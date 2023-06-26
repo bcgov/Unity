@@ -8,10 +8,21 @@
 
   <ItemGroup>
     <PackageReference Include="Elsa" Version="3.0.0-rc1" />
+    <PackageReference Include="Elsa.EntityFrameworkCore" Version="3.0.0-rc1" />
+    <PackageReference Include="Elsa.EntityFrameworkCore.Sqlite" Version="3.0.0-rc1" />
+    <PackageReference Include="Elsa.Http" Version="3.0.0-rc1" />
+    <PackageReference Include="Elsa.Identity" Version="3.0.0-rc1" />
+    <PackageReference Include="Elsa.Workflows.Api" Version="3.0.0-rc1" />
+    <PackageReference Include="Elsa.Workflows.Designer" Version="3.0.0-rc1" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="wwwroot\lib\" />
+    <Folder Include="Pages\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="..\.editorconfig" />
+    <None Remove="Pages\" />
+  </ItemGroup>
 </Project>
