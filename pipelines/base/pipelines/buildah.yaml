@@ -1,0 +1,89 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: buildah
+spec:
+  workspaces:
+    - name: shared-data
+      description: |
+        This workspace will receive the cloned git repo and be passed
+        to the next Task for the repo's README.md file to be read.
+  params:
+    - name: imageRegistry
+      type: string
+      description: The Root url of the image registry. (ie. docker.io)
+    - name: imageRegistryUser
+      type: string
+      description: The secret name of the secret holding the username.
+    - name: imageRegistryPass
+      type: string
+      description: The secret name of the secret holding the password.
+    - name: imageUrl
+      type: string
+      description: Image location (ie. bcgov/codeql-cli)
+    - name: imageTag
+      type: string
+      description: Name of image tag.
+    - name: repoUrl
+      type: string
+      description: The git repository URL containing the Dockerfile.
+    - name: branchName
+      type: string
+      description: The branch to clone.
+    - name: pathToContext
+      type: string
+      description: Path to Dockefile.
+    - name: dockerfile
+      type: string
+      description: Name of Dockerfile.
+    - name: buildahImage
+      type: string
+      description: Version of Buildah to run.
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        name: t-git-clone
+      workspaces:
+        - name: output
+          workspace: shared-data
+      params:
+        - name: url
+          value: $(params.repoUrl)
+        - name: deleteExisting
+          value: "true"
+        - name: revision
+          value: $(params.branchName)
+    - name: generate-id
+      taskRef:
+        name: t-generate-id
+        kind: Task
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: shared-data
+    - name: buildah-build-push
+      taskRef:
+        name: t-buildah
+      runAfter:
+        - generate-id
+      params:
+        - name: IMAGE
+          value: $(params.imageUrl)
+        - name: IMAGE_TAG
+          value: $(tasks.generate-id.results.short-commit)
+        - name: IMAGE_REGISTRY
+          value: $(params.imageRegistry)
+        - name: IMAGE_REGISTRY_USER
+          value: $(params.imageRegistryUser)
+        - name: IMAGE_REGISTRY_PASS
+          value: $(params.imageRegistryPass)
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+        - name: CONTEXT
+          value: $(params.pathToContext)
+        - name: BUILDAH_IMAGE
+          value: $(params.buildahImage)
+      workspaces:
+        - name: source
+          workspace: shared-data
