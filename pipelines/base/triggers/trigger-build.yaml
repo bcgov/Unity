@@ -1,47 +1,46 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: build-push-image-trigger
+  name: unity-build-trigger
 spec:
   params:
   - name: appName
-    default: flask-web
+    default: unity-test
+  - name: unityImage
+    default: index.docker.io/library/maven
   - name: repoUrl
     default: https://github.com/bcgov/pipeline-templates.git
-  - name: imageUrl
-    default: gregnrobinson/tkn-flask-web:latest
   - name: branchName
     default: main
-  - name: dockerfile
-    default: ./Dockerfile
   - name: pathToContext
-    default: ./tekton/demo/flask-web
-  - name: buildahImage
-    default: quay.io/buildah/stable:v1.23.1
+    default: ./tekton/demo/unity-test
+  - name: runSonarScan
+    default: 'true'
+  - name: sonarProject
+    default: bcgov_pipeline-templates
   resourcetemplates:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
-      generateName: docker-build-push-run-
+      generateName: unity-build-run-
     spec:
-      serviceAccountName: pipeline
       pipelineRef:
-        name: p-buildah
+        name: p-mvn-build
       params:
       - name: appName
         value: $(tt.params.appName)
+      - name: unityImage
+        value: $(tt.params.unityImage)
       - name: repoUrl
         value: $(tt.params.repoUrl)
-      - name: imageUrl
-        value: $(tt.params.imageUrl)
       - name: branchName
         value: $(tt.params.branchName)
-      - name: dockerfile
-        value: $(tt.params.dockerfile)
       - name: pathToContext
         value: $(tt.params.pathToContext)
-      - name: buildahImage
-        value: $(tt.params.buildahImage)
+      - name: runSonarScan
+        value: $(tt.params.runSonarScan)
+      - name: sonarProject
+        value: $(tt.params.sonarProject)
       workspaces:
       - name: shared-data
         volumeClaimTemplate:
@@ -50,15 +49,17 @@ spec:
             - ReadWriteOnce
             resources:
               requests:
-                storage: 500Mi
+                storage: 1Gi
       - name: docker-config
         secret:
           secretName: docker-config-path
+      - name: unity-settings
+        emptyDir: {}
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
-  name: build-push-image-trigger
+  name: unity-build-event-listener
 spec:
   serviceAccountName: pipeline
   triggers:
@@ -67,24 +68,24 @@ spec:
         - github:
             secretRef:
               secretName: github-webhook-secret
-              secretKey: github-webhook-secret
+              secretKey: secretToken
             eventTypes:
               - pull_request
               - push
       bindings:
-        - ref: pipeline-templates
+        - ref: unity-build-trigger-binding
       template:
-        ref: build-push-image-trigger
+        ref: unity-build-trigger
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: pipeline-templates
+  name: unity-build-trigger-binding
 spec:
   params:
-  - name: gitrevision
-    value: $(body.head_commit.id)
-  - name: gitrepositoryurl
+  - name: branchName
+    value: $(body.ref)
+  - name: repoUrl
     value: $(body.repository.url)
   - name: contenttype
     value: $(header.Content-Type)

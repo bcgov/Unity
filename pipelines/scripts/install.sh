@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 # set -o errexit
 
 readonly REQUIRED_ENV_VARS=(
@@ -11,11 +9,14 @@ readonly REQUIRED_ENV_VARS=(
 # ask user to input value so that we don't leave secrets in any plain text
 ask-for-env(){
 
+    export NAMESPACE="d18498-tools"
+    export OC_LOGIN_STRING="oc login --token= --server=https://api.silver.devops.gov.bc.ca:6443"
+
     echo Hello! To start with this Tekton setup, I need couple things from you:
-    read -p 'Namespace full-name(ex: 101ed4-tools): ' NAMESPACE
+#    read -p 'Namespace full-name(ex: d18498-tools): ' NAMESPACE
 
     # tekton.sh required env variable 
-    export NAMESPACE=$NAMESPACE
+#    export NAMESPACE=$NAMESPACE
 
     read -p 'OC login sting that you can find on your console page:(whole string including oc) ' OC_LOGIN_STRING
 
@@ -26,10 +27,8 @@ ask-for-env(){
         done
     oc project $NAMESPACE
 
-    read -p 'Your sonar Token(not mandatory): ' SONAR_TOKEN
-    sed -i "s/sonar-token=/sonar-token=$SONAR_TOKEN/g" ./overlays/secrets/secrets.ini
-    
-
+#    read -p 'Your sonar Token(not mandatory): ' SONAR_TOKEN
+#    sed -i "s/sonar-token=/sonar-token=$SONAR_TOKEN/g" ./overlays/secrets/secrets.ini
 
     # tekton.sh required env variable 
     export CONTEXT=`oc config current-context`

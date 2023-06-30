@@ -6,5 +6,5 @@ resources:
   - ingress.yaml
   # switch to use the default serviceAccount/pipeline
   # - rbac.yaml
-  - trigger-flask-web.yaml
-  - trigger-maven-build.yaml
+  - trigger-web.yaml
+  - trigger-build.yaml

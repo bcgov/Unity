@@ -1,46 +1,47 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: maven-build-trigger
+  name: build-push-image-trigger
 spec:
   params:
   - name: appName
-    default: maven-test
-  - name: mavenImage
-    default: index.docker.io/library/maven
+    default: unity-web
   - name: repoUrl
     default: https://github.com/bcgov/pipeline-templates.git
+  - name: imageUrl
+    default: gregnrobinson/tkn-unity-web:latest
   - name: branchName
     default: main
+  - name: dockerfile
+    default: ./Dockerfile
   - name: pathToContext
-    default: ./tekton/demo/maven-test
-  - name: runSonarScan
-    default: 'true'
-  - name: sonarProject
-    default: bcgov_pipeline-templates
+    default: ./tekton/demo/unity-web
+  - name: buildahImage
+    default: quay.io/buildah/stable:v1.23.1
   resourcetemplates:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
-      generateName: maven-build-run-
+      generateName: docker-build-push-run-
     spec:
+      serviceAccountName: pipeline
       pipelineRef:
-        name: p-mvn-build
+        name: p-buildah
       params:
       - name: appName
         value: $(tt.params.appName)
-      - name: mavenImage
-        value: $(tt.params.mavenImage)
       - name: repoUrl
         value: $(tt.params.repoUrl)
+      - name: imageUrl
+        value: $(tt.params.imageUrl)
       - name: branchName
         value: $(tt.params.branchName)
+      - name: dockerfile
+        value: $(tt.params.dockerfile)
       - name: pathToContext
         value: $(tt.params.pathToContext)
-      - name: runSonarScan
-        value: $(tt.params.runSonarScan)
-      - name: sonarProject
-        value: $(tt.params.sonarProject)
+      - name: buildahImage
+        value: $(tt.params.buildahImage)
       workspaces:
       - name: shared-data
         volumeClaimTemplate:
@@ -49,17 +50,15 @@ spec:
             - ReadWriteOnce
             resources:
               requests:
-                storage: 1Gi
+                storage: 500Mi
       - name: docker-config
         secret:
           secretName: docker-config-path
-      - name: maven-settings
-        emptyDir: {}
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:
-  name: maven-build-event-listener
+  name: build-push-image-trigger
 spec:
   serviceAccountName: pipeline
   triggers:
@@ -68,24 +67,24 @@ spec:
         - github:
             secretRef:
               secretName: github-webhook-secret
-              secretKey: secretToken
+              secretKey: github-webhook-secret
             eventTypes:
               - pull_request
               - push
       bindings:
-        - ref: maven-build-trigger-binding
+        - ref: pipeline-templates
       template:
-        ref: maven-build-trigger
+        ref: build-push-image-trigger
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: maven-build-trigger-binding
+  name: pipeline-templates
 spec:
   params:
-  - name: branchName
-    value: $(body.ref)
-  - name: repoUrl
+  - name: gitrevision
+    value: $(body.head_commit.id)
+  - name: gitrepositoryurl
     value: $(body.repository.url)
   - name: contenttype
     value: $(header.Content-Type)
