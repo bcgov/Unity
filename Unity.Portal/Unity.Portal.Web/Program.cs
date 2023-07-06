@@ -2,6 +2,7 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
 using Elsa.Identity.Features;
+using Elsa.Webhooks.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,8 @@ builder.Services.AddElsa(elsa =>
 
     // Use default authentication (JWT + API Key).
     elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
+
+    elsa.UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
 });
 
 // Add services to the container.
@@ -33,6 +36,15 @@ builder.Services.AddControllersWithViews();
 
 // Add Razor pages.
 builder.Services.AddRazorPages();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "_myAllowSpecificOrigins",
+                      policy =>
+                      {
+                          policy.WithOrigins("*");
+                      });
+});
 
 var app = builder.Build();
 
@@ -46,16 +58,19 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseAuthentication();
-app.UseAuthorization();
 app.UseWorkflowsApi();
 app.UseWorkflows();
 app.MapRazorPages();
 
+app.UseCors("_myAllowSpecificOrigins");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 //app.UseRouting();
 
-//app.MapControllerRoute(
-//    name: "default",
-//    pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
