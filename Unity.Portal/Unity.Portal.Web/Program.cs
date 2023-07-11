@@ -62,7 +62,12 @@ app.UseWorkflowsApi();
 app.UseWorkflows();
 app.MapRazorPages();
 
-app.UseCors("_myAllowSpecificOrigins");
+app.UseCors(builder =>
+{
+    builder.WithOrigins("http://localhost:8081", "https://localhost:7131")
+    .AllowAnyMethod()
+    .AllowAnyHeader();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
