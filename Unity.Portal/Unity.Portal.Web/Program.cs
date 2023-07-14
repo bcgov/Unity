@@ -1,8 +1,9 @@
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
-using Elsa.Identity.Features;
 using Elsa.Webhooks.Extensions;
+using System.Net.Http.Headers;
+using Unity.Portal.Web.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,12 +22,21 @@ builder.Services.AddElsa(elsa =>
     // Configure identity so that we can create a default admin user.
     elsa.UseIdentity(identity =>
     {
-        identity.UseAdminUserProvider();
-        identity.TokenOptions = options => options.SigningKey = "secret-token-signing-key";
+        var configuration = builder.Configuration;
+        var identitySection = configuration.GetSection("Identity");
+        var identityTokenSection = identitySection.GetSection("Tokens");
+        
+        identity.IdentityOptions = options => identitySection.Bind(options);
+        identity.TokenOptions = options => identityTokenSection.Bind(options);
+        identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+        identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+        identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
     });
 
     // Use default authentication (JWT + API Key).
-    elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
+    elsa.UseDefaultAuthentication();
+    // If we wanted to use the key of Authorization: ApiKey 00000000-0000-0000-0000-000000000000
+    //elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
 
     elsa.UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
 });
@@ -46,6 +56,15 @@ builder.Services.AddCors(options =>
                       });
 });
 
+builder.Services.AddHttpClient<ApiController>(httpClient =>
+{
+    var configuration = builder.Configuration;
+    var url = configuration["Elsa:ServerUrl"]!.TrimEnd('/') + '/';
+    var apiKey = configuration["Elsa:ApiKey"]!;
+    httpClient.BaseAddress = new Uri(url);
+    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", apiKey);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -56,12 +75,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseWorkflowsApi();
-app.UseWorkflows();
-app.MapRazorPages();
-
 app.UseCors(builder =>
 {
     builder.WithOrigins("http://localhost:8081", "https://localhost:7131")
@@ -69,10 +82,13 @@ app.UseCors(builder =>
     .AllowAnyHeader();
 });
 
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseWorkflowsApi();
+app.UseWorkflows();
+app.MapRazorPages();
 app.UseAuthentication();
 app.UseAuthorization();
-
-//app.UseRouting();
 
 app.MapControllerRoute(
     name: "default",
