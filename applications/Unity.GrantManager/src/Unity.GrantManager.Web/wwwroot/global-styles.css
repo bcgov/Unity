@@ -1,0 +1,21 @@
+/* Your Global Styles */
+
+:root {
+    --lpx-brand: #FCBA19;
+    --lpx-primary: #003366;
+    --lpx-secondary: #38598A;
+    --lpx-success: #2E8540;
+    --lpx-light: #eeeeee;
+    --lpx-info: #438aa7;
+    --lpx-danger: #D8292F;
+    --lpx-warning: #ff9f38;
+}
+
+    :root .lpx-brand-logo {
+        --lpx-logo: url('/images/logo/bcgov/BCID_H_rgb_rev.png');
+        --lpx-logo-icon: url('/images/logo/bcgov/BCID_V_rgb_rev.png');
+    }
+
+.lpx-topbar-container .lpx-topbar {
+    border-radius: 0;
+}

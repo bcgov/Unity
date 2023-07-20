@@ -1,0 +1,19 @@
+{
+  "culture": "en",
+    "texts": {
+        "Menu:Home": "Home",
+        "Menu:GrantPrograms": "Grant Programs",
+        "Menu:Submissions": "Submissions",
+        "Menu:Payments": "Payments",
+        "Welcome": "Welcome",
+        "LongWelcomeMessage": "Welcome to Unity Grant Manager",
+
+        "Enum:GrantProgramType.0": "Undefined",
+        "Enum:GrantProgramType.1": "Agriculture",
+        "Enum:GrantProgramType.2": "Arts, Culture and Sport",
+        "Enum:GrantProgramType.3": "Business",
+        "Enum:GrantProgramType.4": "Environment",
+        "Enum:GrantProgramType.5": "Research",
+        "Enum:GrantProgramType.6": "Jobs & Training"
+    }
+}
