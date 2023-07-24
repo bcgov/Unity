@@ -1,4 +1,4 @@
-namespace Unity.Portal.Web.Models
+namespace Unity.Workflows.Web.Models
 {
     public class ErrorViewModel
     {

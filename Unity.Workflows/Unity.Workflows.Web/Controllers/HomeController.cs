@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using Unity.Portal.Web.Models;
+using Unity.Workflows.Web.Models;
 
-namespace Unity.Portal.Web.Controllers
+namespace Unity.Workflows.Web.Controllers
 {
     public class HomeController : Controller
     {

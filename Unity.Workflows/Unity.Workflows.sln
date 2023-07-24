@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Portal.Web", "Unity.Portal.Web\Unity.Portal.Web.csproj", "{86A4F34F-7D36-4EBD-87D6-407E97AB7D37}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Workflows.Web", "Unity.Workflows.Web\Unity.Workflows.Web.csproj", "{86A4F34F-7D36-4EBD-87D6-407E97AB7D37}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
