@@ -9,4 +9,5 @@ public class GrantManagerMenus
     public const string GrantPrograms = Prefix + ".GrantPrograms";
     public const string Submissions = Prefix + ".Submissions";
     public const string Payments = Prefix + ".Payments";
+    public const string Applications = Prefix + ".GrantApplications";
 }

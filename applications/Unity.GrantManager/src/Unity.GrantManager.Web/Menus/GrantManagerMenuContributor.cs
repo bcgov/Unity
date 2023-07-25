@@ -67,6 +67,15 @@ public class GrantManagerMenuContributor : IMenuContributor
                 order: 3
             )
         );
+        context.Menu.AddItem(
+           new ApplicationMenuItem(
+               GrantManagerMenus.Applications,
+               l["Menu:Applications"],
+               "~/GrantApplications",
+               icon: "fas fa-list",
+               order: 4
+           )
+       );
 
         if (MultiTenancyConsts.IsEnabled)
         {
