@@ -3,6 +3,8 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
 using Elsa.Identity.Features;
 using Elsa.Webhooks.Extensions;
+using Elsa.EntityFrameworkCore.PostgreSql;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddElsa(elsa =>
 {
     // Configure management feature to use EF Core.
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql("Server=localhost;Port=5433;Database=elsa;User Id=postgres;Password=password;")));
 
     // Expose API endpoints.
     elsa.UseWorkflowsApi();
@@ -21,14 +23,22 @@ builder.Services.AddElsa(elsa =>
     // Configure identity so that we can create a default admin user.
     elsa.UseIdentity(identity =>
     {
-        identity.UseAdminUserProvider();
-        identity.TokenOptions = options => options.SigningKey = "secret-token-signing-key";
+        var configuration = builder.Configuration;
+        var identitySection = configuration.GetSection("Identity");
+        var identityTokenSection = identitySection.GetSection("Tokens");
+
+        identity.IdentityOptions = options => identitySection.Bind(options);
+        identity.TokenOptions = options => identityTokenSection.Bind(options);
+        identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+        identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+        identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
     });
 
     // Use default authentication (JWT + API Key).
-    elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
+    elsa.UseDefaultAuthentication();
 
     elsa.UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
+    
 });
 
 // Add services to the container.
