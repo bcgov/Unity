@@ -17,7 +17,17 @@
 
 <abp-card>
     <abp-card-header>
-        <h2>Grant Programs</h2>
+        <abp-row>
+            <abp-column size="_6">
+                <abp-card-title>@L["GrantPrograms"]</abp-card-title>
+            </abp-column>
+            <abp-column size="_6" class="text-end">
+                <abp-button id="CreateGrantProgramButton"
+                            text="@L["GrantProgram_Create"].Value"
+                            icon="plus"
+                            button-type="Primary" />
+            </abp-column>
+        </abp-row>
     </abp-card-header>
     <abp-card-body>
         <abp-table striped-rows="true" id="GrantProgramsTable"></abp-table>

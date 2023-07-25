@@ -10,5 +10,6 @@ public class GrantManagerWebAutoMapperProfile : Profile
         //Define your AutoMapper configuration here for the Web project.
         CreateMap<GrantProgram, GrantProgramDto>();
         CreateMap<CreateUpdateGrantProgramDto, GrantProgram>();
+        CreateMap<GrantProgramDto, CreateUpdateGrantProgramDto>();
     }
 }

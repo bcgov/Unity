@@ -1,5 +1,5 @@
 {
-  "culture": "en",
+    "culture": "en",
     "texts": {
         "Menu:Home": "Home",
         "Menu:GrantPrograms": "Grant Programs",
@@ -14,6 +14,19 @@
         "Enum:GrantProgramType.3": "Business",
         "Enum:GrantProgramType.4": "Environment",
         "Enum:GrantProgramType.5": "Research",
-        "Enum:GrantProgramType.6": "Jobs & Training"
+        "Enum:GrantProgramType.6": "Jobs & Training",
+
+        "Common:Command:Edit": "Edit",
+
+        "GrantPrograms": "Grant Programs",
+        "GrantProgram": "Grant Program",
+        "GrantProgramType": "Sector",
+        "ProgramName": "Program Name",
+        "PublishDate": "Published",
+        "CreateDate": "Created",
+
+        "Sector": "Sector",
+        "GrantProgram_Create": "New Grant Program",
+        "GrantProgram_Update": "Edit Grant Program"
     }
 }
