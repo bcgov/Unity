@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -90,6 +91,40 @@ public class GrantManagerDbContext :
         //    b.ConfigureByConvention(); //auto configure for the base class props
         //    //...
         //});
+
+        builder.Entity<ApplicationForm>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationForm",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(250);
+
+            b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
+        });
+
+        builder.Entity<Intake>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Intake",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.IntakeName).IsRequired().HasMaxLength(250);
+
+            b.HasOne<GrantProgram>().WithMany().HasForeignKey(x => x.GrantProgramId).IsRequired();
+        });
+
+        builder.Entity<GrantProgram>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "GrantProgram",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.ProgramName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            b.HasIndex(x => x.ProgramName);
+        });
 
         #region Domain Models
         // TODO: Review database table name conventions
