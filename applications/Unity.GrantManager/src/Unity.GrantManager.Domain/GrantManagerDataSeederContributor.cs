@@ -17,12 +17,13 @@ public class GrantManagerDataSeederContributor
 
     private readonly IApplicationFormRepository _applicationFormRepository;
 
-    public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository, IIntakeRepository intakeRepository, IApplicationFormRepository applicationFormRepository)
-    {
-        _grantProgramRepository = grantProgramRepository;
-        _intakeRepository = intakeRepository;
-        _applicationFormRepository = applicationFormRepository;
-    }
+     public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository, IIntakeRepository intakeRepository, IApplicationFormRepository applicationFormRepository)
+     {
+         _grantProgramRepository = grantProgramRepository;
+         _intakeRepository = intakeRepository;
+         _applicationFormRepository = applicationFormRepository;
+     }
+       
 
     public async Task SeedAsync(DataSeedContext context)
     {
@@ -115,6 +116,7 @@ public class GrantManagerDataSeederContributor
                 ApplicationFormName = "Space Farms Intake 1 Form 2"
             },
             autoSave: true
-        );
+        ); 
+       
     }
 }
