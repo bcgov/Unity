@@ -3,9 +3,9 @@
   "texts": {
     "Menu:Home": "Home",
     "Menu:GrantPrograms": "Grant Programs",
-    "Menu:Submissions": "Submissions",
+    "Menu:GrantTracker": "Grant Tracker",
+    "Menu:Applications": "Applications",  
     "Menu:Payments": "Payments",
-    "Menu:Applications": "Applications",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
