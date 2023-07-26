@@ -108,3 +108,4 @@ UpgradeLog*.htm
 *.ldf
 
 # Application-specific settings
+appsettings.json

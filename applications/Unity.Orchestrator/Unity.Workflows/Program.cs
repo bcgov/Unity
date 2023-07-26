@@ -11,8 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddElsa(elsa =>
 {
+    var configuration = builder.Configuration;
+    var connectionString = configuration.GetValue<String>("DBConnectionString") ?? "";
     // Configure management feature to use EF Core.
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql("Server=localhost;Port=5433;Database=elsa;User Id=postgres;Password=password;")));
+    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(connectionString)));
 
     // Expose API endpoints.
     elsa.UseWorkflowsApi();
@@ -23,7 +25,6 @@ builder.Services.AddElsa(elsa =>
     // Configure identity so that we can create a default admin user.
     elsa.UseIdentity(identity =>
     {
-        var configuration = builder.Configuration;
         var identitySection = configuration.GetSection("Identity");
         var identityTokenSection = identitySection.GetSection("Tokens");
 

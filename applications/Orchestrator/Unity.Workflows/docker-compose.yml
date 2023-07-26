@@ -1,8 +1,0 @@
-version: '3.4'
-
-services:
-  unity.workflows:
-    image: ${DOCKER_REGISTRY-}unity
-    build:
-      context: .
-      dockerfile: ./Dockerfile
