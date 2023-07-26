@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.GrantPrograms;
 
 namespace Unity.GrantManager.Web.Mapping
 {
@@ -8,6 +9,7 @@ namespace Unity.GrantManager.Web.Mapping
         public GrantApplicationsMapper()
         {
             CreateMap<GrantApplication, GrantApplicationDto>();
+            CreateMap<CreateUpdateGrantProgramDto, GrantApplication>();
         }
     }
 }

@@ -1,38 +1,82 @@
 ﻿$(function () {
-    const l = abp.localization.getResource('GrantManager');
-
-    const dt = new DataTable('#grantApplicationsTable', {
-        ajax: 'api/app/grant-application',
-        processing: true,
-        serverSide: true,        
-        columns: [
-            {
-                title: "Name",
-                data: "name"
-            },
-            {
-                title: "Last Modified",
-                data: "lastModificationTime",
-                render: function (data) {
-                    return luxon
-                        .DateTime
-                        .fromISO(data, {
-                            locale: abp.localization.currentCulture.name
-                        }).toLocaleString();
-                }
-            },
-            {
-                title: "Created",
-                data: "creationTime",
-                render: function (data) {
-                    return luxon
-                        .DateTime
-                        .fromISO(data, {
-                            locale: abp.localization.currentCulture.name
-                        }).toLocaleString();
-                }
-            },
-        ]
+    const formatter = new Intl.NumberFormat('en-CA', {
+        style: 'currency',
+        currency: 'CAD',        
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     });
-});
 
+    const l = abp.localization.getResource('GrantManager');
+    const dataTable = $('#GrantApplicationsTable').DataTable(
+        abp.libs.datatables.normalizeConfiguration({
+            serverSide: true,
+            paging: true,
+            order: [[1, "asc"]],
+            searching: false,
+            scrollX: true,
+            ajax: abp.libs.datatables.createAjax(unity.grantManager.grantApplications.grantApplication.getList),
+            columnDefs: [
+                {
+                    title: l('ProjectName'),
+                    data: "projectName"
+                },
+                {
+                    title: l('ReferenceNo'),
+                    data: "referenceNo",
+                },
+                {
+                    title: l('EligibleAmount'),
+                    data: "eligibleAmount",
+                    render: function (data) {
+                        return formatter.format(data)
+                    }
+                },
+                {
+                    title: l('RequestedAmount'),
+                    data: "requestedAmount",
+                    render: function (data) {
+                        return formatter.format(data)
+                    }
+                },
+                {
+                    title: l('Assignee'),
+                    data: "assignees",
+                    render: function (data) {
+                        return data[0].username; // how should multiple be displayed?
+                    }
+                },
+                {
+                    title: l('Probability'),
+                    data: "probability",
+                },
+                {
+                    title: l('GrantApplicationStatus'),
+                    data: "status",
+                    render: (data) => l('Enum:GrantApplicationStatus.' + data)
+                },
+                {
+                    title: l('ProposalDate'),
+                    data: "proposalDate",
+                    render: function (data) {
+                        return luxon
+                            .DateTime
+                            .fromISO(data, {
+                                locale: abp.localization.currentCulture.name
+                            }).toLocaleString();
+                    }
+                },
+                {
+                    title: l('SubmissionDate'),
+                    data: "submissionDate",
+                    render: function (data) {
+                        return luxon
+                            .DateTime
+                            .fromISO(data, {
+                                locale: abp.localization.currentCulture.name
+                            }).toLocaleString();
+                    }
+                },
+            ]
+        })
+    );
+});

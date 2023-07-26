@@ -17,24 +17,13 @@
 
 <abp-card>
     <abp-card-header>
-        <h2>Grant Applications</h2>
+        <abp-row>
+            <abp-column size="_6">
+                <abp-card-title>@L["GrantApplications"]</abp-card-title>
+            </abp-column>
+        </abp-row>
     </abp-card-header>
-    <abp-card-body>        
-        <table id="grantApplicationsTable" class="display" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Last Modified</th>
-                    <th>Created</th>                    
-                </tr>
-            </thead>
-            <tfoot>
-                <tr>
-                    <th>Name</th>
-                    <th>Last Modified</th>
-                    <th>Created</th>
-                </tr>
-            </tfoot>
-        </table>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="GrantApplicationsTable"></abp-table>
     </abp-card-body>
 </abp-card>

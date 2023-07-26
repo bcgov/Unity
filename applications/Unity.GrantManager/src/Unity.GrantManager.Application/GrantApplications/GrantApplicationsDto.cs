@@ -1,6 +1,6 @@
 ﻿namespace Unity.GrantManager.GrantApplications
 {
-    public class CreateUpdateGrantApplicationDto
+    internal class GrantApplicationsDto
     {
     }
 }

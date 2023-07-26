@@ -23,6 +23,6 @@ namespace Unity.GrantManager.GrantPrograms
             : base(repository)
         {
 
-        }
+        }        
     }
 }

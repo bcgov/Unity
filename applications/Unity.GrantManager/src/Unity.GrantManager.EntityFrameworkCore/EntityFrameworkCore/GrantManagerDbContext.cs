@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -57,6 +58,7 @@ public class GrantManagerDbContext :
 
     #region Domain Entities
     public DbSet<GrantProgram> GrantPrograms { get; set; }
+    public DbSet<GrantApplication> GrantApplications { get; set; }
     #endregion
 
     public GrantManagerDbContext(DbContextOptions<GrantManagerDbContext> options)
