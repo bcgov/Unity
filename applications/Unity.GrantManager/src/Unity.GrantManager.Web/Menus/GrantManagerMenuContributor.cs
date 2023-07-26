@@ -36,28 +36,30 @@ public class GrantManagerMenuContributor : IMenuContributor
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
-                "GrantManager",
-                "Grant Manager",
+                GrantManagerMenus.GrantPrograms,
+                l["Menu:GrantPrograms"],
+                url: "/GrantPrograms",
                 icon: "fas fa-award",
                 order: 1
+            )
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.GrantTracker,
+                l["Menu:GrantTracker"],
+                icon: "fas fa-file-contract",
+                order: 2
             ).AddItem(
                 new ApplicationMenuItem(
-                    GrantManagerMenus.GrantPrograms,
-                    l["Menu:GrantPrograms"],
-                    url: "/GrantPrograms",
+                    GrantManagerMenus.Applications,
+                    l["Menu:Applications"],
+                    "~/GrantApplications",
                     order: 0
                 )
             )
         );
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                GrantManagerMenus.Submissions,
-                l["Menu:Submissions"],
-                "~/",
-                icon: "fas fa-file-contract",
-                order: 2
-            )
-        );
+
         context.Menu.AddItem(
             new ApplicationMenuItem(
                 GrantManagerMenus.Payments,
@@ -67,6 +69,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 order: 3
             )
         );
+
 
         if (MultiTenancyConsts.IsEnabled)
         {

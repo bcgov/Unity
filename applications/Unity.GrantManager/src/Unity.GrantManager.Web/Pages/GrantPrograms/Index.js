@@ -1,6 +1,11 @@
 ﻿$(function () {
     const l = abp.localization.getResource('GrantManager');
+    let createModal = new abp.ModalManager(abp.appPath + 'GrantPrograms/CreateModal');
+    let updateModal = new abp.ModalManager(abp.appPath + 'GrantPrograms/UpdateModal');
 
+    /**
+     * Grant Programs: List All
+     */
     let dataTable = $('#GrantProgramsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
@@ -11,39 +16,65 @@
             ajax: abp.libs.datatables.createAjax(unity.grantManager.grantPrograms.grantProgram.getList),
             columnDefs: [
                 {
-                    title: 'Program Name',
+                    title: l('ProgramName'),
                     data: "programName"
                 },
                 {
-                    title: 'Sector',
+                    title: l('GrantProgramType'),
                     data: "type",
-                    render: function (data) {
-                        return l('Enum:GrantProgramType.' + data);
-                    }
+                    render: (data) => l('Enum:GrantProgramType.' + data)
                 },
                 {
-                    title: 'Published',
+                    title: l('PublishDate'),
                     data: "publishDate",
-                    render: function (data) {
-                        return luxon
-                            .DateTime
-                            .fromISO(data, {
-                                locale: abp.localization.currentCulture.name
-                            }).toLocaleString();
-                    }
+                    render: (data) => luxon
+                        .DateTime
+                        .fromISO(data, {
+                            locale: abp.localization.currentCulture.name
+                        }).toLocaleString()
                 },
                 {
-                    title: 'Created',
+                    title: l('CreateDate'),
                     data: "creationTime",
-                    render: function (data) {
-                        return luxon
-                            .DateTime
-                            .fromISO(data, {
-                                locale: abp.localization.currentCulture.name
-                            }).toLocaleString(luxon.DateTime.DATETIME_SHORT);
+                    render: (data) => luxon
+                        .DateTime
+                        .fromISO(data, {
+                            locale: abp.localization.currentCulture.name
+                        }).toLocaleString(luxon.DateTime.DATETIME_SHORT)
+                },
+                {
+                    title: l('Common:Command:Edit'),
+                    rowAction: {
+                        items:
+                            [
+                                {
+                                    text: l('Common:Command:Edit'),
+                                    action: (data) => updateModal.open({ id: data.record.id })
+                                }
+                            ]
                     }
                 }
             ]
         })
     );
+
+    /**
+     * Grant Programs: CREATE
+     */
+    createModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
+    updateModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
+    $('#CreateGrantProgramButton').click(function (e) {
+        e.preventDefault();
+        createModal.open();
+    });
+
+    /**
+     * Grant Programs: UPDATE
+     */
 });
