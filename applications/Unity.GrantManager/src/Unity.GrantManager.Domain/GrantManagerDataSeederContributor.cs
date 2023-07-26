@@ -17,7 +17,9 @@ public class GrantManagerDataSeederContributor
 
     private readonly IApplicationFormRepository _applicationFormRepository;
 
-     public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository, IIntakeRepository intakeRepository, IApplicationFormRepository applicationFormRepository)
+     public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository, 
+         IIntakeRepository intakeRepository, 
+         IApplicationFormRepository applicationFormRepository)
      {
          _grantProgramRepository = grantProgramRepository;
          _intakeRepository = intakeRepository;

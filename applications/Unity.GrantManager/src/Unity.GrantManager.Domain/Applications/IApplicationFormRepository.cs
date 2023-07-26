@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Unity.GrantManager.GrantPrograms;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Applications;
 
-public interface IApplicationFormRepository : IRepository<ApplicationForm,Guid>
+public interface IApplicationFormRepository : IBasicRepository<ApplicationForm, Guid>
 {
 }

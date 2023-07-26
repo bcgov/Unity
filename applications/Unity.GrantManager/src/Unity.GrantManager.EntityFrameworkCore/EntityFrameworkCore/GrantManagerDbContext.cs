@@ -59,7 +59,12 @@ public class GrantManagerDbContext :
 
     #region Domain Entities
     public DbSet<GrantProgram> GrantPrograms { get; set; }
+
     public DbSet<GrantApplication> GrantApplications { get; set; }
+
+    public DbSet<Intake> Intakes { get; set; }
+    public DbSet<ApplicationForm> ApplicationForms { get; set; }
+
     #endregion
 
     public GrantManagerDbContext(DbContextOptions<GrantManagerDbContext> options)
