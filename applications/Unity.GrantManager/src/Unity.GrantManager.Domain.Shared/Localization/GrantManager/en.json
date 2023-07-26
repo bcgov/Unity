@@ -46,6 +46,7 @@
     "Probability": "Probability",
     "GrantApplicationStatus": "Status",
     "ProposalDate": "Proposal Date",
-    "SubmissionDate": "Submission Date"
+    "SubmissionDate": "Submission Date",
+    "GrantApplications": "Grant Applications"
   }
 }
