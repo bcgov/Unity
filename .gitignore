@@ -108,5 +108,6 @@ UpgradeLog*.htm
 *.ldf
 
 # Application-specific settings
+appsettings.json
 /applications/Unity.GrantManager/src/Unity.GrantManager.DbMigrator/appsettings.secrets.json
 /applications/Unity.GrantManager/src/Unity.GrantManager.Web/appsettings.secrets.json
