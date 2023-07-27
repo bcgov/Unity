@@ -97,25 +97,7 @@ public class GrantManagerDbContext :
         //    //...
         //});
 
-        builder.Entity<ApplicationForm>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationForm",
-                GrantManagerConsts.DbSchema);
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(250);
-
-            b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
-        });
-
-        builder.Entity<Intake>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Intake",
-                GrantManagerConsts.DbSchema);
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.IntakeName).IsRequired().HasMaxLength(250);
-
-            b.HasOne<GrantProgram>().WithMany().HasForeignKey(x => x.GrantProgramId).IsRequired();
-        });
+              
 
         builder.Entity<GrantProgram>(b =>
         {
@@ -129,6 +111,26 @@ public class GrantManagerDbContext :
                 .HasMaxLength(250);
 
             b.HasIndex(x => x.ProgramName);
+        });
+
+        builder.Entity<Intake>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Intake",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.IntakeName).IsRequired().HasMaxLength(250);
+
+            b.HasOne<GrantProgram>().WithMany().HasForeignKey(x => x.GrantProgramId).IsRequired();
+        });
+
+        builder.Entity<ApplicationForm>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationForm",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(250);
+
+            b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
         });
 
         #region Domain Models
