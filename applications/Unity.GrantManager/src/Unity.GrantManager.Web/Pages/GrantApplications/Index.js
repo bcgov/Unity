@@ -42,7 +42,7 @@
                     title: l('Assignee'),
                     data: "assignees",
                     render: function (data) {
-                        return data[0].username; // how should multiple be displayed?
+                        return (!data || data.length === 0) ? null : data.length > 1 ? l('Multiple') : data[0].username;                        
                     }
                 },
                 {
