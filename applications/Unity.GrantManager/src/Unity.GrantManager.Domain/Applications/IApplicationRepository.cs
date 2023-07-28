@@ -7,7 +7,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Applications;
 
-public interface IApplicationRepository : IBasicRepository<Application, Guid>
+public interface IApplicationRepository : IRepository<Application, Guid>
 {
     Task<List<Application>> GetListAsync(
         int skipCount,
