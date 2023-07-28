@@ -113,6 +113,20 @@ public class GrantManagerDbContext :
             b.HasIndex(x => x.ProgramName);
         });
 
+        builder.Entity<Applicant>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Applicant",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.ApplicantName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            b.HasIndex(x => x.ApplicantName);
+        });
+
         builder.Entity<Intake>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Intake",
@@ -133,6 +147,16 @@ public class GrantManagerDbContext :
             b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
         });
 
+        builder.Entity<Application>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Application",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.ApplicationName).IsRequired().HasMaxLength(250);
+            b.Property(x => x.Payload).HasColumnType("jsonb");
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+        });
         #region Domain Models
         // TODO: Review database table name conventions
         builder.Entity<GrantProgram>(b =>

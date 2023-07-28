@@ -12,20 +12,24 @@ public class GrantManagerDataSeederContributor
     : IDataSeedContributor, ITransientDependency
 {
     private readonly IRepository<GrantProgram, Guid> _grantProgramRepository;
-
     private readonly IIntakeRepository _intakeRepository;
-
     private readonly IApplicationFormRepository _applicationFormRepository;
+    private readonly IApplicantRepository _applicantRepository;
+    private readonly IApplicationRepository _applicationRepository;
 
-     public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository, 
-         IIntakeRepository intakeRepository, 
-         IApplicationFormRepository applicationFormRepository)
-     {
-         _grantProgramRepository = grantProgramRepository;
-         _intakeRepository = intakeRepository;
-         _applicationFormRepository = applicationFormRepository;
-     }
-       
+    public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository,
+        IIntakeRepository intakeRepository,
+        IApplicationFormRepository applicationFormRepository,
+        IApplicantRepository applicantRepository,
+        IApplicationRepository applicationRepository)
+    {
+        _grantProgramRepository = grantProgramRepository;
+        _intakeRepository = intakeRepository;
+        _applicationFormRepository = applicationFormRepository;
+        _applicantRepository = applicantRepository;
+        _applicationRepository = applicationRepository;
+    }
+
 
     public async Task SeedAsync(DataSeedContext context)
     {
@@ -118,7 +122,31 @@ public class GrantManagerDataSeederContributor
                 ApplicationFormName = "Space Farms Intake 1 Form 2"
             },
             autoSave: true
-        ); 
-       
+        );
+
+        var applicant1 = await _applicantRepository.InsertAsync(
+            new Applicant { 
+                ApplicantName = " John Smith" 
+            }, autoSave: true
+        );
+
+        var application1 = await _applicationRepository.InsertAsync(
+            new Application { 
+                ApplicantId = applicant1.Id, 
+                ApplicationName = "Application For Space Farms Grant", 
+                ApplicationFormId = appForm1.Id,
+                Payload = "{\"Name\":\"John Smith\",\"Age\":34,\"Address\":\"British Columbia\"}"
+            }, autoSave: true
+        );
+
+        var application2 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationName = "Application For BizBusiness Fund",
+                ApplicationFormId = appForm2.Id,
+                Payload = "{\"Name\":\"John Doe\",\"Age\":45,\"Address\":\"Toronto\"}"
+            }, autoSave: true
+        );
     }
 }
