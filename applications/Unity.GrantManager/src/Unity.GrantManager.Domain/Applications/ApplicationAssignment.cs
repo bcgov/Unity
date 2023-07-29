@@ -7,7 +7,9 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Unity.GrantManager.Applications;
 
-public class ChefsFormSubmission : AuditedAggregateRoot<Guid>
+public class ApplicationAssignment : AuditedAggregateRoot<Guid>
 {
+    public Guid UserId { get; set; }
     public Guid ApplicationId { get; set; }
+       
 }

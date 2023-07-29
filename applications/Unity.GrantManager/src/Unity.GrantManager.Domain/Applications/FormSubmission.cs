@@ -7,10 +7,10 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Unity.GrantManager.Applications;
 
-public class ApplicantAgent : AuditedAggregateRoot<Guid>
+public class FormSubmission : AuditedAggregateRoot<Guid>
 {
     public Guid UserId { get; set; }
-    public Guid ApplicantId { get; set; }
-    public Boolean IsConfirmed { get; set; }
+    public Guid ApplicationId { get; set; }
 
+    public string ChefsSubmissionGuid { get; set; }
 }

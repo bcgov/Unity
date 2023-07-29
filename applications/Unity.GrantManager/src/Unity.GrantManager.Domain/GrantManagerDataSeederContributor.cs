@@ -91,8 +91,8 @@ public class GrantManagerDataSeederContributor
         var spaceFarmsIntake1 = await _intakeRepository.InsertAsync(
             new Intake
             {
-                GrantProgramId = spaceFarms.Id,
-                IntakeName = "Space Farms Intake 1"
+                StartDate = new DateOnly(2022,1,1),
+                EndDate = new DateOnly(2023,1,1),
             },
             autoSave: true
         );
@@ -100,8 +100,8 @@ public class GrantManagerDataSeederContributor
         var spaceFarmsIntake2 = await _intakeRepository.InsertAsync(
             new Intake
             {
-                GrantProgramId = spaceFarms.Id,
-                IntakeName = "Space Farms Intake 2"
+                StartDate = new DateOnly(2023,1,1),
+                EndDate = new DateOnly(2024,1,1),
             },
             autoSave: true
         );

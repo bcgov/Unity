@@ -9,7 +9,11 @@ namespace Unity.GrantManager.GrantPrograms;
 
 public class Intake : FullAuditedAggregateRoot<Guid>
 {
-    public Guid GrantProgramId { get; set; }
+    public Double Budget { get; set; }
 
+    public DateOnly StartDate { get; set; }
+
+    public DateOnly EndDate { get; set; }
+    
     public string IntakeName { get; set; }
 }

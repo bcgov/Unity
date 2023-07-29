@@ -9,5 +9,8 @@ namespace Unity.GrantManager.Applications;
 
 public class AdjudicationAssessment : AuditedAggregateRoot<Guid>
 {
+    public Guid UserId { get; set; }
     public Guid ApplicationId { get; set; }
+
+    public string ChefsSubmissionGuid { get; set; }
 }

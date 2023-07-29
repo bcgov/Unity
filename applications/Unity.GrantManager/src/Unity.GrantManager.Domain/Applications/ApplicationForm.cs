@@ -13,4 +13,8 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>
     public string ApplicationFormName { get; set; }
 
     public string? ApplicationFormDescription { get; set;}
+
+    public string ChefsApplicationFormGuid { get; set; }
+
+    public string ChefsCriteriaFormGuid { get; set; }
 }
