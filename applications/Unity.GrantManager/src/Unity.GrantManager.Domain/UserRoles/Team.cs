@@ -7,8 +7,8 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Unity.GrantManager.ApplicationUserRoles;
 
-public class Role : AuditedAggregateRoot<Guid>
+public class Team : AuditedAggregateRoot<Guid>
 {
-    public string RoleName { get; set; } = string.Empty;
-    public string RoleDescription { get; set; } = string.Empty;
+   
+    public string Description { get; set; } = string.Empty;
 }

@@ -9,8 +9,11 @@ namespace Unity.GrantManager.ApplicationUserRoles;
 
 public class User : AuditedAggregateRoot<Guid>
 {
-    public Guid UserRoleId { get; set; }
-    public string Sub { get; set; }
-    public string DisplayName { get; set; }
-    public string Email { get; set; }
+    public string OidcSub { get; set; }
+    public string OidcDisplayName { get; set; }
+    public string OidcEmail { get; set; }
+    public string LegalName { get; set; }
+    public string PreferredFirstName { get; set; }
+    public string PreferredLastName { get; set; }
+    public string Phone {get; set; }
 }

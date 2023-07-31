@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationUserRoles;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -113,6 +114,32 @@ public class GrantManagerDbContext :
             b.HasIndex(x => x.ProgramName);
         });
 
+        builder.Entity<User>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "User",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention();
+            b.HasIndex(x => x.OidcSub);
+        });
+
+        builder.Entity<Team>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Team",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention();
+            
+        });
+
+        builder.Entity<UserTeam>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "UserTeam",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention(); //auto configure for the base class props            
+            b.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).IsRequired();
+            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+        });
+
         builder.Entity<Applicant>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Applicant",
@@ -165,18 +192,19 @@ public class GrantManagerDbContext :
                     GrantManagerConsts.DbSchema);
                 
                 b.ConfigureByConvention(); //auto configure for the base class props                             
-                b.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).IsRequired();
+                b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired();
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
-        builder.Entity<FormSubmission>(b =>
+        builder.Entity<ApplicationFormSubmission>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "FormSubmission",
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationFormSubmission",
                 GrantManagerConsts.DbSchema);
             
             b.ConfigureByConvention(); //auto configure for the base class props                             
-            b.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).IsRequired();
-            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
         });
 
         builder.Entity<AdjudicationAssessment>(b =>
@@ -185,8 +213,9 @@ public class GrantManagerDbContext :
                 GrantManagerConsts.DbSchema);
             
             b.ConfigureByConvention(); //auto configure for the base class props                             
-            b.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).IsRequired();
-            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
         });
 
         builder.Entity<ApplicationAssignment>(b =>
@@ -195,7 +224,9 @@ public class GrantManagerDbContext :
                 GrantManagerConsts.DbSchema);
             
             b.ConfigureByConvention(); //auto configure for the base class props                             
-            b.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).IsRequired();
+            b.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).IsRequired();
+            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
 

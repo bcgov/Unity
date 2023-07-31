@@ -9,7 +9,11 @@ namespace Unity.GrantManager.Applications;
 
 public class ApplicationAssignment : AuditedAggregateRoot<Guid>
 {
-    public Guid UserId { get; set; }
+    public Guid TeamId { get; set; }
+
+    public string OidcSub { get; set; } 
+
+    public Guid ApplicationFormId { get; set; }
     public Guid ApplicationId { get; set; }
        
 }

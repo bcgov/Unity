@@ -91,6 +91,7 @@ public class GrantManagerDataSeederContributor
         var spaceFarmsIntake1 = await _intakeRepository.InsertAsync(
             new Intake
             {
+                IntakeName = "2022 Intake",
                 StartDate = new DateOnly(2022,1,1),
                 EndDate = new DateOnly(2023,1,1),
             },
@@ -100,6 +101,7 @@ public class GrantManagerDataSeederContributor
         var spaceFarmsIntake2 = await _intakeRepository.InsertAsync(
             new Intake
             {
+                IntakeName = "2023 Intake",
                 StartDate = new DateOnly(2023,1,1),
                 EndDate = new DateOnly(2024,1,1),
             },
@@ -110,7 +112,9 @@ public class GrantManagerDataSeederContributor
             new ApplicationForm
             {
                 IntakeId = spaceFarmsIntake1.Id,
-                ApplicationFormName = "Space Farms Intake 1 Form 1"
+                ApplicationFormName = "Space Farms Intake 1 Form 1",
+                ChefsApplicationFormGuid="123456",
+                ChefsCriteriaFormGuid="213121"
             },
             autoSave: true
         );
@@ -119,7 +123,9 @@ public class GrantManagerDataSeederContributor
             new ApplicationForm
             {
                 IntakeId = spaceFarmsIntake1.Id,
-                ApplicationFormName = "Space Farms Intake 1 Form 2"
+                ApplicationFormName = "Space Farms Intake 1 Form 2",
+                ChefsApplicationFormGuid = "123456",
+                ChefsCriteriaFormGuid = "213121"
             },
             autoSave: true
         );
