@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using System.Linq.Dynamic.Core;
+using Unity.GrantManager.Applications;
+using Microsoft.AspNetCore.Authorization;
+
+
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -18,9 +23,11 @@ namespace Unity.GrantManager.GrantApplications
         CreateUpdateGrantApplicationDto>,
         IGrantApplicationAppService
     {
+
         public GrantApplicationAppService(IRepository<GrantApplication, Guid> repository)
              : base(repository)
         {
+           
         }
 
         public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -202,6 +209,7 @@ namespace Unity.GrantManager.GrantApplications
                         ProposalDate = new DateTime(2022, 10, 02),
                         SubmissionDate = new DateTime(2023, 01, 02),
                         Status = GrantApplicationStatus.Awaiting
+
                     }
                 };
         }
@@ -221,6 +229,8 @@ namespace Unity.GrantManager.GrantApplications
 
             return query;
         }
+
+        
     }
 }
 

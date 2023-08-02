@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.ApplicationUserRoles;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -58,7 +60,12 @@ public class GrantManagerDbContext :
 
     #region Domain Entities
     public DbSet<GrantProgram> GrantPrograms { get; set; }
+
     public DbSet<GrantApplication> GrantApplications { get; set; }
+
+    public DbSet<Intake> Intakes { get; set; }
+    public DbSet<ApplicationForm> ApplicationForms { get; set; }
+
     #endregion
 
     public GrantManagerDbContext(DbContextOptions<GrantManagerDbContext> options)
@@ -91,15 +98,148 @@ public class GrantManagerDbContext :
         //    //...
         //});
 
-        #region Domain Models
-        // TODO: Review database table name conventions
+              
+
         builder.Entity<GrantProgram>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + nameof(GrantPrograms),
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "GrantProgram",
                 GrantManagerConsts.DbSchema);
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.ProgramName).IsRequired().HasMaxLength(128);
+           
+            b.ConfigureByConvention();
+            
+            b.Property(x => x.ProgramName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            b.HasIndex(x => x.ProgramName);
         });
-        #endregion
+
+        builder.Entity<User>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "User",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention();
+            b.HasIndex(x => x.OidcSub);
+        });
+
+        builder.Entity<Team>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Team",
+                GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention();
+            
+        });
+
+        builder.Entity<UserTeam>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "UserTeam",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention(); //auto configure for the base class props            
+            b.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).IsRequired();
+            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+        });
+
+        builder.Entity<Applicant>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Applicant",
+                GrantManagerConsts.DbSchema);
+           ;
+            b.ConfigureByConvention();
+            
+            b.Property(x => x.ApplicantName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            b.HasIndex(x => x.ApplicantName);
+        });
+
+        builder.Entity<Intake>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Intake",
+                GrantManagerConsts.DbSchema);
+            
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.IntakeName).IsRequired().HasMaxLength(250);
+        });
+
+        builder.Entity<ApplicationForm>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationForm",
+                GrantManagerConsts.DbSchema);
+            
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(250);
+
+            b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
+        });
+
+        builder.Entity<Application>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Application",
+                GrantManagerConsts.DbSchema);
+            
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.ApplicationName).IsRequired().HasMaxLength(250);
+            b.Property(x => x.Payload).HasColumnType("jsonb");
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+        });
+
+         builder.Entity<ApplicantAgent>(b =>
+            {
+                b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicantAgent",
+                    GrantManagerConsts.DbSchema);
+                
+                b.ConfigureByConvention(); //auto configure for the base class props                             
+                b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+            });
+
+        builder.Entity<ApplicationFormSubmission>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationFormSubmission",
+                GrantManagerConsts.DbSchema);
+            
+            b.ConfigureByConvention(); //auto configure for the base class props                             
+            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+        });
+
+        builder.Entity<AdjudicationAssessment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "AdjudicationAssessment",
+                GrantManagerConsts.DbSchema);
+            
+            b.ConfigureByConvention(); //auto configure for the base class props                             
+            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+        });
+
+        builder.Entity<ApplicationAssignment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationAssignment",
+                GrantManagerConsts.DbSchema);
+            
+            b.ConfigureByConvention(); //auto configure for the base class props                             
+            b.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).IsRequired();
+            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+        });
+
+        var allEntityTypes = builder.Model.GetEntityTypes();
+        foreach (var t in allEntityTypes)
+        {
+            if (t.ClrType != typeof(ExtraPropertyDictionary))
+            {
+                var entityBuilder = builder.Entity(t.ClrType);
+                
+                entityBuilder.TryConfigureExtraProperties();
+            }
+        }
+
     }
 }

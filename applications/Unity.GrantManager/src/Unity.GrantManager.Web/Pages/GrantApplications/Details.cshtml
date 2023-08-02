@@ -1,0 +1,57 @@
+﻿@page "{submissionId?}"
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.GrantManager.Web.Pages.GrantApplications
+@using Microsoft.Extensions.Localization
+@model DetailsModel
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+@{
+    // TODO
+    PageLayout.Content.Title = L["Grants"].Value;
+}
+@section styles
+{
+    <abp-style src="/libs/formiojs/formio.form.css" />
+    <abp-style src="/Pages/GrantApplications/Details.css" />
+}
+@section scripts
+{
+    <abp-script src="/Pages/GrantApplications/Details.js" />
+    <abp-script src="/libs/formiojs/formio.form.js" />
+}
+
+<abp-card>
+    <abp-card-body>
+        <abp-row>
+            <abp-column size="_6">
+                <abp-button id="SaveDraftReviewButton"
+                            text="Save Draft"
+                            icon="floppy-disk"
+                            button-type="Primary" />
+            </abp-column>
+            <abp-column size="_6" class="text-end">
+                <abp-button id="ApproveReviewButton"
+                            text="Approve"
+                            icon="check"
+                            button-type="Outline_Secondary" />
+            </abp-column>
+        </abp-row>
+    </abp-card-body>
+</abp-card>
+
+<div class="container-fluid">
+    <abp-row>
+        <abp-column size="_8">
+            <abp-alert alert-type="Primary">
+                @*TODO: Put FormIO handler here!*@
+                Put FormIO handler here!
+            </abp-alert>
+        </abp-column>
+        <abp-column size="_4">
+            <abp-alert alert-type="Secondary">
+                Details Tabs Pane
+            </abp-alert>
+        </abp-column>
+    </abp-row>
+</div>
