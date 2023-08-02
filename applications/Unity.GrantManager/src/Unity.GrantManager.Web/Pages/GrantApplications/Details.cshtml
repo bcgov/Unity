@@ -19,6 +19,7 @@
 {
     <abp-script src="/Pages/GrantApplications/Details.js" />
     <abp-script src="/libs/formiojs/formio.form.js" />
+    <abp-script src="/libs/axios/axios.js" />
 }
 
 <abp-card>
@@ -42,16 +43,12 @@
 
 <div class="container-fluid">
     <abp-row>
-        <abp-column size="_8">
-            <abp-alert alert-type="Primary">
+        <abp-column size="_12">
+            
                 @*TODO: Put FormIO handler here!*@
-                Put FormIO handler here!
-            </abp-alert>
+                <div id="formio"></div>
+           
         </abp-column>
-        <abp-column size="_4">
-            <abp-alert alert-type="Secondary">
-                Details Tabs Pane
-            </abp-alert>
-        </abp-column>
+
     </abp-row>
 </div>

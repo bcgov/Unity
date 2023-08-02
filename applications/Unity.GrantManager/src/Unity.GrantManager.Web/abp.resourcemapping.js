@@ -7,6 +7,7 @@ module.exports = {
 
     ],
     mappings: {
-        "@node_modules/formiojs/dist/": "@libs/formiojs"
+        "@node_modules/formiojs/dist/": "@libs/formiojs",
+        "@node_modules/axios/dist/": "@libs/axios"
     }
 };
