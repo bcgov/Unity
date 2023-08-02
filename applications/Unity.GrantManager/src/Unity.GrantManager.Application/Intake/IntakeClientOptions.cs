@@ -9,4 +9,6 @@ public class IntakeClientOptions
     public string ApiKey { get; set; }
 
     public string BearerTokenPlaceholder { get; set; }
+
+    public bool UseBearerToken { get; set; }
 }

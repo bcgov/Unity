@@ -50,8 +50,6 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         return response.Content;
     }
 
-    
-
     public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId)
     {
         if (formId == null) 
@@ -84,15 +82,5 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         return new PagedResultDto<FormSubmissionSummaryDto>(
             jsonResponse.Count,
             jsonResponse);
-    }
-
-    public async Task<List<object>> ListVersionSubmissions(Guid? formId, Guid? formVersionId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task<List<object>> ListDiscoverSubmissions(Guid? formId, Guid? formVersionId, string fields)
-    {
-        throw new NotImplementedException();
     }
 }

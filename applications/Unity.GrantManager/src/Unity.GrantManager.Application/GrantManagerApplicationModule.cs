@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using RestSharp;
 using RestSharp.Authenticators;
@@ -46,6 +47,7 @@ public class GrantManagerApplicationModule : AbpModule
             options.FormId  = configuration["Intake:FormId"] ?? "";
             options.ApiKey  = configuration["Intake:ApiKey"] ?? "";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
+            options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
         });
 
         context.Services.AddSingleton<RestClient>(provider =>
@@ -55,9 +57,10 @@ public class GrantManagerApplicationModule : AbpModule
             var restOptions = new RestClientOptions(options.BaseUri)
             {
                 // NOTE: Basic authentication only works for fetching forms and lists of form submissions
-                Authenticator = new HttpBasicAuthenticator(options.FormId, options.ApiKey),
+                Authenticator = options.UseBearerToken ?
+                    new JwtAuthenticator(options.BearerTokenPlaceholder) :
+                    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
 
-                // Authenticator = new JwtAuthenticator(options.BearerTokenPlaceholder),
                 FailOnDeserializationError = true,
                 ThrowOnDeserializationError = true
             };

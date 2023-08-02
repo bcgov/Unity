@@ -12,29 +12,12 @@ namespace Unity.GrantManager.Intake;
 public interface ISubmissionAppService : IApplicationService
 {
     /// <summary>
-    /// List field value submissions from a form version A queryable endpoint for acquiring a specific subset of data from the submissions
-    /// </summary>
-    /// <param name="formId">ID of the form</param>
-    /// <param name="formVersionId">ID of the form version</param>
-    /// <param name="fields">A list of form fields to search on. Refer to the related &#x60;/fields&#x60; endpoint for a list of valid values to query for. The list can be comma separated or by repeating the same fields query multiple times.</param>
-    /// <returns>List&lt;FormSubmissionDiscover&gt;</returns>
-    Task<List<object>> ListDiscoverSubmissions(Guid? formId, Guid? formVersionId, string fields);
-
-    /// <summary>
     /// List submissions for a form 
     /// </summary>
     /// <param name="formId">ID of the form</param>
     /// <param name="fields">A list of form fields to search on. Refer to the related &#x60;versions/{formVersionId}/fields&#x60; endpoint for a list of valid values to query for. The list should be comma separated.</param>
     /// <returns>List&lt;FormSubmissionSummary&gt;</returns>
     Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId);
-
-    /// <summary>
-    /// List submissions from a form version 
-    /// </summary>
-    /// <param name="formId">ID of the form</param>
-    /// <param name="formVersionId">ID of the form version</param>
-    /// <returns>List&lt;FormSubmission&gt;</returns>
-    Task<List<object>> ListVersionSubmissions(Guid? formId, Guid? formVersionId);
 
     /// <summary>
     /// Get a form submission 

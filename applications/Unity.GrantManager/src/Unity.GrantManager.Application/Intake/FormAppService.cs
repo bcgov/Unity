@@ -17,12 +17,12 @@ namespace Unity.GrantManager.Intake
             _intakeClient = restClient;
         }
 
+        // TODO: This needs to be mapped to a DTO
         public async Task<object> GetForm(Guid? formId)
         {
             var request = new RestRequest($"/forms/{formId}");
             var response = await _intakeClient.GetAsync(request);
 
-            // TODO: Status code response on fail
             return response.Content ?? "Error";
         }
 
