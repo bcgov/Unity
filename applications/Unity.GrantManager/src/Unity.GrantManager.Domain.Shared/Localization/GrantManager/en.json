@@ -4,7 +4,7 @@
     "Menu:Home": "Home",
     "Menu:GrantPrograms": "Grant Programs",
     "Menu:GrantTracker": "Grant Tracker",
-    "Menu:Applications": "Applications",  
+    "Menu:Applications": "Applications",
     "Menu:Payments": "Payments",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
@@ -47,6 +47,7 @@
     "GrantApplicationStatus": "Status",
     "ProposalDate": "Proposal Date",
     "SubmissionDate": "Submission Date",
-    "GrantApplications": "Grant Applications"
+    "GrantApplications": "Grant Applications",
+    "Multiple": "Multiple"
   }
 }

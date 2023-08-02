@@ -1,12 +1,21 @@
-﻿$(function () {
+$(function () {
     const formatter = new Intl.NumberFormat('en-CA', {
         style: 'currency',
-        currency: 'CAD',        
+        currency: 'CAD',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
 
     const l = abp.localization.getResource('GrantManager');
+
+    const placeholderText = function () {
+        return "<span class=\"badge text-bg-secondary\">PLACEHOLDER</span>";
+    }
+
+    let inputAction = function (requestData, dataTableSettings) {
+        return document.getElementById('PassFormIdToJavaScript').value;
+    }
+
     const dataTable = $('#GrantApplicationsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
@@ -14,26 +23,31 @@
             order: [[1, "asc"]],
             searching: false,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(unity.grantManager.grantApplications.grantApplication.getList),
+            ajax:
+                abp.libs.datatables.createAjax(
+                    unity.grantManager.intake.submission.getSubmissionsList, inputAction),
             columnDefs: [
                 {
                     title: l('ProjectName'),
-                    data: "projectName"
+                    data: "projectTitle"
                 },
                 {
                     title: l('ReferenceNo'),
-                    data: "referenceNo",
+                    data: "confirmationId",
+                    render: function (data) {
+                        return '<a href="#">' + data + '</a>';
+                    }
                 },
                 {
                     title: l('EligibleAmount'),
-                    data: "eligibleAmount",
+                    data: "totalRequestToMjf",
                     render: function (data) {
                         return formatter.format(data)
                     }
                 },
                 {
                     title: l('RequestedAmount'),
-                    data: "requestedAmount",
+                    data: "eligibleCost",
                     render: function (data) {
                         return formatter.format(data)
                     }
@@ -41,33 +55,42 @@
                 {
                     title: l('Assignee'),
                     data: "assignees",
-                    render: function (data) {
-                        return (!data || data.length === 0) ? null : data.length > 1 ? l('Multiple') : data[0].username;                        
-                    }
+                    render: placeholderText
+                    //render: function (data) {
+                    //    return (!data || data.length === 0) ? null : data.length > 1 ? l('Multiple') : data[0].username;
+                    //}
                 },
                 {
                     title: l('Probability'),
                     data: "probability",
+                    render: placeholderText
                 },
                 {
                     title: l('GrantApplicationStatus'),
                     data: "status",
-                    render: (data) => l('Enum:GrantApplicationStatus.' + data)
+                    render: placeholderText
+                    //render: (data) => l('Enum:GrantApplicationStatus.' + data)
                 },
                 {
                     title: l('ProposalDate'),
                     data: "proposalDate",
-                    render: function (data) {
-                        return luxon
-                            .DateTime
-                            .fromISO(data, {
-                                locale: abp.localization.currentCulture.name
-                            }).toLocaleString();
-                    }
+                    render: placeholderText
+                },
+                {
+                    title: l('ProposalDate'),
+                    data: "proposalDate",
+                    render: placeholderText
+                    //render: function (data) {
+                    //    return luxon
+                    //        .DateTime
+                    //        .fromISO(data, {
+                    //            locale: abp.localization.currentCulture.name
+                    //        }).toLocaleString();
+                    //}
                 },
                 {
                     title: l('SubmissionDate'),
-                    data: "submissionDate",
+                    data: "createdAt",
                     render: function (data) {
                         return luxon
                             .DateTime
