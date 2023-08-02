@@ -1,10 +1,8 @@
 ﻿using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
-using Elsa.Identity.Features;
 using Elsa.Webhooks.Extensions;
-using Elsa.EntityFrameworkCore.PostgreSql;
-
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +35,14 @@ builder.Services.AddElsa(elsa =>
 
     // Use default authentication (JWT + API Key).
     elsa.UseDefaultAuthentication();
+
+    elsa.UseWorkflowRuntime(runtime =>
+     {
+         runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UsePostgreSql(connectionString)));
+         runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UsePostgreSql(connectionString)));
+         runtime.UseAsyncWorkflowStateExporter();
+     });
+
 
     elsa.UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
     
