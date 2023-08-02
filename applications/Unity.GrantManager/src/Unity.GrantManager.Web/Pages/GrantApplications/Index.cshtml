@@ -1,0 +1,29 @@
+﻿@page
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.GrantManager.Web.Pages.GrantApplications
+@using Microsoft.Extensions.Localization
+@model IndexModel
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.MenuItemName = "GrantManager.GrantApplications";
+    PageLayout.Content.Title = L["Applications"].Value;
+}
+@section scripts
+    {
+    <abp-script src="/Pages/GrantApplications/Index.js" />
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size="_6">
+                <abp-card-title>@L["GrantApplications"]</abp-card-title>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="GrantApplicationsTable"></abp-table>
+    </abp-card-body>
+</abp-card>

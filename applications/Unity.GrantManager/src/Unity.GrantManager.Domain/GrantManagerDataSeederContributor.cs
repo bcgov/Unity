@@ -1,0 +1,158 @@
+﻿using System;
+using System.Threading.Tasks;
+using Unity.GrantManager.GrantPrograms;
+using Unity.GrantManager.Applications;
+using Volo.Abp.Data;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
+
+namespace Unity.GrantManager;
+
+public class GrantManagerDataSeederContributor
+    : IDataSeedContributor, ITransientDependency
+{
+    private readonly IRepository<GrantProgram, Guid> _grantProgramRepository;
+    private readonly IIntakeRepository _intakeRepository;
+    private readonly IApplicationFormRepository _applicationFormRepository;
+    private readonly IApplicantRepository _applicantRepository;
+    private readonly IApplicationRepository _applicationRepository;
+
+    public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository,
+        IIntakeRepository intakeRepository,
+        IApplicationFormRepository applicationFormRepository,
+        IApplicantRepository applicantRepository,
+        IApplicationRepository applicationRepository)
+    {
+        _grantProgramRepository = grantProgramRepository;
+        _intakeRepository = intakeRepository;
+        _applicationFormRepository = applicationFormRepository;
+        _applicantRepository = applicantRepository;
+        _applicationRepository = applicationRepository;
+    }
+
+
+    public async Task SeedAsync(DataSeedContext context)
+    {
+        if (await _grantProgramRepository.GetCountAsync() > 0)
+        {
+            return;
+        }
+
+        var spaceFarms = await _grantProgramRepository.InsertAsync(
+            new GrantProgram
+            {
+                ProgramName = "Space Farms Grant Program",
+                Type = GrantProgramType.Agriculture,
+                PublishDate = new DateTime(2023, 6, 8),
+            },
+            autoSave: true
+        );
+
+        var fictionalArts = await _grantProgramRepository.InsertAsync(
+            new GrantProgram
+            {
+                ProgramName = "Fictional Arts Accelerator Grant",
+                Type = GrantProgramType.Arts,
+                PublishDate = new DateTime(2023, 5, 15),
+            },
+            autoSave: true
+        );
+
+        var newApproaches = await _grantProgramRepository.InsertAsync(
+            new GrantProgram
+            {
+                ProgramName = "New Approaches in Counting Grant",
+                Type = GrantProgramType.Research,
+                PublishDate = new DateTime(2020, 5, 15),
+            },
+            autoSave: true
+        );
+
+        var bizBusiness = await _grantProgramRepository.InsertAsync(
+            new GrantProgram
+            {
+                ProgramName = "BizBusiness Fund",
+                Type = GrantProgramType.Business,
+                PublishDate = new DateTime(1992, 01, 01),
+            },
+            autoSave: true
+        );
+
+        var historicalBooks = await _grantProgramRepository.InsertAsync(
+            new GrantProgram
+            {
+                ProgramName = "Historically Small Books Preservation Grant",
+                Type = GrantProgramType.Arts,
+                PublishDate = new DateTime(2002, 01, 01),
+            },
+            autoSave: true
+        );
+
+        var spaceFarmsIntake1 = await _intakeRepository.InsertAsync(
+            new Intake
+            {
+                IntakeName = "2022 Intake",
+                StartDate = new DateOnly(2022,1,1),
+                EndDate = new DateOnly(2023,1,1),
+            },
+            autoSave: true
+        );
+
+        var spaceFarmsIntake2 = await _intakeRepository.InsertAsync(
+            new Intake
+            {
+                IntakeName = "2023 Intake",
+                StartDate = new DateOnly(2023,1,1),
+                EndDate = new DateOnly(2024,1,1),
+            },
+            autoSave: true
+        );
+
+        var appForm1 = await _applicationFormRepository.InsertAsync(
+            new ApplicationForm
+            {
+                IntakeId = spaceFarmsIntake1.Id,
+                ApplicationFormName = "Space Farms Intake 1 Form 1",
+                ChefsApplicationFormGuid="123456",
+                ChefsCriteriaFormGuid="213121"
+            },
+            autoSave: true
+        );
+
+        var appForm2 = await _applicationFormRepository.InsertAsync(
+            new ApplicationForm
+            {
+                IntakeId = spaceFarmsIntake1.Id,
+                ApplicationFormName = "Space Farms Intake 1 Form 2",
+                ChefsApplicationFormGuid = "123456",
+                ChefsCriteriaFormGuid = "213121"
+            },
+            autoSave: true
+        );
+
+        var applicant1 = await _applicantRepository.InsertAsync(
+            new Applicant { 
+                ApplicantName = " John Smith" 
+            }, autoSave: true
+        );
+
+        var application1 = await _applicationRepository.InsertAsync(
+            new Application { 
+                ApplicantId = applicant1.Id, 
+                ApplicationName = "Application For Space Farms Grant", 
+                ApplicationFormId = appForm1.Id,
+                Payload = "{\"Name\":\"John Smith\",\"Age\":34,\"Address\":\"British Columbia\"}"
+            }, autoSave: true
+        );
+
+        var application2 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationName = "Application For BizBusiness Fund",
+                ApplicationFormId = appForm2.Id,
+                Payload = "{\"Name\":\"John Doe\",\"Age\":45,\"Address\":\"Toronto\"}"
+            }, autoSave: true
+        );
+    }
+}
