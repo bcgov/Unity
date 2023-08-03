@@ -1,2 +1,48 @@
-﻿body {
+﻿.card-header {
+    padding-bottom: 1.5rem !important;
+}
+
+.card-title {
+    font-weight: 600 !important;
+}
+
+.card-header::before {
+    content: ' ';
+    display: inline-block;
+    border-bottom: 1px solid #313132;
+    border-right: 1px solid #313132;
+    height: 10px;
+    width: 10px;
+    transform: rotate(45deg);
+    float: right !important;
+    transition: all 0.5s !important;
+}
+
+.card-header.custom-active::before {
+    content: ' ';
+    display: inline-block;
+    border-bottom: 1px solid #313132;
+    border-right: 1px solid #313132;
+    height: 10px;
+    width: 10px;
+    transform: rotate(-135deg);
+    float: right !important;
+    transition: all 0.5s !important;
+}
+
+.card-body {
+    transition: height 0.5s;
+    overflow: hidden;
+}
+
+.formio-component label {
+    font-weight: bold !important;
+}
+
+
+/* Target elements with class names starting with 'same-class' */
+[class^="formio-component-nextTab"] {
+    /* Apply your common CSS styles here */
+    display: none;
+    /* Add more common styles as needed */
 }

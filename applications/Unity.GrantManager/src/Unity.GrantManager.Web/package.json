@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@abp/aspnetcore.mvc.ui.theme.leptonxlite": "~2.2.2",
+    "axios": "^1.4.0",
     "formiojs": "^4.15.1"
   }
 }
