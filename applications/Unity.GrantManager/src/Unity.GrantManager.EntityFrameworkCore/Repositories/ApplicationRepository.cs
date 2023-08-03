@@ -26,7 +26,7 @@ public class ApplicationRepository : EfCoreRepository<GrantManagerDbContext, App
         return await dbSet
             .WhereIf(
                 !filter.IsNullOrWhiteSpace(),
-                application => application.ApplicationName.Contains(filter)
+                application => application.ProjectName.Contains(filter)
              )
             .OrderBy(sorting)
             .Skip(skipCount)
