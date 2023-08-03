@@ -174,19 +174,30 @@ public class GrantManagerDbContext :
             b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
         });
 
+        builder.Entity<ApplicationStatus>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationStatus",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.Property(x => x.StatusCode).IsRequired().HasMaxLength(250);
+            b.HasIndex(x => x.StatusCode).IsUnique();
+        });
+
         builder.Entity<Application>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Application",
                 GrantManagerConsts.DbSchema);
             
             b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.ApplicationName).IsRequired().HasMaxLength(250);
+            b.Property(x => x.ProjectName).IsRequired().HasMaxLength(250);
             b.Property(x => x.Payload).HasColumnType("jsonb");
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
             b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
-        });
+            b.HasOne<ApplicationStatus>().WithMany().HasForeignKey(x => x.ApplicationStatusId).IsRequired();
+        });        
 
-         builder.Entity<ApplicantAgent>(b =>
+        builder.Entity<ApplicantAgent>(b =>
             {
                 b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicantAgent",
                     GrantManagerConsts.DbSchema);
