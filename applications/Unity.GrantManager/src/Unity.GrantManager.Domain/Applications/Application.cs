@@ -12,8 +12,16 @@ public class Application : AuditedAggregateRoot<Guid>
 {
     public Guid ApplicationFormId { get; set; }
     public Guid ApplicantId { get; set; }
-    public string ApplicationName { get; set; }
+    public Guid ApplicationStatusId { get; set; }
+    public string ProjectName { get; set; }
+    public string ReferenceNo { get; set; }
+    public Double EligibleAmount { get; set; }
+    public Double RequestedAmount { get; set; }
+    public DateOnly ProposalDate { get; set; }
+    public DateOnly SubmissionDate { get; set; }
 
     [Column(TypeName = "jsonb")]
-    public string? Payload { get; set; }
+    public string? Payload { get; set; }    
+                     
+                       
 }

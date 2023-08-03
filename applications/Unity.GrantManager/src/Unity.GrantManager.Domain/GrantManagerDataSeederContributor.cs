@@ -16,28 +16,26 @@ public class GrantManagerDataSeederContributor
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IApplicantRepository _applicantRepository;
     private readonly IApplicationRepository _applicationRepository;
+    private readonly IApplicationStatusRepository _applicationStatusRepository;
 
     public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository,
         IIntakeRepository intakeRepository,
         IApplicationFormRepository applicationFormRepository,
         IApplicantRepository applicantRepository,
-        IApplicationRepository applicationRepository)
+        IApplicationRepository applicationRepository,
+        IApplicationStatusRepository applicationStatusRepository)
     {
         _grantProgramRepository = grantProgramRepository;
         _intakeRepository = intakeRepository;
         _applicationFormRepository = applicationFormRepository;
         _applicantRepository = applicantRepository;
         _applicationRepository = applicationRepository;
+        _applicationStatusRepository = applicationStatusRepository;
     }
 
 
     public async Task SeedAsync(DataSeedContext context)
     {
-        if (await _grantProgramRepository.GetCountAsync() > 0)
-        {
-            return;
-        }
-
         var spaceFarms = await _grantProgramRepository.InsertAsync(
             new GrantProgram
             {
@@ -134,13 +132,119 @@ public class GrantManagerDataSeederContributor
             new Applicant { 
                 ApplicantName = " John Smith" 
             }, autoSave: true
+        );        
+
+        var status1 = await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS01",
+                ExternalStatus = "In progress",
+                InternalStatus = "In progress"
+            }
+        );
+
+        var status2 = await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS02",
+                ExternalStatus = "Submitted",
+                InternalStatus = "Submitted"
+            }
+        );
+
+        var status3 = await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS03",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Assigned"
+            }
+        );
+
+        await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS04",
+                ExternalStatus = "Withdrawn",
+                InternalStatus = "Withdrawn"
+            }
+        );
+
+        await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS05",
+                ExternalStatus = "Closed",
+                InternalStatus = "Closed"
+            }
+        );
+
+        await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS06",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Under Initial Review"
+            }
+        );
+
+        await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS07",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Initial Review Completed"
+            }
+        );
+
+        await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS08",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Under Adjudication"
+            }
+        );
+
+        await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS09",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Adjudication Completed"
+            }
+        );
+
+        await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS10",
+                ExternalStatus = "Grant Approved",
+                InternalStatus = "Grant Approved"
+            }
+        );
+
+        await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "STATUS11",
+                ExternalStatus = "Grant Not Approved",
+                InternalStatus = "Grant Not Approved"
+            }
         );
 
         var application1 = await _applicationRepository.InsertAsync(
-            new Application { 
-                ApplicantId = applicant1.Id, 
-                ApplicationName = "Application For Space Farms Grant", 
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ProjectName = "Application For Space Farms Grant",
                 ApplicationFormId = appForm1.Id,
+                ApplicationStatusId = status1.Id,
+                ReferenceNo = "1234",
+                EligibleAmount = 123.4,
+                RequestedAmount = 231.4,
+                ProposalDate = new DateOnly(2022, 1, 1),
+                SubmissionDate = new DateOnly(2023, 1, 1),
                 Payload = "{\"Name\":\"John Smith\",\"Age\":34,\"Address\":\"British Columbia\"}"
             }, autoSave: true
         );
@@ -149,8 +253,14 @@ public class GrantManagerDataSeederContributor
             new Application
             {
                 ApplicantId = applicant1.Id,
-                ApplicationName = "Application For BizBusiness Fund",
+                ProjectName = "Application For BizBusiness Fund",
                 ApplicationFormId = appForm2.Id,
+                ApplicationStatusId = status2.Id,
+                ReferenceNo =  "3445",
+                EligibleAmount = 345.5,
+                RequestedAmount = 765.4,
+                ProposalDate = new DateOnly(2022, 1, 1),
+                SubmissionDate = new DateOnly(2023, 1, 1),
                 Payload = "{\"Name\":\"John Doe\",\"Age\":45,\"Address\":\"Toronto\"}"
             }, autoSave: true
         );
