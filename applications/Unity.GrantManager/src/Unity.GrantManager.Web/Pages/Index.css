@@ -1,3 +1,226 @@
 body {
-    
+	overflow: hidden; 
+}
+
+
+.grant-blurb {
+	color: var(--bc-colors-grey-text-500, #313131);
+	font-family: BC Sans;
+	font-size: 16px;
+	font-style: normal;
+	font-weight: 400;
+	line-height: 24px; /* 150% */
+	width: 576px;
+}
+
+.grant-title {
+	color: var(--bc-colors-grey-text-500, #313131);
+	font-family: BC Sans;
+	font-size: 48px;
+	font-style: normal;
+	font-weight: 300;
+	line-height: 56px; /* 116.667% */
+	width: 855px;
+	margin-bottom: 24px;
+	margin-top: 100px;
+}
+
+.lpx-sidebar-container {
+	display: none !important;
+	width:0px !important;
+}
+
+.lpx-content-container .lpx-content {
+    padding: 0;
+    background-color: black;
+    margin: 0 auto;
+}
+
+.lpx-content-container {
+    margin-left:  0px !important;
+}
+
+.lpx-content-container {
+    margin-left: 0px !important;
+    height: 0px !important;
+}
+
+.lpx-topbar-container .lpx-topbar {
+color: transparent;
+    height: 0px;
+}
+
+.lpx-content-container .lpx-content {
+    padding: 0;
+    margin: 0 auto;
+}
+
+.my-2 { 
+	margin: 0px !important;
+	}
+
+
+.top-bar {
+	width: 100%;
+	background-color: #fff;
+	height: 80px;
+	position: absolute;
+}
+
+
+.img-logo {
+	margin-top: 7px;
+    margin-bottom: 7px;
+	opacity: 0.8;
+	background: linear-gradient(90deg, rgba(1,29,56,1) 0%, rgba(1,29,56,1) 25%, rgba(255,255,255,1) 48%);
+}
+
+.stock-video {
+	width: 1728px;
+	height: 809.406px;
+	flex-shrink: 0;
+	margin-top: -87px;
+	background: linear-gradient(90deg, rgba(1,29,56,1) 0%, rgba(1,29,56,1) 25%, rgba(255,255,255,1) 48%);
+}
+
+
+.bottom-content {
+	position: relative;
+    z-index: 6666666;
+    width: 1727px;
+    height: 1000px;
+    border-radius: 32px 32px 0px 0px;
+    background: var(--bc-colors-white-primary-500, #FFF);
+    box-shadow: 0px -4px 24px 0px rgba(0, 51, 102, 0.75);
+}
+
+
+.stock-title {
+	color: #fff;
+    float: left;
+    position: absolute;
+    z-index: 33333;
+	font-family: BC Sans;
+	font-size: 48px;
+	font-style: normal;
+	font-weight: 400;
+	line-height: normal;
+    margin-top: 120px;
+    margin-left: 83px;
+}
+
+.stock-title-blurb {
+	color: #fff;
+    float: left;
+    position: absolute;
+    z-index: 33333;
+	color: #FFF;
+	font-family: BC Sans;
+	font-size: 19.2px;
+	font-style: normal;
+	font-weight: 400;
+	line-height: normal;
+	width: 575px;	
+    margin-top: 274px;
+    margin-left: 83px;	
+}
+
+.gradient-blue {
+    height: 1153px;
+    background: linear-gradient(180deg, #036 65.97%, rgba(0, 51, 102, 0.00) 100%);
+    background-blend-mode: multiply;
+    width: 619px;
+    top: -187px;
+    position: absolute;
+    transform: rotate(-90deg);
+    opacity: 0.9;
+    margin: auto 0;
+}
+
+.video-div {
+
+	height: 582px;
+	background: linear-gradient(90deg, rgba(1,29,56,1) 0%, rgba(1,29,56,1) 25%, rgba(255,255,255,1) 48%);
+}
+
+.column {
+	float: left;
+  }
+  
+  .left {
+	width: 25%;
+  }
+  
+  .right {
+	width: 75%;
+  }
+
+
+.main {
+	z-index: 3333333;
+    width: 1728px;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+}  
+
+
+#parent{ 
+	background: #fff;
+	padding:10px;
+	padding-left:85px;
+	padding-top: 87px;
+	margin-left: 16px;
+}
+
+.child:hover {
+	border-left: 4px solid;	
+	border-left-color: #38598A;
+	color: #38598A;
+}
+
+.child {
+	padding-left: 16px;
+	cursor: pointer;
+	border-left: 4px solid;
+	border-left-color: var(--bc-colors-grey-text-100, #C7C7C7);
+	align-self: stretch;
+	color: var(--bc-colors-grey-text-500, #313131);
+	/* Small Text */
+	font-family: BC Sans;
+	font-size: 13.33px;
+	font-style: normal;
+	font-weight: 400;
+	line-height: normal;
+	display: flex;
+	width: 280px;
+	height: 50px;
+	padding-right: 0px;
+	align-items: center;
+	gap: 16px;
+
+}
+.row {
+	margin-left: 0px;
+}
+a {
+	text-decoration: inherit;
+	color: var(--bc-colors-grey-text-500, #313131);
+	/* Small Text */
+	font-family: BC Sans;
+	font-size: 13.33px;
+	font-style: normal;
+	font-weight: 400;
+	line-height: normal;
+	display: flex;
+	width: 280px;
+	height: 50px;
+	padding-right: 0px;
+	align-items: center;
+	gap: 16px;	
+}
+
+.lpx-topbar-container {
+    height: 0px;
+    background-color: white;
 }
