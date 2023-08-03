@@ -1,4 +1,4 @@
-﻿@page
+﻿@page "{formId:guid?}"
 @using Unity.GrantManager.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -11,8 +11,16 @@
     PageLayout.Content.Title = L["Applications"].Value;
 }
 @section scripts
+{
+    @if (Model.FormId == null)
     {
-    <abp-script src="/Pages/GrantApplications/Index.js" />
+        <abp-script src="/Pages/GrantApplications/Index.js" />
+    } 
+    else
+    {
+
+        <abp-script src="/Pages/GrantApplications/Intake.js" />
+    }
 }
 
 <abp-card>
@@ -27,3 +35,5 @@
         <abp-table striped-rows="true" id="GrantApplicationsTable"></abp-table>
     </abp-card-body>
 </abp-card>
+
+<input type="hidden" id="PassFormIdToJavaScript" value=@Model.FormId>

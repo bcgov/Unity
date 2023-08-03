@@ -46,17 +46,11 @@ public class GrantManagerMenuContributor : IMenuContributor
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
-                GrantManagerMenus.GrantTracker,
-                l["Menu:GrantTracker"],
+                GrantManagerMenus.Applications,
+                l["Menu:Applications"],
+                "~/GrantApplications",
                 icon: "fas fa-file-contract",
                 order: 2
-            ).AddItem(
-                new ApplicationMenuItem(
-                    GrantManagerMenus.Applications,
-                    l["Menu:Applications"],
-                    "~/GrantApplications",
-                    order: 0
-                )
             )
         );
 
