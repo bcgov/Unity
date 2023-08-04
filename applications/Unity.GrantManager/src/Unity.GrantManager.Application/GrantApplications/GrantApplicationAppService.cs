@@ -35,29 +35,56 @@ namespace Unity.GrantManager.GrantApplications
 
         public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
-
-            var applications = await _applicationRepository.GetListAsync(
-                input.SkipCount,
-                input.MaxResultCount,
-                input.Sorting
-            );           
-
-            var totalCount = await _applicationRepository.CountAsync();
+            //Get the IQueryable<Book> from the repository
+            var queryable = await _applicationRepository.GetQueryableAsync();
+            
+            //Prepare a query to join books and authors
+            var query = from application in queryable
+                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                        select new { application, appStatus };
+            
+            //Paging
+            query = query
+                .OrderBy(NormalizeSorting(input.Sorting))
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount);
+            
+            //Execute the query and get a list
+            var queryResult = await AsyncExecuter.ToListAsync(query);            
 
             var mapperConfig = new MapperConfiguration(cfg => {
-                cfg.CreateMap<Application, GrantApplicationDto>();                
+                cfg.CreateMap<Application, GrantApplicationDto>();
             });
-
             var mapper = mapperConfig.CreateMapper();
-            var destinations = mapper.Map<List<GrantApplicationDto>>(applications);                      
+
+            //Convert the query result to a list of BookDto objects
+            var applicationDtos = queryResult.Select(x =>
+            {                
+                var appDto = mapper.Map<Application, GrantApplicationDto>(x.application);
+                appDto.Status = x.appStatus.InternalStatus;
+                return appDto;
+            }).ToList();
+
+            //Get the total count with another query
+            var totalCount = await _applicationRepository.GetCountAsync();           
 
             return new PagedResultDto<GrantApplicationDto>(
-                totalCount,destinations
-            );
-            
-        }      
+                totalCount,
+                applicationDtos
+            );            
+        }
 
-        
+        private static string NormalizeSorting(string sorting)
+        {
+            if (sorting.IsNullOrEmpty())
+            {
+                return $"application.{nameof(Application.ProjectName)}";
+            }
+
+            return $"application.{sorting}";
+        }       
+
+
     }
 
     public static class IQueryableExtensions
