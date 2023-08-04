@@ -13,7 +13,7 @@ namespace Unity.GrantManager.GrantApplications
         public decimal EligibleAmount { get; set; }
         public List<GrantApplicationAssigneeDto> Assignees { get; set; }
         public DateTime SubmissionDate { get; set; }
-        public GrantApplicationStatus Status { get; set; }
+        public string Status { get; set; }
         public int Probability { get; set; }
         public DateTime ProposalDate { get; set; }
 
