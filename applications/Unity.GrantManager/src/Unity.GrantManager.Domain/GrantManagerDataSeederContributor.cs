@@ -5,6 +5,8 @@ using Unity.GrantManager.Applications;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using System.Collections.Generic;
+using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager;
 
@@ -161,7 +163,7 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        await _applicationStatusRepository.InsertAsync(
+        var status4 = await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
                 StatusCode = "STATUS04",
@@ -170,7 +172,7 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        await _applicationStatusRepository.InsertAsync(
+        var status5 = await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
                 StatusCode = "STATUS05",
@@ -179,7 +181,7 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        await _applicationStatusRepository.InsertAsync(
+        var status6 = await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
                 StatusCode = "STATUS06",
@@ -188,7 +190,7 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        await _applicationStatusRepository.InsertAsync(
+        var status7 = await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
                 StatusCode = "STATUS07",
@@ -197,7 +199,7 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        await _applicationStatusRepository.InsertAsync(
+        var status8 = await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
                 StatusCode = "STATUS08",
@@ -206,7 +208,7 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        await _applicationStatusRepository.InsertAsync(
+        var status9 = await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
                 StatusCode = "STATUS09",
@@ -215,7 +217,7 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        await _applicationStatusRepository.InsertAsync(
+        var status10 = await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
                 StatusCode = "STATUS10",
@@ -224,7 +226,7 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        await _applicationStatusRepository.InsertAsync(
+        var status11 = await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
                 StatusCode = "STATUS11",
@@ -243,8 +245,8 @@ public class GrantManagerDataSeederContributor
                 ReferenceNo = "1234",
                 EligibleAmount = 123.4,
                 RequestedAmount = 231.4,
-                ProposalDate = new DateOnly(2022, 1, 1),
-                SubmissionDate = new DateOnly(2023, 1, 1),
+                ProposalDate = new DateTime(2022, 1, 1),
+                SubmissionDate = new DateTime(2023, 1, 1),
                 Payload = "{\"Name\":\"John Smith\",\"Age\":34,\"Address\":\"British Columbia\"}"
             }, autoSave: true
         );
@@ -259,10 +261,183 @@ public class GrantManagerDataSeederContributor
                 ReferenceNo =  "3445",
                 EligibleAmount = 345.5,
                 RequestedAmount = 765.4,
-                ProposalDate = new DateOnly(2022, 1, 1),
-                SubmissionDate = new DateOnly(2023, 1, 1),
+                ProposalDate = new DateTime(2022, 1, 1),
+                SubmissionDate = new DateTime(2023, 1, 1),
                 Payload = "{\"Name\":\"John Doe\",\"Age\":45,\"Address\":\"Toronto\"}"
             }, autoSave: true
         );
+
+        var application3 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm1.Id,
+                ApplicationStatusId = status1.Id,
+                ProjectName = "New Helicopter Fund",
+                ReferenceNo = "ABC123",
+                EligibleAmount = 10000.00,
+                RequestedAmount = 12500.00,                
+                ProposalDate = new DateTime(2022, 10, 02),
+                SubmissionDate = new DateTime(2023, 01, 02)                
+            }
+        );
+
+        var application4 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm2.Id,
+                ApplicationStatusId = status2.Id,
+                ProjectName = "Shoebox",
+                ReferenceNo = "HCA123",
+                EligibleAmount = 22300.00,
+                RequestedAmount = 332500.00,                        
+                ProposalDate = new DateTime(2022, 11, 03),
+                SubmissionDate = new DateTime(2023, 1, 04)                
+            }
+         );
+
+        var application5 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm2.Id,
+                ApplicationStatusId = status2.Id,
+                ProjectName = "Pony Club",
+                ReferenceNo = "111BGC",
+                EligibleAmount = 2212400.00,
+                RequestedAmount = 2312500.00,                
+                ProposalDate = new DateTime(2021, 01, 03),
+                SubmissionDate = new DateTime(2023, 02, 02)                
+            }
+        );
+        var application6 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm1.Id,
+                ApplicationStatusId = status4.Id,
+                ProjectName = "Village Fountain Repair",
+                ReferenceNo = "BB11FF",
+                EligibleAmount = 13100.00,
+                RequestedAmount = 11100.00,
+                ProposalDate = new DateTime(2024, 05, 02),
+                SubmissionDate = new DateTime(2025, 01, 03)
+            }
+         );
+        var application7 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm1.Id,
+                ApplicationStatusId = status7.Id,
+                ProjectName = "Hoover",
+                ReferenceNo = "GG1731",
+                EligibleAmount = 232400.00,
+                RequestedAmount = 332500.00,
+                ProposalDate = new DateTime(2022, 10, 02),
+                SubmissionDate = new DateTime(2023, 01, 02)
+            }
+            );
+        var application8 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm2.Id,
+                ApplicationStatusId = status5.Id,
+                ProjectName = "Tree Planting",
+                ReferenceNo = "BBNNGG",
+                EligibleAmount = 1312400.00,
+                RequestedAmount = 444400.00,
+                ProposalDate = new DateTime(2023, 10, 03),
+                SubmissionDate = new DateTime(2023, 02, 02)
+
+            }
+            );
+        var application9 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm2.Id,
+                ApplicationStatusId = status2.Id,
+                ProjectName = "Pizza Joint",
+                ReferenceNo = "FF13BB",
+                EligibleAmount = 332100.00,
+                RequestedAmount = 32100.00,
+                ProposalDate = new DateTime(2022, 09, 01),
+                SubmissionDate = new DateTime(2023, 08, 03)
+
+            }
+            );
+        var application10 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm1.Id,
+                ApplicationStatusId = status2.Id,
+                ProjectName = "Froghopper Express",
+                ReferenceNo = "AD1FFB",
+                EligibleAmount = 3312300.00,
+                RequestedAmount = 11100.00,
+                ProposalDate = new DateTime(2022, 11, 03),
+                SubmissionDate = new DateTime(2023, 11, 05)                             
+            }
+            );
+        var application11 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm2.Id,
+                ApplicationStatusId = status2.Id,
+                ProjectName = "Courtyard Landscaping",
+                ReferenceNo = "AF17GB",
+                EligibleAmount = 12400.00,
+                RequestedAmount = 22500.00,
+                ProposalDate = new DateTime(2022, 10, 02),
+                SubmissionDate = new DateTime(2023, 01, 02),
+            }
+            );
+        var application12 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm2.Id,
+                ApplicationStatusId = status2.Id,
+                ProjectName = "Disco Ball",
+                ReferenceNo = "AF11BB",
+                EligibleAmount = 1400.00,
+                RequestedAmount = 3500.00,
+                ProposalDate = new DateTime(2023, 10, 03),
+                SubmissionDate = new DateTime(2023, 11, 02)
+            }
+            );
+        var application13 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm1.Id,
+                ApplicationStatusId = status2.Id,
+                ProjectName = "Gymnasium Repair",
+                ReferenceNo = "GYM007",
+                EligibleAmount = 332400.00,
+                RequestedAmount = 112500.00,
+                ProposalDate = new DateTime(2023, 10, 02),
+                SubmissionDate = new DateTime(2023, 01, 02)
+            }
+            );
+        var application14 = await _applicationRepository.InsertAsync(
+            new Application
+            {
+                ApplicantId = applicant1.Id,
+                ApplicationFormId = appForm1.Id,
+                ApplicationStatusId = status4.Id,
+                ProjectName = "Holiday Abroad Funding",
+                ReferenceNo = "BG22CD",
+                EligibleAmount = 23400.00,
+                RequestedAmount = 33500.00,
+                ProposalDate = new DateTime(2022, 10, 02),
+                SubmissionDate = new DateTime(2023, 01, 02)
+            }
+            );
     }
 }
