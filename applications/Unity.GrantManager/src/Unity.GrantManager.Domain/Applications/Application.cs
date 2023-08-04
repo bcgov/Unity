@@ -17,8 +17,8 @@ public class Application : AuditedAggregateRoot<Guid>
     public string ReferenceNo { get; set; }
     public Double EligibleAmount { get; set; }
     public Double RequestedAmount { get; set; }
-    public DateOnly ProposalDate { get; set; }
-    public DateOnly SubmissionDate { get; set; }
+    public DateTime ProposalDate { get; set; }
+    public DateTime SubmissionDate { get; set; }
 
     [Column(TypeName = "jsonb")]
     public string? Payload { get; set; }    
