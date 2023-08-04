@@ -9,8 +9,7 @@ using Volo.Abp.Domain.Repositories;
 using System.Linq.Dynamic.Core;
 using Unity.GrantManager.Applications;
 using Microsoft.AspNetCore.Authorization;
-
-
+using AutoMapper;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -25,11 +24,13 @@ namespace Unity.GrantManager.GrantApplications
     {
 
         private readonly IApplicationRepository _applicationRepository;
+        private readonly IApplicationStatusRepository _applicationStatusRepository;
 
-        public GrantApplicationAppService(IRepository<GrantApplication, Guid> repository, IApplicationRepository applicationRepository)
+        public GrantApplicationAppService(IRepository<GrantApplication, Guid> repository, IApplicationRepository applicationRepository, IApplicationStatusRepository applicationStatusRepository)
              : base(repository)
         {
             _applicationRepository = applicationRepository;
+            _applicationStatusRepository = applicationStatusRepository; 
         }
 
         public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -39,14 +40,19 @@ namespace Unity.GrantManager.GrantApplications
                 input.SkipCount,
                 input.MaxResultCount,
                 input.Sorting
-            );
+            );           
 
             var totalCount = await _applicationRepository.CountAsync();
-                
+
+            var mapperConfig = new MapperConfiguration(cfg => {
+                cfg.CreateMap<Application, GrantApplicationDto>();                
+            });
+
+            var mapper = mapperConfig.CreateMapper();
+            var destinations = mapper.Map<List<GrantApplicationDto>>(applications);                      
 
             return new PagedResultDto<GrantApplicationDto>(
-                totalCount,
-                ObjectMapper.Map<List<Application>, List<GrantApplicationDto>>(applications)
+                totalCount,destinations
             );
             
         }      
