@@ -9,8 +9,7 @@ using Volo.Abp.Domain.Repositories;
 using System.Linq.Dynamic.Core;
 using Unity.GrantManager.Applications;
 using Microsoft.AspNetCore.Authorization;
-
-
+using AutoMapper;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -24,195 +23,68 @@ namespace Unity.GrantManager.GrantApplications
         IGrantApplicationAppService
     {
 
-        public GrantApplicationAppService(IRepository<GrantApplication, Guid> repository)
+        private readonly IApplicationRepository _applicationRepository;
+        private readonly IApplicationStatusRepository _applicationStatusRepository;
+
+        public GrantApplicationAppService(IRepository<GrantApplication, Guid> repository, IApplicationRepository applicationRepository, IApplicationStatusRepository applicationStatusRepository)
              : base(repository)
         {
-           
+            _applicationRepository = applicationRepository;
+            _applicationStatusRepository = applicationStatusRepository; 
         }
 
         public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
-            // What we store in the DB vs what we present will likely be very different
-            // This can also be done in conjunction with AutoMapper            
-            return await Task.FromResult(new PagedResultDto<GrantApplicationDto>(
-                GetMockData().Count,
-                GetSortedAndPagedData(input)));
-        }
-
-        private static List<GrantApplicationDto> GetSortedAndPagedData(PagedAndSortedResultRequestDto input)
-        {
-            var query = GetMockData()
-                .AsQueryable();
-
-            return query
-                .Sort(input)
+            //Get the IQueryable<Book> from the repository
+            var queryable = await _applicationRepository.GetQueryableAsync();
+            
+            //Prepare a query to join books and authors
+            var query = from application in queryable
+                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                        select new { application, appStatus };
+            
+            //Paging
+            query = query
+                .OrderBy(NormalizeSorting(input.Sorting))
                 .Skip(input.SkipCount)
-                .Take(input.MaxResultCount)
-                .ToList();
+                .Take(input.MaxResultCount);
+            
+            //Execute the query and get a list
+            var queryResult = await AsyncExecuter.ToListAsync(query);            
+
+            var mapperConfig = new MapperConfiguration(cfg => {
+                cfg.CreateMap<Application, GrantApplicationDto>();
+            });
+            var mapper = mapperConfig.CreateMapper();
+
+            //Convert the query result to a list of BookDto objects
+            var applicationDtos = queryResult.Select(x =>
+            {                
+                var appDto = mapper.Map<Application, GrantApplicationDto>(x.application);
+                appDto.Status = x.appStatus.InternalStatus;
+                return appDto;
+            }).ToList();
+
+            //Get the total count with another query
+            var totalCount = await _applicationRepository.GetCountAsync();           
+
+            return new PagedResultDto<GrantApplicationDto>(
+                totalCount,
+                applicationDtos
+            );            
         }
 
-        private static List<GrantApplicationDto> GetMockData()
+        private static string NormalizeSorting(string sorting)
         {
-            return new List<GrantApplicationDto>()
-                {
-                    new GrantApplicationDto()
-                    {
-                        ProjectName = "New Helicopter Fund",
-                        ReferenceNo = "ABC123",
-                        EligibleAmount = 10000.00M,
-                        RequestedAmount = 12500.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>() { new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" } },
-                        Probability = 70,
-                        ProposalDate = new DateTime(2022, 10, 02),
-                        SubmissionDate = new DateTime(2023, 01, 02),
-                        Status = GrantApplicationStatus.Active
-                    },
-                    new GrantApplicationDto()
-                    {
-                        ProjectName = "Shoebox",
-                        ReferenceNo = "HCA123",
-                        EligibleAmount = 22300.00M,
-                        RequestedAmount = 332500.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>() { new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" } },
-                        Probability = 50,
-                        ProposalDate = new DateTime(2022, 11, 03),
-                        SubmissionDate = new DateTime(2023, 1, 04),
-                        Status = GrantApplicationStatus.Awaiting
-                    },
-                     new GrantApplicationDto()
-                    {
-                        ProjectName = "Pony Club",
-                        ReferenceNo = "111BGC",
-                        EligibleAmount = 2212400.00M,
-                        RequestedAmount = 2312500.00M,                        
-                        Probability = 90,
-                        ProposalDate = new DateTime(2021, 01, 03),
-                        SubmissionDate = new DateTime(2023, 02, 02),
-                        Status = GrantApplicationStatus.Awaiting
-                    },
-                      new GrantApplicationDto()
-                    {
-                        ProjectName = "Village Fountain Repair",
-                        ReferenceNo = "BB11FF",
-                        EligibleAmount = 13100.00M,
-                        RequestedAmount = 11100.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>() { new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" } },
-                        Probability = 40,
-                        ProposalDate = new DateTime(2024, 05, 02),
-                        SubmissionDate = new DateTime(2025, 01, 03),
-                        Status = GrantApplicationStatus.Awaiting
-                    },
-                       new GrantApplicationDto()
-                    {
-                        ProjectName = "Hoover",
-                        ReferenceNo = "GG1731",
-                        EligibleAmount = 232400.00M,
-                        RequestedAmount = 332500.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>()
-                        {
-                            new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" },
-                            new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "Jane Doe" }
-                        },
-                        Probability = 55,
-                        ProposalDate = new DateTime(2022, 10, 02),
-                        SubmissionDate = new DateTime(2023, 01, 02),
-                        Status = GrantApplicationStatus.Declined
-                    },
-                        new GrantApplicationDto()
-                    {
-                        ProjectName = "Tree Planting",
-                        ReferenceNo = "BBNNGG",
-                        EligibleAmount = 1312400.00M,
-                        RequestedAmount = 444400.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>() { new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" } },
-                        Probability = 20,
-                        ProposalDate = new DateTime(2023, 10, 03),
-                        SubmissionDate = new DateTime(2023, 02, 02),
-                        Status = GrantApplicationStatus.Awaiting
-                    },
-                         new GrantApplicationDto()
-                    {
-                        ProjectName = "Pizza Joint",
-                        ReferenceNo = "FF13BB",
-                        EligibleAmount = 332100.00M,
-                        RequestedAmount = 32100.00M,
-                          Assignees = new List<GrantApplicationAssigneeDto>()
-                        {
-                            new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" },
-                            new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "Jane Doe" }
-                        },
-                        Probability = 55,
-                        ProposalDate = new DateTime(2022, 09, 01),
-                        SubmissionDate = new DateTime(2023, 08, 03),
-                        Status = GrantApplicationStatus.Awaiting
-                    },
-                          new GrantApplicationDto()
-                    {
-                        ProjectName = "Froghopper Express",
-                        ReferenceNo = "AD1FFB",
-                        EligibleAmount = 3312300.00M,
-                        RequestedAmount = 11100.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>() { new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" } },
-                        Probability = 80,
-                        ProposalDate = new DateTime(2022, 11, 03),
-                        SubmissionDate = new DateTime(2023, 11, 05),
-                        Status = GrantApplicationStatus.Awaiting
-                    },
-                           new GrantApplicationDto()
-                    {
-                        ProjectName = "Courtyard Landscaping",
-                        ReferenceNo = "AF17GB",
-                        EligibleAmount = 12400.00M,
-                        RequestedAmount = 22500.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>() { new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" } },
-                        Probability = 60,
-                        ProposalDate = new DateTime(2022, 10, 02),
-                        SubmissionDate = new DateTime(2023, 01, 02),
-                        Status = GrantApplicationStatus.Approved
-                    },
-                    new GrantApplicationDto()
-                    {
-                        ProjectName = "Disco Ball",
-                        ReferenceNo = "AF11BB",
-                        EligibleAmount = 1400.00M,
-                        RequestedAmount = 3500.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>() { new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" } },
-                        Probability = 10,
-                        ProposalDate = new DateTime(2023, 10, 03),
-                        SubmissionDate = new DateTime(2023, 11, 02),
-                        Status = GrantApplicationStatus.Scoring
-                    },
-                    new GrantApplicationDto()
-                    {
-                        ProjectName = "Gymnasium Repair",
-                        ReferenceNo = "GYM007",
-                        EligibleAmount = 332400.00M,
-                        RequestedAmount = 112500.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>()
-                        {
-                            new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" },
-                            new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "Jane Doe" }
-                        },
-                        Probability = 75,
-                        ProposalDate = new DateTime(2023, 10, 02),
-                        SubmissionDate = new DateTime(2023, 01, 02),
-                        Status = GrantApplicationStatus.OnHold
-                    },
-                    new GrantApplicationDto()
-                    {
-                        ProjectName = "Holiday Abroad Funding",
-                        ReferenceNo = "BG22CD",
-                        EligibleAmount = 23400.00M,
-                        RequestedAmount = 33500.00M,
-                        Assignees = new List<GrantApplicationAssigneeDto>() { new GrantApplicationAssigneeDto() { UserId = Guid.NewGuid(), Username = "John Smith" } },
-                        Probability = 60,
-                        ProposalDate = new DateTime(2022, 10, 02),
-                        SubmissionDate = new DateTime(2023, 01, 02),
-                        Status = GrantApplicationStatus.Awaiting
+            if (sorting.IsNullOrEmpty())
+            {
+                return $"application.{nameof(Application.ProjectName)}";
+            }
 
-                    }
-                };
-        }
+            return $"application.{sorting}";
+        }       
+
+
     }
 
     public static class IQueryableExtensions

@@ -51,8 +51,7 @@
                 },
                 {
                     title: l('GrantApplicationStatus'),
-                    data: "status",
-                    render: (data) => l('Enum:GrantApplicationStatus.' + data)
+                    data: "status",              
                 },
                 {
                     title: l('ProposalDate'),
