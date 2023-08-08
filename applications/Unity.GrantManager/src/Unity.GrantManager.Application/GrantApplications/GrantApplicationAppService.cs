@@ -61,7 +61,7 @@ namespace Unity.GrantManager.GrantApplications
             var applicationDtos = queryResult.Select(x =>
             {                
                 var appDto = mapper.Map<Application, GrantApplicationDto>(x.application);
-                appDto.Status = x.appStatus.InternalStatus;
+                appDto.Status = x.appStatus.InternalStatus;               
                 return appDto;
             }).ToList();
 
