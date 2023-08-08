@@ -14,7 +14,8 @@ public class ApplicationStatusAppService : CrudAppService<
         ApplicationStatus, 
         ApplicationStatusDto, 
         Guid, 
-        PagedAndSortedResultRequestDto>, 
+        PagedAndSortedResultRequestDto,
+        CreateUpdateApplicationStatusDto>, 
     IApplicationStatusService 
 {
     private readonly IApplicationStatusRepository _applicationStatusRepository;
