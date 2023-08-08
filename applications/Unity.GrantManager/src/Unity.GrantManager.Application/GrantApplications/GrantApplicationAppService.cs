@@ -84,7 +84,18 @@ namespace Unity.GrantManager.GrantApplications
             return $"application.{sorting}";
         }       
 
-
+        public async Task UpdateApplicationStatus(Guid[] applicationIds, Guid statusId)
+        {
+            foreach(Guid applicationId in applicationIds)
+            {
+                var application = await _applicationRepository.GetAsync(applicationId);
+                if(application != null)
+                {
+                    application.ApplicationStatusId = statusId;
+                    await _applicationRepository.UpdateAsync(application);
+                }
+            }
+        }
     }
 
     public static class IQueryableExtensions
