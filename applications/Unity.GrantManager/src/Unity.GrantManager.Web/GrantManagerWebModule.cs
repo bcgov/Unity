@@ -37,6 +37,11 @@ using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.UI;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
+using System;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http;
 
 namespace Unity.GrantManager.Web;
 
@@ -51,7 +56,8 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpSwashbuckleModule)
+    typeof(AbpSwashbuckleModule),
+    typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
     )]
 public class GrantManagerWebModule : AbpModule
 {
@@ -85,7 +91,7 @@ public class GrantManagerWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
-        ConfigureAuthentication(context);
+        ConfigureAuthentication(context, configuration);
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureAutoMapper();
@@ -93,11 +99,84 @@ public class GrantManagerWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
+        ConfigureAccessTokenManagement(context);
     }
 
-    private void ConfigureAuthentication(ServiceConfigurationContext context)
+    private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+        context.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = "Cookies";
+            options.DefaultChallengeScheme = "oidc";
+        })
+        .AddCookie("Cookies", options =>
+        {            
+            options.Events.OnSigningOut = async e =>
+            {
+                // revoke refresh token on sign-out
+                // await e.HttpContext.RevokeUserRefreshTokenAsync();
+            };
+        })
+        .AddAbpOpenIdConnect("oidc", options =>
+        {
+            options.SignInScheme = "Cookies";
+            options.Authority = configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"];
+            options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
+            options.ResponseType = OpenIdConnectResponseType.Code;
+
+            options.ClientId = configuration["AuthServer:ClientId"];
+            options.ClientSecret = configuration["AuthServer:ClientSecret"];
+
+            options.SaveTokens = true;
+            options.GetClaimsFromUserInfoEndpoint = true;            
+
+            //options.Scope.Add("profile");
+            //options.Scope.Add("email");
+            //options.Scope.Add("phone");
+            //options.Scope.Add("roles");
+            //options.Scope.Add("offline_access");
+
+            options.Events.OnTokenResponseReceived = async (context) =>
+            {
+                Console.WriteLine(context);
+            };
+
+            options.Events.OnTokenValidated = async (context) =>
+            {
+                //var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
+
+                //await updater.UpdateAsync(context.SecurityToken);
+            };
+        });
+    }
+
+    private void ConfigureAccessTokenManagement(ServiceConfigurationContext context)
+    {
+        context.Services.AddAccessTokenManagement(options =>
+        {
+            // client config is inferred from OpenID Connect settings
+            // if you want to specify scopes explicitly, do it here, otherwise the scope parameter will not be sent
+            //options.Client.Scope = "api";
+        })
+        .ConfigureBackchannelHttpClient();
+        //.AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(new[]
+        //{
+        //    TimeSpan.FromSeconds(1),
+        //    TimeSpan.FromSeconds(2),
+        //    TimeSpan.FromSeconds(3)
+        //}));
+        
+        // registers HTTP client that uses the managed user access token
+        context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
+        {
+            client.BaseAddress = new Uri("localhost:8082/realms/Unity/");
+        });
+
+        // registers HTTP client that uses the managed client access token
+        context.Services.AddClientAccessTokenHttpClient("client", configureClient: client =>
+        {
+            client.BaseAddress = new Uri("localhost:8082/realms/Unity/");
+        });
     }
 
     private void ConfigureUrls(IConfiguration configuration)
@@ -177,7 +256,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-
+        
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
@@ -194,7 +273,9 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
-        app.UseAbpOpenIddictValidation();
+
+        // TODO: check if this is still required
+        //app.UseAbpOpenIddictValidation();
 
         if (MultiTenancyConsts.IsEnabled)
         {
