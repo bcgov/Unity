@@ -10,6 +10,7 @@ using System.Linq.Dynamic.Core;
 using Unity.GrantManager.Applications;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
+using System.Diagnostics;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -88,12 +89,19 @@ namespace Unity.GrantManager.GrantApplications
         {
             foreach(Guid applicationId in applicationIds)
             {
-                var application = await _applicationRepository.GetAsync(applicationId);
-                if(application != null)
+                try
                 {
-                    application.ApplicationStatusId = statusId;
-                    await _applicationRepository.UpdateAsync(application);
+                    var application = await _applicationRepository.GetAsync(applicationId);
+                    if (application != null)
+                    {
+                        application.ApplicationStatusId = statusId;
+                        await _applicationRepository.UpdateAsync(application);
+                    }
+                } catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.ToString());
                 }
+                
             }
         }
     }
