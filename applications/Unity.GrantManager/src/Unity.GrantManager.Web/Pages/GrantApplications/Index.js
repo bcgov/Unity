@@ -15,10 +15,6 @@
             searching: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(unity.grantManager.grantApplications.grantApplication.getList),
-            select: {
-                style: 'os',
-                selector: 'td:first-child'
-            },
             columnDefs: [
                 {
                     title: "",
@@ -90,6 +86,7 @@
             ]
         })
     );
+
     dataTable.on('click', 'tbody tr', function (e) {
         e.currentTarget.classList.toggle('selected');
     });
