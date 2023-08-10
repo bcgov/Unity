@@ -1,7 +1,7 @@
 ﻿$(function () {
     const formatter = new Intl.NumberFormat('en-CA', {
         style: 'currency',
-        currency: 'CAD',        
+        currency: 'CAD',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
@@ -15,7 +15,18 @@
             searching: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(unity.grantManager.grantApplications.grantApplication.getList),
+            select: {
+                style: 'os',
+                selector: 'td:first-child'
+            },
             columnDefs: [
+                {
+                    title: "",
+                    className: 'select-checkbox',
+                    targets: 0,
+                    orderable: false,
+                    data: ""
+                },                
                 {
                     title: l('ProjectName'),
                     data: "projectName"
