@@ -37,6 +37,9 @@ using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.UI;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
+using Volo.Abp.AspNetCore.Mvc.UI.Theming;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
 
 namespace Unity.GrantManager.Web;
 
@@ -49,6 +52,7 @@ namespace Unity.GrantManager.Web;
     typeof(AbpSettingManagementWebModule),
     typeof(AbpAccountWebOpenIddictModule),
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
+    typeof(AbpAspNetCoreMvcUiBasicThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule)
@@ -87,7 +91,8 @@ public class GrantManagerWebModule : AbpModule
 
         ConfigureAuthentication(context);
         ConfigureUrls(configuration);
-        ConfigureBundles();
+        ConfigureTheming(configuration);
+        ConfigureBundles(configuration);
         ConfigureAutoMapper();
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
@@ -108,12 +113,20 @@ public class GrantManagerWebModule : AbpModule
         });
     }
 
-    private void ConfigureBundles()
+    private void ConfigureTheming(IConfiguration configuration)
+    {
+        Configure<AbpThemingOptions>(options =>
+        {
+            options.DefaultThemeName = configuration["Theme:Name"];
+        });
+    }
+
+    private void ConfigureBundles(IConfiguration configuration)
     {
         Configure<AbpBundlingOptions>(options =>
         {
             options.StyleBundles.Configure(
-                LeptonXLiteThemeBundles.Styles.Global,
+                string.Concat(configuration["Theme:Name"], ".Global"),
                 bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
