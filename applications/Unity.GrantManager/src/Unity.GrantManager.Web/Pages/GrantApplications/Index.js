@@ -90,4 +90,7 @@
             ]
         })
     );
+    dataTable.on('click', 'tbody tr', function (e) {
+        e.currentTarget.classList.toggle('selected');
+    });
 });
