@@ -12,17 +12,20 @@ using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
 using System.Diagnostics;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using Volo.Abp.DependencyInjection;
+
 
 namespace Unity.GrantManager.GrantApplications
 {
+    [Dependency(ReplaceServices = true)]
+    [ExposeServices(typeof(GrantApplicationAppService))]
     public class GrantApplicationAppService :
         CrudAppService<
         GrantApplication,
         GrantApplicationDto,
         Guid,
         PagedAndSortedResultRequestDto,
-        CreateUpdateGrantApplicationDto>,
-        IGrantApplicationAppService
+        CreateUpdateGrantApplicationDto>
     {
 
         private readonly IApplicationRepository _applicationRepository;

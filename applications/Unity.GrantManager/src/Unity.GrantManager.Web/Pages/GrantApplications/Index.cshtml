@@ -29,10 +29,13 @@
         <abp-script src="/Pages/GrantApplications/Intake.js" />
     }
 }
+
 @section styles {
     <abp-style src="/libs/datatables/css/select.bootstrap.min.css" />
     <abp-style src="/Pages/GrantApplications/Index.css" />
 }
+
+@await Component.InvokeAsync("ActionBar")
 
 <abp-card>
     <abp-card-header>
