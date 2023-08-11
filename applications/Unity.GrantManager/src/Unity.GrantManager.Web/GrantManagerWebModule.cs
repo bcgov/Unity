@@ -93,9 +93,9 @@ public class GrantManagerWebModule : AbpModule
             string url = configuration["KeyCloak:BaseUri"];
             string userName = configuration["KeyCloak:AdminName"];
             string password = configuration["KeyCloak:AdminPassword"];
-            string clientSecret = "3rTcYXq5bFONad2f06c1MTKSCstHZXZc";
-            KeycloakClient keyCloakClient = new(url, userName, password);
-            //KeycloakClient keyCloakClient = new(url, clientSecret);
+            string clientSecret = "PJJ7MfTftearGEe9SDwYjhhfEw58QimM";
+           // KeycloakClient keyCloakClient = new(url, userName, password);
+            KeycloakClient keyCloakClient = new(url, clientSecret);
 
             return keyCloakClient;
         });
