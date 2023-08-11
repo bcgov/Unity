@@ -63,22 +63,14 @@ namespace Unity.GrantManager.GrantApplications
             var assigneeMapperConfig = new MapperConfiguration(cfg => {
                 cfg.CreateMap<ApplicationUserAssignment, GrantApplicationAssigneeDto>();
             });
-            var assigneeMapper = mapperConfig.CreateMapper();
+            var assigneeMapper = assigneeMapperConfig.CreateMapper();
 
             //Convert the query result to a list of BookDto objects
             var applicationDtos = queryResult.Select(x =>
             {                
                 var appDto = mapper.Map<Application, GrantApplicationDto>(x.application);
                 appDto.Status = x.appStatus.InternalStatus;
-
-                /*IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;                
-                var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(x.application.Id)).ToList();
-                var assignees = assignments.Select(a => {
-                    var assignee = assigneeMapper.Map<ApplicationUserAssignment, GrantApplicationAssigneeDto>(a);
-                    return assignee;
-                    }).ToList();
-
-                appDto.Assignees = assignees;*/
+                appDto.Assignees = getAssignees(assigneeMapper,x.application.Id);
                 return appDto;
             }).ToList();
 
@@ -91,7 +83,17 @@ namespace Unity.GrantManager.GrantApplications
             );            
         }
 
-        
+        public List<GrantApplicationAssigneeDto> getAssignees(IMapper assigneeMapper, Guid applicationId)
+        {
+            IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
+            var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).ToList();
+            /*var assignees = assignments.Select(a => {
+                var assignee = assigneeMapper.Map<ApplicationUserAssignment, GrantApplicationAssigneeDto>(a);
+                return assignee;
+            }).ToList();*/
+            var assignees = assigneeMapper.Map<List<ApplicationUserAssignment>, List<GrantApplicationAssigneeDto>>(assignments);
+            return assignees;
+        }
 
         private static string NormalizeSorting(string sorting)
         {
