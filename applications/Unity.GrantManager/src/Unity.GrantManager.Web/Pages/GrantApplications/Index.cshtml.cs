@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public async Task OnGetAsync()
         {
             // We should know the group based on the logged on user selection of grant programs
-            string realm = "master";
+            string realm = "unity";
             string search = "MJF";
 
             /*IEnumerable<Group> groups = await _keycloakClient.GetGroupHierarchyAsync(realm, search: search).ConfigureAwait(false);
