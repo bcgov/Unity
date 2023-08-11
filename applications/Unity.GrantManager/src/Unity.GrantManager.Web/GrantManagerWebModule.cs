@@ -1,6 +1,5 @@
 using System.IO;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,38 +9,33 @@ using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Web.Menus;
 using Microsoft.OpenApi.Models;
-using OpenIddict.Validation.AspNetCore;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
-using Volo.Abp.AspNetCore.Mvc.UI;
-using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
-using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity.Web;
-using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
-using Volo.Abp.PermissionManagement.Web;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.Web;
 using Volo.Abp.UI.Navigation.Urls;
-using Volo.Abp.UI;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using System;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using System.Threading.Tasks;
+using Unity.GrantManager.Web.Identity;
 
 namespace Unity.GrantManager.Web;
 
@@ -87,7 +81,7 @@ public class GrantManagerWebModule : AbpModule
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
-    {
+    {      
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
@@ -99,27 +93,27 @@ public class GrantManagerWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
-        ConfigureAccessTokenManagement(context);
+        ConfigureAccessTokenManagement(context, configuration);
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAuthentication(options =>
         {
-            options.DefaultScheme = "Cookies";
-            options.DefaultChallengeScheme = "oidc";
+            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
         })
-        .AddCookie("Cookies", options =>
-        {            
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+        {
             options.Events.OnSigningOut = async e =>
             {
                 // revoke refresh token on sign-out
-                // await e.HttpContext.RevokeUserRefreshTokenAsync();
+                await e.HttpContext.RevokeUserRefreshTokenAsync();
             };
         })
-        .AddAbpOpenIdConnect("oidc", options =>
+        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
         {
-            options.SignInScheme = "Cookies";
+            options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             options.Authority = configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"];
             options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
             options.ResponseType = OpenIdConnectResponseType.Code;
@@ -128,29 +122,27 @@ public class GrantManagerWebModule : AbpModule
             options.ClientSecret = configuration["AuthServer:ClientSecret"];
 
             options.SaveTokens = true;
-            options.GetClaimsFromUserInfoEndpoint = true;            
+            options.GetClaimsFromUserInfoEndpoint = true;
 
-            //options.Scope.Add("profile");
-            //options.Scope.Add("email");
-            //options.Scope.Add("phone");
-            //options.Scope.Add("roles");
-            //options.Scope.Add("offline_access");
+            options.Scope.Add("profile");
+            options.Scope.Add("email");
+            options.Scope.Add("roles");
 
             options.Events.OnTokenResponseReceived = async (context) =>
             {
-                Console.WriteLine(context);
+                await Task.CompletedTask;
             };
 
             options.Events.OnTokenValidated = async (context) =>
             {
-                //var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
+                var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
 
-                //await updater.UpdateAsync(context.SecurityToken);
+                await updater!.UpdateAsync(context);
             };
         });
     }
 
-    private void ConfigureAccessTokenManagement(ServiceConfigurationContext context)
+    private void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAccessTokenManagement(options =>
         {
@@ -159,23 +151,25 @@ public class GrantManagerWebModule : AbpModule
             //options.Client.Scope = "api";
         })
         .ConfigureBackchannelHttpClient();
+
+        // Configure transient retry policy for access token
         //.AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(new[]
         //{
         //    TimeSpan.FromSeconds(1),
         //    TimeSpan.FromSeconds(2),
         //    TimeSpan.FromSeconds(3)
         //}));
-        
+
         // registers HTTP client that uses the managed user access token
         context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
         {
-            client.BaseAddress = new Uri("localhost:8082/realms/Unity/");
+            client.BaseAddress = new Uri(configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"]);
         });
 
         // registers HTTP client that uses the managed client access token
         context.Services.AddClientAccessTokenHttpClient("client", configureClient: client =>
         {
-            client.BaseAddress = new Uri("localhost:8082/realms/Unity/");
+            client.BaseAddress = new Uri(configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"]);
         });
     }
 
@@ -256,7 +250,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        
+
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
@@ -273,8 +267,6 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
-
-        // TODO: check if this is still required
         //app.UseAbpOpenIddictValidation();
 
         if (MultiTenancyConsts.IsEnabled)

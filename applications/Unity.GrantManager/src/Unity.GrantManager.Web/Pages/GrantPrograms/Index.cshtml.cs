@@ -6,7 +6,11 @@ namespace Unity.GrantManager.Web.Pages.GrantPrograms;
 [Authorize]
 public class IndexModel : PageModel
 {
+    public IndexModel()
+    {
+    }
+
     public void OnGet()
-    {        
+    {
     }
 }

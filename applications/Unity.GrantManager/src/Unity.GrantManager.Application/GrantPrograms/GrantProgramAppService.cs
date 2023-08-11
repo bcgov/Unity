@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Unity.GrantManager.GrantPrograms;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.GrantPrograms
 {
+    [Authorize]
     public class GrantProgramAppService :
     CrudAppService<
         GrantProgram,      // The Grant entity

@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using System.Linq.Dynamic.Core;
-using Unity.GrantManager.Applications;
 using Microsoft.AspNetCore.Authorization;
-
-
 
 namespace Unity.GrantManager.GrantApplications
 {
+    [Authorize]
     public class GrantApplicationAppService :
         CrudAppService<
         GrantApplication,
