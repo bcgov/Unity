@@ -26,15 +26,17 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public async Task OnGetAsync()
         {
             // We should know the group based on the logged on user selection of grant programs
-            string realm = "unity";
+            string realm = "master";
             string search = "MJF";
 
-            IEnumerable<Group> groups = await _keycloakClient.GetGroupHierarchyAsync(realm, search: search).ConfigureAwait(false);
+            /*IEnumerable<Group> groups = await _keycloakClient.GetGroupHierarchyAsync(realm, search: search).ConfigureAwait(false);
             string groupId = groups.FirstOrDefault()?.Id;
             if (groupId != null)
             {
                groupUsers = await _keycloakClient.GetGroupUsersAsync(realm, groupId).ConfigureAwait(false);
-            }
+            }*/
+
+            IEnumerable<User> users = await _keycloakClient.GetUsersAsync(realm).ConfigureAwait(false);
         }
     }
 }
