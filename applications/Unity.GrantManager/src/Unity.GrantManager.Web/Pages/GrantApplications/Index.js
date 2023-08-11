@@ -1,7 +1,7 @@
 ﻿$(function () {
     const formatter = new Intl.NumberFormat('en-CA', {
         style: 'currency',
-        currency: 'CAD',        
+        currency: 'CAD',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
@@ -16,6 +16,13 @@
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(unity.grantManager.grantApplications.grantApplication.getList),
             columnDefs: [
+                {
+                    title: "",
+                    className: 'select-checkbox',
+                    targets: 0,
+                    orderable: false,
+                    data: ""
+                },                
                 {
                     title: l('ProjectName'),
                     data: "projectName"
@@ -79,4 +86,8 @@
             ]
         })
     );
+
+    dataTable.on('click', 'tbody tr', function (e) {
+        e.currentTarget.classList.toggle('selected');
+    });
 });
