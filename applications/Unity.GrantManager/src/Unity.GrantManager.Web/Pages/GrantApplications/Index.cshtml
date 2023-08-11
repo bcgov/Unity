@@ -14,14 +14,26 @@
 {
     @if (Model.FormId == null)
     {
+        <script>
+            let userGroups = [];
+            @foreach (var userGroup in Model.groupUsers) {
+                @:userGroups.push("{'Id':"+"'@userGroup.Id', 'UserName':"+"'@userGroup.UserName', 'FirstName':"+"'@userGroup.FirstName', 'LastName':"+"'@userGroup.LastName', 'Email':"+"'@userGroup.Email'}");
+            }
+        </script>
         <abp-script src="/Pages/GrantApplications/Index.js" />
+        <abp-script src="/libs/datatables/js/dataTables.select.min.js" />
+        <abp-script src="/libs/datatables/js/select.bootstrap.min.js" />
     } 
     else
     {
-
         <abp-script src="/Pages/GrantApplications/Intake.js" />
     }
 }
+@section styles {
+    <abp-style src="/libs/datatables/css/select.bootstrap.min.css" />
+    <abp-style src="/Pages/GrantApplications/Index.css" />
+}
+
 @await Component.InvokeAsync("ActionBar")
 <abp-card>
     <abp-card-header>

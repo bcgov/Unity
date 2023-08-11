@@ -19,13 +19,15 @@ public class GrantManagerDataSeederContributor
     private readonly IApplicantRepository _applicantRepository;
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
+    private readonly IApplicationUserAssignmentRepository _applicationUserAssignmentRepository;
 
     public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository,
         IIntakeRepository intakeRepository,
         IApplicationFormRepository applicationFormRepository,
         IApplicantRepository applicantRepository,
         IApplicationRepository applicationRepository,
-        IApplicationStatusRepository applicationStatusRepository)
+        IApplicationStatusRepository applicationStatusRepository,
+        IApplicationUserAssignmentRepository applicationUserAssignmentRepository)
     {
         _grantProgramRepository = grantProgramRepository;
         _intakeRepository = intakeRepository;
@@ -33,6 +35,7 @@ public class GrantManagerDataSeederContributor
         _applicantRepository = applicantRepository;
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
+        _applicationUserAssignmentRepository = applicationUserAssignmentRepository;
     }
 
 
@@ -437,6 +440,79 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 33500.00,
                 ProposalDate = new DateTime(2022, 10, 02),
                 SubmissionDate = new DateTime(2023, 01, 02)
+            }
+            );
+        var appUserAssignment1 = _applicationUserAssignmentRepository.InsertAsync(
+            new ApplicationUserAssignment
+            {
+                OidcSub = "12345",
+                ApplicationFormId = appForm1.Id,
+                ApplicationId = application1.Id,
+                AssigneeDisplayName = "John Smith",
+                AssignmentTime = new DateTime(2023,01,02)
+            }
+            );
+        var appUserAssignment2 = _applicationUserAssignmentRepository.InsertAsync(
+            new ApplicationUserAssignment
+            {
+                OidcSub = "3456",
+                ApplicationFormId = appForm2.Id,
+                ApplicationId = application2.Id,
+                AssigneeDisplayName = "Will Smith",
+                AssignmentTime = new DateTime(2023, 02, 02)
+            }
+            );
+
+        var appUserAssignment31 = _applicationUserAssignmentRepository.InsertAsync(
+            new ApplicationUserAssignment
+            {
+                OidcSub = "23564",
+                ApplicationFormId = appForm2.Id,
+                ApplicationId = application3.Id,
+                AssigneeDisplayName = "John Doe",
+                AssignmentTime = new DateTime(2023, 02, 02)
+            }
+            );
+
+        var appUserAssignment32 = _applicationUserAssignmentRepository.InsertAsync(
+            new ApplicationUserAssignment
+            {
+                OidcSub = "76857",
+                ApplicationFormId = appForm1.Id,
+                ApplicationId = application3.Id,
+                AssigneeDisplayName = "Joe Wilson",
+                AssignmentTime = new DateTime(2023, 04, 04)
+            }
+            );
+        var appUserAssignment41 = _applicationUserAssignmentRepository.InsertAsync(
+            new ApplicationUserAssignment
+            {
+                OidcSub = "38332",
+                ApplicationFormId = appForm2.Id,
+                ApplicationId = application4.Id,
+                AssigneeDisplayName = "Eva Harris",
+                AssignmentTime = new DateTime(2023, 05, 02)
+            }
+            );
+
+        var appUserAssignment42 = _applicationUserAssignmentRepository.InsertAsync(
+            new ApplicationUserAssignment
+            {
+                OidcSub = "76857",
+                ApplicationFormId = appForm1.Id,
+                ApplicationId = application4.Id,
+                AssigneeDisplayName = "Michael John",
+                AssignmentTime = new DateTime(2023, 06, 06)
+            }
+            );
+        var appUserAssignment43 = _applicationUserAssignmentRepository.InsertAsync(
+            new ApplicationUserAssignment
+            {
+                OidcSub = "764658",
+                ApplicationFormId = appForm1.Id,
+                ApplicationId = application4.Id,
+                AssigneeDisplayName = "Kevin Douglas",
+                AssignmentTime = new DateTime(2023, 07, 07)
             }
             );
     }

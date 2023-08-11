@@ -19,7 +19,7 @@ public class ApplicationStatusAppService : CrudAppService<
         ApplicationStatusDto, 
         Guid, 
         PagedAndSortedResultRequestDto>, 
-        IApplicationStatusService 
+    IApplicationStatusService 
 {
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     public ApplicationStatusAppService(IApplicationStatusRepository repository) : base(repository)
