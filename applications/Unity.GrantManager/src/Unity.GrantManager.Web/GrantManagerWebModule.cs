@@ -37,6 +37,11 @@ using Microsoft.AspNetCore.Authentication;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Identity;
 
+using System.Linq;
+using Keycloak.Net;
+using Keycloak.Net.Models.Clients;
+using System.Threading.Tasks;
+
 namespace Unity.GrantManager.Web;
 
 [DependsOn(
@@ -80,12 +85,27 @@ public class GrantManagerWebModule : AbpModule
         });
     }
 
+    private void ConfigureKeyCloakClient(ServiceConfigurationContext context)
+    {
+        context.Services.AddSingleton<KeycloakClient>(provider =>
+        {
+            var configuration = context.Services.GetConfiguration();
+            string url = configuration["KeyCloak:BaseUri"];
+            string userName = configuration["KeyCloak:AdminName"];
+            string password = configuration["KeyCloak:AdminPassword"];
+            KeycloakClient keyCloakClient = new(url, userName, password);
+
+            return keyCloakClient;
+        });
+    }
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {      
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
         ConfigureAuthentication(context, configuration);
+        ConfigureKeyCloakClient(context);
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureAutoMapper();
