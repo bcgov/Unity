@@ -16,6 +16,7 @@ namespace Unity.GrantManager.Web.Identity
         // - this is a stripped down version to create the user on token validation while in monolith mode and relying on the proxy generation
         // private readonly IHttpClientFactory _httpClientFactory;                
         // private readonly IRemoteServiceConfigurationProvider _remoteServiceConfigurationProvider;
+        // TODO: look at this during user sync / roles / permissions to make sure this works as wanted
 
         private readonly IdentityUserManager _userManager;
 
@@ -31,7 +32,7 @@ namespace Unity.GrantManager.Web.Identity
 
         protected async Task CreateOrUpdateAsync(TokenValidatedContext validatedTokenContext)
         {
-            var user = await _userManager.FindByIdAsync(validatedTokenContext.SecurityToken.Subject);
+            var user = await _userManager.FindByIdAsync(validatedTokenContext.SecurityToken.Subject.Replace("@idir",""));
 
             if (user == null)
             {
@@ -48,10 +49,10 @@ namespace Unity.GrantManager.Web.Identity
             var token = validatedTokenContext.SecurityToken;
             var claims = token.Claims;
 
-            var userNameClaim = claims.FirstOrDefault(x => x.Type == "preferred_username");
+            var userNameClaim = claims.FirstOrDefault(x => x.Type == UnityClaimsTypes.Username);
 
             var user = new IdentityUser(
-                    Guid.Parse(validatedTokenContext.SecurityToken.Subject),
+                    Guid.Parse(validatedTokenContext.SecurityToken.Subject.Replace("@idir", "")),
                     userNameClaim!.Value, //CurrentUser.UserName provides FullName instead of UserName
                     GetClaimValue(token, AbpClaimTypes.Email) ?? "blank@blank.blank");
             // abp want an email to create user locally

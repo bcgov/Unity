@@ -58,7 +58,7 @@ public class GrantManagerMenuContributor : IMenuContributor
             new ApplicationMenuItem(
                 GrantManagerMenus.Payments,
                 l["Menu:Payments"],
-                "~/",
+                "~/Payments",
                 icon: "fas fa-landmark",
                 order: 3
             )

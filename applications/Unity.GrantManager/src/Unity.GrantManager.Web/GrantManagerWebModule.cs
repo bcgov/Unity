@@ -36,11 +36,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Identity;
-
-using System.Linq;
 using Keycloak.Net;
-using Keycloak.Net.Models.Clients;
-using System.Threading.Tasks;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Unity.GrantManager.Web;
 
@@ -87,13 +84,15 @@ public class GrantManagerWebModule : AbpModule
 
     private void ConfigureKeyCloakClient(ServiceConfigurationContext context)
     {
+        // This wont work with a standard realm implementation, as there is a different
+        // set of API's that need to be consumed
         context.Services.AddSingleton<KeycloakClient>(provider =>
         {
             var configuration = context.Services.GetConfiguration();
-            string url = configuration["KeyCloak:BaseUri"];
-            string userName = configuration["KeyCloak:AdminName"];
-            string password = configuration["KeyCloak:AdminPassword"];
-            KeycloakClient keyCloakClient = new(url, userName, password);
+            string url = configuration["KeyCloakApi:BaseUri"];
+
+            KeycloakClient keyCloakClient = new(url, configuration["KeyCloakApi:ClientSecret"],
+                new KeycloakOptions("", configuration["KeyCloakApi:ClientId"]));
 
             return keyCloakClient;
         });
@@ -117,7 +116,7 @@ public class GrantManagerWebModule : AbpModule
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
-    {
+    {        
         context.Services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -144,9 +143,11 @@ public class GrantManagerWebModule : AbpModule
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
 
-            options.Scope.Add("profile");
-            options.Scope.Add("email");
-            options.Scope.Add("roles");
+            options.ClaimActions.MapClaimTypes();
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                RoleClaimType = UnityClaimsTypes.Role
+            };
 
             options.Events.OnTokenResponseReceived = async (context) =>
             {
@@ -179,7 +180,7 @@ public class GrantManagerWebModule : AbpModule
         //    TimeSpan.FromSeconds(2),
         //    TimeSpan.FromSeconds(3)
         //}));
-
+        
         // registers HTTP client that uses the managed user access token
         context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
         {

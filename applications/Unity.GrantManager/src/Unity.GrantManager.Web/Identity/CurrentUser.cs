@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Web.Identity
 
         public virtual Guid? Id => this.FindUserId();
 
-        public virtual string? UserName => this.FindClaimValue("preferred_username");
+        public virtual string? UserName => this.FindClaimValue(UnityClaimsTypes.Username);
 
         public virtual string? Name => this.FindClaimValue(ClaimTypes.GivenName);
 
@@ -34,7 +34,7 @@ namespace Unity.GrantManager.Web.Identity
 
         public virtual Guid? TenantId => _principalAccessor.Principal?.FindTenantId();
 
-        public virtual string[] Roles => FindClaims(ClaimTypes.Role).Select(c => c.Value).Distinct().ToArray();
+        public virtual string[] Roles => FindClaims(UnityClaimsTypes.Role).Select(c => c.Value).Distinct().ToArray();
 
         private readonly ICurrentPrincipalAccessor _principalAccessor;
 
@@ -60,7 +60,7 @@ namespace Unity.GrantManager.Web.Identity
 
         public virtual bool IsInRole(string roleName)
         {
-            return FindClaims(ClaimTypes.Role).Any(c => c.Value == roleName);
+            return FindClaims(UnityClaimsTypes.Role).Any(c => c.Value == roleName);            
         }
 
         public virtual Guid? FindUserId()
@@ -71,7 +71,7 @@ namespace Unity.GrantManager.Web.Identity
                 var userId = userClaims.FirstOrDefault(s => s.Type == ClaimTypes.NameIdentifier);
                 if (userId != null)
                 {
-                    return Guid.Parse(userId.Value);
+                    return Guid.Parse(userId.Value.Replace("@idir",""));
                 }
             }
             return null;
