@@ -11,6 +11,7 @@ using Unity.GrantManager.Applications;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
 using System.Diagnostics;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -87,10 +88,7 @@ namespace Unity.GrantManager.GrantApplications
         {
             IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).ToList();
-            /*var assignees = assignments.Select(a => {
-                var assignee = assigneeMapper.Map<ApplicationUserAssignment, GrantApplicationAssigneeDto>(a);
-                return assignee;
-            }).ToList();*/
+            
             var assignees = assigneeMapper.Map<List<ApplicationUserAssignment>, List<GrantApplicationAssigneeDto>>(assignments);
             return assignees;
         }
@@ -122,6 +120,35 @@ namespace Unity.GrantManager.GrantApplications
                     Debug.WriteLine(ex.ToString());
                 }
                 
+            }
+        }
+
+        public async Task AddAssignee(Guid[] applicationIds, string AssigneeKeycloakId, string AssigneeDisplayName)
+        {
+            foreach (Guid applicationId in applicationIds)
+            {
+                try
+                {
+                    var application = await _applicationRepository.GetAsync(applicationId);
+                    if (application != null)
+                    {
+                        await _userAssignmentRepository.InsertAsync(
+                            new ApplicationUserAssignment
+                            {
+                                OidcSub = AssigneeKeycloakId,
+                                //ApplicationFormId = appForm1.Id,
+                                ApplicationId = application.Id,
+                                AssigneeDisplayName = AssigneeDisplayName,
+                                AssignmentTime = DateTime.Now
+                            }
+                            );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.ToString());
+                }
+
             }
         }
     }

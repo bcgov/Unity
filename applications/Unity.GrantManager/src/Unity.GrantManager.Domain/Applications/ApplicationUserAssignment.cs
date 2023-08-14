@@ -13,7 +13,7 @@ public class ApplicationUserAssignment : AuditedAggregateRoot<Guid>
 
     public string OidcSub { get; set; } 
 
-    public Guid ApplicationFormId { get; set; }
+    public Guid? ApplicationFormId { get; set; }
     public Guid ApplicationId { get; set; }
 
     public string AssigneeDisplayName { get; set; }
