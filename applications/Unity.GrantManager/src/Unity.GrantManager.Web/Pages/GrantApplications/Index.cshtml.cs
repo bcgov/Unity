@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using Keycloak.Net.Models.Users;
 using Keycloak.Net.Models.Groups;
+using System.Collections;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -37,6 +38,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             }*/
 
             IEnumerable<User> users = await _keycloakClient.GetUsersAsync(realm).ConfigureAwait(false);
+        }
+
+        public async IEnumerable<User> GetAssigneesAsync()
+        {
+            string realm = "unity";                      
+
+            IEnumerable<User> users = await _keycloakClient.GetUsersAsync(realm).ConfigureAwait(false);
+
+            return users;
         }
     }
 }
