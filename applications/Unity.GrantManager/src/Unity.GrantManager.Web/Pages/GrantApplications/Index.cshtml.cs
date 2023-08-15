@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using Keycloak.Net.Models.Users;
 using Keycloak.Net.Models.Groups;
+using System.Collections;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -29,12 +30,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             string realm = "unity";
             string search = "MJF";
 
-            IEnumerable<Group> groups = await _keycloakClient.GetGroupHierarchyAsync(realm, search: search).ConfigureAwait(false);
+            /*IEnumerable<Group> groups = await _keycloakClient.GetGroupHierarchyAsync(realm, search: search).ConfigureAwait(false);
             string groupId = groups.FirstOrDefault()?.Id;
             if (groupId != null)
             {
                groupUsers = await _keycloakClient.GetGroupUsersAsync(realm, groupId).ConfigureAwait(false);
-            }
+            }*/
+
+            IEnumerable<User> users = await _keycloakClient.GetUsersAsync(realm).ConfigureAwait(false);
         }
+
     }
 }
