@@ -158,7 +158,8 @@ public class GrantManagerWebModule : AbpModule
             {
                 var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
 
-                await updater!.UpdateAsync(context);
+                // TODO: can be used to create users locally
+                // await updater!.UpdateAsync(context);
             };
         });
     }
