@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 using System.Linq;
 using Keycloak.Net.Models.Users;
 using Keycloak.Net.Models.Groups;
+using Microsoft.AspNetCore.Authorization;
 using System.Collections;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
+    [Authorize]
     public class IndexModel : GrantManagerPageModel
     {
 
@@ -26,19 +28,23 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public Guid? FormId { get; set; }
         public async Task OnGetAsync()
         {
-            // We should know the group based on the logged on user selection of grant programs
+            // We should know the group based on the logged on user selection of grant programs            
             string realm = "unity";
             string search = "MJF";
 
-            /*IEnumerable<Group> groups = await _keycloakClient.GetGroupHierarchyAsync(realm, search: search).ConfigureAwait(false);
-            string groupId = groups.FirstOrDefault()?.Id;
-            if (groupId != null)
+            try
             {
-               groupUsers = await _keycloakClient.GetGroupUsersAsync(realm, groupId).ConfigureAwait(false);
-            }*/
-
-            IEnumerable<User> users = await _keycloakClient.GetUsersAsync(realm).ConfigureAwait(false);
+                IEnumerable<Group> groups = await _keycloakClient.GetGroupHierarchyAsync(realm, search: search).ConfigureAwait(false);
+                string groupId = groups.FirstOrDefault()?.Id;
+                if (groupId != null)
+                {
+                    groupUsers = await _keycloakClient.GetGroupUsersAsync(realm, groupId).ConfigureAwait(false);
+                }
+            }
+            catch (Exception)
+            {
+                // This will not work if looking at Standard Realm - TODO:
+            }
         }
-
     }
 }

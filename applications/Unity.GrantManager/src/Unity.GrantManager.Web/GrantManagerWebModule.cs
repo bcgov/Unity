@@ -1,6 +1,5 @@
 using System.IO;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,38 +9,35 @@ using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Web.Menus;
 using Microsoft.OpenApi.Models;
-using OpenIddict.Validation.AspNetCore;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
-using Volo.Abp.AspNetCore.Mvc.UI;
-using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
-using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity.Web;
-using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
-using Volo.Abp.PermissionManagement.Web;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.Web;
 using Volo.Abp.UI.Navigation.Urls;
-using Volo.Abp.UI;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
-
-using System.Linq;
-using Keycloak.Net;
-using Keycloak.Net.Models.Clients;
+using System;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using System.Threading.Tasks;
+using Unity.GrantManager.Web.Identity;
+using Keycloak.Net;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Unity.GrantManager.Web;
 
@@ -56,7 +52,8 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpSwashbuckleModule)
+    typeof(AbpSwashbuckleModule),
+    typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
     )]
 public class GrantManagerWebModule : AbpModule
 {
@@ -87,27 +84,27 @@ public class GrantManagerWebModule : AbpModule
 
     private void ConfigureKeyCloakClient(ServiceConfigurationContext context)
     {
+        // This wont work with a standard realm implementation, as there is a different
+        // set of API's that need to be consumed
         context.Services.AddSingleton<KeycloakClient>(provider =>
         {
             var configuration = context.Services.GetConfiguration();
-            string url = configuration["KeyCloak:BaseUri"];
-            string userName = configuration["KeyCloak:AdminName"];
-            string password = configuration["KeyCloak:AdminPassword"];
-            string clientSecret = configuration["KeyCloak:ClientSecret"];
-            // KeycloakClient keyCloakClient = new(url, userName, password);
-            KeycloakClient keyCloakClient = new(url, clientSecret);
+            string url = configuration["KeyCloakApi:BaseUri"];
+
+            KeycloakClient keyCloakClient = new(url, configuration["KeyCloakApi:ClientSecret"],
+                new KeycloakOptions("", configuration["KeyCloakApi:ClientId"]));            
 
             return keyCloakClient;
         });
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
-    {
+    {      
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        ConfigureAuthentication(context, configuration);
         ConfigureKeyCloakClient(context);
-        ConfigureAuthentication(context);
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureAutoMapper();
@@ -115,11 +112,87 @@ public class GrantManagerWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
+        ConfigureAccessTokenManagement(context, configuration);
     }
 
-    private void ConfigureAuthentication(ServiceConfigurationContext context)
+    private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
+    {        
+        context.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+        })
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+        {
+            options.Events.OnSigningOut = async e =>
+            {
+                // revoke refresh token on sign-out
+                await e.HttpContext.RevokeUserRefreshTokenAsync();
+            };
+        })
+        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+        {
+            options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.Authority = configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"];
+            options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
+            options.ResponseType = OpenIdConnectResponseType.Code;
+
+            options.ClientId = configuration["AuthServer:ClientId"];
+            options.ClientSecret = configuration["AuthServer:ClientSecret"];
+
+            options.SaveTokens = true;
+            options.GetClaimsFromUserInfoEndpoint = true;
+
+            options.ClaimActions.MapClaimTypes();
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                RoleClaimType = UnityClaimsTypes.Role
+            };
+
+            options.Events.OnTokenResponseReceived = async (context) =>
+            {
+                await Task.CompletedTask;
+            };
+
+            options.Events.OnTokenValidated = async (context) =>
+            {
+                var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
+
+                // TODO: can be used to create users locally
+                // await updater!.UpdateAsync(context);
+            };
+        });
+    }
+
+    private void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+        context.Services.AddAccessTokenManagement(options =>
+        {
+            // client config is inferred from OpenID Connect settings
+            // if you want to specify scopes explicitly, do it here, otherwise the scope parameter will not be sent
+            //options.Client.Scope = "api";
+        })
+        .ConfigureBackchannelHttpClient();
+
+        // Configure transient retry policy for access token
+        //.AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(new[]
+        //{
+        //    TimeSpan.FromSeconds(1),
+        //    TimeSpan.FromSeconds(2),
+        //    TimeSpan.FromSeconds(3)
+        //}));
+        
+        // registers HTTP client that uses the managed user access token
+        context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
+        {
+            client.BaseAddress = new Uri(configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"]);
+        });
+
+        // registers HTTP client that uses the managed client access token
+        context.Services.AddClientAccessTokenHttpClient("client", configureClient: client =>
+        {
+            client.BaseAddress = new Uri(configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"]);
+        });
     }
 
     private void ConfigureUrls(IConfiguration configuration)
@@ -216,7 +289,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
-        app.UseAbpOpenIddictValidation();
+        //app.UseAbpOpenIddictValidation();
 
         if (MultiTenancyConsts.IsEnabled)
         {

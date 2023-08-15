@@ -224,3 +224,7 @@ a {
     height: 0px;
     background-color: white;
 }
+
+.lpx-scroll-container {
+	overflow: scroll;
+}

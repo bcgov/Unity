@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using System.Linq.Dynamic.Core;
-using Unity.GrantManager.Applications;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
 using System.Diagnostics;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using Volo.Abp.DependencyInjection;
-
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.GrantApplications
 {
+    [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(GrantApplicationAppService))]
     public class GrantApplicationAppService :
