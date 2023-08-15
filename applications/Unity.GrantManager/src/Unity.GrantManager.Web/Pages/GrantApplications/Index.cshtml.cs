@@ -40,13 +40,5 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             IEnumerable<User> users = await _keycloakClient.GetUsersAsync(realm).ConfigureAwait(false);
         }
 
-        public async IEnumerable<User> GetAssigneesAsync()
-        {
-            string realm = "unity";                      
-
-            IEnumerable<User> users = await _keycloakClient.GetUsersAsync(realm).ConfigureAwait(false);
-
-            return users;
-        }
     }
 }
