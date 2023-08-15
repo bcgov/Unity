@@ -1,0 +1,18 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.AssigneeSelection.AssigneeSelectionModalModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@{
+    Layout = null;
+}
+<abp-modal>
+    <abp-modal-header title="Select Users"></abp-modal-header>
+    <abp-modal-body>
+        <div>
+            <abp-select asp-for="@Model.statusId" asp-items="@Model.statusList" label="Users">
+        <option value="">Choose a status</option>
+        </abp-select>
+        </div>
+       
+    </abp-modal-body>
+    <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
+</abp-modal>

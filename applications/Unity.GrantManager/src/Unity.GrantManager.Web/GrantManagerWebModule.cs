@@ -93,6 +93,8 @@ public class GrantManagerWebModule : AbpModule
 
             KeycloakClient keyCloakClient = new(url, configuration["KeyCloakApi:ClientSecret"],
                 new KeycloakOptions("", configuration["KeyCloakApi:ClientId"]));
+            // KeycloakClient keyCloakClient = new(url, userName, password);
+            KeycloakClient keyCloakClient = new(url, clientSecret);
 
             return keyCloakClient;
         });

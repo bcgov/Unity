@@ -49,7 +49,7 @@
                     title: l('Assignee'),
                     data: "assignees",
                     render: function (data) {
-                        return (!data || data.length === 0) ? null : data.length > 1 ? l('Multiple') : data[0].username;                        
+                        return (!data || data.length === 0) ? null : data.length > 1 ? l('Multiple') : data[0].assigneeDisplayName;                        
                     }
                 },
                 {
@@ -58,8 +58,7 @@
                 },
                 {
                     title: l('GrantApplicationStatus'),
-                    data: "status",
-                    render: (data) => l('Enum:GrantApplicationStatus.' + data)
+                    data: "status",              
                 },
                 {
                     title: l('ProposalDate'),

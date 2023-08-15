@@ -7,6 +7,7 @@ using System.Linq;
 using Keycloak.Net.Models.Users;
 using Keycloak.Net.Models.Groups;
 using Microsoft.AspNetCore.Authorization;
+using System.Collections;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -43,7 +44,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             catch (Exception)
             {
                 // This will not work if looking at Standard Realm - TODO:
-            }
         }
+
     }
 }

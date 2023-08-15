@@ -229,15 +229,15 @@ public class GrantManagerDbContext :
             b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
         });
 
-        builder.Entity<ApplicationAssignment>(b =>
+        builder.Entity<ApplicationUserAssignment>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationAssignment",
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationUserAssignment",
                 GrantManagerConsts.DbSchema);
             
             b.ConfigureByConvention(); //auto configure for the base class props                             
-            b.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).IsRequired();
-            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
-            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+            //b.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).IsRequired();
+            //b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId);
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230810213138_Update_ApplicationAssignment_Table")]
+    partial class UpdateApplicationAssignmentTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -603,7 +606,7 @@ namespace Unity.GrantManager.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ApplicationFormId")
+                    b.Property<Guid>("ApplicationFormId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ApplicationId")
@@ -647,6 +650,7 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("text");
 
                     b.Property<Guid?>("TeamId")
+                        .IsRequired()
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -654,6 +658,10 @@ namespace Unity.GrantManager.Migrations
                     b.HasIndex("ApplicationFormId");
 
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("OidcSub");
+
+                    b.HasIndex("TeamId");
 
                     b.ToTable("UnityApplicationUserAssignment", (string)null);
                 });
@@ -2573,11 +2581,26 @@ namespace Unity.GrantManager.Migrations
                 {
                     b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
                         .WithMany()
-                        .HasForeignKey("ApplicationFormId");
+                        .HasForeignKey("ApplicationFormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Unity.GrantManager.Applications.Application", null)
                         .WithMany()
                         .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.ApplicationUserRoles.User", null)
+                        .WithMany()
+                        .HasForeignKey("OidcSub")
+                        .HasPrincipalKey("OidcSub")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.ApplicationUserRoles.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
