@@ -32,16 +32,11 @@ public class ApplicationStatusAppService : CrudAppService<
 
         var statuses = await _applicationStatusRepository.GetListAsync();        
 
-        var totalCount = await _applicationStatusRepository.CountAsync();
-
-        var mapperConfig = new MapperConfiguration(cfg => {
-            cfg.CreateMap<ApplicationStatus, ApplicationStatusDto>();
-        });
-        var mapper = mapperConfig.CreateMapper();
+        var totalCount = statuses.Count;     
                  
         return new PagedResultDto<ApplicationStatusDto>(
             totalCount,
-            mapper.Map<List<ApplicationStatus>, List<ApplicationStatusDto>>(statuses)
+            ObjectMapper.Map<List<ApplicationStatus>, List<ApplicationStatusDto>>(statuses)
         );
     }
 }
