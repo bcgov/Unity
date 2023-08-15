@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             catch (Exception)
             {
                 // This will not work if looking at Standard Realm - TODO:
+            }
         }
-
     }
 }

@@ -11,6 +11,8 @@ using AutoMapper;
 using System.Diagnostics;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using Volo.Abp.DependencyInjection;
+using Unity.GrantManager.Applications;
+
 namespace Unity.GrantManager.GrantApplications
 {
     [Authorize]
