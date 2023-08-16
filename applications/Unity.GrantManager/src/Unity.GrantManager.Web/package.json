@@ -4,9 +4,11 @@
   "private": true,
   "dependencies": {
     "@abp/aspnetcore.mvc.ui.theme.leptonxlite": "~2.2.2",
+    "@abp/font-awesome": "^7.3.2",
     "axios": "^1.4.0",
     "datatables.net-select": "1.7.0",
     "datatables.net-select-bs": "^1.7.0",
-    "formiojs": "^4.15.1"
+    "formiojs": "^4.15.1",
+    "pubsub-js": "^1.9.4"
   }
 }

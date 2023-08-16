@@ -46,3 +46,14 @@
     display: none;
     /* Add more common styles as needed */
 }
+
+.nav-tabs .nav-item .nav-link.active {
+    color: #003366;
+    border-bottom: 3px solid #003366;
+}
+
+.spinner-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
