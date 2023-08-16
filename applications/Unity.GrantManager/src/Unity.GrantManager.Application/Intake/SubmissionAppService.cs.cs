@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.Intake;
 
+[Authorize]
 public class SubmissionAppService : GrantManagerAppService, ISubmissionAppService
 {
     private readonly RestClient _intakeClient;

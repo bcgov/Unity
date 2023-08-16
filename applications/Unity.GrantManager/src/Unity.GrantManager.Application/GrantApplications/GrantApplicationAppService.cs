@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using System.Linq.Dynamic.Core;
-using Unity.GrantManager.Applications;
 using Microsoft.AspNetCore.Authorization;
+using AutoMapper;
+using System.Diagnostics;
+using static OpenIddict.Abstractions.OpenIddictConstants;
+using Volo.Abp.DependencyInjection;
+using Unity.GrantManager.Applications;
 using AutoMapper;
 using System.Diagnostics;
 using Volo.Abp.DependencyInjection;
@@ -16,6 +19,7 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Unity.GrantManager.GrantApplications
 {
+    [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(GrantApplicationAppService))]
     public class GrantApplicationAppService :
@@ -56,24 +60,15 @@ namespace Unity.GrantManager.GrantApplications
                 .Take(input.MaxResultCount);
             
             //Execute the query and get a list
-            var queryResult = await AsyncExecuter.ToListAsync(query);            
-
-            var mapperConfig = new MapperConfiguration(cfg => {
-                cfg.CreateMap<Application, GrantApplicationDto>();
-            });
-            var mapper = mapperConfig.CreateMapper();
-
-            var assigneeMapperConfig = new MapperConfiguration(cfg => {
-                cfg.CreateMap<ApplicationUserAssignment, GrantApplicationAssigneeDto>();
-            });
-            var assigneeMapper = assigneeMapperConfig.CreateMapper();
-
+            var queryResult = await AsyncExecuter.ToListAsync(query);           
+                     
+           
             //Convert the query result to a list of BookDto objects
             var applicationDtos = queryResult.Select(x =>
             {                
-                var appDto = mapper.Map<Application, GrantApplicationDto>(x.application);
+                var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
                 appDto.Status = x.appStatus.InternalStatus;
-                appDto.Assignees = getAssignees(assigneeMapper,x.application.Id);
+                appDto.Assignees = getAssignees(x.application.Id);
                 return appDto;
             }).ToList();
 
@@ -86,12 +81,12 @@ namespace Unity.GrantManager.GrantApplications
             );            
         }
 
-        public List<GrantApplicationAssigneeDto> getAssignees(IMapper assigneeMapper, Guid applicationId)
+        public List<GrantApplicationAssigneeDto> getAssignees(Guid applicationId)
         {
             IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).ToList();
             
-            var assignees = assigneeMapper.Map<List<ApplicationUserAssignment>, List<GrantApplicationAssigneeDto>>(assignments);
+            var assignees = ObjectMapper.Map<List<ApplicationUserAssignment>, List<GrantApplicationAssigneeDto>>(assignments);
             return assignees;
         }
 

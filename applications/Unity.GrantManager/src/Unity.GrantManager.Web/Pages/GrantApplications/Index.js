@@ -71,7 +71,7 @@
                 },
                 {
                     title: l('GrantApplicationStatus'),
-                    data: 'status',
+                    data: "status",              
                     className: 'data-table-header',
                 },
                 {

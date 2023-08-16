@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Intake
 {
+    [Authorize]
     public class FormAppService : GrantManagerAppService, IFormAppService
     {
         private readonly IConfiguration _configuration;
