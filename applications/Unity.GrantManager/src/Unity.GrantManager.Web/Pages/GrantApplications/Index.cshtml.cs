@@ -40,9 +40,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 {
                     groupUsers = await _keycloakClient.GetGroupUsersAsync(realm, groupId).ConfigureAwait(false);
                 }
-            }*/
-
-            IEnumerable<User> users = await _keycloakClient.GetUsersAsync(realm).ConfigureAwait(false);
+            }
             catch (Exception)
             {
                 // This will not work if looking at Standard Realm - TODO:
