@@ -13,6 +13,7 @@ $(function () {
         var components = JSON.stringify(data).replace(
             /simpleaddressadvanced/g,
             'address'
+        );
         components = components.replace(/simplebuttonadvanced/g, 'button');
         components = components.replace(/simplecheckboxadvanced/g, 'checkbox');
         components = components.replace(/simplecurrencyadvanced/g, 'currency');
