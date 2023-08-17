@@ -1,8 +1,8 @@
 ﻿@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.Brand
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.Menu
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.Toolbar
-<nav class="navbar navbar-expand-md navbar-dark bg-dark shadow-sm flex-column flex-md-row mb-4" id="main-navbar" style="min-height: 4rem;">
-    <div class="container">
+<nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="main-navbar">
+    <div class="container-fluid">
         @(await Component.InvokeAsync<MainNavbarBrandViewComponent>())
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#main-navbar-collapse" aria-controls="main-navbar-collapse"

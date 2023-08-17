@@ -1,19 +1,25 @@
 ﻿@page
 @using Volo.Abp.Users
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @model Unity.GrantManager.Web.Pages.IndexModel
 @inject ICurrentUser CurrentUser
 @section styles {
-<abp-style src="/Pages/Index.css" />
+    <abp-style src="/Pages/Index.css" />
 }
 @section scripts {
-<abp-script src="/Pages/Index.js" />
+    <abp-script src="/Pages/Index.js" />
+}
+@inject IPageLayout PageLayout
+
+@{
+    PageLayout.Content.Title = "Home";
 }
 
 
 <div class="main">
-    <div class="top-bar">
-        <img src="/images/logo/bcgov/BCID_H_rgb_pos.png" class="bc-logo"/>
-    </div>
+    @*<div class="top-bar">
+        <img src="/images/logo/bcgov/BCID_H_rgb_pos.png" class="bc-logo" />
+    </div>*@
 
     <div class="video-div">
         <div class="gradient-blue">
@@ -24,35 +30,32 @@
         </div>
 
         <div class="stock-title-blurb">
-            Introducing the "Unity Grant Management System" <br/><br/>A scalable, customizable platform revolutionizing Grant Management for the Province of BC. From building your application forms, though assessment, payments and reporting – UNITY offers and intuitive and efficient approach for Ministries to achieve their grant program objectives.
+            Introducing the "Unity Grant Management System" <br /><br />A scalable, customizable platform revolutionizing Grant Management for the Province of BC. From building your application forms, though assessment, payments and reporting – UNITY offers and intuitive and efficient approach for Ministries to achieve their grant program objectives.
         </div>
 
         <div class="splash-div">
-            <img src="https://localhost:44342/images/splash.png"  class="stock-video">
+            <img src="https://localhost:44342/images/splash.png" class="stock-video">
         </div>
     </div>
 
     <div class="bottom-content ">
-        <div class="row">
-            <div class="left"> 
-                <div id="parent">
-                    <div class="child">What is Unity Grant Management?</div>
-                    <div class="child">How to use Unity Grant Management</div>
-                    <div class="child"><a target="_blank" href="http://192.168.1.79:8081/app/form/create">Build a new Application Form</a></div>
-                    <div class="child"><a href="/GrantPrograms">Access Grant Programs</a></div>
-                    <div class="child">Review Current Applications</div>
-                    <div class="child">Tools for creating user-friendly Forms</div>
-                </div> 
+        <div class="left">
+            <div class="landing-navigation">
+                <div class="landing-navigation-child">What is Unity Grant Management?</div>
+                <div class="landing-navigation-child">How to use Unity Grant Management</div>
+                <div class="landing-navigation-child"><a target="_blank" href="http://192.168.1.79:8081/app/form/create">Build a new Application Form</a></div>
+                <div class="landing-navigation-child"><a href="/GrantPrograms">Access Grant Programs</a></div>
+                <div class="landing-navigation-child">Review Current Applications</div>
+                <div class="landing-navigation-child">Tools for creating user-friendly Forms</div>
             </div>
-            <div class="right"> 
-                <div class="grant-title ">
-                    What is Unity Grant Manager?
-                </div>
-                <div class="grant-blurb">
-                    Unity Grant Management is a comprehensive and user-friendly software platform designed to streamline the entire process of managing grants and funding initiatives. Unity Grant Management provides a robust set of tools to efficiently handle every aspect of the grant lifecycle, from initial application submission to post-award reporting.
-                </div>
+        </div>
+        <div class="right">
+            <div class="grant-title ">
+                What is Unity Grant Manager?
             </div>
-
+            <div class="grant-blurb">
+                Unity Grant Management is a comprehensive and user-friendly software platform designed to streamline the entire process of managing grants and funding initiatives. Unity Grant Management provides a robust set of tools to efficiently handle every aspect of the grant lifecycle, from initial application submission to post-award reporting.
+            </div>
         </div>
     </div>
 </div>

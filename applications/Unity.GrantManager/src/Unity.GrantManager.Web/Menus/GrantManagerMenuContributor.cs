@@ -29,7 +29,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.Home,
                 l["Menu:Home"],
                 "~/",
-                icon: "fas fa-home",
+                icon: "ms-Icon--Home",
                 order: 0
             )
         );
@@ -39,7 +39,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.GrantPrograms,
                 l["Menu:GrantPrograms"],
                 url: "/GrantPrograms",
-                icon: "fas fa-award",
+                icon: "ms-Icon--Bank",
                 order: 1
             )
         );
@@ -49,7 +49,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.Applications,
                 l["Menu:Applications"],
                 "~/GrantApplications",
-                icon: "fas fa-file-contract",
+                icon: "ms-Icon--PageList",
                 order: 2
             )
         );
@@ -59,7 +59,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.Payments,
                 l["Menu:Payments"],
                 "~/",
-                icon: "fas fa-landmark",
+                icon: "ms-Icon--PaymentCard",
                 order: 3
             )
         );

@@ -14,7 +14,8 @@
 @inject IPageLayout PageLayout
 @{
     Layout = null;
-    var containerClass = ViewBag.FluidLayout == true ? "container-fluid" : "container"; //TODO: Better and type-safe options
+    //var containerClass = ViewBag.FluidLayout == true ? "container-fluid" : "container"; //TODO: Better and type-safe options
+    var containerClass = "container-fluid";
 
     var pageTitle = ViewBag.Title == null ? BrandingProvider.AppName : ViewBag.Title; //TODO: Discard to get from Title
 
@@ -28,7 +29,11 @@
         pageTitle = PageLayout.Content.Title + pageTitle;
     }
 
+    var isHomePage = (PageLayout.Content.Title == "Home");
+
     var rtl = CultureHelper.IsRtl ? "rtl" : string.Empty;
+
+    var applicationContainerClass = isHomePage ? "" : "p-1";
 }
 
 <!DOCTYPE html>
@@ -54,12 +59,16 @@
 <body class="abp-application-layout @rtl">
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Application)
 
-    @(await Component.InvokeAsync<MainNavbarViewComponent>())
+    @(await Component.InvokeAsync<TopbarViewComponent>())
 
-    <div class="@containerClass">
-        @(await Component.InvokeAsync<PageAlertsViewComponent>())
-        <div id="AbpContentToolbar">
-            <div class="row mb-2">
+    @if(!@isHomePage) {
+        @(await Component.InvokeAsync<SubTopbarViewComponent>())
+    }
+
+    <div class="@containerClass unity-app-container p-0">
+        @*@(await Component.InvokeAsync<PageAlertsViewComponent>())*@
+        @*<div id="AbpContentToolbar">
+            <div class="row m-0 mb-2">
                 @(await Component.InvokeAsync<ContentTitleViewComponent>())
                 <div class="col">
                     <div class="text-end">
@@ -67,9 +76,18 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>*@
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.First, StandardLayouts.Application)
-        @RenderBody()
+        <div class="d-flex">
+
+            @if (!@isHomePage)
+            {
+                @(await Component.InvokeAsync<SideNavbarViewComponent>())
+            }
+            <div class="flex-fill @applicationContainerClass">
+                @RenderBody()
+            </div>
+        </div>
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.Last, StandardLayouts.Application)
     </div>
 
