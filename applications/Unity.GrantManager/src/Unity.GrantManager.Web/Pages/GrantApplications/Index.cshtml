@@ -23,6 +23,7 @@
         <abp-script src="/Pages/GrantApplications/Index.js" />
         <abp-script src="/libs/datatables/js/dataTables.select.min.js" />
         <abp-script src="/libs/datatables/js/select.bootstrap.min.js" />
+        <abp-script src="/libs/pubsub-js/src/pubsub.js" />
     } 
     else
     {
@@ -37,16 +38,10 @@
 
 @await Component.InvokeAsync("ActionBar")
 
+
 <abp-card>
-    <abp-card-header>
-        <abp-row>
-            <abp-column size="_6">
-                <abp-card-title>@L["GrantApplications"]</abp-card-title>
-            </abp-column>
-        </abp-row>
-    </abp-card-header>
     <abp-card-body>
-        <abp-table striped-rows="true" id="GrantApplicationsTable"></abp-table>
+        <abp-table hoverable-rows="true" id="GrantApplicationsTable"></abp-table>
     </abp-card-body>
 </abp-card>
 

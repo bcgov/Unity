@@ -22,39 +22,32 @@
 }
 
 
-<abp-card>
-   
-        <!-- Other content -->
-    @Html.Partial("_ActionTab")
-
-    
-
-    <abp-card-body>
-        <abp-row>
-            <abp-column size="_6">
-                <abp-button id="SaveDraftReviewButton"
-                            text="Save Draft"
-                            icon="floppy-disk"
-                            button-type="Primary" />
-            </abp-column>
-            <abp-column size="_6" class="text-end">
-                <abp-button id="ApproveReviewButton"
-                            text="Approve"
-                            icon="check"
-                            button-type="Outline_Secondary" />
-            </abp-column>
-        </abp-row>
-    </abp-card-body>
-</abp-card>
-
-<div class="container-fluid">
-    <abp-row>
-        <abp-column size="_12">
-            
-                @*TODO: Put FormIO handler here!*@
-                <div id="formio"></div>
-           
+<abp-tabs name="TabId" class="nav-justified">
+    <abp-tab name="nav-summerry" active="true" title="Application Summary">
+         <abp-row>
+                <abp-column size="_12" class="spinner-loader">
+                <div class="spinner-grow" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
         </abp-column>
+        </abp-row>
+        <div class="container-fluid">
+            <abp-row>
+                <abp-column size="_12">
 
-    </abp-row>
-</div>
+                    @*TODO: Put FormIO handler here!*@
+                    <div id="formio"></div>
+
+                </abp-column>
+
+            </abp-row>
+        </div>
+    </abp-tab>
+    <abp-tab name="nav-review-and-adudication" title="Review & Adjudication">
+        Review & Adjudication View
+    </abp-tab>
+    <abp-tab name="nav-approval" title="Approval">
+        Approval View
+    </abp-tab>
+</abp-tabs>
+
