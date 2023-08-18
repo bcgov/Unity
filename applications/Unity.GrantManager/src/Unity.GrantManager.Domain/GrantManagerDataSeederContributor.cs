@@ -5,8 +5,8 @@ using Unity.GrantManager.Applications;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
-using System.Collections.Generic;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp.Identity;
 
 namespace Unity.GrantManager;
 
@@ -14,20 +14,22 @@ public class GrantManagerDataSeederContributor
     : IDataSeedContributor, ITransientDependency
 {
     private readonly IRepository<GrantProgram, Guid> _grantProgramRepository;
-    private readonly IIntakeRepository _intakeRepository;
-    private readonly IApplicationFormRepository _applicationFormRepository;
-    private readonly IApplicantRepository _applicantRepository;
+    private readonly IRepository<Intake, Guid> _intakeRepository;
+    private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
+    private readonly IRepository<Applicant, Guid> _applicantRepository;
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationUserAssignmentRepository _applicationUserAssignmentRepository;
+    private readonly IdentityUserManager _identityUserManager;
 
     public GrantManagerDataSeederContributor(IRepository<GrantProgram, Guid> grantProgramRepository,
-        IIntakeRepository intakeRepository,
-        IApplicationFormRepository applicationFormRepository,
-        IApplicantRepository applicantRepository,
+        IRepository<Intake, Guid> intakeRepository,
+        IRepository<ApplicationForm, Guid> applicationFormRepository,
+        IRepository<Applicant, Guid> applicantRepository,
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
-        IApplicationUserAssignmentRepository applicationUserAssignmentRepository)
+        IApplicationUserAssignmentRepository applicationUserAssignmentRepository,
+        IdentityUserManager identityUserManager)
     {
         _grantProgramRepository = grantProgramRepository;
         _intakeRepository = intakeRepository;
@@ -36,93 +38,114 @@ public class GrantManagerDataSeederContributor
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
         _applicationUserAssignmentRepository = applicationUserAssignmentRepository;
+        _identityUserManager = identityUserManager;
     }
-
 
     public async Task SeedAsync(DataSeedContext context)
     {
-        var spaceFarms = await _grantProgramRepository.InsertAsync(
-            new GrantProgram
-            {
-                ProgramName = "Space Farms Grant Program",
-                Type = GrantProgramType.Agriculture,
-                PublishDate = new DateTime(2023, 6, 8),
-            },
-            autoSave: true
+        // TODO: Neaten up with Upsert
+
+        if (!await _grantProgramRepository.AnyAsync(s => s.ProgramName == "Space Farms Grant Program"))
+        {
+            await _grantProgramRepository.InsertAsync(
+                new GrantProgram
+                {
+                    ProgramName = "Space Farms Grant Program",
+                    Type = GrantProgramType.Agriculture,
+                    PublishDate = new DateTime(2023, 6, 8),
+                },
+                autoSave: true
+            );
+        }
+
+        if (!await _grantProgramRepository.AnyAsync(s => s.ProgramName == "Fictional Arts Accelerator Grant"))
+        {
+            await _grantProgramRepository.InsertAsync(
+                 new GrantProgram
+                 {
+                     ProgramName = "Fictional Arts Accelerator Grant",
+                     Type = GrantProgramType.Arts,
+                     PublishDate = new DateTime(2023, 5, 15),
+                 },
+                 autoSave: true
+             );
+        }
+
+        if (!await _grantProgramRepository.AnyAsync(s => s.ProgramName == "New Approaches in Counting Grant"))
+        {
+            await _grantProgramRepository.InsertAsync(
+                new GrantProgram
+                {
+                    ProgramName = "New Approaches in Counting Grant",
+                    Type = GrantProgramType.Research,
+                    PublishDate = new DateTime(2020, 5, 15),
+                },
+                autoSave: true
+            );
+        }
+
+        if (!await _grantProgramRepository.AnyAsync(s => s.ProgramName == "BizBusiness Fund"))
+        {
+            await _grantProgramRepository.InsertAsync(
+                new GrantProgram
+                {
+                    ProgramName = "BizBusiness Fund",
+                    Type = GrantProgramType.Business,
+                    PublishDate = new DateTime(1992, 01, 01),
+                },
+                autoSave: true
+            );
+        }
+
+        if (!await _grantProgramRepository.AnyAsync(s => s.ProgramName == "Historically Small Books Preservation Grant"))
+        {
+            await _grantProgramRepository.InsertAsync(
+                new GrantProgram
+                {
+                    ProgramName = "Historically Small Books Preservation Grant",
+                    Type = GrantProgramType.Arts,
+                    PublishDate = new DateTime(2002, 01, 01),
+                },
+                autoSave: true
+            );
+        }
+
+        Intake? spaceFarmsIntake1 = await _intakeRepository.FirstOrDefaultAsync(s => s.IntakeName == "2022 Intake");
+        spaceFarmsIntake1 ??= await _intakeRepository.InsertAsync(
+                new Intake
+                {
+                    IntakeName = "2022 Intake",
+                    StartDate = new DateOnly(2022, 1, 1),
+                    EndDate = new DateOnly(2023, 1, 1),
+                },
+                autoSave: true
         );
 
-        var fictionalArts = await _grantProgramRepository.InsertAsync(
-            new GrantProgram
-            {
-                ProgramName = "Fictional Arts Accelerator Grant",
-                Type = GrantProgramType.Arts,
-                PublishDate = new DateTime(2023, 5, 15),
-            },
-            autoSave: true
-        );
-
-        var newApproaches = await _grantProgramRepository.InsertAsync(
-            new GrantProgram
-            {
-                ProgramName = "New Approaches in Counting Grant",
-                Type = GrantProgramType.Research,
-                PublishDate = new DateTime(2020, 5, 15),
-            },
-            autoSave: true
-        );
-
-        var bizBusiness = await _grantProgramRepository.InsertAsync(
-            new GrantProgram
-            {
-                ProgramName = "BizBusiness Fund",
-                Type = GrantProgramType.Business,
-                PublishDate = new DateTime(1992, 01, 01),
-            },
-            autoSave: true
-        );
-
-        var historicalBooks = await _grantProgramRepository.InsertAsync(
-            new GrantProgram
-            {
-                ProgramName = "Historically Small Books Preservation Grant",
-                Type = GrantProgramType.Arts,
-                PublishDate = new DateTime(2002, 01, 01),
-            },
-            autoSave: true
-        );
-
-        var spaceFarmsIntake1 = await _intakeRepository.InsertAsync(
-            new Intake
-            {
-                IntakeName = "2022 Intake",
-                StartDate = new DateOnly(2022,1,1),
-                EndDate = new DateOnly(2023,1,1),
-            },
-            autoSave: true
-        );
-
-        var spaceFarmsIntake2 = await _intakeRepository.InsertAsync(
+        Intake? spaceFarmsIntake2 = await _intakeRepository.FirstOrDefaultAsync(s => s.IntakeName == "2023 Intake");
+        spaceFarmsIntake2 ??= await _intakeRepository.InsertAsync(
             new Intake
             {
                 IntakeName = "2023 Intake",
-                StartDate = new DateOnly(2023,1,1),
-                EndDate = new DateOnly(2024,1,1),
+                StartDate = new DateOnly(2023, 1, 1),
+                EndDate = new DateOnly(2024, 1, 1),
             },
             autoSave: true
         );
 
-        var appForm1 = await _applicationFormRepository.InsertAsync(
+        ApplicationForm? appForm1 = await _applicationFormRepository.FirstOrDefaultAsync(s => s.ApplicationFormName == "Space Farms Intake 1 Form 1");
+        appForm1 ??= await _applicationFormRepository.InsertAsync(
             new ApplicationForm
             {
                 IntakeId = spaceFarmsIntake1.Id,
                 ApplicationFormName = "Space Farms Intake 1 Form 1",
-                ChefsApplicationFormGuid="123456",
-                ChefsCriteriaFormGuid="213121"
+                ChefsApplicationFormGuid = "123456",
+                ChefsCriteriaFormGuid = "213121"
             },
             autoSave: true
         );
 
-        var appForm2 = await _applicationFormRepository.InsertAsync(
+        ApplicationForm? appForm2 = await _applicationFormRepository.FirstOrDefaultAsync(s => s.ApplicationFormName == "Space Farms Intake 1 Form 2");
+        appForm2 ??= await _applicationFormRepository.InsertAsync(
             new ApplicationForm
             {
                 IntakeId = spaceFarmsIntake1.Id,
@@ -133,112 +156,126 @@ public class GrantManagerDataSeederContributor
             autoSave: true
         );
 
-        var applicant1 = await _applicantRepository.InsertAsync(
-            new Applicant { 
-                ApplicantName = " John Smith" 
+        Applicant? applicant1 = await _applicantRepository.FirstOrDefaultAsync(s => s.ApplicantName == " John Smith");
+        applicant1 ??= await _applicantRepository.InsertAsync(
+            new Applicant
+            {
+                ApplicantName = " John Smith"
             }, autoSave: true
-        );        
+        );
 
-        var status1 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.IN_PROGRESS);
+        status1 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS01",
+                StatusCode = ApplicationStatusConsts.IN_PROGRESS,
                 ExternalStatus = "In progress",
                 InternalStatus = "In progress"
             }
         );
 
-        var status2 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status2 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.SUBMITTED);
+        status2 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS02",
+                StatusCode = "SUBMITTED",
                 ExternalStatus = "Submitted",
                 InternalStatus = "Submitted"
             }
         );
 
-        var status3 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status3 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.ASSIGNED);
+        status3 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS03",
+                StatusCode = "ASSIGNED",
                 ExternalStatus = "Under Review",
                 InternalStatus = "Assigned"
             }
         );
 
-        var status4 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status4 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.WITHDRAWN);
+        status4 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS04",
+                StatusCode = "WITHDRAWN",
                 ExternalStatus = "Withdrawn",
                 InternalStatus = "Withdrawn"
             }
         );
 
-        var status5 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status5 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.CLOSED);
+        status5 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS05",
+                StatusCode = "CLOSED",
                 ExternalStatus = "Closed",
                 InternalStatus = "Closed"
             }
         );
 
-        var status6 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status6 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.UNDER_INITIAL_REVIEW);
+        status6 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS06",
+                StatusCode = "UNDER_INITIAL_REVIEW",
                 ExternalStatus = "Under Review",
                 InternalStatus = "Under Initial Review"
             }
         );
 
-        var status7 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status7 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.INITITAL_REVIEW_COMPLETED);
+        status7 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS07",
+                StatusCode = "INITITAL_REVIEW_COMPLETED",
                 ExternalStatus = "Under Review",
                 InternalStatus = "Initial Review Completed"
             }
         );
 
-        var status8 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status8 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.UNDER_ADJUDICATION);
+        status8 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS08",
+                StatusCode = "UNDER_ADJUDICATION",
                 ExternalStatus = "Under Review",
                 InternalStatus = "Under Adjudication"
             }
         );
 
-        var status9 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status9 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.ADJUDICATION_COMPLETED);
+        status9 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS09",
+                StatusCode = "ADJUDICATION_COMPLETED",
                 ExternalStatus = "Under Review",
                 InternalStatus = "Adjudication Completed"
             }
         );
 
-        var status10 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status10 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.GRANT_APPROVED);
+        status10 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS10",
+                StatusCode = "GRANT_APPROVED",
                 ExternalStatus = "Grant Approved",
                 InternalStatus = "Grant Approved"
             }
         );
 
-        var status11 = await _applicationStatusRepository.InsertAsync(
+        ApplicationStatus? status11 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.GRANT_NOT_APPROVED);
+        status11 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "STATUS11",
+                StatusCode = "GRANT_NOT_APPROVED",
                 ExternalStatus = "Grant Not Approved",
                 InternalStatus = "Grant Not Approved"
             }
         );
 
-        var application1 = await _applicationRepository.InsertAsync(
+        Application? application1 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Application For Space Farms Grant");
+        application1 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -254,14 +291,15 @@ public class GrantManagerDataSeederContributor
             }, autoSave: true
         );
 
-        var application2 = await _applicationRepository.InsertAsync(
+        Application? application2 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Application For BizBusiness Fund");
+        application2 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
                 ProjectName = "Application For BizBusiness Fund",
                 ApplicationFormId = appForm2.Id,
                 ApplicationStatusId = status2.Id,
-                ReferenceNo =  "3445",
+                ReferenceNo = "3445",
                 EligibleAmount = 345.5,
                 RequestedAmount = 765.4,
                 ProposalDate = new DateTime(2022, 1, 1),
@@ -270,7 +308,8 @@ public class GrantManagerDataSeederContributor
             }, autoSave: true
         );
 
-        var application3 = await _applicationRepository.InsertAsync(
+        Application? application3 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "New Helicopter Fund");
+        application3 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -279,13 +318,13 @@ public class GrantManagerDataSeederContributor
                 ProjectName = "New Helicopter Fund",
                 ReferenceNo = "ABC123",
                 EligibleAmount = 10000.00,
-                RequestedAmount = 12500.00,                
+                RequestedAmount = 12500.00,
                 ProposalDate = new DateTime(2022, 10, 02),
-                SubmissionDate = new DateTime(2023, 01, 02)                
-            }
-        );
+                SubmissionDate = new DateTime(2023, 01, 02)
+            });
 
-        var application4 = await _applicationRepository.InsertAsync(
+        Application? application4 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Shoebox");
+        application4 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -294,13 +333,13 @@ public class GrantManagerDataSeederContributor
                 ProjectName = "Shoebox",
                 ReferenceNo = "HCA123",
                 EligibleAmount = 22300.00,
-                RequestedAmount = 332500.00,                        
+                RequestedAmount = 332500.00,
                 ProposalDate = new DateTime(2022, 11, 03),
-                SubmissionDate = new DateTime(2023, 1, 04)                
-            }
-         );
+                SubmissionDate = new DateTime(2023, 1, 04)
+            });
 
-        var application5 = await _applicationRepository.InsertAsync(
+        Application? application5 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Pony Club");
+        application5 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -309,12 +348,13 @@ public class GrantManagerDataSeederContributor
                 ProjectName = "Pony Club",
                 ReferenceNo = "111BGC",
                 EligibleAmount = 2212400.00,
-                RequestedAmount = 2312500.00,                
+                RequestedAmount = 2312500.00,
                 ProposalDate = new DateTime(2021, 01, 03),
-                SubmissionDate = new DateTime(2023, 02, 02)                
-            }
-        );
-        var application6 = await _applicationRepository.InsertAsync(
+                SubmissionDate = new DateTime(2023, 02, 02)
+            });
+
+        Application? application6 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Village Fountain Repair");
+        application6 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -326,9 +366,10 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 11100.00,
                 ProposalDate = new DateTime(2024, 05, 02),
                 SubmissionDate = new DateTime(2025, 01, 03)
-            }
-         );
-        var application7 = await _applicationRepository.InsertAsync(
+            });
+
+        Application? application7 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Hoover");
+        application7 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -340,9 +381,10 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 332500.00,
                 ProposalDate = new DateTime(2022, 10, 02),
                 SubmissionDate = new DateTime(2023, 01, 02)
-            }
-            );
-        var application8 = await _applicationRepository.InsertAsync(
+            });
+
+        Application? application8 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Tree Planting");
+        application8 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -354,10 +396,10 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 444400.00,
                 ProposalDate = new DateTime(2023, 10, 03),
                 SubmissionDate = new DateTime(2023, 02, 02)
+            });
 
-            }
-            );
-        var application9 = await _applicationRepository.InsertAsync(
+        Application? application9 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Pizza Joint");
+        application9 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -369,10 +411,10 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 32100.00,
                 ProposalDate = new DateTime(2022, 09, 01),
                 SubmissionDate = new DateTime(2023, 08, 03)
+            });
 
-            }
-            );
-        var application10 = await _applicationRepository.InsertAsync(
+        Application? application10 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Froghopper Express");
+        application10 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -383,10 +425,11 @@ public class GrantManagerDataSeederContributor
                 EligibleAmount = 3312300.00,
                 RequestedAmount = 11100.00,
                 ProposalDate = new DateTime(2022, 11, 03),
-                SubmissionDate = new DateTime(2023, 11, 05)                             
-            }
-            );
-        var application11 = await _applicationRepository.InsertAsync(
+                SubmissionDate = new DateTime(2023, 11, 05)
+            });
+
+        Application? application11 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Courtyard Landscaping");
+        application11 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -398,9 +441,10 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 22500.00,
                 ProposalDate = new DateTime(2022, 10, 02),
                 SubmissionDate = new DateTime(2023, 01, 02),
-            }
-            );
-        var application12 = await _applicationRepository.InsertAsync(
+            });
+
+        Application? application12 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Disco Ball");
+        application12 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -412,9 +456,10 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 3500.00,
                 ProposalDate = new DateTime(2023, 10, 03),
                 SubmissionDate = new DateTime(2023, 11, 02)
-            }
-            );
-        var application13 = await _applicationRepository.InsertAsync(
+            });
+
+        Application? application13 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Gymnasium Repair");
+        application13 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -426,9 +471,10 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 112500.00,
                 ProposalDate = new DateTime(2023, 10, 02),
                 SubmissionDate = new DateTime(2023, 01, 02)
-            }
-            );
-        var application14 = await _applicationRepository.InsertAsync(
+            });
+
+        Application? application14 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Holiday Abroad Funding");
+        application14 ??= await _applicationRepository.InsertAsync(
             new Application
             {
                 ApplicantId = applicant1.Id,
@@ -440,19 +486,21 @@ public class GrantManagerDataSeederContributor
                 RequestedAmount = 33500.00,
                 ProposalDate = new DateTime(2022, 10, 02),
                 SubmissionDate = new DateTime(2023, 01, 02)
-            }
-            );
-        var appUserAssignment1 = _applicationUserAssignmentRepository.InsertAsync(
+            });
+
+        ApplicationUserAssignment? appUserAssignment1 = await _applicationUserAssignmentRepository.FirstOrDefaultAsync(s => s.OidcSub == "12345");
+        appUserAssignment1 ??= await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
                 OidcSub = "12345",
                 ApplicationFormId = appForm1.Id,
                 ApplicationId = application1.Id,
                 AssigneeDisplayName = "John Smith",
-                AssignmentTime = new DateTime(2023,01,02)
-            }
-            );
-        var appUserAssignment2 = _applicationUserAssignmentRepository.InsertAsync(
+                AssignmentTime = new DateTime(2023, 01, 02)
+            });
+
+        ApplicationUserAssignment? appUserAssignment2 = await _applicationUserAssignmentRepository.FirstOrDefaultAsync(s => s.OidcSub == "3456");
+        appUserAssignment2 ??= await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
                 OidcSub = "3456",
@@ -460,10 +508,10 @@ public class GrantManagerDataSeederContributor
                 ApplicationId = application2.Id,
                 AssigneeDisplayName = "Will Smith",
                 AssignmentTime = new DateTime(2023, 02, 02)
-            }
-            );
+            });
 
-        var appUserAssignment31 = _applicationUserAssignmentRepository.InsertAsync(
+        ApplicationUserAssignment? appUserAssignment31 = await _applicationUserAssignmentRepository.FirstOrDefaultAsync(s => s.OidcSub == "23564");
+        appUserAssignment31 ??= await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
                 OidcSub = "23564",
@@ -471,10 +519,10 @@ public class GrantManagerDataSeederContributor
                 ApplicationId = application3.Id,
                 AssigneeDisplayName = "John Doe",
                 AssignmentTime = new DateTime(2023, 02, 02)
-            }
-            );
+            });
 
-        var appUserAssignment32 = _applicationUserAssignmentRepository.InsertAsync(
+        ApplicationUserAssignment? appUserAssignment32 = await _applicationUserAssignmentRepository.FirstOrDefaultAsync(s => s.OidcSub == "76857");
+        appUserAssignment32 ??= await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
                 OidcSub = "76857",
@@ -482,9 +530,10 @@ public class GrantManagerDataSeederContributor
                 ApplicationId = application3.Id,
                 AssigneeDisplayName = "Joe Wilson",
                 AssignmentTime = new DateTime(2023, 04, 04)
-            }
-            );
-        var appUserAssignment41 = _applicationUserAssignmentRepository.InsertAsync(
+            });
+
+        ApplicationUserAssignment? appUserAssignment41 = await _applicationUserAssignmentRepository.FirstOrDefaultAsync(s => s.OidcSub == "38332");
+        appUserAssignment41 ??= await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
                 OidcSub = "38332",
@@ -492,20 +541,21 @@ public class GrantManagerDataSeederContributor
                 ApplicationId = application4.Id,
                 AssigneeDisplayName = "Eva Harris",
                 AssignmentTime = new DateTime(2023, 05, 02)
-            }
-            );
+            });
 
-        var appUserAssignment42 = _applicationUserAssignmentRepository.InsertAsync(
+        ApplicationUserAssignment? appUserAssignment42 = await _applicationUserAssignmentRepository.FirstOrDefaultAsync(s => s.OidcSub == "76857");
+        appUserAssignment42 ??= await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
-                OidcSub = "76857",
+                OidcSub = "777888",
                 ApplicationFormId = appForm1.Id,
                 ApplicationId = application4.Id,
                 AssigneeDisplayName = "Michael John",
                 AssignmentTime = new DateTime(2023, 06, 06)
-            }
-            );
-        var appUserAssignment43 = _applicationUserAssignmentRepository.InsertAsync(
+            });
+
+        ApplicationUserAssignment? appUserAssignment43 = await _applicationUserAssignmentRepository.FirstOrDefaultAsync(s => s.OidcSub == "764658");
+        appUserAssignment43 ??= await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
                 OidcSub = "764658",
@@ -513,7 +563,41 @@ public class GrantManagerDataSeederContributor
                 ApplicationId = application4.Id,
                 AssigneeDisplayName = "Kevin Douglas",
                 AssignmentTime = new DateTime(2023, 07, 07)
-            }
-            );
+            });
+
+
+        // Seed some application users for testing
+        var identityUser1 = await _identityUserManager.FindByEmailAsync("steve.rogers@example.com");
+        if (identityUser1 == null)
+        {
+            identityUser1 = new(Guid.NewGuid(), "steve.rogers", "steve.rogers@example.com")
+            {
+                Name = "Steve",
+                Surname = "Rogers"
+            };
+            await _identityUserManager.CreateAsync(identityUser1);
+        }
+
+        var identityUser2 = await _identityUserManager.FindByEmailAsync("bruce.banner@example.com");
+        if (identityUser2 == null)
+        {
+            identityUser2 = new(Guid.NewGuid(), "bruce.banner", "testuser2@example.com")
+            {
+                Name = "Bruce",
+                Surname = "Banner"
+            };
+            await _identityUserManager.CreateAsync(identityUser2);
+        }
+
+        var identityUser3 = await _identityUserManager.FindByEmailAsync("natasha.romanoff@example.com");
+        if (identityUser3 == null)
+        {
+            identityUser3 = new(Guid.NewGuid(), "natasha.romanoff", "testuser3@example.com")
+            {
+                Name = "Natasha",
+                Surname = "Romanoff"
+            };
+            await _identityUserManager.CreateAsync(identityUser3);
+        };
     }
 }

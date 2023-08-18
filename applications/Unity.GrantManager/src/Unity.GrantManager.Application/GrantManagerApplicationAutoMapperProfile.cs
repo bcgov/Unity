@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System.Collections.Generic;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 
@@ -14,7 +15,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
 
         CreateMap<Application, GrantApplicationDto>();   
         CreateMap<ApplicationUserAssignment, GrantApplicationAssigneeDto>();
-        CreateMap<ApplicationStatus, ApplicationStatusDto>();
+        CreateMap<ApplicationStatus, ApplicationStatusDto>();        
     }
 }
 
