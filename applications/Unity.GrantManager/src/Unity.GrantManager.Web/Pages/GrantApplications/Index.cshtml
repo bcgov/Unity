@@ -15,9 +15,9 @@
     @if (Model.FormId == null)
     {
         <script>
-            let userGroups = [];
-            @foreach (var userGroup in Model.groupUsers) {
-                @:userGroups.push("{'Id':"+"'@userGroup.Id', 'UserName':"+"'@userGroup.UserName', 'FirstName':"+"'@userGroup.FirstName', 'LastName':"+"'@userGroup.LastName', 'Email':"+"'@userGroup.Email'}");
+            let users = [];
+            @foreach (var user in Model.Users) {
+                @:users.push("{'Id':" + "'@user.Id', 'UserName':" + "'@user.UserName', 'FirstName':" + "'@user.Name', 'LastName':" + "'@user.Surname', 'Email':" + "'@user.Email'}");
             }
         </script>
         <abp-script src="/Pages/GrantApplications/Index.js" />

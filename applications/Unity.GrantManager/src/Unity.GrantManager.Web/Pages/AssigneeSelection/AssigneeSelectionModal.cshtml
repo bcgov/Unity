@@ -10,11 +10,10 @@
     <abp-modal-header title="Adjudication Users"></abp-modal-header>
     <abp-modal-body>
         <div>
-            <abp-select  asp-for="@Model.assigneeId" asp-items="@Model.assigneeList" label="Users">
-                    <option value="">Select a user</option>
-        </abp-select>
-        </div>
-       
+            <abp-select  asp-for="@Model.AssigneeId" asp-items="@Model.AssigneeList" label="Users">
+                <option value="">Select a user</option>
+            </abp-select>
+        </div>       
     </abp-modal-body>
     <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
 </abp-modal>

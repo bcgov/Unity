@@ -7,6 +7,8 @@ using Volo.Abp;
 using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using OpenIddict.Abstractions;
+using Microsoft.AspNetCore.Http;
 
 namespace Unity.GrantManager.Web.Identity
 {
@@ -32,7 +34,7 @@ namespace Unity.GrantManager.Web.Identity
 
         protected async Task CreateOrUpdateAsync(TokenValidatedContext validatedTokenContext)
         {
-            var user = await _userManager.FindByIdAsync(validatedTokenContext.SecurityToken.Subject.Replace("@idir",""));
+            var user = await _userManager.FindByIdAsync(validatedTokenContext.SecurityToken.Subject.Replace("@idir", ""));
 
             if (user == null)
             {
@@ -42,6 +44,12 @@ namespace Unity.GrantManager.Web.Identity
             {
                 await UpdateCurrentUserAsync(user, validatedTokenContext);
             }
+
+            // This is needed for lookup - for now every user can get it until we lock this down further
+            if (!validatedTokenContext.Principal!.HasClaim(UnityClaimsTypes.Role, IdentityPermissions.Users.Default))
+            {
+                validatedTokenContext.Principal!.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
+            }
         }
 
         protected virtual async Task CreateCurrentUserAsync(TokenValidatedContext validatedTokenContext)
@@ -50,13 +58,14 @@ namespace Unity.GrantManager.Web.Identity
             var claims = token.Claims;
 
             var userNameClaim = claims.FirstOrDefault(x => x.Type == UnityClaimsTypes.Username);
-
             var user = new IdentityUser(
                     Guid.Parse(validatedTokenContext.SecurityToken.Subject.Replace("@idir", "")),
-                    userNameClaim!.Value, //CurrentUser.UserName provides FullName instead of UserName
-                    GetClaimValue(token, AbpClaimTypes.Email) ?? "blank@blank.blank");
-            // abp want an email to create user locally
-            //CurrentTenant.Id);
+                    userNameClaim!.Value,
+                    GetClaimValue(token, AbpClaimTypes.Email) ?? "blank@example.com")
+            {
+                Name = claims.FirstOrDefault(x => x.Type == UnityClaimsTypes.GivenName)?.Value,
+                Surname = claims.FirstOrDefault(x => x.Type == UnityClaimsTypes.FamilyName)?.Value
+            };
 
             var isEmailVerified = claims.FirstOrDefault(x => x.Type == "email_verified")?.Value == "true";
             user.SetEmailConfirmed(isEmailVerified);
@@ -80,7 +89,7 @@ namespace Unity.GrantManager.Web.Identity
 
             if (user.Email != GetClaimValue(token, AbpClaimTypes.Email))
             {
-                await _userManager.SetEmailAsync(user, GetClaimValue(token, AbpClaimTypes.Email) ?? "blank@blank.blank");
+                await _userManager.SetEmailAsync(user, GetClaimValue(token, AbpClaimTypes.Email) ?? "blank@example.com");
             }
 
             if (user.PhoneNumber != GetClaimValue(token, AbpClaimTypes.PhoneNumber))
