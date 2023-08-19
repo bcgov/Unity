@@ -7,6 +7,9 @@ $(function () {
     var statusUpdateModal = new abp.ModalManager({
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
+    var approveApplicationsModal = new abp.ModalManager({
+        viewUrl: 'Approve/ApproveApplicationsModal'
+    });
 
     assignApplicationModal.onResult(function () {
         abp.notify.success(
@@ -14,7 +17,7 @@ $(function () {
             'Application Assinee'
         );
         PubSub.publish("refresh_application_list");
-    });
+    });    
     statusUpdateModal.onResult(function () {
         abp.notify.success(
             'The application status has been successfully updated',
@@ -22,7 +25,16 @@ $(function () {
         );
         PubSub.publish("refresh_application_list");
     });
-
+    approveApplicationsModal.onResult(function () {
+        abp.notify.success(
+            'The application/s has been successfully approved',
+            'Approve Applications'
+        );
+        PubSub.publish("refresh_application_list");
+    });
+    approveApplicationsModal.onClose(function () {
+        PubSub.publish("refresh_application_list");
+    });
     
     const select_application_subscription = PubSub.subscribe("select_application", (msg, data) => {
         selectedApplicationIds.push(data.id);
@@ -49,6 +61,11 @@ $(function () {
 
     $('#statusUpdate').click(function () {
         statusUpdateModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+        });
+    });
+    $('#approveApplications').click(function () {
+        approveApplicationsModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
         });
     });
