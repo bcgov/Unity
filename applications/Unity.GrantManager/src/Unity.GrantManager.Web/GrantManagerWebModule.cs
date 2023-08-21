@@ -224,7 +224,8 @@ public class GrantManagerWebModule : AbpModule
         {
             Configure<AbpVirtualFileSystemOptions>(options =>
             {
-                options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Domain.Shared"));
+                // TODO: Not used but raises error in container: System.IO.DirectoryNotFoundException: /Unity.GrantManager.Domain.Shared/
+                // options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Domain.Shared"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Domain"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Application.Contracts"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Application"));
