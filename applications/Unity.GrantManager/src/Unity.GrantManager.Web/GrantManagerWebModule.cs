@@ -38,6 +38,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Web.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Volo.Abp.Identity;
+using Microsoft.IdentityModel.Logging;
 
 namespace Unity.GrantManager.Web;
 
@@ -270,6 +271,7 @@ public class GrantManagerWebModule : AbpModule
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
+            IdentityModelEventSource.ShowPII = true;
         }
 
         app.UseAbpRequestLocalization();

@@ -10,6 +10,9 @@ $(function () {
     var approveApplicationsModal = new abp.ModalManager({
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
+    var dontApproveApplicationsModal = new abp.ModalManager({
+        viewUrl: 'Approve/ApproveApplicationsModal'
+    });
 
     assignApplicationModal.onResult(function () {
         abp.notify.success(
@@ -32,7 +35,17 @@ $(function () {
         );
         PubSub.publish("refresh_application_list");
     });
+    dontApproveApplicationsModal.onResult(function () {
+        abp.notify.success(
+            'The application/s has now been disapproved',
+            'Not Approve Applications'
+        );
+        PubSub.publish("refresh_application_list");
+    });
     approveApplicationsModal.onClose(function () {
+        PubSub.publish("refresh_application_list");
+    });
+    dontApproveApplicationsModal.onClose(function () {
         PubSub.publish("refresh_application_list");
     });
     
@@ -67,6 +80,17 @@ $(function () {
     $('#approveApplications').click(function () {
         approveApplicationsModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
+            operation: 'GRANT_APPROVED',
+            message: 'Are you sure you want to approve the selected application/s?',
+            title: 'Approve Applications',
+        });
+    });
+    $('#dontApproveApplications').click(function () {
+        dontApproveApplicationsModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+            operation: 'GRANT_NOT_APPROVED',
+            message: 'Are you sure you want to disapprove the selected application/s?', 
+            title: 'Not Approve Applications',
         });
     });
     $('#externalLink').click(function () {

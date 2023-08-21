@@ -16,6 +16,12 @@ public class ApproveApplicationsModalModel : AbpPageModel
         
     [TempData]
     public string selectedApplicationIds { get; set; } = "";
+    [TempData]
+    public string operationStatusCode { get; set; } = "";
+    [TempData]
+    public string popupMessage { get; set; } = "";
+    [TempData]
+    public string popupTitle { get; set; } = "";
 
     public List<SelectListItem> statusList { get; set; }
 
@@ -28,9 +34,12 @@ public class ApproveApplicationsModalModel : AbpPageModel
         _applicationService = applicationService;
     }
 
-    public async Task OnGetAsync(string applicationIds)
+    public async Task OnGetAsync(string applicationIds, string operation, string message, string title)
     {
         selectedApplicationIds = applicationIds;
+        operationStatusCode = operation;
+        popupMessage = message;
+        popupTitle = title;
     }     
 
     public async Task<IActionResult> OnPostAsync()
@@ -39,14 +48,14 @@ public class ApproveApplicationsModalModel : AbpPageModel
         {
             Guid statusId = Guid.Empty;
             var statuses = await _statusService.GetListAsync();
-            var approvedStatus = statuses.FirstOrDefault(status => status.StatusCode == "GRANT_APPROVED");
+            var approvedStatus = statuses.FirstOrDefault(status => status.StatusCode == operationStatusCode);
             if (approvedStatus != null)
             {
                 statusId = approvedStatus.Id;                
             }
             else
             {
-                throw new Exception("Grant Approved status is not found in the database!");
+                throw new Exception(operationStatusCode + " status code is not found in the database!");
             }
 
             var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(selectedApplicationIds);           
