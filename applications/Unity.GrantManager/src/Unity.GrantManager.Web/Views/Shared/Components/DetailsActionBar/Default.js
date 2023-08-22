@@ -12,15 +12,13 @@ $(function () {
         abp.notify.success(
             'This application has been successfully approved',
             'Approve Application'
-        );
-        PubSub.publish("refresh_application_list");
+        );        
     });
     dontApproveApplicationsModal.onResult(function () {
         abp.notify.success(
             'This application has now been disapproved',
             'Not Approve Application'
-        );
-        PubSub.publish("refresh_application_list");
+        );        
     });
            
     $('#approveApplicationsDetails').click(function () {
