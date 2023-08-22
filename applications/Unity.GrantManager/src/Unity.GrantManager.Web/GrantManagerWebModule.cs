@@ -36,8 +36,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Identity;
-using Keycloak.Net;
 using Microsoft.IdentityModel.Tokens;
+using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.Web;
 
@@ -48,11 +48,11 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAutofacModule),
     typeof(AbpIdentityWebModule),
     typeof(AbpSettingManagementWebModule),
-    typeof(AbpAccountWebOpenIddictModule),
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
+    typeof(AbpAccountWebOpenIddictModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
     )]
 public class GrantManagerWebModule : AbpModule
@@ -82,29 +82,12 @@ public class GrantManagerWebModule : AbpModule
         });
     }
 
-    private void ConfigureKeyCloakClient(ServiceConfigurationContext context)
-    {
-        // This wont work with a standard realm implementation, as there is a different
-        // set of API's that need to be consumed
-        context.Services.AddSingleton<KeycloakClient>(provider =>
-        {
-            var configuration = context.Services.GetConfiguration();
-            string url = configuration["KeyCloakApi:BaseUri"];
-
-            KeycloakClient keyCloakClient = new(url, configuration["KeyCloakApi:ClientSecret"],
-                new KeycloakOptions("", configuration["KeyCloakApi:ClientId"]));            
-
-            return keyCloakClient;
-        });
-    }
-
     public override void ConfigureServices(ServiceConfigurationContext context)
-    {      
+    {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
         ConfigureAuthentication(context, configuration);
-        ConfigureKeyCloakClient(context);
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureAutoMapper();
@@ -113,10 +96,11 @@ public class GrantManagerWebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
+        ConfigureAuthorization(context);
     }
 
-    private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
-    {        
+    private static void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
+    {
         context.Services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -159,12 +143,21 @@ public class GrantManagerWebModule : AbpModule
                 var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
 
                 // TODO: can be used to create users locally
-                // await updater!.UpdateAsync(context);
+                await updater!.UpdateAsync(context);
             };
         });
     }
 
-    private void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
+    private static void ConfigureAuthorization(ServiceConfigurationContext context)
+    {
+        // TODO: ABP maps these, figure out how to map from database
+        // Configure your policies
+        context.Services.AddAuthorization(options =>
+              options.AddPolicy(IdentityPermissions.UserLookup.Default,
+              policy => policy.RequireClaim("Permission", IdentityPermissions.UserLookup.Default)));
+    }
+
+    private static void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAccessTokenManagement(options =>
         {
@@ -181,7 +174,7 @@ public class GrantManagerWebModule : AbpModule
         //    TimeSpan.FromSeconds(2),
         //    TimeSpan.FromSeconds(3)
         //}));
-        
+
         // registers HTTP client that uses the managed user access token
         context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
         {

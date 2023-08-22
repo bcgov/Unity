@@ -7,15 +7,9 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using System.Linq.Dynamic.Core;
 using Microsoft.AspNetCore.Authorization;
-using AutoMapper;
 using System.Diagnostics;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 using Volo.Abp.DependencyInjection;
 using Unity.GrantManager.Applications;
-using AutoMapper;
-using System.Diagnostics;
-using Volo.Abp.DependencyInjection;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -163,9 +157,7 @@ namespace Unity.GrantManager.GrantApplications
             }
 
             return query;
-        }
-
-        
+        }        
     }
 }
 

@@ -1,23 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using static OpenIddict.Abstractions.OpenIddictConstants;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Text.Json;
-using NUglify.Helpers;
 using Newtonsoft.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Web.Pages.StatusUpdate
 {
     public class StatusUpdateModalModel : AbpPageModel
     {
-
         [BindProperty]
         public Guid statusId { get; set; }
         public Guid selectedStatusId { get; set; }
@@ -34,24 +28,19 @@ namespace Unity.GrantManager.Web.Pages.StatusUpdate
         {
             _statusService = statusService;
             _applicationService = applicationService;
-
         }
 
         public async Task OnGetAsync(string applicationIds)
         {
             selectedApplicationIds = applicationIds;
 
-            if (statusList == null)
-            {
-                statusList = new List<SelectListItem>();
-            }
+            statusList ??= new List<SelectListItem>();
 
             try
             {
+                var statuses = await _statusService.GetListAsync();
 
-                var status = await _statusService.GetListAsync();
-
-                foreach (var entityDto in status.Items)
+                foreach (var entityDto in statuses)
                 {
                     Console.WriteLine(entityDto.InternalStatus);
                     try
@@ -72,28 +61,23 @@ namespace Unity.GrantManager.Web.Pages.StatusUpdate
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Logger.LogError(ex, "Error getting application statuses");
             }
-
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-
             try
             {
-
                 var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(selectedApplicationIds);
 
                 await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), statusId);
-
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Logger.LogError(ex, "Error updating application statuses");
             }
             return NoContent();
-
         }
     }
 }
