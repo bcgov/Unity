@@ -48,6 +48,9 @@
     "ProposalDate": "Proposal Date",
     "SubmissionDate": "Submission Date",
     "GrantApplications": "Grant Applications",
-    "Multiple": "Multiple"
+    "Multiple": "Multiple",
+    "ApplicationInfoButton": "Info",
+    "ApplicationOpenButton": "Open",
+    "ApplicationAssignButton": "Assign"
   }
 }

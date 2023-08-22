@@ -9,13 +9,15 @@
 @{
     PageLayout.Content.MenuItemName = "GrantManager.GrantApplications";
     PageLayout.Content.Title = L["Applications"].Value;
+    ViewBag.UserName = "Test User";
+    ViewBag.PageTitle = "Teleportation Ministry Grant Program";
 }
 @section scripts
 {
     @if (Model.FormId == null)
     {
         <abp-script src="/Pages/GrantApplications/Index.js" />
-    } 
+    }
     else
     {
 
@@ -23,17 +25,29 @@
     }
 }
 
-<abp-card>
-    <abp-card-header>
-        <abp-row>
-            <abp-column size="_6">
-                <abp-card-title>@L["GrantApplications"]</abp-card-title>
-            </abp-column>
-        </abp-row>
-    </abp-card-header>
-    <abp-card-body>
-        <abp-table striped-rows="true" id="GrantApplicationsTable"></abp-table>
-    </abp-card-body>
-</abp-card>
+<div class="container-fluid px-2">
+    <div class="d-flex my-1 p-2 justify-content-between">
+        <div class="d-flex">
+            <abp-button id="ApplicationOpenButton"
+                        text="@L["ApplicationOpenButton"].Value"
+                        icon-type="Other"
+                        icon="ms-Icon ms-Icon--OpenInNewWindow"
+                        button-type="Light" />
+            <abp-button class="mx-2" id="ApplicationAssignButton"
+                        text="@L["ApplicationAssignButton"].Value"
+                        icon-type="Other"
+                        icon="ms-Icon ms-Icon--AddFriend"
+                        button-type="Light" />
+        </div>
+        <div>
+            <abp-button id="ApplicationInfoButton"
+                        text="@L["ApplicationInfoButton"].Value"
+                        icon-type="Other"
+                        icon="ms-Icon ms-Icon--Info"
+                        button-type="Light" />
+        </div>
+    </div>
+    <abp-table id="GrantApplicationsTable"></abp-table>
+</div>
 
 <input type="hidden" id="PassFormIdToJavaScript" value=@Model.FormId>
