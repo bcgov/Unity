@@ -2,8 +2,7 @@
 
 public static class GrantManagerPermissions
 {
-    public const string GroupName = "GrantManager";
-
-    //Add your own permission names. Example:
-    //public const string MyPermission1 = GroupName + ".MyPermission1";
+    public const string GroupName = "GrantManagerManagement";   
+    
+    public const string Default = GroupName + ".Default";
 }

@@ -8,9 +8,10 @@ public class GrantManagerPermissionDefinitionProvider : PermissionDefinitionProv
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        var myGroup = context.AddGroup(GrantManagerPermissions.GroupName);
-        //Define your own permissions here. Example:
-        //myGroup.AddPermission(GrantManagerPermissions.MyPermission1, L("Permission:MyPermission1"));
+        var grantManagerPermissionsGroup = context.AddGroup(GrantManagerPermissions.GroupName, L("Permission:GrantManagerManagement"));
+
+        // Default grant manager user
+        grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.Default, L("Permission:GrantManagerManagement.Default"));
     }
 
     private static LocalizableString L(string name)

@@ -30,14 +30,12 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using System;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.Web;
 
@@ -52,8 +50,7 @@ namespace Unity.GrantManager.Web;
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
-    typeof(AbpAccountWebOpenIddictModule),
-    typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
+    typeof(AbpAccountWebOpenIddictModule)
     )]
 public class GrantManagerWebModule : AbpModule
 {
@@ -141,8 +138,7 @@ public class GrantManagerWebModule : AbpModule
             options.Events.OnTokenValidated = async (context) =>
             {
                 var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
-
-                // TODO: can be used to create users locally
+                
                 await updater!.UpdateAsync(context);
             };
         });
@@ -150,11 +146,7 @@ public class GrantManagerWebModule : AbpModule
 
     private static void ConfigureAuthorization(ServiceConfigurationContext context)
     {
-        // TODO: ABP maps these, figure out how to map from database
-        // Configure your policies
-        context.Services.AddAuthorization(options =>
-              options.AddPolicy(IdentityPermissions.UserLookup.Default,
-              policy => policy.RequireClaim("Permission", IdentityPermissions.UserLookup.Default)));
+        AuthorizationConfiguration.Configure(context);
     }
 
     private static void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
@@ -282,7 +274,6 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
-        //app.UseAbpOpenIddictValidation();
 
         if (MultiTenancyConsts.IsEnabled)
         {

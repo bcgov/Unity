@@ -8,10 +8,10 @@ using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using OpenIddict.Abstractions;
-using Microsoft.AspNetCore.Http;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Web.Identity
-{
+{    
     internal class IdentityProfileLoginUpdater : ITransientDependency
     {
         // The sample code for this hosts the Api in a host project with Bearer tokens
@@ -24,7 +24,7 @@ namespace Unity.GrantManager.Web.Identity
 
         public IdentityProfileLoginUpdater(IdentityUserManager userManager)
         {
-            _userManager = userManager;
+            _userManager = userManager;            
         }
 
         internal async Task UpdateAsync(TokenValidatedContext context)
@@ -34,7 +34,7 @@ namespace Unity.GrantManager.Web.Identity
 
         protected async Task CreateOrUpdateAsync(TokenValidatedContext validatedTokenContext)
         {
-            var user = await _userManager.FindByIdAsync(validatedTokenContext.SecurityToken.Subject.Replace("@idir", ""));
+            var user = await _userManager.FindByIdAsync(validatedTokenContext.SecurityToken.Subject.Replace("@idir", ""));            
 
             if (user == null)
             {
@@ -42,13 +42,27 @@ namespace Unity.GrantManager.Web.Identity
             }
             else
             {
+                //var claims = await _userManager.GetClaimsAsync(user);
+                //var roles = await _userManager.GetRolesAsync(user);
+                //var x = _userRepository.get
+
+
                 await UpdateCurrentUserAsync(user, validatedTokenContext);
             }
+
+            // Here we read from the database - add default permissions and roles
+            // And update what we have based on the 
+                // AbpPermissionGrants table, add as a permission claim if not added
+                // AbpUserClaims, add as a claim if not added
+                // AbpUserRoles, add a a role claim if not added
 
             // This is needed for lookup - for now every user can get it until we lock this down further
             if (!validatedTokenContext.Principal!.HasClaim(UnityClaimsTypes.Role, IdentityPermissions.Users.Default))
             {
                 validatedTokenContext.Principal!.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
+                validatedTokenContext.Principal!.AddClaim("Permission", IdentityPermissions.Users.Default);
+                validatedTokenContext.Principal!.AddClaim("Permission", IdentityPermissions.Users.ManagePermissions);
+                validatedTokenContext.Principal!.AddClaim("Permission", IdentityPermissions.Users.Update);
             }
         }
 
