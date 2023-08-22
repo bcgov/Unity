@@ -6,6 +6,11 @@ $(function () {
         maximumFractionDigits: 2,
     });
 
+
+    var assignApplicationModal = new abp.ModalManager({
+        viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
+    });
+
     const l = abp.localization.getResource('GrantManager');
 
     function formatChefComponents(data) {
@@ -149,4 +154,20 @@ $(function () {
             body.style.display = 'none';
         });
     }
+
+    $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
+    $('#addReviewBtn').click(function () {
+        $('#adjudicationMainView').fadeOut(1000);
+        setTimeout(()=>{
+            $('#adjudicationAddReviewView').fadeIn(1000);
+        },800)
+       
+    });
+    $('#backBtn').click(function () {
+        $('#adjudicationAddReviewView').fadeOut(1000);
+        setTimeout(()=>{
+            $('#adjudicationMainView').fadeIn(1000);
+        },800)
+       
+    });
 });

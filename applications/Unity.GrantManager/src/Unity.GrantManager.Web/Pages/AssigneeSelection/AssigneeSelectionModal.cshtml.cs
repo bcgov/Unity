@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
         public Guid AssigneeId { get; set; }
         public List<SelectListItem> AssigneeList { get; set; } = new();
 
-        [TempData]
+        [BindProperty]
         public string SelectedApplicationIds { get; set; } = default!;
 
         private readonly IApplicationStatusService _statusService;

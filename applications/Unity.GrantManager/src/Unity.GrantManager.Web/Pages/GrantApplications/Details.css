@@ -57,3 +57,119 @@
     align-items: center;
     justify-content: center;
 }
+
+.left-card {
+    border-right: 1px solid #dddddd;
+}
+
+.add-review-btn-container {
+    justify-content: end;
+    align-items: end;
+    gap: 8px;
+    display: flex;
+}
+
+.add-review-btn {
+    background: #003366;
+    color: #FFFFFF;
+    border: 0px;
+    border-radius: 3px;
+    font-weight: 400;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25);
+    margin: 1rem 2.5rem 1rem 0rem;
+}
+
+.review-heading {
+    margin: 1.5rem 0rem 0rem 1rem;
+    color: #003366;
+    font-weight: 700;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 160px;
+    z-index: 1000;
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    display: block;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+.adj-act-btn-ctnr {
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    display: flex;
+}
+
+.adjudication-action-btn {
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    display: flex;
+    background: #003366;
+    color: #FFFFFF;
+    border: 0px;
+    border-radius: 3px;
+    font-weight: 400;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25) !important;
+    min-width: 10rem;
+    margin-top: 1rem;
+}
+
+.dataTables_scrollHeadInner {
+    width: auto !important;
+}
+
+.recom-select {
+    background: #003366;
+    color: #FFFFFF;
+    border: 0px;
+    border-radius: 3px;
+    font-weight: 400;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25) !important;
+}
+
+    .recom-select:hover {
+        background: #FFFFFF;
+    }
+
+.back-button-container {
+    justify-content: left;
+    align-items: start;
+    gap: 8px;
+    display: flex;
+}
+
+.back-btn {
+    color: #003366;
+    margin-bottom: 0px;
+}
+
+.custom-input {
+    margin: 0.2rem 0rem 1rem 0rem;
+}

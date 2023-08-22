@@ -13,6 +13,7 @@
             <abp-select  asp-for="@Model.AssigneeId" asp-items="@Model.AssigneeList" label="Users">
                 <option value="">Select a user</option>
             </abp-select>
+            <abp-input type="hidden" asp-for="@Model.SelectedApplicationIds" />
         </div>       
     </abp-modal-body>
     <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>

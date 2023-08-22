@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Web.Pages.StatusUpdate
         public Guid statusId { get; set; }
         public Guid selectedStatusId { get; set; }
 
-        [TempData]
+        [BindProperty]
         public string selectedApplicationIds { get; set; } = "";
 
         public List<SelectListItem> statusList { get; set; }
