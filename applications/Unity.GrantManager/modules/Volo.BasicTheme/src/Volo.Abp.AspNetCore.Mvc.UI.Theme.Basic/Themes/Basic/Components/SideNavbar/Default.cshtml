@@ -1,5 +1,4 @@
 ﻿@using Volo.Abp.UI.Navigation
-@using FluentIcons.Common
 @model ApplicationMenu
 <div class="unity-side-nav">
     <div class="d-flex flex-column align-items-center align-items-sm-start text-white">
@@ -23,7 +22,7 @@
                                 {
                                     <i class="fs-5 ms-Icon @menuItem.Icon" aria-hidden="true"></i>
                                 }
-                                <span class="ms-2 d-none d-sm-inline"> @menuItem.DisplayName</span>
+                                <span class="ms-2 d-none d-sm-inline">@menuItem.DisplayName</span>
                             </a>
                         </li>
                     }
@@ -35,7 +34,7 @@
                             <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="Menu_@(menuItem.Name)" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 @if (menuItem.Icon != null)
                                 {
-                                    <i class="fs-4 fas @menuItem.Icon"></i>
+                                    <i class="fs-5 ms-Icon @menuItem.Icon"></i>
                                 }
                                 <span class="ms-2 d-none d-sm-inline"> @menuItem.DisplayName</span>
                             </a>
@@ -48,11 +47,11 @@
                                             {
                                                 if (childMenuItem.Icon.StartsWith("fa"))
                                                 {
-                                                    <i class="@childMenuItem.Icon"></i>
+                                                    <i class="fs-5 ms-Icon @childMenuItem.Icon"></i>
                                                 }
                                             }
 
-                                            <span class="d-none d-sm-inline">@Model.DisplayName</span>
+                                            <span class="ms-2 d-none d-sm-inline">@Model.DisplayName</span>
                                         </a>
                                     </li>
                                 }

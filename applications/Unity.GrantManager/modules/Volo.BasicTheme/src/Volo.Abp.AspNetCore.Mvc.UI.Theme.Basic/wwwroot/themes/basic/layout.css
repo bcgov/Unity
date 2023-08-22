@@ -31,12 +31,6 @@
     left: 100%; 
 } 
 
-.card-header .btn {
-    padding: 2px 6px;
-} 
-.card-header h5 {
-    margin: 0;
-} 
 .container > .card { 
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
 }
