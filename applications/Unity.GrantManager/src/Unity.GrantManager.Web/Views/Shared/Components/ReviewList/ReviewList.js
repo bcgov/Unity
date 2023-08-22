@@ -138,7 +138,7 @@
         e.currentTarget.classList.toggle('selected');
     });
 
-    const refresh_application_list_subscription = PubSub.subscribe(
+    const refresh_review_list_subscription = PubSub.subscribe(
         'refresh_reviewer_list',
         (msg, data) => {
             dataTable.ajax.reload();
