@@ -20,8 +20,6 @@ RUN curl -SL --compressed "$NODE_DOWNLOAD_URL" --output nodejs.tar.gz \
   && node --version \
   && npm --version
 
-RUN apt update && apt -y install gnupg
-
 ## INSTALL YARN
 ENV YARN_VERSION 1.22.19
 RUN corepack enable \
