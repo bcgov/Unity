@@ -14,9 +14,9 @@ namespace Unity.GrantManager.Web.Pages.Approve;
 public class ApproveApplicationsModalModel : AbpPageModel
 {
         
-    [TempData]
+    [BindProperty]
     public string selectedApplicationIds { get; set; } = "";
-    [TempData]
+    [BindProperty]
     public string operationStatusCode { get; set; } = "";
     [TempData]
     public string popupMessage { get; set; } = "";
