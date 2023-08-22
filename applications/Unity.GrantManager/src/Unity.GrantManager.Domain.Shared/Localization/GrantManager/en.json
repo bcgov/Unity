@@ -48,6 +48,20 @@
     "ProposalDate": "Proposal Date",
     "SubmissionDate": "Submission Date",
     "GrantApplications": "Grant Applications",
-    "Multiple": "Multiple"
+    "Multiple": "Multiple",
+
+
+    "ReviewerList:ReviewerName": "Reviewer Name",
+    "ReviewerList:StartDate": "Start Date",
+    "ReviewerList:EndDate": "End Date",
+    "ReviewerList:Status": "Status",
+    "ReviewerList:Recommended": "Recommended",
+
+    "AssessmentResultAttachments:Id": "#",
+    "AssessmentResultAttachments:DocumentName": "Document Name",
+    "AssessmentResultAttachments:UploadedDate": "Date",
+    "AssessmentResultAttachments:AttachedBy": "Attached By"
+
+
   }
 }
