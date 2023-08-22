@@ -108,7 +108,7 @@
                     data: 'Recommended',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data === true ? 'Yes' : 'No';
+                        return data === true ? 'Recommended for Approval' : 'Recommended for Denial';
                     },
                 },
             ],

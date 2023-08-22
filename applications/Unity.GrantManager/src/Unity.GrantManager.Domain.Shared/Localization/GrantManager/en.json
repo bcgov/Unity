@@ -55,7 +55,7 @@
     "ReviewerList:StartDate": "Start Date",
     "ReviewerList:EndDate": "End Date",
     "ReviewerList:Status": "Status",
-    "ReviewerList:Recommended": "Recommended",
+    "ReviewerList:Recommended": "Recommendation",
 
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",
