@@ -94,7 +94,7 @@ $(function () {
         });
     });
     $('#externalLink').click(function () {
-        location.href = '/GrantApplications/details';
+        location.href = '/GrantApplications/details?applicationId=' + JSON.stringify(selectedApplicationIds);
     });
 
 
