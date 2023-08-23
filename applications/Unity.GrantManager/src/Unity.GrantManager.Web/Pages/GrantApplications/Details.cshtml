@@ -86,14 +86,12 @@
                         <abp-column size="_4">
                             <abp-row>
                                 <abp-column size="_12" class="adj-act-btn-ctnr">
-                                    <abp-dropdown>
-                                        <abp-dropdown-button class="adjudication-action-btn" link="true" text="Action" />
-                                        <abp-dropdown-menu>
-                                            <abp-dropdown-item href="#">Start Adjudication</abp-dropdown-item>
-                                            <abp-dropdown-item href="#">Complete Adjudication</abp-dropdown-item>
-
-                                        </abp-dropdown-menu>
-                                    </abp-dropdown>
+                                    <abp-button class="adjudication-action-btn" id="startAdjudication" style="width:200px" text="Start Adjudication" />
+                                </abp-column>
+                            </abp-row>
+                            <abp-row>
+                                <abp-column size="_12" class="adj-act-btn-ctnr">
+                                    <abp-button class="adjudication-action-btn" id="completeAdjudication" style="width:200px" text="Complete Adjudication" />
                                 </abp-column>
                             </abp-row>
                         </abp-column>
@@ -134,11 +132,9 @@
                                     <abp-dropdown>
                                         <abp-dropdown-button class="adjudication-action-btn" link="true" text="Action" />
                                         <abp-dropdown-menu>
-
                                             <abp-dropdown-item href="#">Send for Team Lead Review</abp-dropdown-item>
                                             <abp-dropdown-item href="#">Send Back (By Team Lead)</abp-dropdown-item>
                                             <abp-dropdown-item href="#">Complete Review (By Team Lead)</abp-dropdown-item>
-
                                         </abp-dropdown-menu>
                                     </abp-dropdown>
                                 </abp-column>
@@ -160,3 +156,4 @@
         </abp-column>
     </abp-row>
 </abp-container>
+
