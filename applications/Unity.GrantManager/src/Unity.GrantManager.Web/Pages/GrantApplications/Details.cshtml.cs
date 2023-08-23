@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
+
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -21,8 +23,12 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             new SelectListItem { Value = "N", Text = "Recommended for Denial"}
            
         };
-public void OnGet()
+
+        [TempData]
+        public string SelectedApplicationId { get; set; } = "";
+        public async Task OnGetAsync(string applicationId)
         {
+            SelectedApplicationId = applicationId;
         }
     }
 }

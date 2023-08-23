@@ -20,6 +20,9 @@
     <abp-script src="/libs/formiojs/formio.form.js" />
 }
 
+@await Component.InvokeAsync("DetailsActionBar", new {ApplicationId=@Model.SelectedApplicationId})
+
+<input type="hidden" id="DetailsViewApplicationId" value="@Model.SelectedApplicationId" />
 
 <abp-tabs name="TabId" class="nav-justified">
     <abp-tab name="nav-summerry" active="true" title="Application Summary">
