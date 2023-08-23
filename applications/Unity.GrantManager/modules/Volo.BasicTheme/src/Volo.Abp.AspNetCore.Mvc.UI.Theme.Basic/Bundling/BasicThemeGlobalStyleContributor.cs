@@ -7,6 +7,7 @@ public class BasicThemeGlobalStyleContributor : BundleContributor
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
         context.Files.Add("/themes/basic/fonts/Segoe-Fluent-Icons.ttf");
+        context.Files.Add("/themes/basic/fonts/Segoe-MDL2-Assets.ttf");
         context.Files.Add("/themes/basic/fluentui-icons.css");
         context.Files.Add("/themes/basic/fluenticons.min.css");
         context.Files.Add("/themes/basic/layout.css");

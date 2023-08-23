@@ -3,7 +3,7 @@
 
 @font-face {
     font-family: 'Segoe-Fluent-Icons';
-    src: url('fonts/Segoe-Fluent-Icons.ttf') format('truetype');
+    src: url('fonts/Segoe-MDL2-Assets.ttf') format('truetype');
     font-weight: 100;
     font-style: normal;
 }
@@ -149,7 +149,54 @@
     content: '\EC25';
 }
 
-
 .fl-settings:before {
     content: '\E713';
+}
+
+.fl-view-dashboard:before {
+    content: '\F246';
+}
+
+.fl-bank:before {
+    content: '\E825';
+}
+
+.fl-other-user:before {
+    content: '\E7EE';
+}
+
+.fl-bullseye:before {
+    content: '\F272';
+}
+
+.fl-lexicon:before {
+    content: '\F180';
+}
+
+.fl-street:before {
+    content: '\E913';
+}
+
+.fl-unknown:before {
+    content: '\E9CE';
+}
+
+.fl-search:before {
+    content: '\E721';
+}
+
+.fl-add-to:before {
+    content: '\ECC8';
+}
+
+.fl-open-pane:before {
+    content: '\E8A0';
+}
+
+.fl-mini-contract-2-mirrored:before {
+    content: '\EE49';
+}
+
+.fl-add-friend:before {
+    content: '\E8FA';
 }

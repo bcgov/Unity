@@ -66,17 +66,6 @@
     }
 
     <div class="@containerClass unity-app-container p-0">
-        @*@(await Component.InvokeAsync<PageAlertsViewComponent>())*@
-        @*<div id="AbpContentToolbar">
-            <div class="row m-0 mb-2">
-                @(await Component.InvokeAsync<ContentTitleViewComponent>())
-                <div class="col">
-                    <div class="text-end">
-                        @await RenderSectionAsync("content_toolbar", false)
-                    </div>
-                </div>
-            </div>
-        </div>*@
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.First, StandardLayouts.Application)
         <div class="d-flex">
 

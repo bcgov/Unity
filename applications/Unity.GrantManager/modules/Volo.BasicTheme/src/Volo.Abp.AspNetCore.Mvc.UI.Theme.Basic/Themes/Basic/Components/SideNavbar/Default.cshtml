@@ -20,7 +20,7 @@
                             <a href="@url" target="@menuItem.Target" class="nav-link d-flex align-items-center ps-3 pe-0">
                                 @if (menuItem.Icon != null)
                                 {
-                                    <i class="fs-5 ms-Icon @menuItem.Icon" aria-hidden="true"></i>
+                                    <i class="fs-5 @menuItem.Icon" aria-hidden="true"></i>
                                 }
                                 <span class="ms-2 d-none d-sm-inline">@menuItem.DisplayName</span>
                             </a>
@@ -34,7 +34,7 @@
                             <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="Menu_@(menuItem.Name)" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 @if (menuItem.Icon != null)
                                 {
-                                    <i class="fs-5 ms-Icon @menuItem.Icon"></i>
+                                    <i class="fs-5 @menuItem.Icon"></i>
                                 }
                                 <span class="ms-2 d-none d-sm-inline"> @menuItem.DisplayName</span>
                             </a>
@@ -47,7 +47,7 @@
                                             {
                                                 if (childMenuItem.Icon.StartsWith("fa"))
                                                 {
-                                                    <i class="fs-5 ms-Icon @childMenuItem.Icon"></i>
+                                                    <i class="fs-5 @childMenuItem.Icon"></i>
                                                 }
                                             }
 

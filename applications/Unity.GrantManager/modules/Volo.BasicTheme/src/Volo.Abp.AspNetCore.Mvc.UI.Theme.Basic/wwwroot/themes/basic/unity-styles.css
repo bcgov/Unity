@@ -88,6 +88,7 @@
 
     .unity-side-nav a, .unity-side-nav .unity-user-name a {
         font-size: var(--bc-font-size);
+        color: var(--bc-colors-grey-text-500);
     }
 
     .unity-side-nav .nav-item:hover, .unity-side-nav .nav-item:focus, .unity-side-nav .nav-item:active {

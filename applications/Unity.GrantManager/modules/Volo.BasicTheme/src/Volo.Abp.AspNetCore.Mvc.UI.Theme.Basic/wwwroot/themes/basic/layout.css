@@ -53,9 +53,9 @@ body {
     --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
     --bs-btn-line-height: 1;
     --bs-btn-padding-x: 0.875rem;
+    --bs-btn-font-size: var(--bc-font-size);
     display: flex;
     align-items: center;
-    font-size: var(--bc-font-size);
     min-height: 2.13rem;
 }
 

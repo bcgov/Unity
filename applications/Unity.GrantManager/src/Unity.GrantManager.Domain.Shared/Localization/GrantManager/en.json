@@ -2,10 +2,14 @@
   "culture": "en",
   "texts": {
     "Menu:Home": "Home",
+    "Menu:Dashboard": "Dashboard",
     "Menu:GrantPrograms": "Grant Programs",
     "Menu:GrantTracker": "Grant Tracker",
     "Menu:Applications": "Applications",
     "Menu:Payments": "Payments",
+    "Menu:Scoring": "Scoring",
+    "Menu:Reporting": "Reporting",
+    "Menu:Welcome": "Welcome",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
