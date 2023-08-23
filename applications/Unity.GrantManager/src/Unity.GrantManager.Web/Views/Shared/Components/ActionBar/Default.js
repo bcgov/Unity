@@ -7,6 +7,12 @@ $(function () {
     var statusUpdateModal = new abp.ModalManager({
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
+    var approveApplicationsModal = new abp.ModalManager({
+        viewUrl: 'Approve/ApproveApplicationsModal'
+    });
+    var dontApproveApplicationsModal = new abp.ModalManager({
+        viewUrl: 'Approve/ApproveApplicationsModal'
+    });
 
     assignApplicationModal.onResult(function () {
         abp.notify.success(
@@ -14,7 +20,7 @@ $(function () {
             'Application Assinee'
         );
         PubSub.publish("refresh_application_list");
-    });
+    });    
     statusUpdateModal.onResult(function () {
         abp.notify.success(
             'The application status has been successfully updated',
@@ -22,7 +28,26 @@ $(function () {
         );
         PubSub.publish("refresh_application_list");
     });
-
+    approveApplicationsModal.onResult(function () {
+        abp.notify.success(
+            'The application/s has been successfully approved',
+            'Approve Applications'
+        );
+        PubSub.publish("refresh_application_list");
+    });
+    dontApproveApplicationsModal.onResult(function () {
+        abp.notify.success(
+            'The application/s has now been disapproved',
+            'Not Approve Applications'
+        );
+        PubSub.publish("refresh_application_list");
+    });
+    approveApplicationsModal.onClose(function () {
+        PubSub.publish("refresh_application_list");
+    });
+    dontApproveApplicationsModal.onClose(function () {
+        PubSub.publish("refresh_application_list");
+    });
     
     const select_application_subscription = PubSub.subscribe("select_application", (msg, data) => {
         selectedApplicationIds.push(data.id);
@@ -52,8 +77,24 @@ $(function () {
             applicationIds: JSON.stringify(selectedApplicationIds),
         });
     });
+    $('#approveApplications').click(function () {
+        approveApplicationsModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+            operation: 'GRANT_APPROVED',
+            message: 'Are you sure you want to approve the selected application/s?',
+            title: 'Approve Applications',
+        });
+    });
+    $('#dontApproveApplications').click(function () {
+        dontApproveApplicationsModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+            operation: 'GRANT_NOT_APPROVED',
+            message: 'Are you sure you want to disapprove the selected application/s?', 
+            title: 'Not Approve Applications',
+        });
+    });
     $('#externalLink').click(function () {
-        location.href = '/GrantApplications/details';
+        location.href = '/GrantApplications/details?applicationId=' + JSON.stringify(selectedApplicationIds);
     });
 
 

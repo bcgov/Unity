@@ -50,6 +50,19 @@
     "GrantApplications": "Grant Applications",
     "Multiple": "Multiple",
 
+
+    "ReviewerList:ReviewerName": "Reviewer Name",
+    "ReviewerList:StartDate": "Start Date",
+    "ReviewerList:EndDate": "End Date",
+    "ReviewerList:Status": "Status",
+    "ReviewerList:Recommended": "Recommendation",
+
+    "AssessmentResultAttachments:Id": "#",
+    "AssessmentResultAttachments:DocumentName": "Document Name",
+    "AssessmentResultAttachments:UploadedDate": "Date",
+    "AssessmentResultAttachments:AttachedBy": "Attached By"
+
+
     "Permission:GrantManagerManagement": "Grant Manager Management",
     "Permission:GrantManagerManagement.Default": "Default",
 

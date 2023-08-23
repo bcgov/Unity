@@ -1,0 +1,23 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.Approve.ApproveApplicationsModalModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@{
+    Layout = null;
+}
+
+
+<form method="post" asp-page-handler="OnPostAsync">
+    <abp-modal id="approveApplicationsModal">
+        <abp-modal-header title="@Model.popupTitle"></abp-modal-header>
+        <abp-modal-body>
+            @Model.popupMessage
+            <abp-input type="hidden" asp-for="@Model.selectedApplicationIds" />
+            <abp-input type="hidden" asp-for="@Model.operationStatusCode" />
+        </abp-modal-body>
+        <abp-modal-footer> 
+            <abp-modal-footer buttons="@AbpModalButtons.Cancel"></abp-modal-footer>
+            <abp-button text="Yes" button-type="Primary" type="submit" icon="check"/>             
+        </abp-modal-footer>
+        
+    </abp-modal>
+</form>

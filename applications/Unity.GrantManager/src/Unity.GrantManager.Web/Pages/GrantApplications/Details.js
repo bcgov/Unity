@@ -6,6 +6,11 @@ $(function () {
         maximumFractionDigits: 2,
     });
 
+
+    var assignApplicationModal = new abp.ModalManager({
+        viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
+    });
+
     const l = abp.localization.getResource('GrantManager');
 
     function formatChefComponents(data) {
@@ -78,7 +83,7 @@ $(function () {
     }
     async function getSubmission() {
         try {
-            let submissionId = 'c85f81ce-07ff-4a31-ad0d-0f3a15796528';
+            let submissionId = '8f7b1da6-e131-4059-9ec8-e24fd6d44b5b';
             let isLoading = true;
             unity.grantManager.intake.submission
                 .getSubmission(submissionId)
@@ -149,4 +154,20 @@ $(function () {
             body.style.display = 'none';
         });
     }
+
+    $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
+    $('#addReviewBtn').click(function () {
+        $('#adjudicationMainView').fadeOut(1000);
+        setTimeout(()=>{
+            $('#adjudicationAddReviewView').fadeIn(1000);
+        },800)
+       
+    });
+    $('#backBtn').click(function () {
+        $('#adjudicationAddReviewView').fadeOut(1000);
+        setTimeout(()=>{
+            $('#adjudicationMainView').fadeIn(1000);
+        },800)
+       
+    });
 });
