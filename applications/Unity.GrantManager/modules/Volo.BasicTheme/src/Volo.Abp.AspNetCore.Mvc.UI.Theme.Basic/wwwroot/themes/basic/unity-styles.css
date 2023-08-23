@@ -119,6 +119,7 @@ body {
     display: flex;
     align-items: center;
     font-size: 0.85rem;
+    min-height: 2.13rem;
 }
 
     .btn i {
@@ -211,3 +212,26 @@ body {
     --bs-pagination-disabled-bg: var(--bc-colors-grey-hover);
     --bs-pagination-font-size: .75rem;
 }
+
+.modal-dialog {
+    --bs-modal-border-radius: .25rem;
+    --bs-modal-inner-border-radius: .25rem;
+    --bs-modal-header-padding: 1.5rem 1.5rem 1rem 1.5rem;
+}
+
+    .modal-dialog .modal-header {
+        border-bottom: none;
+    }
+
+    .modal-dialog .modal-title {
+        font-weight: 700;
+    }
+
+    .modal-dialog .modal-body {
+        padding: 0.5rem 1.5rem;
+    }
+
+    .modal-dialog .modal-footer {
+        border-top: none;
+        padding: 0.5rem 1.5rem 1rem;
+    }
