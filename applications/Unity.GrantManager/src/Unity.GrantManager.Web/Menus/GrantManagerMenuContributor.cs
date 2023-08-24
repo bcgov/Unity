@@ -58,7 +58,7 @@ public class GrantManagerMenuContributor : IMenuContributor
             new ApplicationMenuItem(
                 GrantManagerMenus.Scoring,
                 l["Menu:Scoring"],
-                "~/",
+                "~/Payments",
                 icon: "fl fl-bullseye",
                 order: 3
             )

@@ -15,6 +15,15 @@
     PageLayout.Content.Title = "Home";
 }
 
+<div>
+    @if (CurrentUser.IsAuthenticated)
+    {
+        <span><span>@CurrentUser.Name </span><span> @CurrentUser.SurName</span></span>
+        <form asp-page-handler="cancel" method="post">
+            <button class="btn btn-default">Logout</button>
+        </form>
+    }   
+</div>
 
 <div class="main">
     @*<div class="top-bar">

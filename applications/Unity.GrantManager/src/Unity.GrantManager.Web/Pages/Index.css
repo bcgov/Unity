@@ -199,6 +199,9 @@ color: transparent;
 	width: 576px;
 }
 
+.lpx-scroll-container {
+	overflow: scroll;
+}
 .grant-title {
 	color: var(--bc-colors-grey-text-500, #313131);
 	font-family: BC Sans;

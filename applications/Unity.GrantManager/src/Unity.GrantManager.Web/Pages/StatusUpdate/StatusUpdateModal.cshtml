@@ -1,0 +1,19 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.StatusUpdate.StatusUpdateModalModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@{
+    Layout = null;
+}
+<form method="post" asp-page-handler="OnPostAsync">
+    <abp-modal>
+        <abp-modal-header title="Application Status"></abp-modal-header>
+        <abp-modal-body>
+
+            <abp-select asp-for="@Model.statusId" asp-items="@Model.statusList" label="Status">
+                <option value="">Choose a status</option>
+            </abp-select>
+            <abp-input type="hidden" asp-for="@Model.selectedApplicationIds" />
+        </abp-modal-body>
+        <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
+    </abp-modal>
+</form>

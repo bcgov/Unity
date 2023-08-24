@@ -16,14 +16,30 @@
 {
     @if (Model.FormId == null)
     {
+        <script>
+            let users = [];
+            @foreach (var user in Model.Users) {
+                @:users.push("{'Id':" + "'@user.Id', 'UserName':" + "'@user.UserName', 'FirstName':" + "'@user.Name', 'LastName':" + "'@user.Surname', 'Email':" + "'@user.Email'}");
+            }
+        </script>
         <abp-script src="/Pages/GrantApplications/Index.js" />
+        <abp-script src="/libs/datatables/js/dataTables.select.min.js" />
+        <abp-script src="/libs/datatables/js/select.bootstrap.min.js" />
+        <abp-script src="/libs/pubsub-js/src/pubsub.js" />
     }
     else
     {
-
         <abp-script src="/Pages/GrantApplications/Intake.js" />
     }
 }
+
+@section styles {
+    <abp-style src="/libs/datatables/css/select.bootstrap.min.css" />
+    <abp-style src="/Pages/GrantApplications/Index.css" />
+}
+
+@await Component.InvokeAsync("ActionBar")
+
 
 <div class="container-fluid px-2">
     <div class="d-flex my-1 p-2 justify-content-between">
