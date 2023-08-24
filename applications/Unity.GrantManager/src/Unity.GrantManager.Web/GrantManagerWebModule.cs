@@ -15,7 +15,6 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
@@ -30,7 +29,6 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
 using Volo.Abp.AspNetCore.Mvc.UI.Theming;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
 using System;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -42,6 +40,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Logging;
 using Unity.GrantManager.Web.Identity.Policy;
 using Microsoft.AspNetCore.Http;
+using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 
 namespace Unity.GrantManager.Web;
 
@@ -57,7 +56,8 @@ namespace Unity.GrantManager.Web;
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
-    typeof(AbpAccountWebOpenIddictModule)
+    typeof(AbpAccountWebOpenIddictModule),
+    typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
 )]
 public class GrantManagerWebModule : AbpModule
 {

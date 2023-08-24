@@ -86,7 +86,8 @@ public class GrantManagerDbContext :
         builder.ConfigureSettingManagement();
         builder.ConfigureBackgroundJobs();
         builder.ConfigureAuditLogging();
-        builder.ConfigureIdentity();        
+        builder.ConfigureIdentity();
+        builder.ConfigureOpenIddict();
         builder.ConfigureFeatureManagement();
         builder.ConfigureTenantManagement();
 
