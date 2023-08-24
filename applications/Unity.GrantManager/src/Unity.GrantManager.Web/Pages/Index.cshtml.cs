@@ -13,6 +13,7 @@ public class IndexModel : GrantManagerPageModel
 
     public async Task OnPostCancelAsync()
     {
+        // Needs to be called to sign out
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
     }

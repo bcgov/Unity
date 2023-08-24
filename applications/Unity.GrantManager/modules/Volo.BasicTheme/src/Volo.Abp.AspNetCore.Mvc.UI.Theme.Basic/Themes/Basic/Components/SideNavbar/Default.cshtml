@@ -1,5 +1,7 @@
 ﻿@using Volo.Abp.UI.Navigation;
 @using Microsoft.AspNetCore.Http;
+@using Volo.Abp.Users;
+@inject ICurrentUser CurrentUser
 @model ApplicationMenu
 
 @{
@@ -8,7 +10,18 @@
 <div class="unity-side-nav">
     <div class="d-flex flex-column align-items-center align-items-sm-start text-white">
         <div class="d-flex align-items-center mb-md-0 me-md-auto px-3 py-4 unity-user-name">
-            <a href="#" class="fw-bold d-sm-inline text-decoration-none">Fenske, Melissa JEDI:EX</a>
+            @*<a href="#" class="fw-bold d-sm-inline text-decoration-none">Fenske, Melissa JEDI:EX</a>*@
+
+            @if (CurrentUser.IsAuthenticated)
+            {                
+                <a href="#" class="fw-bold d-sm-inline text-decoration-none">
+                    <span><span>@CurrentUser.Name </span><span> @CurrentUser.SurName</span></span>
+                </a>
+                
+                @*<form asp-page-handler="cancel" method="post">
+                    <button class="btn btn-default">Logout</button>
+                </form>*@
+            }
         </div>
         <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100" id="menu">
             @foreach (var menuItem in Model.Items)

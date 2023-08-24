@@ -15,16 +15,6 @@
     PageLayout.Content.Title = "Home";
 }
 
-<div>
-    @if (CurrentUser.IsAuthenticated)
-    {
-        <span><span>@CurrentUser.Name </span><span> @CurrentUser.SurName</span></span>
-        <form asp-page-handler="cancel" method="post">
-            <button class="btn btn-default">Logout</button>
-        </form>
-    }   
-</div>
-
 <div class="main">
     @*<div class="top-bar">
         <img src="/images/logo/bcgov/BCID_H_rgb_pos.png" class="bc-logo" />
@@ -43,7 +33,7 @@
         </div>
 
         <div class="splash-div">
-            <img src="https://localhost:44342/images/splash.png" class="stock-video">
+            <img src="/images/splash.png" class="stock-video">
         </div>
     </div>
 
