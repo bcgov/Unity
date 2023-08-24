@@ -1,5 +1,10 @@
-﻿@using Volo.Abp.UI.Navigation
+﻿@using Volo.Abp.UI.Navigation;
+@using Microsoft.AspNetCore.Http;
 @model ApplicationMenu
+
+@{
+    string currentPath = Context.Request.Path;
+}
 <div class="unity-side-nav">
     <div class="d-flex flex-column align-items-center align-items-sm-start text-white">
         <div class="d-flex align-items-center mb-md-0 me-md-auto px-3 py-4 unity-user-name">
@@ -12,12 +17,14 @@
                 var cssClass = string.IsNullOrEmpty(menuItem.CssClass) ? string.Empty : menuItem.CssClass;
                 var disabled = menuItem.IsDisabled ? "disabled" : string.Empty;
                 var url = string.IsNullOrEmpty(menuItem.Url) ? "#" : Url.IsLocalUrl(menuItem.Url) ? Url.Content(menuItem.Url.EnsureStartsWith('~')) : menuItem.Url;
+                var isCurrentUrlActive = (currentPath.Split('/').ElementAt(1) == url.Split('/').ElementAt(1));
+                var isCurrentClass = isCurrentUrlActive ? "current" : string.Empty;
                 if (menuItem.IsLeaf)
                 {
                     if (menuItem.Url != null)
                     {
-                        <li class="nav-item w-100 @cssClass @disabled" @elementId>
-                            <a href="@url" target="@menuItem.Target" class="nav-link d-flex align-items-center ps-3 pe-0">
+                        <li class="nav-item w-100 @cssClass @disabled @isCurrentClass" @elementId>
+                            <a href="@url" target="@menuItem.Target" class="nav-link d-flex align-items-center ps-3 pe-0 @isCurrentClass">
                                 @if (menuItem.Icon != null)
                                 {
                                     <i class="fs-5 @menuItem.Icon" aria-hidden="true"></i>
