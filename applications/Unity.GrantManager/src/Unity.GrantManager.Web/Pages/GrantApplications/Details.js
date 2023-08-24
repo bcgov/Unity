@@ -6,12 +6,12 @@ $(function () {
         maximumFractionDigits: 2,
     });
 
-
     var assignApplicationModal = new abp.ModalManager({
         viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
     });
 
     const l = abp.localization.getResource('GrantManager');
+    setupComments();
 
     function formatChefComponents(data) {
         // Advanced Components
@@ -110,6 +110,107 @@ $(function () {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    function setupComments() {
+        let addComment = document.getElementById('addCommentTextArea');
+        let placeHolderString = addComment.placeholder;
+        let widgets = document.getElementsByName('widget-div');
+        let editCommentsIcons = document.getElementsByName('edit-comment');
+
+        for (var i = 0; i < widgets.length; i++) {
+            let editIcon = widgets[i].children.overlay.children[0];
+            let deleteIcon = widgets[i].children.overlay.children[1];
+            let cancelBtn = widgets[i].children[2].children[0];
+            let updateBtn = widgets[i].children[2].children[1];
+
+            widgets[i].addEventListener('mouseover', (e) => {
+                let textArea =
+                    e.currentTarget.firstElementChild.nextElementSibling;
+                if (textArea.readOnly == true) {
+                    e.currentTarget.children[2].style.display = 'none';
+                    e.currentTarget.children.overlay.style.display = 'block';
+                    textArea.style.cursor = 'default';
+                } else {
+                    e.currentTarget.children[2].style.display = 'flex';
+                    e.currentTarget.children.overlay.style.display = 'none';
+                    textArea.style.cursor = 'text';
+                }
+            });
+
+            widgets[i].addEventListener('mouseout', (e) => {
+                e.currentTarget.children.overlay.style.display = 'none';
+            });
+
+            cancelBtn.addEventListener('click', (e) => {
+                let textArea =
+                    e.currentTarget.parentElement.parentElement.querySelector(
+                        'textarea'
+                    );
+                textArea.readOnly = true;
+                $(textArea).removeClass('selected');
+                e.currentTarget.parentElement.style.display = 'none';
+                textArea.value = $(textArea).attr('value');
+                showEditIcons();
+            });
+
+            updateBtn.addEventListener('click', (e) => {
+                let textArea =
+                    e.currentTarget.parentElement.parentElement.querySelector(
+                        'textarea'
+                    );
+                let commentId = textArea.id;
+                let commentValue = textArea.value;
+            });
+
+            editIcon.addEventListener('click', (e) => {
+                e.currentTarget.parentElement.style.display = 'none';
+                let textArea =
+                    e.currentTarget.parentElement.parentElement.querySelector(
+                        'textarea'
+                    );
+                textArea.readOnly = false;
+                $(textArea).addClass('selected');
+                if ($(textArea).attr('value') !== textArea.value) {
+                    updateBtn.disabled = false;
+                } else {
+                    updateBtn.disabled = true;
+                }
+                textArea.addEventListener('keyup', (e) => {
+                    if ($(textArea).attr('value') !== textArea.value) {
+                        updateBtn.disabled = false;
+                    } else {
+                        updateBtn.disabled = true;
+                    }
+                });
+
+                hideEditIcons();
+            });
+        }
+
+        function hideEditIcons() {
+            for (let i = 0; i < $(editCommentsIcons).length; i++) {
+                $(editCommentsIcons)[i].style.display = 'none';
+            }
+        }
+
+        function showEditIcons() {
+            for (let i = 0; i < $(editCommentsIcons).length; i++) {
+                $(editCommentsIcons)[i].style.display = 'inline-block';
+            }
+        }
+
+        addComment.addEventListener('focus', () => {
+            addComment.placeholder = '';
+            $(addComment).addClass('selected');
+        });
+
+        addComment.addEventListener('blur', () => {
+            addComment.placeholder = placeHolderString;
+            $(addComment).removeClass('selected');
+        });
+
+        $('[data-toggle="tooltip"]').tooltip();
     }
 
     let result = getSubmission();

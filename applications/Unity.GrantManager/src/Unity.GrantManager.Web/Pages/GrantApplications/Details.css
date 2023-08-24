@@ -1,4 +1,10 @@
-﻿.card-header {
+﻿@media (min-width: 1400px) {
+    .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
+        max-width: 1600px;
+    }
+}
+
+.card-header {
     padding-bottom: 1.5rem !important;
 }
 
@@ -172,4 +178,63 @@
 
 .custom-input {
     margin: 0.2rem 0rem 1rem 0rem;
+}
+
+.comment-message-button-area {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+}
+
+textarea::placeholder {
+    color: #b9b9b9 !important;
+}
+
+
+#widget{
+    position: relative;
+}
+
+#widget #overlay{
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #FFFFFF;
+    box-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+}
+
+#widget textarea{
+    border: 1px solid #e7e9ec;
+    resize: vertical;
+}
+
+.fa, .fas {
+    padding: 5px;
+}
+
+i.fas:hover {
+    cursor: pointer;
+}
+
+.btn {
+    margin: 2px;
+    border: 1px solid #f5f5f757;
+}
+
+
+.btn:disabled {
+    border: 1px solid #cbcbcb;
+}
+
+button:not(:disabled), [type=button]:not(:disabled), [type=reset]:not(:disabled), [type=submit]:not(:disabled) {
+    border: 1px solid #4a4a4a5c;
+}
+
+.selected{
+    border: 1px solid rgba(0, 51, 102, 38%) !important;
+    background-color: #fff !important;
+}
+
+textarea {
+    background-color: #f5f5f757 !important;
 }
