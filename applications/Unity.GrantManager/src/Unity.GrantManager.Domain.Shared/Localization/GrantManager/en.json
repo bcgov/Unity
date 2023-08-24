@@ -67,8 +67,27 @@
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",
     "AssessmentResultAttachments:UploadedDate": "Date",
-    "AssessmentResultAttachments:AttachedBy": "Attached By"
+    "AssessmentResultAttachments:AttachedBy": "Attached By",
 
 
+    "Permission:GrantManagerManagement": "Grant Manager Management",
+    "Permission:GrantManagerManagement.Default": "Default",
+
+    "Permission:GrantApplicationManagement": "Grant Application Management",
+    "Permission:GrantApplicationManagement.Applications.Default": "Applications",
+    "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
+    "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
+    "Permission:GrantApplicationManagement.Assignments.Default": "Assignment",
+    "Permission:GrantApplicationManagement.Assignments.AssignInitial": "Initial Assignment",
+    "Permission:GrantApplicationManagement.Reviews.Default": "Reviews",
+    "Permission:GrantApplicationManagement.Reviews.StartInitial": "Start Initial Review",
+    "Permission:GrantApplicationManagement.Reviews.CompleteInitial": "Complete Initial Review",
+    "Permission:GrantApplicationManagement.Adjudications.Default": "Adjudications",
+    "Permission:GrantApplicationManagement.Adjudications.Start": "Start Adjudication",
+    "Permission:GrantApplicationManagement.Adjudications.Complete": "Complete Adjudication",
+    "Permission:GrantApplicationManagement.Approvals.Default": "Approvals",
+    "Permission:GrantApplicationManagement.Approvals.Complete": "Complete Approval",
+    "Permission:GrantApplicationManagement.Comments.Default": "Comments",
+    "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment"
   }
 }
