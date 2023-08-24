@@ -26,10 +26,10 @@ public class GrantManagerMenuContributor : IMenuContributor
         context.Menu.Items.Insert(
             0,
             new ApplicationMenuItem(
-                GrantManagerMenus.Home,
-                l["Menu:Home"],
+                GrantManagerMenus.Dashboard,
+                l["Menu:Dashboard"],
                 "~/",
-                icon: "fas fa-home",
+                icon: "fl fl-view-dashboard",
                 order: 0
             )
         );
@@ -39,7 +39,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.GrantPrograms,
                 l["Menu:GrantPrograms"],
                 url: "/GrantPrograms",
-                icon: "fas fa-award",
+                icon: "fl fl-bank",
                 order: 1
             )
         );
@@ -49,18 +49,38 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.Applications,
                 l["Menu:Applications"],
                 "~/GrantApplications",
-                icon: "fas fa-file-contract",
+                icon: "fl fl-other-user",
                 order: 2
             )
         );
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
-                GrantManagerMenus.Payments,
-                l["Menu:Payments"],
+                GrantManagerMenus.Scoring,
+                l["Menu:Scoring"],
                 "~/Payments",
-                icon: "fas fa-landmark",
+                icon: "fl fl-bullseye",
                 order: 3
+            )
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.Reporting,
+                l["Menu:Reporting"],
+                "~/",
+                icon: "fl fl-lexicon",
+                order: 4
+            )
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.Welcome,
+                l["Menu:Welcome"],
+                "~/",
+                icon: "fl fl-street",
+                order: 5
             )
         );
 
