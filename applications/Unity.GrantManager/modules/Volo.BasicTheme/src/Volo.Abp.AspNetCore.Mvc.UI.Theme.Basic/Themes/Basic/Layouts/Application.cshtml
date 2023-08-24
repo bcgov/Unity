@@ -40,6 +40,10 @@
 
 <html lang="@CultureInfo.CurrentCulture.Name" dir="@rtl">
 <head>
+    @{
+        IgnoreSection("content_toolbar");
+    }; 
+
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.First, StandardLayouts.Application)
 
     <meta charset="utf-8">
