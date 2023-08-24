@@ -100,7 +100,6 @@ public class GrantManagerDbContext :
         //});
 
 
-
         builder.Entity<GrantProgram>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "GrantProgram",
@@ -128,7 +127,6 @@ public class GrantManagerDbContext :
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Team",
                 GrantManagerConsts.DbSchema);
             b.ConfigureByConvention();
-
         });
 
         builder.Entity<UserTeam>(b =>
@@ -145,9 +143,7 @@ public class GrantManagerDbContext :
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Applicant",
                 GrantManagerConsts.DbSchema);
-            ;
             b.ConfigureByConvention();
-
             b.Property(x => x.ApplicantName)
                 .IsRequired()
                 .HasMaxLength(250);
@@ -219,6 +215,15 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
         });
 
+        builder.Entity<AssessmentComment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentComment",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.HasOne<ApplicationFormSubmission>().WithMany().HasForeignKey(x => x.Id).IsRequired();
+        });
+
         builder.Entity<AdjudicationAssessment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "AdjudicationAssessment",
@@ -229,7 +234,6 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
             b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
         });
-
         builder.Entity<ApplicationUserAssignment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationUserAssignment",
@@ -241,7 +245,6 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId);
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
-
         var allEntityTypes = builder.Model.GetEntityTypes();
         foreach (var t in allEntityTypes)
         {

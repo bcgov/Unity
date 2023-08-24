@@ -1,4 +1,4 @@
-﻿@page "{submissionId?}"
+﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @using Unity.GrantManager.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -20,154 +20,140 @@
     <abp-script src="/libs/formiojs/formio.form.js" />
 }
 
-@await Component.InvokeAsync("DetailsActionBar", new {ApplicationId=@Model.SelectedApplicationId})
+@await Component.InvokeAsync("DetailsActionBar", new {ApplicationId=@Model.ApplicationFormSubmissionId})
 
-<input type="hidden" id="DetailsViewApplicationId" value="@Model.SelectedApplicationId" />
+<input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationFormSubmissionId" />
 
-<abp-tabs name="TabId" class="nav-justified">
-    <abp-tab name="nav-summerry" active="true" title="Application Summary">
-        <abp-row>
-            <abp-column size="_12" class="spinner-loader">
-                <div class="spinner-grow" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-            </abp-column>
-        </abp-row>
-        <div class="container-fluid">
-            <abp-row>
-                <abp-column size="_12">
+<abp-container>
+    <abp-row>
+        <abp-column>
+            <abp-tabs name="TabId" class="nav-justified">
+                <abp-tab name="nav-summerry" active="true" title="Application Summary">
+                    <abp-row>
+                        <abp-column size="_12" class="spinner-loader">
+                            <div class="spinner-grow" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <div class="container-fluid">
+                        <abp-row>
+                            <abp-column size="_12">
 
-                    @*TODO: Put FormIO handler here!*@
-                    <div id="formio"></div>
+                                @*TODO: Put FormIO handler here!*@
+                                <div id="formio"></div>
 
-                </abp-column>
+                            </abp-column>
 
-            </abp-row>
-        </div>
-    </abp-tab>
-    <abp-tab name="nav-review-and-adudication" title="Review & Adjudication">
-        <abp-row id="adjudicationMainView">
-            <abp-column size="_8" class="left-card">
+                        </abp-row>
+                    </div>
+                </abp-tab>
+                <abp-tab name="nav-review-and-adudication" title="Review & Adjudication">
+                    <abp-row id="adjudicationMainView">
+                        <abp-column size="_8" class="left-card">
 
-                <abp-row>
-                    <abp-column size="_4">
-                        <h4 class="review-heading">Review List</h4>
+                            <abp-row>
+                                <abp-column size="_4">
+                                    <h4 class="review-heading">Review List</h4>
+                                </abp-column>
+                                <abp-column size="_8" class="add-review-btn-container">
+                                    <abp-button id="addReviewBtn" class="add-review-btn" icon="user-plus" text="Add Review" />
+                                </abp-column>
 
-                    </abp-column>
-                    <abp-column size="_8" class="add-review-btn-container">
-                        <abp-button id="addReviewBtn" class="add-review-btn" icon="user-plus" text="Add Review" />
-                    </abp-column>
+                            </abp-row>
+                            <abp-row>
+                                <abp-column size="_10">
+                                    @await Component.InvokeAsync("ReviewList")
+                                </abp-column>
+                            </abp-row>
+                            <hr />
+                            <abp-row>
+                                <abp-column size="_8">
+                                    <h4 class="review-heading">Attachments</h4>
+                                </abp-column>
+                                <abp-column size="_4" class="add-review-btn-container">
+                                    <input type="file" id="assessment_upload" style="display:none" />
+                                    <abp-button id="assessment_upload_btn" class="add-review-btn" icon="paperclip" text="Attach Document" />
+                                </abp-column>
+                            </abp-row>
+                            <abp-row>
+                                <abp-column size="_10">
+                                    @await Component.InvokeAsync("ApplicationAttachments")
+                                </abp-column>
+                            </abp-row>
 
-                </abp-row>
-                <abp-row>
-                    <abp-column size="_10">
+                        </abp-column>
+                        <abp-column size="_4">
+                            <abp-row>
+                                <abp-column size="_12" class="adj-act-btn-ctnr">
+                                    <abp-button class="adjudication-action-btn" id="startAdjudication" style="width:200px" text="Start Adjudication" />
+                                </abp-column>
+                            </abp-row>
+                            <abp-row>
+                                <abp-column size="_12" class="adj-act-btn-ctnr">
+                                    <abp-button class="adjudication-action-btn" id="completeAdjudication" style="width:200px" text="Complete Adjudication" />
+                                </abp-column>
+                            </abp-row>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row id="adjudicationAddReviewView" style="display:none;">
+                        <abp-column size="_8" class="left-card">
+                            <abp-row>
+                                <abp-column size="_12" class="back-button-container">
+                                    <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
+                                </abp-column>
+                                <abp-column size="_8">
+                                    <h4 class="review-heading">Assessment Result Attachments</h4>
+                                </abp-column>
+                                <abp-column size="_4" class="add-review-btn-container">
 
-                        @await Component.InvokeAsync("ReviewList")
-                    </abp-column>
-                </abp-row>
-                <hr />
-                <abp-row>
-                    <abp-column size="_8">
-                        <h4 class="review-heading">Attachments</h4>
+                                </abp-column>
+                            </abp-row>
+                            <abp-row>
+                                <abp-column size="_10">
 
-                    </abp-column>
-                    <abp-column size="_4" class="add-review-btn-container">
-                        <input type="file" id="assessment_upload" style="display:none" />
-                        <abp-button id="assessment_upload_btn" class="add-review-btn" icon="paperclip" text="Attach Document" />
-                    </abp-column>
+                                    @await Component.InvokeAsync("AssessmentResultAttachments")
 
-                </abp-row>
-                <abp-row>
-                    <abp-column size="_10">
-
-                        @await Component.InvokeAsync("ApplicationAttachments")
-
-
-
-                    </abp-column>
-                </abp-row>
-
-
-            </abp-column>
-            <abp-column size="_4">
-                <abp-row>
-                    <abp-column size="_12" class="adj-act-btn-ctnr">
-                        <abp-dropdown>
-                            <abp-dropdown-button class="adjudication-action-btn" link="true" text="Action" />
-                            <abp-dropdown-menu>
-                                <abp-dropdown-item href="#">Start Adjudication</abp-dropdown-item>
-                                <abp-dropdown-item href="#">Complete Adjudication</abp-dropdown-item>
-
-                            </abp-dropdown-menu>
-                        </abp-dropdown>
-                    </abp-column>
-                </abp-row>
-
-
-            </abp-column>
-        </abp-row>
-        <abp-row id="adjudicationAddReviewView" style="display:none;">
-
-            <abp-column size="_8" class="left-card">
-
-                <abp-row>
-                    <abp-column size="_12" class="back-button-container">
-                        <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
-                    </abp-column>
-                    <abp-column size="_8">
-                        <h4 class="review-heading">Assessment Result Attachments</h4>
-
-                    </abp-column>
-                    <abp-column size="_4" class="add-review-btn-container">
-
-                    </abp-column>
-
-                </abp-row>
-                <abp-row>
-                    <abp-column size="_10">
-
-                        @await Component.InvokeAsync("AssessmentResultAttachments")
-
-                    </abp-column>
-                </abp-row>
-                <abp-row>
-                    <abp-column size="_10">
-                        <label>Attach Document</label>
-                        <input class="form-control custom-input" asp-for="@Model.Attachment" type="file" id="formFile" />
-                        <abp-select asp-for="@Model.selectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
-                            <option value="">Select</option>
-                        </abp-select>
-
-
-                    </abp-column>
-                </abp-row>
-
-
-            </abp-column>
-            <abp-column size="_4">
-                <abp-row>
-                    <abp-column size="_12" class="adj-act-btn-ctnr">
-                        <abp-dropdown>
-                            <abp-dropdown-button class="adjudication-action-btn" link="true" text="Action" />
-                            <abp-dropdown-menu>
-
-                                <abp-dropdown-item href="#">Send for Team Lead Review</abp-dropdown-item>
-                                <abp-dropdown-item href="#">Send Back (By Team Lead)</abp-dropdown-item>
-                                <abp-dropdown-item href="#">Complete Review (By Team Lead)</abp-dropdown-item>
-
-                            </abp-dropdown-menu>
-                        </abp-dropdown>
-                    </abp-column>
-                </abp-row>
-
-
-            </abp-column>
-        </abp-row>
-
-
-    </abp-tab>
-    <abp-tab name="nav-approval" title="Approval">
-        Approval View
-    </abp-tab>
-</abp-tabs>
+                                </abp-column>
+                            </abp-row>
+                            <abp-row>
+                                <abp-column size="_10">
+                                    <label>Attach Document</label>
+                                    <input class="form-control custom-input" asp-for="@Model.Attachment" type="file" id="formFile" />
+                                    <abp-select asp-for="@Model.SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
+                                        <option value="">Select</option>
+                                    </abp-select>
+                                </abp-column>
+                            </abp-row>
+                        </abp-column>
+                        <abp-column size="_4">
+                            <abp-row>
+                                <abp-column size="_12" class="adj-act-btn-ctnr">
+                                    <abp-dropdown>
+                                        <abp-dropdown-button class="adjudication-action-btn" link="true" text="Action" />
+                                        <abp-dropdown-menu>
+                                            <abp-dropdown-item href="#">Send for Team Lead Review</abp-dropdown-item>
+                                            <abp-dropdown-item href="#">Send Back (By Team Lead)</abp-dropdown-item>
+                                            <abp-dropdown-item href="#">Complete Review (By Team Lead)</abp-dropdown-item>
+                                        </abp-dropdown-menu>
+                                    </abp-dropdown>
+                                </abp-column>
+                            </abp-row>
+                        </abp-column>
+                    </abp-row>
+                </abp-tab>
+                <abp-tab name="nav-approval" title="Approval">
+                    Approval View
+                </abp-tab>
+            </abp-tabs>
+        </abp-column>
+        <abp-column size="_9" size-lg="_4">
+            <abp-tabs name="TabId" class="nav-justified">
+                <abp-tab name="nav-summerry" active="true" title="Details">
+                    <partial name="/Pages/GrantApplications/_AssessmentComment.cshtml" />
+                </abp-tab>
+            </abp-tabs>
+        </abp-column>
+    </abp-row>
+</abp-container>
 

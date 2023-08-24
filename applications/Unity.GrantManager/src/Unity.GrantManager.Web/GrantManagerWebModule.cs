@@ -28,6 +28,9 @@ using Volo.Abp.TenantManagement.Web;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
+using Volo.Abp.AspNetCore.Mvc.UI.Theming;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
 using System;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -50,6 +53,7 @@ namespace Unity.GrantManager.Web;
     typeof(AbpIdentityWebModule),
     typeof(AbpSettingManagementWebModule),
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
+    typeof(AbpAspNetCoreMvcUiBasicThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
@@ -90,7 +94,8 @@ public class GrantManagerWebModule : AbpModule
         ConfigurePolicies(context);
         ConfigureAuthentication(context, configuration);
         ConfigureUrls(configuration);
-        ConfigureBundles();
+        ConfigureTheming(configuration);
+        ConfigureBundles(configuration);
         ConfigureAutoMapper();
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
@@ -191,12 +196,20 @@ public class GrantManagerWebModule : AbpModule
         });
     }
 
-    private void ConfigureBundles()
+    private void ConfigureTheming(IConfiguration configuration)
+    {
+        Configure<AbpThemingOptions>(options =>
+        {
+            options.DefaultThemeName = configuration["Theme:Name"];
+        });
+    }
+
+    private void ConfigureBundles(IConfiguration configuration)
     {
         Configure<AbpBundlingOptions>(options =>
         {
             options.StyleBundles.Configure(
-                LeptonXLiteThemeBundles.Styles.Global,
+                string.Concat(configuration["Theme:Name"], ".Global"),
                 bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");

@@ -1,0 +1,47 @@
+﻿@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.Brand
+
+@{
+    string userName = (@ViewBag.UserName == null) ? "Test" : @ViewBag.UserName;
+    string[] userNameInitialsArr = userName.Split(" ");
+    string userNameInitials = userNameInitialsArr[0].Truncate(1) + ((userNameInitialsArr.Length > 1) ? userNameInitialsArr[1].Truncate(1) : "");
+
+    string pageTitle = (@ViewBag.PageTitle == null) ? "" : @ViewBag.PageTitle;
+}
+
+<nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-sub-navbar" id="sub-navbar">
+    <div class="container-fluid">
+        <h6>@pageTitle</h6>
+        <div class="search-input">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">
+                        <i class="fs-5 fl fl-search"></i>
+                    </span>
+                </div>
+                <input type="text" class="form-control" placeholder="Search" aria-label="Search" aria-describedby="basic-addon1">
+                <div class="input-group-append">
+                    <span class="input-group-text">
+                        <i class="fl fl-chevron-down"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex">
+            <div class="">
+                <button type="button" class="btn btn-icon">
+                    <i class="fs-5 fl fl-settings"></i>
+                </button>
+            </div>
+            <div class="mx-1">
+                <button type="button" class="btn btn-icon">
+                    <i class="fs-5 fl fl-unknown"></i>
+                </button>
+            </div>
+            <div class="px-2 d-flex align-items-center">
+                <div class="unity-user-initials">
+                    @userNameInitials
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
