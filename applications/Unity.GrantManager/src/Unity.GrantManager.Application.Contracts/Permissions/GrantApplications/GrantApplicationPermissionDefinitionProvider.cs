@@ -1,22 +1,21 @@
 ﻿using Unity.GrantManager.Localization;
-using Unity.GrantManager.Permissions.Applications;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 
 namespace Unity.GrantManager.Permissions.GrantApplications
 {
     public class GrantApplicationPermissionDefinitionProvider : PermissionDefinitionProvider
-    {
+    {        
         public override void Define(IPermissionDefinitionContext context)
         {
             var grantApplicationPermissionsGroup = context.AddGroup(GrantApplicationPermissions.GroupName, L("Permission:GrantApplicationManagement"));
 
             // Application
-            grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applications.Default, L("Permission:GrantApplicationManagement.Applications.Default"));
+            grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applications.Default, L("Permission:GrantApplicationManagement.Applications.Default"));            
 
             // Applicant
             var applicatPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applicants.Default, L("Permission:GrantApplicationManagement.Applicants.Default"));
-            applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagements.Applicants.Edit"));
+            applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagements.Applicants.Edit"));            
 
             // Assignment
             var assignmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assignments.Default, L("Permission:GrantApplicationManagementons.Assignments.Default"));
@@ -34,7 +33,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             // Approval
             var approvalPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Approvals.Default, L("Permission:GrantApplicationManagement.Approvals.Default"));
-            approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.Approve, L("Permission:GrantApplicationManagement.Approvals.Approve"));
+            approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.Complete, L("Permission:GrantApplicationManagement.Approvals.Complete"));
 
             // Comments
             var appCommentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Comments.Default, L("Permission:GrantApplicationManagement.Comments.Default"));

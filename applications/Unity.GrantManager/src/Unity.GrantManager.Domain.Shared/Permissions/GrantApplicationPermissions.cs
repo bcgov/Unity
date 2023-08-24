@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.Permissions.Applications
+﻿namespace Unity.GrantManager.Permissions
 {
     public static class GrantApplicationPermissions
     {
@@ -6,7 +6,7 @@
 
         public static class Applications
         {
-            public const string Default = GroupName + ".Applications";            
+            public const string Default = GroupName + ".Applications";
         }
 
         public static class Applicants
@@ -38,7 +38,7 @@
         public static class Approvals
         {
             public const string Default = GroupName + ".Approvals";
-            public const string Approve = Default + ".Approve";
+            public const string Complete = Default + ".Complete";
         }
 
         public static class Comments

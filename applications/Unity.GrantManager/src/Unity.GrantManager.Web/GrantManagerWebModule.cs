@@ -36,8 +36,9 @@ using Microsoft.AspNetCore.Authentication;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Volo.Abp.Identity;
 using Microsoft.IdentityModel.Logging;
+using Unity.GrantManager.Web.Identity.Policy;
+using Microsoft.AspNetCore.Http;
 
 namespace Unity.GrantManager.Web;
 
@@ -51,9 +52,9 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpSwashbuckleModule),    
-    typeof(AbpAccountWebOpenIddictModule),
-    )]
+    typeof(AbpSwashbuckleModule),
+    typeof(AbpAccountWebOpenIddictModule)
+)]
 public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -86,6 +87,7 @@ public class GrantManagerWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        ConfigurePolicies(context);
         ConfigureAuthentication(context, configuration);
         ConfigureUrls(configuration);
         ConfigureBundles();
@@ -95,7 +97,11 @@ public class GrantManagerWebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
-        ConfigureAuthorization(context);
+    }
+
+    private static void ConfigurePolicies(ServiceConfigurationContext context)
+    {
+        PolicyRegistrant.Register(context);
     }
 
     private static void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
@@ -119,6 +125,7 @@ public class GrantManagerWebModule : AbpModule
             options.Authority = configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"];
             options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
             options.ResponseType = OpenIdConnectResponseType.Code;
+            
 
             options.ClientId = configuration["AuthServer:ClientId"];
             options.ClientSecret = configuration["AuthServer:ClientSecret"];
@@ -132,23 +139,17 @@ public class GrantManagerWebModule : AbpModule
                 RoleClaimType = UnityClaimsTypes.Role
             };
 
-            options.Events.OnTokenResponseReceived = async (context) =>
+            options.Events.OnTokenResponseReceived = async (tokenReceivedContext) =>
             {
                 await Task.CompletedTask;
             };
 
-            options.Events.OnTokenValidated = async (context) =>
+            options.Events.OnTokenValidated = async (tokenValidatedContext) =>
             {
-                var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
-                
-                await updater!.UpdateAsync(context);
+                var updater = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
+                await updater!.UpdateAsync(tokenValidatedContext);
             };
         });
-    }
-
-    private static void ConfigureAuthorization(ServiceConfigurationContext context)
-    {
-        AuthorizationConfiguration.Configure(context);
     }
 
     private static void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
@@ -277,6 +278,12 @@ public class GrantManagerWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
+
+        app.UseCookiePolicy(new CookiePolicyOptions
+        {
+            Secure = CookieSecurePolicy.Always
+        });
+
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)

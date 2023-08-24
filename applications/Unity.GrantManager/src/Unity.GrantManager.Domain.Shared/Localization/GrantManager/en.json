@@ -60,7 +60,7 @@
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",
     "AssessmentResultAttachments:UploadedDate": "Date",
-    "AssessmentResultAttachments:AttachedBy": "Attached By"
+    "AssessmentResultAttachments:AttachedBy": "Attached By",
 
 
     "Permission:GrantManagerManagement": "Grant Manager Management",
@@ -79,7 +79,7 @@
     "Permission:GrantApplicationManagement.Adjudications.Start": "Start Adjudication",
     "Permission:GrantApplicationManagement.Adjudications.Complete": "Complete Adjudication",
     "Permission:GrantApplicationManagement.Approvals.Default": "Approvals",
-    "Permission:GrantApplicationManagement.Approvals.Approve": "Approve Application",
+    "Permission:GrantApplicationManagement.Approvals.Complete": "Complete Approval",
     "Permission:GrantApplicationManagement.Comments.Default": "Comments",
     "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment"
   }

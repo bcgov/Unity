@@ -7,6 +7,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Identity;
+using Volo.Abp.PermissionManagement;
 
 namespace Unity.GrantManager;
 
