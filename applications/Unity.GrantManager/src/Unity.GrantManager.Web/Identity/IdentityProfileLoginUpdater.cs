@@ -61,7 +61,9 @@ namespace Unity.GrantManager.Web.Identity
                 principal.AddClaim(UnityClaimsTypes.Role, adminRole);
                 var userPermissions = await _permissionManager.GetAllForRoleAsync(adminRole);
                 foreach (var permission in userPermissions)
+                {
                     principal.AddClaim("Permission", permission.Name);
+                }
             }
             else
                 foreach (var role in user.Roles)

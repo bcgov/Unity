@@ -4,6 +4,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.ContentTitle
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.MainNavbar
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.PageAlerts
+@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Pages.Shared.Components.AbpPageToolbar;
 @using Volo.Abp.AspNetCore.Mvc.UI.Theming
 @using Volo.Abp.AspNetCore.Mvc.UI.Widgets.Components.WidgetScripts
 @using Volo.Abp.AspNetCore.Mvc.UI.Widgets.Components.WidgetStyles
@@ -30,6 +31,7 @@
     }
 
     var isHomePage = (PageLayout.Content.Title == "Home");
+    var isIdentityPage = (PageLayout.Content.Title == "Roles" || PageLayout.Content.Title == "Users");
 
     var rtl = CultureHelper.IsRtl ? "rtl" : string.Empty;
 
@@ -40,10 +42,6 @@
 
 <html lang="@CultureInfo.CurrentCulture.Name" dir="@rtl">
 <head>
-    @{
-        IgnoreSection("content_toolbar");
-    }; 
-
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.First, StandardLayouts.Application)
 
     <meta charset="utf-8">
@@ -65,7 +63,8 @@
 
     @(await Component.InvokeAsync<TopbarViewComponent>())
 
-    @if(!@isHomePage) {
+    @if (!@isHomePage)
+    {
         @(await Component.InvokeAsync<SubTopbarViewComponent>())
     }
 
@@ -77,7 +76,23 @@
             {
                 @(await Component.InvokeAsync<SideNavbarViewComponent>())
             }
+
             <div class="flex-fill @applicationContainerClass">
+                @if (isIdentityPage)
+                {
+                    <div id="AbpContentToolbar" class="card identity-toolbar">
+                        <div>
+                            @(
+                                await Component.InvokeAsync<ContentTitleViewComponent>()
+                                )
+                        </div>
+                        <div>
+                            <div class="text-end">
+                                @await RenderSectionAsync("content_toolbar", false)
+                            </div>
+                        </div>
+                    </div>
+                }
                 @RenderBody()
             </div>
         </div>

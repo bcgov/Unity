@@ -1,9 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Localization;
-using Unity.GrantManager.MultiTenancy;
+using Volo.Abp.Identity;
 using Volo.Abp.Identity.Web.Navigation;
-using Volo.Abp.SettingManagement.Web.Navigation;
-using Volo.Abp.TenantManagement.Web.Navigation;
 using Volo.Abp.UI.Navigation;
 
 namespace Unity.GrantManager.Web.Menus;
@@ -12,6 +10,9 @@ public class GrantManagerMenuContributor : IMenuContributor
 {
     public async Task ConfigureMenuAsync(MenuConfigurationContext context)
     {
+        context.Menu.TryRemoveMenuGroup(IdentityMenuNames.GroupName);
+        context.Menu.TryRemoveMenuItem(DefaultMenuNames.Application.Main.Administration);
+
         if (context.Menu.Name == StandardMenus.Main)
         {
             await ConfigureMainMenuAsync(context);
@@ -20,7 +21,8 @@ public class GrantManagerMenuContributor : IMenuContributor
 
     private Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
-        var administration = context.Menu.GetAdministration();
+        // var administration = context.Menu.GetAdministration();
+
         var l = context.GetLocalizer<GrantManagerResource>();
 
         context.Menu.Items.Insert(
@@ -80,22 +82,43 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Welcome"],
                 "~/",
                 icon: "fl fl-street",
-                order: 5
+                order: 5                
             )
         );
 
+        context.Menu.AddItem(
+               new ApplicationMenuItem(
+                   IdentityMenuNames.Roles,
+                   l["Menu:Roles"],
+                   "~/Identity/Roles",
+                   icon: "fl fl-settings",
+                   order: 6,
+                   requiredPermissionName: IdentityPermissions.Roles.Default
+               )
+           );
 
-        if (MultiTenancyConsts.IsEnabled)
-        {
-            administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
-        }
-        else
-        {
-            administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
-        }
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                IdentityMenuNames.Users,
+                l["Menu:Users"],
+                "~/Identity/Users",
+                icon: "fl fl-other-user",
+                order: 7,
+                requiredPermissionName: IdentityPermissions.Users.Default
+            )
+        );
 
-        administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
-        administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
+        //if (MultiTenancyConsts.IsEnabled)
+        //{
+        //    administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
+        //}
+        //else
+        //{
+        //    administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
+        //}
+
+        //administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
+        //administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
 
         return Task.CompletedTask;
     }
