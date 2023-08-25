@@ -38,10 +38,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite" Version="2.3.*-*" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Components.Web.BasicTheme\Volo.Abp.AspNetCore.Components.Web.BasicTheme.csproj" />
 	<ProjectReference Include="..\..\modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />

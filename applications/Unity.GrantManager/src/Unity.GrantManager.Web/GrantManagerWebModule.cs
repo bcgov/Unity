@@ -14,7 +14,6 @@ using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
@@ -51,8 +50,7 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
     typeof(AbpIdentityWebModule),
-    typeof(AbpSettingManagementWebModule),
-    typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
+    typeof(AbpSettingManagementWebModule),    
     typeof(AbpAspNetCoreMvcUiBasicThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
@@ -111,7 +109,7 @@ public class GrantManagerWebModule : AbpModule
     }
 
     private static void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
-    {
+    {        
         context.Services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;

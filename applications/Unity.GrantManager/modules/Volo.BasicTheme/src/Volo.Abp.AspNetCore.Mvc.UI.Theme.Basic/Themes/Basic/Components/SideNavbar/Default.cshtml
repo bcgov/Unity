@@ -30,7 +30,18 @@
                 var cssClass = string.IsNullOrEmpty(menuItem.CssClass) ? string.Empty : menuItem.CssClass;
                 var disabled = menuItem.IsDisabled ? "disabled" : string.Empty;
                 var url = string.IsNullOrEmpty(menuItem.Url) ? "#" : Url.IsLocalUrl(menuItem.Url) ? Url.Content(menuItem.Url.EnsureStartsWith('~')) : menuItem.Url;
-                var isCurrentUrlActive = (currentPath.Split('/').ElementAt(1) == url.Split('/').ElementAt(1));
+                
+                /* Added as an enabler for now, as the group menus are not rendering correctly - currently being worked */
+                bool isCurrentUrlActive = false;
+                if (currentPath.Split('/').ElementAt(1) == "Identity")
+                {
+                    isCurrentUrlActive = (currentPath.Split('/').Last() == url.Split('/').Last());
+                }
+                else
+                {
+                    isCurrentUrlActive = ((currentPath.Split('/').Length > 1 && (url.Split('/').Length > 1) && (currentPath.Split('/').ElementAt(1) == url.Split('/').ElementAt(1))));
+                }
+
                 var isCurrentClass = isCurrentUrlActive ? "current" : string.Empty;
                 if (menuItem.IsLeaf)
                 {

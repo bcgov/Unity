@@ -3,7 +3,7 @@
 
 @font-face {
     font-family: 'Segoe-Fluent-Icons';
-    src: url('fonts/Segoe-MDL2-Assets.ttf') format('truetype');
+    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
     font-weight: 100;
     font-style: normal;
 }
@@ -199,4 +199,32 @@
 
 .fl-add-friend:before {
     content: '\E8FA';
+}
+
+.fl-dislike:before {
+    content: '\E8E0';
+}
+
+.fl-like:before {
+    content: '\E8E1';
+}
+
+.fl-startpoint:before {
+    content: '\E819';
+}
+
+.fl-endpoint:before {
+    content: '\E81B';
+}
+
+.fl-link:before {
+    content: '\E71B';
+}
+
+.fl-player-settings:before {
+    content: '\EF58';
+}
+
+.fl-sort:before {
+    content: '\E8CB';
 }

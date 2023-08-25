@@ -50,7 +50,7 @@
                 </abp-tab>
                 <abp-tab name="nav-review-and-adudication" title="Review & Adjudication">
                     <abp-row id="adjudicationMainView">
-                        <abp-column size="_8" class="left-card">
+                        <abp-column size="_12" class="left-card">
 
                             <abp-row>
                                 <abp-column size="_4">
@@ -81,20 +81,7 @@
                                     @await Component.InvokeAsync("ApplicationAttachments")
                                 </abp-column>
                             </abp-row>
-
-                        </abp-column>
-                        <abp-column size="_4">
-                            <abp-row>
-                                <abp-column size="_12" class="adj-act-btn-ctnr">
-                                    <abp-button class="adjudication-action-btn" id="startAdjudication" style="width:200px" text="Start Adjudication" />
-                                </abp-column>
-                            </abp-row>
-                            <abp-row>
-                                <abp-column size="_12" class="adj-act-btn-ctnr">
-                                    <abp-button class="adjudication-action-btn" id="completeAdjudication" style="width:200px" text="Complete Adjudication" />
-                                </abp-column>
-                            </abp-row>
-                        </abp-column>
+                        </abp-column>                        
                     </abp-row>
                     <abp-row id="adjudicationAddReviewView" style="display:none;">
                         <abp-column size="_8" class="left-card">
