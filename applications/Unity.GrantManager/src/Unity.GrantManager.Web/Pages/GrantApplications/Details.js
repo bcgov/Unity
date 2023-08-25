@@ -25,7 +25,7 @@ $(function () {
 
     $('#startAdjudication').click(function () {
         startAdjudicationModal.open({
-            applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
+            applicationIds: selectedApplicationIds,
             operation: 'UNDER_ADJUDICATION',
             message: 'Are you sure you want to start adjudication for this application?',
             title: 'Start Adjudication',
@@ -45,7 +45,7 @@ $(function () {
 
     $('#completeAdjudication').click(function () {
         completeAdjudicationModal.open({
-            applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
+            applicationIds: selectedApplicationIds,
             operation: 'ADJUDICATION_COMPLETED',
             message: 'Are you sure you want to complete adjudication for this application?',
             title: 'Complete Adjudication',
@@ -155,10 +155,12 @@ $(function () {
     }
 
     function setupComments() {
-        let addComment = document.getElementById('addCommentTextArea');
-        let placeHolderString = addComment.placeholder;
+        let commentTextArea = document.getElementById('addCommentTextArea');
+        let placeHolderString = commentTextArea.placeholder;
         let widgets = document.getElementsByName('widget-div');
         let editCommentsIcons = document.getElementsByName('edit-comment');
+        let saveCommentBtn = document.getElementById('saveCommentBtn');
+        let submissionId = document.getElementById('ApplicationFormSubmissionId');
 
         for (var i = 0; i < widgets.length; i++) {
             let editIcon = widgets[i].children.overlay.children[0];
@@ -197,12 +199,29 @@ $(function () {
             });
 
             updateBtn.addEventListener('click', (e) => {
+                let parent = e.currentTarget.parentElement;
                 let textArea =
-                    e.currentTarget.parentElement.parentElement.querySelector(
+                parent.parentElement.querySelector(
                         'textarea'
                     );
                 let commentId = textArea.id;
                 let commentValue = textArea.value;
+                try {
+                    unity.grantManager.grantApplications.assessmentComment
+                        .updateAssessmentComment(commentId, commentValue, {})
+                        .done(function () {
+                            abp.notify.success(
+                                'The comment has been updated.'
+                            );
+
+                            textArea.readOnly = true;
+                            parent.style.display = 'none';
+                            $(textArea).removeClass('selected');
+                            textArea.setAttribute('value', textArea.value);
+                            showEditIcons();
+                        });
+                    
+                } catch (error) {}
             });
 
             editIcon.addEventListener('click', (e) => {
@@ -230,6 +249,42 @@ $(function () {
             });
         }
 
+        function cloneTextAreaWidget(assessmentComment) {
+            let comment =  assessmentComment.comment;
+
+            let widgetHtml = document.getElementById("widget-example").innerHTML;
+            let commentsDiv = document.getElementById("comments-div");
+            commentsDiv.innerHTML = widgetHtml + commentsDiv.innerHTML;
+
+            let textArea = commentsDiv.firstElementChild.querySelector('textarea');
+            let commentIdInput = commentsDiv.firstElementChild.querySelector('#CommentId');
+            commentIdInput.value = assessmentComment.id;
+            textArea.id = assessmentComment.id;
+            textArea.value = comment;
+            setupComments();
+        }
+
+        saveCommentBtn.addEventListener('click', (e) => {
+            let commentValue = commentTextArea.value;
+            try {
+                unity.grantManager.grantApplications.assessmentComment
+                    .createAssessmentComment(commentValue, submissionId.value, {})
+                    .then((response) => {
+                        return response;
+                    })                    
+                    .done(function (result) {
+                        abp.notify.success(
+                            'The comment has been created.'
+                        );
+                        commentTextArea.value = "";
+                        cloneTextAreaWidget(result);
+                    });
+                
+            } catch (error) {}
+
+            
+        });
+
         function hideEditIcons() {
             for (let i = 0; i < $(editCommentsIcons).length; i++) {
                 $(editCommentsIcons)[i].style.display = 'none';
@@ -242,14 +297,14 @@ $(function () {
             }
         }
 
-        addComment.addEventListener('focus', () => {
-            addComment.placeholder = '';
-            $(addComment).addClass('selected');
+        commentTextArea.addEventListener('focus', () => {
+            commentTextArea.placeholder = '';
+            $(commentTextArea).addClass('selected');
         });
 
-        addComment.addEventListener('blur', () => {
-            addComment.placeholder = placeHolderString;
-            $(addComment).removeClass('selected');
+        commentTextArea.addEventListener('blur', () => {
+            commentTextArea.placeholder = placeHolderString;
+            $(commentTextArea).removeClass('selected');
         });
 
         $('[data-toggle="tooltip"]').tooltip();

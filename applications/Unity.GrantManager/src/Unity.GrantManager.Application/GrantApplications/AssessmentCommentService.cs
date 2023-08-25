@@ -31,13 +31,14 @@ namespace Unity.GrantManager.GrantApplications
         }
 
 
-        public async Task CreateAssessmentComment(string AssessmentComment, string applicationFormSubmissionId)
+        public async Task<AssessmentComment> CreateAssessmentComment(string AssessmentComment, string applicationFormSubmissionId)
         {
+            AssessmentComment newAssesment = new AssessmentComment();
             try
             {
                 if (AssessmentComment != null)
                 {
-                    await _assessmentCommentRepository.InsertAsync(
+                    newAssesment = await _assessmentCommentRepository.InsertAsync(
                         new AssessmentComment
                         {
                             Comment = AssessmentComment,
@@ -45,13 +46,13 @@ namespace Unity.GrantManager.GrantApplications
                         },
                         autoSave: true
                     );
-
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
             }
+            return newAssesment;
         }
 
         public async Task UpdateAssessmentComment(string AssessmentCommentId, String AssessmentComment)
