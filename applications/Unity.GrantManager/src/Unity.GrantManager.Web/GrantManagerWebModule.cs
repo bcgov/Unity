@@ -39,6 +39,8 @@ using Unity.GrantManager.Web.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Volo.Abp.Identity;
 using Microsoft.IdentityModel.Logging;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.CookiePolicy;
 
 namespace Unity.GrantManager.Web;
 
@@ -146,6 +148,42 @@ public class GrantManagerWebModule : AbpModule
                 // TODO: can be used to create users locally
                 await updater!.UpdateAsync(context);
             };
+
+            // Change OIDC cookie policies when developing locally
+            var env = context.Services.GetRequiredService<IWebHostEnvironment>();
+            if (env.IsDevelopment())
+            {
+                // Allows http://localhost to work on Chromium and Edge.
+                options.ProtocolValidator.RequireNonce = false;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
+            }
+
+            // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested
+            if (!env.IsDevelopment() || Convert.ToBoolean(configuration["AuthServer:UseHttpsRedirectLocally"]))
+            {
+                options.Events.OnRedirectToIdentityProvider = context =>
+                {
+                    var host = context.Request.Host;
+                    context.ProtocolMessage.SetParameter("redirect_uri", $"https://{host}/signin-oidc");
+
+                    if (!string.IsNullOrEmpty(configuration["AuthServer:IdpHint"]))
+                    {
+                        context.ProtocolMessage.SetParameter(configuration["AuthServer:IdpHintKey"], configuration["AuthServer:IdpHint"]);
+                    }
+
+                    return Task.CompletedTask;
+                };
+
+                options.Events.OnRedirectToIdentityProviderForSignOut = ctx =>
+                {
+                    // change the post-logout redirect uri to the reverse proxy
+                    var host = ctx.Request.Host;
+                    ctx.ProtocolMessage.SetParameter("post_logout_redirect_uri", $"https://{host}/signout-callback-oidc");
+
+                    return Task.CompletedTask;
+                };
+            }
         });
     }
 
@@ -221,7 +259,7 @@ public class GrantManagerWebModule : AbpModule
 
     private void ConfigureVirtualFileSystem(IWebHostEnvironment hostingEnvironment)
     {
-        if (hostingEnvironment.IsDevelopment())
+        if (!hostingEnvironment.IsProduction())
         {
             Configure<AbpVirtualFileSystemOptions>(options =>
             {
@@ -268,7 +306,7 @@ public class GrantManagerWebModule : AbpModule
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
 
-        if (env.IsDevelopment())
+        if (env.IsDevelopment() || env.IsStaging())
         {
             app.UseDeveloperExceptionPage();
             IdentityModelEventSource.ShowPII = true;
@@ -276,16 +314,25 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseAbpRequestLocalization();
 
-        if (!env.IsDevelopment())
+        if (env.IsProduction())
         {
             app.UseErrorPage();
+        }
+
+        if (!env.IsDevelopment())
+        {
+            app.UseCookiePolicy(new CookiePolicyOptions
+            {
+                HttpOnly = HttpOnlyPolicy.Always,
+                Secure = CookieSecurePolicy.Always,
+                MinimumSameSitePolicy = SameSiteMode.None
+            });
         }
 
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
-        //app.UseAbpOpenIddictValidation();
 
         if (MultiTenancyConsts.IsEnabled)
         {

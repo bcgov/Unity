@@ -4,7 +4,7 @@ name: unity_local
 
 services:
   unity-grantmanager-web:
-    image: 'unity-grantmanager-web:${TAG:-latest}'
+    image: 'image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-grantmanager-web:${TAG:-latest}'
     build:
       context: .
       dockerfile: src/Unity.GrantManager.Web/Dockerfile
@@ -20,7 +20,7 @@ services:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     ports:
-      - 8080:80
+      - 8080:8080
       - 44342:443
     networks: 
       - common-network
@@ -46,8 +46,9 @@ services:
       POSTGRES_DB: ${UNITY_POSTGRES_DB:-UnityGrantManager}
       POSTGRES_USER: ${UNITY_POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${UNITY_POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB_PORT: 5432
     ports:
-      - "${POSTGRES_DB_PORT:-5450}:5432"
+      - "${POSTGRES_DB_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s

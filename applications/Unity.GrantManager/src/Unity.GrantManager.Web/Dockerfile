@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+ENV ASPNETCORE_URLS="http://+:8080"
+EXPOSE 8080 443
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
@@ -50,4 +50,11 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -o /app/publish /p
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+## TODO: Replace with volume
+RUN mkdir -p /.aspnet \
+    && mkdir -p /.dotnet \
+    && chmod 777 /.aspnet \
+    && chmod 777 /.dotnet
+
 ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]
