@@ -216,25 +216,8 @@ i.fas:hover {
     cursor: pointer;
 }
 
-.btn {
-    margin: 2px;
-    border: 1px solid #f5f5f757;
-}
-
-
-.btn:disabled {
-    border: 1px solid #cbcbcb;
-}
-
-button:not(:disabled), [type=button]:not(:disabled), [type=reset]:not(:disabled), [type=submit]:not(:disabled) {
-    border: 1px solid #4a4a4a5c;
-}
-
 .selected{
     border: 1px solid rgba(0, 51, 102, 38%) !important;
     background-color: #fff !important;
 }
 
-textarea {
-    background-color: #f5f5f757 !important;
-}

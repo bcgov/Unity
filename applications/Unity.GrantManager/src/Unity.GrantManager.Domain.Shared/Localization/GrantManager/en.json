@@ -64,6 +64,8 @@
     "ApplicationList:FilterButton": "Filter",
     "ApplicationList:SortButton": "Sort",
     "ApplicationList:InfoButton": "Info",
+    "ApplicationList:StartAdjudicationButton": "Start Adjudication",
+    "ApplicationList:CompleteAdjudicationButton": "Complete Adjudication",
 
     "ReviewerList:ReviewerName": "Reviewer Name",
     "ReviewerList:StartDate": "Start Date",

@@ -209,6 +209,14 @@
     content: '\E8E1';
 }
 
+.fl-startpoint:before {
+    content: '\E819';
+}
+
+.fl-endpoint:before {
+    content: '\E81B';
+}
+
 .fl-link:before {
     content: '\E71B';
 }
