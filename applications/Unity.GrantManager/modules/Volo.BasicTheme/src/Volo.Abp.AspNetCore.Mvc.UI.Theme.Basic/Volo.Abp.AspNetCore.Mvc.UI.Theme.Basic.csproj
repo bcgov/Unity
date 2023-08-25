@@ -23,6 +23,8 @@
   <ItemGroup>
     <Content Remove="wwwroot\**\*.*" />
     <Content Remove="wwwroot\themes\basic\fonts\" />
+    <Content Remove="wwwroot\themes\basic\fonts\icons\" />
+    <Content Remove="wwwroot\themes\basic\fonts\BCSans\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,5 +51,7 @@
     <Folder Include="Themes\Basic\Components\SubTopbar\" />
     <Folder Include="Themes\Basic\Components\SideNavbar\" />
     <Folder Include="wwwroot\themes\basic\fonts\" />
+    <Folder Include="wwwroot\themes\basic\fonts\icons\" />
+    <Folder Include="wwwroot\themes\basic\fonts\BCSans\" />
   </ItemGroup>
 </Project>

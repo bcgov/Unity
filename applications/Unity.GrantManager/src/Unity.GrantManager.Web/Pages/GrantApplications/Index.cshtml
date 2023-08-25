@@ -38,31 +38,11 @@
     <abp-style src="/Pages/GrantApplications/Index.css" />
 }
 
-@await Component.InvokeAsync("ActionBar")
 
 
 <div class="container-fluid px-2">
-    <div class="d-flex my-1 p-2 justify-content-between">
-        <div class="d-flex">
-            <abp-button id="ApplicationOpenButton"
-                        text="@L["ApplicationOpenButton"].Value"
-                        icon-type="Other"
-                        icon="fl fl-mini-contract-2-mirrored"
-                        button-type="Light" />
-            <abp-button class="mx-2" id="ApplicationAssignButton"
-                        text="@L["ApplicationAssignButton"].Value"
-                        icon-type="Other"
-                        icon="fl fl-add-friend"
-                        button-type="Light" />
-        </div>
-        <div>
-            <abp-button id="ApplicationInfoButton"
-                        text="@L["ApplicationInfoButton"].Value"
-                        icon-type="Other"
-                        icon="fl fl-open-pane"
-                        button-type="Light" />
-        </div>
-    </div>
+    @await Component.InvokeAsync("ActionBar")
+
     <abp-table id="GrantApplicationsTable"></abp-table>
 </div>
 

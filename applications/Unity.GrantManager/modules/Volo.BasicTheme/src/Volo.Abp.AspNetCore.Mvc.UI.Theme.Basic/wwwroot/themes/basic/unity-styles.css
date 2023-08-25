@@ -21,6 +21,7 @@
     --bc-input-field-height: 34px;
     /*boostrap overrides*/
     --bs-primary: var(--bc-colors-blue-primary-500);
+    --bs-body-font-family: 'BCSans';
 }
 
 
