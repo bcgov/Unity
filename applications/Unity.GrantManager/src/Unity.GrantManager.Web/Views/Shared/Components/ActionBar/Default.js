@@ -108,11 +108,12 @@ $(function () {
 
         }
         if (selectedApplicationIds.length == 0) {
-
-            $('.active-list').prop('disabled', true);
+            $('*[data-selector="applications-table-actions"]').prop('disabled', true);
+            $('.action-bar').removeClass('active');
         }
         else {
-            $('.active-list').prop('disabled', false);
+            $('*[data-selector="applications-table-actions"]').prop('disabled', false);
+            $('.action-bar').addClass('active');
         }
     }
 });
