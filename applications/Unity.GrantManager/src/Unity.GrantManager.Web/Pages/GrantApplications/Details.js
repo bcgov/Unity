@@ -25,7 +25,7 @@ $(function () {
 
     $('#startAdjudication').click(function () {
         startAdjudicationModal.open({
-            applicationIds: selectedApplicationIds,
+            applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
             operation: 'UNDER_ADJUDICATION',
             message: 'Are you sure you want to start adjudication for this application?',
             title: 'Start Adjudication',
@@ -45,7 +45,7 @@ $(function () {
 
     $('#completeAdjudication').click(function () {
         completeAdjudicationModal.open({
-            applicationIds: selectedApplicationIds,
+            applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
             operation: 'ADJUDICATION_COMPLETED',
             message: 'Are you sure you want to complete adjudication for this application?',
             title: 'Complete Adjudication',
