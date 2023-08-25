@@ -23,7 +23,7 @@ $(function () {
            
     $('#approveApplicationsDetails').click(function () {
         approveApplicationsModal.open({
-            applicationIds: selectedApplicationIds,
+            applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
             operation: 'GRANT_APPROVED',
             message: 'Are you sure you want to approve this application?',
             title: 'Approve Applications',
@@ -31,7 +31,7 @@ $(function () {
     });
     $('#dontApproveApplicationsDetails').click(function () {
         dontApproveApplicationsModal.open({
-            applicationIds: selectedApplicationIds,
+            applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
             operation: 'GRANT_NOT_APPROVED',
             message: 'Are you sure you want to disapprove this application?', 
             title: 'Not Approve Applications',
