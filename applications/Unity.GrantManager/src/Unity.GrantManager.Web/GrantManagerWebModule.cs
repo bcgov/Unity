@@ -15,7 +15,6 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
@@ -28,18 +27,20 @@ using Volo.Abp.TenantManagement.Web;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
+using Volo.Abp.AspNetCore.Mvc.UI.Theming;
 using System;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Volo.Abp.Identity;
 using Microsoft.IdentityModel.Logging;
+using Unity.GrantManager.Web.Identity.Policy;
 using Microsoft.AspNetCore.Http;
+using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.CookiePolicy;
 
 namespace Unity.GrantManager.Web;
@@ -52,12 +53,13 @@ namespace Unity.GrantManager.Web;
     typeof(AbpIdentityWebModule),
     typeof(AbpSettingManagementWebModule),
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
+    typeof(AbpAspNetCoreMvcUiBasicThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAccountWebOpenIddictModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
-    )]
+)]
 public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -90,16 +92,22 @@ public class GrantManagerWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        ConfigurePolicies(context);
         ConfigureAuthentication(context, configuration);
         ConfigureUrls(configuration);
-        ConfigureBundles();
+        ConfigureTheming(configuration);
+        ConfigureBundles(configuration);
         ConfigureAutoMapper();
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
-        ConfigureAuthorization(context);
+    }
+
+    private static void ConfigurePolicies(ServiceConfigurationContext context)
+    {
+        PolicyRegistrant.Register(context);
     }
 
     private static void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
@@ -136,17 +144,15 @@ public class GrantManagerWebModule : AbpModule
                 RoleClaimType = UnityClaimsTypes.Role
             };
 
-            options.Events.OnTokenResponseReceived = async (context) =>
+            options.Events.OnTokenResponseReceived = async (tokenReceivedContext) =>
             {
                 await Task.CompletedTask;
             };
 
-            options.Events.OnTokenValidated = async (context) =>
+            options.Events.OnTokenValidated = async (tokenValidatedContext) =>
             {
-                var updater = context.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
-
-                // TODO: can be used to create users locally
-                await updater!.UpdateAsync(context);
+                var updater = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
+                await updater!.UpdateAsync(tokenValidatedContext);
             };
 
             // Change OIDC cookie policies when developing locally
@@ -185,15 +191,6 @@ public class GrantManagerWebModule : AbpModule
                 };
             }
         });
-    }
-
-    private static void ConfigureAuthorization(ServiceConfigurationContext context)
-    {
-        // TODO: ABP maps these, figure out how to map from database
-        // Configure your policies
-        context.Services.AddAuthorization(options =>
-              options.AddPolicy(IdentityPermissions.UserLookup.Default,
-              policy => policy.RequireClaim("Permission", IdentityPermissions.UserLookup.Default)));
     }
 
     private static void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
@@ -235,12 +232,20 @@ public class GrantManagerWebModule : AbpModule
         });
     }
 
-    private void ConfigureBundles()
+    private void ConfigureTheming(IConfiguration configuration)
+    {
+        Configure<AbpThemingOptions>(options =>
+        {
+            options.DefaultThemeName = configuration["Theme:Name"];
+        });
+    }
+
+    private void ConfigureBundles(IConfiguration configuration)
     {
         Configure<AbpBundlingOptions>(options =>
         {
             options.StyleBundles.Configure(
-                LeptonXLiteThemeBundles.Styles.Global,
+                string.Concat(configuration["Theme:Name"], ".Global"),
                 bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");

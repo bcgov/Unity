@@ -92,12 +92,12 @@ $(function () {
             message: 'Are you sure you want to disapprove the selected application/s?', 
             title: 'Not Approve Applications',
         });
-    });
+    });    
     $('#externalLink').click(function () {
-        location.href = '/GrantApplications/details?applicationId=' + JSON.stringify(selectedApplicationIds);
+        location.href =
+            '/GrantApplications/Details?ApplicationFormSubmissionId=' +
+            selectedApplicationIds[0];
     });
-
-
 
     function manageActionButtons() {
         if (selectedApplicationIds.length == 1) {

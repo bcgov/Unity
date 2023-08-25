@@ -8,23 +8,26 @@ using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using OpenIddict.Abstractions;
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using IdentityUser = Volo.Abp.Identity.IdentityUser;
+using Volo.Abp.PermissionManagement;
+using Unity.GrantManager.Permissions;
 
 namespace Unity.GrantManager.Web.Identity
 {
     internal class IdentityProfileLoginUpdater : ITransientDependency
     {
-        // The sample code for this hosts the Api in a host project with Bearer tokens
-        // - this is a stripped down version to create the user on token validation while in monolith mode and relying on the proxy generation
-        // private readonly IHttpClientFactory _httpClientFactory;                
-        // private readonly IRemoteServiceConfigurationProvider _remoteServiceConfigurationProvider;
-        // TODO: look at this during user sync / roles / permissions to make sure this works as wanted
-
         private readonly IdentityUserManager _userManager;
+        private readonly IdentityRoleManager _identityRoleManager;
+        private readonly PermissionManager _permissionManager;
 
-        public IdentityProfileLoginUpdater(IdentityUserManager userManager)
+        public IdentityProfileLoginUpdater(IdentityUserManager userManager,
+             IdentityRoleManager identityRoleManager,
+             PermissionManager permissionManager)
         {
             _userManager = userManager;
+            _identityRoleManager = identityRoleManager;
+            _permissionManager = permissionManager;
         }
 
         internal async Task UpdateAsync(TokenValidatedContext context)
@@ -34,22 +37,47 @@ namespace Unity.GrantManager.Web.Identity
 
         protected async Task CreateOrUpdateAsync(TokenValidatedContext validatedTokenContext)
         {
-            var user = await _userManager.FindByIdAsync(validatedTokenContext.SecurityToken.Subject.Replace("@idir", ""));
+            var subject = validatedTokenContext.SecurityToken.Subject.Replace("@idir", "");
+            var user = await _userManager.FindByIdAsync(subject);
 
             if (user == null)
             {
                 await CreateCurrentUserAsync(validatedTokenContext);
+                user = await _userManager.FindByIdAsync(subject);
             }
             else
             {
                 await UpdateCurrentUserAsync(user, validatedTokenContext);
             }
 
-            // This is needed for lookup - for now every user can get it until we lock this down further
-            if (!validatedTokenContext.Principal!.HasClaim(UnityClaimsTypes.Role, IdentityPermissions.Users.Default))
+            await UpdatePrincipal(validatedTokenContext.Principal!, user!);
+        }
+
+        private async Task UpdatePrincipal(ClaimsPrincipal principal, IdentityUser user)
+        {
+            var adminRole = "admin";
+            if (principal.IsInRole(adminRole))
             {
-                validatedTokenContext.Principal!.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
+                principal.AddClaim(UnityClaimsTypes.Role, adminRole);
+                var userPermissions = await _permissionManager.GetAllForRoleAsync(adminRole);
+                foreach (var permission in userPermissions)
+                    principal.AddClaim("Permission", permission.Name);
             }
+            else
+                foreach (var role in user.Roles)
+                {
+                    var dbRole = await _identityRoleManager.GetByIdAsync(role.RoleId);
+                    principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
+
+                    var userPermissions = (await _permissionManager.GetAllForUserAsync(user.Id)).Where(s => s.IsGranted);
+
+                    foreach (var permission in userPermissions)
+                        principal.AddClaim("Permission", permission.Name);
+                }
+
+            // This gets added as a Claim Provider through ABP - give this to all users for now
+            principal.AddClaim("Permission", GrantManagerPermissions.Default);
+            principal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
         }
 
         protected virtual async Task CreateCurrentUserAsync(TokenValidatedContext validatedTokenContext)

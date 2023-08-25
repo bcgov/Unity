@@ -5,11 +5,17 @@ VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.Domain", "src\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj", "{554AD327-6DBA-4F8F-96F8-81CE7A0C863F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Volo.BasicTheme.Tests", "Volo.BasicTheme.Tests", "{bb274e24-9741-4e8d-97ff-8164bc7db258}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Volo.BasicTheme", "Volo.BasicTheme", "{f842c2bc-69b0-4f40-9774-6ca4ede26a12}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{00099710-cf66-4bd2-932c-5b7534b78185}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.Application", "src\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj", "{1A94A50E-06DC-43C1-80B5-B662820EC3EB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.EntityFrameworkCore", "src\Unity.GrantManager.EntityFrameworkCore\Unity.GrantManager.EntityFrameworkCore.csproj", "{C956DD76-69C8-4A9C-83EA-D17DF83340FD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.Web", "src\Unity.GrantManager.Web\Unity.GrantManager.Web.csproj", "{068855E8-9240-4F1A-910B-CF825794513B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.GrantManager.Web", "src\Unity.GrantManager.Web\Unity.GrantManager.Web.csproj", "{068855E8-9240-4F1A-910B-CF825794513B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CA9AC87F-097E-4F15-8393-4BC07735A5B0}"
 EndProject
@@ -36,6 +42,22 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.HttpApi.Client.ConsoleTestApp", "test\Unity.GrantManager.HttpApi.Client.ConsoleTestApp\Unity.GrantManager.HttpApi.Client.ConsoleTestApp.csproj", "{EF480016-9127-4916-8735-D2466BDBC582}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.DbMigrator", "src\Unity.GrantManager.DbMigrator\Unity.GrantManager.DbMigrator.csproj", "{AA94D832-1CCC-4715-95A9-A483F23A1A5D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.AspNetCore.Components.Server.BasicTheme", "modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Components.Server.BasicTheme\Volo.Abp.AspNetCore.Components.Server.BasicTheme.csproj", "{227F9060-AD4B-46E4-B5A6-FAD3E34749F9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.BasicTheme.Installer", "modules\Volo.BasicTheme\src\Volo.Abp.BasicTheme.Installer\Volo.Abp.BasicTheme.Installer.csproj", "{E814CE50-0622-47FE-9398-F17EA3C7D809}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic", "modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.csproj", "{33ED9030-5498-4DFF-B938-62793F1BE0B2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.AspNetCore.Components.Web.BasicTheme", "modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Components.Web.BasicTheme\Volo.Abp.AspNetCore.Components.Web.BasicTheme.csproj", "{516F5F1B-5BB4-4A00-8C5D-B5CFCF0102A9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.AspNetCore.Components.WebAssembly.BasicTheme", "modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Components.WebAssembly.BasicTheme\Volo.Abp.AspNetCore.Components.WebAssembly.BasicTheme.csproj", "{06069022-9963-4131-B63E-4838709997AF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo", "modules\Volo.BasicTheme\test\Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo\Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo.csproj", "{5EAA3EC8-F0FE-4EC2-A7F5-0823AC4E081C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo.Tests", "modules\Volo.BasicTheme\test\Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo.Tests\Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo.Tests.csproj", "{39CEB103-1049-49D5-9BF0-BB06C3125EA2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Demo", "modules\Volo.BasicTheme\test\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Demo\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Demo.csproj", "{4319734C-932A-4B83-808A-E5E76B0CBA42}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -103,6 +125,38 @@ Global
 		{AA94D832-1CCC-4715-95A9-A483F23A1A5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA94D832-1CCC-4715-95A9-A483F23A1A5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA94D832-1CCC-4715-95A9-A483F23A1A5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{227F9060-AD4B-46E4-B5A6-FAD3E34749F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{227F9060-AD4B-46E4-B5A6-FAD3E34749F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{227F9060-AD4B-46E4-B5A6-FAD3E34749F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{227F9060-AD4B-46E4-B5A6-FAD3E34749F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E814CE50-0622-47FE-9398-F17EA3C7D809}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E814CE50-0622-47FE-9398-F17EA3C7D809}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E814CE50-0622-47FE-9398-F17EA3C7D809}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E814CE50-0622-47FE-9398-F17EA3C7D809}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33ED9030-5498-4DFF-B938-62793F1BE0B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33ED9030-5498-4DFF-B938-62793F1BE0B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33ED9030-5498-4DFF-B938-62793F1BE0B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33ED9030-5498-4DFF-B938-62793F1BE0B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{516F5F1B-5BB4-4A00-8C5D-B5CFCF0102A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{516F5F1B-5BB4-4A00-8C5D-B5CFCF0102A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{516F5F1B-5BB4-4A00-8C5D-B5CFCF0102A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{516F5F1B-5BB4-4A00-8C5D-B5CFCF0102A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06069022-9963-4131-B63E-4838709997AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06069022-9963-4131-B63E-4838709997AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06069022-9963-4131-B63E-4838709997AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06069022-9963-4131-B63E-4838709997AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EAA3EC8-F0FE-4EC2-A7F5-0823AC4E081C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EAA3EC8-F0FE-4EC2-A7F5-0823AC4E081C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EAA3EC8-F0FE-4EC2-A7F5-0823AC4E081C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EAA3EC8-F0FE-4EC2-A7F5-0823AC4E081C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39CEB103-1049-49D5-9BF0-BB06C3125EA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39CEB103-1049-49D5-9BF0-BB06C3125EA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39CEB103-1049-49D5-9BF0-BB06C3125EA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39CEB103-1049-49D5-9BF0-BB06C3125EA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4319734C-932A-4B83-808A-E5E76B0CBA42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4319734C-932A-4B83-808A-E5E76B0CBA42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4319734C-932A-4B83-808A-E5E76B0CBA42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4319734C-932A-4B83-808A-E5E76B0CBA42}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -123,6 +177,16 @@ Global
 		{E512F4D9-9375-480F-A2F6-A46509F9D824} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{EF480016-9127-4916-8735-D2466BDBC582} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{AA94D832-1CCC-4715-95A9-A483F23A1A5D} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{5EAA3EC8-F0FE-4EC2-A7F5-0823AC4E081C} = {bb274e24-9741-4e8d-97ff-8164bc7db258}
+		{39CEB103-1049-49D5-9BF0-BB06C3125EA2} = {bb274e24-9741-4e8d-97ff-8164bc7db258}
+		{4319734C-932A-4B83-808A-E5E76B0CBA42} = {bb274e24-9741-4e8d-97ff-8164bc7db258}
+		{227F9060-AD4B-46E4-B5A6-FAD3E34749F9} = {f842c2bc-69b0-4f40-9774-6ca4ede26a12}
+		{516F5F1B-5BB4-4A00-8C5D-B5CFCF0102A9} = {f842c2bc-69b0-4f40-9774-6ca4ede26a12}
+		{06069022-9963-4131-B63E-4838709997AF} = {f842c2bc-69b0-4f40-9774-6ca4ede26a12}
+		{33ED9030-5498-4DFF-B938-62793F1BE0B2} = {f842c2bc-69b0-4f40-9774-6ca4ede26a12}
+		{E814CE50-0622-47FE-9398-F17EA3C7D809} = {f842c2bc-69b0-4f40-9774-6ca4ede26a12}
+		{f842c2bc-69b0-4f40-9774-6ca4ede26a12} = {00099710-cf66-4bd2-932c-5b7534b78185}
+		{bb274e24-9741-4e8d-97ff-8164bc7db258} = {00099710-cf66-4bd2-932c-5b7534b78185}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
