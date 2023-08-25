@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.PermissionManagement;
@@ -8,71 +10,105 @@ namespace Unity.GrantManager.Permissions
 {
     internal class PermissionGrantsDataSeeder : IDataSeedContributor, ITransientDependency
     {
-        private readonly PermissionManager _permissionManager;
+        private readonly IPermissionDataSeeder _permissionDataSeeder;
 
-        public PermissionGrantsDataSeeder(PermissionManager permissionManager)
+        public PermissionGrantsDataSeeder(IPermissionDataSeeder permissionDataSeeder)
         {
-            _permissionManager = permissionManager;
+            _permissionDataSeeder = permissionDataSeeder;
         }
 
         public async Task SeedAsync(DataSeedContext context)
-        {
+        {            
             // Default permission grants based on role
 
             // - Program Manager
-            await _permissionManager.SetForRoleAsync(UnityRoles.ProgramManager, GrantManagerPermissions.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.ProgramManager, GrantApplicationPermissions.Applications.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.ProgramManager, GrantApplicationPermissions.Assignments.AssignInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.ProgramManager, GrantApplicationPermissions.Reviews.StartInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.ProgramManager, GrantApplicationPermissions.Reviews.CompleteInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.ProgramManager, GrantApplicationPermissions.Adjudications.Start, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.ProgramManager, GrantApplicationPermissions.Adjudications.Complete, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.ProgramManager, GrantApplicationPermissions.Comments.Add, true);            
-            // TODO: manage organization profiles
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager,
+                new List<string>
+                {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    GrantApplicationPermissions.Assignments.AssignInitial,
+                    GrantApplicationPermissions.Reviews.StartInitial,
+                    GrantApplicationPermissions.Reviews.CompleteInitial,
+                    GrantApplicationPermissions.Adjudications.Start,
+                    GrantApplicationPermissions.Adjudications.Complete,
+                    GrantApplicationPermissions.Comments.Add
+                });
 
             // - Reviewer
-            await _permissionManager.SetForRoleAsync(UnityRoles.Reviewer, GrantManagerPermissions.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Reviewer, GrantApplicationPermissions.Applications.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Reviewer, GrantApplicationPermissions.Reviews.StartInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Reviewer, GrantApplicationPermissions.Reviews.CompleteInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Reviewer, GrantApplicationPermissions.Comments.Add, true);
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Reviewer,
+                new List<string>
+                {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    GrantApplicationPermissions.Reviews.StartInitial,
+                    GrantApplicationPermissions.Reviews.CompleteInitial,
+                    GrantApplicationPermissions.Comments.Add
+                });
+            //// TODO: manage organization profiles
 
             // - Adjudicator
-            await _permissionManager.SetForRoleAsync(UnityRoles.Adjudicator, GrantManagerPermissions.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Adjudicator, GrantApplicationPermissions.Applications.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Adjudicator, GrantApplicationPermissions.Reviews.StartInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Adjudicator, GrantApplicationPermissions.Reviews.CompleteInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Adjudicator, GrantApplicationPermissions.Adjudications.Start, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Adjudicator, GrantApplicationPermissions.Comments.Add, true);
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Adjudicator,
+               new List<string>
+               {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    GrantApplicationPermissions.Reviews.StartInitial,
+                    GrantApplicationPermissions.Reviews.CompleteInitial,
+                    GrantApplicationPermissions.Adjudications.Start,
+                    GrantApplicationPermissions.Comments.Add
+               });
 
             // - TeamLead
-            await _permissionManager.SetForRoleAsync(UnityRoles.TeamLead, GrantManagerPermissions.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.TeamLead, GrantApplicationPermissions.Applications.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.TeamLead, GrantApplicationPermissions.Assignments.AssignInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.TeamLead, GrantApplicationPermissions.Reviews.StartInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.TeamLead, GrantApplicationPermissions.Reviews.CompleteInitial, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.TeamLead, GrantApplicationPermissions.Adjudications.Start, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.TeamLead, GrantApplicationPermissions.Adjudications.Complete, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.TeamLead, GrantApplicationPermissions.Comments.Add, true);
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.TeamLead,
+               new List<string>
+               {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    GrantApplicationPermissions.Assignments.AssignInitial,
+                    GrantApplicationPermissions.Reviews.StartInitial,
+                    GrantApplicationPermissions.Reviews.CompleteInitial,
+                    GrantApplicationPermissions.Adjudications.Start,
+                    GrantApplicationPermissions.Adjudications.Complete,
+                    GrantApplicationPermissions.Comments.Add
+               });
             // TODO: manage organization profiles
 
             // - Approver
-            await _permissionManager.SetForRoleAsync(UnityRoles.Approver, GrantManagerPermissions.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Approver, GrantApplicationPermissions.Applications.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Approver, GrantApplicationPermissions.Approvals.Complete, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.Approver, GrantApplicationPermissions.Comments.Add, true);
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Approver,
+              new List<string>
+              {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    GrantApplicationPermissions.Approvals.Complete,
+                    GrantApplicationPermissions.Comments.Add
+              });
 
             // - BusinessAreaAdmin
-            await _permissionManager.SetForRoleAsync(UnityRoles.BusinessAreaAdmin, GrantManagerPermissions.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.BusinessAreaAdmin, GrantApplicationPermissions.Applications.Default, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.BusinessAreaAdmin, GrantApplicationPermissions.Applicants.Edit, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.BusinessAreaAdmin, GrantApplicationPermissions.Approvals.Complete, true);
-            await _permissionManager.SetForRoleAsync(UnityRoles.BusinessAreaAdmin, GrantApplicationPermissions.Comments.Add, true);
-            // TODO: user management
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.BusinessAreaAdmin,
+             new List<string>
+             {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    GrantApplicationPermissions.Applicants.Edit,
+                    GrantApplicationPermissions.Approvals.Complete,
+                    GrantApplicationPermissions.Comments.Add,
+                    IdentitySeedPermissions.Users.Default,
+                    IdentitySeedPermissions.Users.Create,
+                    IdentitySeedPermissions.Users.Update,
+                    IdentitySeedPermissions.Users.Delete,
+                    IdentitySeedPermissions.Users.ManagePermissions
+             });
 
             // - SystemAdmin
-            await _permissionManager.SetForRoleAsync(UnityRoles.SystemAdmin, GrantManagerPermissions.Default, true);
-            // TODO: manage organization profiles, manage system settings
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.SystemAdmin,
+             new List<string>
+             {
+                    GrantManagerPermissions.Default,
+                    SettingManagementSeedPermissions.Emailing,
+                    SettingManagementSeedPermissions.EmailingTest
+             });
         }
     }
 }
+
