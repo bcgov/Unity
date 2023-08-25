@@ -113,3 +113,4 @@ appsettings.json
 /applications/Unity.GrantManager/src/Unity.GrantManager.Web/appsettings.secrets.json
 
 /applications/Orchestrator
+*.env
