@@ -23,42 +23,43 @@
 </div>
 
 <div id="comments-div" class="row" style="margin-top:10px;">
-@foreach (var comment in Model.CommentList)
-{
-    @if (comment != null)
+    @foreach (var comment in Model.CommentList)
     {
-    <div id="widget" name="widget-div">
-        <div id="overlay" style="display: none">
-            <i id="edit-comment" class="fas fa-edit" name="edit-comment" data-toggle="tooltip" data-placement="left"  title="Edit Comment"></i>
-            <i id="delete-comment" class="fas fa-trash"  style="display: none;" name="delete-comment" data-toggle="tooltip" data-placement="left"  title="Delete Comment" title="Delete"></i>
+        @if (comment != null)
+        {
+        <div id="widget" name="widget-div">
+            <div id="overlay" style="display: none">
+                <i id="edit-comment" class="fas fa-edit" name="edit-comment" data-toggle="tooltip" data-placement="left"  title="Edit Comment"></i>
+                <i id="delete-comment" class="fas fa-trash"  style="display: none;" name="delete-comment" data-toggle="tooltip" data-placement="left"  title="Delete Comment" title="Delete"></i>
+            </div>
+
+            <textarea
+                id="@comment.Id"
+                readonly="true"
+                name="@Html.NameFor(m => m.Comment)" 
+                class="form-control"
+                value="@comment.Comment"
+                style="margin-top: 4px;margin-bottom: 4px;">@comment.Comment</textarea>
+
+            <div id="comment-buttons" class="comment-message-button-area" style="display: none">
+                <abp-button id="cancelCommentBtn"
+                    text="Cancel"
+                    type="button"
+                    class="btn"
+                    />
+
+                <abp-button id="updateCommentBtn"
+                    text="Update"
+                    type="button"
+                    class="btn"
+                    disabled="true"
+                    />
+            </div>
+            <input type="hidden" name="CommentId" value="@comment.Id"/>
         </div>
-
-        <textarea
-            id="@comment.Id"
-            readonly="true"
-            name="@Html.NameFor(m => m.Comment)" 
-            class="form-control"
-            value="@comment.Comment"
-            style="margin-top: 4px;margin-bottom: 4px;">@comment.Comment</textarea>
-
-        <div id="comment-buttons" class="comment-message-button-area" style="display: none">
-            <abp-button id="cancelCommentBtn"
-                text="Cancel"
-                type="button"
-                class="btn"
-                />
-
-            <abp-button id="updateCommentBtn"
-                text="Update"
-                type="button"
-                class="btn"
-                disabled="true"
-                />
-        </div>
-        <input type="hidden" name="CommentId" value="@comment.Id"/>
-    </div>
+        }
     }
-}
+</div>
 
 <div id="widget-example" style="display: none">
     <div id="widget" name="widget-div">

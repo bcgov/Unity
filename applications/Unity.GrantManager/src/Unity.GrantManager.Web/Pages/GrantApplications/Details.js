@@ -1,5 +1,6 @@
 $(function () {
-    
+    var selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
+
     const formatter = new Intl.NumberFormat('en-CA', {
         style: 'currency',
         currency: 'CAD',
@@ -9,7 +10,47 @@ $(function () {
 
     var assignApplicationModal = new abp.ModalManager({
         viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
-    });    
+    });
+
+    var startAdjudicationModal = new abp.ModalManager({
+        viewUrl: '../Approve/ApproveApplicationsModal'
+    });
+
+    startAdjudicationModal.onResult(function () {
+        abp.notify.success(
+            'Adjudication is now started for this application',
+            'Start Adjudication'
+        );
+    });
+
+    $('#startAdjudication').click(function () {
+        startAdjudicationModal.open({
+            applicationIds: selectedApplicationIds,
+            operation: 'UNDER_ADJUDICATION',
+            message: 'Are you sure you want to start adjudication for this application?',
+            title: 'Start Adjudication',
+        });
+    });
+
+    var completeAdjudicationModal = new abp.ModalManager({
+        viewUrl: '../Approve/ApproveApplicationsModal'
+    });
+
+    completeAdjudicationModal.onResult(function () {
+        abp.notify.success(
+            'Adjudication is now completed for this application',
+            'Completed Adjudication'
+        );
+    });
+
+    $('#completeAdjudication').click(function () {
+        completeAdjudicationModal.open({
+            applicationIds: selectedApplicationIds,
+            operation: 'ADJUDICATION_COMPLETED',
+            message: 'Are you sure you want to complete adjudication for this application?',
+            title: 'Complete Adjudication',
+        });
+    });
 
     const l = abp.localization.getResource('GrantManager');
     setupComments();
@@ -120,107 +161,122 @@ $(function () {
         let editCommentsIcons = document.getElementsByName('edit-comment');
         let saveCommentBtn = document.getElementById('saveCommentBtn');
         let submissionId = document.getElementById('ApplicationFormSubmissionId');
+        let widgetExample = document.getElementById("widget-example");
+        let commentsDiv = document.getElementById("comments-div");
 
-        for (var i = 0; i < widgets.length; i++) {
-            let editIcon = widgets[i].children.overlay.children[0];
-            let deleteIcon = widgets[i].children.overlay.children[1];
-            let cancelBtn = widgets[i].children[2].children[0];
-            let updateBtn = widgets[i].children[2].children[1];
+        addWidgetListners();
+        
+        function cloneTextAreaWidget(assessmentComment) {
+            console.log('wtf');
 
-            widgets[i].addEventListener('mouseover', (e) => {
-                let textArea =
-                    e.currentTarget.firstElementChild.nextElementSibling;
-                if (textArea.readOnly == true) {
-                    e.currentTarget.children[2].style.display = 'none';
-                    e.currentTarget.children.overlay.style.display = 'block';
-                    textArea.style.cursor = 'default';
-                } else {
-                    e.currentTarget.children[2].style.display = 'flex';
+            let textArea = widgetExample.firstElementChild.querySelector('textarea');
+            let commentIdInput = widgetExample.firstElementChild.querySelector('#CommentId');
+
+            commentIdInput.value = assessmentComment.id;
+            commentIdInput.setAttribute('value', assessmentComment.id);
+            textArea.id = assessmentComment.id;
+            textArea.value = assessmentComment.comment;
+            textArea.setAttribute('value', assessmentComment.comment);
+            textArea.append(assessmentComment.comment);
+
+            
+            let widgetHtml = widgetExample.innerHTML;
+            let divHTML = commentsDiv.innerHTML;
+            commentsDiv.innerHTML = widgetHtml + divHTML;
+
+
+            addWidgetListners();
+
+        }
+
+        function addWidgetListners() {
+            for (var i = 0; i < widgets.length; i++) {
+                let editIcon = widgets[i].children.overlay.children[0];
+                let deleteIcon = widgets[i].children.overlay.children[1];
+                let cancelBtn = widgets[i].children[2].children[0];
+                let updateBtn = widgets[i].children[2].children[1];
+    
+                widgets[i].addEventListener('mouseover', (e) => {
+                    let textArea =
+                        e.currentTarget.firstElementChild.nextElementSibling;
+                    if (textArea.readOnly == true) {
+                        e.currentTarget.children[2].style.display = 'none';
+                        e.currentTarget.children.overlay.style.display = 'block';
+                        textArea.style.cursor = 'default';
+                    } else {
+                        e.currentTarget.children[2].style.display = 'flex';
+                        e.currentTarget.children.overlay.style.display = 'none';
+                        textArea.style.cursor = 'text';
+                    }
+                });
+    
+                widgets[i].addEventListener('mouseout', (e) => {
                     e.currentTarget.children.overlay.style.display = 'none';
-                    textArea.style.cursor = 'text';
-                }
-            });
-
-            widgets[i].addEventListener('mouseout', (e) => {
-                e.currentTarget.children.overlay.style.display = 'none';
-            });
-
-            cancelBtn.addEventListener('click', (e) => {
-                let textArea =
-                    e.currentTarget.parentElement.parentElement.querySelector(
-                        'textarea'
-                    );
-                textArea.readOnly = true;
-                $(textArea).removeClass('selected');
-                e.currentTarget.parentElement.style.display = 'none';
-                textArea.value = $(textArea).attr('value');
-                showEditIcons();
-            });
-
-            updateBtn.addEventListener('click', (e) => {
-                let parent = e.currentTarget.parentElement;
-                let textArea =
-                parent.parentElement.querySelector(
-                        'textarea'
-                    );
-                let commentId = textArea.id;
-                let commentValue = textArea.value;
-                try {
-                    unity.grantManager.grantApplications.assessmentComment
-                        .updateAssessmentComment(commentId, commentValue, {})
-                        .done(function () {
-                            abp.notify.success(
-                                'The comment has been updated.'
-                            );
-
-                            textArea.readOnly = true;
-                            parent.style.display = 'none';
-                            $(textArea).removeClass('selected');
-                            textArea.setAttribute('value', textArea.value);
-                            showEditIcons();
-                        });
-                    
-                } catch (error) {}
-            });
-
-            editIcon.addEventListener('click', (e) => {
-                e.currentTarget.parentElement.style.display = 'none';
-                let textArea =
-                    e.currentTarget.parentElement.parentElement.querySelector(
-                        'textarea'
-                    );
-                textArea.readOnly = false;
-                $(textArea).addClass('selected');
-                if ($(textArea).attr('value') !== textArea.value) {
-                    updateBtn.disabled = false;
-                } else {
-                    updateBtn.disabled = true;
-                }
-                textArea.addEventListener('keyup', (e) => {
+                });
+    
+                cancelBtn.addEventListener('click', (e) => {
+                    let textArea =
+                        e.currentTarget.parentElement.parentElement.querySelector(
+                            'textarea'
+                        );
+                    textArea.readOnly = true;
+                    $(textArea).removeClass('selected');
+                    e.currentTarget.parentElement.style.display = 'none';
+                    textArea.value = $(textArea).attr('value');
+                    showEditIcons();
+                });
+    
+                updateBtn.addEventListener('click', (e) => {
+                    let parent = e.currentTarget.parentElement;
+                    let textArea =
+                    parent.parentElement.querySelector(
+                            'textarea'
+                        );
+                    let commentId = textArea.id;
+                    let commentValue = textArea.value;
+                    try {
+                        unity.grantManager.grantApplications.assessmentComment
+                            .updateAssessmentComment(commentId, commentValue, {})
+                            .done(function () {
+                                abp.notify.success(
+                                    'The comment has been updated.'
+                                );
+    
+                                textArea.readOnly = true;
+                                parent.style.display = 'none';
+                                $(textArea).removeClass('selected');
+                                textArea.setAttribute('value', textArea.value);
+                                showEditIcons();
+                            });
+                        
+                    } catch (error) {}
+                });
+    
+                editIcon.addEventListener('click', (e) => {
+                    e.currentTarget.parentElement.style.display = 'none';
+                    let textArea =
+                        e.currentTarget.parentElement.parentElement.querySelector(
+                            'textarea'
+                        );
+                    textArea.readOnly = false;
+                    $(textArea).addClass('selected');
                     if ($(textArea).attr('value') !== textArea.value) {
                         updateBtn.disabled = false;
                     } else {
                         updateBtn.disabled = true;
                     }
+                    textArea.addEventListener('keyup', (e) => {
+                        if ($(textArea).attr('value') !== textArea.value) {
+                            updateBtn.disabled = false;
+                        } else {
+                            updateBtn.disabled = true;
+                        }
+                    });
+    
+                    hideEditIcons();
                 });
-
-                hideEditIcons();
-            });
-        }
-
-        function cloneTextAreaWidget(assessmentComment) {
-            let comment =  assessmentComment.comment;
-
-            let widgetHtml = document.getElementById("widget-example").innerHTML;
-            let commentsDiv = document.getElementById("comments-div");
-            commentsDiv.innerHTML = widgetHtml + commentsDiv.innerHTML;
-
-            let textArea = commentsDiv.firstElementChild.querySelector('textarea');
-            let commentIdInput = commentsDiv.firstElementChild.querySelector('#CommentId');
-            commentIdInput.value = assessmentComment.id;
-            textArea.id = assessmentComment.id;
-            textArea.value = comment;
-            setupComments();
+            }
+    
         }
 
         saveCommentBtn.addEventListener('click', (e) => {
