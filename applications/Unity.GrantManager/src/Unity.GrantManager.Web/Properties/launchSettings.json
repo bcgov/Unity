@@ -3,7 +3,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:44342/",
+      "applicationUrl": "https://localhost:44342/",
       "sslPort": 44342
     }
   },
@@ -18,10 +18,11 @@
     "Unity.GrantManager.Web": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "http://localhost:44342/",
+      "applicationUrl": "https://localhost:44342/",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
-    }    
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://+:8080;https://+:44342"
+      },
+    }
   }
 }
