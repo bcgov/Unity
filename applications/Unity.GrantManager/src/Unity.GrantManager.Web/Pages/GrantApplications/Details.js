@@ -174,11 +174,11 @@ $(function () {
 
             commentIdInput.value = assessmentComment.id;
             commentIdInput.setAttribute('value', assessmentComment.id);
+            textArea.innetHTML = "";
             textArea.id = assessmentComment.id;
             textArea.value = assessmentComment.comment;
             textArea.setAttribute('value', assessmentComment.comment);
-            textArea.append(assessmentComment.comment);
-
+            textArea.textContent = assessmentComment.comment;
             
             let widgetHtml = widgetExample.innerHTML;
             let divHTML = commentsDiv.innerHTML;
