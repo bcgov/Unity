@@ -18,11 +18,11 @@
     "Unity.GrantManager.Web": {
       "commandName": "Project",
       "launchBrowser": true,
-        "environmentVariables": {
-            "ASPNETCORE_ENVIRONMENT": "Development",
-            "ASPNETCORE_URLS": "http://+:8080;https://+:44342"
-        },
-      "applicationUrl": "https://localhost:44342/"
+      "applicationUrl": "https://localhost:44342/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://+:8080;https://+:44342"
+      },
     }
   }
 }
