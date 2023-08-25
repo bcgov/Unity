@@ -10,6 +10,8 @@
     "Menu:Scoring": "Scoring",
     "Menu:Reporting": "Reporting",
     "Menu:Welcome": "Welcome",
+    "Menu:Roles": "Roles",
+    "Menu:Users": "Users", 
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 

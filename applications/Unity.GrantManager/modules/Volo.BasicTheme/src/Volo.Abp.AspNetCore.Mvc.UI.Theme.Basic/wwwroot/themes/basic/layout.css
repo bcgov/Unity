@@ -279,3 +279,12 @@ div.dataTables_wrapper div.dataTables_length label {
 .rtl table.dataTable thead th, table.dataTable thead td, table.dataTable tfoot th, table.dataTable tfoot td {
     text-align: right;
 }
+
+.identity-toolbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    padding: 15px 7px 7px 12px;
+}

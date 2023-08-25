@@ -1,13 +1,19 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
+using Volo.Abp.Authorization.Permissions;
 
 namespace Unity.GrantManager.Web.Pages;
 
 public class IndexModel : GrantManagerPageModel
 {
-    public void OnGet()
+    public IndexModel()
+    {
+    }
+
+    public void  OnGet()
     {
     }
 
