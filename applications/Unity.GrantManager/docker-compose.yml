@@ -41,7 +41,7 @@ services:
   unity-data-postgres:
     image: postgres:15.4
     volumes:
-      - postgres_data:/var/opt/postgres
+      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${UNITY_POSTGRES_DB:-UnityGrantManager}
       POSTGRES_USER: ${UNITY_POSTGRES_USER:-postgres}
