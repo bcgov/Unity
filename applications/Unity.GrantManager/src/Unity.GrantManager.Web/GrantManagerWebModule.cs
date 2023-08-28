@@ -109,7 +109,7 @@ public class GrantManagerWebModule : AbpModule
     }
 
     private static void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
-    {        
+    {
         context.Services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -153,19 +153,9 @@ public class GrantManagerWebModule : AbpModule
                 await updater!.UpdateAsync(tokenValidatedContext);
             };
 
-            // Change OIDC cookie policies when developing locally
-            var env = context.Services.GetRequiredService<IWebHostEnvironment>();
-            if (env.IsDevelopment())
+            if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
             {
-                // Allows http://localhost to work on Chromium and Edge.
-                options.ProtocolValidator.RequireNonce = false;
-                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
-            }
-
-            // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested
-            if (!env.IsDevelopment() || Convert.ToBoolean(configuration["AuthServer:UseHttpsRedirectLocally"]))
-            {
+                // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested
                 options.Events.OnRedirectToIdentityProvider = context =>
                 {
                     var host = context.Request.Host;
@@ -181,12 +171,19 @@ public class GrantManagerWebModule : AbpModule
 
                 options.Events.OnRedirectToIdentityProviderForSignOut = ctx =>
                 {
-                    // change the post-logout redirect uri to the reverse proxy
                     var host = ctx.Request.Host;
                     ctx.ProtocolMessage.SetParameter("post_logout_redirect_uri", $"https://{host}/signout-callback-oidc");
 
                     return Task.CompletedTask;
                 };
+            }
+            else
+            {
+                //// Change OIDC cookie policies when developing locally
+                // Allows http://localhost to work on Chromium and Edge.
+                options.ProtocolValidator.RequireNonce = false;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
             }
         });
     }
@@ -308,8 +305,9 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
+        var configuration = context.GetConfiguration();
 
-        if (env.IsDevelopment() || env.IsStaging())
+        if (!env.IsProduction())
         {
             app.UseDeveloperExceptionPage();
             IdentityModelEventSource.ShowPII = true;
@@ -322,7 +320,7 @@ public class GrantManagerWebModule : AbpModule
             app.UseErrorPage();
         }
 
-        if (!env.IsDevelopment())
+        if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
         {
             app.UseCookiePolicy(new CookiePolicyOptions
             {
