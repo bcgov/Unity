@@ -11,7 +11,7 @@
     "Menu:Reporting": "Reporting",
     "Menu:Welcome": "Welcome",
     "Menu:Roles": "Roles",
-    "Menu:Users": "Users", 
+    "Menu:Users": "Users",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
@@ -99,6 +99,8 @@
     "Permission:GrantApplicationManagement.Approvals.Default": "Approvals",
     "Permission:GrantApplicationManagement.Approvals.Complete": "Complete Approval",
     "Permission:GrantApplicationManagement.Comments.Default": "Comments",
-    "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment"
+    "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment",
+    "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
+    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles"
   }
 }
