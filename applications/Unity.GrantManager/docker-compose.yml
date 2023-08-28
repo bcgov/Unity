@@ -4,7 +4,7 @@ name: unity_local
 
 services:
   unity-grantmanager-web:
-    image: 'image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-grantmanager-web:${TAG:-latest}'
+    image: 'image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-grantmanager-web:${WEB_VERSION:-latest}'
     build:
       context: .
       dockerfile: src/Unity.GrantManager.Web/Dockerfile
@@ -26,7 +26,7 @@ services:
       - common-network
 
   unity-data-dbmigrator:
-    image: 'image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-grantmanager-dbmigrator:${TAG:-latest}'
+    image: 'image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-grantmanager-dbmigrator:${MIGRATOR_VERSION:-latest}'
     build:
       context: .
       dockerfile: src/Unity.GrantManager.DbMigrator/Dockerfile
