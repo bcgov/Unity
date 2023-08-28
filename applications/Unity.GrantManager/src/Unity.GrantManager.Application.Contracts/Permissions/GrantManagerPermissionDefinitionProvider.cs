@@ -12,6 +12,9 @@ public class GrantManagerPermissionDefinitionProvider : PermissionDefinitionProv
 
         // Default grant manager user
         grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.Default, L("Permission:GrantManagerManagement.Default"));
+
+        var organizationPermissions = grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.Organizations.Default, L("Permission:GrantApplicationManagement.Organizations.Default"));
+        organizationPermissions.AddChild(GrantManagerPermissions.Organizations.ManageProfiles, L("Permission:GrantApplicationManagement.Organizations.ManageProfiles"));
     }
 
     private static LocalizableString L(string name)
