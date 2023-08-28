@@ -32,7 +32,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Adjudications.Start,
                     GrantApplicationPermissions.Adjudications.Complete,
-                    GrantApplicationPermissions.Comments.Add
+                    GrantApplicationPermissions.Comments.Add,
+                    GrantManagerPermissions.Organizations.Default,
+                    GrantManagerPermissions.Organizations.ManageProfiles
                 });
 
             // - Reviewer
@@ -44,8 +46,7 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add
-                });
-            //// TODO: manage organization profiles
+                });            
 
             // - Adjudicator
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Adjudicator,
@@ -70,9 +71,10 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Adjudications.Start,
                     GrantApplicationPermissions.Adjudications.Complete,
-                    GrantApplicationPermissions.Comments.Add
-               });
-            // TODO: manage organization profiles
+                    GrantApplicationPermissions.Comments.Add,
+                    GrantManagerPermissions.Organizations.Default,
+                    GrantManagerPermissions.Organizations.ManageProfiles
+               });            
 
             // - Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Approver,
@@ -106,7 +108,9 @@ namespace Unity.GrantManager.Permissions
              {
                     GrantManagerPermissions.Default,
                     SettingManagementSeedPermissions.Emailing,
-                    SettingManagementSeedPermissions.EmailingTest
+                    SettingManagementSeedPermissions.EmailingTest,
+                    GrantManagerPermissions.Organizations.Default,
+                    GrantManagerPermissions.Organizations.ManageProfiles
              });
         }
     }
