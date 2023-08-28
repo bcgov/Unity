@@ -1,0 +1,21 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.AssigneeSelection.AssigneeSelectionModalModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page-handler="OnPostAsync">
+<abp-modal>
+    <abp-modal-header title="Adjudication Users"></abp-modal-header>
+    <abp-modal-body>
+        <div>
+            <abp-select  asp-for="@Model.AssigneeId" asp-items="@Model.AssigneeList" label="Users">
+                <option value="">Select a user</option>
+            </abp-select>
+            <abp-input type="hidden" asp-for="@Model.SelectedApplicationIds" />
+        </div>       
+    </abp-modal-body>
+    <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
+</abp-modal>
+</form>

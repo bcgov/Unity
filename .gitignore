@@ -22,6 +22,7 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+[Ll]ogs/
 
 # Visual Studio cache/options directory
 .vs/
@@ -113,3 +114,4 @@ appsettings.json
 /applications/Unity.GrantManager/src/Unity.GrantManager.Web/appsettings.secrets.json
 
 /applications/Orchestrator
+*.env

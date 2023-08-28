@@ -1,0 +1,97 @@
+﻿@using Volo.Abp.UI.Navigation;
+@using Microsoft.AspNetCore.Http;
+@using Volo.Abp.Users;
+@inject ICurrentUser CurrentUser
+@model ApplicationMenu
+
+@{
+    string currentPath = Context.Request.Path;
+}
+<div class="unity-side-nav">
+    <div class="d-flex flex-column align-items-center align-items-sm-start text-white">
+        <div class="d-flex align-items-center mb-md-0 me-md-auto px-3 py-4 unity-user-name">
+            @*<a href="#" class="fw-bold d-sm-inline text-decoration-none">Fenske, Melissa JEDI:EX</a>*@
+
+            @if (CurrentUser.IsAuthenticated)
+            {                
+                <a href="#" class="fw-bold d-sm-inline text-decoration-none">
+                    <span><span>@CurrentUser.Name </span><span> @CurrentUser.SurName</span></span>
+                </a>
+                
+                @*<form asp-page-handler="cancel" method="post">
+                    <button class="btn btn-default">Logout</button>
+                </form>*@
+            }
+        </div>
+        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100" id="menu">
+            @foreach (var menuItem in Model.Items)
+            {
+                var elementId = string.IsNullOrEmpty(menuItem.ElementId) ? string.Empty : $"id=\"{menuItem.ElementId}\"";
+                var cssClass = string.IsNullOrEmpty(menuItem.CssClass) ? string.Empty : menuItem.CssClass;
+                var disabled = menuItem.IsDisabled ? "disabled" : string.Empty;
+                var url = string.IsNullOrEmpty(menuItem.Url) ? "#" : Url.IsLocalUrl(menuItem.Url) ? Url.Content(menuItem.Url.EnsureStartsWith('~')) : menuItem.Url;
+                
+                /* Added as an enabler for now, as the group menus are not rendering correctly - currently being worked */
+                bool isCurrentUrlActive = false;
+                if (currentPath.Split('/').ElementAt(1) == "Identity")
+                {
+                    isCurrentUrlActive = (currentPath.Split('/').Last() == url.Split('/').Last());
+                }
+                else
+                {
+                    isCurrentUrlActive = ((currentPath.Split('/').Length > 1 && (url.Split('/').Length > 1) && (currentPath.Split('/').ElementAt(1) == url.Split('/').ElementAt(1))));
+                }
+
+                var isCurrentClass = isCurrentUrlActive ? "current" : string.Empty;
+                if (menuItem.IsLeaf)
+                {
+                    if (menuItem.Url != null)
+                    {
+                        <li class="nav-item w-100 @cssClass @disabled @isCurrentClass" @elementId>
+                            <a href="@url" target="@menuItem.Target" class="nav-link d-flex align-items-center ps-3 pe-0 @isCurrentClass">
+                                @if (menuItem.Icon != null)
+                                {
+                                    <i class="fs-5 @menuItem.Icon" aria-hidden="true"></i>
+                                }
+                                <span class="ms-2 d-none d-sm-inline">@menuItem.DisplayName</span>
+                            </a>
+                        </li>
+                    }
+                }
+                else
+                {
+                    <li class="nav-item w-100">
+                        <div class="dropdown">
+                            <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="Menu_@(menuItem.Name)" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                @if (menuItem.Icon != null)
+                                {
+                                    <i class="fs-5 @menuItem.Icon"></i>
+                                }
+                                <span class="ms-2 d-none d-sm-inline"> @menuItem.DisplayName</span>
+                            </a>
+                            <ul class="collapse show nav flex-column ms-1" id="submenu1" data-bs-parent="#menu" aria-labelledby="Menu_@(menuItem.Name)">
+                                @foreach (var childMenuItem in menuItem.Items)
+                                {
+                                    <li class="w-100">
+                                        <a class="nav-link px-0 @cssClass @disabled" href="@url" target="@childMenuItem.Target" @Html.Raw(childMenuItem.ElementId)>
+                                            @if (childMenuItem.Icon != null)
+                                            {
+                                                if (childMenuItem.Icon.StartsWith("fa"))
+                                                {
+                                                    <i class="fs-5 @childMenuItem.Icon"></i>
+                                                }
+                                            }
+
+                                            <span class="ms-2 d-none d-sm-inline">@Model.DisplayName</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </li>
+                }
+            }
+
+        </ul>
+    </div>
+</div>

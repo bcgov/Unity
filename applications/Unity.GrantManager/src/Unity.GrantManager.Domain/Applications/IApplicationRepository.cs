@@ -15,4 +15,5 @@ public interface IApplicationRepository : IRepository<Application, Guid>
         string sorting,
         string filter = null
     );
+   
 }

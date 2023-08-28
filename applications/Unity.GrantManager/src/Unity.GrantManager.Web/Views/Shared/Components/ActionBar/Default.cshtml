@@ -1,0 +1,85 @@
+﻿@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization;
+@inject IStringLocalizer<GrantManagerResource> L
+
+<div class="action-bar p-2">
+    <div class="d-flex align-items-start justify-content-start gap-2">
+
+        <abp-button id="externalLink"
+                    text="@L["ApplicationList:OpenButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-mini-contract-2-mirrored"
+                    button-type="Primary" />
+
+        <abp-button id="assignApplication"
+                    data-selector="applications-table-actions"
+                    text="@L["ApplicationList:AssignButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-add-friend"
+                    button-type="Light" />
+
+        <abp-button id="statusUpdate"
+                    data-selector="applications-table-actions"
+                    text="@L["ApplicationList:StatusButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-player-settings"
+                    button-type="Light" />
+
+        <abp-button id="approveApplications"
+                    data-selector="applications-table-actions"
+                    text="@L["ApplicationList:ApprovedButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-like"
+                    button-type="Light" />
+
+        <abp-button id="dontApproveApplications"
+                    data-selector="applications-table-actions"
+                    text="@L["ApplicationList:NotApprovedButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-dislike"
+                    button-type="Light" />        
+        <abp-button 
+                    data-selector="applications-table-actions"
+                    text="@L["ApplicationList:CopyLinkButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-link"
+                    button-type="Light" />
+
+        <abp-button 
+                    data-selector="applications-table-actions"
+                    text="@L["ApplicationList:DownloadButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-download"
+                    button-type="Light" />
+    </div>
+    <div class="d-flex align-items-end justify-content-end gap-2">
+
+        <abp-button data-selector="applications-table-actions"
+                    text="@L["ApplicationList:FilterButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-filter"
+                    button-type="Light" />
+
+        <abp-button data-selector="applications-table-actions"
+                    text="@L["ApplicationList:SortButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-sort"
+                    button-type="Light" />
+
+        <abp-button data-selector="applications-table-actions"
+                    text="@L["ApplicationList:InfoButton"].Value"
+                    icon-type="Other"
+                    icon="fl fl-open-pane"
+                    button-type="Light" />
+
+    </div>
+</div>

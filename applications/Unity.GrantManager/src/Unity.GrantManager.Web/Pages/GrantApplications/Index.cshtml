@@ -1,4 +1,4 @@
-﻿@page
+﻿@page "{formId:guid?}"
 @using Unity.GrantManager.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -9,21 +9,41 @@
 @{
     PageLayout.Content.MenuItemName = "GrantManager.GrantApplications";
     PageLayout.Content.Title = L["Applications"].Value;
+    ViewBag.UserName = "Test User";
+    ViewBag.PageTitle = "Teleportation Ministry Grant Program";
 }
 @section scripts
+{
+    @if (Model.FormId == null)
     {
-    <abp-script src="/Pages/GrantApplications/Index.js" />
+        <script>
+            let users = [];
+            @foreach (var user in Model.Users) {
+                @:users.push("{'Id':" + "'@user.Id', 'UserName':" + "'@user.UserName', 'FirstName':" + "'@user.Name', 'LastName':" + "'@user.Surname', 'Email':" + "'@user.Email'}");
+            }
+        </script>
+        <abp-script src="/Pages/GrantApplications/Index.js" />
+        <abp-script src="/libs/datatables/js/dataTables.select.min.js" />
+        <abp-script src="/libs/datatables/js/select.bootstrap.min.js" />
+        <abp-script src="/libs/pubsub-js/src/pubsub.js" />
+    }
+    else
+    {
+        <abp-script src="/Pages/GrantApplications/Intake.js" />
+    }
 }
 
-<abp-card>
-    <abp-card-header>
-        <abp-row>
-            <abp-column size="_6">
-                <abp-card-title>@L["GrantApplications"]</abp-card-title>
-            </abp-column>
-        </abp-row>
-    </abp-card-header>
-    <abp-card-body>
-        <abp-table striped-rows="true" id="GrantApplicationsTable"></abp-table>
-    </abp-card-body>
-</abp-card>
+@section styles {
+    <abp-style src="/libs/datatables/css/select.bootstrap.min.css" />
+    <abp-style src="/Pages/GrantApplications/Index.css" />
+}
+
+
+
+<div class="container-fluid px-2">
+    @await Component.InvokeAsync("ActionBar")
+
+    <abp-table id="GrantApplicationsTable"></abp-table>
+</div>
+
+<input type="hidden" id="PassFormIdToJavaScript" value=@Model.FormId>

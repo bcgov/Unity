@@ -1,0 +1,230 @@
+﻿/** Segoe Fluent Icons*/
+
+
+@font-face {
+    font-family: 'Segoe-Fluent-Icons';
+    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
+    font-weight: 100;
+    font-style: normal;
+}
+
+.fl {
+    font-family: 'Segoe-Fluent-Icons';
+    font-weight: 100;
+    font-style: normal;
+}
+
+/*GID624 : U+EA37*/
+.fl-list:before {
+    content: '\EA37';
+}
+
+/*GID362 : U+E16C*/ /**!!**/
+.fl-attach:before {
+    content: '\E723';
+}
+
+/*GID147 : U+E1FD*/
+.fl-down:before {
+    content: '\E74B';
+}
+
+/*GID27 : U+E760*/
+.fl-page-left:before {
+    content: '\E760';
+}
+
+/*GID27 : U+E761*/
+.fl-page-right:before {
+    content: '\E761'
+}
+
+/*GID146 : U+E110*/
+.fl-up:before {
+    content: '\E74A';
+}
+
+/*GID313 : U+E118*/
+.fl-download:before {
+    content: '\E896';
+}
+
+/*GID315 : U+E11C*/
+.fl-upload:before {
+    content: '\E898';
+}
+
+/*GID690 : U+EAC2*/
+.fl-resize-touch-shorter:before {
+    content: '\E7EB';
+}
+
+/*GID1158 : U+E25B*/
+.fl-status-circle-block:before {
+    content: '\F140';
+}
+
+/*GID450 : U+E019*/
+.fl-chevron-down:before {
+    content: '\E70D';
+}
+
+/*GID450 : U+E019*/
+.fl-chevron-down-small:before {
+    content: '\E96E';
+}
+
+/*GID1393 : U+F743*/
+.fl-chevron-left:before {
+    content: '\E76B';
+}
+
+/*GID1391 : U+F745*/
+.fl-chevron-right:before {
+    content: '\E76C';
+}
+
+/*GID549 : U+E019*/
+.fl-chevron-up:before {
+    content: '\E70E';
+}
+
+/*GID206 : U+F78C*/
+.fl-checkmark:before {
+    content: '\E73E';
+}
+
+/*GID1517 : U+F78A*/
+.fl-cancel:before {
+    content: '\E711';
+}
+
+/*Close Panel GID : U+E126*/
+.fl-close-panel:before {
+    content: '\E89F';
+}
+
+/*GID144 : U+E871*/
+.fl-back-to-window:before {
+    content: '\E73F';
+}
+
+/*GID930 : U+ED0D*/
+.fl-action-center:before {
+    content: '\E91C';
+}
+
+/*GID352 : U+E15F*/
+.fl-chat:before {
+    content: '\E8F2';
+}
+
+/*GID9 : U+E119*/
+.fl-mail:before {
+    content: '\E715';
+}
+
+/*GID145 : U+E1D9*/
+.fl-full-screen:before {
+    content: '\E740';
+}
+
+/*GID308 : U+F78D*/
+.fl-view:before {
+    content: '\E890';
+}
+
+/*GID11 : U+E16E*/
+.fl-filter:before {
+    content: '\E71C';
+}
+
+/*GID939 : U+ED25*/
+.fl-open-folder:before {
+    content: '\ED25';
+}
+
+/*GID841 : U+EC25*/
+.fl-personal-folder:before {
+    content: '\EC25';
+}
+
+.fl-settings:before {
+    content: '\E713';
+}
+
+.fl-view-dashboard:before {
+    content: '\F246';
+}
+
+.fl-bank:before {
+    content: '\E825';
+}
+
+.fl-other-user:before {
+    content: '\E7EE';
+}
+
+.fl-bullseye:before {
+    content: '\F272';
+}
+
+.fl-lexicon:before {
+    content: '\F180';
+}
+
+.fl-street:before {
+    content: '\E913';
+}
+
+.fl-unknown:before {
+    content: '\E9CE';
+}
+
+.fl-search:before {
+    content: '\E721';
+}
+
+.fl-add-to:before {
+    content: '\ECC8';
+}
+
+.fl-open-pane:before {
+    content: '\E8A0';
+}
+
+.fl-mini-contract-2-mirrored:before {
+    content: '\EE49';
+}
+
+.fl-add-friend:before {
+    content: '\E8FA';
+}
+
+.fl-dislike:before {
+    content: '\E8E0';
+}
+
+.fl-like:before {
+    content: '\E8E1';
+}
+
+.fl-startpoint:before {
+    content: '\E819';
+}
+
+.fl-endpoint:before {
+    content: '\E81B';
+}
+
+.fl-link:before {
+    content: '\E71B';
+}
+
+.fl-player-settings:before {
+    content: '\EF58';
+}
+
+.fl-sort:before {
+    content: '\E8CB';
+}

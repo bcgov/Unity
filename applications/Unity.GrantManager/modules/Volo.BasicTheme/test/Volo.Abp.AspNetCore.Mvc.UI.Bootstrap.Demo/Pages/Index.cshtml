@@ -1,0 +1,221 @@
+﻿@page
+@model Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo.Pages.IndexModel
+@{
+    ViewData["Title"] = "Bootstrap Tag Helpers";
+}
+
+@section styles {
+    <abp-style src="/Pages/Index.css"/>
+}
+
+<div class="container">
+    <div class="row p-3">
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Alerts">Alerts</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Badges">Badges</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Borders">Borders</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Breadcrumbs">Breadcrumbs</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Buttons">Buttons</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/ButtonGroups">Button Groups</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Cards">Cards</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Carousel">Carousel</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Collapse">Collapse</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-3" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/DatePicker">Date Picker & Date Range Picker</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Dropdowns">Dropdowns</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/DynamicForms">Dynamic Forms</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/FormElements">Form Elements</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Grids">Grids</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/ListGroup">List Groups</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Modals">Modals</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Navs">Navs</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Paginator">Paginator</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Popovers">Popovers</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/ProgressBars">Progress Bars</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Tables">Tables</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Tabs">Tabs</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+        <div class="col-3">
+            <abp-card class="text-center p-4" style="width: 15rem; height: 7rem;">
+                <abp-card-body>
+                    <abp-card-title>
+                        <a abp-card-link asp-page="Components/Tooltips">Tooltips</a>
+                    </abp-card-title>
+                </abp-card-body>
+            </abp-card>
+        </div>
+    </div>
+</div>

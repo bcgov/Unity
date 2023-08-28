@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  
+  
+
+  <PropertyGroup><LangVersion>latest</LangVersion>
+    <TargetFramework>net7.0</TargetFramework>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <AssemblyName>Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic</AssemblyName>
+    <PackageId>Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic</PackageId>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <IsPackable>true</IsPackable>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="wwwroot\**\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\**\*.*" />
+    <Content Remove="wwwroot\themes\basic\fonts\" />
+    <Content Remove="wwwroot\themes\basic\fonts\icons\" />
+    <Content Remove="wwwroot\themes\basic\fonts\BCSans\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy" Version="7.3.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared" Version="7.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="wwwroot\favicon.svg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="wwwroot\favicon.svg">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Themes\Basic\Components\Topbar\" />
+    <None Remove="Themes\Basic\Components\SubTopbar\" />
+    <None Remove="Themes\Basic\Components\SideNavbar\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Themes\Basic\Components\Topbar\" />
+    <Folder Include="Themes\Basic\Components\SubTopbar\" />
+    <Folder Include="Themes\Basic\Components\SideNavbar\" />
+    <Folder Include="wwwroot\themes\basic\fonts\" />
+    <Folder Include="wwwroot\themes\basic\fonts\icons\" />
+    <Folder Include="wwwroot\themes\basic\fonts\BCSans\" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,40 @@
+﻿@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization;
+@inject IStringLocalizer<GrantManagerResource> L
+
+<div class="action-bar p-2">
+    <div class="d-flex align-items-start justify-content-start gap-2"> 
+        <abp-button id="approveApplicationsDetails"                    
+                    text="@L["ApplicationList:ApprovedButton"].Value"                    
+                    icon-type="Other"
+                    icon="fl fl-like"
+                    button-type="Light" />             
+        <abp-button id="dontApproveApplicationsDetails"                    
+                    text="@L["ApplicationList:NotApprovedButton"].Value"                    
+                    icon-type="Other"
+                    icon="fl fl-dislike"
+                    button-type="Light" />
+        <abp-button id="startAdjudication"
+                    text="@L["ApplicationList:StartAdjudicationButton"].Value"
+                    icon-type="Other"
+                    icon="fl fl-startpoint"
+                    button-type="Light" />
+        <abp-button id="completeAdjudication"
+                    text="@L["ApplicationList:CompleteAdjudicationButton"].Value"
+                    icon-type="Other"
+                    icon="fl fl-endpoint"
+                    button-type="Light" />
+        <abp-button text="@L["ApplicationList:CopyLinkButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-link"
+                    button-type="Light" />
+
+        <abp-button text="@L["ApplicationList:DownloadButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-download"
+                    button-type="Light" />
+    </div>
+    
+</div>

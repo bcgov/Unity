@@ -1,0 +1,7 @@
+﻿@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.Brand
+
+<nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="main-navbar">
+    <div class="container-fluid">
+        @(await Component.InvokeAsync<MainNavbarBrandViewComponent>())
+    </div>
+</nav>
