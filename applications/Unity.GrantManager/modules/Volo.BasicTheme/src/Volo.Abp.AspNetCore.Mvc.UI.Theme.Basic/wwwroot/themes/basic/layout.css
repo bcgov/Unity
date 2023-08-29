@@ -288,3 +288,7 @@ div.dataTables_wrapper div.dataTables_length label {
     flex-wrap: nowrap;
     padding: 15px 7px 7px 12px;
 }
+.nav {
+    --bs-nav-link-color: var(--bc-colors-grey-text-500);
+    --bs-nav-link-hover-color: var(--bc-colors-grey-text-500);
+}
