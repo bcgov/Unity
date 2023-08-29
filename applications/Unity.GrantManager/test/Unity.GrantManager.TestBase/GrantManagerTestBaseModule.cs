@@ -4,6 +4,7 @@ using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Data;
+using Volo.Abp.Linq;
 using Volo.Abp.Modularity;
 using Volo.Abp.Threading;
 
@@ -29,7 +30,7 @@ public class GrantManagerTestBaseModule : AbpModule
             options.IsJobExecutionEnabled = false;
         });
 
-        context.Services.AddAlwaysAllowAuthorization();
+        context.Services.AddAlwaysAllowAuthorization();        
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)

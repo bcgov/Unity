@@ -1,37 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Shouldly;
-using Volo.Abp.Domain.Repositories;
 using Xunit;
-using NSubstitute;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Unity.GrantManager.GrantApplications;
 
 public class GrantApplicationAppServiceTest : GrantManagerApplicationTestBase
 {
+    private readonly IGrantApplicationAppService _grantApplicationAppService;
+
     public GrantApplicationAppServiceTest()
-    {        
+    {
+        _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();            
+    }
+
+    protected override IServiceCollection CreateServiceCollection()
+    {
+        var serviceCollection = base.CreateServiceCollection();
+        serviceCollection.AddTransient<IGrantApplicationAppService>();
+        return serviceCollection;
     }
 
     [Fact]
-    public async Task Should_Get_All_GrantApplications_Without_Any_Filter()
-    {
-        // TODO: this need fixing 
-        // Arrange
-        /*
-        var fakeRepo = Substitute.For<IRepository<GrantApplication, Guid>>();
-        GrantApplicationAppService _appService = new GrantApplicationAppService(fakeRepo);
-
+    [Trait("Category", "Integration")]
+    public async Task Should_Contain_Integration_Test_Application()
+    {        
         // Act
-        var result = await _appService.GetListAsync(new GetApplicationListDto());
+        var grantApplications = await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto() { MaxResultCount = 100 });
 
         // Assert
-        result.TotalCount.ShouldBeGreaterThanOrEqualTo(12);
-        result.Items.ShouldContain(application => application.ProjectName == "New Helicopter Fund");
-        result.Items.ShouldContain(application => application.ProjectName == "Shoebox");
-        */
-    }
+        grantApplications.Items.Any(s => s.ProjectName == "Application For Integration Test Funding").ShouldBeTrue();        
+    }    
 }
