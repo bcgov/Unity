@@ -1,7 +1,0 @@
-**/.env
-**/opaque.secrets
-overlays/secrets/kustomization.yml
-**/.DS_Store
-yq
-.DS_Store
-**/*.ini
