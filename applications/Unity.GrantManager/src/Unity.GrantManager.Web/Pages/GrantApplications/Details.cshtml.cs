@@ -15,6 +15,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
     public class DetailsModel : AbpPageModel
     {
         private readonly AssessmentCommentService _assessmentCommentService;
+        private readonly GrantApplicationAppService _grantApplicationAppService;
 
         [BindProperty(SupportsGet = true)]
         public string SubmissionId { get; set; }
@@ -36,16 +37,29 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public string ApplicationFormSubmissionId { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public string ApplicationId { get; set; }
 
         [BindProperty]
         public List<AssessmentCommentDto> CommentList { get; set; } = new();
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DetailsModel(AssessmentCommentService assessmentCommentService) => _assessmentCommentService = assessmentCommentService;
+        public DetailsModel(AssessmentCommentService assessmentCommentService, GrantApplicationAppService grantApplicationAppService)
+        {
+            _assessmentCommentService = assessmentCommentService;
+            _grantApplicationAppService = grantApplicationAppService;
+        }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
+            // Lookup the Application Form Submission Id
+            var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(Guid.Parse(ApplicationId));
+            if(applicationFormSubmission != null)
+            {
+                ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
+            }
+
             var comments = _assessmentCommentService.GetListAsync(Guid.Parse(ApplicationFormSubmissionId));
             if (comments.Result != null && comments.Result.Count > 0)
             {
