@@ -86,8 +86,8 @@ $(function () {
     }
     async function getSubmission() {
         try {
-            let submissionId =  '639bbb6e-7ee6-4fa0-82ae-36f740a32d51' //'8f7b1da6-e131-4059-9ec8-e24fd6d44b5b';
             let isLoading = true;
+            let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
             unity.grantManager.intake.submission
                 .getSubmission(submissionId)
                 .done(function (result) {
