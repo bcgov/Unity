@@ -1,4 +1,4 @@
-﻿@page "{@Model.ApplicationFormSubmissionId?}"
+﻿@page "{@Model.ApplicationId?}"
 @using Unity.GrantManager.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -20,9 +20,9 @@
     <abp-script src="/libs/formiojs/formio.form.js" />
 }
 
-@await Component.InvokeAsync("DetailsActionBar", new {ApplicationId=@Model.ApplicationFormSubmissionId})
+@await Component.InvokeAsync("DetailsActionBar", new {ApplicationId=@Model.ApplicationId.ToString()})
 
-<input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationFormSubmissionId" />
+<input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
 
    
         <abp-row>

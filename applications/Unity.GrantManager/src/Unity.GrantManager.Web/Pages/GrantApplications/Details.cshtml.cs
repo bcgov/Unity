@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,13 +15,13 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
     [Authorize]
     public class DetailsModel : AbpPageModel
     {
-        private readonly AssessmentCommentService _assessmentCommentService;
+        private readonly ApplicationCommentsService _applicationCommentsService;
         private readonly GrantApplicationAppService _grantApplicationAppService;
 
         [BindProperty(SupportsGet = true)]
         public string SubmissionId { get; set; }
         public string SelectedAction { get; set; }
-        public IFormFile Attachment { get; set; } = null;
+        public IFormFile? Attachment { get; set; } = default;
         public List<SelectListItem> ActionList { get; set; } = new List<SelectListItem>
         {
             new SelectListItem { Value = "Y", Text = "Recommended for Approval"},
@@ -32,38 +33,41 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? Comment { get; set; } = string.Empty;
 
         [BindProperty(SupportsGet = true)]
-        public string? CommentId { get; set; }
+        public Guid? CommentId { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public string ApplicationFormSubmissionId { get; set; }
+        public Guid ApplicationId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string ApplicationId { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public string ApplicationFormSubmissionId { get; set; }
+        
         [BindProperty]
-        public List<AssessmentCommentDto> CommentList { get; set; } = new();
+        public List<ApplicationCommentDto> CommentList { get; set; } = new();
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DetailsModel(AssessmentCommentService assessmentCommentService, GrantApplicationAppService grantApplicationAppService)
+        public DetailsModel(ApplicationCommentsService applicationCommentsService, GrantApplicationAppService grantApplicationAppService)
         {
-            _assessmentCommentService = assessmentCommentService;
+            _applicationCommentsService = applicationCommentsService;
             _grantApplicationAppService = grantApplicationAppService;
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         public async Task OnGetAsync()
         {
-            // Lookup the Application Form Submission Id
-            var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(Guid.Parse(ApplicationId));
-            if(applicationFormSubmission != null)
+            var comments = await _applicationCommentsService.GetListAsync(ApplicationId);
+            var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            
+            if (applicationFormSubmission != null)
             {
                 ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
             }
 
-            var comments = _assessmentCommentService.GetListAsync(Guid.Parse(ApplicationFormSubmissionId));
-            if (comments.Result != null && comments.Result.Count > 0)
+            if (comments != null && comments.Count > 0)
             {
-                CommentList = (List<AssessmentCommentDto>)(comments.Result);
+                CommentList = (List<ApplicationCommentDto>)(comments);
             }
         }
 
@@ -71,26 +75,34 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {
             try
             {
-                if (CommentId != null && CommentId != "" && Comment != null)
+                if (CommentId != null && Comment != null)
                 {
-                    await _assessmentCommentService.UpdateAssessmentComment(CommentId, Comment);
+                    await _applicationCommentsService.UpdateApplicationComment(new UpdateApplicationCommentDto()
+                    {
+                        Comment = Comment,
+                        CommentId = CommentId.Value
+                    });
                 }
-                else if(Comment != null)
+                else if (Comment != null)
                 {
-                    await _assessmentCommentService.CreateAssessmentComment(Comment, ApplicationFormSubmissionId);
+                    await _applicationCommentsService.CreateApplicationComment(new CreateApplicationCommentDto()
+                    {
+                        Comment = Comment,
+                        ApplicationId = ApplicationId
+                    });
                 }
 
-                var comments = _assessmentCommentService.GetListAsync(Guid.Parse(ApplicationFormSubmissionId));
+                var comments = _applicationCommentsService.GetListAsync(ApplicationId);
+
                 if (comments.Result != null && comments.Result.Count > 0)
                 {
-                    CommentList = (List<AssessmentCommentDto>)(comments.Result);
+                    CommentList = (List<ApplicationCommentDto>)(comments.Result);
                     Comment = "";
-                    CommentId = "";
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Logger.LogError(ex, "Error updating or creating application exception");
             }
 
             return Page();

@@ -6,11 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Unity.GrantManager.GrantApplications;
 
-public class GrantApplicationAppServiceTest : GrantManagerApplicationTestBase
+public class GrantApplicationAppServiceTests : GrantManagerApplicationTestBase
 {
     private readonly IGrantApplicationAppService _grantApplicationAppService;
 
-    public GrantApplicationAppServiceTest()
+    public GrantApplicationAppServiceTests()
     {
         _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();            
     }
@@ -24,7 +24,7 @@ public class GrantApplicationAppServiceTest : GrantManagerApplicationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task Should_Contain_Integration_Test_Application()
+    public async Task Should_Add_Integration_Test_Application()
     {        
         // Act
         var grantApplications = await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto() { MaxResultCount = 100 });

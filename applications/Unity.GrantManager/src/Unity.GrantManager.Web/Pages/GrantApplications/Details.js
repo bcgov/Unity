@@ -86,6 +86,7 @@ $(function () {
     }
     async function getSubmission() {
         try {
+            let isLoading = true;
             let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
             unity.grantManager.intake.submission
                 .getSubmission(submissionId)
@@ -120,7 +121,7 @@ $(function () {
         let widgets = document.getElementsByName('widget-div');
         let editCommentsIcons = document.getElementsByName('edit-comment');
         let saveCommentBtn = document.getElementById('saveCommentBtn');
-        let submissionId = document.getElementById('ApplicationFormSubmissionId');
+        let submissionId = document.getElementById('ApplicationId');
         let widgetExample = document.getElementById("widget-example");
         let commentsDiv = document.getElementById("comments-div");
 
