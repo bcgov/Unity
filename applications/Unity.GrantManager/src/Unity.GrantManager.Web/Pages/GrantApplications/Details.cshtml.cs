@@ -16,6 +16,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
     public class DetailsModel : AbpPageModel
     {
         private readonly ApplicationCommentsService _applicationCommentsService;
+        private readonly GrantApplicationAppService _grantApplicationAppService;
 
         [BindProperty(SupportsGet = true)]
         public string SubmissionId { get; set; }
@@ -37,20 +38,36 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public string ApplicationId { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public string ApplicationFormSubmissionId { get; set; }
+        
         [BindProperty]
         public List<ApplicationCommentDto> CommentList { get; set; } = new();
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DetailsModel(ApplicationCommentsService applicationCommentsService) => _applicationCommentsService = applicationCommentsService;
+        public DetailsModel(ApplicationCommentsService applicationCommentsService, GrantApplicationAppService grantApplicationAppService)
+        {
+            _applicationCommentsService = applicationCommentsService;
+            _grantApplicationAppService = grantApplicationAppService;
+        }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
-            var comments = _applicationCommentsService.GetListAsync(ApplicationId);
-            if (comments.Result != null && comments.Result.Count > 0)
+            var comments = await _applicationCommentsService.GetListAsync(ApplicationId);
+            var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            
+            if (applicationFormSubmission != null)
             {
-                CommentList = (List<ApplicationCommentDto>)(comments.Result);
+                ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
+            }
+
+            if (comments != null && comments.Count > 0)
+            {
+                CommentList = (List<ApplicationCommentDto>)(comments);
             }
         }
 
