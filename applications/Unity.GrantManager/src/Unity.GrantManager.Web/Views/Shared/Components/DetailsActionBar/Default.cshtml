@@ -1,29 +1,43 @@
-﻿@using Unity.GrantManager.Localization;
+﻿
+@using Microsoft.AspNetCore.Authorization;
+@using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
+@using Unity.GrantManager.Permissions;
+
 @inject IStringLocalizer<GrantManagerResource> L
+@inject IAuthorizationService AuthorizationService
 
 <div class="action-bar p-2">
     <div class="d-flex align-items-start justify-content-start gap-2"> 
-        <abp-button id="approveApplicationsDetails"                    
-                    text="@L["ApplicationList:ApprovedButton"].Value"                    
-                    icon-type="Other"
-                    icon="fl fl-like"
-                    button-type="Light" />             
-        <abp-button id="dontApproveApplicationsDetails"                    
-                    text="@L["ApplicationList:NotApprovedButton"].Value"                    
-                    icon-type="Other"
-                    icon="fl fl-dislike"
-                    button-type="Light" />
-        <abp-button id="startAdjudication"
-                    text="@L["ApplicationList:StartAdjudicationButton"].Value"
-                    icon-type="Other"
-                    icon="fl fl-startpoint"
-                    button-type="Light" />
-        <abp-button id="completeAdjudication"
-                    text="@L["ApplicationList:CompleteAdjudicationButton"].Value"
-                    icon-type="Other"
-                    icon="fl fl-endpoint"
-                    button-type="Light" />
+        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Approvals.Complete))
+        {
+            <abp-button id="approveApplicationsDetails"
+                        text="@L["ApplicationList:ApprovedButton"].Value"
+                        icon-type="Other"
+                        icon="fl fl-like"
+                        button-type="Light" />
+            <abp-button id="dontApproveApplicationsDetails"
+                        text="@L["ApplicationList:NotApprovedButton"].Value"
+                        icon-type="Other"
+                        icon="fl fl-dislike"
+                        button-type="Light" />
+        }
+        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Adjudications.Start))
+        {
+            <abp-button id="startAdjudication"
+                        text="@L["ApplicationList:StartAdjudicationButton"].Value"
+                        icon-type="Other"
+                        icon="fl fl-startpoint"
+                        button-type="Light" />
+        }
+        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Adjudications.Complete))
+        {
+            <abp-button id="completeAdjudication"
+                        text="@L["ApplicationList:CompleteAdjudicationButton"].Value"
+                        icon-type="Other"
+                        icon="fl fl-endpoint"
+                        button-type="Light" />
+        }
         <abp-button text="@L["ApplicationList:CopyLinkButton"].Value"
                     disabled="true"
                     icon-type="Other"

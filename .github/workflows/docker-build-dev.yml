@@ -1,0 +1,48 @@
+name: Dev - Build & Push docker images
+
+on:
+  push:
+    branches: [ "dev" ]
+    paths-ignore:
+      - '.github/**'
+      - '.gitignore'
+      - 'cypress/**'
+      - 'database/**'
+      - 'documentation/**'
+      - 'openshift/**'
+      - 'COMPLIANCE.yaml'
+      - 'CONTRIBUTING.md'
+      - 'LICENSE'
+      - 'README.md'
+      - 'SECURITY..md'
+    
+env:
+  CLUSTER: https://api.silver.devops.gov.bc.ca:6443
+  AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN_DEV }}
+  TARGET_PROJECT: d18498
+  TARGET_ENV: dev
+  
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build application Docker images
+      run: docker compose build
+      working-directory: ./applications/Unity.GrantManager
+    - name: Connect to OpenShift API
+      run: |
+        oc login --token=$AUTH_TOKEN --server=$CLUSTER
+        oc project $TARGET_PROJECT-$TARGET_ENV
+        oc registry login
+    - name: Push application images to OpenShift container registry
+      run:  | 
+        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest
+        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
+        docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest
+        docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
+      
+      
