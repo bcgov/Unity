@@ -95,7 +95,7 @@ $(function () {
     });    
     $('#externalLink').click(function () {
         location.href =
-            '/GrantApplications/Details?ApplicationFormSubmissionId=' +
+            '/GrantApplications/Details?ApplicationId=' +
             selectedApplicationIds[0];
     });
 

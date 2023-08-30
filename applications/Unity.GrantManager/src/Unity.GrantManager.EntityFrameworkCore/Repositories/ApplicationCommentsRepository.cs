@@ -1,0 +1,39 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Dynamic.Core;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+using Unity.GrantManager.EntityFrameworkCore;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
+using Volo.Abp.EntityFrameworkCore;
+using Unity.GrantManager.Applications;
+
+namespace Unity.GrantManager.Repositories
+{
+
+    [Dependency(ReplaceServices = true)]
+    [ExposeServices(typeof(IApplicationCommentsRepository))]
+    public class ApplicationCommentsRepository : EfCoreRepository<GrantManagerDbContext, ApplicationComment, Guid>, IApplicationCommentsRepository
+    {
+        public ApplicationCommentsRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
+        {
+        }
+
+        public async Task<List<ApplicationComment>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet
+                .WhereIf(
+                    !filter.IsNullOrWhiteSpace(),
+                    applicationComment => applicationComment.Comment.Contains(filter)
+                 )
+                .OrderBy(sorting)
+                .Skip(skipCount)
+                .Take(maxResultCount)
+                .ToListAsync();
+        }
+    }
+}
+

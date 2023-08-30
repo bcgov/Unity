@@ -125,7 +125,7 @@ $(function () {
     }
     async function getSubmission() {
         try {
-            let submissionId = '8f7b1da6-e131-4059-9ec8-e24fd6d44b5b';
+            let submissionId =  '639bbb6e-7ee6-4fa0-82ae-36f740a32d51' //'8f7b1da6-e131-4059-9ec8-e24fd6d44b5b';
             let isLoading = true;
             unity.grantManager.intake.submission
                 .getSubmission(submissionId)
@@ -160,7 +160,7 @@ $(function () {
         let widgets = document.getElementsByName('widget-div');
         let editCommentsIcons = document.getElementsByName('edit-comment');
         let saveCommentBtn = document.getElementById('saveCommentBtn');
-        let submissionId = document.getElementById('ApplicationFormSubmissionId');
+        let submissionId = document.getElementById('ApplicationId');
         let widgetExample = document.getElementById("widget-example");
         let commentsDiv = document.getElementById("comments-div");
 

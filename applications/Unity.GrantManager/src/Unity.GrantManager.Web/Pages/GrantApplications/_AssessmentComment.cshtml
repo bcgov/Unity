@@ -9,8 +9,7 @@
     <div class="col-12 mt-4">
         <div class="comments-div">
                 <abp-input asp-for="@Model.Comment" placeholder="Add a comment" id="addCommentTextArea" label="Comments"/>
-                <input type="hidden" id="ApplicationFormSubmissionId" name="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
-
+            <input type="hidden" id="ApplicationId" name="ApplicationId" value="@Model.ApplicationId" />
                 <div class="comment-message-button-area">
                     <abp-button id="saveCommentBtn"
                         text="Save"

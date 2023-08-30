@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.Data;
@@ -16,18 +17,25 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IRepository<Applicant, Guid> _applicantRepository;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
     private readonly IRepository<Intake, Guid> _intakeRepository;
+    private readonly IRepository<Assessment, Guid> _assessmentRepository;
+    private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
+
 
     public GrantManagerTestDataSeedContributor(IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
         IRepository<Applicant, Guid> applicantRepository,
         IRepository<ApplicationForm, Guid> applicationFormRepository,
-        IRepository<Intake, Guid> intakeRepository)
+        IRepository<Intake, Guid> intakeRepository,
+        IRepository<Assessment, Guid> assessmentRepository,
+        IRepository<AssessmentComment, Guid> assessmentCommentRepository)
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
         _applicantRepository = applicantRepository;
         _applicationFormRepository = applicationFormRepository;
         _intakeRepository = intakeRepository;
+        _assessmentRepository = assessmentRepository;
+        _assessmentCommentRepository = assessmentCommentRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
@@ -84,15 +92,33 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             new Application
             {
                 ApplicantId = applicant1.Id,
-                ProjectName = "Application For Integration Test Funding",
+                ProjectName = "Application For Integration Test Funding",                
                 ApplicationFormId = appForm1.Id,
                 ApplicationStatusId = appStatus1.Id,
                 ReferenceNo = "TEST12345",
                 EligibleAmount = 12345.51,
                 RequestedAmount = 3456.13,
-                ProposalDate = new DateTime(2022, 1, 1),
-                SubmissionDate = new DateTime(2023, 1, 1),
+                ProposalDate =  new DateTime(2022, 1, 1, 12, 0, 0, 0, DateTimeKind.Local),
+                SubmissionDate = new DateTime(2023, 1, 1, 12, 0, 0, 0, DateTimeKind.Local),
                 Payload = "{\"Name\":\"John Smith\",\"Age\":34,\"Address\":\"British Columbia\"}"
+            },
+            autoSave: true
+        );
+
+        Assessment assessment1 = await _assessmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
+        assessment1 ??= await _assessmentRepository.InsertAsync(
+            new Assessment
+            {
+                ApplicationId = application1.Id                
+            },
+            autoSave: true
+        );
+
+        AssessmentComment assessmentComment1 = await _assessmentCommentRepository.FirstOrDefaultAsync(s => s.AssessmentId == assessment1.Id);
+        assessmentComment1 ??= await _assessmentCommentRepository.InsertAsync(
+            new AssessmentComment
+            {
+                AssessmentId = assessment1.Id
             },
             autoSave: true
         );
