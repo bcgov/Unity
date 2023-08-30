@@ -15,7 +15,7 @@ namespace Unity.GrantManager.GrantApplications
 {
     [Authorize]
     [Dependency(ReplaceServices = true)]
-    [ExposeServices(typeof(GrantApplicationAppService))]
+    [ExposeServices(typeof(GrantApplicationAppService), typeof(IGrantApplicationAppService))]
     public class GrantApplicationAppService :
         CrudAppService<
         GrantApplication,
@@ -23,6 +23,7 @@ namespace Unity.GrantManager.GrantApplications
         Guid,
         PagedAndSortedResultRequestDto,
         CreateUpdateGrantApplicationDto>
+        ,IGrantApplicationAppService
     {
 
         private readonly IApplicationRepository _applicationRepository;
@@ -57,7 +58,7 @@ namespace Unity.GrantManager.GrantApplications
             var queryResult = await AsyncExecuter.ToListAsync(query);           
                      
            
-            //Convert the query result to a list of BookDto objects
+            //Convert the query result to a list of ApplicationDto objects
             var applicationDtos = queryResult.Select(x =>
             {                
                 var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
