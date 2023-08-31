@@ -1,0 +1,76 @@
+﻿
+.sinlge-comment {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    border-left: 0.50px #1A5A96 solid;
+    border-top: 0.50px #1A5A96 solid;
+    border-right: 0.50px #1A5A96 solid;
+    border-bottom: 1px #1A5A96 solid;
+    padding: 10px 5px 5px 5px;
+}
+
+.comment-input {
+    border: 0;
+    outline: 0;
+    border-bottom: 0.5px solid #D6D6D6;
+    border-radius: 0px;
+}
+
+    .comment-input.selected {
+        border: 0 !important;
+        outline: 0 !important;
+        border-bottom: 0.5px solid #D6D6D6 !important;
+        border-radius: 0px !important;
+    }
+
+.comment-button-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: right;
+    gap: 8px;
+}
+
+.fl-cross {
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background: #E6EFF7;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.fl-tick {
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background: #E6EFF7;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.add-comment {
+    display: none;
+}
+
+.edit-button {
+    cursor: pointer;
+}
+
+.comment-input-mutliple {
+    border: 0;
+    outline: 0;
+    border-bottom: 0.5px solid #D6D6D6;
+    border-radius: 0px;
+}
+
+    .comment-input-mutliple.selected {
+        border: 0 !important;
+        outline: 0 !important;
+        border-bottom: 0.5px solid #D6D6D6 !important;
+        border-radius: 0px !important;
+    }

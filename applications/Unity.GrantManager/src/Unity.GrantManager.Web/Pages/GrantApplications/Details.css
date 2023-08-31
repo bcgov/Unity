@@ -68,12 +68,7 @@
     border-right: 1px solid #dddddd;
 }
 
-.add-review-btn-container {
-    justify-content: end;
-    align-items: end;
-    gap: 8px;
-    display: flex;
-}
+
 
 .add-review-btn {
     background: #003366;
@@ -220,4 +215,28 @@ i.fas:hover {
     border: 1px solid rgba(0, 51, 102, 38%) !important;
     background-color: #fff !important;
 }
+.fl-review-list-container {
+    justify-content: left;
+    align-items: start;
+    gap: 8px;
+    display: flex;
+}
+    
+    .review-list-heading{
+        margin-left:0.5rem;
+       margin-top:0.3rem;
+    }
+    .fl-review-list {
+        font-size: 1.5rem;
+    }
 
+.mb-2.card.border {
+    border-bottom: 1px solid rgba(214, 214, 214, 1)
+}
+.card-header.bg-default {
+    background-color: white !important;
+    
+}
+.card-header.bg-default {
+    margin-top: 1.2rem;
+}

@@ -75,6 +75,12 @@
             },
             columnDefs: [
                 {
+                    title: '',
+                    render: function (data) {
+                        return '<i class="fl fl-review-user"></i>';
+                    },
+                },
+                {
                     title: l('ReviewerList:ReviewerName'),
                     data: 'ReviewerName',
                     className: 'data-table-header',

@@ -28,6 +28,7 @@
 .unity-app-container {
     height: calc(100vh - 5rem);
     background: var(--bc-colors-white-background);
+    overflow:scroll;
 }
 
 .unity-navbar {
