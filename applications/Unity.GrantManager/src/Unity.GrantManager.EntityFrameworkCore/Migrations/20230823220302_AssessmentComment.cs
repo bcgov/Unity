@@ -17,6 +17,7 @@ namespace Unity.GrantManager.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApplicationFormSubmissionId = table.Column<Guid>(type: "uuid", nullable: false),
                     Comment = table.Column<string>(type: "text", nullable: false),
                     ExtraProperties = table.Column<string>(type: "text", nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
