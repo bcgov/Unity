@@ -36,10 +36,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public Guid? CommentId { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public Guid ApplicationId { get; set; }
-
-        [BindProperty(SupportsGet = true)]
-        public string ApplicationId { get; set; }
+        public Guid ApplicationId { get; set; }        
 
         [BindProperty(SupportsGet = true)]
         public string ApplicationFormSubmissionId { get; set; }
