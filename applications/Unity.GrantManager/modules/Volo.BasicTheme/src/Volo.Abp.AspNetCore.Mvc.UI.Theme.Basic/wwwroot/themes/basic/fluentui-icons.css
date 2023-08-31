@@ -228,3 +228,36 @@
 .fl-sort:before {
     content: '\E8CB';
 }
+
+.fl-review:before {
+    content: '\F32A';
+}
+.fl-review-list:before {
+    content: '\EA4A';
+}
+.fl-history:before {
+    content: '\E81C';
+}
+.fl-comments:before {
+    content: '\E15F';
+}
+.fl-link:before {
+    content: '\E167';
+}
+.fl-paperclip:before {
+    content: '\E16C';
+}
+.fl-review-user:before {
+    content: '\E1A6';
+}
+.fl-plus:before {
+    content: '\E109';
+}
+
+.fl-tick:before {
+    content: '\F78C';
+}
+
+.fl-cross:before {
+    content: '\F78A';
+}

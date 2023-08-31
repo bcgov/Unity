@@ -28,8 +28,8 @@
         <abp-row>
         <abp-column size="_8">
                  <abp-card>
-                <abp-tabs name="TabId" class="nav-justified">
-                    <abp-tab name="nav-summerry" active="true" title="Application Summary">
+            <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
+                    <abp-tab name="nav-summery" active="true" title="Application Summary">
                         <abp-row>
                             <abp-column size="_12" class="spinner-loader">
                                 <div class="spinner-grow" role="status">
@@ -53,22 +53,19 @@
                         <abp-row id="adjudicationMainView" class="p-2">
                             <abp-column size="_12" class="left-card">
 
-                                <abp-row>
-                                    <abp-column size="_4">
-                                        <h4 class="review-heading">Review List</h4>
+                                <abp-row class="p-2">
+                                <abp-column size="_4" class="fl-review-list-container">
+                                    <i class="fl fl-review-list"></i><h5 class="review-list-heading">Review List</h5>
                                     </abp-column>
-                                    <abp-column size="_8" class="add-review-btn-container">
-                                        <abp-button id="addReviewBtn" class="add-review-btn" icon="user-plus" text="Add Review" />
-                                    </abp-column>
-
+                                
                                 </abp-row>
                                 <abp-row>
                                     <abp-column size="_10">
                                         @await Component.InvokeAsync("ReviewList")
                                     </abp-column>
                                 </abp-row>
-                                <hr />
-                                <abp-row>
+                               
+                              @* <abp-row>
                                     <abp-column size="_8">
                                         <h4 class="review-heading">Attachments</h4>
                                     </abp-column>
@@ -82,8 +79,8 @@
                                         @await Component.InvokeAsync("ApplicationAttachments")
                                     </abp-column>
                                 </abp-row>
-
-                            </abp-column>
+                            *@
+                        </abp-column>
                            @* <abp-column size="_4">
                                 <abp-row>
                                     <abp-column size="_12" class="adj-act-btn-ctnr">
@@ -157,20 +154,20 @@
                         <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fa fa-history" aria-hidden="true"></i></button>
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fa fa-comment" aria-hidden="true"></i></button>
+                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (0)</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fa fa-link" aria-hidden="true"></i></button>
+                    <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (0)</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fa fa-paperclip" aria-hidden="true"></i></button>
+                    <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (5)</button>
                     </li>
       
                 </ul>
-            <div class="tab-content p-2" id="myTabContent">
+            <div class="tab-content p-3" id="myTabContent">
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
                     <h6>Details View</h6>
 
@@ -180,7 +177,10 @@
 
                     </div>
                     <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                        <partial name="/Pages/GrantApplications/_AssessmentComment.cshtml" />
+                    <div id="MyDashboardWidgetsArea" data-widget-filter="#MyDashboardFilterForm">
+                        @await Component.InvokeAsync("Comments")
+                    </div>
+                   
 
                     </div>
                     <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab">
@@ -188,7 +188,7 @@
 
                     </div>
                     <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
-                    <h6>Attachments View</h6>
+                       @await Component.InvokeAsync("ApplicationAttachments")
 
                     </div>
 
