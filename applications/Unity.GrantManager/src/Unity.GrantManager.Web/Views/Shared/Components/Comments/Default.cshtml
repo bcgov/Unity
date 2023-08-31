@@ -1,0 +1,132 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.GrantManager.Web.Pages.GrantApplications
+@model DetailsModel
+@{
+    Layout = null;
+}
+
+<div class="row">
+    <div class="col-12 mt-4">
+        <div class="comments-div">
+            <div class="sinlge-comment">
+
+                <textarea class="form-control comment-input" asp-for="@Model.Comment" placeholder="Add a comment" id="addCommentTextArea"> </textarea>
+                <input type="hidden" id="ApplicationFormSubmissionId" name="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
+
+
+                <div class="comment-button-container add-comment">
+
+
+                    <i id="clearComment" class="fl fl-cross"></i>
+                    <i id="saveCommentBtn" class="fl fl-tick"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="comments-div" class="row" style="margin-top:10px;">
+    @foreach (var comment in Model.CommentList)
+    {
+        @if (comment != null)
+        {
+            <div>
+                <div id="overlay" style="display: none">
+                    <i id="edit-comment" class="fas fa-edit" name="edit-comment" data-toggle="tooltip" data-placement="left" title="Edit Comment"></i>
+                    <i id="delete-comment" class="fas fa-trash" style="display: none;" name="delete-comment" data-toggle="tooltip" data-placement="left" title="Delete Comment" title="Delete"></i>
+                </div>
+
+                @*  <textarea
+        id="@comment.Id"
+        readonly="true"
+        name="@Html.NameFor(m => m.Comment)"
+        class="form-control"
+        value="@comment.Comment"
+        style="margin-top: 4px;margin-bottom: 4px;">@comment.Comment</textarea> *@
+                <abp-container class="read-mode" data-id="@comment.Id" style="background: #F2F8FC; border-radius: 4px; overflow: hidden; margin-bottom:10px; padding : 0px 5px 5px 5px">
+                    <abp-row>
+                        <abp-column size="_8">
+                            <span style="color: #666666; font-size: 0.89rem;  font-weight: 700; word-wrap: break-word">
+                                Fenske, Melissa JEDI:EX
+                            </span>
+                        </abp-column>
+                        <abp-column size="_4">
+                            <div style="display: flex; justify-content: right; align-items: start; gap : 8px;">
+                                <span class="edit-button" data-id="@comment.Id">...</span>
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row>
+                        <abp-column size="_12" style="color: #666666; font-size: 0.89rem; font-weight: 400; word-wrap: break-word">
+                            <label class="comment-lbl" data-id="@comment.Id">@comment.Comment</label>
+                        </abp-column>
+                    </abp-row>
+                    <div style="left: 16px; color: #666666; font-size: 0.8rem; font-weight: 400; word-wrap: break-word">Just now</div>
+
+                </abp-container>
+                <div class="sinlge-comment edit-mode" data-id="@comment.Id" style="display: none;">
+
+                    <textarea class="form-control comment-input-mutliple" placeholder="Update the comment" data-id="@comment.Id"> @comment.Comment</textarea>
+                    <input type="hidden" id="ApplicationFormSubmissionId" name="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
+
+
+                    <div class="comment-button-container">
+
+
+                        <i class="fl fl-cross cancel-edit" data-id="@comment.Id"></i>
+                        <i class="fl fl-tick save-button" data-id="@comment.Id"></i>
+                    </div>
+                </div>
+
+                <div id="comment-buttons" class="comment-message-button-area" style="display: none">
+                    <abp-button id="cancelCommentBtn"
+                                text="Cancel"
+                                type="button"
+                                class="btn" />
+
+                    <abp-button id="updateCommentBtn"
+                                text="Update"
+                                type="button"
+                                class="btn"
+                                disabled="true" />
+                </div>
+                <input type="hidden" name="CommentId" value="@comment.Id" />
+            </div>
+        }
+    }
+</div>
+
+<div id="widget-example" style="display: none">
+    <div id="widget" name="widget-div">
+        <div id="overlay" style="display: none">
+            <i id="edit-comment" class="fas fa-edit" name="edit-comment" data-toggle="tooltip" data-placement="left" title="Edit Comment"></i>
+            <i id="delete-comment" class="fas fa-trash" style="display: none;" name="delete-comment" data-toggle="tooltip" data-placement="left" title="Delete Comment" title="Delete"></i>
+        </div>
+        <textarea id=""
+                  readonly="true"
+                  name="Comment"
+                  class="form-control"
+                  value=""
+                  style="margin-top: 4px;margin-bottom: 4px;"></textarea>
+
+        <div id="comment-buttons" class="comment-message-button-area" style="display: none">
+            <abp-button id="cancelCommentBtn"
+                        text="Cancel"
+                        type="button"
+                        class="btn" />
+
+            <abp-button id="updateCommentBtn"
+                        text="Update"
+                        type="button"
+                        class="btn"
+                        disabled="true" />
+        </div>
+        <input type="hidden" id="CommentId" name="CommentId" value="" />
+    </div>
+</div>

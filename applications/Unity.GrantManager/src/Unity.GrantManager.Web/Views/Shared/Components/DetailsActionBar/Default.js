@@ -77,5 +77,11 @@ $(function () {
             title: 'Complete Adjudication',
         });
     });
+
+    $('#addReview').click(function () {
+        PubSub.publish('add_review');
+    });
+
+ ;
         
 });

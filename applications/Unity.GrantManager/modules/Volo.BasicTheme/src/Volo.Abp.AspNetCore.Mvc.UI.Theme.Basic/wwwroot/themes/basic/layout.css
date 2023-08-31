@@ -292,3 +292,6 @@ div.dataTables_wrapper div.dataTables_length label {
     --bs-nav-link-color: var(--bc-colors-grey-text-500);
     --bs-nav-link-hover-color: var(--bc-colors-grey-text-500);
 }
+.nav-item a{
+    padding : 1rem;
+}
