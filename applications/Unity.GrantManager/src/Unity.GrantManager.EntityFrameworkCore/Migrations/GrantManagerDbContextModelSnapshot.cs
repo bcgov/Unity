@@ -180,67 +180,9 @@ namespace Unity.GrantManager.Migrations
                     b.ToTable("UnityUserTeam", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.AdjudicationAssessment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicationFormId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ChefsSubmissionGuid")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("OidcSub")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicantId");
-
-                    b.HasIndex("ApplicationFormId");
-
-                    b.HasIndex("OidcSub");
-
-                    b.ToTable("UnityAdjudicationAssessment", (string)null);
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.Applicant", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ApplicantName")
@@ -343,7 +285,6 @@ namespace Unity.GrantManager.Migrations
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ApplicantId")
@@ -414,6 +355,51 @@ namespace Unity.GrantManager.Migrations
                     b.HasIndex("ApplicationStatusId");
 
                     b.ToTable("UnityApplication", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.ToTable("UnityApplicationComment", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationForm", b =>
@@ -539,15 +525,12 @@ namespace Unity.GrantManager.Migrations
 
                     b.HasIndex("ApplicationFormId");
 
-                    b.HasIndex("OidcSub");
-
                     b.ToTable("UnityApplicationFormSubmission", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -600,7 +583,6 @@ namespace Unity.GrantManager.Migrations
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationUserAssignment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("ApplicationFormId")
@@ -658,13 +640,60 @@ namespace Unity.GrantManager.Migrations
                     b.ToTable("UnityApplicationUserAssignment", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentComment", b =>
+            modelBuilder.Entity("Unity.GrantManager.Assessments.Assessment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ApplicationFormSubmissionId")
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsComplete")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UnityAssessment", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Assessments.AssessmentComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssessmentId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Comment")
@@ -698,6 +727,8 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AssessmentId");
 
                     b.ToTable("UnityAssessmentComment", (string)null);
                 });
@@ -2523,28 +2554,6 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.AdjudicationAssessment", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicationFormId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.ApplicationUserRoles.User", null)
-                        .WithMany()
-                        .HasForeignKey("OidcSub")
-                        .HasPrincipalKey("OidcSub")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantAgent", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Applicant", null)
@@ -2582,6 +2591,15 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationComment", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationForm", b =>
                 {
                     b.HasOne("Unity.GrantManager.GrantPrograms.Intake", null)
@@ -2604,13 +2622,6 @@ namespace Unity.GrantManager.Migrations
                         .HasForeignKey("ApplicationFormId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.ApplicationUserRoles.User", null)
-                        .WithMany()
-                        .HasForeignKey("OidcSub")
-                        .HasPrincipalKey("OidcSub")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationUserAssignment", b =>
@@ -2626,11 +2637,11 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentComment", b =>
+            modelBuilder.Entity("Unity.GrantManager.Assessments.AssessmentComment", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationFormSubmission", null)
+                    b.HasOne("Unity.GrantManager.Assessments.Assessment", null)
                         .WithMany()
-                        .HasForeignKey("Id")
+                        .HasForeignKey("AssessmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -21,7 +21,5 @@ public class Application : AuditedAggregateRoot<Guid>
     public DateTime SubmissionDate { get; set; }
 
     [Column(TypeName = "jsonb")]
-    public string? Payload { get; set; }    
-                     
-                       
+    public string? Payload { get; set; }                                            
 }

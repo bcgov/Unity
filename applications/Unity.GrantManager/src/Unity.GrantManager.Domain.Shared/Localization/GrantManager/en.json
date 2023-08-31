@@ -63,6 +63,7 @@
     "ApplicationList:NotApprovedButton": "Not approved",
     "ApplicationList:CopyLinkButton": "Copy link",
     "ApplicationList:DownloadButton": "Download",
+    "ApplicationList:AddReviewButton": "Add Review",
     "ApplicationList:FilterButton": "Filter",
     "ApplicationList:SortButton": "Sort",
     "ApplicationList:InfoButton": "Info",
