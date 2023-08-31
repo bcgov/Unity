@@ -10,47 +10,8 @@ $(function () {
 
     var assignApplicationModal = new abp.ModalManager({
         viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
-    });
+    });  
 
-    var startAdjudicationModal = new abp.ModalManager({
-        viewUrl: '../Approve/ApproveApplicationsModal'
-    });
-
-    startAdjudicationModal.onResult(function () {
-        abp.notify.success(
-            'Adjudication is now started for this application',
-            'Start Adjudication'
-        );
-    });
-
-    $('#startAdjudication').click(function () {
-        startAdjudicationModal.open({
-            applicationIds: selectedApplicationIds,
-            operation: 'UNDER_ADJUDICATION',
-            message: 'Are you sure you want to start adjudication for this application?',
-            title: 'Start Adjudication',
-        });
-    });
-
-    var completeAdjudicationModal = new abp.ModalManager({
-        viewUrl: '../Approve/ApproveApplicationsModal'
-    });
-
-    completeAdjudicationModal.onResult(function () {
-        abp.notify.success(
-            'Adjudication is now completed for this application',
-            'Completed Adjudication'
-        );
-    });
-
-    $('#completeAdjudication').click(function () {
-        completeAdjudicationModal.open({
-            applicationIds: selectedApplicationIds,
-            operation: 'ADJUDICATION_COMPLETED',
-            message: 'Are you sure you want to complete adjudication for this application?',
-            title: 'Complete Adjudication',
-        });
-    });
 
     const l = abp.localization.getResource('GrantManager');
 
@@ -125,8 +86,8 @@ $(function () {
     }
     async function getSubmission() {
         try {
-            let submissionId = "8f7b1da6-e131-4059-9ec8-e24fd6d44b5b";
             let isLoading = true;
+            let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
             unity.grantManager.intake.submission
                 .getSubmission(submissionId)
                 .done(function (result) {

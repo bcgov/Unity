@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
   </ItemGroup>
@@ -47,6 +47,7 @@
     <ProjectReference Include="..\..\modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Components.Web.BasicTheme\Volo.Abp.AspNetCore.Components.Web.BasicTheme.csproj" />
 	<ProjectReference Include="..\..\modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
+    <ProjectReference Include="..\Unity.GrantManager.HttpApi.Client\Unity.GrantManager.HttpApi.Client.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.HttpApi\Unity.GrantManager.HttpApi.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.EntityFrameworkCore\Unity.GrantManager.EntityFrameworkCore.csproj" />
     <PackageReference Include="Volo.Abp.Autofac" Version="7.3.0" />

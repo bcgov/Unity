@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationUserRoles;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -67,6 +68,9 @@ public class GrantManagerDbContext :
     public DbSet<Application> Applications { get; set; }
     public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
     public DbSet<ApplicationUserAssignment> ApplicationUserAssignments { get; set; }
+    public DbSet<ApplicationComment> ApplicationComments { get; set; }
+    public DbSet<Assessment> Assessments { get; set; }
+    public DbSet<AssessmentComment> AssessmentComments { get; set; }
 
     #endregion
 
@@ -211,30 +215,33 @@ public class GrantManagerDbContext :
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention(); //auto configure for the base class props                             
-            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            //b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
             b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+        });
+
+        builder.Entity<ApplicationComment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationComment", GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+        });
+
+        builder.Entity<Assessment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
         });
 
         builder.Entity<AssessmentComment>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentComment",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.HasOne<ApplicationFormSubmission>().WithMany().HasForeignKey(x => x.Id).IsRequired();
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentComment", GrantManagerConsts.DbSchema);
+            b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AssessmentId).IsRequired();
         });
 
-        builder.Entity<AdjudicationAssessment>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "AdjudicationAssessment",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props                             
-            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
-            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
-            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
-        });
         builder.Entity<ApplicationUserAssignment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationUserAssignment",

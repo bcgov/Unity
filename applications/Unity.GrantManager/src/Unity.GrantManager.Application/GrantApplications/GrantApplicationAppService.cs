@@ -15,7 +15,7 @@ namespace Unity.GrantManager.GrantApplications
 {
     [Authorize]
     [Dependency(ReplaceServices = true)]
-    [ExposeServices(typeof(GrantApplicationAppService))]
+    [ExposeServices(typeof(GrantApplicationAppService), typeof(IGrantApplicationAppService))]
     public class GrantApplicationAppService :
         CrudAppService<
         GrantApplication,
@@ -23,18 +23,27 @@ namespace Unity.GrantManager.GrantApplications
         Guid,
         PagedAndSortedResultRequestDto,
         CreateUpdateGrantApplicationDto>
+        ,IGrantApplicationAppService
     {
 
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationStatusRepository _applicationStatusRepository;
+        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
 
-        public GrantApplicationAppService(IRepository<GrantApplication, Guid> repository, IApplicationRepository applicationRepository, IApplicationStatusRepository applicationStatusRepository, IApplicationUserAssignmentRepository userAssignmentRepository)
+        public GrantApplicationAppService(
+            IRepository<GrantApplication, Guid> repository,
+            IApplicationRepository applicationRepository, 
+            IApplicationStatusRepository applicationStatusRepository, 
+            IApplicationUserAssignmentRepository userAssignmentRepository,
+            IApplicationFormSubmissionRepository applicationFormSubmissionRepository
+            )
              : base(repository)
         {
             _applicationRepository = applicationRepository;
             _applicationStatusRepository = applicationStatusRepository;
             _userAssignmentRepository = userAssignmentRepository;
+            _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         }
 
         public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -57,7 +66,7 @@ namespace Unity.GrantManager.GrantApplications
             var queryResult = await AsyncExecuter.ToListAsync(query);           
                      
            
-            //Convert the query result to a list of BookDto objects
+            //Convert the query result to a list of ApplicationDto objects
             var applicationDtos = queryResult.Select(x =>
             {                
                 var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
@@ -82,6 +91,24 @@ namespace Unity.GrantManager.GrantApplications
             
             var assignees = ObjectMapper.Map<List<ApplicationUserAssignment>, List<GrantApplicationAssigneeDto>>(assignments);
             return assignees;
+        }
+
+        public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
+        {
+            ApplicationFormSubmission applicationFormSubmission = new ApplicationFormSubmission();
+            var application = await _applicationRepository.GetAsync(applicationId);
+
+            if (application != null)
+            {
+                IQueryable<ApplicationFormSubmission> queryableFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
+                
+                if (queryableFormSubmissions != null)
+                {
+                    applicationFormSubmission = queryableFormSubmissions.Where(a => a.ApplicationFormId.Equals(application.ApplicationFormId)).FirstOrDefault();
+                }
+            }
+
+            return applicationFormSubmission;
         }
 
         private static string NormalizeSorting(string sorting)

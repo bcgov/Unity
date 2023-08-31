@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System.Collections.Generic;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager;
@@ -17,6 +18,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationUserAssignment, GrantApplicationAssigneeDto>();
         CreateMap<ApplicationStatus, ApplicationStatusDto>();
         CreateMap<AssessmentComment, AssessmentCommentDto>();
+        CreateMap<ApplicationComment, ApplicationCommentDto>();
+        CreateMap<Assessment, AssessmentDto>();
     }
 }
 

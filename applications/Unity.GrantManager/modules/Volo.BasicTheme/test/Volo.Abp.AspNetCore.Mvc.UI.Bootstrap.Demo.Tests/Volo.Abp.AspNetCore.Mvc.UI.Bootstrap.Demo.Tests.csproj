@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   
 
@@ -37,6 +37,9 @@
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Volo\Abp\AspNetCore\Mvc\UI\Bootstrap\Demo\Components\" />
   </ItemGroup>
 
   <!-- https://github.com/NuGet/Home/issues/4412. -->
