@@ -26,9 +26,7 @@
 
 
 .unity-app-container {
-    height: calc(100vh - 5rem);
     background: var(--bc-colors-white-background);
-    overflow:scroll;
 }
 
 .unity-navbar {
@@ -70,6 +68,13 @@
         .unity-sub-navbar .search-input .input-group-append .input-group-text {
             font-size: 10px;
         }
+
+.unity-app-main-container {
+    height: calc(100vh - 8rem);
+    padding: 0.25rem;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
 
 .unity-user-initials {
     border-radius: 75%;
