@@ -4,27 +4,25 @@ using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Xunit;
 using Shouldly;
+using Unity.GrantManager.Comments;
 
 namespace Unity.GrantManager.Assessments
 {
     public class AssessmentCommentsAppServiceTests : GrantManagerApplicationTestBase
-    {
-        private readonly IAssessmentCommentsService _assessmentsCommentsService;
-        private readonly IAssessmentsService _assessmentsService;
+    {        
+        private readonly IAssessmentAppService _adjuductionAppService;
         private readonly IGrantApplicationAppService _grantApplicationAppService;
 
         public AssessmentCommentsAppServiceTests()
         {
-            _assessmentsService = GetRequiredService<IAssessmentsService>();
-            _assessmentsCommentsService = GetRequiredService<IAssessmentCommentsService>();
+            _adjuductionAppService = GetRequiredService<IAssessmentAppService>();     
             _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
         }
 
         protected override IServiceCollection CreateServiceCollection()
         {
             var serviceCollection = base.CreateServiceCollection();
-            serviceCollection.AddTransient<IAssessmentsService>();
-            serviceCollection.AddTransient<IAssessmentCommentsService>();
+            serviceCollection.AddTransient<IAssessmentAppService>();            
             serviceCollection.AddTransient<IGrantApplicationAppService>();
             return serviceCollection;
         }
@@ -39,18 +37,17 @@ namespace Unity.GrantManager.Assessments
                     .Items
                     .First(s => s.ProjectName == "Application For Integration Test Funding");
 
-            var assessment = (await _assessmentsService.GetListAsync(application.Id))[0];      
+            var adjudication = (await _adjuductionAppService.GetListAsync(application.Id))[0];      
             var comment = "Test Assessment Comment Integration";
 
             // Act
-            _ = await _assessmentsCommentsService.CreateAssessmentComment(new CreateAssessmentCommentDto()
-            {
-                AssessmentId = assessment.Id,
+            _ = await _adjuductionAppService.CreateCommentAsync(adjudication.Id, new CreateCommentDto()
+            {                
                 Comment = comment
             });
 
             // Assert
-            var comments = await _assessmentsCommentsService.GetListAsync(assessment.Id);
+            var comments = await _adjuductionAppService.GetCommentsAsync(adjudication.Id);
             comments.FirstOrDefault(s => s.Comment == comment).ShouldNotBeNull();            
         }
     }

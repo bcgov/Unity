@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.GrantManager.Comments;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -14,8 +15,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
     [Authorize]
     public class DetailsModel : AbpPageModel
-    {
-        private readonly ApplicationCommentsService _applicationCommentsService;
+    {        
         private readonly GrantApplicationAppService _grantApplicationAppService;
 
         [BindProperty(SupportsGet = true)]
@@ -42,19 +42,18 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string ApplicationFormSubmissionId { get; set; }
         
         [BindProperty]
-        public List<ApplicationCommentDto> CommentList { get; set; } = new();
+        public List<CommentDto> CommentList { get; set; } = new();
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DetailsModel(ApplicationCommentsService applicationCommentsService, GrantApplicationAppService grantApplicationAppService)
-        {
-            _applicationCommentsService = applicationCommentsService;
+        public DetailsModel(GrantApplicationAppService grantApplicationAppService)
+        {            
             _grantApplicationAppService = grantApplicationAppService;
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         public async Task OnGetAsync()
         {
-            var comments = await _applicationCommentsService.GetListAsync(ApplicationId);
+            var comments = await _grantApplicationAppService.GetCommentsAsync(ApplicationId);
             var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
             
             if (applicationFormSubmission != null)
@@ -64,7 +63,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             if (comments != null && comments.Count > 0)
             {
-                CommentList = (List<ApplicationCommentDto>)(comments);
+                CommentList = (List<CommentDto>)(comments);
             }
         }
 
@@ -74,7 +73,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             {
                 if (CommentId != null && Comment != null)
                 {
-                    await _applicationCommentsService.UpdateApplicationComment(new UpdateApplicationCommentDto()
+                    await _grantApplicationAppService.UpdateCommentAsync(ApplicationId, new UpdateCommentDto()
                     {
                         Comment = Comment,
                         CommentId = CommentId.Value
@@ -82,18 +81,17 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 }
                 else if (Comment != null)
                 {
-                    await _applicationCommentsService.CreateApplicationComment(new CreateApplicationCommentDto()
+                    await _grantApplicationAppService.CreateCommentAsync(ApplicationId, new CreateCommentDto()
                     {
-                        Comment = Comment,
-                        ApplicationId = ApplicationId
+                        Comment = Comment
                     });
                 }
 
-                var comments = _applicationCommentsService.GetListAsync(ApplicationId);
+                var comments = _grantApplicationAppService.GetCommentsAsync(ApplicationId);
 
                 if (comments.Result != null && comments.Result.Count > 0)
                 {
-                    CommentList = (List<ApplicationCommentDto>)(comments.Result);
+                    CommentList = (List<CommentDto>)(comments.Result);
                     Comment = "";
                 }
             }

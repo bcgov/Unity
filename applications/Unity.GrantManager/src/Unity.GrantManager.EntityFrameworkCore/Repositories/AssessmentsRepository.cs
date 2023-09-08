@@ -8,8 +8,8 @@ using Unity.GrantManager.Assessments;
 namespace Unity.GrantManager.Repositories
 {
     [Dependency(ReplaceServices = true)]
-    [ExposeServices(typeof(IAssessmentsRepository))]
-    public class AssessmentsRepository : EfCoreRepository<GrantManagerDbContext, Assessment, Guid>, IAssessmentsRepository
+    [ExposeServices(typeof(IAssessmentRepository))]
+    public class AssessmentsRepository : EfCoreRepository<GrantManagerDbContext, Assessment, Guid>, IAssessmentRepository
     {
         public AssessmentsRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
         {

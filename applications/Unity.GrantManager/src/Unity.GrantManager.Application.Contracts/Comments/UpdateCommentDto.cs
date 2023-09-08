@@ -1,9 +1,9 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Unity.GrantManager.Assessments
+namespace Unity.GrantManager.Comments
 {
-    public class CreateAssessmentCommentDto
+    public class UpdateCommentDto
     {
         [StringLength(2000)]
         [Required]
@@ -11,6 +11,6 @@ namespace Unity.GrantManager.Assessments
         public string Comment { get; set; } = string.Empty;
 
         [Required]
-        public Guid AssessmentId { get; set; }
+        public Guid CommentId { get; set; }
     }
 }

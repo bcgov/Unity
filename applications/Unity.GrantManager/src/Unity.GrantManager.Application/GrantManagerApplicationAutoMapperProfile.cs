@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Comments;
 using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager;
@@ -17,8 +18,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<Application, GrantApplicationDto>();
         CreateMap<ApplicationUserAssignment, GrantApplicationAssigneeDto>();
         CreateMap<ApplicationStatus, ApplicationStatusDto>();
-        CreateMap<AssessmentComment, AssessmentCommentDto>();
-        CreateMap<ApplicationComment, ApplicationCommentDto>();
+        CreateMap<AssessmentComment, CommentDto>();
+        CreateMap<ApplicationComment, CommentDto>();
         CreateMap<Assessment, AssessmentDto>();
     }
 }
