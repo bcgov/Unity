@@ -1,6 +1,6 @@
 $(function () {
-    var selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
-    var selectedReviewDetails = null;
+    let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
+    let selectedReviewDetails = null;
 
     const formatter = new Intl.NumberFormat('en-CA', {
         style: 'currency',
@@ -9,7 +9,7 @@ $(function () {
         maximumFractionDigits: 2,
     });
 
-    var assignApplicationModal = new abp.ModalManager({
+    let assignApplicationModal = new abp.ModalManager({
         viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
     });  
 
@@ -19,7 +19,7 @@ $(function () {
 
     function formatChefComponents(data) {
         // Advanced Components
-        var components = JSON.stringify(data).replace(
+        let components = JSON.stringify(data).replace(
             /simpleaddressadvanced/g,
             'address'
         );
@@ -95,7 +95,7 @@ $(function () {
                     console.log(result);
                     $('.spinner-grow').hide();
                     Formio.icons = 'fontawesome';
-                    var data = JSON.parse(formatChefComponents(result));
+                    let data = JSON.parse(formatChefComponents(result));
                     console.log(data);
                     Formio.createForm(
                         document.getElementById('formio'),
@@ -164,7 +164,7 @@ $(function () {
 
     $('#recommendation_select').change(function () {
 
-        var value = $(this).val();
+        let value = $(this).val();
         
         updateRecommendation(value, selectedReviewDetails.id);
     });
@@ -193,7 +193,7 @@ $(function () {
             if (data) {
                 selectedReviewDetails = data;
                 $('#reviewDetails').show();
-                var selectElement = document.getElementById("recommendation_select");
+                let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
             }
             else {

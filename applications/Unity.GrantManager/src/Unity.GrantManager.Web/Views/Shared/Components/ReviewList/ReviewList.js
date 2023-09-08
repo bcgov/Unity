@@ -7,7 +7,7 @@
         return applicationId;
     }
     
-    var responseCallback = function (result) {
+    let responseCallback = function (result) {
 
         // your custom code.
         console.log(result)
@@ -87,7 +87,7 @@
 
     reviewListTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {
-            var selectedData = reviewListTable.row(indexes).data();
+            let selectedData = reviewListTable.row(indexes).data();
             console.log('Selected Data:', selectedData);
             PubSub.publish('select_application_review', selectedData);
             e.currentTarget.classList.toggle('selected');
@@ -98,7 +98,7 @@
 
     reviewListTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
-            var deselectedData = reviewListTable.row(indexes).data();
+            let deselectedData = reviewListTable.row(indexes).data();
             PubSub.publish('select_application_review', null);
             e.currentTarget.classList.toggle('selected');
         }
@@ -111,7 +111,7 @@
              reviewListTable.ajax.reload(function (json) {
                  if (data) {
                      //var row = reviewListTable.row(0).select();
-                     var indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
+                     let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
                          return reviewListTable.cell(rowIdx, 0).data() === data ? true : false;
                      });
 
