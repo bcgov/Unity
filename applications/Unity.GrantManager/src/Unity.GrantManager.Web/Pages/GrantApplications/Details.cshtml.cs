@@ -24,8 +24,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public IFormFile? Attachment { get; set; } = default;
         public List<SelectListItem> ActionList { get; set; } = new List<SelectListItem>
         {
-            new SelectListItem { Value = "Y", Text = "Recommended for Approval"},
-            new SelectListItem { Value = "N", Text = "Recommended for Denial"}
+            new SelectListItem { Value = "true", Text = "Yes"},
+            new SelectListItem { Value = "false", Text = "No"}
         };
 
         [TextArea]
