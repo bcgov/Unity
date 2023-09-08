@@ -9,5 +9,6 @@ namespace Unity.GrantManager.Comments
         Task<CommentDto> CreateCommentAsync(Guid id, CreateCommentDto dto);
         Task<IReadOnlyList<CommentDto>> GetCommentsAsync(Guid id);
         Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto);
+        Task<CommentDto> GetCommentAsync(Guid id, Guid commentId);
     }
 }

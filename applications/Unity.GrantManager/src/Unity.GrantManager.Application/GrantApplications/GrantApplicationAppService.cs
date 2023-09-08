@@ -11,6 +11,8 @@ using Volo.Abp.DependencyInjection;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Validation;
+using Volo.Abp.Domain.Entities;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -189,8 +191,25 @@ namespace Unity.GrantManager.GrantApplications
 
         public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
         {
-            return ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)
-              await _commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentsManager.CommentType.ApplicationComment));
+            try
+            {
+                return ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)
+                    await _commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentsManager.CommentType.ApplicationComment));
+
+            }
+            catch (EntityNotFoundException)
+            {
+                throw new AbpValidationException("Comment not found");
+            }
+        }
+
+        public async Task<CommentDto> GetCommentAsync(Guid id, Guid commentId)
+        {
+            var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentsManager.CommentType.ApplicationComment);
+
+            return comment == null
+                ? throw new AbpValidationException("Comment not found")
+                : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
         }
     }
 

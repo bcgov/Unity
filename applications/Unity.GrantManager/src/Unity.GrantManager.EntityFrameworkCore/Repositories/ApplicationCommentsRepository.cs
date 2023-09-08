@@ -23,8 +23,7 @@ namespace Unity.GrantManager.Repositories
 
         public async Task<List<ApplicationComment>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter)
         {
-            var dbSet = await GetDbSetAsync();
-            return await dbSet
+            return await (await GetDbSetAsync())
                 .WhereIf(
                     !filter.IsNullOrWhiteSpace(),
                     applicationComment => applicationComment.Comment.Contains(filter)
