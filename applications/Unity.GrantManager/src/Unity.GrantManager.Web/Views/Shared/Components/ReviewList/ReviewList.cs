@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.GrantManager.Web.Views.Shared.Components.ReviewList
 {
 
-    [Widget(ScriptFiles = new[] { "/Views/Shared/Components/ReviewList/ReviewList.js", "/libs/pubsub-js/src/pubsub.js" },
+    [Widget(ScriptFiles = new[] { "/libs/datatables/js/dataTables.select.min.js", "/libs/datatables/js/select.bootstrap.min.js" ,"/Views/Shared/Components/ReviewList/ReviewList.js", "/libs/pubsub-js/src/pubsub.js" },
         StyleFiles = new[] { "/Views/Shared/Components/ReviewList/ReviewList.css" })]
     public class ReviewList : AbpViewComponent
     {

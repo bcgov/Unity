@@ -1,5 +1,6 @@
 $(function () {
-    var selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
+    let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
+    let selectedReviewDetails = null;
 
     const formatter = new Intl.NumberFormat('en-CA', {
         style: 'currency',
@@ -8,7 +9,7 @@ $(function () {
         maximumFractionDigits: 2,
     });
 
-    var assignApplicationModal = new abp.ModalManager({
+    let assignApplicationModal = new abp.ModalManager({
         viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
     });  
 
@@ -18,7 +19,7 @@ $(function () {
 
     function formatChefComponents(data) {
         // Advanced Components
-        var components = JSON.stringify(data).replace(
+        let components = JSON.stringify(data).replace(
             /simpleaddressadvanced/g,
             'address'
         );
@@ -94,7 +95,7 @@ $(function () {
                     console.log(result);
                     $('.spinner-grow').hide();
                     Formio.icons = 'fontawesome';
-                    var data = JSON.parse(formatChefComponents(result));
+                    let data = JSON.parse(formatChefComponents(result));
                     console.log(data);
                     Formio.createForm(
                         document.getElementById('formio'),
@@ -160,8 +161,53 @@ $(function () {
     }
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
-  
 
+    $('#recommendation_select').change(function () {
+
+        let value = $(this).val();
+        
+        updateRecommendation(value, selectedReviewDetails.id);
+    });
+    function updateRecommendation(value,id) {
+     
+
+        try {
+            let data = { "approvalRecommended": value, "assessmentId": id }
+            unity.grantManager.assessments.assessments.updateAssessmentRecommendation
+                (data)
+                .done(function () {
+
+                    abp.notify.success(
+                        'The recommendation has been updated.'
+                    );
+                    PubSub.publish('refresh_review_list', id);
+                 
+                });
+
+        } catch (error) { }
+    }
+
+    const select_application_review_subscription = PubSub.subscribe(
+        'select_application_review',
+        (msg, data) => {
+            if (data) {
+                selectedReviewDetails = data;
+                $('#reviewDetails').show();
+                let selectElement = document.getElementById("recommendation_select");
+                selectElement.value = data.approvalRecommended;
+            }
+            else {
+                $('#reviewDetails').hide();
+            }
+         
+
+        }
+    );
+
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        $($.fn.dataTable.tables(true)).DataTable()
+            .columns.adjust();
+    });
 
 
 });

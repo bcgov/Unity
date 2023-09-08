@@ -107,22 +107,7 @@
 
                                     </abp-column>
                                 </abp-row>
-                                <abp-row>
-                                    <abp-column size="_10">
-
-                                        @await Component.InvokeAsync("AssessmentResultAttachments")
-
-                                    </abp-column>
-                                </abp-row>
-                                <abp-row>
-                                    <abp-column size="_10">
-                                        <label>Attach Document</label>
-                                        <input class="form-control custom-input" asp-for="@Model.Attachment" type="file" id="formFile" />
-                                        <abp-select asp-for="@Model.SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
-                                            <option value="">Select</option>
-                                        </abp-select>
-                                    </abp-column>
-                                </abp-row>
+                               
                             </abp-column>
                           @* <abp-column size="_4">
                                 <abp-row>
@@ -169,8 +154,37 @@
                 </ul>
             <div class="tab-content p-3" id="myTabContent">
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
-                    <h6>Details View</h6>
+                   <div id="reviewDetails" style="display:none">
 
+                 
+                    <abp-row>
+                        <abp-column size="_12">
+
+                            @await Component.InvokeAsync("AssessmentResultAttachments")
+
+                        </abp-column>
+                    </abp-row>
+                    <abp-row>
+                        <abp-column size="_12">
+                           
+                                <abp-row>
+                                    <abp-column size="_12" class="add-review-btn-container">
+                                        <input type="file" id="assessment_upload" style="display:none" />
+
+                                        <abp-button text="Add Attachments"
+                                                    id="assessment_upload_btn"
+                                                    class="assessment-upload-btn"
+                                                    icon-type="Other"
+                                                    icon="fl fl-plus"
+                                                    button-type="Light" />
+                                    </abp-column>
+                                </abp-row>
+                                <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
+                                    <option value="null" disabled >Please Choose...</option>
+                            </abp-select>
+                        </abp-column>
+                    </abp-row>
+                    </div>
                     </div>
                     <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
                         <h6>History View</h6>
