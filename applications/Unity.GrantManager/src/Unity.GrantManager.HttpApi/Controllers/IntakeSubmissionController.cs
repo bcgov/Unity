@@ -124,7 +124,7 @@ namespace Unity.GrantManager.Controllers
                                 RequestedAmount = Double.Parse(intake.requestedAmount)
                             },
                             autoSave: true
-                        ); ;
+                        );
 
                         ApplicationFormSubmission applicationFormSubmission = await _applicationFormSubmissionRepository.InsertAsync(
                          new ApplicationFormSubmission

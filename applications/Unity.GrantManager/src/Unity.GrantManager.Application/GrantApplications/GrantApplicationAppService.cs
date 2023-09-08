@@ -56,12 +56,16 @@ namespace Unity.GrantManager.GrantApplications
                         join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                         select new { application, appStatus };
             
-            //Paging
-            query = query
-                .OrderBy(NormalizeSorting(input.Sorting))
-                .Skip(input.SkipCount)
-                .Take(input.MaxResultCount);
-            
+            try {
+                query = query
+                    .OrderBy(NormalizeSorting(input.Sorting))
+                    .Skip(input.SkipCount)
+                    .Take(input.MaxResultCount);
+            } catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
+
             //Execute the query and get a list
             var queryResult = await AsyncExecuter.ToListAsync(query);           
                      
