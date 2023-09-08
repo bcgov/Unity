@@ -9,9 +9,11 @@ using System.Net.Http;
 using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
 using Volo.Abp.Account;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BlobStoring;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -35,12 +37,22 @@ public class GrantManagerApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var configuration = context.Services.GetConfiguration();
+        Configure<AbpBlobStoringOptions>(options =>
+        {
+            options.Containers.Configure<ComsS3Container>(container =>
+            {
+                container.UseComsS3CustomBlobProvider(provider =>
+                {
+                    provider.BucketId = configuration["S3:BucketId"] ?? "";
+                    provider.BaseUri = configuration["S3:BaseUri"] ?? "";
+                });
+            });
+        });
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<GrantManagerApplicationModule>();
-        });
-
-        var configuration = context.Services.GetConfiguration();
+        });      
 
         Configure<IntakeClientOptions>(options => {
             options.BaseUri = configuration["Intake:BaseUri"] ?? "";
