@@ -648,6 +648,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool?>("ApprovalRecommended")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
