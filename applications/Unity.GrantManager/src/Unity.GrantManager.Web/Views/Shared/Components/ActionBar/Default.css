@@ -5,6 +5,9 @@
     display: inline-flex;
     margin-top: 2px;
     margin-bottom: 6px;
+    border-radius: 10px;
+    box-shadow: 2px 5px 5px #0000004a;
+    background-color: white;    
 }
 
     .action-bar.active {
