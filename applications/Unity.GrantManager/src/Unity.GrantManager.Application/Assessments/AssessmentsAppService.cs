@@ -6,6 +6,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -28,7 +29,9 @@ namespace Unity.GrantManager.Assessments
                 return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentsRepository.InsertAsync(
                     new Assessment
                     {
-                        ApplicationId = dto.ApplicationId
+                        ApplicationId = dto.ApplicationId,
+                        StartDate = dto.StartDate,
+                        ApprovalRecommended = dto.ApprovalRecommended,
                     },
                     autoSave: true
                 ));
@@ -46,6 +49,27 @@ namespace Unity.GrantManager.Assessments
             IQueryable<Assessment> queryableAssessments = _assessmentsRepository.GetQueryableAsync().Result;
             var comments = queryableAssessments.Where(c => c.ApplicationId.Equals(applicationId)).ToList();
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(comments.OrderByDescending(s => s.CreationTime).ToList()));
+        }
+
+
+        public async Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto)
+        {
+            try
+            {
+                var assessment = await _assessmentsRepository.GetAsync(dto.AssessmentId);
+                if (assessment != null)
+                {
+                    assessment.ApprovalRecommended = dto.ApprovalRecommended;
+                   await _assessmentsRepository.UpdateAsync(assessment);
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error updating  assessment recommendation");
+                // TODO: Exception handling
+            }
         }
     }
 }

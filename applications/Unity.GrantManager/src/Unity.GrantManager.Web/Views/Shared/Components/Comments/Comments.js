@@ -20,10 +20,7 @@
         'add_review',
         (msg, data) => {
             $('#detailsTab a[href="#nav-review-and-adudication"]').tab('show');
-            $('#adjudicationMainView').fadeOut(500);
-            setTimeout(() => {
-                $('#adjudicationAddReviewView').fadeIn(1000);
-            }, 800)
+           
         }
     );
 

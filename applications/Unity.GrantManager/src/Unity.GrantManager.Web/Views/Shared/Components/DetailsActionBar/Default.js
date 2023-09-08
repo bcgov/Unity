@@ -79,9 +79,23 @@ $(function () {
     });
 
     $('#addReview').click(function () {
-        PubSub.publish('add_review');
+        console.log("Add review")
+        const urlParams = new URL(window.location.toLocaleString()).searchParams;
+        const applicationId = urlParams.get('ApplicationId');
+
+        try {
+            unity.grantManager.assessments.assessments.createAssessment({ "applicationId": applicationId, "approvalRecommended": null, "startDate" : new Date() }, {})
+                .done(function (data) {
+                    PubSub.publish('add_review');
+                    PubSub.publish('refresh_review_list',data.id);
+
+
+                });
+
+        } catch (error) { }
+
     });
 
- ;
+
         
 });

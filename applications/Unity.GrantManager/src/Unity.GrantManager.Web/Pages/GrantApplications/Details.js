@@ -1,5 +1,6 @@
 $(function () {
     var selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
+    var selectedReviewDetails = null;
 
     const formatter = new Intl.NumberFormat('en-CA', {
         style: 'currency',
@@ -160,8 +161,53 @@ $(function () {
     }
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
-  
 
+    $('#recommendation_select').change(function () {
+
+        var value = $(this).val();
+        
+        updateRecommendation(value, selectedReviewDetails.id);
+    });
+    function updateRecommendation(value,id) {
+     
+
+        try {
+            let data = { "approvalRecommended": value, "assessmentId": id }
+            unity.grantManager.assessments.assessments.updateAssessmentRecommendation
+                (data)
+                .done(function () {
+
+                    abp.notify.success(
+                        'The recommendation has been updated.'
+                    );
+                    PubSub.publish('refresh_review_list', id);
+                 
+                });
+
+        } catch (error) { }
+    }
+
+    const select_application_review_subscription = PubSub.subscribe(
+        'select_application_review',
+        (msg, data) => {
+            if (data) {
+                selectedReviewDetails = data;
+                $('#reviewDetails').show();
+                var selectElement = document.getElementById("recommendation_select");
+                selectElement.value = data.approvalRecommended;
+            }
+            else {
+                $('#reviewDetails').hide();
+            }
+         
+
+        }
+    );
+
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        $($.fn.dataTable.tables(true)).DataTable()
+            .columns.adjust();
+    });
 
 
 });

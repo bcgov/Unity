@@ -157,6 +157,7 @@
 
     .recom-select:hover {
         background: #FFFFFF;
+        color: #333;
     }
 
 .back-button-container {
@@ -211,7 +212,7 @@ i.fas:hover {
     cursor: pointer;
 }
 
-.selected{
+select.selected{
     border: 1px solid rgba(0, 51, 102, 38%) !important;
     background-color: #fff !important;
 }
@@ -239,4 +240,7 @@ i.fas:hover {
 }
 .card-header.bg-default {
     margin-top: 1.2rem;
+}
+.assessment-upload-btn{
+    margin-top : 0.5rem;
 }
