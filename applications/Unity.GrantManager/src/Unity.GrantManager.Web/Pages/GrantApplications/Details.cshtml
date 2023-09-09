@@ -204,12 +204,15 @@
                     <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                        @await Component.InvokeAsync("ApplicationAttachments")
                         <abp-row>
-                            <abp-column size="_12" class="add-review-btn-container">
-
-                            <form method="post" enctype="multipart/form-data">
-                                    <abp-input asp-for="UploadFileDto.File"></abp-input>
-                                <button class="btn-primary btn" type="submit" value="Submit" asp-page-handler="File"></button>
-                                </form>
+                            <abp-column size="_12" class="add-review-btn-container">                            
+                            <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">                                
+                                <input id="assessment_upload" name="assessment_upload" type="file" size="1" multiple onchange="uploadFiles('assessment_upload');" style="display: none" />
+                                <abp-button text="Add Attachments"
+                                            id="assessment_upload_btn"
+                                            icon-type="Other"
+                                            icon="fl fl-plus"
+                                            button-type="Light" />
+                            </form>
                             </abp-column>
                         </abp-row>
                     </div>

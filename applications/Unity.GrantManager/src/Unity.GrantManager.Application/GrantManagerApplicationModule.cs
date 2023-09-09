@@ -46,6 +46,8 @@ public class GrantManagerApplicationModule : AbpModule
                 {
                     provider.BucketId = configuration["S3:BucketId"] ?? "";
                     provider.BaseUri = configuration["S3:BaseUri"] ?? "";
+                    provider.Username = configuration["S3:Username"] ?? "";
+                    provider.Password = configuration["S3:Password"] ?? "";
                 });
             });
         });

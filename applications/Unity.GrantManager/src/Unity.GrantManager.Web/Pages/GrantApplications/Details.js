@@ -209,5 +209,43 @@ $(function () {
             .columns.adjust();
     });
 
+  
+    
+
+
 
 });
+
+function uploadFiles(inputId) {
+    var input = document.getElementById(inputId);
+    var files = input.files;
+    var formData = new FormData();
+    if (files.length == 0) {
+        return;
+    }
+    for (var i = 0; i != files.length; i++) {        
+        formData.append("files", files[i]);
+    }
+
+    $.ajax(
+        {
+            url: "/uploader",
+            data: formData,
+            processData: false,
+            contentType: false,
+            type: "POST",
+            success: function (data) {
+                abp.notify.success(
+                    data.responseText,
+                    'File Upload Is Successful'
+                ); 
+            },
+            error: function (data) {                
+                abp.notify.error(
+                    data.responseText,
+                    'File Upload Not Successful'
+                );
+            }
+        }
+    );
+}

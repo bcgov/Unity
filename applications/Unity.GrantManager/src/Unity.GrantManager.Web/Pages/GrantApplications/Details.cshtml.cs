@@ -53,8 +53,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public DetailsModel(ApplicationCommentsService applicationCommentsService, GrantApplicationAppService grantApplicationAppService, IFileAppService fileAppService)
         {
             _applicationCommentsService = applicationCommentsService;
-            _grantApplicationAppService = grantApplicationAppService;
-            _fileAppService = fileAppService;
+            _grantApplicationAppService = grantApplicationAppService;            
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -111,30 +110,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             return Page();
         }
 
-        [BindProperty]
-        public UploadFileDto UploadFileDto { get; set; }
-        private readonly IFileAppService _fileAppService;
-        public async Task<IActionResult> OnPostFileAsync() 
-        { 
-            using (var memoryStream = new MemoryStream()) 
-            { 
-                await UploadFileDto.File.CopyToAsync(memoryStream); 
-                await _fileAppService.SaveBlobAsync(
-                    new SaveBlobInputDto
-                    { 
-                        Name = UploadFileDto.File.FileName,
-                        Content = memoryStream.ToArray()
-                    }); 
-            } 
-            return Page(); 
-        }
-    }
-    public class UploadFileDto
-    {
-        [Required]
-        [Display(Name = "File")]
-        public IFormFile File { get; set; }
         
     }
+    
 
 }
