@@ -16,8 +16,9 @@
     --bc-colors-grey-dividers: #D6D6D6;
     --bc-colors-blue-hover: #ADDBFF;
     /* bc style variables */
-    --bc-font-size: 0.85rem;
-    --bc-font-size-sm: 0.7rem;
+    --bc-font-size: 1rem;
+    --bc-font-size-sm: 0.833rem;
+    --bc-font-size-ex-sm: 0.694rem;
     --bc-input-field-height: 34px;
     /*boostrap overrides*/
     --bs-primary: var(--bc-colors-blue-primary-500);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using System.Linq.Dynamic.Core;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +14,7 @@ using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Validation;
 using Volo.Abp.Domain.Entities;
+using Unity.GrantManager.Exceptions;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -62,11 +64,15 @@ namespace Unity.GrantManager.GrantApplications
                         join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                         select new { application, appStatus };
 
-            //Paging
-            query = query
-                .OrderBy(NormalizeSorting(input.Sorting))
-                .Skip(input.SkipCount)
-                .Take(input.MaxResultCount);
+            try {
+                query = query
+                    .OrderBy(NormalizeSorting(input.Sorting))
+                    .Skip(input.SkipCount)
+                    .Take(input.MaxResultCount);
+            } catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
 
             //Execute the query and get a list
             var queryResult = await AsyncExecuter.ToListAsync(query);
@@ -199,7 +205,7 @@ namespace Unity.GrantManager.GrantApplications
             }
             catch (EntityNotFoundException)
             {
-                throw new AbpValidationException("Comment not found");
+                throw new InvalidCommentParametersException();
             }
         }
 
@@ -208,27 +214,8 @@ namespace Unity.GrantManager.GrantApplications
             var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentsManager.CommentType.ApplicationComment);
 
             return comment == null
-                ? throw new AbpValidationException("Comment not found")
+                ? throw new InvalidCommentParametersException()
                 : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
         }
     }
-
-    public static class IQueryableExtensions
-    {
-        public static IQueryable<T> Sort<T>(this IQueryable<T> query, PagedAndSortedResultRequestDto input)
-        {
-            if (input is ISortedResultRequest sortInput)
-            {
-                if (!sortInput.Sorting.IsNullOrWhiteSpace())
-                {
-                    return query.OrderBy(input.Sorting);
-                }
-            }
-
-            return query;
-        }
-    }
 }
-
-
-

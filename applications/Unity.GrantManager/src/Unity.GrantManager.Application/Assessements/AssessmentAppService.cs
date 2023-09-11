@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Services;
-using Volo.Abp.Validation;
 using Volo.Abp.Domain.Entities;
+using Unity.GrantManager.Exceptions;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -65,7 +65,7 @@ namespace Unity.GrantManager.Assessments
             }
             catch (EntityNotFoundException)
             {
-                throw new AbpValidationException("Comment not found");
+                throw new InvalidCommentParametersException();
             }
         }
 
@@ -74,7 +74,7 @@ namespace Unity.GrantManager.Assessments
             var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentsManager.CommentType.AssessmentComment);
 
             return comment == null
-                ? throw new AbpValidationException("Comment not found")
+                ? throw new InvalidCommentParametersException()
                 : ObjectMapper.Map<AssessmentComment, CommentDto>((AssessmentComment)comment);
         }
     }

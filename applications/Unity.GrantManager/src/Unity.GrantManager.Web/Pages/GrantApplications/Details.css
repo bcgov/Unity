@@ -241,6 +241,15 @@ select.selected{
 .card-header.bg-default {
     margin-top: 1.2rem;
 }
+
+.col-8 {
+    padding-right: 8px;
+}
+
+.col-4 {
+    padding-left: 8px;
+}
+
 .assessment-upload-btn{
     margin-top : 0.5rem;
 }

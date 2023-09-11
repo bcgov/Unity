@@ -4,6 +4,8 @@ using Shouldly;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Comments;
+using System;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -25,7 +27,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task Should_Add_Integration_Test_Application()
+    public async Task GetListAsync_Should_Return_Items()
     {        
         // Act
         var grantApplications = await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto() { MaxResultCount = 100 });
@@ -36,7 +38,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task Comment_Should_Be_Added_To_Application()
+    public async Task CreateCommentAsync_Should_Create_Comment()
     {
         // Arrange
         var application = (await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto())).Items[0];
@@ -55,7 +57,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task ApplicationComment_Should_Be_Updated()
+    public async Task UpdateCommentAsync_Should_Update_Comment()
     {
         // Arrange
         var application = (await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto())).Items[0];
@@ -78,5 +80,29 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
         // Assert
         updatedComment.Comment.ShouldBe(updateComment);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task UpdateCommentAsync_Invalid_Should_Throw()
+    {
+        // Arrange                        
+        // Act
+        // Assert
+        await Should.ThrowAsync<AbpValidationException>(_grantApplicationAppService.UpdateCommentAsync(Guid.NewGuid(), new UpdateCommentDto()
+        {
+            CommentId = Guid.NewGuid(),
+            Comment = "Foobar"
+        }));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetCommentAsync_Invalid_Should_Throw()
+    {
+        // Arrange                        
+        // Act
+        // Assert
+        await Should.ThrowAsync<AbpValidationException>(_grantApplicationAppService.GetCommentAsync(Guid.NewGuid(), Guid.NewGuid()));
     }
 }
