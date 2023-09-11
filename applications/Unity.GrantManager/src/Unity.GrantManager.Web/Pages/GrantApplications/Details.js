@@ -218,6 +218,8 @@ $(function () {
 
 function uploadFiles(inputId) {
     var input = document.getElementById(inputId);
+    var applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
+    var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
     var files = input.files;
     var formData = new FormData();
     if (files.length == 0) {
@@ -229,7 +231,7 @@ function uploadFiles(inputId) {
 
     $.ajax(
         {
-            url: "/uploader",
+            url: "/uploader?ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId,
             data: formData,
             processData: false,
             contentType: false,
