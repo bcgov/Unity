@@ -5,8 +5,7 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <RootNamespace>Unity.GrantManager</RootNamespace>
-    <UserSecretsId>4d64e1b9-9e6e-4bb6-9dcf-b70d108adaeb</UserSecretsId>
+    <RootNamespace>Unity.GrantManager</RootNamespace>    
   </PropertyGroup>
 
   <ItemGroup>
