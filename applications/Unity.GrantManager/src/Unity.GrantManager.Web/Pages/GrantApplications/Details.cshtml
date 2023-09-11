@@ -22,8 +22,9 @@
 
 @await Component.InvokeAsync("DetailsActionBar", new {ApplicationId=@Model.ApplicationFormSubmissionId})
 
-<input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationFormSubmissionId" />
+<input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
+<input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
    
         <abp-row>
         <abp-column size="_8">
@@ -203,10 +204,19 @@
                     </div>
                     <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                        @await Component.InvokeAsync("ApplicationAttachments")
-
+                        <abp-row>
+                            <abp-column size="_12" class="add-review-btn-container">                            
+                            <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">                                
+                                <input id="application_attachment_upload" name="application_attachment_upload" type="file" size="1" multiple onchange="uploadFiles('application_attachment_upload');" style="display: none" />
+                                <abp-button text="Add Attachments"
+                                            id="application_attachment_upload_btn"
+                                            icon-type="Other"
+                                            icon="fl fl-plus"
+                                            button-type="Light" />
+                            </form>
+                            </abp-column>
+                        </abp-row>
                     </div>
-
-
                 </div>
              
             </abp-card>

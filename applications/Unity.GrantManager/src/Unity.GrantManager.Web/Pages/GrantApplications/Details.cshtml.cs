@@ -5,10 +5,16 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Web.Views.Shared.Components.ApplicationAttachments;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -44,11 +50,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty]
         public List<ApplicationCommentDto> CommentList { get; set; } = new();
 
+        [BindProperty(SupportsGet = true)]
+        public Guid? CurrentUserId { get; set; }
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DetailsModel(ApplicationCommentsService applicationCommentsService, GrantApplicationAppService grantApplicationAppService)
+        public DetailsModel(ApplicationCommentsService applicationCommentsService, GrantApplicationAppService grantApplicationAppService, IFileAppService fileAppService, ICurrentUser currentUser)
         {
             _applicationCommentsService = applicationCommentsService;
             _grantApplicationAppService = grantApplicationAppService;
+            CurrentUserId = currentUser.Id;
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -104,5 +114,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             return Page();
         }
+
+        
     }
+    
+
 }

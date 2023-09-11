@@ -228,6 +228,14 @@ public class GrantManagerDbContext :
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
 
+        builder.Entity<ApplicationAttachment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationAttachment", GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+        });
+
         builder.Entity<Assessment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment",
