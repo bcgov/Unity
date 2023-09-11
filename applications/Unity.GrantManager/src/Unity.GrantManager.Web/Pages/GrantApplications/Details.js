@@ -162,6 +162,8 @@ $(function () {
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
 
+    $('#application_attachment_upload_btn').click(function () { $('#application_attachment_upload').trigger('click'); });
+
     $('#recommendation_select').change(function () {
 
         let value = $(this).val();
