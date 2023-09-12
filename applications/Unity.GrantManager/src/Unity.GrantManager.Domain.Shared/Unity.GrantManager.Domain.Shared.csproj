@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Stateless" Version="5.13.0" />
     <PackageReference Include="Volo.Abp.Identity.Domain.Shared" Version="7.3.0" />
     <PackageReference Include="Volo.Abp.BackgroundJobs.Domain.Shared" Version="7.3.0" />
     <PackageReference Include="Volo.Abp.AuditLogging.Domain.Shared" Version="7.3.0" />

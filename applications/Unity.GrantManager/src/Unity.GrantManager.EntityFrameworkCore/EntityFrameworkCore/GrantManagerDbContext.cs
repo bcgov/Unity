@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationUserRoles;
 using Unity.GrantManager.Assessments;
@@ -230,10 +231,25 @@ public class GrantManagerDbContext :
 
         builder.Entity<Assessment>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment",
-                GrantManagerConsts.DbSchema);
-
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment", GrantManagerConsts.DbSchema);
             b.ConfigureByConvention();
+            
+            b.HasOne<Application>()
+                .WithMany()
+                .HasForeignKey(x => x.ApplicationId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            b.HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(x => x.AssignedUserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            b.Property(x => x.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasConversion(new EnumToStringConverter<AssessmentState>());
         });
 
         builder.Entity<AssessmentComment>(b =>
