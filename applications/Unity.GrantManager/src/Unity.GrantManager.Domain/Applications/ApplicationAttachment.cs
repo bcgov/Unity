@@ -10,4 +10,6 @@ public class ApplicationAttachment : AuditedAggregateRoot<Guid>
     public string UserId { get; set; }
     public string? FileName { get; set; }
     public DateTime Time { get; set; }
+    public DateTime CreationTime { get; set; }
+    public Guid? CreatorId { get; set; }
 }

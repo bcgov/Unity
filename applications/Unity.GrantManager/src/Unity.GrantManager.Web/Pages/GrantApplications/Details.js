@@ -224,11 +224,36 @@ function uploadFiles(inputId) {
     var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
     var files = input.files;
     var formData = new FormData();
+    const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
+    const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
+    let isAllowedTypeError = false;
+    let isMaxFileSizeError = false;
     if (files.length == 0) {
         return;
     }
-    for (var i = 0; i != files.length; i++) {        
+    for (var i = 0; i != files.length; i++) {   
+        console.log(files[i]);
+        if (!allowedTypes.includes(files[i].type)) {
+            isAllowedTypeError = true;
+        }
+        if ((files[i].size * 0.000001) > maxFileSize) {
+            isMaxFileSizeError = true;
+        }
+
         formData.append("files", files[i]);
+    }
+
+    if (isAllowedTypeError) {
+       return abp.notify.error(
+            'Error',
+            'File type not supported'
+        );
+    }
+    if (isMaxFileSizeError) {
+        return abp.notify.error(
+            'Error',
+            'File size exceeds ' + maxFileSize + 'MB'
+        );
     }
 
     $.ajax(
@@ -243,6 +268,8 @@ function uploadFiles(inputId) {
                     data.responseText,
                     'File Upload Is Successful'
                 ); 
+
+                PubSub.publish('refresh_application_attachment_list');  
             },
             error: function (data) {                
                 abp.notify.error(
@@ -253,3 +280,12 @@ function uploadFiles(inputId) {
         }
     );
 }
+
+const update_application_attachment_count_subscription = PubSub.subscribe(
+    'update_application_attachment_count',
+    (msg, data) => {
+        $('#application_attachment_count').html(data)
+
+
+    }
+);
