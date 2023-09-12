@@ -7,6 +7,11 @@ using Volo.Abp.Application.Services;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.GrantManager.Applications;
+using Volo.Abp;
+using Volo.Abp.Users;
+using Unity.GrantManager.Permissions;
+using Volo.Abp.Identity;
+using Volo.Abp.Domain.Entities;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -16,32 +21,30 @@ namespace Unity.GrantManager.Assessments
     public class AssessmentsAppService : ApplicationService, IAssessmentsService
     {
         private readonly IAssessmentsRepository _assessmentsRepository;
+        private readonly AssessmentManager _assessmentManager;
+        private readonly IApplicationRepository _applicationRepository;
+        private readonly IIdentityUserLookupAppService _userLookupProvider;
 
-        public AssessmentsAppService(IAssessmentsRepository assessmentsRepository)
+        public AssessmentsAppService(
+            IAssessmentsRepository assessmentsRepository,
+            AssessmentManager assessmentManager,
+            IApplicationRepository applicationRepository,
+            IIdentityUserLookupAppService userLookupProvider)
         {
             _assessmentsRepository = assessmentsRepository;
+            _assessmentManager = assessmentManager;
+            _applicationRepository = applicationRepository;
+            _userLookupProvider = userLookupProvider;
         }
 
+        [Authorize(GrantApplicationPermissions.Adjudications.Start)]
         public async Task<AssessmentDto> CreateAssessment(CreateAssessmentDto dto)
         {
-            try
-            {
-                return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentsRepository.InsertAsync(
-                    new Assessment
-                    {
-                        ApplicationId = dto.ApplicationId,
-                        StartDate = dto.StartDate,
-                        ApprovalRecommended = dto.ApprovalRecommended,
-                    },
-                    autoSave: true
-                ));
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error creating assessment");
-                return new AssessmentDto();
-                // TODO: Exception handling
-            }
+            Application application = await _applicationRepository.GetAsync(dto.ApplicationId);
+            IUserData currentUser = await _userLookupProvider.FindByIdAsync(CurrentUser.GetId());
+
+            var result =  await _assessmentManager.CreateAsync(application, currentUser);
+            return ObjectMapper.Map<Assessment, AssessmentDto>(result);
         }
 
         public async Task<IList<AssessmentDto>> GetListAsync(Guid applicationId)
@@ -51,6 +54,11 @@ namespace Unity.GrantManager.Assessments
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(comments.OrderByDescending(s => s.CreationTime).ToList()));
         }
 
+        public async Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId)
+        {
+            var assessment = await _assessmentsRepository.GetAsync(assessmentId);
+            return assessment.GetActions().ToList();
+        }
 
         public async Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto)
         {

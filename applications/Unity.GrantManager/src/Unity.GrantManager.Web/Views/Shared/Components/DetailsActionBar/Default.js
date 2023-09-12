@@ -84,7 +84,7 @@ $(function () {
         const applicationId = urlParams.get('ApplicationId');
 
         try {
-            unity.grantManager.assessments.assessments.createAssessment({ "applicationId": applicationId, "approvalRecommended": null, "startDate" : new Date() }, {})
+            unity.grantManager.assessments.assessments.createAssessment({ "applicationId": applicationId }, {})
                 .done(function (data) {
                     PubSub.publish('add_review');
                     PubSub.publish('refresh_review_list',data.id);

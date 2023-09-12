@@ -19,7 +19,11 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationStatus, ApplicationStatusDto>();
         CreateMap<AssessmentComment, AssessmentCommentDto>();
         CreateMap<ApplicationComment, ApplicationCommentDto>();
-        CreateMap<Assessment, AssessmentDto>();
+        
+        CreateMap<Assessment, AssessmentDto>()
+            .ForMember(
+                dest => dest.StartDate,
+                opts => opts.MapFrom(src => src.CreationTime));
     }
 }
 
