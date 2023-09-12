@@ -162,6 +162,8 @@ $(function () {
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
 
+    $('#application_attachment_upload_btn').click(function () { $('#application_attachment_upload').trigger('click'); });
+
     $('#recommendation_select').change(function () {
 
         let value = $(this).val();
@@ -209,5 +211,45 @@ $(function () {
             .columns.adjust();
     });
 
+  
+    
+
+
 
 });
+
+function uploadFiles(inputId) {
+    var input = document.getElementById(inputId);
+    var applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
+    var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+    var files = input.files;
+    var formData = new FormData();
+    if (files.length == 0) {
+        return;
+    }
+    for (var i = 0; i != files.length; i++) {        
+        formData.append("files", files[i]);
+    }
+
+    $.ajax(
+        {
+            url: "/uploader?ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId,
+            data: formData,
+            processData: false,
+            contentType: false,
+            type: "POST",
+            success: function (data) {
+                abp.notify.success(
+                    data.responseText,
+                    'File Upload Is Successful'
+                ); 
+            },
+            error: function (data) {                
+                abp.notify.error(
+                    data.responseText,
+                    'File Upload Not Successful'
+                );
+            }
+        }
+    );
+}

@@ -149,6 +149,7 @@ namespace Unity.GrantManager.GrantApplications
                 catch (Exception ex)
                 {
                     Debug.WriteLine(ex.ToString());
+                    throw new Exception(ex.ToString());
                 }
 
             }
