@@ -7,6 +7,8 @@ using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Guids;
+using Volo.Abp.Identity;
 
 namespace Unity.GrantManager;
 
@@ -19,6 +21,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IRepository<Intake, Guid> _intakeRepository;
     private readonly IRepository<Assessment, Guid> _assessmentRepository;
     private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
+    private readonly IdentityUserManager _identityUserManager;
 
 
     public GrantManagerTestDataSeedContributor(IApplicationRepository applicationRepository,
@@ -27,7 +30,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         IRepository<ApplicationForm, Guid> applicationFormRepository,
         IRepository<Intake, Guid> intakeRepository,
         IRepository<Assessment, Guid> assessmentRepository,
-        IRepository<AssessmentComment, Guid> assessmentCommentRepository)
+        IRepository<AssessmentComment, Guid> assessmentCommentRepository,
+        IdentityUserManager identityUserManager)
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
@@ -36,6 +40,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         _intakeRepository = intakeRepository;
         _assessmentRepository = assessmentRepository;
         _assessmentCommentRepository = assessmentCommentRepository;
+        _identityUserManager = identityUserManager;
     }
 
     public async Task SeedAsync(DataSeedContext context)
@@ -55,11 +60,11 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         ApplicationStatus? appStatus1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.SUBMITTED);
         appStatus1 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            {
-                StatusCode = "SUBMITTED",
-                ExternalStatus = "Submitted",
-                InternalStatus = "Submitted"
-            },
+            (
+                statusCode: "SUBMITTED",
+                externalStatus: "Submitted",
+                internalStatus: "Submitted"
+            ),
             autoSave: true
         );
 
@@ -105,12 +110,25 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
+        var identityUser1 = await _identityUserManager.FindByEmailAsync("natasha.romanoff@example.com");
+        if (identityUser1 == null)
+        {
+            identityUser1 = new(Guid.NewGuid(), "natasha.romanoff", "testuser3@example.com")
+            {
+                Name = "Natasha",
+                Surname = "Romanoff"
+            };
+            await _identityUserManager.CreateAsync(identityUser1);
+        };
+
         Assessment assessment1 = await _assessmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
         assessment1 ??= await _assessmentRepository.InsertAsync(
             new Assessment
-            {
-                ApplicationId = application1.Id                
-            },
+        (
+                id: Guid.NewGuid(),
+                applicationId: application1.Id,
+                assignedUserId: identityUser1.Id
+            ),
             autoSave: true
         );
 
