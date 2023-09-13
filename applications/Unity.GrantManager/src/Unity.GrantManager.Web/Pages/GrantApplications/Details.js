@@ -186,6 +186,7 @@ $(function () {
         (msg, data) => {
             if (data) {
                 selectedReviewDetails = data;
+                document.getElementById("AssessmentId").value = data.id;
                 $('#reviewDetails').show();
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
@@ -213,19 +214,33 @@ $(function () {
     initCommentsWidget();
 });
 
-function uploadFiles(inputId) {
-    const input = document.getElementById(inputId);
-    const applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
-    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
-    const files = input.files;
-    const formData = new FormData();
-    const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val()));
-    const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
+function uploadApplicationFiles(inputId) {    
+    var applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
+    var currentUserId = decodeURIComponent($("#CurrentUserId").val());     
+    var url = "/uploader?AttachmentType=Application&ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId;
+    uploadFiles(inputId, url);     
+}
+
+function uploadAssessmentFiles(inputId) {    
+    var assessmentId = decodeURIComponent($("#AssessmentId").val());
+    var currentUserId = decodeURIComponent($("#CurrentUserId").val());
+    var url = "/uploader?AttachmentType=Adjudication&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId;
+    uploadFiles(inputId, url);        
+}
+
+function uploadFiles(inputId, urlStr) {
+    var input = document.getElementById(inputId);    
+    var files = input.files;
+    var formData = new FormData();
+    const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
+    const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
+
     let isAllowedTypeError = false;
     let isMaxFileSizeError = false;
     if (files.length == 0) {
         return;
     }
+
     for (let file of files) {
         console.log(file);
         if (!allowedTypes.includes(file.type)) {
@@ -253,7 +268,7 @@ function uploadFiles(inputId) {
 
     $.ajax(
         {
-            url: "/uploader?ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId,
+            url: urlStr,
             data: formData,
             processData: false,
             contentType: false,
@@ -275,6 +290,7 @@ function uploadFiles(inputId) {
         }
     );
 }
+
 
 const update_application_attachment_count_subscription = PubSub.subscribe(
     'update_application_attachment_count',
@@ -353,3 +369,4 @@ function initCommentsWidget() {
 
     updateCommentsCounters();
 }
+

@@ -238,6 +238,14 @@ public class GrantManagerDbContext :
             b.ConfigureByConvention();
         });
 
+        modelBuilder.Entity<AdjudicationAttachment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "AdjudicationAttachment", GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AdjudicationId).IsRequired();
+        });
+
         modelBuilder.Entity<AssessmentComment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentComment", GrantManagerConsts.DbSchema);
