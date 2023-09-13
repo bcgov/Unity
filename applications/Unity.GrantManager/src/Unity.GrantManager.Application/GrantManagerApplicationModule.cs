@@ -41,7 +41,8 @@ public class GrantManagerApplicationModule : AbpModule
             {
                 container.UseComsS3CustomBlobProvider(provider =>
                 {
-                    provider.BucketId = configuration["S3:BucketId"] ?? "";
+                    provider.ApplicationBucketId = configuration["S3:ApplicationBucketId"] ?? "";
+                    provider.AdjudicationBucketId = configuration["S3:AdjudicationBucketId"] ?? "";
                     provider.BaseUri = configuration["S3:BaseUri"] ?? "";
                     provider.Username = configuration["S3:Username"] ?? "";
                     provider.Password = configuration["S3:Password"] ?? "";
