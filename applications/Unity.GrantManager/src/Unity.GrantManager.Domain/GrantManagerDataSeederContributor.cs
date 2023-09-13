@@ -37,6 +37,10 @@ public class GrantManagerDataSeederContributor
 
     public async Task SeedAsync(DataSeedContext context)
     {
+        if(await _grantProgramRepository.GetCountAsync() > 0)
+        {
+            return;
+        }
         // TODO: Neaten up with Upsert
 
         if (!await _grantProgramRepository.AnyAsync(s => s.ProgramName == "Space Farms Grant Program"))

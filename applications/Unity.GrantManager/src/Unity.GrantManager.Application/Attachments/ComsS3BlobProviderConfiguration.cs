@@ -10,14 +10,20 @@ public class ComsS3BlobProviderConfiguration
     {
         _containerConfiguration = containerConfiguration;
     }
-    public string BucketId
+    public string ApplicationBucketId
     {
         get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.BucketId");
+                .GetConfiguration<string>("ComsS3BlobProvider.ApplicationBucketId");
         set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.BucketId", value);
+            .SetConfiguration("ComsS3BlobProvider.ApplicationBucketId", value);
     }
-
+    public string AdjudicationBucketId
+    {
+        get => _containerConfiguration
+                .GetConfiguration<string>("ComsS3BlobProvider.AdjudicationBucketId");
+        set => _containerConfiguration
+            .SetConfiguration("ComsS3BlobProvider.AdjudicationBucketId", value);
+    }
 
     public string BaseUri
     {

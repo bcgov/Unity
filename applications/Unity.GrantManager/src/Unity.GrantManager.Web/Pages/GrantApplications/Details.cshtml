@@ -157,7 +157,8 @@
                 </ul>
             <div class="tab-content p-3" id="myTabContent">
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
-                   <div id="reviewDetails" style="display:none">                 
+                   <div id="reviewDetails" style="display:none">
+                   <input type="hidden" id="AssessmentId" value=""/>   
                     <abp-row>
                         <abp-column size="_12">
 
@@ -168,15 +169,15 @@
                     <abp-row>
                         <abp-column size="_12">                           
                                 <abp-row>
-                                    <abp-column size="_12" class="add-review-btn-container">
-                                        <input type="file" id="assessment_upload" style="display:none" />
-
-                                        <abp-button text="Add Attachments"
-                                                    id="assessment_upload_btn"
-                                                    class="assessment-upload-btn"
-                                                    icon-type="Other"
-                                                    icon="fl fl-plus"
-                                                    button-type="Light" />
+                                    <abp-column size="_12" class="add-review-btn-container">                                        
+                                        <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
+                                            <input id="assessment_upload" name="assessment_upload" type="file" size="1" multiple onchange="uploadAssessmentFiles('assessment_upload');" style="display: none" />
+                                            <abp-button text="Add Attachments"
+                                                        id="assessment_upload_btn"
+                                                        icon-type="Other"
+                                                        icon="fl fl-plus"
+                                                        button-type="Light" />
+                                        </form>
                                     </abp-column>
                                 </abp-row>
                                 <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
@@ -212,7 +213,7 @@
                         <abp-row>
                             <abp-column size="_12" class="add-review-btn-container">                            
                             <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">                                
-                                <input id="application_attachment_upload" name="application_attachment_upload" type="file" size="1" multiple onchange="uploadFiles('application_attachment_upload');" style="display: none" />
+                                <input id="application_attachment_upload" name="application_attachment_upload" type="file" size="1" multiple onchange="uploadApplicationFiles('application_attachment_upload');" style="display: none" />
                                 <abp-button text="Add Attachments"
                                             id="application_attachment_upload_btn"
                                             icon-type="Other"
