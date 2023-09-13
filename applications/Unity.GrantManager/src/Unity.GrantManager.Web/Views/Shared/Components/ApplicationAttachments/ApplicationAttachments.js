@@ -76,7 +76,7 @@
             e.currentTarget.classList.toggle('selected');
         });
    
-    const refresh_application_attachment_list_subscription = PubSub.subscribe(
+     PubSub.subscribe(
         'refresh_application_attachment_list',
         (msg, data) => {
             dataTable.ajax.reload();
