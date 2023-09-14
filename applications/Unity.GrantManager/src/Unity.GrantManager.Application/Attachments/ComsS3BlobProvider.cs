@@ -85,6 +85,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
                     S3Guid = result.id,
                     UserId = currentUserId.ToString(),
                     Time = DateTime.Now,
+                    FileName = args.BlobName,
                 });
         }
         else
