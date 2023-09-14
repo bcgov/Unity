@@ -19,7 +19,7 @@
             data: result
         };
     };
-
+   
     const dataTable = $('#ApplicationAttachmentsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
@@ -48,15 +48,12 @@
                 },
                 {
                     title: l('AssessmentResultAttachments:AttachedBy'),
-                    data: 'creatorId',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        return 'Reviewer Name';
-                    },
+                    data: 'attachedBy',
+                    className: 'data-table-header',                        
                 },
             ],
         })
-    );
+    );    
 
     dataTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {

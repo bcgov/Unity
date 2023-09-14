@@ -197,15 +197,17 @@ $(function () {
 
 function uploadApplicationFiles(inputId) {    
     var applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
-    var currentUserId = decodeURIComponent($("#CurrentUserId").val());     
-    var url = "/uploader?AttachmentType=Application&ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId;
+    var currentUserId = decodeURIComponent($("#CurrentUserId").val());  
+    var currentUserName = decodeURIComponent($("#CurrentUserName").val());
+    var url = "/uploader?AttachmentType=Application&ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
     uploadFiles(inputId, url);     
 }
 
 function uploadAssessmentFiles(inputId) {    
     var assessmentId = decodeURIComponent($("#AssessmentId").val());
     var currentUserId = decodeURIComponent($("#CurrentUserId").val());
-    var url = "/uploader?AttachmentType=Adjudication&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId;
+    var currentUserName = decodeURIComponent($("#CurrentUserName").val());
+    var url = "/uploader?AttachmentType=Adjudication&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
     uploadFiles(inputId, url);        
 }
 
