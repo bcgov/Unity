@@ -50,7 +50,9 @@ namespace Unity.GrantManager.GrantApplications
         {
             //Get the IQueryable<Book> from the repository
             var queryable = await _applicationRepository.GetQueryableAsync();
-            
+
+            PagedAndSortedResultRequestDto.DefaultMaxResultCount = 1000;
+
             //Prepare a query to join books and authors
             var query = from application in queryable
                         join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
