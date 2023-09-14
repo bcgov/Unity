@@ -41,6 +41,7 @@ WORKDIR "/src/src/Unity.GrantManager.Web"
 
 RUN dotnet tool install -g Volo.Abp.Cli
 ENV PATH="${PATH}:/root/.dotnet/tools"
+RUN dotnet dev-certs https --trust
 RUN abp install-libs
 RUN dotnet build "Unity.GrantManager.Web.csproj" -c Release -o /app/build
 
@@ -49,6 +50,7 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -o /app/publish /p
 
 FROM base AS final
 WORKDIR /app
+COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
 COPY --from=publish /app/publish .
 
 ## TODO: Replace with volume
