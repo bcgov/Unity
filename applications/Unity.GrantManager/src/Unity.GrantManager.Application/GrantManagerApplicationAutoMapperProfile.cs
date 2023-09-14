@@ -23,6 +23,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicationId));
         CreateMap<Assessment, AssessmentDto>();
+        CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
     }
 }
 
