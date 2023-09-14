@@ -13,6 +13,7 @@ public class AdjudicationAttachment : AuditedAggregateRoot<Guid>
     public Guid S3Guid { get; set; }
     public Guid UserId { get; set; }
     public string FileName { get; set; }
+    public string? AttachedBy { get; set; }
     public DateTime Time { get; set; }
 }
 
