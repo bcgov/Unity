@@ -15,6 +15,8 @@ using Unity.GrantManager.Web.Views.Shared.Components.ApplicationAttachments;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Users;
+using Microsoft.Extensions.Configuration;
+
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -53,12 +55,21 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public Guid? CurrentUserId { get; set; }
 
+        public string Extensions { get; set; }
+        public string MaxFileSize { get; set; }
+
+        private readonly IConfiguration _configuration;
+
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DetailsModel(ApplicationCommentsService applicationCommentsService, GrantApplicationAppService grantApplicationAppService, IFileAppService fileAppService, ICurrentUser currentUser)
+        public DetailsModel(ApplicationCommentsService applicationCommentsService, GrantApplicationAppService grantApplicationAppService, IFileAppService fileAppService, ICurrentUser currentUser, IConfiguration configuration)
         {
             _applicationCommentsService = applicationCommentsService;
             _grantApplicationAppService = grantApplicationAppService;
             CurrentUserId = currentUser.Id;
+            _configuration = configuration;
+            Extensions =  _configuration["S3:FileTypes"] ?? "";
+            MaxFileSize = _configuration["S3:MaxFileSize"] ?? "";
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 

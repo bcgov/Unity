@@ -20,6 +20,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<AssessmentComment, AssessmentCommentDto>();
         CreateMap<ApplicationComment, ApplicationCommentDto>();
         CreateMap<Assessment, AssessmentDto>();
+        CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
     }
 }
 
