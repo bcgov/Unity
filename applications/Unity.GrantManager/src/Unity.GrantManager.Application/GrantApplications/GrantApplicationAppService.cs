@@ -11,10 +11,9 @@ using System.Diagnostics;
 using Volo.Abp.DependencyInjection;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
-using Volo.Abp.Application.Services;
-using Volo.Abp.Validation;
 using Volo.Abp.Domain.Entities;
 using Unity.GrantManager.Exceptions;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -35,7 +34,7 @@ namespace Unity.GrantManager.GrantApplications
         private readonly IApplicationStatusRepository _applicationStatusRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
-        private readonly ICommentsManager _commentsManager;
+        private readonly ICommentsManager _commentsManager;                
 
         public GrantApplicationAppService(
             IRepository<GrantApplication, Guid> repository,
@@ -187,13 +186,13 @@ namespace Unity.GrantManager.GrantApplications
         public async Task<CommentDto> CreateCommentAsync(Guid id, CreateCommentDto dto)
         {
             return ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)
-             await _commentsManager.CreateCommentAsync(id, dto.Comment, CommentsManager.CommentType.ApplicationComment));
+             await _commentsManager.CreateCommentAsync(id, dto.Comment, CommentType.ApplicationComment));
         }
 
         public async Task<IReadOnlyList<CommentDto>> GetCommentsAsync(Guid id)
         {
             return ObjectMapper.Map<IReadOnlyList<ApplicationComment>, IReadOnlyList<CommentDto>>((IReadOnlyList<ApplicationComment>)
-                await _commentsManager.GetCommentsAsync(id, CommentsManager.CommentType.ApplicationComment));
+                await _commentsManager.GetCommentsAsync(id, CommentType.ApplicationComment));
         }
 
         public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
@@ -201,7 +200,7 @@ namespace Unity.GrantManager.GrantApplications
             try
             {
                 return ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)
-                    await _commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentsManager.CommentType.ApplicationComment));
+                    await _commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentType.ApplicationComment));
 
             }
             catch (EntityNotFoundException)
@@ -212,7 +211,7 @@ namespace Unity.GrantManager.GrantApplications
 
         public async Task<CommentDto> GetCommentAsync(Guid id, Guid commentId)
         {
-            var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentsManager.CommentType.ApplicationComment);
+            var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentType.ApplicationComment);
 
             return comment == null
                 ? throw new InvalidCommentParametersException()

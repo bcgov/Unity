@@ -1,4 +1,14 @@
-$(function () {
+$(function () {   
+    let commentsWidgetManager = new abp.WidgetManager({
+        wrapper: '#commentsWidget',
+        filterCallback: function () {
+            return {
+                'ownerId': $('#DetailsViewApplicationId').val(),
+                'commentType': 0
+            };
+        }
+    });
+
     let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
     let selectedReviewDetails = null;
 
@@ -170,23 +180,23 @@ $(function () {
         
         updateRecommendation(value, selectedReviewDetails.id);
     });
-    function updateRecommendation(value,id) {
-     
 
+    function updateRecommendation(value,id) {     
         try {
             let data = { "approvalRecommended": value, "assessmentId": id }
-            unity.grantManager.assessments.assessments.updateAssessmentRecommendation
+            unity.grantManager.assessments.assessment.updateAssessmentRecommendation
                 (data)
                 .done(function () {
-
                     abp.notify.success(
                         'The recommendation has been updated.'
                     );
-                    PubSub.publish('refresh_review_list', id);
-                 
+                    PubSub.publish('refresh_review_list', id);                 
                 });
 
-        } catch (error) { }
+        }
+        catch (error) {
+            console.log(error);
+        }
     }
 
     const select_application_review_subscription = PubSub.subscribe(
@@ -211,11 +221,12 @@ $(function () {
             .columns.adjust();
     });
 
-  
-    
-
-
-
+    PubSub.subscribe(
+        'refresh_comments',
+        () => {                                             
+            commentsWidgetManager.refresh();                            
+        }
+    );    
 });
 
 function uploadFiles(inputId) {

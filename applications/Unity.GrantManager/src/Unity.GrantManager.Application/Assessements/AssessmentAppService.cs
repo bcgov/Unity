@@ -44,16 +44,26 @@ namespace Unity.GrantManager.Assessments
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(comments.OrderByDescending(s => s.CreationTime).ToList()));
         }
 
+        public async Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto)
+        {            
+            var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
+            if (assessment != null)
+            {
+                assessment.ApprovalRecommended = dto.ApprovalRecommended;
+                await _assessmentRepository.UpdateAsync(assessment);
+            }
+        }
+
         public async Task<CommentDto> CreateCommentAsync(Guid id, CreateCommentDto dto)
         {
             return ObjectMapper.Map<AssessmentComment, CommentDto>((AssessmentComment)
-             await _commentsManager.CreateCommentAsync(id, dto.Comment, CommentsManager.CommentType.AssessmentComment));
+             await _commentsManager.CreateCommentAsync(id, dto.Comment, CommentType.AssessmentComment));
         }
 
         public async Task<IReadOnlyList<CommentDto>> GetCommentsAsync(Guid id)
         {
             return ObjectMapper.Map<IReadOnlyList<AssessmentComment>, IReadOnlyList<CommentDto>>((IReadOnlyList<AssessmentComment>)
-                await _commentsManager.GetCommentsAsync(id, CommentsManager.CommentType.AssessmentComment));
+                await _commentsManager.GetCommentsAsync(id, CommentType.AssessmentComment));
         }
 
         public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
@@ -61,7 +71,7 @@ namespace Unity.GrantManager.Assessments
             try
             {
                 return ObjectMapper.Map<AssessmentComment, CommentDto>((AssessmentComment)
-                      await _commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentsManager.CommentType.AssessmentComment));
+                      await _commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentType.AssessmentComment));
             }
             catch (EntityNotFoundException)
             {
@@ -71,7 +81,7 @@ namespace Unity.GrantManager.Assessments
 
         public async Task<CommentDto> GetCommentAsync(Guid id, Guid commentId)
         {
-            var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentsManager.CommentType.AssessmentComment);
+            var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentType.AssessmentComment);
 
             return comment == null
                 ? throw new InvalidCommentParametersException()

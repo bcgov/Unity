@@ -4,35 +4,42 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Comments
 {
     public class CommentsManager : DomainService, ICommentsManager
     {
-        public enum CommentType
-        {
-            ApplicationComment,
-            AssessmentComment
-        }
-
         private readonly ICommentsRepository<ApplicationComment> _applicationCommentsRepository;
         private readonly ICommentsRepository<AssessmentComment> _assessmentCommentsRepository;
+        private readonly ICurrentUser _currentUser;
 
         public CommentsManager(ICommentsRepository<ApplicationComment> applicationCommentsRepository,
-            ICommentsRepository<AssessmentComment> assessmentCommentsRepository)
+            ICommentsRepository<AssessmentComment> assessmentCommentsRepository,
+            ICurrentUser currentUser)
         {
             _applicationCommentsRepository = applicationCommentsRepository;
             _assessmentCommentsRepository = assessmentCommentsRepository;
+            _currentUser = currentUser;
         }
 
         public async Task<CommentBase> CreateCommentAsync(Guid ownerId, string comment, CommentType assessmentComment)
         {
             return assessmentComment switch
             {
-                CommentType.ApplicationComment => await _applicationCommentsRepository.InsertAsync(new ApplicationComment() { Comment = comment, ApplicationId = ownerId }, autoSave: true),
-                CommentType.AssessmentComment => await _assessmentCommentsRepository.InsertAsync(new AssessmentComment() { Comment = comment, AssessmentId = ownerId }, autoSave: true),
+                CommentType.ApplicationComment => await _applicationCommentsRepository
+                    .InsertAsync(new ApplicationComment() 
+                        { Commenter = GetCommenter(), Comment = comment, ApplicationId = ownerId }, autoSave: true),
+                CommentType.AssessmentComment => await _assessmentCommentsRepository
+                    .InsertAsync(new AssessmentComment() 
+                        { Commenter = GetCommenter(), Comment = comment, AssessmentId = ownerId }, autoSave: true),
                 _ => throw new NotImplementedException(),
             };
+        }
+
+        private string GetCommenter()
+        {
+            return $"{_currentUser.SurName}, {_currentUser.Name}";
         }
 
         public async Task<IReadOnlyList<CommentBase>> GetCommentsAsync(Guid ownerId, CommentType type)
@@ -40,7 +47,7 @@ namespace Unity.GrantManager.Comments
             switch (type)
             {
                 case CommentType.ApplicationComment:
-                    var applicationCommentsQry = await _applicationCommentsRepository.GetQueryableAsync();
+                    var applicationCommentsQry = await _applicationCommentsRepository.GetQueryableAsync();                    
                     return applicationCommentsQry.Where(c => c.ApplicationId.Equals(ownerId)).OrderByDescending(s => s.CreationTime).ToList();
                 case CommentType.AssessmentComment:
                     var assessmentCommentsQry = await _assessmentCommentsRepository.GetQueryableAsync();

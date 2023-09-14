@@ -1,5 +1,5 @@
 ﻿
-.sinlge-comment {
+.single-comment {
     position: relative;
     border-radius: 4px;
     overflow: hidden;
@@ -15,6 +15,7 @@
     outline: 0;
     border-bottom: 0.5px solid #D6D6D6;
     border-radius: 0px;
+    resize: none;
 }
 
     .comment-input.selected {

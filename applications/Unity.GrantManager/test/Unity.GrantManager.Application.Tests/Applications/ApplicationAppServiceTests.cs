@@ -6,34 +6,40 @@ using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Comments;
 using System;
 using Volo.Abp.Validation;
+using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Assessments;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.Repositories;
 
 namespace Unity.GrantManager.GrantApplications;
 
 public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 {
     private readonly IGrantApplicationAppService _grantApplicationAppService;
+    private readonly IRepository<Application, Guid> _applicationsRepository;
+    private readonly IRepository<ApplicationComment, Guid> _applicationCommentsRepository;
+    private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public ApplicationAppServiceTests()
     {
-        _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();            
+        _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
+        _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
+        _applicationCommentsRepository = GetRequiredService<IRepository<ApplicationComment, Guid>>();
+        _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
     }
 
-    protected override IServiceCollection CreateServiceCollection()
-    {
-        var serviceCollection = base.CreateServiceCollection();
-        serviceCollection.AddTransient<IGrantApplicationAppService>();
-        return serviceCollection;
-    }
 
     [Fact]
     [Trait("Category", "Integration")]
     public async Task GetListAsync_Should_Return_Items()
-    {        
+    {
         // Act
         var grantApplications = await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto() { MaxResultCount = 100 });
 
         // Assert
-        grantApplications.Items.Any(s => s.ProjectName == "Application For Integration Test Funding").ShouldBeTrue();        
+        grantApplications.Items.Any(s => s.ProjectName == "Application For Integration Test Funding").ShouldBeTrue();
     }
 
     [Fact]
@@ -41,7 +47,10 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
     public async Task CreateCommentAsync_Should_Create_Comment()
     {
         // Arrange
-        var application = (await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto())).Items[0];
+        using var uow = _unitOfWorkManager.Begin();
+        var application = (await _applicationsRepository.GetListAsync())[0];
+        var applicationComments = (await _applicationCommentsRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList();
+        var count = applicationComments.Count;
         var comment = "Test Application Comment Integration";
 
         // Act
@@ -51,7 +60,8 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         });
 
         // Assert
-        (await _grantApplicationAppService.GetCommentsAsync(application.Id)).Any(s => s.Comment == comment).ShouldBe(true);
+        var afterAssessmentComments = (await _applicationCommentsRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList();
+        afterAssessmentComments.Count.ShouldBe(count + 1);
     }
 
 
@@ -60,26 +70,37 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
     public async Task UpdateCommentAsync_Should_Update_Comment()
     {
         // Arrange
-        var application = (await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto())).Items[0];
-        var comment = "Test Application Update Comment Integration";
+        using var uow = _unitOfWorkManager.Begin();
+        var application = (await _applicationsRepository.GetListAsync())[0];
+        var applicationComment = (await _applicationCommentsRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList()[0];
         var updateComment = "Updated Comment";
 
         // Act
-        var addedCommentDto = await _grantApplicationAppService.CreateCommentAsync(application.Id, new CreateCommentDto()
-        {
-            Comment = comment
-        });
-
         var updatedCommentDto = await _grantApplicationAppService.UpdateCommentAsync(application.Id, new UpdateCommentDto()
         {
-            CommentId = addedCommentDto.Id,
+            CommentId = applicationComment.Id,
             Comment = updateComment
         });
 
-        var updatedComment = await _grantApplicationAppService.GetCommentAsync(application.Id, updatedCommentDto.Id);
-
         // Assert
+        var updatedComment = await _applicationCommentsRepository.GetAsync(updatedCommentDto.Id);
         updatedComment.Comment.ShouldBe(updateComment);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetCommentListAsync_Should_Return_ApplicationComments()
+    {
+        // Arrange
+        using var uow = _unitOfWorkManager.Begin();
+        var application = (await _applicationsRepository.GetListAsync())[0];
+
+        // Act
+        var assessmentComments = (await _grantApplicationAppService.GetCommentsAsync(application.Id)).ToList();
+
+        // Assert            
+        assessmentComments.ShouldNotBeNull();
+        assessmentComments.Count.ShouldBeGreaterThan(0);
     }
 
     [Fact]
@@ -89,7 +110,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         // Arrange                        
         // Act
         // Assert
-        await Should.ThrowAsync<AbpValidationException>(_grantApplicationAppService.UpdateCommentAsync(Guid.NewGuid(), new UpdateCommentDto()
+        await Assert.ThrowsAsync<InvalidCommentParametersException>(() => _grantApplicationAppService.UpdateCommentAsync(Guid.NewGuid(), new UpdateCommentDto()
         {
             CommentId = Guid.NewGuid(),
             Comment = "Foobar"
@@ -103,6 +124,6 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         // Arrange                        
         // Act
         // Assert
-        await Should.ThrowAsync<AbpValidationException>(_grantApplicationAppService.GetCommentAsync(Guid.NewGuid(), Guid.NewGuid()));
+        await Assert.ThrowsAsync<InvalidCommentParametersException>(() => _grantApplicationAppService.GetCommentAsync(Guid.NewGuid(), Guid.NewGuid()));
     }
 }

@@ -155,9 +155,7 @@
                 </ul>
             <div class="tab-content p-3" id="myTabContent">
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
-                   <div id="reviewDetails" style="display:none">
-
-                 
+                   <div id="reviewDetails" style="display:none">                 
                     <abp-row>
                         <abp-column size="_12">
 
@@ -166,8 +164,7 @@
                         </abp-column>
                     </abp-row>
                     <abp-row>
-                        <abp-column size="_12">
-                           
+                        <abp-column size="_12">                           
                                 <abp-row>
                                     <abp-column size="_12" class="add-review-btn-container">
                                         <input type="file" id="assessment_upload" style="display:none" />
@@ -192,8 +189,8 @@
 
                     </div>
                     <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <div id="MyDashboardWidgetsArea" data-widget-filter="#MyDashboardFilterForm">
-                        @await Component.InvokeAsync("Comments")
+                    <div id="commentsWidget">
+                        @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0 })
                     </div>
                    
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -13,22 +14,24 @@ namespace Unity.GrantManager;
 
 public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
-    private readonly IApplicationRepository _applicationRepository;
-    private readonly IApplicationStatusRepository _applicationStatusRepository;
+    private readonly IRepository<Application, Guid> _applicationRepository;
+    private readonly IRepository<ApplicationStatus, Guid> _applicationStatusRepository;
     private readonly IRepository<Applicant, Guid> _applicantRepository;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
     private readonly IRepository<Intake, Guid> _intakeRepository;
     private readonly IRepository<Assessment, Guid> _assessmentRepository;
     private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
+    private readonly IRepository<ApplicationComment, Guid> _applicationCommentRepository;
 
 
-    public GrantManagerTestDataSeedContributor(IApplicationRepository applicationRepository,
-        IApplicationStatusRepository applicationStatusRepository,
+    public GrantManagerTestDataSeedContributor(IRepository<Application, Guid> applicationRepository,
+        IRepository<ApplicationStatus, Guid> applicationStatusRepository,
         IRepository<Applicant, Guid> applicantRepository,
         IRepository<ApplicationForm, Guid> applicationFormRepository,
         IRepository<Intake, Guid> intakeRepository,
         IRepository<Assessment, Guid> assessmentRepository,
-        IRepository<AssessmentComment, Guid> assessmentCommentRepository)
+        IRepository<AssessmentComment, Guid> assessmentCommentRepository,
+        IRepository<ApplicationComment, Guid> applicationCommentRepository)
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
@@ -37,6 +40,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         _intakeRepository = intakeRepository;
         _assessmentRepository = assessmentRepository;
         _assessmentCommentRepository = assessmentCommentRepository;
+        _applicationCommentRepository = applicationCommentRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
@@ -88,7 +92,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
-        Application? application1 = await _applicationRepository.FirstOrDefaultAsync(s => s.ProjectName == "Integration Tests 1");
+        Application? application1 = (await _applicationRepository.GetQueryableAsync()).FirstOrDefault(s => s.ProjectName == "Integration Tests 1");
         application1 ??= await _applicationRepository.InsertAsync(
             new Application
             {
@@ -106,6 +110,16 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
+        ApplicationComment applicationComment1 = await _applicationCommentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
+        applicationComment1 ??= await _applicationCommentRepository.InsertAsync(
+            new ApplicationComment
+            {
+                ApplicationId = application1.Id,
+                Comment = "Test Comment"
+            },
+            autoSave: true
+        );
+
         Assessment assessment1 = await _assessmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
         assessment1 ??= await _assessmentRepository.InsertAsync(
             new Assessment
@@ -119,7 +133,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         assessmentComment1 ??= await _assessmentCommentRepository.InsertAsync(
             new AssessmentComment
             {
-                AssessmentId = assessment1.Id
+                AssessmentId = assessment1.Id,
+                Comment = "Test Comment"
             },
             autoSave: true
         );

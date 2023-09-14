@@ -1,50 +1,69 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
+﻿using Shouldly;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
-using Unity.GrantManager.GrantApplications;
-using Volo.Abp.Validation;
+using Unity.GrantManager.Exceptions;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 using Xunit;
 
 namespace Unity.GrantManager.Assessments
 {
     public class AssessmentAppServiceTests : GrantManagerApplicationTestBase
     {
-        private readonly IGrantApplicationAppService _grantApplicationAppService;
         private readonly IAssessmentAppService _assessmentAppService;
+        private readonly IRepository<Application, Guid> _applicationsRepository;
+        private readonly IRepository<Assessment, Guid> _assessmentRepository;
+        private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public AssessmentAppServiceTests()
         {
             _assessmentAppService = GetRequiredService<IAssessmentAppService>();
-            _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
-        }
-
-        protected override IServiceCollection CreateServiceCollection()
-        {
-            var serviceCollection = base.CreateServiceCollection();
-            serviceCollection.AddTransient<IAssessmentAppService>();
-            serviceCollection.AddTransient<IGrantApplicationAppService>();
-            return serviceCollection;
+            _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
+            _assessmentRepository = GetRequiredService<IRepository<Assessment, Guid>>();
+            _assessmentCommentRepository = GetRequiredService<IRepository<AssessmentComment, Guid>>();
+            _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
         }
 
         [Fact]
         [Trait("Category", "Integration")]
         public async Task CreateAsync_Should_Create_Assessment()
         {
-            // Arrange            
-            var application = (await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto())).Items[0];
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();            
+            var application = (await _applicationsRepository.GetListAsync())[0];
+            var assessments = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList();
+            var count = assessments.Count;
 
             // Act
-            var assessment = await _assessmentAppService.CreateAsync(new CreateAssessmentDto()
+            _ = await _assessmentAppService.CreateAsync(new CreateAssessmentDto()
             {
                 ApplicationId = application.Id
             });
 
-            // Assert
-            var updatedAssessments = await _assessmentAppService.GetListAsync(application.Id);
-            updatedAssessments.FirstOrDefault(s => s.Id == assessment.Id).ShouldNotBeNull();
+            // Assert            
+            var afterAssessments = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList();
+            afterAssessments.Count.ShouldBe(count + 1);
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task GetCommentListAsync_Should_Return_AssessmentComments()
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+            var application = (await _applicationsRepository.GetListAsync())[0];
+            var assessment = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList()[0];
+
+            // Act
+            var assessmentComments = (await _assessmentAppService.GetCommentsAsync(assessment.Id)).ToList();
+
+            // Assert            
+            assessmentComments.ShouldNotBeNull();
+            assessmentComments.Count.ShouldBeGreaterThan(0);
         }
 
         [Fact]
@@ -52,54 +71,44 @@ namespace Unity.GrantManager.Assessments
         public async Task CreateCommentAsync_Should_Create_Comment()
         {
             // Arrange
-            var application = (await _grantApplicationAppService.GetListAsync(
-                    new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto()))
-                    .Items
-                    .First(s => s.ProjectName == "Application For Integration Test Funding");
-
-            var adjudication = (await _assessmentAppService.GetListAsync(application.Id))[0];
+            using var uow = _unitOfWorkManager.Begin();
+            var application = (await _applicationsRepository.GetListAsync())[0];
+            var assessment = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList()[0];
+            var assessmentComments = (await _assessmentCommentRepository.GetQueryableAsync()).Where(s => s.AssessmentId == assessment.Id).ToList();
+            var count = assessmentComments.Count;
             var comment = "Test Assessment Comment Integration";
 
             // Act
-            _ = await _assessmentAppService.CreateCommentAsync(adjudication.Id, new CreateCommentDto()
+            _ = await _assessmentAppService.CreateCommentAsync(assessment.Id, new CreateCommentDto()
             {
                 Comment = comment
             });
 
             // Assert
-            var comments = await _assessmentAppService.GetCommentsAsync(adjudication.Id);
-            comments.FirstOrDefault(s => s.Comment == comment).ShouldNotBeNull();
+            var afterAssessmentComments = (await _assessmentCommentRepository.GetQueryableAsync()).Where(s => s.AssessmentId == assessment.Id).ToList();
+            afterAssessmentComments.Count.ShouldBe(count + 1);
         }
 
         [Fact]
         [Trait("Category", "Integration")]
         public async Task UpdateCommentAsync_Should_Update_Comment()
         {
-            // Arrange                        
-            var application = (await _grantApplicationAppService.GetListAsync(
-                    new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto()))
-                    .Items
-                    .First(s => s.ProjectName == "Application For Integration Test Funding");
-
-            var assessment = (await _assessmentAppService.GetListAsync(application.Id))[0];
-            var comment = "Test Application Update Comment Integration";
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin(); 
+            var application = (await _applicationsRepository.GetListAsync())[0];
+            var assessment = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList()[0];
+            var assessmentComment = (await _assessmentCommentRepository.GetQueryableAsync()).Where(s => s.AssessmentId == assessment.Id).ToList()[0];
             var updateComment = "Updated Comment";
 
             // Act
-            var addedCommentDto = await _assessmentAppService.CreateCommentAsync(assessment.Id, new CreateCommentDto()
-            {
-                Comment = comment
-            });
-
             var updatedCommentDto = await _assessmentAppService.UpdateCommentAsync(assessment.Id, new UpdateCommentDto()
             {
-                CommentId = addedCommentDto.Id,
+                CommentId = assessmentComment.Id,
                 Comment = updateComment
             });
 
-            var updatedComment = await _assessmentAppService.GetCommentAsync(assessment.Id, updatedCommentDto.Id);
-
             // Assert
+            var updatedComment = await _assessmentCommentRepository.GetAsync(updatedCommentDto.Id);
             updatedComment.Comment.ShouldBe(updateComment);
         }
 
@@ -110,7 +119,7 @@ namespace Unity.GrantManager.Assessments
             // Arrange                        
             // Act
             // Assert
-            await Should.ThrowAsync<AbpValidationException>(_assessmentAppService.UpdateCommentAsync(Guid.NewGuid(), new UpdateCommentDto()
+            await Assert.ThrowsAsync<InvalidCommentParametersException>(() => _assessmentAppService.UpdateCommentAsync(Guid.NewGuid(), new UpdateCommentDto()
             {
                 CommentId = Guid.NewGuid(),
                 Comment = "Foobar"
@@ -124,7 +133,7 @@ namespace Unity.GrantManager.Assessments
             // Arrange                        
             // Act
             // Assert
-            await Should.ThrowAsync<AbpValidationException>(_assessmentAppService.GetCommentAsync(Guid.NewGuid(), Guid.NewGuid()));
+            await Assert.ThrowsAsync<InvalidCommentParametersException>(() => _assessmentAppService.GetCommentAsync(Guid.NewGuid(), Guid.NewGuid()));
         }
     }
 }
