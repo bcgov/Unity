@@ -55,7 +55,7 @@ objects:
       - from:
         - namespaceSelector:
             matchLabels:
-              environment: dev
-              name: d18498
+              environment: ${ENV_NAME}
+              name: ${PROJECT_NAMESPACE}
       policyTypes:
         - Ingress
