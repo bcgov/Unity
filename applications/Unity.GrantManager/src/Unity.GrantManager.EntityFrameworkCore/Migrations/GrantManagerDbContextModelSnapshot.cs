@@ -189,6 +189,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("AdjudicationId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AttachedBy")
+                        .HasColumnType("text");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
@@ -398,6 +401,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<double>("RequestedAmount")
                         .HasColumnType("double precision");
 
+                    b.Property<Guid?>("S3BucketId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("SubmissionDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -420,6 +426,9 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("AttachedBy")
+                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -752,6 +761,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("S3BucketId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp without time zone");

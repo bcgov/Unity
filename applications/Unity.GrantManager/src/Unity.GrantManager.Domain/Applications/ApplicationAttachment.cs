@@ -8,6 +8,8 @@ public class ApplicationAttachment : AuditedAggregateRoot<Guid>
     public Guid ApplicationId { get; set; }
     public Guid S3Guid { get; set; }
     public string UserId { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
+    public string? FileName { get; set; }
+    public string? AttachedBy { get; set; }
+
     public DateTime Time { get; set; }
 }

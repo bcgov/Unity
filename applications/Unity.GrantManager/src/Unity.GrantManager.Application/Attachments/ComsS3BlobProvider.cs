@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
@@ -17,12 +18,16 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
     private readonly IAdjudicationAttachmentRepository _adjudicationAttachmentRepository;
+    private readonly IApplicationRepository _applicationRepository;
+    private readonly IAssessmentsRepository _assessmentsRepository;
 
-    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAdjudicationAttachmentRepository adjudicationAttachmentRepository)
+    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAdjudicationAttachmentRepository adjudicationAttachmentRepository, IApplicationRepository applicationRepository, IAssessmentsRepository assessmentsRepository)
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
         _adjudicationAttachmentRepository = adjudicationAttachmentRepository;   
+        _applicationRepository = applicationRepository;
+        _assessmentsRepository = assessmentsRepository;
     }
 
     public override Task<bool> DeleteAsync(BlobProviderDeleteArgs args)
@@ -49,16 +54,22 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
             {
                 StringValues applicationId;
                 StringValues currentUserId;
+                StringValues currentUserName;
                 queryParams.TryGetValue("ApplicationId", out applicationId);
                 queryParams.TryGetValue("CurrentUserId", out currentUserId);
-                await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString());
+                queryParams.TryGetValue("CurrentUserName", out currentUserName);
+                var bucketId = await GetApplicationBucketId(args, applicationId.ToString());
+                await UploadApplicationAttachment(args, bucketId, applicationId.ToString(), currentUserId.ToString(), currentUserName.ToString());
             } else if (attachmentType.ToString() == "Adjudication")
             {
                 StringValues assessmentId;
                 StringValues currentUserId;
+                StringValues currentUserName;
                 queryParams.TryGetValue("AssessmentId", out assessmentId);
                 queryParams.TryGetValue("CurrentUserId", out currentUserId);
-                await UploadAdjudicationAttachment(args, assessmentId.ToString(), currentUserId.ToString());
+                queryParams.TryGetValue("CurrentUserName", out currentUserName);
+                var bucketId = await GetAdjudicationBucketId(args, assessmentId.ToString());
+                await UploadAdjudicationAttachment(args, bucketId, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
             } else
             {
                 throw new Exception("Invalid AttachmentType:" + attachmentType.ToString());
@@ -69,9 +80,87 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         }
     }
 
-    private async Task UploadAdjudicationAttachment(BlobProviderSaveArgs args, string assessmentId, string currentUserId)
+    private async Task<string> GetAdjudicationBucketId(BlobProviderSaveArgs args, string assessmentId)
     {
-        var response = await UploadToComsS3(args, args.Configuration.GetComsS3BlobProviderConfiguration().AdjudicationBucketId);
+        var assessment = await _assessmentsRepository.GetAsync(new Guid(assessmentId));
+        if (assessment == null)
+        {
+            throw new Exception($"Assessment {assessmentId} does not exist");
+        }
+        if (assessment.S3BucketId == null)
+        {
+            //create S3 bucketId
+            var key = args.Configuration.GetComsS3BlobProviderConfiguration().AdjudicationS3Folder + "/" + assessmentId;
+            var bucketId = await CreateS3BucketId(args, key);
+            assessment.S3BucketId = bucketId;
+            await _assessmentsRepository.UpdateAsync(assessment);
+            return bucketId.ToString();
+        }
+        else
+        {
+            return assessment.S3BucketId.ToString();
+        }
+    }
+
+    private async Task<string> GetApplicationBucketId(BlobProviderSaveArgs args, string applicationId)
+    {
+        var application = await _applicationRepository.GetAsync(new Guid(applicationId));
+        if (application == null)
+        {
+            throw new Exception($"Application {applicationId} does not exist");
+        }
+        if(application.S3BucketId == null)
+        {
+            //create S3 bucketId
+            var key = args.Configuration.GetComsS3BlobProviderConfiguration().ApplicationS3Folder + "/" + applicationId;
+            var bucketId = await CreateS3BucketId(args, key);
+            application.S3BucketId = bucketId;
+            await _applicationRepository.UpdateAsync(application);
+            return bucketId.ToString();
+        } else
+        {
+            return application.S3BucketId.ToString();
+        }
+    }
+
+    private async Task<Guid?> CreateS3BucketId(BlobProviderSaveArgs args, string key)
+    {
+        var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+        var baseUri = config.BaseUri;
+        var username = config.Username;
+        var password = config.Password;
+        if (!baseUri.EndsWith("/"))
+        {
+            baseUri += "/";
+        }
+        var client = new HttpClient();
+        var request = new HttpRequestMessage(HttpMethod.Put, baseUri+"bucket");
+        var authenticationString = $"{username}:{password}";
+        var base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(authenticationString));
+        request.Headers.Add("Authorization", "Basic " + base64EncodedAuthenticationString);        
+        var payload = new CreateBucketPayload
+        {
+            accessKeyId = config.AccessKeyId,
+            active = true,
+            bucket = config.Bucket,
+            bucketName = key,
+            endpoint = config.Endpoint,
+            secretAccessKey = config.SecretAccessKey,
+            key = key,
+        };        
+        string jsonData = JsonSerializer.Serialize(payload);
+        var content = new StringContent(jsonData, null, "application/json");
+        request.Content = content;
+        var response = await client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        var responseStr = await response.Content.ReadAsStringAsync();
+        CreateBucketIdResult result = JsonSerializer.Deserialize<CreateBucketIdResult>(responseStr);
+        return new Guid(result.bucketId);
+    }
+
+    private async Task UploadAdjudicationAttachment(BlobProviderSaveArgs args, string bucketId, string assessmentId, string currentUserId, string currentUserName)
+    {
+        var response = await UploadToComsS3(args, bucketId);
         if ((int)response.StatusCode == 409)
         {
             throw new Exception("File Already Existing.");
@@ -90,6 +179,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
                     S3Guid = result.id,
                     UserId = new Guid(currentUserId),
                     FileName = args.BlobName,
+                    AttachedBy = currentUserName,
                     Time = DateTime.Now,
                 });
         }
@@ -99,9 +189,9 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         }
     }
 
-    private async Task UploadApplicationAttachment(BlobProviderSaveArgs args, string applicationId, string currentUserId)
+    private async Task UploadApplicationAttachment(BlobProviderSaveArgs args, string bucketId, string applicationId, string currentUserId, string currentUserName)
     {
-        var response = await UploadToComsS3(args, args.Configuration.GetComsS3BlobProviderConfiguration().ApplicationBucketId);
+        var response = await UploadToComsS3(args, bucketId);
         if ((int)response.StatusCode == 409)
         {
             throw new Exception("File Already Existing.");
@@ -120,6 +210,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
                     S3Guid = result.id,
                     UserId = currentUserId,
                     FileName = args.BlobName,
+                    AttachedBy = currentUserName,
                     Time = DateTime.Now,                    
                 });
         }
@@ -162,4 +253,20 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
 class BlobSaveResult
 {
     public Guid id { get; set; }
+}
+
+class CreateBucketPayload
+{
+    public string accessKeyId { get; set; }
+    public bool active { get; set; }
+    public string bucket { get; set; }
+    public string bucketName { get; set; }
+    public string endpoint { get; set; }
+    public string secretAccessKey { get; set; }
+    public string key { get; set; }
+}
+
+class CreateBucketIdResult
+{
+    public string bucketId { get; set; }
 }
