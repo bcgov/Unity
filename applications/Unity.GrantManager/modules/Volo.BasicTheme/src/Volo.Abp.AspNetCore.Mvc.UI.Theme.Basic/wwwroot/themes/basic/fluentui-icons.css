@@ -261,3 +261,7 @@
 .fl-cross:before {
     content: '\F78A';
 }
+
+.fl-completed:before {
+    content: '\E930';
+}

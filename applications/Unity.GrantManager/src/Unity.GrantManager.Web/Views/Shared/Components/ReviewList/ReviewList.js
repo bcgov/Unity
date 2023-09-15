@@ -43,10 +43,10 @@
                 },
                 {
                     title: l('ReviewerList:ReviewerName'),
-                    data: 'reviewerName',
+                    data: 'adjudicatorName',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data ? data : 'Reviewer Name';
+                        return data ? data : '';
                     },
                 },
                 {
@@ -70,7 +70,7 @@
                     data: 'status',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data;
+                        return 'In progress' ;
                     },
                 },
                 {

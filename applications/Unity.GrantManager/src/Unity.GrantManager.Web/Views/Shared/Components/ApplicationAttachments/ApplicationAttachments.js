@@ -34,6 +34,12 @@
                 ),
                 columnDefs: [
                     {
+                        title: '',
+                        render: function (data) {
+                            return '<i class="fl fl-paperclip" ></i>';
+                        }
+                    },
+                    {
                         title: l('AssessmentResultAttachments:DocumentName'),
                         data: 'fileName',
                         className: 'data-table-header',

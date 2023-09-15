@@ -700,6 +700,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AdjudicatorName")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 

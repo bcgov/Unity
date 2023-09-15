@@ -7,6 +7,7 @@ using Volo.Abp.Application.Services;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.GrantManager.Applications;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -17,9 +18,12 @@ namespace Unity.GrantManager.Assessments
     {
         private readonly IAssessmentsRepository _assessmentsRepository;
 
-        public AssessmentsAppService(IAssessmentsRepository assessmentsRepository)
+        private readonly ICurrentUser _currentUser;
+
+        public AssessmentsAppService(IAssessmentsRepository assessmentsRepository, ICurrentUser currentUser)
         {
             _assessmentsRepository = assessmentsRepository;
+            _currentUser = currentUser;
         }
 
         public async Task<AssessmentDto> CreateAssessment(CreateAssessmentDto dto)
@@ -32,6 +36,7 @@ namespace Unity.GrantManager.Assessments
                         ApplicationId = dto.ApplicationId,
                         StartDate = dto.StartDate,
                         ApprovalRecommended = dto.ApprovalRecommended,
+                        AdjudicatorName = _currentUser.Name +' '+ _currentUser.SurName,
                     },
                     autoSave: true
                 ));
