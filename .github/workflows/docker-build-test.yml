@@ -31,7 +31,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build application Docker images
-      run: docker compose build
+      run: |
+        rm -f ./docker-compose.override.yml
+        docker compose build
       working-directory: ./applications/Unity.GrantManager
     - name: Connect to OpenShift API
       run: |
@@ -39,7 +41,7 @@ jobs:
         oc project $TARGET_PROJECT-$TARGET_ENV
         oc registry login
     - name: Push application images to OpenShift container registry
-      run:  | 
+      run: | 
         docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest
         docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
         docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest

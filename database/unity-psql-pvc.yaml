@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
       name: unity-data
-      namespace: d18498-dev
+      namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
       labels:
         name: unity-data
         app: unity
@@ -23,7 +23,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
       name: unity-backup
-      namespace: d18498-dev
+      namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
       labels:
         name: unity-backup
         app: unity

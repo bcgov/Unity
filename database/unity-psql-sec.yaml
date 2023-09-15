@@ -4,7 +4,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: unity-database
-  namespace: d18498-dev
+  namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   annotations:
     description: "Database passwords"
   labels:
