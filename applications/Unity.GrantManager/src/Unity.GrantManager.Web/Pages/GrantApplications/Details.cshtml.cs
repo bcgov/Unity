@@ -45,7 +45,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DetailsModel(GrantApplicationAppService grantApplicationAppService, IFileAppService fileAppService, ICurrentUser currentUser)
+        public DetailsModel(GrantApplicationAppService grantApplicationAppService, IFileAppService fileAppService, ICurrentUser currentUser, IConfiguration configuration)
         {            
             _grantApplicationAppService = grantApplicationAppService;
             CurrentUserId = currentUser.Id;

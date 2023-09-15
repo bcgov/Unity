@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, CommentType commentType)
-        {
+        {            
             CommentsWidgetViewModel model = new()
             {
                 CommentType = commentType,

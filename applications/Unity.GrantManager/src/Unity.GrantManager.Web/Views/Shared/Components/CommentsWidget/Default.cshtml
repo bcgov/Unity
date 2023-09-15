@@ -8,36 +8,27 @@
     Layout = null;
 }
 
-<input type="hidden" id="CommentWidgetOwnerId" value="@Model.OwnerId" />
-<input type="hidden" id="CommentWidgetType" value="@Model.CommentType" />
-
 <div class="row">
     <div class="col-12 mt-4">
         <div class="comments-div">
             <div class="single-comment">
-
-                <textarea class="form-control comment-input" placeholder="Add a comment" id="addCommentTextArea"> </textarea>
-                
-                <div class="comment-button-container add-comment">
-                    <i id="clearComment" class="fl fl-cross"></i>
-                    <i id="saveCommentBtn" class="fl fl-tick"></i>
+                <textarea class="form-control comment-input" placeholder="Add a comment" data-ownerId="@Model.OwnerId" id="addCommentTextArea@(Model.OwnerId)"></textarea>                
+                <div id="addCommentContainer@(Model.OwnerId)" class="comment-button-container add-comment">                    
+                    <i data-ownerId="@Model.OwnerId" data-type="@Model.CommentType" class="fl fl-cross add-comment-cancel-button comment-btn"></i>
+                    <i data-ownerId="@Model.OwnerId" data-type="@Model.CommentType" class="fl fl-tick add-comment-save-button comment-btn"></i>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="comments-div" class="row" style="margin-top:10px;">
+<div id="comments-div@(Model.OwnerId)" class="comments-container row" style="margin-top:10px;" data-type="@Model.CommentType" data-count="@Model.Comments.Count" data-counttag="application_comments_count">
     @foreach (var comment in Model.Comments)
     {
         @if (comment != null)
         {
             <div>
-                <div id="overlay" style="display: none">
-                    <i id="edit-comment" class="fas fa-edit" name="edit-comment" data-toggle="tooltip" data-placement="left" title="Edit Comment"></i>
-                    <i id="delete-comment" class="fas fa-trash" style="display: none;" name="delete-comment" data-toggle="tooltip" data-placement="left" title="Delete Comment"></i>
-                </div>
-                <abp-container class="read-mode" data-id="@comment.Id"  style="background: #F2F8FC; border-radius: 4px; overflow: hidden; margin-bottom:10px; padding : 0px 5px 5px 5px">
+                <abp-container class="read-mode" data-id="@comment.Id">
                     <abp-row>
                         <abp-column size="_8">
                             <span style="color: #666666; font-size: 0.89rem;  font-weight: 700; word-wrap: break-word">
@@ -45,43 +36,27 @@
                             </span>
                         </abp-column>
                         <abp-column size="_4">
-                            <div style="display: flex; justify-content: right; align-items: start; gap : 8px;">
+                            <div class="comment-edit-btn-wrapper">
                                 <span class="edit-button" data-id="@comment.Id" >...</span>
                             </div>
                         </abp-column>
                     </abp-row>
                     <abp-row>
-                        <abp-column size="_12" style="color: #666666; font-size: 0.89rem; font-weight: 400; word-wrap: break-word">
-                            <label class="comment-lbl" data-id="@comment.Id" >@comment.Comment</label>
+                        <abp-column size="_12" class="comment-lbl-wrapper">
+                            <label class="comment-lbl" data-id="@comment.Id">@comment.Comment</label>
                         </abp-column>
                     </abp-row>
-                    <div style="left: 16px; color: #666666; font-size: 0.8rem; font-weight: 400; word-wrap: break-word">@comment.CreationTime</div>
+                    <div class="comment-time">@comment.CreationTime</div>
 
                 </abp-container>
+
                 <div class="single-comment edit-mode" data-id="@comment.Id"  style="display: none;">
-
-                    <textarea class="form-control comment-input-mutliple" placeholder="Update the comment" data-id="@comment.Id" > @comment.Comment</textarea>
-                    
-
+                    <textarea class="form-control comment-input-mutliple" placeholder="Update the comment" data-id="@comment.Id">@comment.Comment</textarea>                    
                     <div class="comment-button-container">
-                        <i class="fl fl-cross cancel-edit" data-id="@comment.Id" ></i>
-                        <i class="fl fl-tick save-button" data-id="@comment.Id" ></i>
+                        <i class="fl fl-cross edit-comment-cancel-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
+                        <i class="fl fl-tick edit-comment-save-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
                     </div>
                 </div>
-
-                <div id="comment-buttons" class="comment-message-button-area" style="display: none">
-                    <abp-button id="cancelCommentBtn"
-                                text="Cancel"
-                                type="button"
-                                class="btn" />
-
-                    <abp-button id="updateCommentBtn"
-                                text="Update"
-                                type="button"
-                                class="btn"
-                                disabled="true" />
-                </div>
-                <input type="hidden" name="CommentId" value="@comment.Id" />
             </div>
         }
     }

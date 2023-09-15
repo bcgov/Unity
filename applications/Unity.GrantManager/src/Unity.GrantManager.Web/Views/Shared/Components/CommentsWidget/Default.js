@@ -1,51 +1,43 @@
 ﻿$(function () {
-    $('#backBtn').click(function () {
-        $('#adjudicationAddReviewView').fadeOut(1000);
-        setTimeout(() => {
-            $('#adjudicationMainView').fadeIn(1000);
-        }, 800)
-    });
-
-    $('body').on('click', '#clearComment', function () {
-        let text = $('#addCommentTextArea').val();        
-        if (text.length === 0) {
-            $(".add-comment").css("display", "none");
-        } 
-        $('#addCommentTextArea').val('');
-    });
-
     $('body').on('click', '.edit-button', function () {
         let itemId = $(this).data('id');
         toggleEditMode(itemId);
     });
 
-    $('body').on('click', '.cancel-edit', function () {
-        let itemId = $(this).data('id');
-        $('.add-comment').css('display', 'none');
+    $('body').on('focus', '.comment-input', function () {        
+        $('#addCommentContainer' + $(this).data('ownerid')).css('display', 'flex');
+    });
+
+    $('body').on('click', '.edit-comment-cancel-button', function () {        
+        let itemId = $(this).data('id');                        
         toggleEditMode(itemId);
+        $(".comment-input-mutliple[data-id='" + itemId + "']").val($(".comment-lbl[data-id='" + itemId + "']").text());
     });
 
-    $('body').on('focus', '.comment-input', function () {
-        $('.add-comment').css('display', 'flex');
-    });
-
-    $('body').on('click', '.save-button', function () {                
+    $('body').on('click', '.edit-comment-save-button', function () {
         let itemId = $(this).data('id');
-        let ownerId = $('#CommentWidgetOwnerId').val();
-        let commentType = $('#CommentWidgetType').val();
         let editedValue = $(".comment-input-mutliple[data-id='" + itemId + "']").val();
-        updateComment(ownerId, itemId, editedValue, commentType);
+        updateComment($(this).data('ownerid'),
+            itemId,
+            editedValue,
+            $(this).data('type'));
     });
 
-    $('body').on('click', '#saveCommentBtn', function () {
-        let comment = $('#addCommentTextArea').val();        
-        let ownerId = $('#CommentWidgetOwnerId').val();
-        let commentType = $('#CommentWidgetType').val();
-        saveComment(ownerId, comment, commentType);
+    $('body').on('click', '.add-comment-save-button', function () {
+        saveComment($(this).data('ownerid'),
+            $('#addCommentTextArea' + $(this).data('ownerid')).val(),
+            $(this).data('type'));
     });
 
-    function toggleEditMode(itemId) {
-        // Toggle visibility of textarea and span
+    $('body').on('click', '.add-comment-cancel-button', function () {
+        let text = $('#addCommentTextArea' + $(this).data('ownerid')).val();
+        if (text.length === 0) {
+            $('#addCommentContainer' + $(this).data('ownerid')).css('display', 'none');
+        }
+        $('#addCommentTextArea' + $(this).data('ownerid')).val('');
+    });
+
+    function toggleEditMode(itemId) {        
         $(".edit-mode[data-id='" + itemId + "']").toggle();
         $(".read-mode[data-id='" + itemId + "']").toggle();
     }
@@ -76,12 +68,11 @@
                 .then((response) => {
                     return response;
                 })
-                .done(function (result) {
+                .done(function () {
                     abp.notify.success(
                         'The comment has been created.'
                     );
-
-                    PubSub.publish('refresh_comments', ownerId);
+                    PubSub.publish(commentType + '_refresh');
                 });
 
         }

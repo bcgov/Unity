@@ -145,7 +145,7 @@
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (0)</button>
+                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                     </li>
                     <li class="nav-item" role="presentation">
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (0)</button>
@@ -184,6 +184,12 @@
                             </abp-select>
                         </abp-column>
                     </abp-row>
+                    <abp-row>
+                        <label>Comments</label>
+                        <div id="assessmentCommentsWidget">
+                            @await Component.InvokeAsync("CommentsWidget", new { commentType = 1 })
+                        </div>
+                    </abp-row>
                     </div>
                     </div>
                     <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
@@ -191,7 +197,7 @@
 
                     </div>
                     <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <div id="commentsWidget">
+                    <div id="applicationCommentsWidget">
                         @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0 })
                     </div>
                    
