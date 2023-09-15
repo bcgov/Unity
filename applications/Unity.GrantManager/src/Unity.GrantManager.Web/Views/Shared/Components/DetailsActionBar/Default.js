@@ -1,10 +1,11 @@
 $(function () {
-    var selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());    
+    let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());    
     
-    var approveApplicationsModal = new abp.ModalManager({
+    let approveApplicationsModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
-    var dontApproveApplicationsModal = new abp.ModalManager({
+
+    let dontApproveApplicationsModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });       
     
@@ -38,7 +39,7 @@ $(function () {
         });
     });
 
-    var startAdjudicationModal = new abp.ModalManager({
+    let startAdjudicationModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
 
@@ -58,7 +59,7 @@ $(function () {
         });
     });
 
-    var completeAdjudicationModal = new abp.ModalManager({
+    let completeAdjudicationModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
 
@@ -84,18 +85,21 @@ $(function () {
         const applicationId = urlParams.get('ApplicationId');
 
         try {
-            unity.grantManager.assessments.assessments.createAssessment({ "applicationId": applicationId, "approvalRecommended": null, "startDate" : new Date() }, {})
+            unity.grantManager.assessments.assessment.create({ "applicationId": applicationId, "approvalRecommended": null, "startDate" : new Date() }, {})
                 .done(function (data) {
                     PubSub.publish('add_review');
                     PubSub.publish('refresh_review_list',data.id);
-
-
                 });
 
-        } catch (error) { }
-
-    });
-
-
-        
+        } catch (error) {
+            console.log(error);
+        }
+    }); 
+    
+    PubSub.subscribe(
+        'add_review',
+        (msg, data) => {
+            $('#detailsTab a[href="#nav-review-and-adudication"]').tab('show');
+        }
+    );
 });

@@ -8,7 +8,6 @@
     }
     
     let responseCallback = function (result) {
-
         // your custom code.
         console.log(result)
 
@@ -27,7 +26,7 @@
             info: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.assessments.assessments.getList, inputAction, responseCallback
+                unity.grantManager.assessments.assessment.getList, inputAction, responseCallback
             ),
             columnDefs: [
                 {
@@ -46,7 +45,7 @@
                     data: 'reviewerName',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data ? data : 'Reviewer Name';
+                        return data || 'Reviewer Name';
                     },
                 },
                 {
@@ -78,7 +77,11 @@
                     data: 'approvalRecommended',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data === null ? '' :( data === true ? 'Recommended for Approval' : 'Recommended for Denial');
+                        if (data !== null) {
+                            return data === true ? 'Recommended for Approval' : 'Recommended for Denial'
+                        } else {
+                            return '';
+                        }                        
                     },
                 },
             ],
@@ -121,7 +124,4 @@
         
         }
     );
-
-
- 
 });

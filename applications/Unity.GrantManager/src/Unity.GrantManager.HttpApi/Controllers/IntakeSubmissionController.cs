@@ -84,7 +84,7 @@ namespace Unity.GrantManager.Controllers
                     GrantPrograms.Intake newIntake = await _intakeRepository.InsertAsync(
                     new GrantPrograms.Intake
                     {
-                        IntakeName = intake.formName, // Not sure on how this is mapped 
+                        IntakeName = intake.formName ?? "{Missing}", // Not sure on how this is mapped 
 
                     },
                     autoSave: true
@@ -94,7 +94,7 @@ namespace Unity.GrantManager.Controllers
                     Applicant newApplicant = await _applicantRepository.InsertAsync(
                         new Applicant
                         {
-                            ApplicantName = intake.applicantName, 
+                            ApplicantName = intake.applicantName ?? "{Missing}", 
                         },
                         autoSave: true
                     );
@@ -105,7 +105,7 @@ namespace Unity.GrantManager.Controllers
                         {
                             ChefsApplicationFormGuid = intakeSubmission.formId,
                             IntakeId = newIntake.Id,
-                            ApplicationFormName = intake.projectName, // This should be the form name?/New - this is filled in by applicant Project Name
+                            ApplicationFormName = intake.projectName ?? "{Missing}", // This should be the form name?/New - this is filled in by applicant Project Name
                             ChefsCriteriaFormGuid = "3a0d369f-7da5-64a8-e1f7-71f027cfaa0e" // ChefsCriteriaFormGuid // What is this?
                         },
                         autoSave: true
@@ -116,12 +116,12 @@ namespace Unity.GrantManager.Controllers
                         Application newApplication = await _applicationRepository.InsertAsync(
                             new Application
                             {
-                                ProjectName = intake.projectName, // This should be the form name
+                                ProjectName = intake.projectName ?? "{Missing}", // This should be the form name
                                 ApplicationFormId = newApplicationForm.Id,
                                 ApplicantId = newApplicant.Id,
                                 ApplicationStatusId = submittedStatus.Id,
-                                ReferenceNo = intake.confirmationId, // Taken from the CHEF Confirmation ID
-                                RequestedAmount = Double.Parse(intake.requestedAmount)
+                                ReferenceNo = intake.confirmationId ?? "{Missing}", // Taken from the CHEF Confirmation ID
+                                RequestedAmount = Double.Parse(intake.requestedAmount ?? "0")
                             },
                             autoSave: true
                         );

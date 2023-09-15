@@ -1,4 +1,4 @@
-$(function () {
+$(function () {       
     let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
     let selectedReviewDetails = null;
 
@@ -170,39 +170,38 @@ $(function () {
         
         updateRecommendation(value, selectedReviewDetails.id);
     });
-    function updateRecommendation(value,id) {
-     
 
+    function updateRecommendation(value,id) {     
         try {
             let data = { "approvalRecommended": value, "assessmentId": id }
-            unity.grantManager.assessments.assessments.updateAssessmentRecommendation
+            unity.grantManager.assessments.assessment.updateAssessmentRecommendation
                 (data)
                 .done(function () {
-
                     abp.notify.success(
                         'The recommendation has been updated.'
                     );
-                    PubSub.publish('refresh_review_list', id);
-                 
+                    PubSub.publish('refresh_review_list', id);                 
                 });
 
-        } catch (error) { }
+        }
+        catch (error) {
+            console.log(error);
+        }
     }
 
-    const select_application_review_subscription = PubSub.subscribe(
+    PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
-            if (data) {
+            if (data) {                
                 selectedReviewDetails = data;
                 $('#reviewDetails').show();
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
+                PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
             }
             else {
                 $('#reviewDetails').hide();
-            }
-         
-
+            }         
         }
     );
 
@@ -211,11 +210,7 @@ $(function () {
             .columns.adjust();
     });
 
-  
-    
-
-
-
+    initCommentsWidget();
 });
 
 function uploadFiles(inputId) {
@@ -289,3 +284,55 @@ const update_application_attachment_count_subscription = PubSub.subscribe(
 
     }
 );
+
+function updateCommentsCounters() {
+    setTimeout(() => {
+        $('.comments-container').map(function () {
+            $('#' + $(this).data('counttag')).html($(this).data('count'));
+        }).get();
+    }, 100);
+}
+
+function initCommentsWidget() {
+    let selectedReviewDetails;
+    let applicationCommentsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationCommentsWidget',
+        filterCallback: function () {
+            return {
+                'ownerId': $('#DetailsViewApplicationId').val(),
+                'commentType': 0
+            };
+        }
+    });
+
+    let assessmentCommentsWidgetManager = new abp.WidgetManager({
+        wrapper: '#assessmentCommentsWidget',
+        filterCallback: function () {            
+            return {
+                'ownerId': selectedReviewDetails.id,
+                'commentType': 1
+            };
+        }
+    });
+
+    PubSub.subscribe(
+        'ApplicationComment_refresh',
+        () => {            
+            applicationCommentsWidgetManager.refresh();
+            updateCommentsCounters();
+        }
+    );
+
+    PubSub.subscribe(
+        'AssessmentComment_refresh',
+        (_, data) => {            
+            if (data?.review) {
+                selectedReviewDetails = data.review;
+            }            
+            assessmentCommentsWidgetManager.refresh();
+            updateCommentsCounters();
+        }
+    );
+
+    updateCommentsCounters();
+}

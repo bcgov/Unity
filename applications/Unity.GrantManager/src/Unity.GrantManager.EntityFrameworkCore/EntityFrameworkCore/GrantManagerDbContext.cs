@@ -2,6 +2,7 @@
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationUserRoles;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Comments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;

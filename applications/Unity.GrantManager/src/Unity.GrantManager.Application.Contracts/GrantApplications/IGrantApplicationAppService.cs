@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -8,7 +9,7 @@ namespace Unity.GrantManager.GrantApplications
             GrantApplicationDto,
             Guid,
             PagedAndSortedResultRequestDto,
-            CreateUpdateGrantApplicationDto>
+            CreateUpdateGrantApplicationDto>, ICommentsService
     {
     }
 }
