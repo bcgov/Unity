@@ -174,8 +174,7 @@ $(function () {
         'select_application_review',
         (msg, data) => {
             if (data) {
-                selectedReviewDetails = data;
-                document.getElementById("AssessmentId").value = data.id;
+                selectedReviewDetails = data; 
                 $('#reviewDetails').show();
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
@@ -200,7 +199,7 @@ function uploadApplicationFiles(inputId) {
     var currentUserId = decodeURIComponent($("#CurrentUserId").val());  
     var currentUserName = decodeURIComponent($("#CurrentUserName").val());
     var url = "/uploader?AttachmentType=Application&ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
-    uploadFiles(inputId, url);     
+    uploadFiles(inputId, url, 'refresh_application_attachment_list');     
 }
 
 function uploadAssessmentFiles(inputId) {    
@@ -208,10 +207,10 @@ function uploadAssessmentFiles(inputId) {
     var currentUserId = decodeURIComponent($("#CurrentUserId").val());
     var currentUserName = decodeURIComponent($("#CurrentUserName").val());
     var url = "/uploader?AttachmentType=Adjudication&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
-    uploadFiles(inputId, url);        
+    uploadFiles(inputId, url, 'refresh_adjudication_attachment_list');        
 }
 
-function uploadFiles(inputId, urlStr) {
+function uploadFiles(inputId, urlStr, channel) {
     var input = document.getElementById(inputId);    
     var files = input.files;
     var formData = new FormData();
@@ -260,9 +259,9 @@ function uploadFiles(inputId, urlStr) {
                 abp.notify.success(
                     data.responseText,
                     'File Upload Is Successful'
-                );
 
-                PubSub.publish('refresh_application_attachment_list');
+                ); 
+                PubSub.publish(channel);  
             },
             error: function (data) {
                 abp.notify.error(

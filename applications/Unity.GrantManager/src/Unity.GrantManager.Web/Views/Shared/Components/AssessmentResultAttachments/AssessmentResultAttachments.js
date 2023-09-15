@@ -1,96 +1,77 @@
 ﻿$(function () {
     console.log('Script loaded');
-    const l = abp.localization.getResource('GrantManager');
-    const jsonData = {
-        data: [
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                DocumentName: 'Document 1',
-                UploadedDate: new Date(),
-                AttachedBy: 'Melisa C',
-            },
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                DocumentName: 'Document 2',
-                UploadedDate: new Date(),
-                AttachedBy: 'Jack H',
-            },
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                DocumentName: 'Document 3',
-                UploadedDate: new Date(),
-                AttachedBy: 'Chris M',
-            },
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                DocumentName: 'Document 4',
-                UploadedDate: new Date(),
-                AttachedBy: 'Don',
-            },
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                DocumentName: 'Document N',
-                UploadedDate: new Date(),
-                AttachedBy: 'Honey',
-            },
-        ],
+    const l = abp.localization.getResource('GrantManager');  
+    
+    let inputAction = function (requestData, dataTableSettings) { 
+        var assessmentId = decodeURIComponent($("#AssessmentId").val());
+        if (!assessmentId) {
+            return "00000000-0000-0000-0000-000000000000";
+        }
+        return assessmentId;
+    }
+
+    let responseCallback = function (result) {        
+        console.log(result); 
+        return {
+            data: result
+        };
     };
-    setTimeout(function () {
-        const dataTable = $('#AssessmentResultAttachmentsTable').DataTable(
-            abp.libs.datatables.normalizeConfiguration({
-                serverSide: true,
-                order: [[1, 'asc']],
-                searching: false,
-                paging: false,
-                select: false,
-                info: false,
-                scrollX: true,
-                ajax: function (data, callback, settings) {
-                    callback(jsonData);
+    
+    const dataTable = $('#AssessmentResultAttachmentsTable').DataTable(
+        abp.libs.datatables.normalizeConfiguration({
+            serverSide: true,
+            order: [[1, 'asc']],
+            searching: false,
+            paging: false,
+            select: false,
+            info: false,
+            scrollX: true,
+            ajax: abp.libs.datatables.createAjax(
+                unity.grantManager.grantApplications.adjudicationAttachment.getList, inputAction, responseCallback
+            ),
+            columnDefs: [
+                {
+                    title: l('AssessmentResultAttachments:DocumentName'),
+                    data: 'fileName',
+                    className: 'data-table-header',
                 },
-                columnDefs: [
-                    {
-                        title: l('AssessmentResultAttachments:DocumentName'),
-                        data: 'DocumentName',
-                        className: 'data-table-header',
+                {
+                    title: l('AssessmentResultAttachments:UploadedDate'),
+                    data: 'time',
+                    className: 'data-table-header',
+                    render: function (data) {
+                        return new Date(data).toDateString();
                     },
-                    {
-                        title: l('AssessmentResultAttachments:UploadedDate'),
-                        data: 'UploadedDate',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return new Date(data).toDateString();
-                        },
-                    },
-                    {
-                        title: l('AssessmentResultAttachments:AttachedBy'),
-                        data: 'AttachedBy',
-                        className: 'data-table-header',
-                    },
-                ],
-            })
-        );
+                },
+                {
+                    title: l('AssessmentResultAttachments:AttachedBy'),
+                    data: 'attachedBy',
+                    className: 'data-table-header',
+                },
+            ],
+        })
+    );
 
-        dataTable.on('select', function (e, dt, type, indexes) {
-            if (type === 'row') {
-                const selectedData = dataTable.row(indexes).data();
-                console.log('Selected Data:', selectedData);
-                //PubSub.publish('select_application', selectedData);
-            }
-        });
+    dataTable.on('select', function (e, dt, type, indexes) {
+        if (type === 'row') {
+            const selectedData = dataTable.row(indexes).data();
+            console.log('Selected Data:', selectedData);
+            //PubSub.publish('select_application', selectedData);
+        }
+    });
 
-        dataTable.on('deselect', function (e, dt, type, indexes) {
-            if (type === 'row') {
-                const deselectedData = dataTable.row(indexes).data();
-                //PubSub.publish('deselect_application', deselectedData);
-            }
-        });
-        dataTable.on('click', 'tbody tr', function (e) {
-            e.currentTarget.classList.toggle('selected');
-        });
-    }, 3000);
+    dataTable.on('deselect', function (e, dt, type, indexes) {
+        if (type === 'row') {
+            const deselectedData = dataTable.row(indexes).data();
+            //PubSub.publish('deselect_application', deselectedData);
+        }
+    });
+    dataTable.on('click', 'tbody tr', function (e) {
+        e.currentTarget.classList.toggle('selected');
+    });
+
     PubSub.subscribe(
-        'refresh_reviewer_list',
+        'refresh_adjudication_attachment_list',
         (msg, data) => {
             dataTable.ajax.reload();
         }
