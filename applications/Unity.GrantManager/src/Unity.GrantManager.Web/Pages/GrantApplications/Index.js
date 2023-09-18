@@ -6,9 +6,41 @@
         maximumFractionDigits: 2,
     });
 
-    let searchBar = document.getElementById('search-bar');
-    let btnFilter = document.getElementById('btn-filter');
-    
+    const searchBar = document.getElementById('search-bar');
+    const btnFilter = document.getElementById('btn-filter');
+    const btnSave = document.getElementById('btn-save');
+    const userDiv = document.getElementById('users-div');
+    const l = abp.localization.getResource('GrantManager');
+    const maxRowsPerPage = 15;
+    let dt = $('#GrantApplicationsTable');
+    let userOptions = document.getElementById('users');
+    let dataTable, currentRow, currentCell;
+    let userDivChanged = false;
+
+    $('#users').select2();
+
+    function changeCellContent(cell) {
+        let count = 0;
+        let content = "";
+        dataTable.row(cell).context[0].aoData[currentRow]._aData.assignees = [];
+        
+        for(i = 0; i < userOptions.length; i++) {
+            if (userOptions[i].selected) {
+            count++;
+            content = userOptions[i].text;
+            dataTable.row(cell).context[0].aoData[currentRow]._aData.assignees.push({"assigneeDisplayName": userOptions[i].text, "oidcSub": userOptions[i].value});
+            }
+        }
+
+        if(count === 1) {
+            cell.textContent = content;
+        } else if (count > 1) {
+            cell.textContent = "Multiple assignees";
+        } else if (count === 0) {
+            cell.textContent = "";
+        }
+    }
+
     btnFilter.addEventListener('click', function() {
         document.getElementById('dtFilterRow').classList.toggle('hidden');
     });
@@ -30,11 +62,54 @@
         });
     }
 
-    const l = abp.localization.getResource('GrantManager');
-    let dt = $('#GrantApplicationsTable');
-    let maxRowsPerPage = 40;
+    const createdCell = function(cell) {
+      cell.setAttribute('contenteditable', true);
+      cell.addEventListener("focus", function(e) {
+            
+            if(e.target.children.length == 0) {
+                if(userDivChanged) {
+                    changeCellContent(currentCell);
+                    userDivChanged = false;
+                }
 
-    const dataTable = dt.DataTable(
+                e.target.textContent = "";
+                currentRow = e.target.parentElement._DT_RowIndex;
+                let assigness = dataTable.row(e.target.parentElement).context[0].aoData[currentRow]._aData.assignees;
+                let assigneeIds = [];
+    
+                $(assigness).each(function( key, assignee ) {
+                    assigneeIds.push(assignee.oidcSub);
+                });
+    
+                var userOption, i;
+    
+                for(i = 0; i < userOptions.length; i++) {
+                    userOption = userOptions[i];
+                    $(userOption).prop("selected", assigneeIds.includes(userOption.value));
+                  }
+                
+                $(userDiv).appendTo(this);
+                $('#users').select2();
+
+                userDiv.classList.remove('hidden');
+
+            }      
+            currentCell = this;  
+      });
+      
+      cell.addEventListener("blur", function(e) {
+
+        if(e.relatedTarget != null 
+            && e.relatedTarget.classList.value != 'select2-selection select2-selection--multiple' 
+            && e.relatedTarget.classList.value != 'select2-search__field'
+            ) {
+          changeCellContent(e.currentTarget);
+        }
+      });
+
+    }
+
+    dataTable = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: false,
             paging: true,
@@ -42,10 +117,13 @@
             searching: true,
             pageLength: maxRowsPerPage,
             scrollX: true,
-            select: 'multi',
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.grantApplications.grantApplication.getList
             ),
+            select: {
+              style: 'multiple',
+              selector: 'td:not(:nth-child(6))'
+            }, 
             drawCallback:function() {
                 var $api = this.api();
                 var pages = $api.page.info().pages;
@@ -71,6 +149,7 @@
             initComplete: function () {
                 var api = this.api();
                 addFilterRow(api);
+                api.columns.adjust();
             },
             columnDefs: [
                 {
@@ -115,7 +194,8 @@
                     data: 'assignees',
                     name: 'assignees',
                     className: 'data-table-header',
-                    render: function (data) {
+                    createdCell: createdCell,
+                    render: function (data, type, row) {
                         let disaplayText = ' ';
                         if(data != null && data.length == 1) {
                             disaplayText = data[0].assigneeDisplayName;
@@ -176,6 +256,32 @@
             ],
         })
     );
+
+    $(userDiv).on('change', function(e){
+        userDivChanged = true;
+        $('#btn-save').attr("disabled", false); 
+    });
+
+    $('#btn-save').on('click', function() {
+        changeCellContent(currentCell);
+        userDivChanged = false;
+        $('#btn-save').attr("disabled", true); 
+
+    });
+
+    $(userDiv).on('blur', function() {
+        if(userDivChanged) {
+            changeCellContent(currentCell);
+            userDivChanged = false;
+        }
+    })
+
+    $('#users').on('blur', function() {
+        if(userDivChanged) {
+            changeCellContent(currentCell);
+            userDivChanged = false;
+        }
+    })
     
     function addFilterRow(api) {
         var trNode = document.createElement('tr');
@@ -197,12 +303,14 @@
             child.classList.remove('select-checkbox');
             child.classList.remove('sorting');
             child.classList.remove('sorting_asc');
+            child.classList.add('grey-background');
 
             const firstElement = label.split(':').shift();
 
             if(firstElement != "") {
                 let inputFilter = document.createElement('input');
                 inputFilter.type = "text";
+                inputFilter.classList.add('filter-input');
                 inputFilter.placeholder = firstElement;
                 inputFilter.addEventListener('keyup', function() {
                     dataTable.columns(mapTitles.get(this.placeholder)).search(this.value).draw();
@@ -215,10 +323,9 @@
         document.getElementsByClassName('table')[0].children[0].appendChild(trNode);
     };
 
-    dataTable.on('select', function (e, dt, type, indexes) {
+    dataTable.on('select', function (e, dt, type, indexes) {      
         if (type === 'row') {
             var selectedData = dataTable.row(indexes).data();
-            console.log('Selected Data:', selectedData);
             PubSub.publish('select_application', selectedData);
         }
     });
@@ -228,9 +335,6 @@
             var deselectedData = dataTable.row(indexes).data();
             PubSub.publish('deselect_application', deselectedData);
         }
-    });
-    dataTable.on('click', 'tbody tr', function (e) {
-        e.currentTarget.classList.toggle('selected');
     });
 
     const refresh_application_list_subscription = PubSub.subscribe(

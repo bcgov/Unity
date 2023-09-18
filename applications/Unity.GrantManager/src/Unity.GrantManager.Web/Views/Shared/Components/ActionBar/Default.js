@@ -4,6 +4,9 @@ $(function () {
     var assignApplicationModal = new abp.ModalManager({
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
     });
+    var unAssignApplicationModal = new abp.ModalManager({
+        viewUrl: 'AssigneeSelection/UnAssigneeSelectionModal'
+    });    
     var statusUpdateModal = new abp.ModalManager({
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
@@ -20,7 +23,16 @@ $(function () {
             'Application Assinee'
         );
         PubSub.publish("refresh_application_list");
-    });    
+    });
+
+    unAssignApplicationModal.onResult(function () {
+        abp.notify.success(
+            'The application assignees has been successfully removed.',
+            'Application Assinee'
+        );
+        PubSub.publish("refresh_application_list");
+    });
+
     statusUpdateModal.onResult(function () {
         abp.notify.success(
             'The application status has been successfully updated',
@@ -72,6 +84,12 @@ $(function () {
         });
     });
 
+    $('#unAssignApplication').click(function () {
+        assignApplicationModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+        });
+    });
+
     $('#statusUpdate').click(function () {
         statusUpdateModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
@@ -93,6 +111,8 @@ $(function () {
             title: 'Not Approve Applications',
         });
     });
+
+    
 
     $('#externalLink').click(function () {
         location.href =

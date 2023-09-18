@@ -23,6 +23,14 @@
                     icon="fl fl-add-friend"
                     button-type="Light" />
 
+        <abp-button id="unAssignApplication"
+                    data-selector="applications-table-actions"
+                    text="Un-Assign"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-remove-friend"
+                    button-type="Light" />
+
         <abp-button id="statusUpdate"
                     data-selector="applications-table-actions"
                     text="@L["ApplicationList:StatusButton"].Value"
@@ -66,7 +74,14 @@
     </div>
     <div class="d-flex align-items-end justify-content-end gap-2">
 
-        <abp-button data-selector="applications-table-actions"
+        <abp-button id="btn-save"
+                    text="Save"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-save"
+                    button-type="Light" />
+
+        <abp-button 
                     text="@L["ApplicationList:FilterButton"].Value"
                     disabled="false"
                     id="btn-filter"

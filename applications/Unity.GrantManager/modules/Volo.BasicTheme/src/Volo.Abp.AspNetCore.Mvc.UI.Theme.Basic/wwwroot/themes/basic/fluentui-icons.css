@@ -261,3 +261,11 @@
 .fl-cross:before {
     content: '\F78A';
 }
+
+.fl-remove-friend:before {
+    content: '\E8F8';
+}
+
+.fl-save:before {
+    content: '\E74E';
+}
