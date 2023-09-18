@@ -21,6 +21,9 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
         [BindProperty]
         public string SelectedApplicationIds { get; set; } = default!;
 
+        [BindProperty]
+        public string ActionType { get; set; }
+
         private readonly IApplicationStatusService _statusService;
         private readonly GrantApplicationAppService _applicationService;
         private readonly IIdentityUserLookupAppService _identityUserLookupAppService;
@@ -43,9 +46,10 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             });
         }
 
-        public async Task OnGetAsync(string applicationIds)
+        public async Task OnGetAsync(string applicationIds, string actionType)
         {
             SelectedApplicationIds = applicationIds;
+            ActionType = actionType;
             AssigneeList ??= new List<SelectListItem>();
 
             try
@@ -72,15 +76,17 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             try
             {
                 var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-
                 var selectedUser = await _identityUserLookupAppService.FindByIdAsync(AssigneeId);
-
                 var userName = $"{selectedUser.Name} {selectedUser.Surname}";
-
-                await _applicationService.AddAssignee(applicationIds.ToArray(), AssigneeId.ToString(), userName);
-
                 var statusList = await _statusService.GetListAsync();
                 var selectedStatus = statusList.ToList().Find(x => x.StatusCode == ApplicationStatusConsts.SUBMITTED);
+
+                if(ActionType == AssigneeConsts.ACTION_TYPE_ADD)
+                {
+                    await _applicationService.AddAssignee(applicationIds.ToArray(), AssigneeId.ToString(), userName);
+                } else if (ActionType == AssigneeConsts.ACTION_TYPE_REMOVE) {
+                    await _applicationService.RemoveAssignee(applicationIds.ToArray(), AssigneeId.ToString());
+                }
 
                 if (selectedStatus != null)
                 {

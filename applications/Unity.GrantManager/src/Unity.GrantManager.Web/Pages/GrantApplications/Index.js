@@ -16,19 +16,21 @@
     let userOptions = document.getElementById('users');
     let dataTable, currentRow, currentCell;
     let userDivChanged = false;
+    let modifiedAssignments = new Map();
 
     $('#users').select2();
 
     function changeCellContent(cell) {
         let count = 0;
         let content = "";
-        dataTable.row(cell).context[0].aoData[currentRow]._aData.assignees = [];
-        
+        let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
+        aData.assignees = [];
+
         for(i = 0; i < userOptions.length; i++) {
             if (userOptions[i].selected) {
-            count++;
-            content = userOptions[i].text;
-            dataTable.row(cell).context[0].aoData[currentRow]._aData.assignees.push({"assigneeDisplayName": userOptions[i].text, "oidcSub": userOptions[i].value});
+                count++;
+                content = userOptions[i].text;
+                aData.assignees.push({"assigneeDisplayName": userOptions[i].text, "oidcSub": userOptions[i].value});
             }
         }
 
@@ -39,10 +41,19 @@
         } else if (count === 0) {
             cell.textContent = "";
         }
+
+        modifiedAssignments.set(aData.id, aData.assignees);
     }
 
     btnFilter.addEventListener('click', function() {
         document.getElementById('dtFilterRow').classList.toggle('hidden');
+    });
+
+    btnSave.addEventListener('click', function() {
+        changeCellContent(currentCell);
+        userDivChanged = false;
+        $('#btn-save').attr("disabled", true); 
+        modifyAssignments();
     });
 
     if(searchBar+""!="undefined") {
@@ -262,13 +273,6 @@
         $('#btn-save').attr("disabled", false); 
     });
 
-    $('#btn-save').on('click', function() {
-        changeCellContent(currentCell);
-        userDivChanged = false;
-        $('#btn-save').attr("disabled", true); 
-
-    });
-
     $(userDiv).on('blur', function() {
         if(userDivChanged) {
             changeCellContent(currentCell);
@@ -336,6 +340,27 @@
             PubSub.publish('deselect_application', deselectedData);
         }
     });
+
+    function modifyAssignments() {
+        let obj = Object.fromEntries(modifiedAssignments);
+        let jsonString = JSON.stringify(obj);
+        let id;
+        console.log('modifyAssignments');
+        console.log(jsonString);
+        try {
+            unity.grantManager.grantApplications.grantApplication.modifyAssignees
+                (jsonString)
+                .done(function () {
+                    abp.notify.success(
+                        'The application has been updated.'
+                    );
+                    PubSub.publish('refresh_application_list', id);
+                });
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
 
     const refresh_application_list_subscription = PubSub.subscribe(
         'refresh_application_list',

@@ -10,6 +10,12 @@ using Microsoft.AspNetCore.Authorization;
 using System.Diagnostics;
 using Volo.Abp.DependencyInjection;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Comments;
+using Volo.Abp.Domain.Entities;
+using Unity.GrantManager.Exceptions;
+using Newtonsoft.Json;
+using System.Collections;
+using Newtonsoft.Json.Linq;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -22,21 +28,23 @@ namespace Unity.GrantManager.GrantApplications
         GrantApplicationDto,
         Guid,
         PagedAndSortedResultRequestDto,
-        CreateUpdateGrantApplicationDto>
-        ,IGrantApplicationAppService
+        CreateUpdateGrantApplicationDto>,
+        IGrantApplicationAppService
     {
 
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationStatusRepository _applicationStatusRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
+        private readonly ICommentsManager _commentsManager;                
 
         public GrantApplicationAppService(
             IRepository<GrantApplication, Guid> repository,
-            IApplicationRepository applicationRepository, 
-            IApplicationStatusRepository applicationStatusRepository, 
+            IApplicationRepository applicationRepository,
+            IApplicationStatusRepository applicationStatusRepository,
             IApplicationUserAssignmentRepository userAssignmentRepository,
-            IApplicationFormSubmissionRepository applicationFormSubmissionRepository
+            IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
+            ICommentsManager commentsManager
             )
              : base(repository)
         {
@@ -44,6 +52,7 @@ namespace Unity.GrantManager.GrantApplications
             _applicationStatusRepository = applicationStatusRepository;
             _userAssignmentRepository = userAssignmentRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
+            _commentsManager = commentsManager;
         }
 
         public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -56,7 +65,7 @@ namespace Unity.GrantManager.GrantApplications
             var query = from application in queryable
                         join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                         select new { application, appStatus };
-            
+
             try {
                 query = query
                     .OrderBy(NormalizeSorting(input.Sorting))
@@ -68,12 +77,12 @@ namespace Unity.GrantManager.GrantApplications
             }
 
             //Execute the query and get a list
-            var queryResult = await AsyncExecuter.ToListAsync(query);           
-                     
-           
+            var queryResult = await AsyncExecuter.ToListAsync(query);
+
+
             //Convert the query result to a list of ApplicationDto objects
             var applicationDtos = queryResult.Select(x =>
-            {                
+            {
                 var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
                 appDto.Status = x.appStatus.InternalStatus;
                 appDto.Assignees = getAssignees(x.application.Id);
@@ -82,18 +91,18 @@ namespace Unity.GrantManager.GrantApplications
 
             //Get the total count with another query
             var totalCount = await _applicationRepository.GetCountAsync();
-            
+
             return new PagedResultDto<GrantApplicationDto>(
                 totalCount,
                 applicationDtos
-            );            
+            );
         }
 
         public List<GrantApplicationAssigneeDto> getAssignees(Guid applicationId)
         {
             IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).ToList();
-            
+
             var assignees = ObjectMapper.Map<List<ApplicationUserAssignment>, List<GrantApplicationAssigneeDto>>(assignments);
             return assignees;
         }
@@ -106,7 +115,7 @@ namespace Unity.GrantManager.GrantApplications
             if (application != null)
             {
                 IQueryable<ApplicationFormSubmission> queryableFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
-                
+
                 if (queryableFormSubmissions != null)
                 {
                     applicationFormSubmission = queryableFormSubmissions.Where(a => a.ApplicationFormId.Equals(application.ApplicationFormId)).FirstOrDefault();
@@ -124,11 +133,11 @@ namespace Unity.GrantManager.GrantApplications
             }
 
             return $"application.{sorting}";
-        }       
+        }
 
         public async Task UpdateApplicationStatus(Guid[] applicationIds, Guid statusId)
         {
-            foreach(Guid applicationId in applicationIds)
+            foreach (Guid applicationId in applicationIds)
             {
                 try
                 {
@@ -138,12 +147,12 @@ namespace Unity.GrantManager.GrantApplications
                         application.ApplicationStatusId = statusId;
                         await _applicationRepository.UpdateAsync(application);
                     }
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     Debug.WriteLine(ex.ToString());
                     throw new Exception(ex.ToString());
                 }
-                
             }
         }
 
@@ -182,10 +191,12 @@ namespace Unity.GrantManager.GrantApplications
                 try
                 {
                     var application = await _applicationRepository.GetAsync(applicationId);
-                    var assignees = getAssignees(applicationId);
-                    if (application != null && assignees != null && assignees.FindIndex(a => a.OidcSub == AssigneeKeycloakId) != -1)
+                    IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
+                    var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(AssigneeKeycloakId)).ToList();
+                    // Only remove the assignee if they were already assigned
+                    if (application != null && assignments != null)
                     {
-                        //await _userAssignmentRepository.DeleteAsync();
+                        await _userAssignmentRepository.DeleteAsync(assignments.FirstOrDefault());
                     }
                 }
                 catch (Exception ex)
@@ -194,24 +205,82 @@ namespace Unity.GrantManager.GrantApplications
                 }
             }
         }
-    }
 
-    public static class IQueryableExtensions
-    {
-        public static IQueryable<T> Sort<T>(this IQueryable<T> query, PagedAndSortedResultRequestDto input)
+        public async Task ModifyAssignees(dynamic modifiedAssignees)
         {
-            if (input is ISortedResultRequest sortInput)
+
+            var dynamicObject = JsonConvert.DeserializeObject<dynamic>(modifiedAssignees)!;
+            if (dynamicObject != null && dynamicObject is IEnumerable)
             {
-                if (!sortInput.Sorting.IsNullOrWhiteSpace())
+
+                foreach (JProperty item in dynamicObject)
                 {
-                    return query.OrderBy(input.Sorting);
+                    var currentApplicationId = item.Name;
+                    //await _userAssignmentRepository.BatchDeleteAsync(x => x.ApplicationId.Equals(currentApplicationId)));
+
+                    foreach (JToken assigneeToken in item.Value.Children())
+                    {
+                        Debug.WriteLine(assigneeToken); 
+
+                        
+                    }
+
                 }
             }
 
-            return query;
-        }        
+
+
+        //    var currentApplication = null;
+        //    var previousApplication = null;
+        //    // Assume sorted list of assignees
+        //    foreach (GrantApplicationAssigneeDto assignee in assignees)
+        //    {
+        //        currentApplication = assignee.ApplicationId;
+        //        // If it is a new application id
+        //        if(currentApplication != previousApplication) {
+        //            // Delete all existing
+        //            // 
+
+        //        }
+
+        //        // If it does not exist add it
+        //        previousApplication = currentApplication;
+        //    }
+        }
+
+        public async Task<CommentDto> CreateCommentAsync(Guid id, CreateCommentDto dto)
+        {
+            return ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)
+             await _commentsManager.CreateCommentAsync(id, dto.Comment, CommentType.ApplicationComment));
+        }
+
+        public async Task<IReadOnlyList<CommentDto>> GetCommentsAsync(Guid id)
+        {
+            return ObjectMapper.Map<IReadOnlyList<ApplicationComment>, IReadOnlyList<CommentDto>>((IReadOnlyList<ApplicationComment>)
+                await _commentsManager.GetCommentsAsync(id, CommentType.ApplicationComment));
+        }
+
+        public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
+        {
+            try
+            {
+                return ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)
+                    await _commentsManager.UpdateCommentAsync(id, dto.CommentId, dto.Comment, CommentType.ApplicationComment));
+
+            }
+            catch (EntityNotFoundException)
+            {
+                throw new InvalidCommentParametersException();
+            }
+        }
+
+        public async Task<CommentDto> GetCommentAsync(Guid id, Guid commentId)
+        {
+            var comment = await _commentsManager.GetCommentAsync(id, commentId, CommentType.ApplicationComment);
+
+            return comment == null
+                ? throw new InvalidCommentParametersException()
+                : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
+        }
     }
 }
-
-
-

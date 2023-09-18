@@ -14,6 +14,7 @@
                 <option value="">Select a user</option>
             </abp-select>
             <abp-input type="hidden" asp-for="@Model.SelectedApplicationIds" />
+            <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
         </div>       
     </abp-modal-body>
     <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>

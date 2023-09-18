@@ -50,5 +50,16 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 Logger.LogError(ex, message: "Error loading users select list");
             }
         }
+
+        public async Task OnPostAsync() {
+            try
+            {
+                
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, message: "There was an error saving applications.");
+            }
+        }
     }
 }

@@ -5,7 +5,7 @@ $(function () {
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
     });
     var unAssignApplicationModal = new abp.ModalManager({
-        viewUrl: 'AssigneeSelection/UnAssigneeSelectionModal'
+        viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
     });    
     var statusUpdateModal = new abp.ModalManager({
         viewUrl: 'StatusUpdate/StatusUpdateModal'
@@ -27,7 +27,7 @@ $(function () {
 
     unAssignApplicationModal.onResult(function () {
         abp.notify.success(
-            'The application assignees has been successfully removed.',
+            'The application assignee has been successfully removed.',
             'Application Assinee'
         );
         PubSub.publish("refresh_application_list");
@@ -81,12 +81,14 @@ $(function () {
     $('#assignApplication').click(function () {
         assignApplicationModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
+            actionType: 'Add'
         });
     });
 
     $('#unAssignApplication').click(function () {
-        assignApplicationModal.open({
+        unAssignApplicationModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
+            actionType: 'Remove'
         });
     });
 
