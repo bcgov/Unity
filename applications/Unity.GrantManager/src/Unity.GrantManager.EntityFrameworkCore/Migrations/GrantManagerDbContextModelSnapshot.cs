@@ -417,6 +417,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ApiKey")
+                        .HasColumnType("text");
+
                     b.Property<string>("ApplicationFormDescription")
                         .HasColumnType("text");
 
@@ -2666,6 +2669,15 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationComment", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationForm", b =>
                 {
                     b.HasOne("Unity.GrantManager.GrantPrograms.Intake", null)
@@ -2701,16 +2713,6 @@ namespace Unity.GrantManager.Migrations
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Comments.ApplicationComment", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.Application", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
 
             modelBuilder.Entity("Unity.GrantManager.Comments.AssessmentComment", b =>
                 {

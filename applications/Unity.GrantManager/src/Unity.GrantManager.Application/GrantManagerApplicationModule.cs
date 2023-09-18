@@ -58,8 +58,6 @@ public class GrantManagerApplicationModule : AbpModule
 
         Configure<IntakeClientOptions>(options => {
             options.BaseUri = configuration["Intake:BaseUri"] ?? "";
-            options.FormId  = configuration["Intake:FormId"] ?? "";
-            options.ApiKey  = configuration["Intake:ApiKey"] ?? "";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
         });
@@ -71,9 +69,9 @@ public class GrantManagerApplicationModule : AbpModule
             var restOptions = new RestClientOptions(options.BaseUri)
             {
                 // NOTE: Basic authentication only works for fetching forms and lists of form submissions
-                Authenticator = options.UseBearerToken ?
-                    new JwtAuthenticator(options.BearerTokenPlaceholder) :
-                    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
+                //Authenticator = options.UseBearerToken ?
+                //    new JwtAuthenticator(options.BearerTokenPlaceholder) :
+                //    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
 
                 FailOnDeserializationError = true,
                 ThrowOnDeserializationError = true
