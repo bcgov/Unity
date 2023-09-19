@@ -17,14 +17,10 @@
     let dataTable, currentRow, currentCell;
     let userDivChanged = false;
     let modifiedAssignments = new Map();
-
     $('#users').select2();
 
-    function changeCellContent(cell) {
-        let count = 0;
-        let content = "";
-        let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
-        aData.assignees = [];
+    function addAssignees(aData) {
+        let i, count = 0;
         for(i = 0; i < userOptions.length; i++) {
             if (userOptions[i].selected) {
                 count++;
@@ -32,6 +28,14 @@
                 aData.assignees.push({"assigneeDisplayName": userOptions[i].text, "oidcSub": userOptions[i].value});
             }
         }
+        return count;
+    }
+
+    function changeCellContent(cell) {        
+        let content = "";
+        let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
+        aData.assignees = [];
+        let count = addAssignees(aData);
 
         if(count === 1) {
             cell.textContent = content;
@@ -57,8 +61,8 @@
 
     if(searchBar+""!="undefined") {
         $(searchBar).on('keyup', function(event) {
-            var filterValue = event.currentTarget.value;
-            var oTable = $('#GrantApplicationsTable').dataTable();
+            let filterValue = event.currentTarget.value;
+            let oTable = $('#GrantApplicationsTable').dataTable();
             oTable.fnFilter(filterValue);
             if(filterValue.length > 0) {
                 selectedApplicationIds = [];
@@ -91,7 +95,7 @@
                     assigneeIds.push(assignee.oidcSub);
                 });
     
-                var userOption, i;
+                let userOption, i;
     
                 for(i = 0; i < userOptions.length; i++) {
                     userOption = userOptions[i];
@@ -134,9 +138,9 @@
               selector: 'td:not(:nth-child(6))'
             }, 
             drawCallback:function() {
-                var $api = this.api();
-                var pages = $api.page.info().pages;
-                var rows = $api.data().length;
+                let $api = this.api();
+                let pages = $api.page.info().pages;
+                let rows = $api.data().length;
          
                 // Tailor the settings based on the row count
                 if(rows <= maxRowsPerPage){
@@ -156,7 +160,7 @@
                 }
             },
             initComplete: function () {
-                var api = this.api();
+                let api = this.api();
                 addFilterRow(api);
                 api.columns.adjust();
             },
@@ -286,7 +290,7 @@
     })
     
     function addFilterRow(api) {
-        var trNode = document.createElement('tr');
+        let trNode = document.createElement('tr');
         trNode.classList.add('filter');
         trNode.classList.add('hidden');
         trNode.id = "dtFilterRow";
@@ -299,7 +303,7 @@
             mapTitles.set(title, index);
         });
 
-        var children = [...document.getElementById('GrantApplicationsTable').children[0].children[0].children];
+        let children = [...document.getElementById('GrantApplicationsTable').children[0].children[0].children];
         children.forEach(function(child) {
             let label = child.attributes['aria-label'].value;
             child.classList.remove('select-checkbox');
@@ -327,27 +331,24 @@
 
     dataTable.on('select', function (e, dt, type, indexes) {      
         if (type === 'row') {
-            var selectedData = dataTable.row(indexes).data();
+            let selectedData = dataTable.row(indexes).data();
             PubSub.publish('select_application', selectedData);
         }
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
-            var deselectedData = dataTable.row(indexes).data();
+            let deselectedData = dataTable.row(indexes).data();
             PubSub.publish('deselect_application', deselectedData);
         }
     });
 
     function modifyAssignments() {
-        let obj = Object.fromEntries(modifiedAssignments);
+        let id, obj = Object.fromEntries(modifiedAssignments);
         let jsonString = JSON.stringify(obj);
-        let id;
-        console.log('modifyAssignments');
-        console.log(jsonString);
+
         try {
-            unity.grantManager.grantApplications.grantApplication.modifyAssignees
-                (jsonString)
+            unity.grantManager.grantApplications.grantApplication.modifyAssignees(jsonString)
                 .done(function () {
                     abp.notify.success(
                         'The application has been updated.'

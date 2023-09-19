@@ -1,19 +1,19 @@
 $(function () {
 
-    var selectedApplicationIds = [];
-    var assignApplicationModal = new abp.ModalManager({
+    let selectedApplicationIds = [];
+    let assignApplicationModal = new abp.ModalManager({
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
     });
-    var unAssignApplicationModal = new abp.ModalManager({
+    let unAssignApplicationModal = new abp.ModalManager({
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
     });    
-    var statusUpdateModal = new abp.ModalManager({
+    let statusUpdateModal = new abp.ModalManager({
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
-    var approveApplicationsModal = new abp.ModalManager({
+    let approveApplicationsModal = new abp.ModalManager({
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
-    var dontApproveApplicationsModal = new abp.ModalManager({
+    let dontApproveApplicationsModal = new abp.ModalManager({
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
 
