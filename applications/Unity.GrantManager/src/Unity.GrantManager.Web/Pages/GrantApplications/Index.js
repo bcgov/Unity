@@ -21,107 +21,106 @@
     $('#users').select2();
 
     function changeCellContent(cell) {
-        let i, count = 0;
-        let content = "";
+        let i,
+            count = 0;
+        let content = '';
         let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
         aData.assignees = [];
 
-        for(i = 0; i < userOptions.length; i++) {
+        for (i = 0; i < userOptions.length; i++) {
             if (userOptions[i].selected) {
                 count++;
                 content = userOptions[i].text;
-                aData.assignees.push({"assigneeDisplayName": userOptions[i].text, "oidcSub": userOptions[i].value});
+                aData.assignees.push({
+                    assigneeDisplayName: userOptions[i].text,
+                    oidcSub: userOptions[i].value,
+                });
             }
         }
 
-        if(count === 1) {
+        if (count === 1) {
             cell.textContent = content;
-        }
-        
-        if (count > 1) {
-            cell.textContent = "Multiple assignees";
-        } 
-        
-        if (count === 0) {
-            cell.textContent = "";
+        } else if (count > 1) {
+            cell.textContent = 'Multiple assignees';
+        } else if (count === 0) {
+            cell.textContent = '';
         }
 
         modifiedAssignments.set(aData.id, aData.assignees);
     }
 
-    btnFilter.addEventListener('click', function() {
+    btnFilter.addEventListener('click', function () {
         document.getElementById('dtFilterRow').classList.toggle('hidden');
     });
 
-    btnSave.addEventListener('click', function() {
+    btnSave.addEventListener('click', function () {
         changeCellContent(currentCell);
         userDivChanged = false;
-        $('#btn-save').attr("disabled", true); 
+        $('#btn-save').attr('disabled', true);
         modifyAssignments();
     });
 
-    if(searchBar+""!="undefined") {
-        $(searchBar).on('keyup', function(event) {
+    if (searchBar + '' != 'undefined') {
+        $(searchBar).on('keyup', function (event) {
             let filterValue = event.currentTarget.value;
             let oTable = $('#GrantApplicationsTable').dataTable();
             oTable.fnFilter(filterValue);
-            if(filterValue.length > 0) {
+            if (filterValue.length > 0) {
                 selectedApplicationIds = [];
                 $('#externalLink').prop('disabled', true);
-                Array.from(document.getElementsByClassName("selected")).forEach(
-                    function(element, index, array) {
-                        element.classList.toggle("selected");
+                Array.from(document.getElementsByClassName('selected')).forEach(
+                    function (element, index, array) {
+                        element.classList.toggle('selected');
                     }
                 );
             }
         });
     }
 
-    const createdCell = function(cell) {
-      cell.setAttribute('contenteditable', true);
-      cell.addEventListener("focus", function(e) {
-            
-            if(e.target.children.length == 0) {
-                if(userDivChanged) {
-                    changeCellContent(currentCell);
-                    userDivChanged = false;
-                }
+    const createdCell = function (cell) {
+        cell.setAttribute('contenteditable', true);
+        cell.addEventListener('focus', function (e) {
+            checkUserDivChanged();
 
-                e.target.textContent = "";
+            if (e.target.children.length == 0) {
+                e.target.textContent = '';
                 currentRow = e.target.parentElement._DT_RowIndex;
-                let assigness = dataTable.row(e.target.parentElement).context[0].aoData[currentRow]._aData.assignees;
+                let assigness = dataTable.row(e.target.parentElement).context[0]
+                    .aoData[currentRow]._aData.assignees;
                 let assigneeIds = [];
-    
-                $(assigness).each(function( key, assignee ) {
+
+                $(assigness).each(function (key, assignee) {
                     assigneeIds.push(assignee.oidcSub);
                 });
-    
+
                 let userOption, i;
-    
-                for(i = 0; i < userOptions.length; i++) {
+
+                for (i = 0; i < userOptions.length; i++) {
                     userOption = userOptions[i];
-                    $(userOption).prop("selected", assigneeIds.includes(userOption.value));
+                    $(userOption).prop(
+                        'selected',
+                        assigneeIds.includes(userOption.value)
+                    );
                 }
 
                 $(userDiv).appendTo(this);
                 $('#users').select2();
                 userDiv.classList.remove('hidden');
                 $('ul').click();
-            }      
-            currentCell = this;  
-      });
-      
-      cell.addEventListener("blur", function(e) {
+            }
+            currentCell = this;
+        });
 
-        if(e.relatedTarget != null 
-            && e.relatedTarget.classList.value != 'select2-selection select2-selection--multiple' 
-            && e.relatedTarget.classList.value != 'select2-search__field'
+        cell.addEventListener('blur', function (e) {
+            if (
+                e.relatedTarget != null &&
+                e.relatedTarget.classList.value != 'select2-selection select2-selection--multiple' &&
+                e.relatedTarget.classList.value != 'select2-search__field'
             ) {
-          changeCellContent(e.currentTarget);
-        }
-      });
-
-    }
+                changeCellContent(e.currentTarget);
+            }
+        });
+    };
 
     dataTable = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -135,29 +134,29 @@
                 unity.grantManager.grantApplications.grantApplication.getList
             ),
             select: {
-              style: 'multiple',
-              selector: 'td:not(:nth-child(6))'
-            }, 
-            drawCallback:function() {
+                style: 'multiple',
+                selector: 'td:not(:nth-child(6))',
+            },
+            drawCallback: function () {
                 let $api = this.api();
                 let pages = $api.page.info().pages;
                 let rows = $api.data().length;
-         
+
                 // Tailor the settings based on the row count
-                if(rows <= maxRowsPerPage){
-                    $('.dataTables_info').css('display','none')
-                    $('.dataTables_paginate').css('display','none');
-        
-                    $('.dataTables_filter').css('display', 'none')
-                    $('.dataTables_length').css('display', 'none')
-                } else if(pages === 1){
+                if (rows <= maxRowsPerPage) {
+                    $('.dataTables_info').css('display', 'none');
+                    $('.dataTables_paginate').css('display', 'none');
+
+                    $('.dataTables_filter').css('display', 'none');
+                    $('.dataTables_length').css('display', 'none');
+                } else if (pages === 1) {
                     // With this current length setting, not more than 1 page, hide pagination
-                    $('.dataTables_info').css('display','none')
-                    $('.dataTables_paginate').css('display','none');
+                    $('.dataTables_info').css('display', 'none');
+                    $('.dataTables_paginate').css('display', 'none');
                 } else {
                     // SHow everything
-                    $('.dataTables_info').css('display','block')
-                    $('.dataTables_paginate').css('display','block');
+                    $('.dataTables_info').css('display', 'block');
+                    $('.dataTables_paginate').css('display', 'block');
                 }
             },
             initComplete: function () {
@@ -211,10 +210,10 @@
                     createdCell: createdCell,
                     render: function (data, type, row) {
                         let disaplayText = ' ';
-                        if(data != null && data.length == 1) {
+                        if (data != null && data.length == 1) {
                             disaplayText = data[0].assigneeDisplayName;
-                        } else if(data.length > 1) {
-                            disaplayText = l('Multiple assignees')
+                        } else if (data.length > 1) {
+                            disaplayText = l('Multiple assignees');
                         }
                         return disaplayText;
                     },
@@ -226,7 +225,7 @@
                     className: 'data-table-header',
                     render: function (data) {
                         let disaplayText = ' ';
-                        if(data != null && data.length == 1) {
+                        if (data != null && data.length == 1) {
                             disaplayText = data[0].assigneeDisplayName;
                         }
                         return disaplayText;
@@ -234,12 +233,12 @@
                 },
                 {
                     title: l('GrantApplicationStatus'),
-                    data: "status",
-                    name: "status",
+                    data: 'status',
+                    name: 'status',
                     className: 'data-table-header',
                     render: function (data) {
                         let disaplayText = ' ';
-                        if(data != null && data.length >= 0) {
+                        if (data != null && data.length >= 0) {
                             disaplayText = data;
                         }
                         return disaplayText;
@@ -248,7 +247,7 @@
                 {
                     title: l('ProposalDate'),
                     data: 'proposalDate',
-                    name: "proposalDate",
+                    name: 'proposalDate',
                     className: 'data-table-header',
                     render: function (data) {
                         return luxon.DateTime.fromISO(data, {
@@ -259,7 +258,7 @@
                 {
                     title: l('SubmissionDate'),
                     data: 'submissionDate',
-                    name: "submissionDate",
+                    name: 'submissionDate',
                     className: 'data-table-header',
                     render: function (data) {
                         return luxon.DateTime.fromISO(data, {
@@ -271,30 +270,31 @@
         })
     );
 
-    $(userDiv).on('change', function(e){
+    $(userDiv).on('change', function (e) {
         userDivChanged = true;
-        $('#btn-save').attr("disabled", false); 
+        $('#btn-save').attr('disabled', false);
     });
 
-    $(userDiv).on('blur', function() {
-        if(userDivChanged) {
-            changeCellContent(currentCell);
-            userDivChanged = false;
-        }
-    })
+    $(userDiv).on('blur', function () {
+        checkUserDivChanged();
+    });
 
-    $('#users').on('blur', function() {
-        if(userDivChanged) {
+    $('#users').on('blur', function () {
+        checkUserDivChanged();
+    });
+
+    function checkUserDivChanged() {
+        if (userDivChanged) {
             changeCellContent(currentCell);
             userDivChanged = false;
         }
-    })
-    
+    }
+
     function addFilterRow(api) {
         let trNode = document.createElement('tr');
         trNode.classList.add('filter');
         trNode.classList.add('hidden');
-        trNode.id = "dtFilterRow";
+        trNode.id = 'dtFilterRow';
 
         let mapTitles = new Map();
         api.columns().every(function () {
@@ -304,8 +304,12 @@
             mapTitles.set(title, index);
         });
 
-        let children = [...document.getElementById('GrantApplicationsTable').children[0].children[0].children];
-        children.forEach(function(child) {
+        let children = [
+            ...document.getElementById('GrantApplicationsTable').children[0]
+                .children[0].children,
+        ];
+
+        children.forEach(function (child) {
             let label = child.attributes['aria-label'].value;
             child.classList.remove('select-checkbox');
             child.classList.remove('sorting');
@@ -314,23 +318,28 @@
 
             const firstElement = label.split(':').shift();
 
-            if(firstElement != "") {
+            if (firstElement != '') {
                 let inputFilter = document.createElement('input');
-                inputFilter.type = "text";
+                inputFilter.type = 'text';
                 inputFilter.classList.add('filter-input');
                 inputFilter.placeholder = firstElement;
-                inputFilter.addEventListener('keyup', function() {
-                    dataTable.columns(mapTitles.get(this.placeholder)).search(this.value).draw();
+                inputFilter.addEventListener('keyup', function () {
+                    dataTable
+                        .columns(mapTitles.get(this.placeholder))
+                        .search(this.value)
+                        .draw();
                 });
                 child.appendChild(inputFilter);
             }
             trNode.appendChild(child);
         });
 
-        document.getElementsByClassName('table')[0].children[0].appendChild(trNode);
-    };
+        document
+            .getElementsByClassName('table')[0]
+            .children[0].appendChild(trNode);
+    }
 
-    dataTable.on('select', function (e, dt, type, indexes) {      
+    dataTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {
             let selectedData = dataTable.row(indexes).data();
             PubSub.publish('select_application', selectedData);
@@ -345,19 +354,18 @@
     });
 
     function modifyAssignments() {
-        let id, obj = Object.fromEntries(modifiedAssignments);
+        let id,
+            obj = Object.fromEntries(modifiedAssignments);
         let jsonString = JSON.stringify(obj);
 
         try {
-            unity.grantManager.grantApplications.grantApplication.modifyAssignees(jsonString)
+            unity.grantManager.grantApplications.grantApplication
+                .modifyAssignees(jsonString)
                 .done(function () {
-                    abp.notify.success(
-                        'The application has been updated.'
-                    );
+                    abp.notify.success('The application has been updated.');
                     PubSub.publish('refresh_application_list', id);
                 });
-        }
-        catch (error) {
+        } catch (error) {
             console.log(error);
         }
     }
