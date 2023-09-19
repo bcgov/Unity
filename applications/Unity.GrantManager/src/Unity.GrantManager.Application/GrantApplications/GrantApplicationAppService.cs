@@ -36,7 +36,7 @@ namespace Unity.GrantManager.GrantApplications
         private readonly IApplicationStatusRepository _applicationStatusRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
-        private readonly ICommentsManager _commentsManager;                
+        private readonly ICommentsManager _commentsManager;
 
         public GrantApplicationAppService(
             IRepository<GrantApplication, Guid> repository,
@@ -212,40 +212,37 @@ namespace Unity.GrantManager.GrantApplications
             var dynamicObject = JsonConvert.DeserializeObject<dynamic>(modifiedAssignees)!;
             if (dynamicObject != null && dynamicObject is IEnumerable)
             {
-
+                string previousApplication = "";
                 foreach (JProperty item in dynamicObject)
                 {
-                    var currentApplicationId = item.Name;
-                    //await _userAssignmentRepository.BatchDeleteAsync(x => x.ApplicationId.Equals(currentApplicationId)));
+                    string currentApplicationId = item.Name;
+                    Guid currentGuid = Guid.Parse(currentApplicationId);
+                    IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
+                    List<ApplicationUserAssignment> userAssignments = queryableAssignment.Where(a => a.ApplicationId.Equals(currentGuid)).ToList();
+
+                    if (currentApplicationId != previousApplication)
+                    {
+                        // Changed applications ids
+                        foreach(var userAssignment in userAssignments)
+                        {
+                            await _userAssignmentRepository.DeleteAsync(userAssignment);
+                        }
+                        // Would like to use BatchDeleteAsync
+                        await UnitOfWorkManager.Current.SaveChangesAsync();
+                    }
 
                     foreach (JToken assigneeToken in item.Value.Children())
                     {
                         Debug.WriteLine(assigneeToken); 
-
-                        
+                        string assigneeDisplayName = assigneeToken.Value<string?>("assigneeDisplayName") ?? "";
+                        string oidcSub = assigneeToken.Value<string?>("oidcSub") ?? "";
+                        Guid[] applicationIds = new Guid[1];
+                        applicationIds.SetValue(currentGuid, 0);
+                        await AddAssignee(applicationIds, oidcSub, assigneeDisplayName);
                     }
-
+                    previousApplication = currentApplicationId;
                 }
             }
-
-
-
-        //    var currentApplication = null;
-        //    var previousApplication = null;
-        //    // Assume sorted list of assignees
-        //    foreach (GrantApplicationAssigneeDto assignee in assignees)
-        //    {
-        //        currentApplication = assignee.ApplicationId;
-        //        // If it is a new application id
-        //        if(currentApplication != previousApplication) {
-        //            // Delete all existing
-        //            // 
-
-        //        }
-
-        //        // If it does not exist add it
-        //        previousApplication = currentApplication;
-        //    }
         }
 
         public async Task<CommentDto> CreateCommentAsync(Guid id, CreateCommentDto dto)

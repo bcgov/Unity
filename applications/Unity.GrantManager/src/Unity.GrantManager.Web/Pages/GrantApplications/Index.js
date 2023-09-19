@@ -25,7 +25,6 @@
         let content = "";
         let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
         aData.assignees = [];
-
         for(i = 0; i < userOptions.length; i++) {
             if (userOptions[i].selected) {
                 count++;
@@ -97,13 +96,12 @@
                 for(i = 0; i < userOptions.length; i++) {
                     userOption = userOptions[i];
                     $(userOption).prop("selected", assigneeIds.includes(userOption.value));
-                  }
-                
+                }
+
                 $(userDiv).appendTo(this);
                 $('#users').select2();
-
                 userDiv.classList.remove('hidden');
-
+                $('ul').click();
             }      
             currentCell = this;  
       });
