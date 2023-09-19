@@ -20,40 +20,59 @@
         };
     };
    
-    const dataTable = $('#ApplicationAttachmentsTable').DataTable(
-        abp.libs.datatables.normalizeConfiguration({
-            serverSide: true,
-            order: [[1, 'asc']],
-            searching: false,
-            paging: false,
-            select: false,
-            info: false,
-            scrollX: true,
-            ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.grantApplications.applicationAttachment.getList, inputAction, responseCallback
-            ),
-            columnDefs: [
-                {
-                    title: l('AssessmentResultAttachments:DocumentName'),
-                    data: 'fileName',
-                    className: 'data-table-header',
-                },
-                {
-                    title: l('AssessmentResultAttachments:UploadedDate'),
-                    data: 'time',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        return new Date(data).toDateString();
+
+        const dataTable = $('#ApplicationAttachmentsTable').DataTable(
+            abp.libs.datatables.normalizeConfiguration({
+                serverSide: true,
+                order: [[1, 'asc']],
+                searching: false,
+                paging: false,
+                select: false,
+                info: false,
+                scrollX: true,
+                ajax: abp.libs.datatables.createAjax(
+                    unity.grantManager.grantApplications.applicationAttachment.getList, inputAction, responseCallback
+                ),
+                columnDefs: [
+                    {
+                        title: '',
+                        render: function (data) {
+                            return '<i class="fl fl-attachment" ></i>';
+                        }
                     },
-                },
-                {
-                    title: l('AssessmentResultAttachments:AttachedBy'),
-                    data: 'attachedBy',
-                    className: 'data-table-header',                        
-                },
-            ],
-        })
-    );    
+                    {
+                        title: l('AssessmentResultAttachments:DocumentName'),
+                        data: 'fileName',
+                        className: 'data-table-header',
+                    },
+                    {
+                        title: l('AssessmentResultAttachments:UploadedDate'),
+                        data: 'time',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return new Date(data).toDateString();
+                        },
+                    },
+                    {
+                        title: l('AssessmentResultAttachments:AttachedBy'),
+                        data: 'attachedBy',
+                        className: 'data-table-header',                        
+                    },
+                    {
+                        title: '',
+                        data: 's3Guid',
+                        render: function (data, type, full, meta) {
+                            var html = '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
+                            html += '" target="_blank" download="' + data + '" style="text-decoration:none">';
+                            html += '<button class="btn btn-light" type="submit"><i class="fl fl-attachment-more" ></i></button>';
+                            html += '</a > ';
+                            return html;
+                        }
+                    }
+                ],
+            })
+        );
+
 
     dataTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {

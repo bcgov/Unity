@@ -1,3 +1,4 @@
+
 ﻿/** Segoe Fluent Icons*/
 
 
@@ -277,3 +278,12 @@
 .fl-export:before {
     content: '\EDE2';
 }
+
+.fl-attachment-more:before {
+    content: '\E712';
+}
+
+.fl-attachment:before {
+    content: '\E723';
+}
+

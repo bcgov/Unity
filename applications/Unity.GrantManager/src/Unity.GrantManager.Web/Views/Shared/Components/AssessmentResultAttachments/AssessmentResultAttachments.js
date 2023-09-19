@@ -31,6 +31,12 @@
             ),
             columnDefs: [
                 {
+                    title: '',
+                    render: function (data) {
+                        return '<i class="fl fl-attachment" ></i>';
+                    }
+                },
+                {
                     title: l('AssessmentResultAttachments:DocumentName'),
                     data: 'fileName',
                     className: 'data-table-header',
@@ -48,6 +54,17 @@
                     data: 'attachedBy',
                     className: 'data-table-header',
                 },
+                {
+                    title: '',
+                    data: 's3Guid',
+                    render: function (data, type, full, meta) {
+                        var html = '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
+                        html +=  '" target="_blank" download="' + data + '" style="text-decoration:none">';
+                        html += '<button class="btn btn-light" type="submit"><i class="fl fl-attachment-more" ></i></button>';
+                        html += '</a > ';
+                        return html;
+                    }
+                }
             ],
         })
     );
