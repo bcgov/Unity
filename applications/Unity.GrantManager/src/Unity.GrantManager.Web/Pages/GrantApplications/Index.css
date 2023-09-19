@@ -102,3 +102,9 @@ thead input {
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
     background-color:  var(--bc-colors-blue-background, #38598A);
 }
+
+.abp-widget-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
