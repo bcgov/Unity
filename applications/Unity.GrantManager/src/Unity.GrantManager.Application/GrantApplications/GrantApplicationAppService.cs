@@ -36,6 +36,7 @@ namespace Unity.GrantManager.GrantApplications
         private readonly IApplicationStatusRepository _applicationStatusRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
+        private readonly IApplicantRepository _applicantRepository;
         private readonly ICommentsManager _commentsManager;
 
         public GrantApplicationAppService(
@@ -44,6 +45,7 @@ namespace Unity.GrantManager.GrantApplications
             IApplicationStatusRepository applicationStatusRepository,
             IApplicationUserAssignmentRepository userAssignmentRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
+            IApplicantRepository applicantRepository,
             ICommentsManager commentsManager
             )
              : base(repository)
@@ -52,6 +54,7 @@ namespace Unity.GrantManager.GrantApplications
             _applicationStatusRepository = applicationStatusRepository;
             _userAssignmentRepository = userAssignmentRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
+            _applicantRepository = applicantRepository;
             _commentsManager = commentsManager;
         }
 
@@ -64,7 +67,8 @@ namespace Unity.GrantManager.GrantApplications
             //Prepare a query to join books and authors
             var query = from application in queryable
                         join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                        select new { application, appStatus };
+                        join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                        select new { application, appStatus, applicant };
 
             try {
                 query = query
@@ -86,6 +90,7 @@ namespace Unity.GrantManager.GrantApplications
                 var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
                 appDto.Status = x.appStatus.InternalStatus;
                 appDto.Assignees = getAssignees(x.application.Id);
+                appDto.Applicant = x.applicant.ApplicantName;
                 return appDto;
             }).ToList();
 

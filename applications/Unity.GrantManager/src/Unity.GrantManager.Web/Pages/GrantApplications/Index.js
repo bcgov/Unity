@@ -1,24 +1,107 @@
 ﻿$(function () {
-    const formatter = new Intl.NumberFormat('en-CA', {
-        style: 'currency',
-        currency: 'CAD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
-    const searchBar = document.getElementById('search-bar');
-    const btnFilter = document.getElementById('btn-filter');
-    const btnSave = document.getElementById('btn-save');
+    const formatter = createNumberFormatter();
     const userDiv = document.getElementById('users-div');
     const l = abp.localization.getResource('GrantManager');
     const maxRowsPerPage = 15;
+    const createdCell = getCreatedCell();
     let dt = $('#GrantApplicationsTable');
     let userOptions = document.getElementById('users');
     let dataTable, currentRow, currentCell;
     let userDivChanged = false;
     let modifiedAssignments = new Map();
 
-    $('#users').select2();
+    const UIElements = {
+        searchBar: $('#search-bar'),
+        btnFilter: $('#btn-filter'),
+        btnSave: $('#btn-save'),
+        userDiv: $('#users-div'),
+        users: $('#users'),
+        dataTable: $('#GrantApplicationsTable'),
+    };
+
+    init();
+    
+    function init() {
+        $('#users').select2();
+        bindUIEvents();
+        dataTable = initializeDataTable();
+    }
+
+    function bindUIEvents() {
+        UIElements.btnFilter.on('click', toggleFilterRow);
+        UIElements.btnSave.on('click', handleSave);
+        UIElements.searchBar.on('keyup', handleSearch);
+        UIElements.userDiv.on('change', markUserDivAsChanged);
+        UIElements.userDiv.on('blur', checkUserDivChanged);
+        UIElements.users.on('blur', checkUserDivChanged);
+
+    }
+    
+    dataTable.on('select', function (e, dt, type, indexes) {
+        selectApplication(type, indexes, 'select_application');
+    });
+
+    dataTable.on('deselect', function (e, dt, type, indexes) {
+        selectApplication(type, indexes, 'deselect_application');
+    });
+
+    function selectApplication(type, indexes, action) {
+        if (type === 'row') {
+            let data = dataTable.row(indexes).data();
+            PubSub.publish(action, data);
+        }
+    }
+
+    function toggleFilterRow() {
+        $('#dtFilterRow').toggleClass('hidden');
+    }
+
+    function markUserDivAsChanged() {
+        userDivChanged = true;
+        $('#btn-save').attr('disabled', false);
+    }
+
+    function handleSave() {
+        changeCellContent(currentCell);
+        markUserDivAsUnchanged();
+        modifyAssignmentsOnServer();
+    }
+
+    function handleSearch() {
+        let filterValue = event.currentTarget.value;
+        let oTable = $('#GrantApplicationsTable').dataTable();
+        oTable.fnFilter(filterValue);
+        if (filterValue.length > 0) {
+            selectedApplicationIds = [];
+            $('#externalLink').prop('disabled', true);
+            Array.from(document.getElementsByClassName('selected')).forEach(
+                function (element, index, array) {
+                    element.classList.toggle('selected');
+                }
+            );
+        }
+    }
+
+    function checkUserDivChanged() {
+        if (userDivChanged) {
+            changeCellContent(currentCell);
+            userDivChanged = false;
+        }
+    }
+
+    function markUserDivAsUnchanged() {
+        userDivChanged = false;
+        $('#btn-save').attr('disabled', true);
+    }
+
+    function createNumberFormatter() {
+        return new Intl.NumberFormat('en-CA', {
+            style: 'currency',
+            currency: 'CAD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    }
 
     function changeCellContent(cell) {
         let i,
@@ -49,84 +132,60 @@
         modifiedAssignments.set(aData.id, aData.assignees);
     }
 
-    btnFilter.addEventListener('click', function () {
-        document.getElementById('dtFilterRow').classList.toggle('hidden');
-    });
-
-    btnSave.addEventListener('click', function () {
-        changeCellContent(currentCell);
-        userDivChanged = false;
-        $('#btn-save').attr('disabled', true);
-        modifyAssignments();
-    });
-
-    if (searchBar + '' != 'undefined') {
-        $(searchBar).on('keyup', function (event) {
-            let filterValue = event.currentTarget.value;
-            let oTable = $('#GrantApplicationsTable').dataTable();
-            oTable.fnFilter(filterValue);
-            if (filterValue.length > 0) {
-                selectedApplicationIds = [];
-                $('#externalLink').prop('disabled', true);
-                Array.from(document.getElementsByClassName('selected')).forEach(
-                    function (element, index, array) {
-                        element.classList.toggle('selected');
+    function getCreatedCell() {
+        return function (cell) {
+            cell.setAttribute('contenteditable', true);
+            cell.addEventListener('focus', function (e) {
+                checkUserDivChanged();
+    
+                if (e.target.children.length == 0) {
+                    e.target.textContent = '';
+                    currentRow = e.target.parentElement._DT_RowIndex;
+                    let assigness = dataTable.row(e.target.parentElement).context[0]
+                        .aoData[currentRow]._aData.assignees;
+                    let assigneeIds = [];
+    
+                    $(assigness).each(function (key, assignee) {
+                        assigneeIds.push(assignee.oidcSub);
+                    });
+    
+                    let userOption, i;
+    
+                    for (i = 0; i < userOptions.length; i++) {
+                        userOption = userOptions[i];
+                        $(userOption).prop(
+                            'selected',
+                            assigneeIds.includes(userOption.value)
+                        );
                     }
-                );
-            }
-        });
+    
+                    $(userDiv).appendTo(this);
+                    $('#users').select2();
+                    userDiv.classList.remove('hidden');
+                    $('ul').click();
+                }
+                currentCell = this;
+            });
+    
+            cell.addEventListener('blur', function (e) {
+                if (
+                    e.relatedTarget != null &&
+                    e.relatedTarget.classList.value != 'select2-selection select2-selection--multiple' &&
+                    e.relatedTarget.classList.value != 'select2-search__field'
+                ) {
+                    changeCellContent(e.currentTarget);
+                }
+            });
+        };
     }
 
-    const createdCell = function (cell) {
-        cell.setAttribute('contenteditable', true);
-        cell.addEventListener('focus', function (e) {
-            checkUserDivChanged();
 
-            if (e.target.children.length == 0) {
-                e.target.textContent = '';
-                currentRow = e.target.parentElement._DT_RowIndex;
-                let assigness = dataTable.row(e.target.parentElement).context[0]
-                    .aoData[currentRow]._aData.assignees;
-                let assigneeIds = [];
-
-                $(assigness).each(function (key, assignee) {
-                    assigneeIds.push(assignee.oidcSub);
-                });
-
-                let userOption, i;
-
-                for (i = 0; i < userOptions.length; i++) {
-                    userOption = userOptions[i];
-                    $(userOption).prop(
-                        'selected',
-                        assigneeIds.includes(userOption.value)
-                    );
-                }
-
-                $(userDiv).appendTo(this);
-                $('#users').select2();
-                userDiv.classList.remove('hidden');
-                $('ul').click();
-            }
-            currentCell = this;
-        });
-
-        cell.addEventListener('blur', function (e) {
-            if (
-                e.relatedTarget != null &&
-                e.relatedTarget.classList.value != 'select2-selection select2-selection--multiple' &&
-                e.relatedTarget.classList.value != 'select2-search__field'
-            ) {
-                changeCellContent(e.currentTarget);
-            }
-        });
-    };
-
-    dataTable = dt.DataTable(
+    function initializeDataTable() {
+       return dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: false,
             paging: true,
-            order: [[1, 'asc']],
+            order: [[3, 'asc']],
             searching: true,
             pageLength: maxRowsPerPage,
             scrollX: true,
@@ -135,7 +194,7 @@
             ),
             select: {
                 style: 'multiple',
-                selector: 'td:not(:nth-child(6))',
+                selector: 'td:not(:nth-child(8))',
             },
             drawCallback: function () {
                 let $api = this.api();
@@ -173,15 +232,32 @@
                     },
                 },
                 {
-                    title: l('ProjectName'),
-                    data: 'projectName',
-                    name: 'projectName',
+                    title: 'Applicant Name',
+                    data: 'applicant',
+                    name: 'applicant',
                     className: 'data-table-header',
                 },
                 {
-                    title: l('ReferenceNo'),
+                    title: 'Application #',
                     data: 'referenceNo',
                     name: 'referenceNo',
+                    className: 'data-table-header',
+                },
+                {
+                    title: l('SubmissionDate'),
+                    data: 'submissionDate',
+                    name: 'submissionDate',
+                    className: 'data-table-header',
+                    render: function (data) {
+                        return luxon.DateTime.fromISO(data, {
+                            locale: abp.localization.currentCulture.name,
+                        }).toLocaleString();
+                    },
+                },
+                {
+                    title: l('ProjectName'),
+                    data: 'projectName',
+                    name: 'projectName',
                     className: 'data-table-header',
                 },
                 {
@@ -255,39 +331,9 @@
                         }).toLocaleString();
                     },
                 },
-                {
-                    title: l('SubmissionDate'),
-                    data: 'submissionDate',
-                    name: 'submissionDate',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        return luxon.DateTime.fromISO(data, {
-                            locale: abp.localization.currentCulture.name,
-                        }).toLocaleString();
-                    },
-                },
             ],
         })
     );
-
-    $(userDiv).on('change', function (e) {
-        userDivChanged = true;
-        $('#btn-save').attr('disabled', false);
-    });
-
-    $(userDiv).on('blur', function () {
-        checkUserDivChanged();
-    });
-
-    $('#users').on('blur', function () {
-        checkUserDivChanged();
-    });
-
-    function checkUserDivChanged() {
-        if (userDivChanged) {
-            changeCellContent(currentCell);
-            userDivChanged = false;
-        }
     }
 
     function addFilterRow(api) {
@@ -339,21 +385,7 @@
             .children[0].appendChild(trNode);
     }
 
-    dataTable.on('select', function (e, dt, type, indexes) {
-        if (type === 'row') {
-            let selectedData = dataTable.row(indexes).data();
-            PubSub.publish('select_application', selectedData);
-        }
-    });
-
-    dataTable.on('deselect', function (e, dt, type, indexes) {
-        if (type === 'row') {
-            let deselectedData = dataTable.row(indexes).data();
-            PubSub.publish('deselect_application', deselectedData);
-        }
-    });
-
-    function modifyAssignments() {
+    function modifyAssignmentsOnServer() {
         let id,
             obj = Object.fromEntries(modifiedAssignments);
         let jsonString = JSON.stringify(obj);
