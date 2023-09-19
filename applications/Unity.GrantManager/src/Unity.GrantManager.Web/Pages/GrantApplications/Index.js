@@ -17,10 +17,15 @@
     let dataTable, currentRow, currentCell;
     let userDivChanged = false;
     let modifiedAssignments = new Map();
+
     $('#users').select2();
 
-    function addAssignees(aData) {
+    function changeCellContent(cell) {
         let i, count = 0;
+        let content = "";
+        let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
+        aData.assignees = [];
+
         for(i = 0; i < userOptions.length; i++) {
             if (userOptions[i].selected) {
                 count++;
@@ -28,20 +33,16 @@
                 aData.assignees.push({"assigneeDisplayName": userOptions[i].text, "oidcSub": userOptions[i].value});
             }
         }
-        return count;
-    }
-
-    function changeCellContent(cell) {        
-        let content = "";
-        let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
-        aData.assignees = [];
-        let count = addAssignees(aData);
 
         if(count === 1) {
             cell.textContent = content;
-        } else if (count > 1) {
+        }
+        
+        if (count > 1) {
             cell.textContent = "Multiple assignees";
-        } else if (count === 0) {
+        } 
+        
+        if (count === 0) {
             cell.textContent = "";
         }
 
