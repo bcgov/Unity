@@ -40,9 +40,45 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         throw new NotImplementedException();
     }
 
-    public override Task<Stream> GetOrNullAsync(BlobProviderGetArgs args)
+    public override async Task<Stream> GetOrNullAsync(BlobProviderGetArgs args)
     {
-        throw new NotImplementedException();
+        var queryParams = _httpContextAccessor.HttpContext.Request.Query;
+        if (queryParams.TryGetValue("S3Guid", out StringValues s3guid))
+        {              
+            return await DownloadAttachment(args, s3guid.ToString());            
+        }
+        else
+        {
+            throw new Exception("Missing parameter:AttachmentType");
+        }      
+    }    
+
+    private async Task<Stream> DownloadAttachment(BlobProviderGetArgs args, string s3guid)
+    {        
+        var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+        var baseUri = config.BaseUri;
+        var username = config.Username;
+        var password = config.Password;
+        if (!baseUri.EndsWith("/"))
+        {
+            baseUri += "/";
+        }
+        var client = new HttpClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, baseUri + "object/" + s3guid);
+        var authenticationString = $"{username}:{password}";
+        var base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(authenticationString));
+        request.Headers.Add("Authorization", "Basic " + base64EncodedAuthenticationString);
+        var response = await client.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            System.Net.Http.HttpContent content = response.Content;
+            var contentStream = await content.ReadAsStreamAsync(); // get the actual content stream
+            return contentStream;
+        }
+        else
+        {
+            throw new FileNotFoundException("File not found. S3guid " + s3guid + ".");
+        }
     }
 
     public override async Task SaveAsync(BlobProviderSaveArgs args)
