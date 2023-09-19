@@ -15,8 +15,7 @@
         btnFilter: $('#btn-filter'),
         btnSave: $('#btn-save'),
         userDiv: $('#users-div'),
-        users: $('#users'),
-        dataTable: $('#GrantApplicationsTable'),
+        users: $('#users')
     };
 
     init();
@@ -29,21 +28,21 @@
 
     function bindUIEvents() {
         UIElements.btnFilter.on('click', toggleFilterRow);
-        UIElements.btnSave.on('click', handleSave);
-        UIElements.searchBar.on('keyup', handleSearch);
+        UIElements.btnSave.on('click', handleSave);        
         UIElements.userDiv.on('change', markUserDivAsChanged);
         UIElements.userDiv.on('blur', checkUserDivChanged);
         UIElements.users.on('blur', checkUserDivChanged);
-
+        UIElements.searchBar.on('keyup', function(e) {
+            handleSearch(e);
+        });
     }
-    
-    dataTable.on('select', function (e, dt, type, indexes) {
+
+    dataTable.on('select', function(e, dt, type, indexes) {
         selectApplication(type, indexes, 'select_application');
     });
-
-    dataTable.on('deselect', function (e, dt, type, indexes) {
+    dataTable.on('deselect', function(e, dt, type, indexes) {
         selectApplication(type, indexes, 'deselect_application');
-    });
+    });    
 
     function selectApplication(type, indexes, action) {
         if (type === 'row') {
@@ -67,8 +66,8 @@
         modifyAssignmentsOnServer();
     }
 
-    function handleSearch() {
-        let filterValue = event.currentTarget.value;
+    function handleSearch(e) {
+        let filterValue = e.currentTarget.value;
         let oTable = $('#GrantApplicationsTable').dataTable();
         oTable.fnFilter(filterValue);
         if (filterValue.length > 0) {
