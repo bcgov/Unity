@@ -7,5 +7,6 @@ namespace Unity.GrantManager.Attachments
     {
         [Required]
         public Guid S3Guid { get; set; }
+        public string Name { get; set; }
     }
 }
