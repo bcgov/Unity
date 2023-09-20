@@ -46,6 +46,19 @@
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.grantApplications.grantApplication.getList
             ),
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'csv',
+                    text: 'Export',
+                    className: 'btn btn-light csv-download',
+                    exportOptions: {
+                        columns: [10, 15, 11, 9, 1, 12, 13, 5, 7, 4, 14, 16],
+                        orthogonal: 'fullName',
+                    }
+                }
+                
+            ],
             drawCallback:function() {
                 var $api = this.api();
                 var pages = $api.page.info().pages;
@@ -73,26 +86,26 @@
                 addFilterRow(api);
             },
             columnDefs: [
-                {
+                { //0
                     title: '',
                     className: 'select-checkbox',
                     render: function (data) {
                         return '';
                     },
                 },
-                {
+                { //1
                     title: l('ProjectName'),
                     data: 'projectName',
                     name: 'projectName',
                     className: 'data-table-header',
                 },
-                {
+                { //2
                     title: l('ReferenceNo'),
                     data: 'referenceNo',
                     name: 'referenceNo',
                     className: 'data-table-header',
                 },
-                {
+                { //3
                     title: l('EligibleAmount'),
                     data: 'eligibleAmount',
                     name: 'eligibleAmount',
@@ -101,7 +114,7 @@
                         return formatter.format(data);
                     },
                 },
-                {
+                { //4
                     title: l('RequestedAmount'),
                     data: 'requestedAmount',
                     name: 'requestedAmount',
@@ -110,22 +123,26 @@
                         return formatter.format(data);
                     },
                 },
-                {
+                { //5
                     title: l('Assignee'),
                     data: 'assignees',
                     name: 'assignees',
                     className: 'data-table-header',
-                    render: function (data) {
-                        let disaplayText = ' ';
-                        if(data != null && data.length == 1) {
-                            disaplayText = data[0].assigneeDisplayName;
-                        } else if(data.length > 1) {
-                            disaplayText = l('Multiple assignees')
+                    render: function (data, type, row) {
+                     
+                        if (data != null && data.length == 1) {
+                            return type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
+                        } else if (data && data.length > 1) {
+
+                            return type === 'fullName' ? getNames(data) : l('Multiple assignees')
                         }
-                        return disaplayText;
+                        else {
+                            return '';
+                        }
+                       
                     },
                 },
-                {
+                { //6
                     title: l('Probability'),
                     data: 'probability',
                     name: 'probability',
@@ -138,7 +155,7 @@
                         return disaplayText;
                     },
                 },
-                {
+                { //7
                     title: l('GrantApplicationStatus'),
                     data: "status",
                     name: "status",
@@ -151,7 +168,7 @@
                         return disaplayText;
                     },
                 },
-                {
+                { //8
                     title: l('ProposalDate'),
                     data: 'proposalDate',
                     name: "proposalDate",
@@ -162,7 +179,7 @@
                         }).toLocaleString();
                     },
                 },
-                {
+                { //9
                     title: l('SubmissionDate'),
                     data: 'submissionDate',
                     name: "submissionDate",
@@ -171,6 +188,68 @@
                         return luxon.DateTime.fromISO(data, {
                             locale: abp.localization.currentCulture.name,
                         }).toLocaleString();
+                    },
+                },
+                { //10
+                    title: 'Applicant Name',
+                    name: 'applicantName',
+                    className: 'data-table-header',
+                    visible: false,
+                    render: function (data) {
+                        return '';
+                    },
+                },
+                { //11
+                    title: 'Category',
+                    name: 'category',
+                    className: 'data-table-header',
+                    visible: false,
+                    render: function (data) {
+                        return '';
+                    },
+                },
+                { //12
+                    title: 'Sector',
+                    name: 'sector',
+                    className: 'data-table-header',
+                    visible: false,
+                    render: function (data) {
+                        return '';
+                    },
+                },
+                { //13
+                    title: 'Total Project Budget',
+                    name: 'totalProjectBudget',
+                    className: 'data-table-header',
+                    visible: false,
+                    render: function (data) {
+                        return '';
+                    },
+                },
+                { //14
+                    title: 'Final Decision Date',
+                    name: 'finalDecisionDate',
+                    className: 'data-table-header',
+                    visible: false,
+                    render: function (data) {
+                        return '';
+                    },
+                },
+                { //15
+                    title: 'Application #',
+                    name: 'uniqueIdentifier',
+                    data: 'referenceNo',
+                    className: 'data-table-header',
+                    visible: false,
+                },
+                { //16
+                    title: 'Approved Amount',
+                    name: 'approved Amount',
+                    data: 'eligibleAmount',
+                    className: 'data-table-header',
+                    visible: false,
+                    render: function (data) {
+                        return formatter.format(data);
                     },
                 },
             ],
@@ -232,6 +311,14 @@
     dataTable.on('click', 'tbody tr', function (e) {
         e.currentTarget.classList.toggle('selected');
     });
+    dataTable
+        .buttons()
+        .container()
+        .prependTo('#dynamicButtonContainerId');
+
+    $('.csv-download').removeClass('dt-button buttons-csv buttons-html5');
+    $('.csv-download').prepend('<i class="fl fl-export"></i>');
+
 
     const refresh_application_list_subscription = PubSub.subscribe(
         'refresh_application_list',
@@ -240,4 +327,18 @@
             PubSub.publish('clear_selected_application');
         }
     );
+
+
+    function getNames(data) {
+        let name = '';
+        data.forEach((d,index)=> {
+            name = name + ' ' + d.assigneeDisplayName;
+
+            if(index != (data.length - 1)) {
+                name = name + ',';
+            }
+        });
+
+        return name;
+    }
 });
