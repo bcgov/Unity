@@ -269,3 +269,7 @@
 .fl-save:before {
     content: '\E74E';
 }
+
+.fl-edit:before {
+    content: '\E70F';
+}

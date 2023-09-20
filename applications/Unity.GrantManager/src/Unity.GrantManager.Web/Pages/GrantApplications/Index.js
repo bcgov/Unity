@@ -6,16 +6,17 @@
     const createdCell = getCreatedCell();
     let dt = $('#GrantApplicationsTable');
     let userOptions = document.getElementById('users');
-    let dataTable, currentRow, currentCell;
+    let dataTable, currentRow, previousRow, currentCell, previousCell, originalContent, previousUserOptionsSelected, currentUserOptionsSelected;
     let userDivChanged = false;
     let modifiedAssignments = new Map();
 
     const UIElements = {
         searchBar: $('#search-bar'),
-        btnFilter: $('#btn-filter'),
+        btnFilter: $('#btn-sort'),
         btnSave: $('#btn-save'),
         userDiv: $('#users-div'),
-        users: $('#users')
+        users: $('#users'),
+        closeSort: $('#close-sort')
     };
 
     init();
@@ -28,7 +29,8 @@
 
     function bindUIEvents() {
         UIElements.btnFilter.on('click', toggleFilterRow);
-        UIElements.btnSave.on('click', handleSave);        
+        UIElements.closeSort.on('click', toggleFilterRow);
+        UIElements.btnSave.on('click', handleSave);
         UIElements.userDiv.on('change', markUserDivAsChanged);
         UIElements.userDiv.on('blur', checkUserDivChanged);
         UIElements.users.on('blur', checkUserDivChanged);
@@ -40,6 +42,7 @@
     dataTable.on('select', function(e, dt, type, indexes) {
         selectApplication(type, indexes, 'select_application');
     });
+
     dataTable.on('deselect', function(e, dt, type, indexes) {
         selectApplication(type, indexes, 'deselect_application');
     });    
@@ -131,13 +134,27 @@
         modifiedAssignments.set(aData.id, aData.assignees);
     }
 
+    function getUserOptionSelectedCount() {
+        let userOptionSelectedCount = 0;
+        let userOption, i;
+        for (i = 0; i < userOptions.length; i++) {
+            userOption = userOptions[i];
+            if($(userOption).prop('selected')) {
+                userOptionSelectedCount++;
+            }
+        }
+        return userOptionSelectedCount;
+    }
+
     function getCreatedCell() {
         return function (cell) {
             cell.setAttribute('contenteditable', true);
             cell.addEventListener('focus', function (e) {
                 checkUserDivChanged();
-    
+                
                 if (e.target.children.length == 0) {
+
+                    let currentContent = e.target.textContent;
                     e.target.textContent = '';
                     currentRow = e.target.parentElement._DT_RowIndex;
                     let assigness = dataTable.row(e.target.parentElement).context[0]
@@ -147,9 +164,18 @@
                     $(assigness).each(function (key, assignee) {
                         assigneeIds.push(assignee.oidcSub);
                     });
-    
-                    let userOption, i;
-    
+
+                    previousUserOptionsSelected = getUserOptionSelectedCount();
+
+                    if(originalContent != "" 
+                        && previousCell+"" != "undefined"
+                        && previousCell.textContent == ""
+                        && previousUserOptionsSelected > 0
+                        && currentRow != previousRow
+                    )  {
+                        previousCell.textContent = originalContent;
+                    } 
+                    
                     for (i = 0; i < userOptions.length; i++) {
                         userOption = userOptions[i];
                         $(userOption).prop(
@@ -157,11 +183,27 @@
                             assigneeIds.includes(userOption.value)
                         );
                     }
-    
+
+                    if(originalContent != " " 
+                        && previousCell+"" != "undefined"
+                        && currentUserOptionsSelected+"" != "undefined"
+                        && previousUserOptionsSelected == currentUserOptionsSelected
+                        && currentRow != previousRow
+                    )  {
+                        previousCell.textContent = originalContent;
+                    }
+
+                    currentUserOptionsSelected = getUserOptionSelectedCount();
+
                     $(userDiv).appendTo(this);
                     $('#users').select2();
                     userDiv.classList.remove('hidden');
                     $('ul').click();
+
+                    originalContent = currentContent;
+                    previousCell = this;
+                    previousRow = currentRow;
+                    
                 }
                 currentCell = this;
             });
@@ -184,7 +226,7 @@
         abp.libs.datatables.normalizeConfiguration({
             serverSide: false,
             paging: true,
-            order: [[3, 'asc']],
+            order: [[4, 'desc']],
             searching: true,
             pageLength: maxRowsPerPage,
             scrollX: true,
@@ -243,6 +285,12 @@
                     className: 'data-table-header',
                 },
                 {
+                    title: 'Category',
+                    data: 'projectName',
+                    name: 'projectName',
+                    className: 'data-table-header',
+                },
+                {
                     title: l('SubmissionDate'),
                     data: 'submissionDate',
                     name: 'submissionDate',
@@ -252,12 +300,6 @@
                             locale: abp.localization.currentCulture.name,
                         }).toLocaleString();
                     },
-                },
-                {
-                    title: l('ProjectName'),
-                    data: 'projectName',
-                    name: 'projectName',
-                    className: 'data-table-header',
                 },
                 {
                     title: l('EligibleAmount'),
@@ -281,7 +323,7 @@
                     title: l('Assignee'),
                     data: 'assignees',
                     name: 'assignees',
-                    className: 'data-table-header',
+                    className: 'dt-editable',
                     createdCell: createdCell,
                     render: function (data, type, row) {
                         let disaplayText = ' ';
@@ -375,6 +417,9 @@
                         .draw();
                 });
                 child.appendChild(inputFilter);
+            } else {
+                child.classList.add('close-icon');
+                child.addEventListener('click', toggleFilterRow);
             }
             trNode.appendChild(child);
         });
