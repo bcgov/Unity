@@ -185,19 +185,21 @@
                         </div>
 
                         <div class="m-3">
-                            <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
+                            <h6 class="fw-bold py-2 m-0">Recommendation</h6>
+                            <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" suppress-label="true" asp-items="@Model.ActionList" class="recom-select custom-input">
                                 <option value="null" disabled>Please Choose...</option>
                             </abp-select>
                         </div>
 
-                        <div class="px-3 pt-2">
+                        <div class="p-3">
                             <h6 class="fw-bold m-0">Comments</h6>
                             <div id="assessmentCommentsWidget">
                                 @await Component.InvokeAsync("CommentsWidget", new { commentType = 1 })
                             </div>
                         </div>
                     </div>
-                    </div>
+                </div>
+
                     <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
                         <h6>History View</h6>
 

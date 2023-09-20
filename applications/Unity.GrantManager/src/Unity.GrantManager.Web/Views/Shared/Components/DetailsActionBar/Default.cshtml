@@ -7,7 +7,7 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 
-<div class="action-bar p-2">
+<div class="action-bar active p-2">
     <div class="d-flex align-items-start justify-content-start gap-2"> 
         @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Approvals.Complete))
         {
