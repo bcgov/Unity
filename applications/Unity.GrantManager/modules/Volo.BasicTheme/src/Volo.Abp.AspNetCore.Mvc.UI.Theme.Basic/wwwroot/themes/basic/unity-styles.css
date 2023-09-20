@@ -4,21 +4,21 @@
 :root {
     /* bc style colors */
     --bc-colors-grey-text-500: #313131;
+    --bc-colors-grey-text-300: #666;
+    --bc-colors-grey-text-200: #918F8F;
+    --bc-colors-grey-text-100: #C7C7C7;
     --bc-colors-blue-text-links: #1A5A96;
     --bc-colors-white-background: #F2F2F2;
-    --bc-colors-grey-text-300: #666;
     --bc-colors-blue-primary-500: #003366;
     --bc-colors-white-primary-500: #FFF;
     --bc-colors-grey-pressed: #E6EFF7;
-    --bc-colors-grey-text-500: #313131;
     --bc-colors-grey-hover: #F2F8FC;
-    --bc-colors-grey-text-100: #C7C7C7;
     --bc-colors-grey-dividers: #D6D6D6;
     --bc-colors-blue-hover: #ADDBFF;
     /* bc style variables */
     --bc-font-size: 1rem;
     --bc-font-size-sm: 0.833rem;
-    --bc-font-size-ex-sm: 0.694rem;
+    --bc-font-size-xs: 0.694rem;
     --bc-input-field-height: 34px;
     /*boostrap overrides*/
     --bs-primary: var(--bc-colors-blue-primary-500);
@@ -72,7 +72,7 @@
 
 .unity-app-main-container {
     height: calc(100vh - 8rem);
-    padding: 0.25rem;
+    padding: 0.5rem;
     overflow-y: scroll;
     overflow-x: hidden;
 }
@@ -80,7 +80,8 @@
 .unity-user-initials {
     border-radius: 75%;
     padding: 4px;
-    min-width: 30px;
+    width: 32px;
+    height: 32px;
     font-weight: 700;
     text-align: center;
     font-size: .95rem;
@@ -115,3 +116,14 @@
         border-top-left-radius: 0;
     }
 
+
+.unity-user-fullname .user-name-full {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+}
+
+.unity-user-fullname .user-role-full {
+    font-size: var(--bc-font-size-xs);
+    color: var(--bc-colors-grey-text-200);
+    text-overflow: ellipsis;
+}

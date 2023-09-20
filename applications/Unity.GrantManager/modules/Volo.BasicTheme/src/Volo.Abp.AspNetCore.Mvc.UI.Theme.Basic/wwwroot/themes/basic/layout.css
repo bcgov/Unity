@@ -235,7 +235,7 @@ body {
 }
 
 .dataTables_scrollBody {
-    min-height: 248px;
+    min-height: 240px;
 }
 
 div.dataTables_wrapper div.dataTables_info {
@@ -294,4 +294,12 @@ div.dataTables_wrapper div.dataTables_length label {
 }
 .nav-item a{
     padding : 1rem;
+}
+
+.fs-5 {
+    font-size: 0.83313rem !important;
+}
+
+.fs-6 {
+    font-size: 0.69438rem !important;
 }

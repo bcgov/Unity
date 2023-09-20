@@ -79,7 +79,7 @@
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",
     "AssessmentResultAttachments:UploadedDate": "Date",
-    "AssessmentResultAttachments:AttachedBy": "Attached By",
+    "AssessmentResultAttachments:AttachedBy": "Attached by",
 
 
     "Permission:GrantManagerManagement": "Grant Manager Management",

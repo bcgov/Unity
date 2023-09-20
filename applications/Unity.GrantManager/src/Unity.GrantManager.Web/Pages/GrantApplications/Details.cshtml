@@ -28,8 +28,8 @@
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
    
-        <abp-row>
-        <abp-column size="_8">
+        <abp-row class="m-0">
+        <abp-column size="_8" class="p-0">
                  <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
                     <abp-tab name="nav-summery" active="true" title="Application Summary">
@@ -135,7 +135,7 @@
                 </abp-tabs>
            </abp-card>
             </abp-column>
-            <abp-column size="_4">
+            <abp-column size="_4" class="pe-0 ps-2">
               <abp-card>
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -155,41 +155,47 @@
                     </li>
       
                 </ul>
-            <div class="tab-content p-3" id="myTabContent">
+            <div class="tab-content" id="myTabContent">
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
-                   <div id="reviewDetails" style="display:none">                 
-                    <abp-row>
-                        <abp-column size="_12">
+                    <div id="reviewDetails" style="display:none">
 
-                            @await Component.InvokeAsync("AssessmentResultAttachments")
+                        <h6 class="fw-bold px-3 py-4 m-0">Reviewer Name</h6>
 
-                        </abp-column>
-                    </abp-row>
-                    <abp-row>
-                        <abp-column size="_12">                           
-                                <abp-row>
-                                    <abp-column size="_12" class="add-review-btn-container">
-                                        <input type="file" id="assessment_upload" style="display:none" />
-
-                                        <abp-button text="Add Attachments"
-                                                    id="assessment_upload_btn"
-                                                    class="assessment-upload-btn"
-                                                    icon-type="Other"
-                                                    icon="fl fl-plus"
-                                                    button-type="Light" />
-                                    </abp-column>
-                                </abp-row>
-                                <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
-                                    <option value="null" disabled >Please Choose...</option>
-                            </abp-select>
-                        </abp-column>
-                    </abp-row>
-                    <abp-row>
-                        <label>Comments</label>
-                        <div id="assessmentCommentsWidget">
-                            @await Component.InvokeAsync("CommentsWidget", new { commentType = 1 })
+                        <div class="py-2 px-4 d-flex align-items-center unity-user-fullname">
+                            <div class="unity-user-initials me-2">MF</div>
+                            <div>
+                                <div class="user-name-full">Fenske, Melissa JEDI:EX</div>
+                                <div class="user-role-full">Program Coordinator, Small Business & Economic Development Division</div>
+                            </div>
                         </div>
-                    </abp-row>
+
+                        <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Result Attachments</h6>
+
+                        @await Component.InvokeAsync("AssessmentResultAttachments")
+
+                        <div class="add-review-btn-container px-3 mt-3">
+                            <input type="file" id="assessment_upload" style="display:none" />
+
+                            <abp-button text="Add Attachments"
+                                        id="assessment_upload_btn"
+                                        class="assessment-upload-btn"
+                                        icon-type="Other"
+                                        icon="fl fl-plus"
+                                        button-type="Light" />
+                        </div>
+
+                        <div class="m-3">
+                            <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
+                                <option value="null" disabled>Please Choose...</option>
+                            </abp-select>
+                        </div>
+
+                        <div class="px-3 pt-2">
+                            <h6 class="fw-bold m-0">Comments</h6>
+                            <div id="assessmentCommentsWidget">
+                                @await Component.InvokeAsync("CommentsWidget", new { commentType = 1 })
+                            </div>
+                        </div>
                     </div>
                     </div>
                     <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
