@@ -160,6 +160,10 @@
         color: #333;
     }
 
+    .recom-select:disabled {
+        color: #333;
+    }
+
 .back-button-container {
     justify-content: left;
     align-items: start;

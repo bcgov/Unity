@@ -198,6 +198,7 @@ $(function () {
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
+                checkCurrentUser(data);
             }
             else {
                 $('#reviewDetails').hide();
@@ -284,6 +285,20 @@ const update_application_attachment_count_subscription = PubSub.subscribe(
 
     }
 );
+
+const checkCurrentUser = function (data) {
+    var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+
+    if (currentUserId == data.creatorId) {
+        $('#recommendation_select').prop('disabled', false);
+        $('#assessment_upload_btn').prop('disabled', false);
+    }
+    else {
+        $('#recommendation_select').prop('disabled', 'disabled');
+        $('#assessment_upload_btn').prop('disabled', 'disabled');
+    }
+};
+
 
 function updateCommentsCounters() {
     setTimeout(() => {
