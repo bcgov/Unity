@@ -11,5 +11,6 @@ module.exports = {
         '@node_modules/datatables.net-select-bs/js': '@libs/datatables/js',
         '@node_modules/datatables.net-select-bs/css': '@libs/datatables/css',
         '@node_modules/pubsub-js/src': '@libs/pubsub-js/src',
+        '@node_modules/datatables.net-buttons/js': '@libs/datatables.net-buttons/js',
     },
 };
