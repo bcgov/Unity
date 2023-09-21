@@ -193,20 +193,13 @@ namespace Unity.GrantManager.GrantApplications
         {
             foreach (Guid applicationId in applicationIds)
             {
-                try
+                var application = await _applicationRepository.GetAsync(applicationId);
+                IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
+                var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(AssigneeKeycloakId)).ToList();
+                // Only remove the assignee if they were already assigned
+                if (application != null && assignments != null)
                 {
-                    var application = await _applicationRepository.GetAsync(applicationId);
-                    IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
-                    var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(AssigneeKeycloakId)).ToList();
-                    // Only remove the assignee if they were already assigned
-                    if (application != null && assignments != null)
-                    {
-                        await _userAssignmentRepository.DeleteAsync(assignments.FirstOrDefault());
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.ToString());
+                    await _userAssignmentRepository.DeleteAsync(assignments.FirstOrDefault());
                 }
             }
         }

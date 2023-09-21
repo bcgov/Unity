@@ -268,6 +268,7 @@
                 {
                     title: '',
                     className: 'select-checkbox',
+                    orderable: false,
                     render: function (data) {
                         return '';
                     },

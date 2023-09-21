@@ -17,8 +17,8 @@ table.dataTable>tbody>tr.even.selected>.select-checkbox {
 }
 
 
-table.dataTable>tbody>tr>td.select-checkbox:before,
-table.dataTable>tbody>tr>th.select-checkbox:before {
+table.dataTable>tbody>tr>td.select-checkbox:before
+{
     border: 1px solid #1A5A96;
     border-radius: 26px;
     color: white;
@@ -27,10 +27,11 @@ table.dataTable>tbody>tr>th.select-checkbox:before {
     top: 55%;
     left: 48%;
     margin-top: -10px;
+    cursor: pointer;
 }
 
 table.dataTable>tbody>tr>td.select-checkbox:before:hover,
-table.dataTable>tbody>tr>th.select-checkbox:before:hover {
+table.dataTable>tbody>thead>th.select-checkbox:before:hover {
     border: 1px solid #1A5A96;
 }
 
