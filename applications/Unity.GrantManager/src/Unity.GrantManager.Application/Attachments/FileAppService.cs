@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Volo.Abp.Application.Services;
 using Volo.Abp.BlobStoring;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Attachments
 {
@@ -36,6 +37,11 @@ namespace Unity.GrantManager.Attachments
             await _fileContainer.SaveAsync(saveBlobInputDto.Name, saveBlobInputDto.Content, true);
         }
 
+        async Task<bool> IFileAppService.DeleteBlobAsync(DeleteBlobRequestDto deleteBlobRequestDto)
+        {             
+            return await _fileContainer.DeleteAsync(deleteBlobRequestDto.S3Guid.ToString());  
+        }
+
         private string GetMimeType(string fileName)
         {
             var provider = new FileExtensionContentTypeProvider();
@@ -46,5 +52,6 @@ namespace Unity.GrantManager.Attachments
             return contentType;
         }
 
+        
     }
 }

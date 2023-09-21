@@ -7,5 +7,6 @@ namespace Unity.GrantManager.Attachments
     {
         Task SaveBlobAsync(SaveBlobInputDto saveBlobInputDto);
         Task <BlobDto> GetBlobAsync(GetBlobRequestDto getBlobRequestDto);
+        Task<bool> DeleteBlobAsync(DeleteBlobRequestDto deleteBlobRequestDto);
     }
 }
