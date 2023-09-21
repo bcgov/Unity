@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading.Tasks;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.EntityFrameworkCore;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
-using Unity.GrantManager.Assessments;
 
 namespace Unity.GrantManager.Repositories
 {
@@ -13,6 +15,14 @@ namespace Unity.GrantManager.Repositories
     {
         public AssessmentsRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
         {
+
+        }
+
+        public async Task<bool> ExistsAsync(Guid applicationId, Guid userId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.AnyAsync(x =>
+                x.ApplicationId == applicationId && x.AssignedUserId == userId);
         }
     }
 }

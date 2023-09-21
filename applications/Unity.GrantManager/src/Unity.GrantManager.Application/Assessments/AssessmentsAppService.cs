@@ -37,7 +37,7 @@ namespace Unity.GrantManager.Assessments
             _userLookupProvider = userLookupProvider;
         }
 
-        [Authorize(GrantApplicationPermissions.Adjudications.Start)]
+        //[Authorize(GrantApplicationPermissions.Adjudications.Start)]
         public async Task<AssessmentDto> CreateAssessment(CreateAssessmentDto dto)
         {
             Application application = await _applicationRepository.GetAsync(dto.ApplicationId);
@@ -54,10 +54,55 @@ namespace Unity.GrantManager.Assessments
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(comments.OrderByDescending(s => s.CreationTime).ToList()));
         }
 
-        public async Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId)
+        // NOTE: For debugging only
+        public async Task<AssessmentDto> GetMyAssessment(Guid applicationId)
+        {
+            var assessment = await _assessmentsRepository
+                .GetAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
+            return ObjectMapper.Map<Assessment, AssessmentDto>(assessment);
+        }
+
+        // NOTE: For debugging only
+        public async Task<List<string>> GetMyActions(Guid applicationId)
+        {
+            var assessment = await _assessmentsRepository
+                .GetAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
+
+            if (assessment is null)
+            {
+                return new List<string> { "Create" };
+            }
+
+            return await GetAvailableActions(assessment.Id);
+        }
+
+        public static List<string?> GetAllActions()
+        {
+            // NOTE: Replace with static wokflow class
+            var blankAssessment = new Assessment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+            var allTriggers = blankAssessment.GetAllWorkflowActions();
+            return allTriggers.ToList();
+        }
+
+        public static string? GetWorkflowDiagram()
+        {
+            // NOTE: Replace with static wokflow class
+            var blankAssessment = new Assessment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+            return blankAssessment.GetWorkflowDiagram();
+        }
+
+        public async Task<List<string>> GetAvailableActions(Guid assessmentId)
         {
             var assessment = await _assessmentsRepository.GetAsync(assessmentId);
-            return assessment.GetActions().ToList();
+            var actions = assessment.GetActions();
+            return actions.Select(a => a.ToString()).ToList();
+        }
+
+        public async Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction = AssessmentAction.SendToTeamLead)
+        {
+            var assessment = await _assessmentsRepository.GetAsync(assessmentId);
+            var newAssessment = await assessment.ExecuteActionAsync(triggerAction);
+            return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentsRepository.UpdateAsync(newAssessment, autoSave: true));
         }
 
         public async Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto)
@@ -70,13 +115,10 @@ namespace Unity.GrantManager.Assessments
                     assessment.ApprovalRecommended = dto.ApprovalRecommended;
                    await _assessmentsRepository.UpdateAsync(assessment);
                 }
-
-
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error updating  assessment recommendation");
-                // TODO: Exception handling
             }
         }
     }

@@ -1,7 +1,11 @@
 ﻿using Stateless;
+using Stateless.Graph;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Unity.GrantManager.Assessments
@@ -18,12 +22,12 @@ namespace Unity.GrantManager.Assessments
         public bool? ApprovalRecommended { get; set; }
 
         public AssessmentState Status { get; private set; }
-        private readonly StateMachine<AssessmentState, AssessmentAction> _workflow;
+        private StateMachine<AssessmentState, AssessmentAction> _workflow { get; set; }
 
         private Assessment()
         {
             /* This constructor is for deserialization / ORM purpose */
-            _workflow = new StateMachine<AssessmentState, AssessmentAction>(AssessmentState.IN_PROGRESS);
+            ConfigureWorkflow();
         }
 
         public Assessment(
@@ -37,15 +41,15 @@ namespace Unity.GrantManager.Assessments
             AssignedUserId = assignedUserId;
             Status = status;
 
-            _workflow = new StateMachine<AssessmentState, AssessmentAction>(
-                () => Status, 
-                s => Status = s);
-
             ConfigureWorkflow();
         }
 
         private void ConfigureWorkflow()
         {
+            _workflow = new StateMachine<AssessmentState, AssessmentAction>(
+                () => Status,
+                s => Status = s);
+
             _workflow.Configure(AssessmentState.IN_PROGRESS)
                 .Permit(AssessmentAction.SendToTeamLead, AssessmentState.IN_REVIEW);
 
@@ -61,6 +65,7 @@ namespace Unity.GrantManager.Assessments
         private void OnResolved()
         {
             EndDate = DateTime.UtcNow;
+            IsComplete = true;
         }
 
         private void OnReopened()
@@ -78,6 +83,19 @@ namespace Unity.GrantManager.Assessments
             return _workflow.GetPermittedTriggers();
         }
 
+        public IEnumerable<string?> GetAllWorkflowActions()
+        {
+            var workflowInfo = _workflow.GetInfo();
+            return workflowInfo.States
+                .SelectMany((x) => x.Transitions)
+                .Select((x) => x.Trigger.UnderlyingTrigger.ToString());
+        }
+
+        public string? GetWorkflowDiagram()
+        {
+            return UmlDotGraph.Format(_workflow.GetInfo());
+        }
+
         /// <summary>
         /// The current <see cref="AssessmentState" /> of the <see cref="Assessment"/>.
         /// </summary>
@@ -93,15 +111,16 @@ namespace Unity.GrantManager.Assessments
             }
         }
 
-        public Assessment ExecuteAction(AssessmentAction action)
+        public async Task<Assessment> ExecuteActionAsync(AssessmentAction action)
         {
             if (_workflow.CanFire(action))
             {
-                _workflow.Fire(action);
+                await _workflow.FireAsync(action);
             }
             else
             {
-                throw new BusinessException($"Cannot transition from {GetWorkflowState} via {action}");
+                throw new BusinessException("InvalidStateTransition",
+                    $"Cannot transition from {GetWorkflowState} via {action}");
             }
 
             return this;
