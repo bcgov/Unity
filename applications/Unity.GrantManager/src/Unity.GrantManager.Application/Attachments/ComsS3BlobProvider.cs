@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
@@ -10,6 +12,7 @@ using Unity.GrantManager.Assessments;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -19,7 +22,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
     private readonly IAdjudicationAttachmentRepository _adjudicationAttachmentRepository;
     private readonly IApplicationRepository _applicationRepository;
-    private readonly IAssessmentsRepository _assessmentsRepository;
+    private readonly IAssessmentRepository _assessmentsRepository;
 
     public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAdjudicationAttachmentRepository adjudicationAttachmentRepository, IApplicationRepository applicationRepository, IAssessmentsRepository assessmentsRepository)
     {
@@ -30,9 +33,55 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         _assessmentsRepository = assessmentsRepository;
     }
 
-    public override Task<bool> DeleteAsync(BlobProviderDeleteArgs args)
+    public override async Task<bool> DeleteAsync(BlobProviderDeleteArgs args)
     {
-        throw new NotImplementedException();
+        string s3guid = args.BlobName;
+        var attachmentType = _httpContextAccessor.HttpContext.Request.Form["AttachmentType"];        
+        var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+        var baseUri = config.BaseUri;
+        var username = config.Username;
+        var password = config.Password;
+        if (!baseUri.EndsWith("/"))
+        {
+            baseUri += "/";
+        }
+        var client = new HttpClient();
+        var request = new HttpRequestMessage(HttpMethod.Delete, baseUri + "object/" + s3guid);
+        var authenticationString = $"{username}:{password}";
+        var base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(authenticationString));
+        request.Headers.Add("Authorization", "Basic " + base64EncodedAuthenticationString);
+        var response = await client.SendAsync(request);
+        if (response.IsSuccessStatusCode || (int) response.StatusCode==502) // 502 response means file is already deleted
+        {
+            if(attachmentType == "Application")
+            {
+                IQueryable<ApplicationAttachment> queryableAttachment = _applicationAttachmentRepository.GetQueryableAsync().Result;
+                ApplicationAttachment attachment = queryableAttachment.FirstOrDefault(a => a.S3Guid.Equals(new Guid(s3guid)));
+                if(attachment != null)
+                {
+                    await _applicationAttachmentRepository.DeleteAsync(attachment);
+                }
+            }
+            else if (attachmentType == "Adjudication")
+            {
+                IQueryable<AdjudicationAttachment> queryableAttachment = _adjudicationAttachmentRepository.GetQueryableAsync().Result;
+                AdjudicationAttachment attachment = queryableAttachment.FirstOrDefault(a => a.S3Guid.Equals(new Guid(s3guid)));
+                if (attachment != null)
+                {
+                    await _adjudicationAttachmentRepository.DeleteAsync(attachment);
+                }
+            }
+            else
+            {
+                throw new AbpValidationException("Wrong AttachmentType:"+attachmentType);
+            }
+            return await Task.FromResult(true);
+        }
+        else
+        {
+            return await Task.FromResult(false);
+        }
+        
     }
 
     public override Task<bool> ExistsAsync(BlobProviderExistsArgs args)
