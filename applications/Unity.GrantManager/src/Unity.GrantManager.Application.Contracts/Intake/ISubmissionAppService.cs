@@ -24,5 +24,5 @@ public interface ISubmissionAppService : IApplicationService
     /// </summary>
     /// <param name="formSubmissionId">ID of the Submission</param>
     /// <returns>SubmissionFormVersion</returns>
-    Task<object> GetSubmission(Guid? formSubmissionId);
+    Task<object?> GetSubmission(Guid? formSubmissionId);
 }
