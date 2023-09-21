@@ -246,14 +246,6 @@ select.selected{
     margin-top: 1.2rem;
 }
 
-.col-8 {
-    padding-right: 8px;
-}
-
-.col-4 {
-    padding-left: 8px;
-}
-
 #application_attachment_upload_btn{
     margin-top:0.8rem;
 }

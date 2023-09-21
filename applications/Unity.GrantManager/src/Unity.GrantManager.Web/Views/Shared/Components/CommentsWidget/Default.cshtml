@@ -27,28 +27,21 @@
     {
         @if (comment != null)
         {
-            <div>
-                <abp-container class="read-mode" data-id="@comment.Id">
-                    <abp-row>
-                        <abp-column size="_8">
-                            <span style="color: #666666; font-size: 0.89rem;  font-weight: 700; word-wrap: break-word">
-                               @comment.Commenter
-                            </span>
-                        </abp-column>
-                        <abp-column size="_4">
-                            <div class="comment-edit-btn-wrapper">
-                                <span class="edit-button" data-id="@comment.Id" >...</span>
-                            </div>
-                        </abp-column>
-                    </abp-row>
-                    <abp-row>
-                        <abp-column size="_12" class="comment-lbl-wrapper">
-                            <label class="comment-lbl" data-id="@comment.Id">@comment.Comment</label>
-                        </abp-column>
-                    </abp-row>
-                    <div class="comment-time">@comment.CreationTime</div>
-
-                </abp-container>
+            <div class="mb-2">
+                <div class="unity-comment-block read-mode" data-id="@comment.Id">
+                    <div class="d-flex justify-content-between">
+                        <div class="fw-bold">
+                            @comment.Commenter
+                        </div>
+                        <div class="comment-edit-btn-wrapper">
+                            <span class="edit-button" data-id="@comment.Id">...</span>
+                        </div>
+                    </div>
+                    <div data-id="@comment.Id">
+                        @comment.Comment
+                    </div>
+                    <div class="commented-time mt-3">@comment.CreationTime</div>
+                </div>
 
                 <div class="single-comment edit-mode" data-id="@comment.Id"  style="display: none;">
                     <textarea class="form-control comment-input-mutliple" placeholder="Update the comment" data-id="@comment.Id">@comment.Comment</textarea>                    

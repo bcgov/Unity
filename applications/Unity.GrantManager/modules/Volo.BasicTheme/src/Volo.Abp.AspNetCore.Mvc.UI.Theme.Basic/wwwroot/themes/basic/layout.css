@@ -303,3 +303,19 @@ div.dataTables_wrapper div.dataTables_length label {
 .fs-6 {
     font-size: 0.69438rem !important;
 }
+
+.form-select {
+    background-color: var(--bc-colors-grey-pressed);
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: 0.1875rem;
+    border: none;
+}
+    .form-select:hover {
+        box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
+    }
+    .form-select:focus, .form-select:active {
+        background-color: var(--bc-colors-grey-pressed);
+        color: var(--bc-colors-grey-text-500);
+        font-weight: 700;
+    }
