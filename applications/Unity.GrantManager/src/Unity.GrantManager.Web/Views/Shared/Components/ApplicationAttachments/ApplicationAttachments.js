@@ -62,16 +62,29 @@
                         title: '',
                         data: 's3Guid',
                         render: function (data, type, full, meta) {
-                            var html = '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
+                            /*var html = '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
                             html += '" target="_blank" download="' + data + '" style="text-decoration:none">';
                             html += '<button class="btn btn-light" type="submit"><i class="fl fl-attachment-more" ></i></button>';
                             html += '</a > ';
+                            return html;*/
+                            var html = '<div class="dropdown" style="float:right;">';
+                            html += '<button class="btn btn-light dropbtn" type="button"><i class="fl fl-attachment-more" ></i></button>';
+                            html += '<div class="dropdown-content">';
+                            html += '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
+                            html += '" target="_blank" download="' + data + '" class="fullwidth">';
+                            html += '<button class="btn fullWidth" style="margin:20px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
+                            html += '<button class="btn fullWidth" style="margin:20px" type="button" onclick="deleteApplicationAttachment(\'' + data;
+                            html += '\',\'' + full.fileName + '\')"><i class="fl fl-cancel"></i><span>Delete Attachment</span></button>';
+                            html += '</div>';
+                            html += '</div>';
                             return html;
                         }
                     }
                 ],
             })
-        );
+    );
+
+    
 
 
     dataTable.on('select', function (e, dt, type, indexes) {
@@ -98,4 +111,24 @@
             dataTable.ajax.reload();
         }
     );
+});
+
+var deleteAttachmentModal = new abp.ModalManager({
+    viewUrl: '../Attachments/DeleteAttachmentModal'
+});
+
+function deleteApplicationAttachment(s3guid, fileName) {    
+    deleteAttachmentModal.open({
+        s3guid: s3guid,
+        fileName: fileName,
+        attachmentType: 'Application',
+    });
+}
+
+deleteAttachmentModal.onResult(function () {
+    abp.notify.success(
+        'Attachment is successfully deleted.',
+        'Delete Attachment'
+    );
+    PubSub.publish("refresh_application_attachment_list");
 });
