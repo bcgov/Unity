@@ -4,7 +4,7 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Unity.GrantManager.Applications;
 
-public class ApplicationForm : AuditedAggregateRoot<Guid>
+public class ApplicationForm : FullAuditedAggregateRoot<Guid>
 {
     public Guid IntakeId { get; set; }
 
