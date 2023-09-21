@@ -85,7 +85,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                 var statusList = await _statusService.GetListAsync();
                 var selectedStatus = statusList.ToList().Find(x => x.StatusCode == ApplicationStatusConsts.SUBMITTED);
 
-                if (selectedStatus != null)
+                if (null != selectedStatus && null != applicationIds)
                 {
                     await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), selectedStatus.Id);
                 }

@@ -20,7 +20,7 @@ public class ApplicationRepository : EfCoreRepository<GrantManagerDbContext, App
     {
     }
 
-    public async Task<List<Application>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter)
+    public async Task<List<Application>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter = "")
     {
         var dbSet = await GetDbSetAsync();
         return await dbSet

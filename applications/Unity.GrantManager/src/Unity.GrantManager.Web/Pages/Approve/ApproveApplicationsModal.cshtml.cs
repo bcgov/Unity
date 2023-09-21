@@ -55,7 +55,7 @@ public class ApproveApplicationsModalModel : AbpPageModel
             }
             else
             {
-                throw new Exception(OperationStatusCode + " status code is not found in the database!");
+                throw new ArgumentException(OperationStatusCode + " status code is not found in the database!");
             }
 
             var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
