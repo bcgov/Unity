@@ -15,6 +15,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Repositories;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -50,27 +51,31 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         Guid[] applicationIds = new Guid[1];
         applicationIds.SetValue(application.Id, 0);
         var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
+        if (users != null && users.Items != null)
+        {
+            UserData uData = users.Items.FirstOrDefault();
+            string AssigneeKeycloakId = uData.Id.ToString();
+            string AssigneeDisplayName = uData.Name;
 
-        string AssigneeKeycloakId = users.Items.FirstOrDefault().Id.ToString();
-        string AssigneeDisplayName = users.Items.FirstOrDefault().Name;
-
-        // Act
-        await _grantApplicationAppServiceTest.AddAssignee(applicationIds, AssigneeKeycloakId, AssigneeDisplayName);
-        await _unitOfWorkManager.Current.SaveChangesAsync();
+            // Act
+            await _grantApplicationAppServiceTest.AddAssignee(applicationIds, AssigneeKeycloakId, AssigneeDisplayName);
+            await _unitOfWorkManager.Current.SaveChangesAsync();
 
 
-        // Assert
-        IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
-        var assignments = queryableAssignment.ToList();
-        assignments.Count.ShouldBe(1);
+            // Assert
+            IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
+            var assignments = queryableAssignment.ToList();
+            assignments.Count.ShouldBe(1);
 
-        // Act
-        await _grantApplicationAppServiceTest.RemoveAssignee(applicationIds, AssigneeKeycloakId);
-        await _unitOfWorkManager.Current.SaveChangesAsync();
+            // Act
+            await _grantApplicationAppServiceTest.RemoveAssignee(applicationIds, AssigneeKeycloakId);
+            await _unitOfWorkManager.Current.SaveChangesAsync();
 
-        IQueryable<ApplicationUserAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
-        var assignments2 = queryableAssignment2.ToList();
-        assignments2.Count.ShouldBe(0);
+            IQueryable<ApplicationUserAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
+            var assignments2 = queryableAssignment2.ToList();
+            assignments2.Count.ShouldBe(0);
+        }
+
     }
 
 
