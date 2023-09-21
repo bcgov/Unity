@@ -1,4 +1,4 @@
-﻿$(function () {
+﻿$(document).ready(function () {
     console.log('Script loaded');
     const l = abp.localization.getResource('GrantManager');
     let inputAction = function (requestData, dataTableSettings) {
@@ -6,7 +6,7 @@
         const applicationId = urlParams.get('ApplicationId');
         return applicationId;
     }
-    
+
     let responseCallback = function (result) {
 
         // your custom code.
@@ -17,73 +17,186 @@
         };
     };
 
-    const reviewListTable = $('#ReviewListTable').DataTable(
+    $.fn.unityPlugin = {};
+    $.fn.unityPlugin.formatDate = function (data) {
+        if (data === null) return '—';
+
+        return luxon.DateTime.fromISO(data, {
+            locale: abp.localization.currentCulture.name,
+        }).toLocaleString();
+    }
+
+    $.fn.unityPlugin.renderEnum = (data) => l('Enum:AssessmentState.' + data);
+
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn btn-light';
+    $.fn.dataTable.Buttons.defaults.dom.button.liner.tag = false;
+
+    $.extend(DataTable.ext.buttons, {
+        unityWorkflow: {
+            className: 'btn btn-light',
+            buttonIcon: 'fl-review',
+            enabled: false,
+            text: function (dt, jqNode, config) {
+                let buttonIcon = `<i class="fl ${config.buttonIcon}"></i>`;
+                let buttonText = l(`Enum:AssessmentAction.${config.name}`);
+                return buttonIcon + '<span>' + buttonText + '</span>'
+            },
+            action: function (e, dt, node, config) {
+                let selectedRow = dt.rows({ selected: true }).data()[0];
+                if (typeof(selectedRow) === 'object') {
+                    unity.grantManager.assessments.assessments.executeAssessmentAction(selectedRow.id, config.name, {})
+                        .then(function (result) {
+                            PubSub.publish('refresh_review_list', selectedRow.id);
+                            abp.notify.success(
+                                String(result),
+                                l(`Enum:AssessmentAction.${config.name}`)
+                            );
+                        });
+                }
+            }
+        }
+    });
+
+    let actionArray = ['Create'];
+    let additionalActions;
+
+    // NOTE: FIND A BETTER WAY OF DOING THIS USING PROMISES
+    unity.grantManager.assessments.assessments.getAllActions({
+        async: false,
+        success: function (data) {
+            additionalActions = data;
+        }
+    });
+
+    actionArray.push(...additionalActions);
+
+    let renderButtons = function (actionValue) {
+        return {
+            extend: 'unityWorkflow',
+            name: actionValue,
+            // TODO: Get configured icons
+            buttonIcon: 'fl-endpoint'
+        };
+    }
+    
+    // Filter out Team Lead Actions
+    const teamLeadActions = ['Confirm', 'SendBack'];
+    const bifurcateBy = (arr, fn) =>
+        arr.reduce((acc, val) => (acc[fn(val) ? 0 : 1].push(val), acc), [[], []]);
+
+    let buttonArray = Array.from(actionArray, (item) => renderButtons(item));
+    let buttonGroups = bifurcateBy(buttonArray, x => !teamLeadActions.includes(x.name));
+    
+    let adjudicationButtonsGroup = {
+        name: 'adjudicatorActionButtons',
+        buttons: buttonGroups[0]
+    };
+
+    let teamLeadButtonGroup = {
+        buttons: [
+            {
+                extend: 'collection',
+                name: 'teamLeadActions',
+                text: 'Team Lead Actions',
+                className: 'btn btn-light',
+                enabled: false,
+                display: false,
+                buttons: buttonGroups[1]
+            }
+        ]
+    }
+
+    let reviewListTable = $('#ReviewListTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
+            dom: 'Bfrtip',
             serverSide: true,
-            order: [[1, 'asc']],
+            order: [],
             searching: false,
             paging: false,
-            select: true,
+            select: {
+                style: 'single'
+            },
             info: false,
             scrollX: true,
+            lengthChange: false,
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.assessments.assessments.getList, inputAction, responseCallback
             ),
+            buttons: adjudicationButtonsGroup,
             columnDefs: [
                 {
                     title: '',
                     data: 'id',
-                    visible : false,
-                },
-                {
-                    title: '',
-                    render: function (data) {
-                        return '<i class="fl fl-review-user" ></i>';
-                    }
+                    visible: false,
                 },
                 {
                     title: l('ReviewerList:ReviewerName'),
-                    data: 'reviewerName',
+                    data: 'assignedUserId',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data ? data : 'Reviewer Name';
+                        if (abp.currentUser.id === data) {
+                            return 'Patrick Lavoie';
+                        }
+                        return data;
                     },
                 },
                 {
                     title: l('ReviewerList:StartDate'),
                     data: 'startDate',
                     className: 'data-table-header',
-                    render: function (data) {
-                        return  data ? new Date(data).toDateString() : '';
-                    },
+                    render: $.fn.unityPlugin.formatDate
                 },
                 {
                     title: l('ReviewerList:EndDate'),
                     data: 'endDate',
                     className: 'data-table-header',
-                    render: function (data) {
-                        return data ? new Date(data).toDateString() : '';
-                    },
+                    render: $.fn.unityPlugin.formatDate
                 },
                 {
                     title: l('ReviewerList:Status'),
                     data: 'status',
                     className: 'data-table-header',
-                    render: function (data) {
-                        return data;
-                    },
+                    render: $.fn.unityPlugin.renderEnum,
                 },
                 {
                     title: l('ReviewerList:Recommended'),
                     data: 'approvalRecommended',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data === null ? '' :( data === true ? 'Recommended for Approval' : 'Recommended for Denial');
+                        return data === null ? '' : (data === true ? 'Recommended for Approval' : 'Recommended for Denial');
                     },
-                },
+                }
             ],
         })
     );
+
+    reviewListTable.on('buttons-action', function (e, buttonApi, dataTable, node, config) {
+        console.log('Button ' + buttonApi.name + ' was activated');
+    });
+
+    // Add team lead buttons separately
+    new $.fn.dataTable.Buttons(reviewListTable, teamLeadButtonGroup);
+
+    reviewListTable.buttons(0, null).container().appendTo("#DetailsActionBarStart");
+    reviewListTable.buttons(1, null).container().appendTo("#AdjudicationTeamLeadActionBar");
+    $("#DetailsActionBarStart .dt-buttons").contents().unwrap();
+
+    let refreshActionButtons = function (dataTableContext, assessmentId) {
+        dataTableContext.buttons().disable();
+
+        if (assessmentId) 
+        {
+            unity.grantManager.assessments.assessments.getAvailableActions(assessmentId, {})
+                .then(function (actionListResult) {
+                    // Check permissions
+                    let enabledButtons = actionListResult.map((x) => x + ':name');
+                    if (actionListResult.some(item => teamLeadActions.includes(item))) {
+                        enabledButtons.push('teamLeadActions:name');
+                    }
+                    dataTableContext.buttons(enabledButtons).enable();
+                });
+        }
+    }
 
     reviewListTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {
@@ -91,26 +204,24 @@
             console.log('Selected Data:', selectedData);
             PubSub.publish('select_application_review', selectedData);
             e.currentTarget.classList.toggle('selected');
+            refreshActionButtons(dt, selectedData.id);
         }
     });
-
-  
 
     reviewListTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
             let deselectedData = reviewListTable.row(indexes).data();
             PubSub.publish('select_application_review', null);
             e.currentTarget.classList.toggle('selected');
+            refreshActionButtons(dt, null);
         }
     });
-
 
     const refresh_review_list_subscription = PubSub.subscribe(
         'refresh_review_list',
          (msg, data) => {
              reviewListTable.ajax.reload(function (json) {
                  if (data) {
-                     //var row = reviewListTable.row(0).select();
                      let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
                          return reviewListTable.cell(rowIdx, 0).data() === data ? true : false;
                      });
@@ -121,7 +232,4 @@
         
         }
     );
-
-
- 
 });

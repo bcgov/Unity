@@ -81,6 +81,20 @@
     "AssessmentResultAttachments:UploadedDate": "Date",
     "AssessmentResultAttachments:AttachedBy": "Attached By",
 
+    "Enum:AssessmentState.IN_PROGRESS": "In Progress",
+    "Enum:AssessmentState.IN_REVIEW": "In Review",
+    "Enum:AssessmentState.COMPLETED": "Completed",
+
+    "Enum:AssessmentState.0": "In Progress",
+    "Enum:AssessmentState.1": "In Review",
+    "Enum:AssessmentState.2": "Completed",
+
+    "Enum:AssessmentAction.Create": "Create Adjudication",
+    "Enum:AssessmentAction.SendTo": "Send To...",
+    "Enum:AssessmentAction.SendToTeamLead": "Send for Team Lead Review",
+    "Enum:AssessmentAction.Confirm": "Confirm",
+    "Enum:AssessmentAction.SendBack": "Send Back",
+    "Enum:AssessmentAction.UndoComplete": "Restart Assessment (Demo)",
 
     "Permission:GrantManagerManagement": "Grant Manager Management",
     "Permission:GrantManagerManagement.Default": "Default",
@@ -102,6 +116,8 @@
     "Permission:GrantApplicationManagement.Comments.Default": "Comments",
     "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment",
     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
-    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles"
+    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
+
+    "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user."
   }
 }
