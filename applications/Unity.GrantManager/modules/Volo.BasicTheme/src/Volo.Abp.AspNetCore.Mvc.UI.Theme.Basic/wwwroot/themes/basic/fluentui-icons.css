@@ -261,3 +261,7 @@
 .fl-cross:before {
     content: '\F78A';
 }
+
+.fl-export:before {
+    content: '\EDE2';
+}
