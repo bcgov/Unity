@@ -273,3 +273,7 @@
 .fl-edit:before {
     content: '\E70F';
 }
+
+.fl-export:before {
+    content: '\EDE2';
+}

@@ -25,6 +25,9 @@
         $('#users').select2();
         bindUIEvents();
         dataTable = initializeDataTable();
+        dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
+        $('.csv-download').removeClass('dt-button buttons-csv buttons-html5');
+        $('.csv-download').prepend('<i class="fl fl-export"></i>');
     }
 
     function bindUIEvents() {
@@ -237,6 +240,18 @@
                 style: 'multiple',
                 selector: 'td:not(:nth-child(8))',
             },
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'csv',
+                    text: 'Export',
+                    className: 'btn btn-light csv-download',
+                    exportOptions: {
+                        columns: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11],
+                        orthogonal: 'fullName',
+                    }
+                }
+            ],
             drawCallback: function () {
                 let $api = this.api();
                 let pages = $api.page.info().pages;
@@ -265,7 +280,7 @@
                 api.columns.adjust();
             },
             columnDefs: [
-                {
+                { //0
                     title: '',
                     className: 'select-checkbox',
                     orderable: false,
@@ -273,25 +288,25 @@
                         return '';
                     },
                 },
-                {
+                { //1
                     title: 'Applicant Name',
                     data: 'applicant',
                     name: 'applicant',
                     className: 'data-table-header',
                 },
-                {
+                { //2
                     title: 'Application #',
                     data: 'referenceNo',
                     name: 'referenceNo',
                     className: 'data-table-header',
                 },
-                {
+                { //3
                     title: 'Category',
                     data: 'projectName',
                     name: 'projectName',
                     className: 'data-table-header',
                 },
-                {
+                { //4
                     title: l('SubmissionDate'),
                     data: 'submissionDate',
                     name: 'submissionDate',
@@ -302,25 +317,25 @@
                         }).toLocaleString();
                     },
                 },
-                {
-                    title: l('EligibleAmount'),
-                    data: 'eligibleAmount',
-                    name: 'eligibleAmount',
+                { //5
+                    title: 'Sector',
+                    name: 'sector',
                     className: 'data-table-header',
+                    visible: false,
                     render: function (data) {
-                        return formatter.format(data);
+                        return '';
                     },
                 },
-                {
-                    title: l('RequestedAmount'),
-                    data: 'requestedAmount',
-                    name: 'requestedAmount',
+                { //6
+                    title: 'Total Project Budget',
+                    name: 'totalProjectBudget',
                     className: 'data-table-header',
+                    visible: false,
                     render: function (data) {
-                        return formatter.format(data);
+                        return '';
                     },
                 },
-                {
+                { //7
                     title: l('Assignee'),
                     data: 'assignees',
                     name: 'assignees',
@@ -328,28 +343,17 @@
                     createdCell: createdCell,
                     render: function (data, type, row) {
                         let disaplayText = ' ';
+
                         if (data != null && data.length == 1) {
-                            disaplayText = data[0].assigneeDisplayName;
+                            disaplayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
                         } else if (data.length > 1) {
-                            disaplayText = l('Multiple assignees');
+                            disaplayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
                         }
+
                         return disaplayText;
                     },
                 },
-                {
-                    title: l('Probability'),
-                    data: 'probability',
-                    name: 'probability',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        let disaplayText = ' ';
-                        if (data != null && data.length == 1) {
-                            disaplayText = data[0].assigneeDisplayName;
-                        }
-                        return disaplayText;
-                    },
-                },
-                {
+                { //8
                     title: l('GrantApplicationStatus'),
                     data: 'status',
                     name: 'status',
@@ -362,20 +366,37 @@
                         return disaplayText;
                     },
                 },
-                {
-                    title: l('ProposalDate'),
-                    data: 'proposalDate',
-                    name: 'proposalDate',
+                { //9
+                    title: l('RequestedAmount'),
+                    data: 'requestedAmount',
+                    name: 'requestedAmount',
                     className: 'data-table-header',
                     render: function (data) {
-                        return luxon.DateTime.fromISO(data, {
-                            locale: abp.localization.currentCulture.name,
-                        }).toLocaleString();
+                        return formatter.format(data);
+                    },
+                },
+                { //10
+                    title: 'Final Decision Date',
+                    name: 'finalDecisionDate',
+                    className: 'data-table-header',
+                    visible: false,
+                    render: function (data) {
+                        return '';
+                    },
+                },
+                { //11
+                    title: 'Approved Amount',
+                    name: 'approved Amount',
+                    data: 'eligibleAmount',
+                    className: 'data-table-header',
+                    visible: false,
+                    render: function (data) {
+                        return formatter.format(data);
                     },
                 },
             ],
         })
-    );
+       );
     }
 
     function addFilterRow(api) {
@@ -454,4 +475,17 @@
             PubSub.publish('clear_selected_application');
         }
     );
+
+    function getNames(data) {
+        let name = '';
+        data.forEach((d,index)=> {
+            name = name + ' ' + d.assigneeDisplayName;
+
+            if(index != (data.length - 1)) {
+                name = name + ',';
+            }
+        });
+
+        return name;
+    }
 });
