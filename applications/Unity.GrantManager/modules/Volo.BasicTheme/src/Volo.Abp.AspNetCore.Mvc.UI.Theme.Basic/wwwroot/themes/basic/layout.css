@@ -133,6 +133,11 @@ body {
     font-size: var(--bc-font-size);
 }
 
+.dataTables_wrapper table th {
+    color: var(--bc-colors-grey-text-500);
+    font-weight: 800;
+}
+
 .pagination {
     --bs-pagination-color: var(--bc-colors-grey-text-500);
     --bs-pagination-bg: var(--bc-colors-grey-pressed);
@@ -234,9 +239,6 @@ body {
     font-size: 0.8em;
 }
 
-.dataTables_scrollBody {
-    min-height: 240px;
-}
 
 div.dataTables_wrapper div.dataTables_info {
     padding-top: 11px;

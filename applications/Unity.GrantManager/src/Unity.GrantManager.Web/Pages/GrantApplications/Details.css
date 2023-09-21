@@ -220,19 +220,11 @@ select.selected{
     border: 1px solid rgba(0, 51, 102, 38%) !important;
     background-color: #fff !important;
 }
-.fl-review-list-container {
-    justify-content: left;
-    align-items: start;
-    gap: 8px;
-    display: flex;
-}
+
     
     .review-list-heading{
         margin-left:0.5rem;
        margin-top:0.3rem;
-    }
-    .fl-review-list {
-        font-size: 1.5rem;
     }
 
 .mb-2.card.border {

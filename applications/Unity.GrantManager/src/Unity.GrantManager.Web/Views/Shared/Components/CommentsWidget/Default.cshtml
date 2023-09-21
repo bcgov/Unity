@@ -9,7 +9,7 @@
 }
 
 <div class="row">
-    <div class="col-12 mt-4">
+    <div class="col-12 mt-2">
         <div class="comments-div">
             <div class="single-comment">
                 <textarea class="form-control comment-input" placeholder="Add a comment" data-ownerId="@Model.OwnerId" id="addCommentTextArea@(Model.OwnerId)"></textarea>                
@@ -22,7 +22,7 @@
     </div>
 </div>
 
-<div id="comments-div@(Model.OwnerId)" class="comments-container row" style="margin-top:10px;" data-type="@Model.CommentType" data-count="@Model.Comments.Count" data-counttag="application_comments_count">
+<div id="comments-div@(Model.OwnerId)" class="mt-2" data-type="@Model.CommentType" data-count="@Model.Comments.Count" data-counttag="application_comments_count">
     @foreach (var comment in Model.Comments)
     {
         @if (comment != null)
