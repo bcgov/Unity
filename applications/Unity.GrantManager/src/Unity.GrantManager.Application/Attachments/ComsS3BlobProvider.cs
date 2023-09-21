@@ -1,14 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Web;
 using Unity.GrantManager.Applications;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.DependencyInjection;
@@ -48,49 +44,53 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         var baseUri = config.BaseUri;
         var username = config.Username;
         var password = config.Password;
-        if(!baseUri.EndsWith("/"))        
+        if (!baseUri.EndsWith("/"))
         {
             baseUri += "/";
         }
         var client = new HttpClient();
-        var request = new HttpRequestMessage(HttpMethod.Put, baseUri+"object?bucketId="+bucketId);
-        request.Content = new StreamContent(args.BlobStream);
+        var request = new HttpRequestMessage(HttpMethod.Put, baseUri + "object?bucketId=" + bucketId)
+        {
+            Content = new StreamContent(args.BlobStream)
+        };
         request.Content.Headers.Remove("Content-Disposition");
         var contentDisposition = "attachment; filename=" + Uri.EscapeDataString(args.BlobName) + "; filename*=UTF-8''" + Uri.EscapeDataString(args.BlobName);
         request.Content.Headers.Add("Content-Disposition", contentDisposition);
         var authenticationString = $"{username}:{password}";
         var base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(authenticationString));
 
-        request.Headers.Add("Authorization", "Basic "+ base64EncodedAuthenticationString);
-        
+        request.Headers.Add("Authorization", "Basic " + base64EncodedAuthenticationString);
+
         var response = await client.SendAsync(request);
-        if((int)response.StatusCode==409)
+        if ((int)response.StatusCode == 409)
         {
             throw new Exception("File Already Existing.");
-        } else if ((int)response.StatusCode == 200)
+        }
+        else if ((int)response.StatusCode == 200)
         {
             response.EnsureSuccessStatusCode();
             var responseStr = await response.Content.ReadAsStringAsync();
-            BlobSaveResult result = JsonSerializer.Deserialize<BlobSaveResult>(responseStr);
-            var queryParams = _httpContextAccessor.HttpContext.Request.Query;
-            var body = _httpContextAccessor.HttpContext.Request.Body;            
-            StringValues applicationId;
-            StringValues currentUserId;            
-            queryParams.TryGetValue("ApplicationId", out applicationId);
-            queryParams.TryGetValue("CurrentUserId", out currentUserId);            
-            await _applicationAttachmentRepository.InsertAsync(
-                new ApplicationAttachment
+            BlobSaveResult? result = JsonSerializer.Deserialize<BlobSaveResult>(responseStr);
+            if (result != null)
+            {
+                var queryParams = _httpContextAccessor.HttpContext.Request.Query;
+                if (queryParams.TryGetValue("ApplicationId", out StringValues applicationId) && queryParams.TryGetValue("CurrentUserId", out StringValues currentUserId))
                 {
-                    ApplicationId = new Guid(applicationId.ToString()),
-                    S3Guid = result.id,
-                    UserId = currentUserId.ToString(),
-                    Time = DateTime.Now,
-                    FileName = args.BlobName,
-                });
+                    await _applicationAttachmentRepository.InsertAsync(
+                        new ApplicationAttachment
+                        {
+                            ApplicationId = new Guid(applicationId.ToString()),
+                            S3Guid = result.Id,
+                            UserId = currentUserId.ToString(),
+                            Time = DateTime.Now,
+                            FileName = args.BlobName,
+                        });
+                }
+            }
         }
         else
         {
-            throw new Exception("Error in uploading file. Http Status Code:" +  response.StatusCode );
+            throw new Exception("Error in uploading file. Http Status Code:" + response.StatusCode);
         }
 
     }
@@ -98,5 +98,5 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
 
 class BlobSaveResult
 {
-    public Guid id { get; set; }
+    public Guid Id { get; set; }
 }

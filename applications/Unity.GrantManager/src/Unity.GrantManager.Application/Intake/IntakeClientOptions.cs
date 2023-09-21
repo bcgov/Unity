@@ -2,13 +2,13 @@
 
 public class IntakeClientOptions
 {
-    public string BaseUri { get; set; }
+    public string BaseUri { get; set; } = string.Empty;
 
-    public string FormId { get; set; }
+    public string FormId { get; set; } = string.Empty;
 
-    public string ApiKey { get; set; }
+    public string ApiKey { get; set; } = string.Empty;
 
-    public string BearerTokenPlaceholder { get; set; }
+    public string BearerTokenPlaceholder { get; set; } = string.Empty;
 
     public bool UseBearerToken { get; set; }
 }

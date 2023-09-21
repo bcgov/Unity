@@ -77,7 +77,10 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
                 var userName = $"{selectedUser.Name} {selectedUser.Surname}";
 
-                await _applicationService.AddAssignee(applicationIds.ToArray(), AssigneeId.ToString(), userName);
+                if (null != applicationIds)
+                {
+                    await _applicationService.AddAssignee(applicationIds.ToArray(), AssigneeId.ToString(), userName);
+                }
 
                 var statusList = await _statusService.GetListAsync();
                 var selectedStatus = statusList.ToList().Find(x => x.StatusCode == ApplicationStatusConsts.SUBMITTED);

@@ -1,19 +1,18 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Volo.Abp.Application.Dtos;
-using Volo.Abp.Application.Services;
-using Volo.Abp.Domain.Repositories;
-using System.Linq.Dynamic.Core;
-using Microsoft.AspNetCore.Authorization;
 using System.Diagnostics;
-using Volo.Abp.DependencyInjection;
+using System.Linq;
+using System.Linq.Dynamic.Core;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
-using Volo.Abp.Domain.Entities;
 using Unity.GrantManager.Exceptions;
-using Volo.Abp.Users;
+using Volo.Abp.Application.Dtos;
+using Volo.Abp.Application.Services;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -34,7 +33,7 @@ namespace Unity.GrantManager.GrantApplications
         private readonly IApplicationStatusRepository _applicationStatusRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
-        private readonly ICommentsManager _commentsManager;                
+        private readonly ICommentsManager _commentsManager;
 
         public GrantApplicationAppService(
             IRepository<GrantApplication, Guid> repository,
@@ -63,12 +62,14 @@ namespace Unity.GrantManager.GrantApplications
                         join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                         select new { application, appStatus };
 
-            try {
+            try
+            {
                 query = query
                     .OrderBy(NormalizeSorting(input.Sorting))
                     .Skip(input.SkipCount)
                     .Take(input.MaxResultCount);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
             }
@@ -82,7 +83,7 @@ namespace Unity.GrantManager.GrantApplications
             {
                 var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
                 appDto.Status = x.appStatus.InternalStatus;
-                appDto.Assignees = getAssignees(x.application.Id);
+                appDto.Assignees = GetAssignees(x.application.Id);
                 return appDto;
             }).ToList();
 
@@ -95,7 +96,7 @@ namespace Unity.GrantManager.GrantApplications
             );
         }
 
-        public List<GrantApplicationAssigneeDto> getAssignees(Guid applicationId)
+        private List<GrantApplicationAssigneeDto> GetAssignees(Guid applicationId)
         {
             IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).ToList();
@@ -106,19 +107,20 @@ namespace Unity.GrantManager.GrantApplications
 
         public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
         {
-            ApplicationFormSubmission applicationFormSubmission = new ApplicationFormSubmission();
+            ApplicationFormSubmission applicationFormSubmission = new();
             var application = await _applicationRepository.GetAsync(applicationId);
-
             if (application != null)
             {
                 IQueryable<ApplicationFormSubmission> queryableFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
-
                 if (queryableFormSubmissions != null)
                 {
-                    applicationFormSubmission = queryableFormSubmissions.Where(a => a.ApplicationFormId.Equals(application.ApplicationFormId)).FirstOrDefault();
+                    var dbResult = queryableFormSubmissions.FirstOrDefault(a => a.ApplicationFormId.Equals(application.ApplicationFormId));
+                    if (dbResult != null)
+                    {
+                        applicationFormSubmission = dbResult;
+                    }
                 }
             }
-
             return applicationFormSubmission;
         }
 

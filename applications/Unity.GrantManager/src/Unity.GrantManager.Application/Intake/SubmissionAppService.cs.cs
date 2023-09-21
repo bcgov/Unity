@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Configuration;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq.Dynamic.Core;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -39,33 +37,45 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
     public async Task<object> GetSubmission(Guid? formSubmissionId)
     {
         if (formSubmissionId == null)
+        {
             throw new ApiException(400, "Missing required parameter 'formId' when calling GetSubmission");
+        }
 
         var request = new RestRequest($"/submissions/{formSubmissionId}");
         var response = await _intakeClient.GetAsync(request);
 
         if (((int)response.StatusCode) >= 400)
-            throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.Content, response.ErrorException);
+        {
+            throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.Content, response.ErrorException ?? new object());
+        }
         else if (((int)response.StatusCode) == 0)
-            throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.ErrorMessage, response.ErrorMessage);
+        {
+            throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.ErrorMessage, response.ErrorMessage ?? new object());
+        }
 
-        return response.Content;
+        return response.Content ?? string.Empty;
     }
 
     public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId)
     {
-        if (formId == null) 
+        if (formId == null)
+        {
             throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
-        
+        }
+
         var request = new RestRequest($"/forms/{formId}/submissions", Method.Get)
             .AddParameter("fields", _summaryFieldsFilter.JoinAsString(","));
 
         var response = await _intakeClient.GetAsync(request);
 
         if (((int)response.StatusCode) >= 400)
-            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.Content, response.ErrorException);
+        {
+            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.Content, response.ErrorException ?? new object());
+        }
         else if (((int)response.StatusCode) == 0)
-            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.ErrorMessage, response.ErrorMessage);
+        {
+            throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.ErrorMessage, response.ErrorMessage ?? new object());
+        }
 
         var submissionOptions = new System.Text.Json.JsonSerializerOptions
         {
@@ -75,14 +85,18 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        List<FormSubmissionSummaryDto> jsonResponse
-            = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content, submissionOptions);
 
-        // Remove all deleted and draft submissions
-        jsonResponse.RemoveAll(r => r.Deleted || r.FormSubmissionStatusCode != "SUBMITTED");
+        List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
 
-        return new PagedResultDto<FormSubmissionSummaryDto>(
-            jsonResponse.Count,
-            jsonResponse);
+        if (null == jsonResponse)
+        {
+            return new PagedResultDto<FormSubmissionSummaryDto>(0, null);
+        }
+        else
+        {
+            // Remove all deleted and draft submissions
+            jsonResponse.RemoveAll(r => r.Deleted || r.FormSubmissionStatusCode != "SUBMITTED");
+            return new PagedResultDto<FormSubmissionSummaryDto>(jsonResponse.Count, jsonResponse);
+        }
     }
 }

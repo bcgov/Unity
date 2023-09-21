@@ -12,7 +12,7 @@ public class UpdateModalModel : GrantManagerPageModel
     public Guid Id { get; set; }
 
     [BindProperty]
-    public CreateUpdateGrantProgramDto GrantProgram { get; set; }
+    public CreateUpdateGrantProgramDto GrantProgram { get; set; } = new();
 
     private readonly IGrantProgramAppService _grantProgramAppService;
 

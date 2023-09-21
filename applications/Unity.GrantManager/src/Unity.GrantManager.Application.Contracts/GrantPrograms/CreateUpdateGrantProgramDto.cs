@@ -1,13 +1,13 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-using Unity.GrantManager.GrantPrograms;
+namespace Unity.GrantManager.GrantPrograms;
 
 public class CreateUpdateGrantProgramDto
 {
     [Required]
     [StringLength(128)]
-    public string ProgramName { get; set; }
+    public string ProgramName { get; set; } = string.Empty;
 
     [Required]
     public GrantProgramType Type { get; set; } = GrantProgramType.Undefined;
