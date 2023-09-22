@@ -238,6 +238,10 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         request.Content = content;
         var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
+        if((int) response.StatusCode != 201)
+        {
+            throw new NotImplementedException("COMS setup is not yet implemented.");
+        }
         var responseStr = await response.Content.ReadAsStringAsync();
         CreateBucketIdResult result = JsonSerializer.Deserialize<CreateBucketIdResult>(responseStr);
         return new Guid(result.bucketId);
