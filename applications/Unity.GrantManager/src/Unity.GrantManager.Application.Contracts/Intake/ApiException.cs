@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace Unity.GrantManager.Intake;
 
+[Serializable]
 public class ApiException : Exception
 {
     /// <summary>
@@ -41,5 +43,9 @@ public class ApiException : Exception
     {
         ErrorCode = errorCode;
         ErrorContent = errorContent;
+    }
+
+    protected ApiException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
+    {
     }
 }

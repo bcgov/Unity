@@ -1,21 +1,6 @@
-$(function () {       
-    let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
+$(function () {
     let selectedReviewDetails = null;
-
-    const formatter = new Intl.NumberFormat('en-CA', {
-        style: 'currency',
-        currency: 'CAD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
-    let assignApplicationModal = new abp.ModalManager({
-        viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
-    });  
-
-
-    const l = abp.localization.getResource('GrantManager');
-
+    abp.localization.getResource('GrantManager');
 
     function formatChefComponents(data) {
         // Advanced Components
@@ -87,7 +72,6 @@ $(function () {
     }
     async function getSubmission() {
         try {
-            let isLoading = true;
             let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
             unity.grantManager.intake.submission
                 .getSubmission(submissionId)
@@ -116,8 +100,7 @@ $(function () {
         }
     }
 
- 
-    let result = getSubmission();
+    getSubmission();
     // Wait for the DOM to be fully loaded
     function addEventListeners() {
         // Get all the card headers
@@ -167,20 +150,18 @@ $(function () {
     $('#recommendation_select').change(function () {
 
         let value = $(this).val();
-        
         updateRecommendation(value, selectedReviewDetails.id);
     });
 
-    function updateRecommendation(value,id) {     
+    function updateRecommendation(value, id) {
         try {
             let data = { "approvalRecommended": value, "assessmentId": id }
-            unity.grantManager.assessments.assessment.updateAssessmentRecommendation
-                (data)
+            unity.grantManager.assessments.assessment.updateAssessmentRecommendation(data)
                 .done(function () {
                     abp.notify.success(
                         'The recommendation has been updated.'
                     );
-                    PubSub.publish('refresh_review_list', id);                 
+                    PubSub.publish('refresh_review_list', id);
                 });
 
         }
@@ -192,7 +173,7 @@ $(function () {
     PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
-            if (data) {                
+            if (data) {
                 selectedReviewDetails = data;
                 $('#reviewDetails').show();
                 let selectElement = document.getElementById("recommendation_select");
@@ -201,7 +182,7 @@ $(function () {
             }
             else {
                 $('#reviewDetails').hide();
-            }         
+            }
         }
     );
 
@@ -214,19 +195,19 @@ $(function () {
 });
 
 function uploadFiles(inputId) {
-    var input = document.getElementById(inputId);
-    var applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
-    var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
-    var files = input.files;
-    var formData = new FormData();
-    const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
-    const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
+    const input = document.getElementById(inputId);
+    const applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
+    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
+    const files = input.files;
+    const formData = new FormData();
+    const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val()));
+    const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
     let isAllowedTypeError = false;
     let isMaxFileSizeError = false;
     if (files.length == 0) {
         return;
     }
-    for (var i = 0; i != files.length; i++) {   
+    for (let i = 0; i < files.length; i++) {
         console.log(files[i]);
         if (!allowedTypes.includes(files[i].type)) {
             isAllowedTypeError = true;
@@ -239,7 +220,7 @@ function uploadFiles(inputId) {
     }
 
     if (isAllowedTypeError) {
-       return abp.notify.error(
+        return abp.notify.error(
             'Error',
             'File type not supported'
         );
@@ -262,11 +243,11 @@ function uploadFiles(inputId) {
                 abp.notify.success(
                     data.responseText,
                     'File Upload Is Successful'
-                ); 
+                );
 
-                PubSub.publish('refresh_application_attachment_list');  
+                PubSub.publish('refresh_application_attachment_list');
             },
-            error: function (data) {                
+            error: function (data) {
                 abp.notify.error(
                     data.responseText,
                     'File Upload Not Successful'
@@ -307,7 +288,7 @@ function initCommentsWidget() {
 
     let assessmentCommentsWidgetManager = new abp.WidgetManager({
         wrapper: '#assessmentCommentsWidget',
-        filterCallback: function () {            
+        filterCallback: function () {
             return {
                 'ownerId': selectedReviewDetails.id,
                 'commentType': 1
@@ -317,7 +298,7 @@ function initCommentsWidget() {
 
     PubSub.subscribe(
         'ApplicationComment_refresh',
-        () => {            
+        () => {
             applicationCommentsWidgetManager.refresh();
             updateCommentsCounters();
         }
@@ -325,10 +306,10 @@ function initCommentsWidget() {
 
     PubSub.subscribe(
         'AssessmentComment_refresh',
-        (_, data) => {            
+        (_, data) => {
             if (data?.review) {
                 selectedReviewDetails = data.review;
-            }            
+            }
             assessmentCommentsWidgetManager.refresh();
             updateCommentsCounters();
         }

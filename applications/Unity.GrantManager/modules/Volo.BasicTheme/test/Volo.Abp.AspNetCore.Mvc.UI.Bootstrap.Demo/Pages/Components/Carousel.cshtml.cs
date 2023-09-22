@@ -6,6 +6,6 @@ public class CarouselsModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

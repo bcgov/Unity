@@ -21,6 +21,6 @@ public class DropdownsModel : PageModel
 
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

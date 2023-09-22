@@ -64,7 +64,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         var response = await client.SendAsync(request);
         if ((int)response.StatusCode == 409)
         {
-            throw new Exception("File Already Existing.");
+            throw new IOException("File Already Existing.");
         }
         else if ((int)response.StatusCode == 200)
         {
@@ -90,7 +90,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         }
         else
         {
-            throw new Exception("Error in uploading file. Http Status Code:" + response.StatusCode);
+            throw new IOException("Error in uploading file. Http Status Code:" + response.StatusCode);
         }
 
     }

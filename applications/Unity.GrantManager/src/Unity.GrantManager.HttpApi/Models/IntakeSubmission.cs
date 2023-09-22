@@ -1,7 +1,6 @@
-﻿using System;
-namespace Unity.GrantManager.Models
+﻿namespace Unity.GrantManager.Models
 {
-	public class IntakeSubmission
+    public class IntakeSubmission
 	{
         public required string formId { get; set; }
         public required string submissionId { get; set; }

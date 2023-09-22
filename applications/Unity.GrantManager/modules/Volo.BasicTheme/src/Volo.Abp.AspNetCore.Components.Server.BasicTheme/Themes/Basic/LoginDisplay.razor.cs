@@ -1,7 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
+using System;
+using System.Threading.Tasks;
 using Volo.Abp.UI.Navigation;
 
 namespace Volo.Abp.AspNetCore.Components.Server.BasicTheme.Themes.Basic;
@@ -28,5 +28,6 @@ public partial class LoginDisplay : IDisposable
     public void Dispose()
     {
         Navigation.LocationChanged -= OnLocationChanged;
+        GC.SuppressFinalize(this);
     }
 }

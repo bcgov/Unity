@@ -43,6 +43,7 @@ public partial class LoginDisplay : IDisposable
     {
         Navigation.LocationChanged -= OnLocationChanged;
         ApplicationConfigurationChangedService.Changed -= ApplicationConfigurationChanged;
+        GC.SuppressFinalize(this);
     }
 
     private async Task NavigateToAsync(string uri, string target = null)

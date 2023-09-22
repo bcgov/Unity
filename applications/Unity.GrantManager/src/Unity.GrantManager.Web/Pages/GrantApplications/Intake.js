@@ -16,7 +16,7 @@ $(function () {
         return document.getElementById('PassFormIdToJavaScript').value;
     }
 
-    const dataTable = $('#GrantApplicationsTable').DataTable(
+    $('#GrantApplicationsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
             paging: true,

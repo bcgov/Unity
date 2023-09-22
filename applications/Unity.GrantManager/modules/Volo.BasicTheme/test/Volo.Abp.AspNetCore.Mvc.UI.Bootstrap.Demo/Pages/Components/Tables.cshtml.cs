@@ -6,6 +6,6 @@ public class TablesModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

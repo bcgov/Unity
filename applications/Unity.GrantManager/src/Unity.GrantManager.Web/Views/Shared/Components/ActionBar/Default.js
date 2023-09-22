@@ -1,16 +1,16 @@
 $(function () {
 
-    var selectedApplicationIds = [];
-    var assignApplicationModal = new abp.ModalManager({
+    let selectedApplicationIds = [];
+    const assignApplicationModal = new abp.ModalManager({
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
     });
-    var statusUpdateModal = new abp.ModalManager({
+    const statusUpdateModal = new abp.ModalManager({
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
-    var approveApplicationsModal = new abp.ModalManager({
+    const approveApplicationsModal = new abp.ModalManager({
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
-    var dontApproveApplicationsModal = new abp.ModalManager({
+    const dontApproveApplicationsModal = new abp.ModalManager({
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
 
@@ -49,22 +49,21 @@ $(function () {
         PubSub.publish("refresh_application_list");
     });
     
-    const select_application_subscription = PubSub.subscribe("select_application", (msg, data) => {
+    PubSub.subscribe("select_application", (msg, data) => {
         selectedApplicationIds.push(data.id);
         manageActionButtons();
 
     });
-    const deselect_application_subscription1 = PubSub.subscribe("deselect_application", (msg, data) => {
+    PubSub.subscribe("deselect_application", (msg, data) => {
         selectedApplicationIds.pop(data.id);
         manageActionButtons();
 
     });
 
-    const clear_selected_application_subscription3 = PubSub.subscribe("clear_selected_application", (msg, data) => {
+    PubSub.subscribe("clear_selected_application", (msg, data) => {
         selectedApplicationIds = [];
         manageActionButtons();
     });
-
 
     $('#assignApplication').click(function () {
         assignApplicationModal.open({

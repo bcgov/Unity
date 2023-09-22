@@ -1,8 +1,8 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form.DatePicker;
 
 namespace Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo.Pages.Components;
@@ -177,6 +177,6 @@ public class DatePickerModel : PageModel
 
     public void OnPost()
     {
-        return;
+        //Placeholder. Nothing to do here yet.
     }
 }

@@ -49,5 +49,6 @@ public partial class NavToolbar : IDisposable
     public void Dispose()
     {
         ApplicationConfigurationChangedService.Changed -= ApplicationConfigurationChanged;
+        GC.SuppressFinalize(this);
     }
 }

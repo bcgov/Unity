@@ -14,6 +14,6 @@ public class IndexModel : AbpPageModel
 
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here.
     }
 }

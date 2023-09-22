@@ -6,6 +6,6 @@ public class TooltipsModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

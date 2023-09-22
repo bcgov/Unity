@@ -6,7 +6,7 @@ using System;
 
 namespace Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo;
 
-public class Program
+public static class Program
 {
     public static int Main(string[] args)
     {

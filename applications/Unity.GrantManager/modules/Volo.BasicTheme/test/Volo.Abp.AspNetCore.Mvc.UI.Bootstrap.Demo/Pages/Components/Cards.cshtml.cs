@@ -6,6 +6,6 @@ public class CardsModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

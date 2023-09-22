@@ -6,6 +6,6 @@ public class TabsModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

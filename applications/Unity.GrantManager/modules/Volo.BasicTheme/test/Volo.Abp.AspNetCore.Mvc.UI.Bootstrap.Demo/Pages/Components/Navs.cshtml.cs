@@ -6,6 +6,6 @@ public class NavsModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

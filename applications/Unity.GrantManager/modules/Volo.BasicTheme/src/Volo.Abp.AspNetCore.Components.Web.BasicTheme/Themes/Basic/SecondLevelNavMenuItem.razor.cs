@@ -1,6 +1,6 @@
-﻿using System;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
+using System;
 using Volo.Abp.UI.Navigation;
 
 namespace Volo.Abp.AspNetCore.Components.Web.BasicTheme.Themes.Basic;
@@ -27,6 +27,7 @@ public partial class SecondLevelNavMenuItem : IDisposable
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        GC.SuppressFinalize(this);
     }
 
     private void OnLocationChanged(object sender, LocationChangedEventArgs e)

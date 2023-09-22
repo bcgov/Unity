@@ -46,7 +46,7 @@ public class ApproveApplicationsModalModel : AbpPageModel
     {
         try
         {
-            Guid statusId = Guid.Empty;
+            Guid statusId;
             var statuses = await _statusService.GetListAsync();
             var approvedStatus = statuses.FirstOrDefault(status => status.StatusCode == OperationStatusCode);
             if (approvedStatus != null)

@@ -5,7 +5,7 @@ using System;
 
 namespace Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Demo;
 
-public class Program
+public static class Program
 {
     public static int Main(string[] args)
     {

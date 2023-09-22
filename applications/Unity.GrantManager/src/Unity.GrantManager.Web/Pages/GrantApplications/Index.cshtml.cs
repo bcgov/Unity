@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Volo.Abp.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -14,15 +14,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public Guid? FormId { get; set; }
 
-        public IReadOnlyList<IdentityUserDto> Users { get; set; } = default!;
-                
+        public IReadOnlyList<IdentityUserDto> Users { get; set; } = new List<IdentityUserDto>();
+
         private readonly IIdentityUserLookupAppService _identityUserLookupAppService;
 
         public IndexModel(IIdentityUserLookupAppService identityUserLookupAppService)
         {
-            _identityUserLookupAppService = identityUserLookupAppService ?? throw new ArgumentNullException(nameof(identityUserLookupAppService));                        
+            _identityUserLookupAppService = identityUserLookupAppService ?? throw new ArgumentNullException(nameof(identityUserLookupAppService));
         }
-        
+
         public async Task OnGetAsync()
         {
             try

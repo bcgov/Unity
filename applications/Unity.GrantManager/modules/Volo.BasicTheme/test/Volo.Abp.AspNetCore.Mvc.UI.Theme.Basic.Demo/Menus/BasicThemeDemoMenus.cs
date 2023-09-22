@@ -1,6 +1,6 @@
 ﻿namespace Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Demo.Menus;
 
-public class BasicThemeDemoMenus
+public static class BasicThemeDemoMenus
 {
     private const string Prefix = "BasicThemeDemo";
     public const string Home = Prefix + ".Home";

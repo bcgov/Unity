@@ -6,6 +6,6 @@ public class ButtonsModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

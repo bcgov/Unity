@@ -6,6 +6,6 @@ public class BreadcrumbsModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 }

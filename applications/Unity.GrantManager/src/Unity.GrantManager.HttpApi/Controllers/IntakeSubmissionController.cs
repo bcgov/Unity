@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Unity.GrantManager.Models;
-using Volo.Abp.AspNetCore.Mvc;
-using Unity.GrantManager.Applications;
-using System.Diagnostics;
+using Newtonsoft.Json;
+using RestSharp;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
-using RestSharp;
-using Newtonsoft.Json;
+using Unity.GrantManager.Models;
+using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -16,12 +16,12 @@ namespace Unity.GrantManager.Controllers
     [Route("api/intakeSubmission")]
     public class IntakeSubmissionController : AbpControllerBase
     {
-        private IApplicationRepository _applicationRepository;
-        private IApplicationFormRepository _applicationFormRepository;
-        private IApplicationStatusRepository _applicationStatusRepository;
-        private IApplicantRepository _applicantRepository;
-        private IIntakeRepository _intakeRepository;
-        private IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
+        private readonly IApplicationRepository _applicationRepository;
+        private readonly IApplicationFormRepository _applicationFormRepository;
+        private readonly IApplicationStatusRepository _applicationStatusRepository;
+        private readonly IApplicantRepository _applicantRepository;
+        private readonly IIntakeRepository _intakeRepository;
+        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly RestClient _intakeClient;
 
         public IntakeSubmissionController(IApplicationRepository applicationService,
@@ -113,7 +113,7 @@ namespace Unity.GrantManager.Controllers
 
                     if (submittedStatus != null)
                     {
-                        Application newApplication = await _applicationRepository.InsertAsync(
+                        await _applicationRepository.InsertAsync(
                             new Application
                             {
                                 ProjectName = intake.projectName ?? "{Missing}", // This should be the form name
@@ -121,12 +121,12 @@ namespace Unity.GrantManager.Controllers
                                 ApplicantId = newApplicant.Id,
                                 ApplicationStatusId = submittedStatus.Id,
                                 ReferenceNo = intake.confirmationId ?? "{Missing}", // Taken from the CHEF Confirmation ID
-                                RequestedAmount = Double.Parse(intake.requestedAmount ?? "0")
+                                RequestedAmount = double.Parse(intake.requestedAmount ?? "0")
                             },
                             autoSave: true
                         );
 
-                        ApplicationFormSubmission applicationFormSubmission = await _applicationFormSubmissionRepository.InsertAsync(
+                        await _applicationFormSubmissionRepository.InsertAsync(
                          new ApplicationFormSubmission
                          {
                              OidcSub = "3a0d369f-7ea2-b49d-5c9b-ab141dad52e8", // Not sure on this need to remove FK 
