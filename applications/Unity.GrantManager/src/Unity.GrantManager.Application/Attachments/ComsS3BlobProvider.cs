@@ -24,7 +24,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
     private readonly IApplicationRepository _applicationRepository;
     private readonly IAssessmentRepository _assessmentsRepository;
 
-    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAdjudicationAttachmentRepository adjudicationAttachmentRepository, IApplicationRepository applicationRepository, IAssessmentsRepository assessmentsRepository)
+    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAdjudicationAttachmentRepository adjudicationAttachmentRepository, IApplicationRepository applicationRepository, IAssessmentRepository assessmentsRepository)
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
