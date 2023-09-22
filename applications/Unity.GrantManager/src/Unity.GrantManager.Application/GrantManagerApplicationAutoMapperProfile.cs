@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Identity;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Intake;
 
 namespace Unity.GrantManager;
 
@@ -24,6 +26,10 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicationId));
         CreateMap<Assessment, AssessmentDto>();
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
+        CreateMap<GrantPrograms.Intake, IntakeDto>();
+        CreateMap<ApplicationForm, ApplicationFormDto>();
+        CreateMap<CreateUpdateIntakeDto, GrantPrograms.Intake>();
+        CreateMap<CreateUpdateApplicationFormDto, ApplicationForm>();
     }
 }
 

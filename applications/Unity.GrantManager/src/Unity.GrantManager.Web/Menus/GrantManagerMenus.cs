@@ -14,5 +14,6 @@ public static class GrantManagerMenus
     public const string Scoring = Prefix + ".Scoring";
     public const string Reporting = Prefix + ".Reporting";
     public const string Welcome = Prefix + ".Welcome";
-
+    public const string Intakes = Prefix + ".Intakes";
+    public const string ApplicationForms = Prefix + ".ApplicationForms";
 }
