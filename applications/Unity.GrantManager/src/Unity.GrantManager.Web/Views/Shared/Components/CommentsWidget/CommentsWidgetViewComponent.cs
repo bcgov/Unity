@@ -24,12 +24,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
             _commentAppService = commentAppService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, CommentType commentType)
+        public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, CommentType commentType, Guid currentUserId)
         {            
             CommentsWidgetViewModel model = new()
             {
                 CommentType = commentType,
                 OwnerId = ownerId,
+                CurrentUserId = currentUserId,
                 Comments = (await _commentAppService.GetListAsync(new QueryCommentsByTypeDto() { OwnerId = ownerId, CommentType = commentType })).ToList()
             };
 

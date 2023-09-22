@@ -321,3 +321,10 @@ div.dataTables_wrapper div.dataTables_length label {
         color: var(--bc-colors-grey-text-500);
         font-weight: 700;
     }
+    .form-select:disabled {
+        color: var(--bc-colors-grey-text-100);
+        pointer-events: none;
+        background-color: var(--bc-colors-grey-hover);
+        opacity: var(--bs-btn-disabled-opacity);
+        background-blend-mode: difference;
+    }

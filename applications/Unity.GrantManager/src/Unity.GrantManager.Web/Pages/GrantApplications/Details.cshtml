@@ -172,7 +172,7 @@
                 @*-------- Comments Tab Section ---------*@
                 <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
                     <div class="p-2" id="applicationCommentsWidget">
-                        @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0 })
+                        @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
                     </div>
                 </div>
                 @*-------- Comments Tab Section END ---------*@

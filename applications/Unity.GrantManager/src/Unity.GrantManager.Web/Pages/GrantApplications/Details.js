@@ -309,13 +309,15 @@ function updateCommentsCounters() {
 }
 
 function initCommentsWidget() {
+    const currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
     let selectedReviewDetails;
     let applicationCommentsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationCommentsWidget',
         filterCallback: function () {
             return {
                 'ownerId': $('#DetailsViewApplicationId').val(),
-                'commentType': 0
+                'commentType': 0,
+                'currentUserId': currentUserId,
             };
         }
     });
@@ -325,7 +327,8 @@ function initCommentsWidget() {
         filterCallback: function () {            
             return {
                 'ownerId': selectedReviewDetails.id,
-                'commentType': 1
+                'commentType': 1,
+                'currentUserId': currentUserId,
             };
         }
     });

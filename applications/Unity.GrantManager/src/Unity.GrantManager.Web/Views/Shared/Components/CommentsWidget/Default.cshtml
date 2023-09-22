@@ -33,9 +33,13 @@
                         <div class="fw-bold">
                             @comment.Commenter
                         </div>
-                        <div class="comment-edit-btn-wrapper">
-                            <span class="edit-button" data-id="@comment.Id">...</span>
-                        </div>
+                        @if (Model.CurrentUserId == comment.CreatorId)
+                        {
+
+                            <div class="comment-edit-btn-wrapper">
+                                <span class="edit-button" data-id="@comment.Id">...</span>
+                            </div>
+                        }
                     </div>
                     <div data-id="@comment.Id">
                         @comment.Comment

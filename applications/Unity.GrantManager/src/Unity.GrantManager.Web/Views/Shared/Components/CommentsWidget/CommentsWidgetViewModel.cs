@@ -14,5 +14,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
         public IReadOnlyList<CommentDto> Comments { get; set; }
         public Guid OwnerId { get; set; }
         public CommentType CommentType { get; set; }
+        public Guid CurrentUserId { get; set; }
     }
 }
