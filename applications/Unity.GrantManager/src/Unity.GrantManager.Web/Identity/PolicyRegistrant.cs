@@ -47,7 +47,7 @@ namespace Unity.GrantManager.Web.Identity.Policy
                options.AddPolicy(IdentityPermissions.UserLookup.Default,
                policy => policy.RequireClaim("Permission", IdentityPermissions.UserLookup.Default)));
 
-            context.Services.AddAuthorization(options => 
+            context.Services.AddAuthorization(options =>
                 options.AddPolicy(GrantManagerPermissions.Default,
                 policy => policy.RequireClaim("Permission", GrantManagerPermissions.Default)));
 
@@ -102,6 +102,13 @@ namespace Unity.GrantManager.Web.Identity.Policy
             context.Services.AddAuthorization(options =>
                options.AddPolicy(GrantApplicationPermissions.Comments.Add,
                policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Comments.Add)));
-        }        
+
+            context.Services.AddAuthorization(options =>
+                options.AddPolicy(GrantManagerPermissions.Intakes.Default,
+                policy => policy.RequireClaim("Permission", GrantManagerPermissions.Intakes.Default)));
+            context.Services.AddAuthorization(options =>
+                options.AddPolicy(GrantManagerPermissions.ApplicationForms.Default,
+                policy => policy.RequireClaim("Permission", GrantManagerPermissions.ApplicationForms.Default)));
+        }
     }
 }
