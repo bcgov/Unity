@@ -12,6 +12,7 @@ public interface IAssessmentsService : IApplicationService
     Task<AssessmentDto> CreateAssessment(CreateAssessmentDto dto);
     Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto);
     Task<IList<AssessmentDto>> GetListAsync(Guid applicationId);
-    Task<List<string>> GetAvailableActions(Guid assessmentId);
+    Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId);
+    List<string?> GetAllActions();
     Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction = AssessmentAction.SendToTeamLead);
 }

@@ -1,6 +1,9 @@
-﻿namespace Unity.GrantManager.Assessments;
+﻿using System.Text.Json.Serialization;
 
-public enum AssessmentAction
+namespace Unity.GrantManager.Assessments;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum AssessmentAction : int
 {
     Create,
     SendTo,

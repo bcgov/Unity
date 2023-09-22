@@ -1,7 +1,10 @@
-﻿namespace Unity.GrantManager.Assessments;
+﻿using System.Text.Json.Serialization;
+
+namespace Unity.GrantManager.Assessments;
 
 // NOTE: Max Length: Do not exceed status values that are longer than 50 characters
-public enum AssessmentState
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum AssessmentState : int
 {
     IN_PROGRESS,
     IN_REVIEW,

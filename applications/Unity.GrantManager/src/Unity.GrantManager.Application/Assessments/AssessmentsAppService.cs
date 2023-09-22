@@ -63,20 +63,20 @@ namespace Unity.GrantManager.Assessments
         }
 
         // NOTE: For debugging only
-        public async Task<List<string>> GetMyActions(Guid applicationId)
+        public async Task<List<AssessmentAction>> GetMyActions(Guid applicationId)
         {
             var assessment = await _assessmentsRepository
                 .GetAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
 
             if (assessment is null)
             {
-                return new List<string> { "Create" };
+                return new List<AssessmentAction> { AssessmentAction.Create };
             }
 
             return await GetAvailableActions(assessment.Id);
         }
 
-        public static List<string?> GetAllActions()
+        public List<string?> GetAllActions()
         {
             // NOTE: Replace with static wokflow class
             var blankAssessment = new Assessment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
@@ -91,11 +91,11 @@ namespace Unity.GrantManager.Assessments
             return blankAssessment.GetWorkflowDiagram();
         }
 
-        public async Task<List<string>> GetAvailableActions(Guid assessmentId)
+        public async Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId)
         {
             var assessment = await _assessmentsRepository.GetAsync(assessmentId);
             var actions = assessment.GetActions();
-            return actions.Select(a => a.ToString()).ToList();
+            return actions.ToList();
         }
 
         public async Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction = AssessmentAction.SendToTeamLead)
