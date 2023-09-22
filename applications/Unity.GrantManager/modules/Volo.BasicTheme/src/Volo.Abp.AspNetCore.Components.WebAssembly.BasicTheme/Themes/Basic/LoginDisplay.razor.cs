@@ -2,14 +2,13 @@
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.JSInterop;
-using System;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Components.Web.Security;
 using Volo.Abp.UI.Navigation;
 
 namespace Volo.Abp.AspNetCore.Components.WebAssembly.BasicTheme.Themes.Basic;
 
-public partial class LoginDisplay : IDisposable
+public partial class LoginDisplay
 {
     [Inject]
     protected IMenuManager MenuManager { get; set; }
@@ -56,15 +55,9 @@ public partial class LoginDisplay : IDisposable
         Navigation.NavigateToLogout("authentication/logout");
     }
 
-    #region IDisposable implementation
+    #region Disposable base class implementation
     // To detect redundant calls
     private bool _disposed;
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
 
     // Protected implementation of Dispose pattern.
     protected override void Dispose(bool disposing)
@@ -78,6 +71,7 @@ public partial class LoginDisplay : IDisposable
             }
             _disposed = true;
         }
+        base.Dispose(disposing);
     }
     #endregion
 }
