@@ -1,0 +1,127 @@
+﻿
+.single-comment {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    border-left: 0.50px #1A5A96 solid;
+    border-top: 0.50px #1A5A96 solid;
+    border-right: 0.50px #1A5A96 solid;
+    border-bottom: 1px #1A5A96 solid;
+    padding: 10px 5px 5px 5px;
+}
+
+.comment-input {
+    border: 0;
+    outline: 0;
+    border-bottom: 0.5px solid #D6D6D6;
+    border-radius: 0px;
+    resize: none;
+}
+
+    .comment-input.selected {
+        border: 0 !important;
+        outline: 0 !important;
+        border-bottom: 0.5px solid #D6D6D6 !important;
+        border-radius: 0px !important;
+    }
+
+.comment-button-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: right;
+    gap: 8px;
+}
+
+.fl-cross {
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background: #E6EFF7;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.fl-tick {
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background: #E6EFF7;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.add-comment {
+    display: none;
+}
+
+.edit-button {
+    cursor: pointer;
+    padding-right: 5px;
+    margin-top: -5px;
+}
+
+.comment-input-mutliple {
+    border: 0;
+    outline: 0;
+    border-bottom: 0.5px solid #D6D6D6;
+    border-radius: 0px;
+}
+
+    .comment-input-mutliple.selected {
+        border: 0 !important;
+        outline: 0 !important;
+        border-bottom: 0.5px solid #D6D6D6 !important;
+        border-radius: 0px !important;
+    }
+
+.comment-time {
+    padding-top: 0.1rem;
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    word-wrap: break-word;
+    color: var(--bc-colors-grey-text-300, #666);
+}
+
+.comment-btn {
+    transition: box-shadow .3s;
+}
+
+    .comment-btn:hover {
+        box-shadow: -3px 3px 11px -3px rgba(33,33,33,.2);
+    }
+
+.edit-mode {
+    margin-bottom: 0.7rem;
+}
+
+.comment-lbl {
+    display: block;
+}
+
+.read-mode {
+    background: #F2F8FC;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    padding: 0px 5px 5px 5px
+}
+
+.comment-edit-btn-wrapper {
+    display: flex;
+    justify-content: right;
+    align-items: start;
+    gap: 8px;
+}
+
+.comment-lbl-wrapper {
+    color: #666666;
+    font-size: 0.89rem;
+    font-weight: 400;
+    word-wrap: break-word;
+}

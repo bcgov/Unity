@@ -22,8 +22,11 @@
 
 @await Component.InvokeAsync("DetailsActionBar", new {ApplicationId=@Model.ApplicationFormSubmissionId})
 
-<input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationFormSubmissionId" />
+<input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
+<input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
+<input type="hidden" id="Extensions" value="@Model.Extensions" />
+<input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
    
         <abp-row>
         <abp-column size="_8">
@@ -107,22 +110,7 @@
 
                                     </abp-column>
                                 </abp-row>
-                                <abp-row>
-                                    <abp-column size="_10">
-
-                                        @await Component.InvokeAsync("AssessmentResultAttachments")
-
-                                    </abp-column>
-                                </abp-row>
-                                <abp-row>
-                                    <abp-column size="_10">
-                                        <label>Attach Document</label>
-                                        <input class="form-control custom-input" asp-for="@Model.Attachment" type="file" id="formFile" />
-                                        <abp-select asp-for="@Model.SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
-                                            <option value="">Select</option>
-                                        </abp-select>
-                                    </abp-column>
-                                </abp-row>
+                               
                             </abp-column>
                           @* <abp-column size="_4">
                                 <abp-row>
@@ -157,28 +145,60 @@
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (0)</button>
+                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                     </li>
                     <li class="nav-item" role="presentation">
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (0)</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (5)</button>
+                    <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
                     </li>
       
                 </ul>
             <div class="tab-content p-3" id="myTabContent">
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
-                    <h6>Details View</h6>
+                   <div id="reviewDetails" style="display:none">                 
+                    <abp-row>
+                        <abp-column size="_12">
 
+                            @await Component.InvokeAsync("AssessmentResultAttachments")
+
+                        </abp-column>
+                    </abp-row>
+                    <abp-row>
+                        <abp-column size="_12">                           
+                                <abp-row>
+                                    <abp-column size="_12" class="add-review-btn-container">
+                                        <input type="file" id="assessment_upload" style="display:none" />
+
+                                        <abp-button text="Add Attachments"
+                                                    id="assessment_upload_btn"
+                                                    class="assessment-upload-btn"
+                                                    icon-type="Other"
+                                                    icon="fl fl-plus"
+                                                    button-type="Light" />
+                                    </abp-column>
+                                </abp-row>
+                                <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
+                                    <option value="null" disabled >Please Choose...</option>
+                            </abp-select>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row>
+                        <label>Comments</label>
+                        <div id="assessmentCommentsWidget">
+                            @await Component.InvokeAsync("CommentsWidget", new { commentType = 1 })
+                        </div>
+                    </abp-row>
+                    </div>
                     </div>
                     <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
                         <h6>History View</h6>
 
                     </div>
                     <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <div id="MyDashboardWidgetsArea" data-widget-filter="#MyDashboardFilterForm">
-                        @await Component.InvokeAsync("Comments")
+                    <div id="applicationCommentsWidget">
+                        @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0 })
                     </div>
                    
 
@@ -189,10 +209,19 @@
                     </div>
                     <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                        @await Component.InvokeAsync("ApplicationAttachments")
-
+                        <abp-row>
+                            <abp-column size="_12" class="add-review-btn-container">                            
+                            <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">                                
+                                <input id="application_attachment_upload" name="application_attachment_upload" type="file" size="1" multiple onchange="uploadFiles('application_attachment_upload');" style="display: none" />
+                                <abp-button text="Add Attachments"
+                                            id="application_attachment_upload_btn"
+                                            icon-type="Other"
+                                            icon="fl fl-plus"
+                                            button-type="Light" />
+                            </form>
+                            </abp-column>
+                        </abp-row>
                     </div>
-
-
                 </div>
              
             </abp-card>

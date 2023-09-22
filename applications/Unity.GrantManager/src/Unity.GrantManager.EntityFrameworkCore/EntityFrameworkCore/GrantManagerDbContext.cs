@@ -2,6 +2,7 @@
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationUserRoles;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Comments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -223,6 +224,14 @@ public class GrantManagerDbContext :
         builder.Entity<ApplicationComment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationComment", GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+        });
+
+        builder.Entity<ApplicationAttachment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationAttachment", GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();

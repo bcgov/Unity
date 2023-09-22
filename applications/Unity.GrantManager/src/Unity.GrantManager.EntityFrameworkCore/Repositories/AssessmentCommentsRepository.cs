@@ -8,13 +8,13 @@ using Unity.GrantManager.EntityFrameworkCore;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
-using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Comments;
 
 namespace Unity.GrantManager.Repositories;
 
 [Dependency(ReplaceServices = true)]
-[ExposeServices(typeof(IAssessmentCommentsRepository))]
-public class AssessmentCommentsRepository : EfCoreRepository<GrantManagerDbContext, AssessmentComment, Guid>, IAssessmentCommentsRepository
+[ExposeServices(typeof(ICommentsRepository<AssessmentComment>))]
+public class AssessmentCommentsRepository : EfCoreRepository<GrantManagerDbContext, AssessmentComment, Guid>, ICommentsRepository<AssessmentComment>
 {
     public AssessmentCommentsRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
     {

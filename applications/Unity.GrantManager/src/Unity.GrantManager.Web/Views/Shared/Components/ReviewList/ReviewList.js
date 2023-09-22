@@ -1,153 +1,127 @@
 ﻿$(function () {
     console.log('Script loaded');
     const l = abp.localization.getResource('GrantManager');
-    var jsonData = {
-        data: [
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                ReviewerName: 'Reviewer 1',
-                StartDate: new Date(),
-                EndDate: new Date(),
-                Status: {
-                    Id: 'njsdnf-sjd f-sn fd',
-                    InternalStatus: 'Completed',
-                },
-                Recommended: true,
-            },
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                ReviewerName: 'Reviewer 2',
-                StartDate: new Date(),
-                EndDate: new Date(),
-                Status: {
-                    Id: 'njsdnf-sjd f-sn fd',
-                    InternalStatus: 'In progress',
-                },
-                Recommended: false,
-            },
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                ReviewerName: 'Reviewer 3',
-                StartDate: new Date(),
-                EndDate: new Date(),
-                Status: {
-                    Id: 'njsdnf-sjd f-sn fd',
-                    InternalStatus: 'Completed',
-                },
-                Recommended: true,
-            },
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                ReviewerName: 'Reviewer 4',
-                StartDate: new Date(),
-                EndDate: new Date(),
-                Status: {
-                    Id: 'njsdnf-sjd f-sn fd',
-                    InternalStatus: 'Under Team Lead Review',
-                },
-                Recommended: true,
-            },
-            {
-                Id: '79071522-3c7c-4206-93ef-64538afb00a5',
-                ReviewerName: 'Reviewer N',
-                StartDate: new Date(),
-                EndDate: new Date(),
-                Status: {
-                    Id: 'njsdnf-sjd f-sn fd',
-                    InternalStatus: 'Completed',
-                },
-                Recommended: true,
-            },
-        ],
+    let inputAction = function (requestData, dataTableSettings) {
+        const urlParams = new URL(window.location.toLocaleString()).searchParams;
+        const applicationId = urlParams.get('ApplicationId');
+        return applicationId;
+    }
+    
+    let responseCallback = function (result) {
+        // your custom code.
+        console.log(result)
+
+        return {
+            data: result
+        };
     };
 
-    const dataTable = $('#ReviewListTable').DataTable(
+    const reviewListTable = $('#ReviewListTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
             order: [[1, 'asc']],
             searching: false,
             paging: false,
-            select: false,
+            select: true,
             info: false,
             scrollX: true,
-            ajax: function (data, callback, settings) {
-                callback(jsonData);
-            },
+            ajax: abp.libs.datatables.createAjax(
+                unity.grantManager.assessments.assessment.getList, inputAction, responseCallback
+            ),
             columnDefs: [
                 {
                     title: '',
+                    data: 'id',
+                    visible : false,
+                },
+                {
+                    title: '',
                     render: function (data) {
-                        return '<i class="fl fl-review-user"></i>';
-                    },
+                        return '<i class="fl fl-review-user" ></i>';
+                    }
                 },
                 {
                     title: l('ReviewerList:ReviewerName'),
-                    data: 'ReviewerName',
+                    data: 'reviewerName',
                     className: 'data-table-header',
+                    render: function (data) {
+                        return data || 'Reviewer Name';
+                    },
                 },
                 {
                     title: l('ReviewerList:StartDate'),
-                    data: 'StartDate',
+                    data: 'startDate',
                     className: 'data-table-header',
                     render: function (data) {
-                        return new Date(data).toDateString();
+                        return  data ? new Date(data).toDateString() : '';
                     },
                 },
                 {
                     title: l('ReviewerList:EndDate'),
-                    data: 'EndDate',
+                    data: 'endDate',
                     className: 'data-table-header',
                     render: function (data) {
-                        return new Date(data).toDateString();
+                        return data ? new Date(data).toDateString() : '';
                     },
                 },
                 {
                     title: l('ReviewerList:Status'),
-                    data: 'Status',
+                    data: 'status',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data.InternalStatus;
+                        return data;
                     },
                 },
                 {
                     title: l('ReviewerList:Recommended'),
-                    data: 'Recommended',
+                    data: 'approvalRecommended',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data === true ? 'Recommended for Approval' : 'Recommended for Denial';
+                        if (data !== null) {
+                            return data === true ? 'Recommended for Approval' : 'Recommended for Denial'
+                        } else {
+                            return '';
+                        }                        
                     },
                 },
             ],
         })
     );
 
-    dataTable.on('select', function (e, dt, type, indexes) {
+    reviewListTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {
-            var selectedData = dataTable.row(indexes).data();
+            let selectedData = reviewListTable.row(indexes).data();
             console.log('Selected Data:', selectedData);
-            //PubSub.publish('select_application', selectedData);
+            PubSub.publish('select_application_review', selectedData);
+            e.currentTarget.classList.toggle('selected');
         }
     });
 
-    dataTable.on('draw', function () {
-        // This code will execute when the DataTable completes drawing
-        console.log('DataTable has completed drawing.');
-    });
+  
 
-    dataTable.on('deselect', function (e, dt, type, indexes) {
+    reviewListTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
-            var deselectedData = dataTable.row(indexes).data();
-            //PubSub.publish('deselect_application', deselectedData);
+            let deselectedData = reviewListTable.row(indexes).data();
+            PubSub.publish('select_application_review', null);
+            e.currentTarget.classList.toggle('selected');
         }
     });
-    dataTable.on('click', 'tbody tr', function (e) {
-        e.currentTarget.classList.toggle('selected');
-    });
+
 
     const refresh_review_list_subscription = PubSub.subscribe(
-        'refresh_reviewer_list',
-        (msg, data) => {
-            dataTable.ajax.reload();
+        'refresh_review_list',
+         (msg, data) => {
+             reviewListTable.ajax.reload(function (json) {
+                 if (data) {
+                     //var row = reviewListTable.row(0).select();
+                     let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
+                         return reviewListTable.cell(rowIdx, 0).data() === data ? true : false;
+                     });
+
+                     reviewListTable.row(indexes).select();
+                 }
+             });
+        
         }
     );
 });

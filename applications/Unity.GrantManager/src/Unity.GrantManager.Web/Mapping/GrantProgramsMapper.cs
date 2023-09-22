@@ -9,7 +9,7 @@ namespace Unity.GrantManager.Web.Mapping
         {
             CreateMap<GrantProgram, GrantProgramDto>();
             CreateMap<CreateUpdateGrantProgramDto, GrantProgram>();
-            CreateMap<GrantProgramDto, CreateUpdateGrantProgramDto>();
+            CreateMap<GrantProgramDto, CreateUpdateGrantProgramDto>();            
         }
     }
 }

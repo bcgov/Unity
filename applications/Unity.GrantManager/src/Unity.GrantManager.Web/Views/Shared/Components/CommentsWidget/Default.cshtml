@@ -1,0 +1,64 @@
+﻿@using Unity.GrantManager.Comments;
+@using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Unity.GrantManager.Web.Pages.GrantApplications;
+
+@model CommentsWidgetViewModel
+@{
+    Layout = null;
+}
+
+<div class="row">
+    <div class="col-12 mt-4">
+        <div class="comments-div">
+            <div class="single-comment">
+                <textarea class="form-control comment-input" placeholder="Add a comment" data-ownerId="@Model.OwnerId" id="addCommentTextArea@(Model.OwnerId)"></textarea>                
+                <div id="addCommentContainer@(Model.OwnerId)" class="comment-button-container add-comment">                    
+                    <i data-ownerId="@Model.OwnerId" data-type="@Model.CommentType" class="fl fl-cross add-comment-cancel-button comment-btn"></i>
+                    <i data-ownerId="@Model.OwnerId" data-type="@Model.CommentType" class="fl fl-tick add-comment-save-button comment-btn"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="comments-div@(Model.OwnerId)" class="comments-container row" style="margin-top:10px;" data-type="@Model.CommentType" data-count="@Model.Comments.Count" data-counttag="application_comments_count">
+    @foreach (var comment in Model.Comments)
+    {
+        @if (comment != null)
+        {
+            <div>
+                <abp-container class="read-mode" data-id="@comment.Id">
+                    <abp-row>
+                        <abp-column size="_8">
+                            <span style="color: #666666; font-size: 0.89rem;  font-weight: 700; word-wrap: break-word">
+                               @comment.Commenter
+                            </span>
+                        </abp-column>
+                        <abp-column size="_4">
+                            <div class="comment-edit-btn-wrapper">
+                                <span class="edit-button" data-id="@comment.Id" >...</span>
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row>
+                        <abp-column size="_12" class="comment-lbl-wrapper">
+                            <label class="comment-lbl" data-id="@comment.Id">@comment.Comment</label>
+                        </abp-column>
+                    </abp-row>
+                    <div class="comment-time">@comment.CreationTime</div>
+
+                </abp-container>
+
+                <div class="single-comment edit-mode" data-id="@comment.Id"  style="display: none;">
+                    <textarea class="form-control comment-input-mutliple" placeholder="Update the comment" data-id="@comment.Id">@comment.Comment</textarea>                    
+                    <div class="comment-button-container">
+                        <i class="fl fl-cross edit-comment-cancel-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
+                        <i class="fl fl-tick edit-comment-save-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+

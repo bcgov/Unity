@@ -110,7 +110,7 @@ body {
     }
 
         .dataTables_wrapper .dataTables_scrollHead table th, .dataTables_wrapper .dataTables_scrollBody table td {
-            padding: .5rem 0.625rem !important;
+         
             border-bottom: 0;
             height: 28px;
             vertical-align: middle;

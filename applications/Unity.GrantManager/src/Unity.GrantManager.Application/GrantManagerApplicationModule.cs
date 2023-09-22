@@ -9,9 +9,11 @@ using System.Net.Http;
 using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
 using Volo.Abp.Account;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BlobStoring;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -35,17 +37,27 @@ public class GrantManagerApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var configuration = context.Services.GetConfiguration();
+        Configure<AbpBlobStoringOptions>(options =>
+        {
+            options.Containers.Configure<ComsS3Container>(container =>
+            {
+                container.UseComsS3CustomBlobProvider(provider =>
+                {
+                    provider.BucketId = configuration["S3:BucketId"] ?? "";
+                    provider.BaseUri = configuration["S3:BaseUri"] ?? "";
+                    provider.Username = configuration["S3:Username"] ?? "";
+                    provider.Password = configuration["S3:Password"] ?? "";
+                });
+            });
+        });
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<GrantManagerApplicationModule>();
-        });
-
-        var configuration = context.Services.GetConfiguration();
+        });      
 
         Configure<IntakeClientOptions>(options => {
             options.BaseUri = configuration["Intake:BaseUri"] ?? "";
-            options.FormId  = configuration["Intake:FormId"] ?? "";
-            options.ApiKey  = configuration["Intake:ApiKey"] ?? "";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
         });
@@ -57,9 +69,9 @@ public class GrantManagerApplicationModule : AbpModule
             var restOptions = new RestClientOptions(options.BaseUri)
             {
                 // NOTE: Basic authentication only works for fetching forms and lists of form submissions
-                Authenticator = options.UseBearerToken ?
-                    new JwtAuthenticator(options.BearerTokenPlaceholder) :
-                    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
+                //Authenticator = options.UseBearerToken ?
+                //    new JwtAuthenticator(options.BearerTokenPlaceholder) :
+                //    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
 
                 FailOnDeserializationError = true,
                 ThrowOnDeserializationError = true

@@ -1,5 +1,6 @@
-$(function () {
-    var selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
+$(function () {       
+    let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
+    let selectedReviewDetails = null;
 
     const formatter = new Intl.NumberFormat('en-CA', {
         style: 'currency',
@@ -8,7 +9,7 @@ $(function () {
         maximumFractionDigits: 2,
     });
 
-    var assignApplicationModal = new abp.ModalManager({
+    let assignApplicationModal = new abp.ModalManager({
         viewUrl: '/AssigneeSelection/AssigneeSelectionModal'
     });  
 
@@ -18,7 +19,7 @@ $(function () {
 
     function formatChefComponents(data) {
         // Advanced Components
-        var components = JSON.stringify(data).replace(
+        let components = JSON.stringify(data).replace(
             /simpleaddressadvanced/g,
             'address'
         );
@@ -94,7 +95,7 @@ $(function () {
                     console.log(result);
                     $('.spinner-grow').hide();
                     Formio.icons = 'fontawesome';
-                    var data = JSON.parse(formatChefComponents(result));
+                    let data = JSON.parse(formatChefComponents(result));
                     console.log(data);
                     Formio.createForm(
                         document.getElementById('formio'),
@@ -160,8 +161,178 @@ $(function () {
     }
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
-  
 
+    $('#application_attachment_upload_btn').click(function () { $('#application_attachment_upload').trigger('click'); });
 
+    $('#recommendation_select').change(function () {
 
+        let value = $(this).val();
+        
+        updateRecommendation(value, selectedReviewDetails.id);
+    });
+
+    function updateRecommendation(value,id) {     
+        try {
+            let data = { "approvalRecommended": value, "assessmentId": id }
+            unity.grantManager.assessments.assessment.updateAssessmentRecommendation
+                (data)
+                .done(function () {
+                    abp.notify.success(
+                        'The recommendation has been updated.'
+                    );
+                    PubSub.publish('refresh_review_list', id);                 
+                });
+
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+
+    PubSub.subscribe(
+        'select_application_review',
+        (msg, data) => {
+            if (data) {                
+                selectedReviewDetails = data;
+                $('#reviewDetails').show();
+                let selectElement = document.getElementById("recommendation_select");
+                selectElement.value = data.approvalRecommended;
+                PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
+            }
+            else {
+                $('#reviewDetails').hide();
+            }         
+        }
+    );
+
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        $($.fn.dataTable.tables(true)).DataTable()
+            .columns.adjust();
+    });
+
+    initCommentsWidget();
 });
+
+function uploadFiles(inputId) {
+    var input = document.getElementById(inputId);
+    var applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
+    var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+    var files = input.files;
+    var formData = new FormData();
+    const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
+    const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
+    let isAllowedTypeError = false;
+    let isMaxFileSizeError = false;
+    if (files.length == 0) {
+        return;
+    }
+    for (var i = 0; i != files.length; i++) {   
+        console.log(files[i]);
+        if (!allowedTypes.includes(files[i].type)) {
+            isAllowedTypeError = true;
+        }
+        if ((files[i].size * 0.000001) > maxFileSize) {
+            isMaxFileSizeError = true;
+        }
+
+        formData.append("files", files[i]);
+    }
+
+    if (isAllowedTypeError) {
+       return abp.notify.error(
+            'Error',
+            'File type not supported'
+        );
+    }
+    if (isMaxFileSizeError) {
+        return abp.notify.error(
+            'Error',
+            'File size exceeds ' + maxFileSize + 'MB'
+        );
+    }
+
+    $.ajax(
+        {
+            url: "/uploader?ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId,
+            data: formData,
+            processData: false,
+            contentType: false,
+            type: "POST",
+            success: function (data) {
+                abp.notify.success(
+                    data.responseText,
+                    'File Upload Is Successful'
+                ); 
+
+                PubSub.publish('refresh_application_attachment_list');  
+            },
+            error: function (data) {                
+                abp.notify.error(
+                    data.responseText,
+                    'File Upload Not Successful'
+                );
+            }
+        }
+    );
+}
+
+const update_application_attachment_count_subscription = PubSub.subscribe(
+    'update_application_attachment_count',
+    (msg, data) => {
+        $('#application_attachment_count').html(data)
+
+
+    }
+);
+
+function updateCommentsCounters() {
+    setTimeout(() => {
+        $('.comments-container').map(function () {
+            $('#' + $(this).data('counttag')).html($(this).data('count'));
+        }).get();
+    }, 100);
+}
+
+function initCommentsWidget() {
+    let selectedReviewDetails;
+    let applicationCommentsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationCommentsWidget',
+        filterCallback: function () {
+            return {
+                'ownerId': $('#DetailsViewApplicationId').val(),
+                'commentType': 0
+            };
+        }
+    });
+
+    let assessmentCommentsWidgetManager = new abp.WidgetManager({
+        wrapper: '#assessmentCommentsWidget',
+        filterCallback: function () {            
+            return {
+                'ownerId': selectedReviewDetails.id,
+                'commentType': 1
+            };
+        }
+    });
+
+    PubSub.subscribe(
+        'ApplicationComment_refresh',
+        () => {            
+            applicationCommentsWidgetManager.refresh();
+            updateCommentsCounters();
+        }
+    );
+
+    PubSub.subscribe(
+        'AssessmentComment_refresh',
+        (_, data) => {            
+            if (data?.review) {
+                selectedReviewDetails = data.review;
+            }            
+            assessmentCommentsWidgetManager.refresh();
+            updateCommentsCounters();
+        }
+    );
+
+    updateCommentsCounters();
+}

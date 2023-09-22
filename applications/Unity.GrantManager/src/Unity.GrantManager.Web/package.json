@@ -3,9 +3,10 @@
   "name": "my-app",
   "private": true,
   "dependencies": {
-    "@abp/aspnetcore.mvc.ui.theme.basic": "^7.3.2",    
+    "@abp/aspnetcore.mvc.ui.theme.basic": "^7.3.2",
     "@abp/font-awesome": "^7.3.2",
     "axios": "^1.4.0",
+    "datatables.net-buttons": "^2.4.2",
     "datatables.net-select": "1.7.0",
     "datatables.net-select-bs": "^1.7.0",
     "formiojs": "^4.15.1",

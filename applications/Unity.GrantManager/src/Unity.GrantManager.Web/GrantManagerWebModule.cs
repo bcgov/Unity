@@ -41,6 +41,7 @@ using Unity.GrantManager.Web.Identity.Policy;
 using Microsoft.AspNetCore.Http;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.CookiePolicy;
+using Volo.Abp.BlobStoring;
 
 namespace Unity.GrantManager.Web;
 
@@ -58,7 +59,8 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAccountWebOpenIddictModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
 )]
-public class GrantManagerWebModule : AbpModule
+[DependsOn(typeof(AbpBlobStoringModule))]
+    public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
