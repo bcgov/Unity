@@ -58,10 +58,16 @@
                     title: '',
                     data: 's3Guid',
                     render: function (data, type, full, meta) {
-                        var html = '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
-                        html +=  '" target="_blank" download="' + data + '" style="text-decoration:none">';
-                        html += '<button class="btn btn-light" type="submit"><i class="fl fl-attachment-more" ></i></button>';
-                        html += '</a > ';
+                        var html = '<div class="dropdown" style="float:right;">';
+                        html += '<button class="btn btn-light dropbtn" type="button"><i class="fl fl-attachment-more" ></i></button>';
+                        html += '<div class="dropdown-content">';
+                        html += '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
+                        html += '" target="_blank" download="' + data + '" class="fullwidth">';
+                        html += '<button class="btn fullWidth" style="margin:20px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
+                        html += '<button class="btn fullWidth" style="margin:20px" type="button" onclick="deleteAdjudicationAttachment(\'' + data;
+                        html += '\',\'' + full.fileName + '\')"><i class="fl fl-cancel"></i><span>Delete Attachment</span></button>';
+                        html += '</div>';
+                        html += '</div>';
                         return html;
                     }
                 }
@@ -93,4 +99,24 @@
             dataTable.ajax.reload();
         }
     );
+});
+
+var deleteAdjudicationAttachmentModal = new abp.ModalManager({
+    viewUrl: '../Attachments/DeleteAttachmentModal'
+});
+
+function deleteAdjudicationAttachment(s3guid, fileName) {    
+    deleteAdjudicationAttachmentModal.open({
+        s3guid: s3guid,
+        fileName: fileName,
+        attachmentType: 'Adjudication',
+    });
+}
+
+deleteAdjudicationAttachmentModal.onResult(function () {
+    abp.notify.success(
+        'Attachment is successfully deleted.',
+        'Delete Attachment'
+    );
+    PubSub.publish('refresh_adjudication_attachment_list');
 });

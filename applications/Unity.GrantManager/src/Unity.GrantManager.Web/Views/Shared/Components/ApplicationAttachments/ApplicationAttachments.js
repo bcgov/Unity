@@ -62,11 +62,6 @@
                         title: '',
                         data: 's3Guid',
                         render: function (data, type, full, meta) {
-                            /*var html = '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
-                            html += '" target="_blank" download="' + data + '" style="text-decoration:none">';
-                            html += '<button class="btn btn-light" type="submit"><i class="fl fl-attachment-more" ></i></button>';
-                            html += '</a > ';
-                            return html;*/
                             var html = '<div class="dropdown" style="float:right;">';
                             html += '<button class="btn btn-light dropbtn" type="button"><i class="fl fl-attachment-more" ></i></button>';
                             html += '<div class="dropdown-content">';
@@ -130,5 +125,5 @@ deleteAttachmentModal.onResult(function () {
         'Attachment is successfully deleted.',
         'Delete Attachment'
     );
-    PubSub.publish("refresh_application_attachment_list");
+    PubSub.publish('refresh_application_attachment_list');
 });
