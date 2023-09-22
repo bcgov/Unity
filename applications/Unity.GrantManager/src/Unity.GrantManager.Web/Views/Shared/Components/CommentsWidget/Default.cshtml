@@ -7,7 +7,24 @@
 @{
     Layout = null;
 }
+@functions
+{
+    public string GetInitials(string name)
+    {
+        // StringSplitOptions.RemoveEmptyEntries excludes empty spaces returned by the Split method
 
+        string[] nameSplit = name.Split(new string[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
+
+        string initials = "";
+
+        foreach (string item in nameSplit)
+        {
+            initials += item.Substring(0, 1).ToUpper();
+        }
+
+        return initials;
+    }
+}
 <div class="row">
     <div class="col-12 mt-2">
         <div class="comments-div">
@@ -27,10 +44,15 @@
     {
         @if (comment != null)
         {
-            <div class="mb-2">
+          
+           
+            <div class="mb-2 comment-read-mode">
+                <div class="unity-user-initials me-1">@GetInitials(comment.Commenter)</div>
                 <div class="unity-comment-block read-mode" data-id="@comment.Id">
+                    
                     <div class="d-flex justify-content-between">
-                        <div class="fw-bold">
+
+                        <div class="fw-bold commenter-name">
                             @comment.Commenter
                         </div>
                         @if (Model.CurrentUserId == comment.CreatorId)
@@ -41,10 +63,10 @@
                             </div>
                         }
                     </div>
-                    <div data-id="@comment.Id">
+                    <div class="comment-lbl" data-id="@comment.Id">
                         @comment.Comment
                     </div>
-                    <div class="commented-time mt-3">@comment.CreationTime</div>
+                    <div class="commented-time mt-3">@comment.CreationTime.ToString("MMM dd yyyy")</div>
                 </div>
 
                 <div class="single-comment edit-mode" data-id="@comment.Id"  style="display: none;">

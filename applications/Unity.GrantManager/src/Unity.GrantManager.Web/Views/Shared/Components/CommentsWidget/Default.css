@@ -8,6 +8,7 @@
     border-right: 0.50px #1A5A96 solid;
     border-bottom: 1px #1A5A96 solid;
     padding: 10px 5px 5px 5px;
+    flex: 1;
 }
 
 .comment-input {
@@ -120,8 +121,24 @@
     border-radius: 0.25rem;
     font-size: var(--bc-font-size-xs);
     color: var(--bc-colors-grey-text-300);
+    flex:1;
 }
 
     .unity-comment-block .commented-time {
         font-size: var(--bc-font-size-xxs);
     }
+
+.comment-read-mode{
+    display : flex;
+}
+
+.comment-read-mode > .unity-user-initials {
+    margin-top: 0.5rem;
+    padding:5px;
+    width:22px;
+    height:22px;
+    font-size:0.45rem;
+}
+.commenter-name{
+    font-size:0.75rem;
+}

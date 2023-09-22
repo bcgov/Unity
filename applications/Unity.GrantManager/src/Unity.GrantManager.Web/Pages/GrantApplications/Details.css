@@ -241,3 +241,11 @@ select.selected{
 #application_attachment_upload_btn{
     margin-top:0.8rem;
 }
+
+.details-nav .nav-link {
+    display: flex;
+   
+}
+.details-nav .nav-link .fl{
+    margin-right:4px;
+}

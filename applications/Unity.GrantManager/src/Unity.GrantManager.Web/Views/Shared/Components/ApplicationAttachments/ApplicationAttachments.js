@@ -34,7 +34,7 @@
                 ),
                 columnDefs: [
                     {
-                        title: '',
+                        title: '<i class="fl fl-paperclip" ></i>',
                         render: function (data) {
                             return '<i class="fl fl-paperclip" ></i>';
                         }

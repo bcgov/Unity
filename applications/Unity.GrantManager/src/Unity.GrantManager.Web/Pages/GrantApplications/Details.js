@@ -189,6 +189,17 @@ $(function () {
         }
     }
 
+
+    let assessmentUserDetailsWidgetManager = new abp.WidgetManager({
+        wrapper: '#assessmentUserDetailsWidget',
+        filterCallback: function () {
+            return {
+                'name': selectedReviewDetails.adjudicatorName,
+                'info': 'Program Coordinator, Small Business & Economic Development Division'
+            };
+        }
+    });
+
     PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
@@ -198,6 +209,7 @@ $(function () {
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
+                assessmentUserDetailsWidgetManager.refresh();
                 checkCurrentUser(data);
             }
             else {
