@@ -458,7 +458,7 @@
 
         try {
             unity.grantManager.grantApplications.grantApplication
-                .updateAssigneesAsync(jsonString)
+                .updateAssignees(jsonString)
                 .done(function () {
                     abp.notify.success('The application has been updated.');
                     PubSub.publish('refresh_application_list', id);
