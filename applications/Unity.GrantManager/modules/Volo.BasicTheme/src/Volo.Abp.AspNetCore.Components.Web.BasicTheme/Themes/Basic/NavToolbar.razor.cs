@@ -46,9 +46,27 @@ public partial class NavToolbar : IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
+    #region IDisposable implementation
+    // To detect redundant calls
+    private bool _disposed;
+
     public void Dispose()
     {
-        ApplicationConfigurationChangedService.Changed -= ApplicationConfigurationChanged;
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
+
+    // Protected implementation of Dispose pattern.
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                ApplicationConfigurationChangedService.Changed -= ApplicationConfigurationChanged;
+            }
+            _disposed = true;
+        }
+    }
+    #endregion
 }

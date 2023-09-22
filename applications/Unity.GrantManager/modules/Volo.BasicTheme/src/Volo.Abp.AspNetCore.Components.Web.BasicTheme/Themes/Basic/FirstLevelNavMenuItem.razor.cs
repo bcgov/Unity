@@ -24,15 +24,33 @@ public partial class FirstLevelNavMenuItem : IDisposable
         IsSubMenuOpen = !IsSubMenuOpen;
     }
 
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-        GC.SuppressFinalize(this);
-    }
-
     private void OnLocationChanged(object sender, LocationChangedEventArgs e)
     {
         IsSubMenuOpen = false;
         InvokeAsync(StateHasChanged);
     }
+
+    #region IDisposable implementation
+    // To detect redundant calls
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    // Protected implementation of Dispose pattern.
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                NavigationManager.LocationChanged -= OnLocationChanged;
+            }
+            _disposed = true;
+        }
+    }
+    #endregion
 }

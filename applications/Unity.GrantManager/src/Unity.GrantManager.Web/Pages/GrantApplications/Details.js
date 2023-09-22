@@ -207,16 +207,16 @@ function uploadFiles(inputId) {
     if (files.length == 0) {
         return;
     }
-    for (let i = 0; i < files.length; i++) {
-        console.log(files[i]);
-        if (!allowedTypes.includes(files[i].type)) {
+    for (let file of files) {
+        console.log(file);
+        if (!allowedTypes.includes(file.type)) {
             isAllowedTypeError = true;
         }
-        if ((files[i].size * 0.000001) > maxFileSize) {
+        if ((file.size * 0.000001) > maxFileSize) {
             isMaxFileSizeError = true;
         }
 
-        formData.append("files", files[i]);
+        formData.append("files", file);
     }
 
     if (isAllowedTypeError) {

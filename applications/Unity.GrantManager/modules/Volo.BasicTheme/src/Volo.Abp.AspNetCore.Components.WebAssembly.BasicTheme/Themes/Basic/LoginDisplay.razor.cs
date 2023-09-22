@@ -39,13 +39,6 @@ public partial class LoginDisplay : IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose()
-    {
-        Navigation.LocationChanged -= OnLocationChanged;
-        ApplicationConfigurationChangedService.Changed -= ApplicationConfigurationChanged;
-        GC.SuppressFinalize(this);
-    }
-
     private async Task NavigateToAsync(string uri, string target = null)
     {
         if (target == "_blank")
@@ -62,4 +55,29 @@ public partial class LoginDisplay : IDisposable
     {
         Navigation.NavigateToLogout("authentication/logout");
     }
+
+    #region IDisposable implementation
+    // To detect redundant calls
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    // Protected implementation of Dispose pattern.
+    protected override void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                Navigation.LocationChanged -= OnLocationChanged;
+                ApplicationConfigurationChangedService.Changed -= ApplicationConfigurationChanged;
+            }
+            _disposed = true;
+        }
+    }
+    #endregion
 }
