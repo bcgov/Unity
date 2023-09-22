@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Localization;
+using Unity.GrantManager.Permissions;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Web.Navigation;
 using Volo.Abp.UI.Navigation;
@@ -105,6 +106,28 @@ public class GrantManagerMenuContributor : IMenuContributor
                 icon: "fl fl-other-user",
                 order: 7,
                 requiredPermissionName: IdentityPermissions.Users.Default
+            )
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.Intakes,
+                l["Menu:Intakes"],
+                "~/Intakes",
+                icon: "fl fl-settings",
+                order: 8,
+                requiredPermissionName: GrantManagerPermissions.Intakes.Default
+            )
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.ApplicationForms,
+                l["Menu:ApplicationForms"],
+                "~/ApplicationForms",
+                icon: "fl fl-settings",
+                order: 9,
+                requiredPermissionName: GrantManagerPermissions.ApplicationForms.Default
             )
         );
 
