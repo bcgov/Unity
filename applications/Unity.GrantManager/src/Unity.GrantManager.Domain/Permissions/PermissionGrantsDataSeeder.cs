@@ -110,7 +110,9 @@ namespace Unity.GrantManager.Permissions
                     SettingManagementSeedPermissions.Emailing,
                     SettingManagementSeedPermissions.EmailingTest,
                     GrantManagerPermissions.Organizations.Default,
-                    GrantManagerPermissions.Organizations.ManageProfiles
+                    GrantManagerPermissions.Organizations.ManageProfiles,
+                    GrantManagerPermissions.Intakes.Default,
+                    GrantManagerPermissions.ApplicationForms.Default
              });
         }
     }

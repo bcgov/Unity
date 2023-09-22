@@ -265,3 +265,7 @@
 .fl-completed:before {
     content: '\E930';
 }
+
+.fl-export:before {
+    content: '\EDE2';
+}

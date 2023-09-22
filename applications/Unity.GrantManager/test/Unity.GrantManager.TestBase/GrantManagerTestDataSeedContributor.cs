@@ -73,8 +73,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 new Intake
                 {
                     IntakeName = "Integration Tests Intake",
-                    StartDate = new DateOnly(2022, 1, 1),
-                    EndDate = new DateOnly(2023, 1, 1),
+                    StartDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 },
             autoSave: true
         );
@@ -103,8 +103,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 ReferenceNo = "TEST12345",
                 EligibleAmount = 12345.51,
                 RequestedAmount = 3456.13,
-                ProposalDate =  new DateTime(2022, 1, 1, 12, 0, 0, 0, DateTimeKind.Local),
-                SubmissionDate = new DateTime(2023, 1, 1, 12, 0, 0, 0, DateTimeKind.Local),
+                ProposalDate =  new DateTime(2022, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
+                SubmissionDate = new DateTime(2023, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
                 Payload = "{\"Name\":\"John Smith\",\"Age\":34,\"Address\":\"British Columbia\"}"
             },
             autoSave: true

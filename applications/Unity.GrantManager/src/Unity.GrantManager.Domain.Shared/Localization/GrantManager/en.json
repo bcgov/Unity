@@ -12,6 +12,8 @@
     "Menu:Welcome": "Welcome",
     "Menu:Roles": "Roles",
     "Menu:Users": "Users",
+    "Menu:Intakes": "Intakes",
+    "Menu:ApplicationForms": "Application Forms",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
@@ -24,6 +26,12 @@
     "Enum:GrantProgramType.6": "Jobs & Training",
 
     "Common:Command:Edit": "Edit",
+    "Common:Command:Create": "Create",
+    "Common:Command:Update": "Update",
+    "Common:StartDate": "Start Date",
+    "Common:EndDate": "End Date",
+    "Common:Name": "Name",
+    "Common:Description": "Description",
 
     "GrantPrograms": "Grant Programs",
     "GrantProgram": "Grant Program",
@@ -102,6 +110,16 @@
     "Permission:GrantApplicationManagement.Comments.Default": "Comments",
     "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment",
     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
-    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles"
+    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
+    "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
+    "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Application Forms",
+
+    "ApplicationForms": "Application Forms",
+    "ApplicationForms:Description": "Description",
+    "ApplicationForms:ChefsFormId": "CHEFS Form Id",
+    "ApplicationForms:ChefsCriteriaFormId": "CHEFS Criteria Form Id",
+    "ApplicationForms:ChefsFormApiKey": "CHEFS Form Api Key",
+
+    "Intakes": "Intakes"
   }
 }

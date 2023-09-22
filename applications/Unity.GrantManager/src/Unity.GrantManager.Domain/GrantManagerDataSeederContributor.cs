@@ -46,7 +46,7 @@ public class GrantManagerDataSeederContributor
                 {
                     ProgramName = "Space Farms Grant Program",
                     Type = GrantProgramType.Agriculture,
-                    PublishDate = new DateTime(2023, 6, 8),
+                    PublishDate = new DateTime(2023, 6, 8, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
             );
@@ -59,7 +59,7 @@ public class GrantManagerDataSeederContributor
                  {
                      ProgramName = "Fictional Arts Accelerator Grant",
                      Type = GrantProgramType.Arts,
-                     PublishDate = new DateTime(2023, 5, 15),
+                     PublishDate = new DateTime(2023, 5, 15, 0, 0, 0, DateTimeKind.Utc),
                  },
                  autoSave: true
              );
@@ -72,7 +72,7 @@ public class GrantManagerDataSeederContributor
                 {
                     ProgramName = "New Approaches in Counting Grant",
                     Type = GrantProgramType.Research,
-                    PublishDate = new DateTime(2020, 5, 15),
+                    PublishDate = new DateTime(2020, 5, 15, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
             );
@@ -85,7 +85,7 @@ public class GrantManagerDataSeederContributor
                 {
                     ProgramName = "BizBusiness Fund",
                     Type = GrantProgramType.Business,
-                    PublishDate = new DateTime(1992, 01, 01),
+                    PublishDate = new DateTime(1992, 01, 01, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
             );
@@ -98,7 +98,7 @@ public class GrantManagerDataSeederContributor
                 {
                     ProgramName = "Historically Small Books Preservation Grant",
                     Type = GrantProgramType.Arts,
-                    PublishDate = new DateTime(2002, 01, 01),
+                    PublishDate = new DateTime(2002, 01, 01, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
             );
@@ -109,8 +109,8 @@ public class GrantManagerDataSeederContributor
                 new Intake
                 {
                     IntakeName = "2022 Intake",
-                    StartDate = new DateOnly(2022, 1, 1),
-                    EndDate = new DateOnly(2023, 1, 1),
+                    StartDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
         );
@@ -120,8 +120,8 @@ public class GrantManagerDataSeederContributor
             new Intake
             {
                 IntakeName = "2023 Intake",
-                StartDate = new DateOnly(2023, 1, 1),
-                EndDate = new DateOnly(2024, 1, 1),
+                StartDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             },
             autoSave: true
         );
