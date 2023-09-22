@@ -58,7 +58,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
             string AssigneeDisplayName = uData.Name;
 
             // Act
-            await _grantApplicationAppServiceTest.AddAssignee(applicationIds, AssigneeKeycloakId, AssigneeDisplayName);
+            await _grantApplicationAppServiceTest.InsertAssigneeAsync(applicationIds, AssigneeKeycloakId, AssigneeDisplayName);
             await _unitOfWorkManager.Current.SaveChangesAsync();
 
 
@@ -68,7 +68,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
             assignments.Count.ShouldBe(1);
 
             // Act
-            await _grantApplicationAppServiceTest.RemoveAssignee(applicationIds, AssigneeKeycloakId);
+            await _grantApplicationAppServiceTest.DeleteAssigneeAsync(applicationIds, AssigneeKeycloakId);
             await _unitOfWorkManager.Current.SaveChangesAsync();
 
             IQueryable<ApplicationUserAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;

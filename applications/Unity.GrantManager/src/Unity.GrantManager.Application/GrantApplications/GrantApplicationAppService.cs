@@ -152,7 +152,7 @@ namespace Unity.GrantManager.GrantApplications
             }
         }
 
-        public async Task AddAssignee(Guid[] applicationIds, string AssigneeKeycloakId, string AssigneeDisplayName)
+        public async Task InsertAssigneeAsync(Guid[] applicationIds, string AssigneeKeycloakId, string AssigneeDisplayName)
         {
             foreach (Guid applicationId in applicationIds)
             {
@@ -180,7 +180,7 @@ namespace Unity.GrantManager.GrantApplications
             }
         }
 
-        public async Task RemoveAssignee(Guid[] applicationIds, string AssigneeKeycloakId)
+        public async Task DeleteAssigneeAsync(Guid[] applicationIds, string AssigneeKeycloakId)
         {
             foreach (Guid applicationId in applicationIds)
             {
@@ -195,9 +195,8 @@ namespace Unity.GrantManager.GrantApplications
             }
         }
 
-        public async Task ModifyAssignees(dynamic modifiedAssignees)
+        public async Task UpdateAssigneesAsync(dynamic modifiedAssignees)
         {
-
             var dynamicObject = JsonConvert.DeserializeObject<dynamic>(modifiedAssignees)!;
             if (dynamicObject != null && dynamicObject is IEnumerable)
             {
@@ -227,7 +226,7 @@ namespace Unity.GrantManager.GrantApplications
                         string oidcSub = assigneeToken.Value<string?>("oidcSub") ?? "";
                         Guid[] applicationIds = new Guid[1];
                         applicationIds.SetValue(currentGuid, 0);
-                        await AddAssignee(applicationIds, oidcSub, assigneeDisplayName);
+                        await InsertAssigneeAsync(applicationIds, oidcSub, assigneeDisplayName);
                     }
                     previousApplication = currentApplicationId;
                 }
