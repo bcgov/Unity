@@ -30,15 +30,11 @@
             ),
             columnDefs: [
                 {
-                    title: '',
-                    data: 'id',
-                    visible : false,
-                },
-                {
-                    title: '',
+                    title: '<i class="fl fl-review-user" ></i>',
+                    orderable: false,
                     render: function (data) {
                         return '<i class="fl fl-review-user" ></i>';
-                    }
+                    },
                 },
                 {
                     title: l('ReviewerList:ReviewerName'),

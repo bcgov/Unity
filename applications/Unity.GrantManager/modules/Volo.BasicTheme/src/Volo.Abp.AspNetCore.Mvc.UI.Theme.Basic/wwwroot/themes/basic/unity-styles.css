@@ -101,6 +101,12 @@
         color: var(--bc-colors-grey-text-500);
     }
 
+    .unity-side-nav .menu-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .unity-side-nav .nav-item:hover, .unity-side-nav .nav-item:focus, .unity-side-nav .nav-item:active, .unity-side-nav .nav-item.current {
         color: var(--bc-colors-blue-text-links);
         background: white;
