@@ -79,32 +79,12 @@
         };
     }
     
-    // Filter out Team Lead Actions
-    const teamLeadActions = ['Confirm', 'SendBack'];
-    const bifurcateBy = (arr, fn) =>
-        arr.reduce((acc, val) => (acc[fn(val) ? 0 : 1].push(val), acc), [[], []]);
-
     let buttonArray = Array.from(actionArray, (item) => renderButtons(item));
-    let buttonGroups = bifurcateBy(buttonArray, x => !teamLeadActions.includes(x.name));
     
-    let adjudicationButtonsGroup = {
-        name: 'adjudicatorActionButtons',
-        buttons: buttonGroups[0]
+    let assessmentButtonsGroup = {
+        name: 'assessmentActionButtons',
+        buttons: buttonArray
     };
-
-    let teamLeadButtonGroup = {
-        buttons: [
-            {
-                extend: 'collection',
-                name: 'teamLeadActions',
-                text: 'Team Lead Actions',
-                className: 'btn btn-light',
-                enabled: false,
-                display: false,
-                buttons: buttonGroups[1]
-            }
-        ]
-    }
 
     let reviewListTable = $('#ReviewListTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -122,7 +102,7 @@
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.assessments.assessments.getList, inputAction, responseCallback
             ),
-            buttons: adjudicationButtonsGroup,
+            buttons: assessmentButtonsGroup,
             columnDefs: [
                 {
                     title: '',
@@ -174,11 +154,7 @@
         console.log('Button ' + buttonApi.name + ' was activated');
     });
 
-    // Add team lead buttons separately
-    new $.fn.dataTable.Buttons(reviewListTable, teamLeadButtonGroup);
-
     reviewListTable.buttons(0, null).container().appendTo("#DetailsActionBarStart");
-    reviewListTable.buttons(1, null).container().appendTo("#AdjudicationTeamLeadActionBar");
     $("#DetailsActionBarStart .dt-buttons").contents().unwrap();
 
     let refreshActionButtons = function (dataTableContext, assessmentId) {
@@ -190,9 +166,6 @@
                 .then(function (actionListResult) {
                     // Check permissions
                     let enabledButtons = actionListResult.map((x) => x + ':name');
-                    if (actionListResult.some(item => teamLeadActions.includes(item))) {
-                        enabledButtons.push('teamLeadActions:name');
-                    }
                     dataTableContext.buttons(enabledButtons).enable();
                 });
         }
