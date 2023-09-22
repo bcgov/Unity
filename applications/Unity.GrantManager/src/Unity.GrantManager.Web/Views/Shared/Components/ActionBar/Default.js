@@ -1,16 +1,18 @@
 $(function () {
-
     let selectedApplicationIds = [];
-    const assignApplicationModal = new abp.ModalManager({
+    let assignApplicationModal = new abp.ModalManager({
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
     });
-    const statusUpdateModal = new abp.ModalManager({
+    let unAssignApplicationModal = new abp.ModalManager({
+        viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
+    });    
+    let statusUpdateModal = new abp.ModalManager({
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
-    const approveApplicationsModal = new abp.ModalManager({
+    let approveApplicationsModal = new abp.ModalManager({
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
-    const dontApproveApplicationsModal = new abp.ModalManager({
+    let dontApproveApplicationsModal = new abp.ModalManager({
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
 
@@ -20,7 +22,16 @@ $(function () {
             'Application Assinee'
         );
         PubSub.publish("refresh_application_list");
-    });    
+    });
+
+    unAssignApplicationModal.onResult(function () {
+        abp.notify.success(
+            'The application assignee has been successfully removed.',
+            'Application Assinee'
+        );
+        PubSub.publish("refresh_application_list");
+    });
+
     statusUpdateModal.onResult(function () {
         abp.notify.success(
             'The application status has been successfully updated',
@@ -68,6 +79,14 @@ $(function () {
     $('#assignApplication').click(function () {
         assignApplicationModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
+            actionType: 'Add'
+        });
+    });
+
+    $('#unAssignApplication').click(function () {
+        unAssignApplicationModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+            actionType: 'Remove'
         });
     });
 
@@ -92,6 +111,8 @@ $(function () {
             title: 'Not Approve Applications',
         });
     });
+
+    
 
     $('#externalLink').click(function () {
         location.href =
