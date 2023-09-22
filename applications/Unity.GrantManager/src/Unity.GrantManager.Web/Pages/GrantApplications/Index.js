@@ -175,8 +175,7 @@
                         previousCell.textContent = originalContent;
                     } 
                     
-                    for (i = 0; i < userOptions.length; i++) {
-                        userOption = userOptions[i];
+                    for (let userOption of userOptions) {
                         $(userOption).prop(
                             'selected',
                             assigneeIds.includes(userOption.value)
