@@ -36,12 +36,12 @@
             className: 'btn btn-light',
             buttonIcon: 'fl-review',
             enabled: false,
-            text: function (dt, jqNode, config) {
+            text: function (dt, button, config) {
                 let buttonIcon = `<i class="fl ${config.buttonIcon}"></i>`;
                 let buttonText = l(`Enum:AssessmentAction.${config.name}`);
                 return buttonIcon + '<span>' + buttonText + '</span>'
             },
-            action: function (e, dt, node, config) {
+            action: function (e, dt, button, config) {
                 let selectedRow = dt.rows({ selected: true }).data()[0];
                 if (typeof(selectedRow) === 'object') {
                     unity.grantManager.assessments.assessments.executeAssessmentAction(selectedRow.id, config.name, {})
@@ -70,17 +70,28 @@
 
     actionArray.push(...additionalActions);
 
+    const actionButtonConfigMap = {
+        Create: { order: 1, icon: 'fl-review' },
+        SendToTeamLead: { order: 2, icon: 'fl-send' },
+        SendBack: { order: 3, icon: 'fl-send-mirrored' },
+        Confirm: { order: 4, icon: 'fl-checkbox-checked' },
+        _Fallback: { order: 100, icon: 'fl-endpoint'}
+    }
+
     let renderButtons = function (actionValue) {
+        let buttonConfig = actionButtonConfigMap[actionValue] ?? actionButtonConfigMap['_Fallback']
+
         return {
             extend: 'unityWorkflow',
             name: actionValue,
-            // TODO: Get configured icons
-            buttonIcon: 'fl-endpoint'
+            sortOrder: buttonConfig.order ?? 100,
+            buttonIcon: buttonConfig.icon
         };
     }
     
-    let buttonArray = Array.from(actionArray, (item) => renderButtons(item));
-    
+    let buttonArray = Array.from(actionArray, (item) => renderButtons(item))
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+
     let assessmentButtonsGroup = {
         name: 'assessmentActionButtons',
         buttons: buttonArray

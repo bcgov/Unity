@@ -261,3 +261,15 @@
 .fl-cross:before {
     content: '\F78A';
 }
+
+.fl-send:before {
+    content: '\E724';
+}
+
+.fl-send-mirrored:before {
+    content: '\EA63';
+}
+
+.fl-checkbox-checked:before {
+    content: '\E73A';
+}

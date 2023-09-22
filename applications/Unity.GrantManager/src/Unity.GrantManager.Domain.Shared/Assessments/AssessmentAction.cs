@@ -8,6 +8,6 @@ public enum AssessmentAction : int
     Create,
     SendTo,
     SendToTeamLead,
-    Confirm,
-    SendBack
+    SendBack,
+    Confirm
 }
