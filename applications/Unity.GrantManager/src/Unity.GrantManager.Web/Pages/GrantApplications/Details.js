@@ -287,6 +287,7 @@ function uploadFiles(inputId, urlStr, channel) {
                     data.responseText,
                     'File Upload Not Successful'
                 );
+                PubSub.publish(channel);
             }
         }
     );
