@@ -83,9 +83,9 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
                 if(ActionType == AssigneeConsts.ACTION_TYPE_ADD)
                 {
-                    await _applicationService.AddAssignee(applicationIds.ToArray(), AssigneeId.ToString(), userName);
+                    await _applicationService.InsertAssigneeAsync(applicationIds.ToArray(), AssigneeId.ToString(), userName);
                 } else if (ActionType == AssigneeConsts.ACTION_TYPE_REMOVE) {
-                    await _applicationService.RemoveAssignee(applicationIds.ToArray(), AssigneeId.ToString());
+                    await _applicationService.DeleteAssigneeAsync(applicationIds.ToArray(), AssigneeId.ToString());
                 }
 
                 if (selectedStatus != null)
