@@ -114,6 +114,12 @@
     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
     "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
 
+    "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
+    "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
+    "Permission:GrantApplicationPermissions.Assessments.SendToTeamLead": "Send Assessment to Team Lead",
+    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
+    "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
+
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user."
   }
 }

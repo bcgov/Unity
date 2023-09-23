@@ -102,6 +102,23 @@ namespace Unity.GrantManager.Web.Identity.Policy
             context.Services.AddAuthorization(options =>
                options.AddPolicy(GrantApplicationPermissions.Comments.Add,
                policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Comments.Add)));
+
+            // Assessments
+            context.Services.AddAuthorization(options =>
+               options.AddPolicy(GrantApplicationPermissions.Assessments.Default,
+               policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Default)));
+            context.Services.AddAuthorization(options =>
+               options.AddPolicy(GrantApplicationPermissions.Assessments.Create,
+               policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Create)));
+            context.Services.AddAuthorization(options =>
+               options.AddPolicy(GrantApplicationPermissions.Assessments.SendToTeamLead,
+               policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.SendToTeamLead)));
+            context.Services.AddAuthorization(options =>
+               options.AddPolicy(GrantApplicationPermissions.Assessments.SendBack,
+               policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.SendBack)));
+            context.Services.AddAuthorization(options =>
+               options.AddPolicy(GrantApplicationPermissions.Assessments.Confirm,
+               policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Confirm)));
         }        
     }
 }
