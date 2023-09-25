@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Text;
+﻿namespace Unity.GrantManager.GrantApplications;
 
-namespace Unity.GrantManager.GrantApplications;
-
-public class ApplicationStatusConsts
+public static class ApplicationStatusConsts
 {
     public const int MaxNameLength = 64;
 

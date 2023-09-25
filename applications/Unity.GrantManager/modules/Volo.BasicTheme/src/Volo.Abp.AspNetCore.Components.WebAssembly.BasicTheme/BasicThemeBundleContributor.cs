@@ -6,7 +6,7 @@ public class BasicThemeBundleContributor : IBundleContributor
 {
     public void AddScripts(BundleContext context)
     {
-
+        //Placeholder. Nothing to do here yet.
     }
 
     public void AddStyles(BundleContext context)

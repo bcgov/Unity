@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 using Volo.Abp.BlobStoring;
@@ -17,14 +14,14 @@ namespace Unity.GrantManager.Attachments
             _fileContainer = fileContainer;
         }
 
-        Task<BlobDto> IFileAppService.GetBlobAsync(GetBlobRequestDto input)
+        Task<BlobDto> IFileAppService.GetBlobAsync(GetBlobRequestDto getBlobRequestDto)
         {
             throw new NotImplementedException();
         }
 
-        async Task IFileAppService.SaveBlobAsync(SaveBlobInputDto input)
+        async Task IFileAppService.SaveBlobAsync(SaveBlobInputDto saveBlobInputDto)
         {
-            await _fileContainer.SaveAsync(input.Name, input.Content, true);
+            await _fileContainer.SaveAsync(saveBlobInputDto.Name, saveBlobInputDto.Content, true);
         }
     }
 }

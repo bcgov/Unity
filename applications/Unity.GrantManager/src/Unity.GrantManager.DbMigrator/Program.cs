@@ -1,14 +1,13 @@
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
+using System.Threading.Tasks;
 
 namespace Unity.GrantManager.DbMigrator;
 
-class Program
+public static class Program
 {
     static async Task Main(string[] args)
     {

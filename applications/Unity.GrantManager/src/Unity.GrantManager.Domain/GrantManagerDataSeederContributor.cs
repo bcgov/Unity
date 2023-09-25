@@ -300,6 +300,6 @@ public class GrantManagerDataSeederContributor
                 Surname = "Romanoff"
             };
             await _identityUserManager.CreateAsync(identityUser3);
-        };
+        }
     }
 }

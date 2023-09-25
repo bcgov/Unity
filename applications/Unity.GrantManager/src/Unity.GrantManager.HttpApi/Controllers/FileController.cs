@@ -2,13 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Unity.GrantManager.Attachments;
 using Volo.Abp.AspNetCore.Mvc;
 
@@ -35,7 +30,7 @@ namespace Unity.GrantManager.Controllers
         [Route("uploader")]
         public async Task<IActionResult> Index(IList<IFormFile> files)
         {
-            List<string> ErrorList = new List<string>();
+            List<string> ErrorList = new();
             foreach (IFormFile source in files)
             {
                 try
@@ -52,28 +47,18 @@ namespace Unity.GrantManager.Controllers
                     }
                 }
                 catch (Exception ex)
-                { 
+                {
                     ErrorList.Add(source.FileName + " : " + ex.Message);
                 }
-                
+
             }
 
-            if(ErrorList.Count > 0)
+            if (ErrorList.Count > 0)
             {
                 return BadRequest("ERROR:<br>" + String.Join("<br>", ErrorList.ToArray()));
             }
 
-            return Ok("All Files Are Successfully Uploaded!");          
-
-            
+            return Ok("All Files Are Successfully Uploaded!");
         }
-    }
-
-    public class UploadFileDto
-    {
-        [Required]
-        [Display(Name = "File")]
-        public IFormFile File { get; set; }
-
     }
 }

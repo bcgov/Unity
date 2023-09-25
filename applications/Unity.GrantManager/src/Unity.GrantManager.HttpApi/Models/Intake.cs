@@ -1,8 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
-namespace Unity.GrantManager.Models
+﻿namespace Unity.GrantManager.Models
 {
-	public class Intake
+    public class Intake
 	{
         public string? confirmationId { get; set; }
         public string? formName { get; set; }

@@ -5,6 +5,6 @@ namespace Unity.GrantManager.GrantApplications
 {
     public class GrantApplication : AuditedAggregateRoot<Guid>
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }

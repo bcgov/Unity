@@ -1,21 +1,15 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Shouldly;
-using Xunit;
-using Microsoft.Extensions.DependencyInjection;
-using Unity.GrantManager.Comments;
+﻿using Shouldly;
 using System;
-using Volo.Abp.Validation;
-using Unity.GrantManager.Exceptions;
-using Unity.GrantManager.Assessments;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Uow;
-using Volo.Abp.Identity;
+using System.Linq;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Repositories;
-using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using Unity.GrantManager.Comments;
+using Unity.GrantManager.Exceptions;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Identity;
+using Volo.Abp.Uow;
 using Volo.Abp.Users;
+using Xunit;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -51,9 +45,9 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         Guid[] applicationIds = new Guid[1];
         applicationIds.SetValue(application.Id, 0);
         var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
-        if (users != null && users.Items != null)
+        if (users != null && users.Items.Count > 0)
         {
-            UserData uData = users.Items.FirstOrDefault();
+            UserData uData = users.Items[0];
             string AssigneeKeycloakId = uData.Id.ToString();
             string AssigneeDisplayName = uData.Name;
 

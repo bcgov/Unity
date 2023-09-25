@@ -1,13 +1,12 @@
-﻿using System;
-using System.IO;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+using System;
 
 namespace Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo;
 
-public class Program
+public static class Program
 {
     public static int Main(string[] args)
     {

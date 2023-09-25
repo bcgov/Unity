@@ -1,5 +1,4 @@
 $(function () {
-
     let selectedApplicationIds = [];
     let assignApplicationModal = new abp.ModalManager({
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
@@ -61,22 +60,21 @@ $(function () {
         PubSub.publish("refresh_application_list");
     });
     
-    const select_application_subscription = PubSub.subscribe("select_application", (msg, data) => {
+    PubSub.subscribe("select_application", (msg, data) => {
         selectedApplicationIds.push(data.id);
         manageActionButtons();
 
     });
-    const deselect_application_subscription1 = PubSub.subscribe("deselect_application", (msg, data) => {
+    PubSub.subscribe("deselect_application", (msg, data) => {
         selectedApplicationIds.pop(data.id);
         manageActionButtons();
 
     });
 
-    const clear_selected_application_subscription3 = PubSub.subscribe("clear_selected_application", (msg, data) => {
+    PubSub.subscribe("clear_selected_application", (msg, data) => {
         selectedApplicationIds = [];
         manageActionButtons();
     });
-
 
     $('#assignApplication').click(function () {
         assignApplicationModal.open({

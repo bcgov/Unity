@@ -16,13 +16,13 @@ public class FormSubmissionSummaryDto
     public Guid FormVersionId { get; set; }
 
     [JsonPropertyName("confirmationId")]
-    public string ConfirmationId { get; set; }
+    public string ConfirmationId { get; set; } = string.Empty;
 
     [JsonPropertyName("formSubmissionStatusCode")]
-    public string FormSubmissionStatusCode { get; set; }
+    public string FormSubmissionStatusCode { get; set; } = string.Empty;
 
     [JsonPropertyName("createdBy")]
-    public string CreatedBy { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
 
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }
@@ -31,16 +31,16 @@ public class FormSubmissionSummaryDto
     public bool Deleted { get; set; }
 
     [JsonPropertyName("projectTitle")]
-    public string ProjectTitle { get; set; }
+    public string ProjectTitle { get; set; } = string.Empty;
 
     [JsonPropertyName("projectLocation")]
-    public string ProjectLocation { get; set; }
+    public string ProjectLocation { get; set; } = string.Empty;
 
     [JsonPropertyName("contactName")]
-    public string ContactName { get; set; }
+    public string ContactName { get; set; } = string.Empty;
 
     [JsonPropertyName("organizationLegalName")]
-    public string OrganizationLegalName { get; set; }
+    public string OrganizationLegalName { get; set; } = string.Empty;
 
     [JsonPropertyName("lateEntry")]
     public bool LateEntry { get; set; }

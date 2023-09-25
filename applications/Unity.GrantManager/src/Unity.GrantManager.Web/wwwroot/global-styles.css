@@ -11,30 +11,28 @@
     --lpx-warning: #ff9f38;
 }
 
-:root .lpx-brand-logo {
-    --lpx-logo: url('/images/logo/bcgov/BCID_H_rgb_pos.png');
-    --lpx-logo-icon: url('/images/logo/bcgov/BCID_V_rgb_pos.png');
-}
-
-:root .lpx-brand-logo {
-    background-size: 220px 99px;
-    height: 79px;
-    margin: 0px;
-    margin-top: -30px;
-}
+    :root .lpx-brand-logo {
+        --lpx-logo: url('/images/logo/bcgov/BCID_H_rgb_pos.png');
+        --lpx-logo-icon: url('/images/logo/bcgov/BCID_V_rgb_pos.png');
+        background-size: 220px 99px;
+        height: 79px;
+        margin: 0px;
+        margin-top: -30px;
+    }
 
 
 .lpx-topbar-container .lpx-topbar {
     border-radius: 0;
+    display: none;
 }
 
 .lpx-sidebar {
     background-color: #F2F2F2;
 }
 
-.lpx-sidebar .lpx-logo-container {
-    background-color: #fff;
-}
+    .lpx-sidebar .lpx-logo-container {
+        background-color: #fff;
+    }
 
 .lpx-sidebar-container .lpx-sidebar .lpx-nav .lpx-nav-menu {
     background-color: #F2F2F2;
@@ -69,12 +67,7 @@ inner-menu-item .lpx-menu-item-link:hover {
     margin-top: 20px;
 }
 
-.lpx-topbar-container .lpx-topbar {
-    display: none;
-}
-
 .lpx-topbar-container {
-
     height: 90px;
     background-color: white;
 }

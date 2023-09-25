@@ -5,7 +5,7 @@ namespace Unity.GrantManager.GrantPrograms;
 
 public class Intake : FullAuditedAggregateRoot<Guid>
 {
-    public Double Budget { get; set; }
+    public double Budget { get; set; }
 
     public DateTime StartDate { get; set; }
 

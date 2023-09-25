@@ -1,12 +1,12 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
@@ -78,7 +78,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
                 await SeedDataAsync(tenant);
             }
 
-            Logger.LogInformation($"Successfully completed {tenant.Name} tenant database migrations.");
+            Logger.LogInformation("Successfully completed {tenantName} tenant database migrations.", tenant.Name);
         }
 
         Logger.LogInformation("Successfully completed all database migrations.");
@@ -87,8 +87,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
 
     private async Task MigrateDatabaseSchemaAsync(Tenant? tenant = null)
     {
-        Logger.LogInformation(
-            $"Migrating schema for {(tenant == null ? "host" : tenant.Name + " tenant")} database...");
+        Logger.LogInformation("Migrating schema for {database} database...", tenant == null ? "host" : tenant.Name + " tenant");
 
         foreach (var migrator in _dbSchemaMigrators)
         {
@@ -98,7 +97,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
 
     private async Task SeedDataAsync(Tenant? tenant = null)
     {
-        Logger.LogInformation($"Executing {(tenant == null ? "host" : tenant.Name + " tenant")} database seed...");
+        Logger.LogInformation("Executing {database} database seed...", tenant == null ? "host" : tenant.Name + " tenant");
 
         await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id)
             .WithProperty(IdentityDataSeedContributor.AdminEmailPropertyName, IdentityDataSeedContributor.AdminEmailDefaultValue)
@@ -134,19 +133,18 @@ public class GrantManagerDbMigrationService : ITransientDependency
         }
         catch (Exception e)
         {
-            Logger.LogWarning("Couldn't determinate if any migrations exist : " + e.Message);
+            Logger.LogWarning("Couldn't determinate if any migrations exist : {message}", e.Message);
             return false;
         }
     }
 
-    private bool DbMigrationsProjectExists()
+    private static bool DbMigrationsProjectExists()
     {
         var dbMigrationsProjectFolder = GetEntityFrameworkCoreProjectFolderPath();
-
         return dbMigrationsProjectFolder != null;
     }
 
-    private bool MigrationsFolderExists()
+    private static bool MigrationsFolderExists()
     {
         var dbMigrationsProjectFolder = GetEntityFrameworkCoreProjectFolderPath();
         return dbMigrationsProjectFolder != null && Directory.Exists(Path.Combine(dbMigrationsProjectFolder, "Migrations"));
@@ -174,32 +172,19 @@ public class GrantManagerDbMigrationService : ITransientDependency
             $"{argumentPrefix} \"abp create-migration-and-run-migrator \"{GetEntityFrameworkCoreProjectFolderPath()}\"\""
         );
 
-        try
-        {
-            Process.Start(procStartInfo);
-        }
-        catch (Exception)
-        {
-            throw new Exception("Couldn't run ABP CLI...");
-        }
+        Process.Start(procStartInfo);
     }
 
-    private string? GetEntityFrameworkCoreProjectFolderPath()
+    private static string? GetEntityFrameworkCoreProjectFolderPath()
     {
-        var slnDirectoryPath = GetSolutionDirectoryPath();
-
-        if (slnDirectoryPath == null)
-        {
-            throw new Exception("Solution folder not found!");
-        }
-
+        var slnDirectoryPath = GetSolutionDirectoryPath() ?? throw new IOException("Solution folder not found!");
         var srcDirectoryPath = Path.Combine(slnDirectoryPath, "src");
 
         return Directory.GetDirectories(srcDirectoryPath)
             .FirstOrDefault(d => d.EndsWith(".EntityFrameworkCore"));
     }
 
-    private string? GetSolutionDirectoryPath()
+    private static string? GetSolutionDirectoryPath()
     {
         var currentDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
 

@@ -102,18 +102,17 @@
     reviewListTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
             let deselectedData = reviewListTable.row(indexes).data();
-            PubSub.publish('select_application_review', null);
+            PubSub.publish('select_application_review', deselectedData);
             e.currentTarget.classList.toggle('selected');
         }
     });
 
 
-    const refresh_review_list_subscription = PubSub.subscribe(
+    PubSub.subscribe(
         'refresh_review_list',
          (msg, data) => {
              reviewListTable.ajax.reload(function (json) {
                  if (data) {
-                     //var row = reviewListTable.row(0).select();
                      let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
                          return reviewListTable.cell(rowIdx, 0).data() === data ? true : false;
                      });
