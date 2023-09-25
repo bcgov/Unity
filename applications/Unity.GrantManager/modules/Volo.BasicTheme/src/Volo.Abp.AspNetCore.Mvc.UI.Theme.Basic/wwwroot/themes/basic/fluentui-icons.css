@@ -266,6 +266,18 @@
     content: '\E930';
 }
 
+.fl-remove-friend:before {
+    content: '\E8F8';
+}
+
+.fl-save:before {
+    content: '\E74E';
+}
+
+.fl-edit:before {
+    content: '\E70F';
+}
+
 .fl-export:before {
     content: '\EDE2';
 }

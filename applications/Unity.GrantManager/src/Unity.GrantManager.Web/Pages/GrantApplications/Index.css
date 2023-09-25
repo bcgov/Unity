@@ -17,20 +17,21 @@ table.dataTable>tbody>tr.even.selected>.select-checkbox {
 }
 
 
-table.dataTable>tbody>tr>td.select-checkbox:before,
-table.dataTable>tbody>tr>th.select-checkbox:before {
+table.dataTable>tbody>tr>td.select-checkbox:before
+{
     border: 1px solid #1A5A96;
     border-radius: 26px;
     color: white;
     width: 17px;
     height: 17px;
     top: 55%;
-    left: 46%;
+    left: 48%;
     margin-top: -10px;
+    cursor: pointer;
 }
 
 table.dataTable>tbody>tr>td.select-checkbox:before:hover,
-table.dataTable>tbody>tr>th.select-checkbox:before:hover {
+table.dataTable>tbody>thead>th.select-checkbox:before:hover {
     border: 1px solid #1A5A96;
 }
 
@@ -60,4 +61,86 @@ thead input {
 
 .hidden {
     display: none;
+}
+
+.filter-input {
+    filter: drop-shadow(0px 2px 2px #00000030);
+    border-radius: 4px;
+    padding: 4px;
+    margin: 2px;
+    margin-left: 0px;
+    border: 1px solid #0000004d;
+}
+
+.filter-input:focus {
+    outline: none !important;
+    border:1px solid var(--bc-colors-blue-background, #38598A);
+}
+
+.fl-remove-friend:before {
+    content: '\E8F8';
+}
+
+.grey-background {
+    background-color: var(--bc-colors-white-background) !important;
+}
+
+.select2 {
+    width: 100% !important;
+}
+
+.select2-results__option {
+    font-size: var(--bc-font-size-sm);
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color:  var(--bc-colors-blue-background, #38598A);
+}
+
+.abp-widget-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+td.dt-editable {
+    cursor: pointer;
+}
+
+td.dt-editable:hover {
+    background-color: #e6eff7;
+    color: white;
+}
+
+td.dt-editable:before {
+    content: '\E70F';
+    font-family: 'Segoe-Fluent-Icons';
+    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
+    font-weight: 100;
+    font-style: normal;
+    font-size: 11px;
+    right: 2px;
+    margin-right: 4px;
+    margin-left: -8px;
+    color: var(--bc-colors-blue-background, #38598A);
+}
+
+th.close-icon:before {
+    content: '\E8BB';
+    color: var(--bc-colors-white-primary-500, #FFF);
+    font-family: 'Segoe-Fluent-Icons';
+    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
+    font-size: 9px;
+    padding: 0px;
+    padding-bottom: 14px;
+    text-align: center;
+    height: 16px;
+    width: 16px;
+    font-weight: 400;
+    background-color: var(--bc-colors-blue-background, #38598A);
+    border: 1px solid #1A5A96;
+    border-radius: 17px;
+    cursor: pointer;
+    margin: auto;
+    float: right;
 }
