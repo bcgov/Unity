@@ -1,13 +1,9 @@
-﻿using System;
-
-namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
+﻿namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
 {
     public class UserInfoWidgetViewModel
     {
-       
-        public String Name { get; set; }
-        public string Info { get; set; }
-
-     
+        public string Badge { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;     
     }
 }

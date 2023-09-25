@@ -1,5 +1,4 @@
 ﻿$(function () {
-    console.log('Script loaded');
     const l = abp.localization.getResource('GrantManager');
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
@@ -8,9 +7,6 @@
     }
     
     let responseCallback = function (result) {
-        // your custom code.
-        console.log(result)
-
         return {
             data: result
         };
@@ -30,6 +26,11 @@
             ),
             columnDefs: [
                 {
+                    title: '',
+                    data: 'id',
+                    visible: false,
+                },
+                {
                     title: '<i class="fl fl-review-user" ></i>',
                     orderable: false,
                     render: function (data) {
@@ -41,7 +42,7 @@
                     data: 'adjudicatorName',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data ? data : '';
+                        return data || '';
                     },
                 },
                 {
@@ -87,7 +88,6 @@
     reviewListTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {
             let selectedData = reviewListTable.row(indexes).data();
-            console.log('Selected Data:', selectedData);
             PubSub.publish('select_application_review', selectedData);
             e.currentTarget.classList.toggle('selected');
         }
@@ -110,7 +110,7 @@
              reviewListTable.ajax.reload(function (json) {
                  if (data) {
                      let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
-                         return reviewListTable.cell(rowIdx, 0).data() === data ? true : false;
+                         return reviewListTable.cell(rowIdx, 0).data() === data;
                      });
 
                      reviewListTable.row(indexes).select();

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
@@ -10,9 +9,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
     {
         [HttpGet]
         [Route("RefreshUserInfo")]
-        public IActionResult UserInfo(string name, string info)
+        public IActionResult UserInfo(string displayName, string title)
         {
-            return ViewComponent("UserInfoWidget", new { name, info });
+            return ViewComponent("UserInfoWidget", new { displayName, title });
         }
     }
 }

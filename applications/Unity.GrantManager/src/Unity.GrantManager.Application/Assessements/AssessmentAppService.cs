@@ -37,7 +37,7 @@ namespace Unity.GrantManager.Assessments
                     ApplicationId = dto.ApplicationId,
                     StartDate = dto.StartDate,
                     ApprovalRecommended = dto.ApprovalRecommended,
-                    AdjudicatorName = _currentUser.Name + ' ' + _currentUser.SurName,
+                    AdjudicatorName = $"{_currentUser.SurName}, {_currentUser.Name}",
                 },
                 autoSave: true
             ));

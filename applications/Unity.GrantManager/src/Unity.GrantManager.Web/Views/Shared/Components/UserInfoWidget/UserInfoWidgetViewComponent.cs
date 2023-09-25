@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Linq;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-
+using System;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
 {
@@ -17,24 +14,22 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
         AutoInitialize = true)]
     public class UserInfoWidgetViewComponent : AbpViewComponent
     {
-       
 
         public UserInfoWidgetViewComponent()
         {
-          
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(string name, string info)
-        {            
+        public IViewComponentResult Invoke(string displayName, string title)
+        {
             UserInfoWidgetViewModel model = new()
             {
-               Name = name,
-               Info = info,
+                DisplayName = displayName,
+                Title = title,
+                Badge = displayName.GetUserBadge()
             };
 
-            return View(model);            
-        }
-
+            return View(model);
+        }       
     }
 
     public class UserInfoWidgetStyleBundleContributor : BundleContributor
@@ -56,5 +51,4 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
               .AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
         }
     }
-
 }
