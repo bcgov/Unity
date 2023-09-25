@@ -1,29 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Newtonsoft.Json;
-using Microsoft.Extensions.Logging;
-using System.Linq;
 
 namespace Unity.GrantManager.Web.Pages.Approve;
 
 public class ApproveApplicationsModalModel : AbpPageModel
 {
-        
-    [BindProperty]
-    public string selectedApplicationIds { get; set; } = "";
-    [BindProperty]
-    public string operationStatusCode { get; set; } = "";
-    [TempData]
-    public string popupMessage { get; set; } = "";
-    [TempData]
-    public string popupTitle { get; set; } = "";
 
-    public List<SelectListItem> statusList { get; set; }
+    [BindProperty]
+    public string SelectedApplicationIds { get; set; } = "";
+    [BindProperty]
+    public string OperationStatusCode { get; set; } = "";
+    [TempData]
+    public string PopupMessage { get; set; } = "";
+    [TempData]
+    public string PopupTitle { get; set; } = "";
+
+    public List<SelectListItem> StatusList { get; set; } = new();
 
     private readonly IApplicationStatusService _statusService;
     private readonly GrantApplicationAppService _applicationService;
@@ -34,32 +34,35 @@ public class ApproveApplicationsModalModel : AbpPageModel
         _applicationService = applicationService;
     }
 
-    public async Task OnGetAsync(string applicationIds, string operation, string message, string title)
+    public void OnGet(string applicationIds, string operation, string message, string title)
     {
-        selectedApplicationIds = applicationIds;
-        operationStatusCode = operation;
-        popupMessage = message;
-        popupTitle = title;
-    }     
+        SelectedApplicationIds = applicationIds;
+        OperationStatusCode = operation;
+        PopupMessage = message;
+        PopupTitle = title;
+    }
 
     public async Task<IActionResult> OnPostAsync()
     {
         try
         {
-            Guid statusId = Guid.Empty;
+            Guid statusId;
             var statuses = await _statusService.GetListAsync();
-            var approvedStatus = statuses.FirstOrDefault(status => status.StatusCode == operationStatusCode);
+            var approvedStatus = statuses.FirstOrDefault(status => status.StatusCode == OperationStatusCode);
             if (approvedStatus != null)
             {
-                statusId = approvedStatus.Id;                
+                statusId = approvedStatus.Id;
             }
             else
             {
-                throw new Exception(operationStatusCode + " status code is not found in the database!");
+                throw new ArgumentException(OperationStatusCode + " status code is not found in the database!");
             }
 
-            var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(selectedApplicationIds);           
-            await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), statusId);
+            var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
+            if (null != applicationIds)
+            {
+                await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), statusId);
+            }
         }
         catch (Exception ex)
         {

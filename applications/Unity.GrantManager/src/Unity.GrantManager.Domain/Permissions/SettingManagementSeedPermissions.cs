@@ -1,13 +1,12 @@
-﻿namespace Unity.GrantManager.Permissions
+﻿namespace Unity.GrantManager.Permissions;
+
+/* Domain version of the Abp Setings Permissions to Seed With */
+
+public static class SettingManagementSeedPermissions
 {
-    /* Domain version of the Abp Setings Permissions to Seed With */
+    public const string GroupName = "SettingManagement";
 
-    public class SettingManagementSeedPermissions
-    {
-        public const string GroupName = "SettingManagement";
+    public const string Emailing = GroupName + ".Emailing";
 
-        public const string Emailing = GroupName + ".Emailing";
-
-        public const string EmailingTest = Emailing + ".Test";
-    }
+    public const string EmailingTest = Emailing + ".Test";
 }

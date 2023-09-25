@@ -28,7 +28,7 @@ namespace Unity.GrantManager.Intake
             return response.Content ?? "Error";
         }
 
-        public async Task<List<object>> ListForms(bool? active)
+        public Task<List<object>> ListForms(bool? active)
         {
             // NOTE: Only allows OAUTH authentication
             throw new NotImplementedException();

@@ -1,47 +1,47 @@
-using System.IO;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Logging;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
+using Unity.GrantManager.Web.Identity;
+using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
-using Microsoft.OpenApi.Models;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
+using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
+using Volo.Abp.AspNetCore.Mvc.UI.Theming;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BlobStoring;
 using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.Web;
-using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.UI.Navigation;
+using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
-using Volo.Abp.AspNetCore.Mvc.UI.Theming;
-using System;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using System.Threading.Tasks;
-using Unity.GrantManager.Web.Identity;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.IdentityModel.Logging;
-using Unity.GrantManager.Web.Identity.Policy;
-using Microsoft.AspNetCore.Http;
-using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.CookiePolicy;
-using Volo.Abp.BlobStoring;
 
 namespace Unity.GrantManager.Web;
 
@@ -291,7 +291,7 @@ namespace Unity.GrantManager.Web;
         });
     }
 
-    private void ConfigureSwaggerServices(IServiceCollection services)
+    private static void ConfigureSwaggerServices(IServiceCollection services)
     {
         services.AddAbpSwaggerGen(
             options =>

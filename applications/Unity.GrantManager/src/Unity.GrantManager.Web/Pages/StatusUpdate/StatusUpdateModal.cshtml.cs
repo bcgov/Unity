@@ -1,25 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Newtonsoft.Json;
-using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Web.Pages.StatusUpdate
 {
     public class StatusUpdateModalModel : AbpPageModel
     {
         [BindProperty]
-        public Guid statusId { get; set; }
-        public Guid selectedStatusId { get; set; }
+        public Guid StatusId { get; set; }
+        public Guid SelectedStatusId { get; set; }
 
         [BindProperty]
-        public string selectedApplicationIds { get; set; } = "";
+        public string SelectedApplicationIds { get; set; } = string.Empty;
 
-        public List<SelectListItem> statusList { get; set; }
+        public List<SelectListItem> StatusList { get; set; } = new();
 
         private readonly IApplicationStatusService _statusService;
         private readonly GrantApplicationAppService _applicationService;
@@ -32,9 +32,9 @@ namespace Unity.GrantManager.Web.Pages.StatusUpdate
 
         public async Task OnGetAsync(string applicationIds)
         {
-            selectedApplicationIds = applicationIds;
+            SelectedApplicationIds = applicationIds;
 
-            statusList ??= new List<SelectListItem>();
+            StatusList ??= new List<SelectListItem>();
 
             try
             {
@@ -45,12 +45,12 @@ namespace Unity.GrantManager.Web.Pages.StatusUpdate
                     Console.WriteLine(entityDto.InternalStatus);
                     try
                     {
-                        SelectListItem newItem = new SelectListItem
+                        SelectListItem newItem = new()
                         {
                             Value = entityDto.Id.ToString(),
                             Text = entityDto.InternalStatus
                         };
-                        this.statusList.Add(newItem);
+                        this.StatusList.Add(newItem);
 
                     }
                     catch (Exception ex)
@@ -67,15 +67,10 @@ namespace Unity.GrantManager.Web.Pages.StatusUpdate
 
         public async Task<IActionResult> OnPostAsync()
         {
-            try
+            var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
+            if (null != applicationIds)
             {
-                var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(selectedApplicationIds);
-
-                await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), statusId);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error updating application statuses");
+                await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), StatusId);
             }
             return NoContent();
         }

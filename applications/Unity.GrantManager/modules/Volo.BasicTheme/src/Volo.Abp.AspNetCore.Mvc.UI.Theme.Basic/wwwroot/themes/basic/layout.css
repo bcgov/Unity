@@ -110,8 +110,6 @@ body {
     }
 
         .dataTables_wrapper .dataTables_scrollHead table th, .dataTables_wrapper .dataTables_scrollBody table td {
-         
-            border-bottom: 0;
             height: 28px;
             vertical-align: middle;
             border-bottom: 1px solid var(--bc-colors-grey-dividers);

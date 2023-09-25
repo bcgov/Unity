@@ -1,11 +1,10 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Threading.Tasks;
 
 namespace Unity.GrantManager.HttpApi.Client.ConsoleTestApp;
 
-class Program
+public static class Program
 {
     static async Task Main(string[] args)
     {

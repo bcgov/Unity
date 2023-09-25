@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Pages.Payments
 {
@@ -12,7 +11,8 @@ namespace Unity.GrantManager.Web.Pages.Payments
         }
 
         public void OnGet()
-        {            
+        {
+            //Placeholder. Nothing to do here yet.
         }
     }
 }

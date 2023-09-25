@@ -77,7 +77,6 @@
         let oTable = $('#GrantApplicationsTable').dataTable();
         oTable.fnFilter(filterValue);
         if (filterValue.length > 0) {
-            selectedApplicationIds = [];
             $('#externalLink').prop('disabled', true);
             Array.from(document.getElementsByClassName('selected')).forEach(
                 function (element, index, array) {
@@ -109,19 +108,18 @@
     }
 
     function changeCellContent(cell) {
-        let i,
-            count = 0;
+        let count = 0;
         let content = '';
         let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
         aData.assignees = [];
 
-        for (i = 0; i < userOptions.length; i++) {
-            if (userOptions[i].selected) {
+        for (let userOption of userOptions) {
+            if (userOption.selected) {
                 count++;
-                content = userOptions[i].text;
+                content = userOption.text;
                 aData.assignees.push({
-                    assigneeDisplayName: userOptions[i].text,
-                    oidcSub: userOptions[i].value,
+                    assigneeDisplayName: userOption.text,
+                    oidcSub: userOption.value,
                 });
             }
         }
@@ -139,9 +137,7 @@
 
     function getUserOptionSelectedCount() {
         let userOptionSelectedCount = 0;
-        let userOption, i;
-        for (i = 0; i < userOptions.length; i++) {
-            userOption = userOptions[i];
+        for (let userOption of userOptions) {
             if($(userOption).prop('selected')) {
                 userOptionSelectedCount++;
             }
@@ -179,8 +175,7 @@
                         previousCell.textContent = originalContent;
                     } 
                     
-                    for (i = 0; i < userOptions.length; i++) {
-                        userOption = userOptions[i];
+                    for (let userOption of userOptions) {
                         $(userOption).prop(
                             'selected',
                             assigneeIds.includes(userOption.value)
@@ -468,7 +463,7 @@
         }
     }
 
-    const refresh_application_list_subscription = PubSub.subscribe(
+    PubSub.subscribe(
         'refresh_application_list',
         (msg, data) => {
             dataTable.ajax.reload();
@@ -478,10 +473,10 @@
 
     function getNames(data) {
         let name = '';
-        data.forEach((d,index)=> {
+        data.forEach((d, index) => {
             name = name + ' ' + d.assigneeDisplayName;
 
-            if(index != (data.length - 1)) {
+            if (index != (data.length - 1)) {
                 name = name + ',';
             }
         });

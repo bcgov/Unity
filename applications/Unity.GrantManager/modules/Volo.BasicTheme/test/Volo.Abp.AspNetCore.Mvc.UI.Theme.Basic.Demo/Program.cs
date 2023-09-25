@@ -1,12 +1,11 @@
-using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Serilog.Events;
+using System;
 
 namespace Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Demo;
 
-public class Program
+public static class Program
 {
     public static int Main(string[] args)
     {
