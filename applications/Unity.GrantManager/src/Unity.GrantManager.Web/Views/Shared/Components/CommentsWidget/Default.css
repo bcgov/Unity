@@ -8,6 +8,7 @@
     border-right: 0.50px #1A5A96 solid;
     border-bottom: 1px #1A5A96 solid;
     padding: 10px 5px 5px 5px;
+    flex: 1;
 }
 
 .comment-input {
@@ -96,20 +97,8 @@
         box-shadow: -3px 3px 11px -3px rgba(33,33,33,.2);
     }
 
-.edit-mode {
-    margin-bottom: 0.7rem;
-}
-
 .comment-lbl {
     display: block;
-}
-
-.read-mode {
-    background: #F2F8FC;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 10px;
-    padding: 0px 5px 5px 5px
 }
 
 .comment-edit-btn-wrapper {
@@ -124,4 +113,32 @@
     font-size: 0.89rem;
     font-weight: 400;
     word-wrap: break-word;
+}
+
+.unity-comment-block {
+    background: var(--bc-colors-grey-hover);
+    padding: 0.75rem 0.5rem 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-size: var(--bc-font-size-xs);
+    color: var(--bc-colors-grey-text-300);
+    flex:1;
+}
+
+    .unity-comment-block .commented-time {
+        font-size: var(--bc-font-size-xxs);
+    }
+
+.comment-read-mode{
+    display : flex;
+}
+
+.comment-read-mode > .unity-user-initials {
+    margin-top: 0.5rem;
+    padding:5px;
+    width:22px;
+    height:22px;
+    font-size:0.45rem;
+}
+.commenter-name{
+    font-size:0.75rem;
 }

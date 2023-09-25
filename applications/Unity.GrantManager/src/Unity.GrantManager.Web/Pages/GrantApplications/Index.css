@@ -50,13 +50,6 @@ table.dataTable>tbody>tr.selected>th.select-checkbox:after {
     text-align: center;
 }
 
-table.dataTable thead>tr>th.sorting,
-table.dataTable thead {
-    font-family: var(--bs-body-font-family);
-    font-size: 14px;
-    font-weight: 600;
-    color: #003366;
-}
 
 thead input {
     width: 100%;

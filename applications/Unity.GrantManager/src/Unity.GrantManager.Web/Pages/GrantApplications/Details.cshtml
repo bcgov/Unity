@@ -1,5 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @using Unity.GrantManager.Localization
+@using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
@@ -20,213 +22,199 @@
     <abp-script src="/libs/formiojs/formio.form.js" />
 }
 
-@await Component.InvokeAsync("DetailsActionBar", new {ApplicationId=@Model.ApplicationFormSubmissionId})
+@await Component.InvokeAsync("DetailsActionBar", new { ApplicationId = @Model.ApplicationFormSubmissionId })
 
 <input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
-   
-        <abp-row>
-        <abp-column size="_8">
-                 <abp-card>
-            <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
-                    <abp-tab name="nav-summery" active="true" title="Application Summary">
-                        <abp-row>
-                            <abp-column size="_12" class="spinner-loader">
-                                <div class="spinner-grow" role="status">
-                                    <span class="sr-only">Loading...</span>
-                                </div>
-                            </abp-column>
-                        </abp-row>
-                        <div class="container-fluid">
-                            <abp-row>
-                                <abp-column size="_12">
+@functions
+{
+    public string GetInitials(string name)
+    {
+        // StringSplitOptions.RemoveEmptyEntries excludes empty spaces returned by the Split method
+        string[] nameSplit = name.Split(new string[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
 
-                                    @*TODO: Put FormIO handler here!*@
-                                    <div id="formio"></div>
+        string initials = "";
+
+        foreach (string item in nameSplit)
+        {
+            initials += item.Substring(0, 1).ToUpper();
+        }
+
+        return initials;
+    }
+}
+<abp-row class="m-0 h-100">
+    <abp-column size="_8" class="p-0">
+        <abp-card class="h-100">
+            <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
+
+                @*-------- Application Summary Section ---------*@
+                <abp-tab name="nav-summery" active="true" title="Application Summary">
+                    <abp-row>
+                        <abp-column size="_12" class="spinner-loader">
+                            <div class="spinner-grow" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <div class="container-fluid">
+                        <abp-row>
+                            <abp-column size="_12">
+
+                                @*TODO: Put FormIO handler here!*@
+                                <div id="formio"></div>
+
+                            </abp-column>
+
+                        </abp-row>
+                    </div>
+                </abp-tab>
+                @*-------- Application Summary Section END ---------*@
+
+                @*-------- Review & Adjudication Section ---------*@
+                <abp-tab name="nav-review-and-adudication" title="Review & Adjudication">
+                    <div class="w-100 px-2" id="adjudicationMainView">
+                        <div class="d-flex align-items-center pb-2 border-bottom mb-2">
+                            <i class="fl fl-review-list ms-2 me-3"></i>
+                            <h6 class="text-uppercase m-0 fw-bold">Review List</h6>
+                        </div>
+                        @await Component.InvokeAsync("ReviewList")
+                    </div>
+                    <abp-row id="adjudicationAddReviewView" class="p-2" style="display:none;">
+                        <abp-column size="_12">
+                            <abp-row>
+                                <abp-column size="_12" class="back-button-container">
+                                    <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
+                                </abp-column>
+                                <abp-column size="_8">
+                                    <h4 class="review-heading">Assessment Result Attachments</h4>
+                                </abp-column>
+                                <abp-column size="_4" class="add-review-btn-container">
 
                                 </abp-column>
-
                             </abp-row>
-                        </div>
-                    </abp-tab>
-                    <abp-tab name="nav-review-and-adudication" title="Review & Adjudication">
-                        <abp-row id="adjudicationMainView" class="p-2">
-                            <abp-column size="_12" class="left-card">
 
-                                <abp-row class="p-2">
-                                <abp-column size="_4" class="fl-review-list-container">
-                                    <i class="fl fl-review-list"></i><h5 class="review-list-heading">Review List</h5>
-                                    </abp-column>
-                                
-                                </abp-row>
-                                <abp-row>
-                                    <abp-column size="_10">
-                                        @await Component.InvokeAsync("ReviewList")
-                                    </abp-column>
-                                </abp-row>
-                               
-                              @* <abp-row>
-                                    <abp-column size="_8">
-                                        <h4 class="review-heading">Attachments</h4>
-                                    </abp-column>
-                                    <abp-column size="_4" class="add-review-btn-container">
-                                        <input type="file" id="assessment_upload" style="display:none" />
-                                        <abp-button id="assessment_upload_btn" class="add-review-btn" icon="paperclip" text="Attach Document" />
-                                    </abp-column>
-                                </abp-row>
-                                <abp-row>
-                                    <abp-column size="_10">
-                                        @await Component.InvokeAsync("ApplicationAttachments")
-                                    </abp-column>
-                                </abp-row>
-                            *@
                         </abp-column>
-                           @* <abp-column size="_4">
-                                <abp-row>
-                                    <abp-column size="_12" class="adj-act-btn-ctnr">
-                                        <abp-button class="adjudication-action-btn" id="startAdjudication" style="width:200px" text="Start Adjudication" />
-                                    </abp-column>
-                                </abp-row>
-                                <abp-row>
-                                    <abp-column size="_12" class="adj-act-btn-ctnr">
-                                        <abp-button class="adjudication-action-btn" id="completeAdjudication" style="width:200px" text="Complete Adjudication" />
-                                    </abp-column>
-                                </abp-row>
-                        </abp-column>*@
-                        </abp-row>
-                    <abp-row id="adjudicationAddReviewView" class="p-2" style="display:none;">
-                            <abp-column size="_12" class="left-card">
-                                <abp-row>
-                                    <abp-column size="_12" class="back-button-container">
-                                        <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
-                                    </abp-column>
-                                    <abp-column size="_8">
-                                        <h4 class="review-heading">Assessment Result Attachments</h4>
-                                    </abp-column>
-                                    <abp-column size="_4" class="add-review-btn-container">
-
-                                    </abp-column>
-                                </abp-row>
-                               
-                            </abp-column>
-                          @* <abp-column size="_4">
-                                <abp-row>
-                                    <abp-column size="_12" class="adj-act-btn-ctnr">
-                                        <abp-dropdown>
-                                            <abp-dropdown-button class="adjudication-action-btn" link="true" text="Action" />
-                                            <abp-dropdown-menu>
-                                                <abp-dropdown-item href="#">Send for Team Lead Review</abp-dropdown-item>
-                                                <abp-dropdown-item href="#">Send Back (By Team Lead)</abp-dropdown-item>
-                                                <abp-dropdown-item href="#">Complete Review (By Team Lead)</abp-dropdown-item>
-                                            </abp-dropdown-menu>
-                                        </abp-dropdown>
-                                    </abp-column>
-                                </abp-row>
-                            </abp-column>
-                        *@
                     </abp-row>
-                    </abp-tab>
-                    <abp-tab name="nav-approval" title="Approval">
-                        Approval View
-                    </abp-tab>
-                </abp-tabs>
-           </abp-card>
-            </abp-column>
-            <abp-column size="_4">
-              <abp-card>
-                <ul class="nav nav-tabs" id="myTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
+                </abp-tab>
+                @*-------- Review & Adjudication Section END ---------*@
+
+                @*-------- Approval Section ---------*@
+                <abp-tab name="nav-approval" title="Approval">
+                    Approval View
+                </abp-tab>
+                @*-------- Approval Section END ---------*@
+
+            </abp-tabs>
+        </abp-card>
+    </abp-column>
+    <abp-column size="_4" class="pe-0 ps-2">
+        <abp-card>
+            <ul class="nav nav-tabs details-nav" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (0)</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
-                    </li>
-      
-                </ul>
-            <div class="tab-content p-3" id="myTabContent">
+                </li>
+            </ul>
+
+
+            <div class="tab-content" id="myTabContent">
+
+                @*-------- Details Tab Section ---------*@
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
-                   <div id="reviewDetails" style="display:none">                 
-                    <abp-row>
-                        <abp-column size="_12">
-
-                            @await Component.InvokeAsync("AssessmentResultAttachments")
-
-                        </abp-column>
-                    </abp-row>
-                    <abp-row>
-                        <abp-column size="_12">                           
-                                <abp-row>
-                                    <abp-column size="_12" class="add-review-btn-container">
-                                        <input type="file" id="assessment_upload" style="display:none" />
-
-                                        <abp-button text="Add Attachments"
-                                                    id="assessment_upload_btn"
-                                                    class="assessment-upload-btn"
-                                                    icon-type="Other"
-                                                    icon="fl fl-plus"
-                                                    button-type="Light" />
-                                    </abp-column>
-                                </abp-row>
-                                <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" asp-items="@Model.ActionList" label="Recommendation" class="recom-select custom-input">
-                                    <option value="null" disabled >Please Choose...</option>
-                            </abp-select>
-                        </abp-column>
-                    </abp-row>
-                    <abp-row>
-                        <label>Comments</label>
-                        <div id="assessmentCommentsWidget">
-                            @await Component.InvokeAsync("CommentsWidget", new { commentType = 1 })
+                    <div id="reviewDetails" style="display:none">
+                        <div id="assessmentUserDetailsWidget">
+                        @await Component.InvokeAsync("UserInfoWidget", new { displayName = "" , title = "" })
                         </div>
-                    </abp-row>
-                    </div>
-                    </div>
-                    <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
-                        <h6>History View</h6>
+                        <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Result Attachments</h6>
 
-                    </div>
-                    <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <div id="applicationCommentsWidget">
-                        @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0 })
-                    </div>
-                   
+                        @await Component.InvokeAsync("AssessmentResultAttachments")
 
-                    </div>
-                    <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab">
-                    <h6>Links View</h6>
+                        <div class="d-flex justify-content-end m-3">
+                            <input type="file" id="assessment_upload" style="display:none" />
 
-                    </div>
-                    <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
-                       @await Component.InvokeAsync("ApplicationAttachments")
-                        <abp-row>
-                            <abp-column size="_12" class="add-review-btn-container">                            
-                            <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">                                
-                                <input id="application_attachment_upload" name="application_attachment_upload" type="file" size="1" multiple onchange="uploadFiles('application_attachment_upload');" style="display: none" />
-                                <abp-button text="Add Attachments"
-                                            id="application_attachment_upload_btn"
-                                            icon-type="Other"
-                                            icon="fl fl-plus"
-                                            button-type="Light" />
-                            </form>
-                            </abp-column>
-                        </abp-row>
+                            <abp-button text="Add Attachments"
+                                        id="assessment_upload_btn"
+                                        class="assessment-upload-btn"
+                                        icon-type="Other"
+                                        icon="fl fl-plus"
+                                        button-type="Light" />
+                        </div>
+
+                        <div class="m-3">
+                            <h6 class="fw-bold py-2 m-0">Recommendation</h6>
+                            <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" suppress-label="true" asp-items="@Model.ActionList" class="">
+                                <option value="null" disabled>Please Choose...</option>
+                            </abp-select>
+
+                        </div>
+
+                        <div class="p-3">
+                            <h6 class="fw-bold m-0">Comments</h6>
+                            <div id="assessmentCommentsWidget">
+                                @await Component.InvokeAsync("CommentsWidget", new { commentType = 1 })
+                            </div>
+                        </div>
                     </div>
                 </div>
-             
-            </abp-card>
-            </abp-column>
-        </abp-row>
-   
+                @*-------- Details Tab Section END ---------*@
+
+                @*-------- History Tab Section ---------*@
+                <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
+                    <h6>History View</h6>
+                </div>
+                @*-------- History Tab Section END ---------*@
+
+                @*-------- Comments Tab Section ---------*@
+                <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
+                    <div class="p-2" id="applicationCommentsWidget">
+                        @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
+                    </div>
+                </div>
+                @*-------- Comments Tab Section END ---------*@
+
+                @*-------- Links Tab Section ---------*@
+                <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab">
+                    <h6>Links View</h6>
+                </div>
+                @*-------- Links Tab Section END ---------*@
+
+                @*-------- Attachments Tab Section ---------*@
+                <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
+
+                    @await Component.InvokeAsync("ApplicationAttachments")
+
+                    <div class="d-flex justify-content-end m-3">
+                        <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
+                            <input id="application_attachment_upload" name="application_attachment_upload" type="file" size="1" multiple onchange="uploadFiles('application_attachment_upload');" style="display: none" />
+                            <abp-button text="Add Attachments"
+                                        id="application_attachment_upload_btn"
+                                        icon-type="Other"
+                                        icon="fl fl-plus"
+                                        button-type="Light" />
+                        </form>
+                    </div>
+                </div>
+                @*-------- Attachments Tab Section END ---------*@
+            </div>
+
+        </abp-card>
+    </abp-column>
+</abp-row>
+
 
 
