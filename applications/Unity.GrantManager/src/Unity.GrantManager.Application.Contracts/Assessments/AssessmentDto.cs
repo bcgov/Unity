@@ -11,6 +11,8 @@ namespace Unity.GrantManager.Assessments
         public bool IsComplete { get; set; }
         public string Status { get; set; } = "TBD";
         public bool? ApprovalRecommended { get; set; }
+        public string? AdjudicatorName { get; set; }
+        public Guid? CreatorId { get; set; }
     }
 }
 

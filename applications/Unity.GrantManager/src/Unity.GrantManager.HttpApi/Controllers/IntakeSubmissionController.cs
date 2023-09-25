@@ -1,14 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using RestSharp;
+using RestSharp.Authenticators;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Unity.GrantManager.Models;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Security.Encryption;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -23,6 +28,7 @@ namespace Unity.GrantManager.Controllers
         private readonly IIntakeRepository _intakeRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly RestClient _intakeClient;
+        private readonly IStringEncryptionService _stringEncryptionService;
 
         public IntakeSubmissionController(IApplicationRepository applicationService,
                                               IApplicationStatusRepository applicationStatusRepository,
@@ -30,7 +36,8 @@ namespace Unity.GrantManager.Controllers
                                               IApplicantRepository applicantRepository,
                                               IIntakeRepository intakeRepository,
                                               IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-                                              RestClient restClient)
+                                              RestClient restClient,
+                                              IStringEncryptionService stringEncryptionService)
         {
             _applicationRepository = applicationService;
             _applicationStatusRepository = applicationStatusRepository;
@@ -39,12 +46,22 @@ namespace Unity.GrantManager.Controllers
             _intakeRepository = intakeRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _intakeClient = restClient;
+            _stringEncryptionService = stringEncryptionService;
         }
 
         private async Task<Models.Intake> GetApplicationKeyFields(IntakeSubmission intakeSubmission)
         {
+            // TODO: adding to enable the intake of the app forms and linking - this is code is being worked on already
             Models.Intake intake = new Models.Intake();
-            var request = new RestRequest($"/submissions/{intakeSubmission.submissionId}");
+
+            if (intakeSubmission == null) throw new AbpValidationException();
+            if (intakeSubmission.formId == null) throw new EntityNotFoundException();
+
+            var appForm = (await _applicationFormRepository.GetQueryableAsync()).FirstOrDefault(s => s.ChefsApplicationFormGuid == intakeSubmission.formId) ?? throw new EntityNotFoundException();
+            var request = new RestRequest($"/submissions/{intakeSubmission.submissionId}")
+            {
+                Authenticator = new HttpBasicAuthenticator(intakeSubmission.formId, _stringEncryptionService.Decrypt(appForm.ApiKey))
+            };
             var response = await _intakeClient.GetAsync(request);
 
             if (response != null && response.Content != null)
@@ -94,7 +111,7 @@ namespace Unity.GrantManager.Controllers
                     Applicant newApplicant = await _applicantRepository.InsertAsync(
                         new Applicant
                         {
-                            ApplicantName = intake.applicantName ?? "{Missing}", 
+                            ApplicantName = intake.applicantName ?? "{Missing}",
                         },
                         autoSave: true
                     );

@@ -39,6 +39,8 @@
 
     function toggleEditMode(itemId) {        
         $(".edit-mode[data-id='" + itemId + "']").toggle();
+        let editedValue = $(".comment-input-mutliple[data-id='" + itemId + "']").val();
+        $(".comment-input-mutliple[data-id='" + itemId + "']").val(editedValue.trim());
         $(".read-mode[data-id='" + itemId + "']").toggle();
     }
 

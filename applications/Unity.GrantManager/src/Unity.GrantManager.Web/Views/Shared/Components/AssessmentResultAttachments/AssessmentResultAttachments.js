@@ -39,7 +39,7 @@
         const dataTable = $('#AssessmentResultAttachmentsTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: true,
-                order: [[1, 'asc']],
+                ordering: false,
                 searching: false,
                 paging: false,
                 select: false,
@@ -49,6 +49,12 @@
                     callback(jsonData);
                 },
                 columnDefs: [
+                    {
+                        title: '<i class="fl fl-paperclip" ></i>',
+                        render: function (data) {
+                            return '<i class="fl fl-paperclip" ></i>';
+                        },
+                    },
                     {
                         title: l('AssessmentResultAttachments:DocumentName'),
                         data: 'DocumentName',

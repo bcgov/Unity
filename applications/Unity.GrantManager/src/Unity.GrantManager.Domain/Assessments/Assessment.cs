@@ -10,5 +10,6 @@ namespace Unity.GrantManager.Assessments
         public DateTime? EndDate { get; set; }
         public bool IsComplete { get; set; }
         public bool? ApprovalRecommended { get; set; }
+        public string? AdjudicatorName { get; set; }
     }
 }

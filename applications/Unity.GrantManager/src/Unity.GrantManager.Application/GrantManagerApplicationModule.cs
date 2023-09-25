@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using RestSharp;
+using RestSharp.Authenticators;
 using RestSharp.Serializers.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -67,7 +68,7 @@ public class GrantManagerApplicationModule : AbpModule
                 var restOptions = new RestClientOptions(options.BaseUri)
                 {
                     // NOTE: Basic authentication only works for fetching forms and lists of form submissions
-                    //Authenticator = options.UseBearerToken ?
+                    // Authenticator = options.UseBearerToken ?
                     //    new JwtAuthenticator(options.BearerTokenPlaceholder) :
                     //    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
 

@@ -170,6 +170,17 @@ $(function () {
         }
     }
 
+
+    let assessmentUserDetailsWidgetManager = new abp.WidgetManager({
+        wrapper: '#assessmentUserDetailsWidget',
+        filterCallback: function () {
+            return {
+                'displayName': selectedReviewDetails.adjudicatorName,
+                'title': 'Title, Role'
+            };
+        }
+    });
+
     PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
@@ -179,10 +190,18 @@ $(function () {
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
+                assessmentUserDetailsWidgetManager.refresh();
+                checkCurrentUser(data);
             }
             else {
                 $('#reviewDetails').hide();
             }
+        }
+    );
+    PubSub.subscribe(
+        'deselect_application_review',
+        (msg, data) => {
+                $('#reviewDetails').hide();
         }
     );
 
@@ -266,6 +285,20 @@ const update_application_attachment_count_subscription = PubSub.subscribe(
     }
 );
 
+const checkCurrentUser = function (data) {
+    var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+
+    if (currentUserId == data.creatorId) {
+        $('#recommendation_select').prop('disabled', false);
+        $('#assessment_upload_btn').prop('disabled', false);
+    }
+    else {
+        $('#recommendation_select').prop('disabled', 'disabled');
+        $('#assessment_upload_btn').prop('disabled', 'disabled');
+    }
+};
+
+
 function updateCommentsCounters() {
     setTimeout(() => {
         $('.comments-container').map(function () {
@@ -275,13 +308,15 @@ function updateCommentsCounters() {
 }
 
 function initCommentsWidget() {
+    const currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
     let selectedReviewDetails;
     let applicationCommentsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationCommentsWidget',
         filterCallback: function () {
             return {
                 'ownerId': $('#DetailsViewApplicationId').val(),
-                'commentType': 0
+                'commentType': 0,
+                'currentUserId': currentUserId,
             };
         }
     });
@@ -291,7 +326,8 @@ function initCommentsWidget() {
         filterCallback: function () {
             return {
                 'ownerId': selectedReviewDetails.id,
-                'commentType': 1
+                'commentType': 1,
+                'currentUserId': currentUserId,
             };
         }
     });

@@ -24,16 +24,34 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
             _commentAppService = commentAppService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, CommentType commentType)
-        {            
+        public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, CommentType commentType, Guid currentUserId)
+        {
             CommentsWidgetViewModel model = new()
             {
                 CommentType = commentType,
                 OwnerId = ownerId,
-                Comments = (await _commentAppService.GetListAsync(new QueryCommentsByTypeDto() { OwnerId = ownerId, CommentType = commentType })).ToList()
+                CurrentUserId = currentUserId,
+                Comments = MapToCommentDisplay(await _commentAppService.GetListAsync(new QueryCommentsByTypeDto() { OwnerId = ownerId, CommentType = commentType })).ToList()
             };
 
-            return View(model);            
+            return View(model);
+        }
+
+        private static IEnumerable<CommentViewModel> MapToCommentDisplay(IReadOnlyList<CommentDto> commentDtos)
+        {
+            foreach (var item in commentDtos)
+            {
+                yield return new CommentViewModel()
+                {
+                    Badge = item.Commenter.GetUserBadge(),
+                    Comment = item.Comment,
+                    Commenter = item.Commenter,
+                    CreationTime = item.CreationTime,
+                    CreatorId = item.CreatorId,
+                    Id = item.Id,
+                    OwnerId = item.OwnerId
+                };
+            }
         }
     }
 

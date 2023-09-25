@@ -262,6 +262,10 @@
     content: '\F78A';
 }
 
+.fl-completed:before {
+    content: '\E930';
+}
+
 .fl-remove-friend:before {
     content: '\E8F8';
 }

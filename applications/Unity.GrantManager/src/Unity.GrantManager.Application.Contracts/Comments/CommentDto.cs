@@ -9,5 +9,6 @@ namespace Unity.GrantManager.Comments
         public string Commenter { get; set; } = string.Empty;
         public DateTime CreationTime { get; set; }
         public Guid OwnerId { get; set; }
+        public Guid CreatorId { get; set; }
     }
 }

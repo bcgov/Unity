@@ -8,6 +8,7 @@ using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Unity.GrantManager.Exceptions;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -18,12 +19,14 @@ namespace Unity.GrantManager.Assessments
     {
         private readonly IAssessmentRepository _assessmentRepository;
         private readonly ICommentsManager _commentsManager;
+        private readonly ICurrentUser _currentUser;
 
         public AssessmentAppService(IAssessmentRepository assessmentRepository,
-            ICommentsManager commentsManager)
+            ICommentsManager commentsManager,ICurrentUser currentUser)
         {
             _assessmentRepository = assessmentRepository;
             _commentsManager = commentsManager;
+            _currentUser = currentUser;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -31,7 +34,10 @@ namespace Unity.GrantManager.Assessments
             return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentRepository.InsertAsync(
                 new Assessment
                 {
-                    ApplicationId = dto.ApplicationId
+                    ApplicationId = dto.ApplicationId,
+                    StartDate = dto.StartDate,
+                    ApprovalRecommended = dto.ApprovalRecommended,
+                    AdjudicatorName = $"{_currentUser.SurName}, {_currentUser.Name}",
                 },
                 autoSave: true
             ));
