@@ -175,8 +175,8 @@ $(function () {
         wrapper: '#assessmentUserDetailsWidget',
         filterCallback: function () {
             return {
-                'name': selectedReviewDetails.adjudicatorName,
-                'info': 'Program Coordinator, Small Business & Economic Development Division'
+                'displayName': selectedReviewDetails.adjudicatorName,
+                'title': 'Title, Role'
             };
         }
     });
@@ -196,6 +196,12 @@ $(function () {
             else {
                 $('#reviewDetails').hide();
             }
+        }
+    );
+    PubSub.subscribe(
+        'deselect_application_review',
+        (msg, data) => {
+                $('#reviewDetails').hide();
         }
     );
 

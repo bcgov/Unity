@@ -98,7 +98,7 @@
     reviewListTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
             let deselectedData = reviewListTable.row(indexes).data();
-            PubSub.publish('select_application_review', deselectedData);
+            PubSub.publish('deselect_application_review', deselectedData);
             e.currentTarget.classList.toggle('selected');
         }
     });
