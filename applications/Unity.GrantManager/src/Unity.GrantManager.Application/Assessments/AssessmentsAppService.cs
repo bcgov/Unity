@@ -36,7 +36,6 @@ namespace Unity.GrantManager.Assessments
             _userLookupProvider = userLookupProvider;
         }
 
-        //[Authorize(GrantApplicationPermissions.Adjudications.Start)]
         public async Task<AssessmentDto> CreateAssessment(CreateAssessmentDto dto)
         {
             Application application = await _applicationRepository.GetAsync(dto.ApplicationId);

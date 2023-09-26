@@ -43,7 +43,7 @@
             },
             action: function (e, dt, button, config) {
                 let selectedRow = dt.rows({ selected: true }).data()[0];
-                if (typeof(selectedRow) === 'object') {
+                if (typeof (selectedRow) === 'object') {
                     unity.grantManager.assessments.assessments.executeAssessmentAction(selectedRow.id, config.name, {})
                         .then(function (result) {
                             PubSub.publish('refresh_review_list', selectedRow.id);
@@ -54,47 +54,73 @@
                         });
                 }
             }
+        },
+        createButton: {
+            extend: 'unityWorkflow',
+            init: function (dt, button, config) {
+                var that = this;
+                unity.grantManager.assessments.assessments.getCurrentUserAssessmentId($("#PageApplicationId").val(), {})
+                    .done(function (data) {
+                        if (data == null) {
+                            that.enable();
+                        } else {
+                            that.disable();
+                            PubSub.publish('refresh_review_list', data);
+                        }
+                    });
+            },
+            action: function (e, dt, button, config) {
+                let applicationId = decodeURIComponent($("#PageApplicationId").val());
+                unity.grantManager.assessments.assessments.createAssessment({ "applicationId": applicationId }, {})
+                    .done(function (data) {
+                        PubSub.publish('add_review');
+                        PubSub.publish('refresh_review_list', data.id);
+                    });
+                this.disable();
+            }
         }
     });
 
-    let actionArray = ['Create'];
-    let additionalActions;
-
+    let actionArray = [];
     // NOTE: FIND A BETTER WAY OF DOING THIS USING PROMISES
     unity.grantManager.assessments.assessments.getAllActions({
         async: false,
         success: function (data) {
-            additionalActions = data;
+            actionArray.push(...data);
         }
     });
 
-    actionArray.push(...additionalActions);
-
     const actionButtonConfigMap = {
-        Create: { order: 1, icon: 'fl-review' },
-        SendToTeamLead: { order: 2, icon: 'fl-send' },
-        SendBack: { order: 3, icon: 'fl-send-mirrored' },
-        Confirm: { order: 4, icon: 'fl-checkbox-checked' },
-        _Fallback: { order: 100, icon: 'fl-endpoint'}
+        Create:         { buttonType: 'createButton', order: 1, icon: 'fl-review' },
+        SendToTeamLead: { buttonType: 'unityWorkflow', order: 2, icon: 'fl-send' },
+        SendBack:       { buttonType: 'unityWorkflow', order: 3, icon: 'fl-send-mirrored' },
+        Confirm:        { buttonType: 'unityWorkflow', order: 4, icon: 'fl-checkbox-checked' },
+        _Fallback:      { buttonType: 'unityWorkflow', order: 100, icon: 'fl-endpoint'}
     }
 
-    let renderButtons = function (actionValue) {
+    let renderUnityWorkflowButton = function (actionValue) {
         let buttonConfig = actionButtonConfigMap[actionValue] ?? actionButtonConfigMap['_Fallback']
 
         return {
-            extend: 'unityWorkflow',
+            extend: buttonConfig.buttonType,
             name: actionValue,
             sortOrder: buttonConfig.order ?? 100,
-            buttonIcon: buttonConfig.icon
+            buttonIcon: buttonConfig.icon,
+            attr: { id: `${actionValue}Button`}
         };
     }
     
-    let buttonArray = Array.from(actionArray, (item) => renderButtons(item))
+    let buttonArray = Array.from(actionArray, (item) => renderUnityWorkflowButton(item))
         .sort((a, b) => a.sortOrder - b.sortOrder);
 
     let assessmentButtonsGroup = {
         name: 'assessmentActionButtons',
         buttons: buttonArray
+    };
+
+    let assessmentCreateButtonGroup = {
+        name: 'assessmentCreateButtonsGroup',
+        buttons: Array(renderUnityWorkflowButton('Create'))
     };
 
     let reviewListTable = $('#ReviewListTable').DataTable(
@@ -161,17 +187,18 @@
         })
     );
 
-    reviewListTable.on('buttons-action', function (e, buttonApi, dataTable, node, config) {
-        console.log('Button ' + buttonApi.name + ' was activated');
-    });
+    if (abp.auth.isGranted('GrantApplicationManagement.Assessments.Create')) {
+        let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
+        createButtons.container().appendTo("#DetailsActionBarStart");
+    }
 
     reviewListTable.buttons(0, null).container().appendTo("#DetailsActionBarStart");
     $("#DetailsActionBarStart .dt-buttons").contents().unwrap();
 
     let refreshActionButtons = function (dataTableContext, assessmentId) {
-        dataTableContext.buttons().disable();
+        dataTableContext.buttons(0, null).disable();
 
-        if (assessmentId) 
+        if (assessmentId)
         {
             unity.grantManager.assessments.assessments.getAvailableActions(assessmentId, {})
                 .then(function (actionListResult) {
