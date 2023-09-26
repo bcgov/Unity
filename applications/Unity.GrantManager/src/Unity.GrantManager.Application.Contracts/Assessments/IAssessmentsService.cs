@@ -15,4 +15,5 @@ public interface IAssessmentsService : IApplicationService
     Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId);
     List<string?> GetAllActions();
     Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction = AssessmentAction.SendToTeamLead);
+    Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId);
 }

@@ -85,10 +85,10 @@
     "Enum:AssessmentState.IN_REVIEW": "In Review",
     "Enum:AssessmentState.COMPLETED": "Completed",
 
-    "Enum:AssessmentAction.Create": "Create Review",
+    "Enum:AssessmentAction.Create": "Create Assessment",
     "Enum:AssessmentAction.SendTo": "Send To...",
     "Enum:AssessmentAction.SendToTeamLead": "Send for Team Lead Review",
-    "Enum:AssessmentAction.Confirm": "Complete Review",
+    "Enum:AssessmentAction.Confirm": "Complete Assessment",
     "Enum:AssessmentAction.SendBack": "Send Back",
     "Enum:AssessmentAction.UndoComplete": "Restart Assessment (Demo)",
 
