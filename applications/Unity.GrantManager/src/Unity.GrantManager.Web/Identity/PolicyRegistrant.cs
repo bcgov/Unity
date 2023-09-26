@@ -119,6 +119,7 @@ namespace Unity.GrantManager.Web.Identity.Policy
             context.Services.AddAuthorization(options =>
                options.AddPolicy(GrantApplicationPermissions.Assessments.Confirm,
                policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Confirm)));
-        }        
+
+        }
     }
 }

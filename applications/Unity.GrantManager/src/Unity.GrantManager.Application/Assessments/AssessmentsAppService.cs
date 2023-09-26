@@ -1,17 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 using System;
-using Volo.Abp.DependencyInjection;
-using Volo.Abp.Application.Services;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Volo.Abp;
-using Volo.Abp.Users;
 using Unity.GrantManager.Permissions;
+using Volo.Abp.Application.Services;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
-using Volo.Abp.Domain.Entities;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -43,7 +42,7 @@ namespace Unity.GrantManager.Assessments
             Application application = await _applicationRepository.GetAsync(dto.ApplicationId);
             IUserData currentUser = await _userLookupProvider.FindByIdAsync(CurrentUser.GetId());
 
-            var result =  await _assessmentManager.CreateAsync(application, currentUser);
+            var result = await _assessmentManager.CreateAsync(application, currentUser);
             return ObjectMapper.Map<Assessment, AssessmentDto>(result);
         }
 
@@ -54,26 +53,11 @@ namespace Unity.GrantManager.Assessments
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(comments.OrderByDescending(s => s.CreationTime).ToList()));
         }
 
-        // NOTE: For debugging only
-        public async Task<AssessmentDto> GetMyAssessment(Guid applicationId)
+        public async Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId)
         {
             var assessment = await _assessmentsRepository
-                .GetAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
-            return ObjectMapper.Map<Assessment, AssessmentDto>(assessment);
-        }
-
-        // NOTE: For debugging only
-        public async Task<List<AssessmentAction>> GetMyActions(Guid applicationId)
-        {
-            var assessment = await _assessmentsRepository
-                .GetAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
-
-            if (assessment is null)
-            {
-                return new List<AssessmentAction> { AssessmentAction.Create };
-            }
-
-            return await GetAvailableActions(assessment.Id);
+                .FindAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
+            return assessment?.Id;
         }
 
         public List<string?> GetAllActions()
@@ -94,13 +78,28 @@ namespace Unity.GrantManager.Assessments
         public async Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId)
         {
             var assessment = await _assessmentsRepository.GetAsync(assessmentId);
-            var actions = assessment.GetActions();
-            return actions.ToList();
+            var workflowActions = assessment.GetActions();
+
+            List<AssessmentAction> permittedActions = new();
+            foreach (var action in workflowActions)
+            {
+                var currentRequirement = new OperationAuthorizationRequirement { Name = GrantApplicationPermissions.Assessments.Default + "." + action };
+                if (await AuthorizationService.IsGrantedAsync(assessment, currentRequirement))
+                {
+                    permittedActions.Add(action);
+                }
+            }
+
+            return permittedActions;
         }
 
         public async Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction = AssessmentAction.SendToTeamLead)
         {
             var assessment = await _assessmentsRepository.GetAsync(assessmentId);
+
+            var authorizationAction = GrantApplicationPermissions.Assessments.Default + "." + triggerAction;
+            await AuthorizationService.CheckAsync(assessment,
+                new OperationAuthorizationRequirement { Name = authorizationAction });
             var newAssessment = await assessment.ExecuteActionAsync(triggerAction);
             return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentsRepository.UpdateAsync(newAssessment, autoSave: true));
         }
@@ -113,7 +112,7 @@ namespace Unity.GrantManager.Assessments
                 if (assessment != null)
                 {
                     assessment.ApprovalRecommended = dto.ApprovalRecommended;
-                   await _assessmentsRepository.UpdateAsync(assessment);
+                    await _assessmentsRepository.UpdateAsync(assessment);
                 }
             }
             catch (Exception ex)
