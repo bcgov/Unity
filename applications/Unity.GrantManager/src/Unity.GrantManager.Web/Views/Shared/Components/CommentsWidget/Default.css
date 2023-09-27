@@ -3,10 +3,10 @@
     position: relative;
     border-radius: 4px;
     overflow: hidden;
-    border-left: 0.50px #1A5A96 solid;
-    border-top: 0.50px #1A5A96 solid;
-    border-right: 0.50px #1A5A96 solid;
-    border-bottom: 1px #1A5A96 solid;
+    border-left: 0.50px #D6D6D6 solid;
+    border-top: 0.50px #D6D6D6 solid;
+    border-right: 0.50px #D6D6D6 solid;
+    border-bottom: 1px #D6D6D6 solid;
     padding: 10px 5px 5px 5px;
     flex: 1;
 }
@@ -14,7 +14,7 @@
 .comment-input {
     border: 0;
     outline: 0;
-    border-bottom: 0.5px solid #D6D6D6;
+    border-bottom: 0.5px solid #D6D6D6 !important;
     border-radius: 0px;
     resize: none;
 }
@@ -63,6 +63,7 @@
     cursor: pointer;
     padding-right: 5px;
     margin-top: -5px;
+    font-size: 0.938rem;
 }
 
 .comment-input-mutliple {
