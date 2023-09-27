@@ -1,0 +1,44 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: tools-networkpolicy
+metadata:
+  name: tools-networkpolicy
+  # This template yaml file uses a separate parameter .env file to 
+  # override the default values defined in this section. A template 
+  # usage guide can be found in the readme.md and wiki documents.
+parameters:
+  # Common project parameters
+  - name: PROJECT_NAMESPACE
+    displayName: "Project Namespace"
+    description: "The OpenShift project license plate 6 charater alpha numberic."
+    required: true
+    generate: expression
+    from: "[a-z0-9]{6}"
+  - name: ENV_NAME
+    displayName: "Environment name"
+    description: "The OpenShift environment name [tools, dev, test, prod]."
+    required: true
+    value: "tools"
+objects:
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: intra-namespace-comms
+    spec:
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: intra-namespace-comms
+    spec:
+      # Allow all pods within the project namespace to communicate
+      # to current tools namespace
+      podSelector: {}
+      ingress:
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              environment: ${ENV_NAME}
+              name: ${PROJECT_NAMESPACE}
+      policyTypes:
+        - Ingress
