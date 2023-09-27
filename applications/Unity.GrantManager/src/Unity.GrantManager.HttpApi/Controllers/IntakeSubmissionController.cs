@@ -1,14 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Unity.GrantManager.Models;
-using Volo.Abp.AspNetCore.Mvc;
-using Unity.GrantManager.Applications;
-using System.Diagnostics;
+using Newtonsoft.Json;
+using RestSharp;
+using RestSharp.Authenticators;
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
-using RestSharp;
-using Newtonsoft.Json;
+using Unity.GrantManager.Models;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Security.Encryption;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -16,13 +21,14 @@ namespace Unity.GrantManager.Controllers
     [Route("api/intakeSubmission")]
     public class IntakeSubmissionController : AbpControllerBase
     {
-        private IApplicationRepository _applicationRepository;
-        private IApplicationFormRepository _applicationFormRepository;
-        private IApplicationStatusRepository _applicationStatusRepository;
-        private IApplicantRepository _applicantRepository;
-        private IIntakeRepository _intakeRepository;
-        private IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
+        private readonly IApplicationRepository _applicationRepository;
+        private readonly IApplicationFormRepository _applicationFormRepository;
+        private readonly IApplicationStatusRepository _applicationStatusRepository;
+        private readonly IApplicantRepository _applicantRepository;
+        private readonly IIntakeRepository _intakeRepository;
+        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly RestClient _intakeClient;
+        private readonly IStringEncryptionService _stringEncryptionService;
 
         public IntakeSubmissionController(IApplicationRepository applicationService,
                                               IApplicationStatusRepository applicationStatusRepository,
@@ -30,7 +36,8 @@ namespace Unity.GrantManager.Controllers
                                               IApplicantRepository applicantRepository,
                                               IIntakeRepository intakeRepository,
                                               IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-                                              RestClient restClient)
+                                              RestClient restClient,
+                                              IStringEncryptionService stringEncryptionService)
         {
             _applicationRepository = applicationService;
             _applicationStatusRepository = applicationStatusRepository;
@@ -39,12 +46,22 @@ namespace Unity.GrantManager.Controllers
             _intakeRepository = intakeRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _intakeClient = restClient;
+            _stringEncryptionService = stringEncryptionService;
         }
 
         private async Task<Models.Intake> GetApplicationKeyFields(IntakeSubmission intakeSubmission)
         {
+            // TODO: adding to enable the intake of the app forms and linking - this is code is being worked on already
             Models.Intake intake = new Models.Intake();
-            var request = new RestRequest($"/submissions/{intakeSubmission.submissionId}");
+
+            if (intakeSubmission == null) throw new AbpValidationException();
+            if (intakeSubmission.formId == null) throw new EntityNotFoundException();
+
+            var appForm = (await _applicationFormRepository.GetQueryableAsync()).FirstOrDefault(s => s.ChefsApplicationFormGuid == intakeSubmission.formId) ?? throw new EntityNotFoundException();
+            var request = new RestRequest($"/submissions/{intakeSubmission.submissionId}")
+            {
+                Authenticator = new HttpBasicAuthenticator(intakeSubmission.formId, _stringEncryptionService.Decrypt(appForm.ApiKey))
+            };
             var response = await _intakeClient.GetAsync(request);
 
             if (response != null && response.Content != null)
@@ -94,7 +111,7 @@ namespace Unity.GrantManager.Controllers
                     Applicant newApplicant = await _applicantRepository.InsertAsync(
                         new Applicant
                         {
-                            ApplicantName = intake.applicantName ?? "{Missing}", 
+                            ApplicantName = intake.applicantName ?? "{Missing}",
                         },
                         autoSave: true
                     );
@@ -113,7 +130,7 @@ namespace Unity.GrantManager.Controllers
 
                     if (submittedStatus != null)
                     {
-                        Application newApplication = await _applicationRepository.InsertAsync(
+                        await _applicationRepository.InsertAsync(
                             new Application
                             {
                                 ProjectName = intake.projectName ?? "{Missing}", // This should be the form name
@@ -121,12 +138,12 @@ namespace Unity.GrantManager.Controllers
                                 ApplicantId = newApplicant.Id,
                                 ApplicationStatusId = submittedStatus.Id,
                                 ReferenceNo = intake.confirmationId ?? "{Missing}", // Taken from the CHEF Confirmation ID
-                                RequestedAmount = Double.Parse(intake.requestedAmount ?? "0")
+                                RequestedAmount = double.Parse(intake.requestedAmount ?? "0")
                             },
                             autoSave: true
                         );
 
-                        ApplicationFormSubmission applicationFormSubmission = await _applicationFormSubmissionRepository.InsertAsync(
+                        await _applicationFormSubmissionRepository.InsertAsync(
                          new ApplicationFormSubmission
                          {
                              OidcSub = "3a0d369f-7ea2-b49d-5c9b-ab141dad52e8", // Not sure on this need to remove FK 

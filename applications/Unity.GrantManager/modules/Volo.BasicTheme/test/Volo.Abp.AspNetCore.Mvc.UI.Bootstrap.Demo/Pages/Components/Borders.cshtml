@@ -6,35 +6,31 @@
 
 @section styles {
     <abp-style-bundle>
+        <abp-style src="/libs/highlight.js/styles/default.css" />
         <abp-style src="/css/demo.css" />
     </abp-style-bundle>
+    <style>
+        .border-span span {
+            display: inline-block;
+            width: 5rem;
+            height: 5rem;
+            margin: .25rem;
+            background-color: #f5f5f5;
+        }
+    </style>
 }
 
 @section scripts {
     <abp-script-bundle>
-        @*<abp-script src="/libs/highlight.js/lib/highlight.js" />
-            <abp-script src="/Pages/Components/highlightCode.js" />*@
+        <abp-script src="/libs/highlight.js/lib/highlight.js" />
+        <abp-script src="/Pages/Components/highlightCode.js" />
     </abp-script-bundle>
+    <script>hljs.initHighlightingOnLoad();</script>
 }
-
-<style>
-    .border-span span {
-        display: inline-block;
-        width: 5rem;
-        height: 5rem;
-        margin: .25rem;
-        background-color: #f5f5f5;
-    }
-</style>
-
-<link rel="stylesheet"
-      href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/default.min.css">
-<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
 
 <h2>Borders</h2>
 
-<p>Based on <a href="https://getbootstrap.com/docs/4.1/utilities/borders/" target="_blank"> Bootstrap Border</a>.</p>
+<p>Based on <a href="https://getbootstrap.com/docs/4.1/utilities/borders/" target="_blank" rel="noopener"> Bootstrap Border</a>.</p>
 
 <h4>Border</h4>
 

@@ -51,6 +51,17 @@ namespace Unity.GrantManager.Web.Identity
             }
 
             await UpdatePrincipal(validatedTokenContext.Principal!, user!);
+            SetTokens(validatedTokenContext);
+        }
+
+        private static void SetTokens(TokenValidatedContext validatedTokenContext)
+        {
+            // Minimal required for now to enable access to COMS
+            if (validatedTokenContext != null
+                && validatedTokenContext.TokenEndpointResponse != null)
+            {
+                validatedTokenContext.Principal!.AddClaim("AccessToken", validatedTokenContext.TokenEndpointResponse.AccessToken);              
+            }
         }
 
         private async Task UpdatePrincipal(ClaimsPrincipal principal, IdentityUser user)
@@ -76,8 +87,7 @@ namespace Unity.GrantManager.Web.Identity
                     foreach (var permission in userPermissions)
                         principal.AddClaim("Permission", permission.Name);
                 }
-
-            // This gets added as a Claim Provider through ABP - give this to all users for now
+   
             principal.AddClaim("Permission", GrantManagerPermissions.Default);
             principal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
         }

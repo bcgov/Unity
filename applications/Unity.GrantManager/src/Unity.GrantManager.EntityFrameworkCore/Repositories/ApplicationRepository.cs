@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
-using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -20,7 +20,7 @@ public class ApplicationRepository : EfCoreRepository<GrantManagerDbContext, App
     {
     }
 
-    public async Task<List<Application>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter = null)
+    public async Task<List<Application>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter = "")
     {
         var dbSet = await GetDbSetAsync();
         return await dbSet

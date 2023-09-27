@@ -110,8 +110,6 @@ body {
     }
 
         .dataTables_wrapper .dataTables_scrollHead table th, .dataTables_wrapper .dataTables_scrollBody table td {
-         
-            border-bottom: 0;
             height: 28px;
             vertical-align: middle;
             border-bottom: 1px solid var(--bc-colors-grey-dividers);
@@ -131,6 +129,11 @@ body {
     align-items: baseline;
     color: var(--bc-colors-grey-text-500);
     font-size: var(--bc-font-size);
+}
+
+.dataTables_wrapper table th {
+    color: var(--bc-colors-grey-text-500);
+    font-weight: 800;
 }
 
 .pagination {
@@ -234,9 +237,6 @@ body {
     font-size: 0.8em;
 }
 
-.dataTables_scrollBody {
-    min-height: 248px;
-}
 
 div.dataTables_wrapper div.dataTables_info {
     padding-top: 11px;
@@ -295,3 +295,34 @@ div.dataTables_wrapper div.dataTables_length label {
 .nav-item a{
     padding : 1rem;
 }
+
+.fs-5 {
+    font-size: 0.83313rem !important;
+}
+
+.fs-6 {
+    font-size: 0.69438rem !important;
+}
+
+.form-select {
+    background-color: var(--bc-colors-grey-pressed);
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: 0.1875rem;
+    border: none;
+}
+    .form-select:hover {
+        box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
+    }
+    .form-select:focus, .form-select:active {
+        background-color: var(--bc-colors-grey-pressed);
+        color: var(--bc-colors-grey-text-500);
+        font-weight: 700;
+    }
+    .form-select:disabled {
+        color: var(--bc-colors-grey-text-100);
+        pointer-events: none;
+        background-color: var(--bc-colors-grey-hover);
+        opacity: var(--bs-btn-disabled-opacity);
+        background-blend-mode: difference;
+    }

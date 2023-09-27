@@ -19,7 +19,10 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
         public List<SelectListItem> AssigneeList { get; set; } = new();
 
         [BindProperty]
-        public string SelectedApplicationIds { get; set; } = default!;
+        public string SelectedApplicationIds { get; set; } = string.Empty;
+
+        [BindProperty]
+        public string ActionType { get; set; } = string.Empty;
 
         private readonly IApplicationStatusService _statusService;
         private readonly GrantApplicationAppService _applicationService;
@@ -43,9 +46,10 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             });
         }
 
-        public async Task OnGetAsync(string applicationIds)
+        public async Task OnGetAsync(string applicationIds, string actionType)
         {
             SelectedApplicationIds = applicationIds;
+            ActionType = actionType;
             AssigneeList ??= new List<SelectListItem>();
 
             try
@@ -72,19 +76,26 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             try
             {
                 var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-
-                var selectedUser = await _identityUserLookupAppService.FindByIdAsync(AssigneeId);
-
-                var userName = $"{selectedUser.Name} {selectedUser.Surname}";
-
-                await _applicationService.AddAssignee(applicationIds.ToArray(), AssigneeId.ToString(), userName);
-
-                var statusList = await _statusService.GetListAsync();
-                var selectedStatus = statusList.ToList().Find(x => x.StatusCode == ApplicationStatusConsts.SUBMITTED);
-
-                if (selectedStatus != null)
+                if (null != applicationIds)
                 {
-                    await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), selectedStatus.Id);
+                    var selectedUser = await _identityUserLookupAppService.FindByIdAsync(AssigneeId);
+                    var userName = $"{selectedUser.Name} {selectedUser.Surname}";
+                    var statusList = await _statusService.GetListAsync();
+                    var selectedStatus = statusList.ToList().Find(x => x.StatusCode == ApplicationStatusConsts.SUBMITTED);
+
+                    if (ActionType == AssigneeConsts.ACTION_TYPE_ADD)
+                    {
+                        await _applicationService.InsertAssigneeAsync(applicationIds.ToArray(), AssigneeId.ToString(), userName);
+                    }
+                    else if (ActionType == AssigneeConsts.ACTION_TYPE_REMOVE)
+                    {
+                        await _applicationService.DeleteAssigneeAsync(applicationIds.ToArray(), AssigneeId.ToString());
+                    }
+
+                    if (selectedStatus != null)
+                    {
+                        await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), selectedStatus.Id);
+                    }
                 }
             }
             catch (Exception ex)

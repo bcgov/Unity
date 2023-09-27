@@ -1,7 +1,7 @@
 ﻿$(function () {
     console.log('Script loaded');
     const l = abp.localization.getResource('GrantManager');
-    var jsonData = {
+    const jsonData = {
         data: [
             {
                 Id: '79071522-3c7c-4206-93ef-64538afb00a5',
@@ -39,7 +39,7 @@
         const dataTable = $('#AssessmentResultAttachmentsTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: true,
-                order: [[1, 'asc']],
+                ordering: false,
                 searching: false,
                 paging: false,
                 select: false,
@@ -49,6 +49,12 @@
                     callback(jsonData);
                 },
                 columnDefs: [
+                    {
+                        title: '<i class="fl fl-paperclip" ></i>',
+                        render: function (data) {
+                            return '<i class="fl fl-paperclip" ></i>';
+                        },
+                    },
                     {
                         title: l('AssessmentResultAttachments:DocumentName'),
                         data: 'DocumentName',
@@ -73,7 +79,7 @@
 
         dataTable.on('select', function (e, dt, type, indexes) {
             if (type === 'row') {
-                var selectedData = dataTable.row(indexes).data();
+                const selectedData = dataTable.row(indexes).data();
                 console.log('Selected Data:', selectedData);
                 //PubSub.publish('select_application', selectedData);
             }
@@ -81,7 +87,7 @@
 
         dataTable.on('deselect', function (e, dt, type, indexes) {
             if (type === 'row') {
-                var deselectedData = dataTable.row(indexes).data();
+                const deselectedData = dataTable.row(indexes).data();
                 //PubSub.publish('deselect_application', deselectedData);
             }
         });
@@ -89,7 +95,7 @@
             e.currentTarget.classList.toggle('selected');
         });
     }, 3000);
-    const refresh_application_list_subscription = PubSub.subscribe(
+    PubSub.subscribe(
         'refresh_reviewer_list',
         (msg, data) => {
             dataTable.ajax.reload();

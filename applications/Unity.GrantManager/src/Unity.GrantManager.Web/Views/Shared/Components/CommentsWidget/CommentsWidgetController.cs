@@ -11,9 +11,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
     {
         [HttpGet]
         [Route("RefreshComments")]
-        public IActionResult Comments(Guid ownerId, CommentType commentType)
+        public IActionResult Comments(Guid ownerId, CommentType commentType, Guid currentUserId)
         {
-            return ViewComponent("CommentsWidget", new { ownerId, commentType });
+            return ViewComponent("CommentsWidget", new { ownerId, commentType, currentUserId });
         }
     }
 }

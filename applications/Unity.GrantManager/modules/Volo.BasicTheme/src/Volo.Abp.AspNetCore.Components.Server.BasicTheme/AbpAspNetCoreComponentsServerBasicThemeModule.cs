@@ -2,7 +2,6 @@
 using Volo.Abp.AspNetCore.Components.Server.Theming;
 using Volo.Abp.AspNetCore.Components.Server.Theming.Bundling;
 using Volo.Abp.AspNetCore.Components.Web.BasicTheme;
-using Volo.Abp.AspNetCore.Components.Web.Theming.Routing;
 using Volo.Abp.AspNetCore.Components.Web.Theming.Toolbars;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.Modularity;

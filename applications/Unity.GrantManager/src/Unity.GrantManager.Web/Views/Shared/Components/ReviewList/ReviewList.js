@@ -1,5 +1,4 @@
 ﻿$(function () {
-    console.log('Script loaded');
     const l = abp.localization.getResource('GrantManager');
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
@@ -8,9 +7,6 @@
     }
     
     let responseCallback = function (result) {
-        // your custom code.
-        console.log(result)
-
         return {
             data: result
         };
@@ -32,20 +28,21 @@
                 {
                     title: '',
                     data: 'id',
-                    visible : false,
+                    visible: false,
                 },
                 {
-                    title: '',
+                    title: '<i class="fl fl-review-user" ></i>',
+                    orderable: false,
                     render: function (data) {
                         return '<i class="fl fl-review-user" ></i>';
-                    }
+                    },
                 },
                 {
                     title: l('ReviewerList:ReviewerName'),
-                    data: 'reviewerName',
+                    data: 'adjudicatorName',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data || 'Reviewer Name';
+                        return data || '';
                     },
                 },
                 {
@@ -69,7 +66,7 @@
                     data: 'status',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data;
+                        return 'In progress' ;
                     },
                 },
                 {
@@ -91,7 +88,6 @@
     reviewListTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {
             let selectedData = reviewListTable.row(indexes).data();
-            console.log('Selected Data:', selectedData);
             PubSub.publish('select_application_review', selectedData);
             e.currentTarget.classList.toggle('selected');
         }
@@ -102,20 +98,19 @@
     reviewListTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
             let deselectedData = reviewListTable.row(indexes).data();
-            PubSub.publish('select_application_review', null);
+            PubSub.publish('deselect_application_review', deselectedData);
             e.currentTarget.classList.toggle('selected');
         }
     });
 
 
-    const refresh_review_list_subscription = PubSub.subscribe(
+    PubSub.subscribe(
         'refresh_review_list',
          (msg, data) => {
              reviewListTable.ajax.reload(function (json) {
                  if (data) {
-                     //var row = reviewListTable.row(0).select();
                      let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
-                         return reviewListTable.cell(rowIdx, 0).data() === data ? true : false;
+                         return reviewListTable.cell(rowIdx, 0).data() === data;
                      });
 
                      reviewListTable.row(indexes).select();

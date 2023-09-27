@@ -20,10 +20,8 @@ public class GrantManagerMenuContributor : IMenuContributor
         }
     }
 
-    private Task ConfigureMainMenuAsync(MenuConfigurationContext context)
+    private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
-        // var administration = context.Menu.GetAdministration();
-
         var l = context.GetLocalizer<GrantManagerResource>();
 
         context.Menu.Items.Insert(
@@ -130,6 +128,8 @@ public class GrantManagerMenuContributor : IMenuContributor
                 requiredPermissionName: GrantManagerPermissions.ApplicationForms.Default
             )
         );
+
+        // var administration = context.Menu.GetAdministration();
 
         //if (MultiTenancyConsts.IsEnabled)
         //{

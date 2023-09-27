@@ -160,6 +160,10 @@
         color: #333;
     }
 
+    .recom-select:disabled {
+        color: #333;
+    }
+
 .back-button-container {
     justify-content: left;
     align-items: start;
@@ -216,19 +220,11 @@ select.selected{
     border: 1px solid rgba(0, 51, 102, 38%) !important;
     background-color: #fff !important;
 }
-.fl-review-list-container {
-    justify-content: left;
-    align-items: start;
-    gap: 8px;
-    display: flex;
-}
+
     
     .review-list-heading{
         margin-left:0.5rem;
        margin-top:0.3rem;
-    }
-    .fl-review-list {
-        font-size: 1.5rem;
     }
 
 .mb-2.card.border {
@@ -236,24 +232,17 @@ select.selected{
 }
 .card-header.bg-default {
     background-color: white !important;
-    
-}
-.card-header.bg-default {
     margin-top: 1.2rem;
-}
-
-.col-8 {
-    padding-right: 8px;
-}
-
-.col-4 {
-    padding-left: 8px;
-}
-
-.assessment-upload-btn{
-    margin-top : 0.5rem;
 }
 
 #application_attachment_upload_btn{
     margin-top:0.8rem;
+}
+
+.details-nav .nav-link {
+    display: flex;
+   
+}
+.details-nav .nav-link .fl{
+    margin-right:4px;
 }

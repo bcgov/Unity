@@ -1,15 +1,12 @@
-﻿using System;
-namespace Unity.GrantManager.Web.Pages
+﻿namespace Unity.GrantManager.Web.Pages;
+
+public class PageSection
 {
-	public class PageSection
-	{
 
-        public int Id { get; set; }
-        public String Title { get; set; }
-        public String? Url { get; set; }
-        public String? UrlTarget { get; set; }
-        public String? Description { get; set; }
-    }
-
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Url { get; set; }
+    public string? UrlTarget { get; set; }
+    public string? Description { get; set; }
 }
 

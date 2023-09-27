@@ -17,7 +17,7 @@ public class BootstrapDemoMenuContributor : IMenuContributor
 
         return Task.CompletedTask;
     }
-    private void AddMainMenuItems(MenuConfigurationContext context)
+    private static void AddMainMenuItems(MenuConfigurationContext context)
     {
         var menuItem = new ApplicationMenuItem(BootstrapDemoMenus.Components.Root, "Components");
 

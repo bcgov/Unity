@@ -1,33 +1,75 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Shouldly;
-using Xunit;
-using Microsoft.Extensions.DependencyInjection;
-using Unity.GrantManager.Comments;
+﻿using Shouldly;
 using System;
-using Volo.Abp.Validation;
-using Unity.GrantManager.Exceptions;
-using Unity.GrantManager.Assessments;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Uow;
+using System.Linq;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Repositories;
+using Unity.GrantManager.Comments;
+using Unity.GrantManager.Exceptions;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Identity;
+using Volo.Abp.Uow;
+using Volo.Abp.Users;
+using Xunit;
 
 namespace Unity.GrantManager.GrantApplications;
 
 public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 {
+    private readonly GrantApplicationAppService _grantApplicationAppServiceTest;
     private readonly IGrantApplicationAppService _grantApplicationAppService;
     private readonly IRepository<Application, Guid> _applicationsRepository;
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentsRepository;
+    private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
+    private readonly IIdentityUserLookupAppService _identityUserLookupAppService;
+
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public ApplicationAppServiceTests()
     {
+        _grantApplicationAppServiceTest = GetRequiredService<GrantApplicationAppService>();
         _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
         _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
         _applicationCommentsRepository = GetRequiredService<IRepository<ApplicationComment, Guid>>();
+        _identityUserLookupAppService = GetRequiredService<IIdentityUserLookupAppService>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
+        _userAssignmentRepository = GetRequiredService<IApplicationUserAssignmentRepository>();
+    }
+
+    [Fact]
+    public async Task AddRemoveAssigneeAsync_Should_AddRemove_Assignee()
+    {
+        // Arrange
+        using var uow = _unitOfWorkManager.Begin();
+        var application = (await _applicationsRepository.GetListAsync())[0];
+
+        Guid[] applicationIds = new Guid[1];
+        applicationIds.SetValue(application.Id, 0);
+        var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
+        if (users != null && users.Items.Count > 0)
+        {
+            UserData uData = users.Items[0];
+            string AssigneeKeycloakId = uData.Id.ToString();
+            string AssigneeDisplayName = uData.Name;
+
+            // Act
+            await _grantApplicationAppServiceTest.InsertAssigneeAsync(applicationIds, AssigneeKeycloakId, AssigneeDisplayName);
+            await _unitOfWorkManager.Current.SaveChangesAsync();
+
+
+            // Assert
+            IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
+            var assignments = queryableAssignment.ToList();
+            assignments.Count.ShouldBe(1);
+
+            // Act
+            await _grantApplicationAppServiceTest.DeleteAssigneeAsync(applicationIds, AssigneeKeycloakId);
+            await _unitOfWorkManager.Current.SaveChangesAsync();
+
+            IQueryable<ApplicationUserAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
+            var assignments2 = queryableAssignment2.ToList();
+            assignments2.Count.ShouldBe(0);
+        }
+
     }
 
 

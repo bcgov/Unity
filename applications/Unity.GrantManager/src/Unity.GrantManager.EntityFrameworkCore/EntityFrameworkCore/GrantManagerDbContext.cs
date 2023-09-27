@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationUserRoles;
 using Unity.GrantManager.Assessments;
@@ -81,32 +82,24 @@ public class GrantManagerDbContext :
 
     }
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(builder);
+        base.OnModelCreating(modelBuilder);
 
         /* Include modules to your migration db context */
 
-        builder.ConfigurePermissionManagement();
-        builder.ConfigureSettingManagement();
-        builder.ConfigureBackgroundJobs();
-        builder.ConfigureAuditLogging();
-        builder.ConfigureIdentity();
-        builder.ConfigureOpenIddict();
-        builder.ConfigureFeatureManagement();
-        builder.ConfigureTenantManagement();
+        modelBuilder.ConfigurePermissionManagement();
+        modelBuilder.ConfigureSettingManagement();
+        modelBuilder.ConfigureBackgroundJobs();
+        modelBuilder.ConfigureAuditLogging();
+        modelBuilder.ConfigureIdentity();
+        modelBuilder.ConfigureOpenIddict();
+        modelBuilder.ConfigureFeatureManagement();
+        modelBuilder.ConfigureTenantManagement();
 
         /* Configure your own tables/entities inside here */
 
-        //builder.Entity<YourEntity>(b =>
-        //{
-        //    b.ToTable(GrantManagerConsts.DbTablePrefix + "YourEntities", GrantManagerConsts.DbSchema);
-        //    b.ConfigureByConvention(); //auto configure for the base class props
-        //    //...
-        //});
-
-
-        builder.Entity<GrantProgram>(b =>
+        modelBuilder.Entity<GrantProgram>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "GrantProgram",
                 GrantManagerConsts.DbSchema);
@@ -120,7 +113,7 @@ public class GrantManagerDbContext :
             b.HasIndex(x => x.ProgramName);
         });
 
-        builder.Entity<User>(b =>
+        modelBuilder.Entity<User>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "User",
                 GrantManagerConsts.DbSchema);
@@ -128,14 +121,14 @@ public class GrantManagerDbContext :
             b.HasIndex(x => x.OidcSub);
         });
 
-        builder.Entity<Team>(b =>
+        modelBuilder.Entity<Team>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Team",
                 GrantManagerConsts.DbSchema);
             b.ConfigureByConvention();
         });
 
-        builder.Entity<UserTeam>(b =>
+        modelBuilder.Entity<UserTeam>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "UserTeam",
                 GrantManagerConsts.DbSchema);
@@ -145,7 +138,7 @@ public class GrantManagerDbContext :
             b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
         });
 
-        builder.Entity<Applicant>(b =>
+        modelBuilder.Entity<Applicant>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Applicant",
                 GrantManagerConsts.DbSchema);
@@ -157,7 +150,7 @@ public class GrantManagerDbContext :
             b.HasIndex(x => x.ApplicantName);
         });
 
-        builder.Entity<Intake>(b =>
+        modelBuilder.Entity<Intake>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Intake",
                 GrantManagerConsts.DbSchema);
@@ -166,7 +159,7 @@ public class GrantManagerDbContext :
             b.Property(x => x.IntakeName).IsRequired().HasMaxLength(250);
         });
 
-        builder.Entity<ApplicationForm>(b =>
+        modelBuilder.Entity<ApplicationForm>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationForm",
                 GrantManagerConsts.DbSchema);
@@ -177,7 +170,7 @@ public class GrantManagerDbContext :
             b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
         });
 
-        builder.Entity<ApplicationStatus>(b =>
+        modelBuilder.Entity<ApplicationStatus>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationStatus",
                 GrantManagerConsts.DbSchema);
@@ -187,7 +180,7 @@ public class GrantManagerDbContext :
             b.HasIndex(x => x.StatusCode).IsUnique();
         });
 
-        builder.Entity<Application>(b =>
+        modelBuilder.Entity<Application>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Application",
                 GrantManagerConsts.DbSchema);
@@ -200,7 +193,7 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationStatus>().WithMany().HasForeignKey(x => x.ApplicationStatusId).IsRequired();
         });
 
-        builder.Entity<ApplicantAgent>(b =>
+        modelBuilder.Entity<ApplicantAgent>(b =>
             {
                 b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicantAgent",
                     GrantManagerConsts.DbSchema);
@@ -210,7 +203,7 @@ public class GrantManagerDbContext :
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
-        builder.Entity<ApplicationFormSubmission>(b =>
+        modelBuilder.Entity<ApplicationFormSubmission>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationFormSubmission",
                 GrantManagerConsts.DbSchema);
@@ -221,7 +214,7 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
         });
 
-        builder.Entity<ApplicationComment>(b =>
+        modelBuilder.Entity<ApplicationComment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationComment", GrantManagerConsts.DbSchema);
 
@@ -229,7 +222,7 @@ public class GrantManagerDbContext :
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
 
-        builder.Entity<ApplicationAttachment>(b =>
+        modelBuilder.Entity<ApplicationAttachment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationAttachment", GrantManagerConsts.DbSchema);
 
@@ -237,7 +230,7 @@ public class GrantManagerDbContext :
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
 
-        builder.Entity<Assessment>(b =>
+        modelBuilder.Entity<Assessment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment",
                 GrantManagerConsts.DbSchema);
@@ -245,13 +238,13 @@ public class GrantManagerDbContext :
             b.ConfigureByConvention();
         });
 
-        builder.Entity<AssessmentComment>(b =>
+        modelBuilder.Entity<AssessmentComment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentComment", GrantManagerConsts.DbSchema);
             b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AssessmentId).IsRequired();
         });
 
-        builder.Entity<ApplicationUserAssignment>(b =>
+        modelBuilder.Entity<ApplicationUserAssignment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationUserAssignment",
                 GrantManagerConsts.DbSchema);
@@ -262,16 +255,11 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId);
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
-        var allEntityTypes = builder.Model.GetEntityTypes();
-        foreach (var t in allEntityTypes)
+        var allEntityTypes = modelBuilder.Model.GetEntityTypes();
+        foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
         {
-            if (t.ClrType != typeof(ExtraPropertyDictionary))
-            {
-                var entityBuilder = builder.Entity(t.ClrType);
-
-                entityBuilder.TryConfigureExtraProperties();
-            }
+            var entityBuilder = modelBuilder.Entity(type);
+            entityBuilder.TryConfigureExtraProperties();
         }
-
     }
 }
