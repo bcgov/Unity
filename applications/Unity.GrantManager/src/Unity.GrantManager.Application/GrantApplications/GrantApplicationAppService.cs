@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -199,6 +200,7 @@ public class GrantApplicationAppService :
         }
     }
 
+    [HttpPut]
     public async Task UpdateAssigneesAsync(dynamic modifiedAssignees)
     {
         var dynamicObject = JsonConvert.DeserializeObject<dynamic>(modifiedAssignees);
