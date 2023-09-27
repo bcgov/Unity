@@ -33,6 +33,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theming;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
@@ -103,6 +104,11 @@ namespace Unity.GrantManager.Web;
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
+
+        Configure<AbpBackgroundJobOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = false; //Disables job execution
+        });
     }
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
