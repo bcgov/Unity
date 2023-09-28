@@ -1,0 +1,69 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: unity-s3-object-storage
+metadata:
+  name: unity-s3-object-storage
+  # This template yaml file uses a separate parameter .env file to 
+  # override the default values defined in this section. A template 
+  # usage guide can be found in the readme.md and wiki documents.
+parameters:
+  # Common project parameters
+  - name: PROJECT_NAMESPACE
+    displayName: "Project Namespace"
+    description: "The OpenShift project license plate 6 charater alpha numberic."
+    required: true
+    generate: expression
+    from: "[a-z0-9]{6}"
+  - name: ENV_NAME
+    displayName: "Environment Name"
+    description: "The OpenShift environment name [dev, test, prod]."
+    required: true
+    value: "dev"
+  # Additional parameters for S3 object storage
+  - name: AccessKeyID
+    displayName: "Access Key Login ID"
+    description: "The Access Key for S3 compatible object storage account"
+    required: true
+    value: "unity-dev-admin"
+  - name: BucketDisplayName
+    displayName: "Bucket Name"
+    description: "The object storage bucket name"
+    required: true
+    value: "unity-dev"
+  - name: RestEndpoint
+    displayName: "API endpoint for S3 compatible storage account"
+    description: "Object store URL. eg: https://econ.objectstore.gov.bc.ca"
+    required: true
+    value: "sbg.objectstore.gov.bc.ca"
+  - name: SecretKey
+    displayName: "Secret Key"
+    description: "S3 account Secret Access Key, similar to a password."
+    from: '[\w]{32}_default'
+    generate: expression
+  - name: comskey
+    displayName: "COMS Prefix Key"
+    description: "The prefix given to objects in the COMS managed bucket"
+    required: true
+    value: "coms"
+  - name: comsbucketId
+    displayName: "COMS object identifier"
+    description: "The COMS uuid representing the COMS managed bucket"
+    required: true
+    from: "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}-default"
+    generate: expression
+# Template to add secret for the project S3 storage bucket.
+objects:
+  - kind: Secret
+    apiVersion: v1
+    metadata:
+      name: s3-object-storage
+      namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
+    stringData:
+      Access-Key-ID: ${AccessKeyID}
+      Bucket-Display-Name: ${BucketDisplayName}
+      Rest-Endpoint: ${RestEndpoint}
+      Secret-Key: ${SecretKey}
+      coms-key: ${comskey}/${ENV_NAME}
+      coms-bucketId: ${comsbucketId}
+    type: Opaque

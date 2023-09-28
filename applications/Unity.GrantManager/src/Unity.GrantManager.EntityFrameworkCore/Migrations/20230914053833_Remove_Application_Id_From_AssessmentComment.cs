@@ -8,15 +8,16 @@ namespace Unity.GrantManager.Migrations
     public partial class RemoveApplicationIdFromAssessmentComment : Migration
     {
         /// <inheritdoc />
+#pragma warning disable S1186 // Methods should not be empty
         protected override void Up(MigrationBuilder migrationBuilder)
+#pragma warning restore S1186 // Methods should not be empty
         {
-            migrationBuilder.DropColumn(
-              name: "ApplicationId",
-              table: "UnityAssessmentComment");
         }
 
         /// <inheritdoc />
+#pragma warning disable S1186 // Methods should not be empty
         protected override void Down(MigrationBuilder migrationBuilder)
+#pragma warning restore S1186 // Methods should not be empty
         {
         }
     }

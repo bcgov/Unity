@@ -10,9 +10,6 @@ public static class Program
 {
     static async Task Main(string[] args)
     {
-        Log.Logger = new LoggerConfiguration()
-            .CreateLogger();
-
         await CreateHostBuilder(args).RunConsoleAsync();
     }
 
