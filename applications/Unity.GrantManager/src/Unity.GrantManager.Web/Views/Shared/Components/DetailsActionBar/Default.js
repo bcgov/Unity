@@ -39,43 +39,43 @@ $(function () {
         });
     });
 
-    let startAdjudicationModal = new abp.ModalManager({
+    let startAssessmentModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
 
-    startAdjudicationModal.onResult(function () {
+    startAssessmentModal.onResult(function () {
         abp.notify.success(
-            'Adjudication is now started for this application',
-            'Start Adjudication'
+            'Assessment is now started for this application',
+            'Start Assessment'
         );
     });
 
-    $('#startAdjudication').click(function () {
-        startAdjudicationModal.open({
+    $('#startAssessment').click(function () {
+        startAssessmentModal.open({
             applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
-            operation: 'UNDER_ADJUDICATION',
-            message: 'Are you sure you want to start adjudication for this application?',
-            title: 'Start Adjudication',
+            operation: 'UNDER_ASSESSMENT',
+            message: 'Are you sure you want to start assessment for this application?',
+            title: 'Start Assessment',
         });
     });
 
-    let completeAdjudicationModal = new abp.ModalManager({
+    let completeAssessmentModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
 
-    completeAdjudicationModal.onResult(function () {
+    completeAssessmentModal.onResult(function () {
         abp.notify.success(
-            'Adjudication is now completed for this application',
-            'Completed Adjudication'
+            'Assessment is now completed for this application',
+            'Completed Assessment'
         );
     });
 
-    $('#completeAdjudication').click(function () {
-        completeAdjudicationModal.open({
+    $('#completeAssessment').click(function () {
+        completeAssessmentModal.open({
             applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
-            operation: 'ADJUDICATION_COMPLETED',
-            message: 'Are you sure you want to complete adjudication for this application?',
-            title: 'Complete Adjudication',
+            operation: 'ASSESSMENT_COMPLETED',
+            message: 'Are you sure you want to complete assessment for this application?',
+            title: 'Complete Assessment',
         });
     });
 
@@ -99,7 +99,7 @@ $(function () {
     PubSub.subscribe(
         'add_review',
         (msg, data) => {
-            $('#detailsTab a[href="#nav-review-and-adudication"]').tab('show');
+            $('#detailsTab a[href="#nav-review-and-assessment"]').tab('show');
         }
     );
 });

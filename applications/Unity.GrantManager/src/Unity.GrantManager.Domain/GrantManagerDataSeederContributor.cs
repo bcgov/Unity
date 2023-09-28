@@ -228,23 +228,23 @@ public class GrantManagerDataSeederContributor
             }
         );
 
-        ApplicationStatus? status8 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.UNDER_ADJUDICATION);
+        ApplicationStatus? status8 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.UNDER_ASSESSMENT);
         status8 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "UNDER_ADJUDICATION",
+                StatusCode = "UNDER_ASSESSMENT",
                 ExternalStatus = "Under Review",
-                InternalStatus = "Under Adjudication"
+                InternalStatus = "Under Assessment"
             }
         );
 
-        ApplicationStatus? status9 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.ADJUDICATION_COMPLETED);
+        ApplicationStatus? status9 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.ASSESSMENT_COMPLETED);
         status9 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "ADJUDICATION_COMPLETED",
+                StatusCode = "ASSESSMENT_COMPLETED",
                 ExternalStatus = "Under Review",
-                InternalStatus = "Adjudication Completed"
+                InternalStatus = "Assessment Completed"
             }
         );
 
