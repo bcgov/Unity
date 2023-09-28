@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Amazon.S3.Model;
+using Amazon.S3;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
@@ -14,6 +16,10 @@ using Volo.Abp.BlobStoring;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
 using Volo.Abp.Validation;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.Configuration;
+using System.IO.Compression;
+using System.Data.SqlTypes;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -23,18 +29,34 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
     private readonly IAdjudicationAttachmentRepository _adjudicationAttachmentRepository;
     private readonly IApplicationRepository _applicationRepository;
-    private readonly IAssessmentRepository _assessmentsRepository;
+    private readonly IAssessmentRepository _assessmentsRepository;    
+    private readonly IConfiguration _configuration;
+    private readonly AmazonS3Client _amazonS3Client;
 
-    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAdjudicationAttachmentRepository adjudicationAttachmentRepository, IApplicationRepository applicationRepository, IAssessmentRepository assessmentsRepository)
+    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAdjudicationAttachmentRepository adjudicationAttachmentRepository, IApplicationRepository applicationRepository, IAssessmentRepository assessmentsRepository, IConfiguration configuration)
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
         _adjudicationAttachmentRepository = adjudicationAttachmentRepository;   
         _applicationRepository = applicationRepository;
-        _assessmentsRepository = assessmentsRepository;
-    }
+        _assessmentsRepository = assessmentsRepository;        
+        _configuration = configuration;
+        AmazonS3Config s3config = new AmazonS3Config();
+        s3config.RegionEndpoint = null;
+        s3config.ServiceURL = _configuration["S3:Endpoint"];
+        s3config.AllowAutoRedirect = true;
+        s3config.ForcePathStyle = true;
 
-    public override async Task<bool> DeleteAsync(BlobProviderDeleteArgs args)
+
+        AmazonS3Client s3Client = new AmazonS3Client(
+                _configuration["S3:AccessKeyId"],
+                configuration["S3:SecretAccessKey"],
+                s3config
+                );
+        _amazonS3Client = s3Client;
+    }    
+
+    /*public override async Task<bool> DeleteAsync(BlobProviderDeleteArgs args)
     {
         string s3guid = args.BlobName;
         var attachmentType = _httpContextAccessor.HttpContext.Request.Form["AttachmentType"];        
@@ -83,7 +105,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
             return await Task.FromResult(false);
         }
         
-    }
+    }*/
 
     public override Task<bool> ExistsAsync(BlobProviderExistsArgs args)
     {
@@ -131,6 +153,18 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         }
     }
 
+    
+
+    private string GetMimeType(string fileName)
+    {
+        var provider = new FileExtensionContentTypeProvider();
+        if (!provider.TryGetContentType(fileName, out var contentType))
+        {
+            contentType = "application/octet-stream";
+        }
+        return contentType;
+    }
+
     public override async Task SaveAsync(BlobProviderSaveArgs args)
     {
         var queryParams = _httpContextAccessor.HttpContext.Request.Query;
@@ -143,9 +177,8 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
                 StringValues currentUserName;
                 queryParams.TryGetValue("ApplicationId", out applicationId);
                 queryParams.TryGetValue("CurrentUserId", out currentUserId);
-                queryParams.TryGetValue("CurrentUserName", out currentUserName);
-                var bucketId = await GetApplicationBucketId(args, applicationId.ToString());
-                await UploadApplicationAttachment(args, bucketId, applicationId.ToString(), currentUserId.ToString(), currentUserName.ToString());
+                queryParams.TryGetValue("CurrentUserName", out currentUserName);                
+                await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString(), currentUserName.ToString());
             } else if (attachmentType.ToString() == "Adjudication")
             {
                 StringValues assessmentId;
@@ -153,121 +186,82 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
                 StringValues currentUserName;
                 queryParams.TryGetValue("AssessmentId", out assessmentId);
                 queryParams.TryGetValue("CurrentUserId", out currentUserId);
-                queryParams.TryGetValue("CurrentUserName", out currentUserName);
-                var bucketId = await GetAdjudicationBucketId(args, assessmentId.ToString());
-                await UploadAdjudicationAttachment(args, bucketId, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
+                queryParams.TryGetValue("CurrentUserName", out currentUserName);               
+                await UploadAdjudicationAttachment(args, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
             } else
             {
-                throw new Exception("Invalid AttachmentType:" + attachmentType.ToString());
+                throw new AbpValidationException("Invalid AttachmentType:" + attachmentType.ToString());
             }
         } else
         {
-            throw new Exception("Missing parameter:AttachmentType");
+            throw new AbpValidationException("Missing parameter:AttachmentType");
         }
-    }
-
-    private async Task<string> GetAdjudicationBucketId(BlobProviderSaveArgs args, string assessmentId)
+    }    
+    
+    private async Task UploadAdjudicationAttachment(BlobProviderSaveArgs args, string assessmentId, string currentUserId, string currentUserName)
     {
-        var assessment = await _assessmentsRepository.GetAsync(new Guid(assessmentId));
-        if (assessment == null)
+        var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+        var bucket = config.Bucket;
+        var folder = args.Configuration.GetComsS3BlobProviderConfiguration().AdjudicationS3Folder;
+        if (!folder.EndsWith('/'))
         {
-            throw new Exception($"Assessment {assessmentId} does not exist");
+            folder += "/";
         }
-        if (assessment.S3BucketId == null)
+        folder += assessmentId;
+        var key = folder + "/" + args.BlobName;
+        var mimeType = GetMimeType(args.BlobName);
+        await UploadToS3(args, bucket, key, mimeType);
+        IQueryable<AdjudicationAttachment> queryableAttachment = _adjudicationAttachmentRepository.GetQueryableAsync().Result;
+        AdjudicationAttachment attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.AdjudicationId.Equals(new Guid(assessmentId)));
+        if (attachment == null)
         {
-            //create S3 bucketId
-            var key = args.Configuration.GetComsS3BlobProviderConfiguration().AdjudicationS3Folder + "/" + assessmentId;
-            var bucketId = await CreateS3BucketId(args, key);
-            assessment.S3BucketId = bucketId;
-            await _assessmentsRepository.UpdateAsync(assessment);
-            return bucketId.ToString();
+            await _adjudicationAttachmentRepository.InsertAsync(
+               new AdjudicationAttachment
+               {
+                   AdjudicationId = new Guid(assessmentId),
+                   S3ObjectKey = key,
+                   UserId = new Guid(currentUserId),
+                   FileName = args.BlobName,
+                   AttachedBy = currentUserName,
+                   Time = DateTime.Now,
+               });
         }
         else
         {
-            return assessment.S3BucketId.ToString();
+            attachment.UserId = new Guid(currentUserId);
+            attachment.FileName = args.BlobName;
+            attachment.AttachedBy = currentUserName;
+            attachment.Time = DateTime.Now;
+            await _adjudicationAttachmentRepository.UpdateAsync(attachment);
         }
+
+       
+       
     }
 
-    private async Task<string> GetApplicationBucketId(BlobProviderSaveArgs args, string applicationId)
-    {
-        var application = await _applicationRepository.GetAsync(new Guid(applicationId));
-        if (application == null)
-        {
-            throw new Exception($"Application {applicationId} does not exist");
-        }
-        if(application.S3BucketId == null)
-        {
-            //create S3 bucketId
-            var key = args.Configuration.GetComsS3BlobProviderConfiguration().ApplicationS3Folder + "/" + applicationId;
-            var bucketId = await CreateS3BucketId(args, key);
-            application.S3BucketId = bucketId;
-            await _applicationRepository.UpdateAsync(application);
-            return bucketId.ToString();
-        } else
-        {
-            return application.S3BucketId.ToString();
-        }
-    }
-
-    private async Task<Guid?> CreateS3BucketId(BlobProviderSaveArgs args, string key)
+    private async Task UploadApplicationAttachment(BlobProviderSaveArgs args, string applicationId, string currentUserId, string currentUserName)
     {
         var config = args.Configuration.GetComsS3BlobProviderConfiguration();
-        var baseUri = config.BaseUri;
-        var username = config.Username;
-        var password = config.Password;
-        if (!baseUri.EndsWith("/"))
+        var bucket = config.Bucket;
+        var folder = args.Configuration.GetComsS3BlobProviderConfiguration().ApplicationS3Folder;
+        if (!folder.EndsWith('/'))
         {
-            baseUri += "/";
+            folder += "/";
         }
-        var client = new HttpClient();
-        var request = new HttpRequestMessage(HttpMethod.Put, baseUri+"bucket");
-        var authenticationString = $"{username}:{password}";
-        var base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(authenticationString));
-        request.Headers.Add("Authorization", "Basic " + base64EncodedAuthenticationString);        
-        var payload = new CreateBucketPayload
+        folder += applicationId;
+        var key = folder + "/" + args.BlobName;
+        var mimeType = GetMimeType(args.BlobName);
+        await UploadToS3(args,bucket,key,mimeType);
+        IQueryable<ApplicationAttachment> queryableAttachment = _applicationAttachmentRepository.GetQueryableAsync().Result;
+        ApplicationAttachment attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.ApplicationId.Equals(new Guid(applicationId)));
+        if (attachment == null)
         {
-            accessKeyId = config.AccessKeyId,
-            active = true,
-            bucket = config.Bucket,
-            bucketName = key,
-            endpoint = config.Endpoint,
-            secretAccessKey = config.SecretAccessKey,
-            key = key,
-        };        
-        string jsonData = JsonSerializer.Serialize(payload);
-        var content = new StringContent(jsonData, null, "application/json");
-        request.Content = content;
-        var response = await client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        if((int) response.StatusCode != 201)
-        {
-            throw new NotImplementedException("COMS setup is not yet implemented.");
-        }
-        var responseStr = await response.Content.ReadAsStringAsync();
-        CreateBucketIdResult result = JsonSerializer.Deserialize<CreateBucketIdResult>(responseStr);
-        return new Guid(result.bucketId);
-    }
-
-    private async Task UploadAdjudicationAttachment(BlobProviderSaveArgs args, string bucketId, string assessmentId, string currentUserId, string currentUserName)
-    {
-        var response = await UploadToComsS3(args, bucketId);
-        if ((int)response.StatusCode == 409)
-        {
-            throw new Exception("File Already Existing.");
-        }
-        else if ((int)response.StatusCode == 200)
-        {
-            response.EnsureSuccessStatusCode();
-            var responseStr = await response.Content.ReadAsStringAsync();
-            BlobSaveResult result = JsonSerializer.Deserialize<BlobSaveResult>(responseStr);
-
-
-            await _adjudicationAttachmentRepository.InsertAsync(
-                new AdjudicationAttachment
+            await _applicationAttachmentRepository.InsertAsync(
+                new ApplicationAttachment
                 {
-                    AdjudicationId = new Guid(assessmentId),
-                    S3Guid = result.id,
-                    UserId = new Guid(currentUserId),
+                    ApplicationId = new Guid(applicationId),
+                    S3ObjectKey = key,
+                    UserId = currentUserId,
                     FileName = args.BlobName,
                     AttachedBy = currentUserName,
                     Time = DateTime.Now,
@@ -275,88 +269,31 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         }
         else
         {
-            throw new Exception("Error in uploading file. Http Status Code:" + response.StatusCode);
+            attachment.UserId = currentUserId;
+            attachment.FileName = args.BlobName;
+            attachment.AttachedBy = currentUserName;
+            attachment.Time = DateTime.Now;
+            await _applicationAttachmentRepository.UpdateAsync(attachment);
         }
+        
+        
     }
 
-    private async Task UploadApplicationAttachment(BlobProviderSaveArgs args, string bucketId, string applicationId, string currentUserId, string currentUserName)
+    public async Task UploadToS3(BlobProviderSaveArgs args, string bucket, string key, string mimeType)
     {
-        var response = await UploadToComsS3(args, bucketId);
-        if ((int)response.StatusCode == 409)
+        PutObjectRequest putRequest = new PutObjectRequest
         {
-            throw new Exception("File Already Existing.");
-        }
-        else if ((int)response.StatusCode == 200)
-        {
-            response.EnsureSuccessStatusCode();
-            var responseStr = await response.Content.ReadAsStringAsync();
-            BlobSaveResult result = JsonSerializer.Deserialize<BlobSaveResult>(responseStr);
-
-
-            await _applicationAttachmentRepository.InsertAsync(
-                new ApplicationAttachment
-                {
-                    ApplicationId = new Guid(applicationId),
-                    S3Guid = result.id,
-                    UserId = currentUserId,
-                    FileName = args.BlobName,
-                    AttachedBy = currentUserName,
-                    Time = DateTime.Now,                    
-                });
-        }
-        else
-        {
-            throw new Exception("Error in uploading file. Http Status Code:" + response.StatusCode);
-        }
-    }
-
-    private async Task<HttpResponseMessage> UploadToComsS3(BlobProviderSaveArgs args, string bucketId)
-    {
-        var config = args.Configuration.GetComsS3BlobProviderConfiguration();        
-        var baseUri = config.BaseUri;
-        var username = config.Username;
-        var password = config.Password;
-        if (!baseUri.EndsWith("/"))
-        {
-            baseUri += "/";
-        }
-        var client = new HttpClient();
-
-        var request = new HttpRequestMessage(HttpMethod.Put, baseUri + "object?bucketId=" + bucketId)
-        {
-            Content = new StreamContent(args.BlobStream)
+            BucketName = bucket,
+            Key = Uri.EscapeDataString(key),
+            ContentType = mimeType,
+            InputStream = args.BlobStream,
         };
 
-        request.Content.Headers.Remove("Content-Disposition");
-        var contentDisposition = "attachment; filename=" + Uri.EscapeDataString(args.BlobName) + "; filename*=UTF-8''" + Uri.EscapeDataString(args.BlobName);
-        request.Content.Headers.Add("Content-Disposition", contentDisposition);
-        var authenticationString = $"{username}:{password}";
-        var base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(authenticationString));
-
-        request.Headers.Add("Authorization", "Basic " + base64EncodedAuthenticationString);
-
-        var response = await client.SendAsync(request);
-        return response;
+        await _amazonS3Client.PutObjectAsync(putRequest);
     }
-}
 
-class BlobSaveResult
-{
-    public Guid id { get; set; }
-}
-
-class CreateBucketPayload
-{
-    public string accessKeyId { get; set; }
-    public bool active { get; set; }
-    public string bucket { get; set; }
-    public string bucketName { get; set; }
-    public string endpoint { get; set; }
-    public string secretAccessKey { get; set; }
-    public string key { get; set; }
-}
-
-class CreateBucketIdResult
-{
-    public string bucketId { get; set; }
+    public override Task<bool> DeleteAsync(BlobProviderDeleteArgs args)
+    {
+        throw new NotImplementedException();
+    }
 }

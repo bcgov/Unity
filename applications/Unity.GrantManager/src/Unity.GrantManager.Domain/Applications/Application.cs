@@ -17,7 +17,6 @@ public class Application : AuditedAggregateRoot<Guid>
     public DateTime SubmissionDate { get; set; }
 
     [Column(TypeName = "jsonb")]
-    public string? Payload { get; set; }   
-    public Guid? S3BucketId { get; set; }
+    public string? Payload { get; set; }      
 
 }

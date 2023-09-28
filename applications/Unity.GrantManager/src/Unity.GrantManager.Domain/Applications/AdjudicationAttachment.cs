@@ -10,7 +10,7 @@ namespace Unity.GrantManager.Applications;
 public class AdjudicationAttachment : AuditedAggregateRoot<Guid>
 {
     public Guid AdjudicationId { get; set; }
-    public Guid S3Guid { get; set; }
+    public string S3ObjectKey { get; set; }
     public Guid UserId { get; set; }
     public string FileName { get; set; }
     public string? AttachedBy { get; set; }

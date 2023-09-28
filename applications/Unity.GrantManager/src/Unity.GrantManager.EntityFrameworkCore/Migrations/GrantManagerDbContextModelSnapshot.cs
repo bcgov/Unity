@@ -222,8 +222,9 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<Guid>("S3Guid")
-                        .HasColumnType("uuid");
+                    b.Property<string>("S3ObjectKey")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp without time zone");
@@ -401,9 +402,6 @@ namespace Unity.GrantManager.Migrations
                     b.Property<double>("RequestedAmount")
                         .HasColumnType("double precision");
 
-                    b.Property<Guid?>("S3BucketId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("SubmissionDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -460,8 +458,9 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<Guid>("S3Guid")
-                        .HasColumnType("uuid");
+                    b.Property<string>("S3ObjectKey")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp without time zone");
@@ -761,9 +760,6 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("S3BucketId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp without time zone");
