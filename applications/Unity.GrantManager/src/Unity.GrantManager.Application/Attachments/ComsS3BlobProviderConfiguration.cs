@@ -51,28 +51,5 @@ public class ComsS3BlobProviderConfiguration
                 .GetConfiguration<string>("ComsS3BlobProvider.AdjudicationS3Folder");
         set => _containerConfiguration
             .SetConfiguration("ComsS3BlobProvider.AdjudicationS3Folder", value);
-    }
-
-    public string BaseUri
-    {
-        get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.BaseUri");
-        set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.BaseUri", value);
-    }
-
-    public string Username
-    {
-        get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.Username");
-        set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.Username", value);
-    }
-    public string Password
-    {
-        get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.Password");
-        set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.Password", value);
-    }
+    }    
 }
