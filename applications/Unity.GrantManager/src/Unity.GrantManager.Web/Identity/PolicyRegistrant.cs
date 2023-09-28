@@ -80,14 +80,14 @@ internal static class PolicyRegistrant
            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Reviews.CompleteInitial)));
 
         context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Adjudications.Default,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Adjudications.Default)));
+           options.AddPolicy(GrantApplicationPermissions.Assessments.Default,
+           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Default)));
         context.Services.AddAuthorization(options =>
-          options.AddPolicy(GrantApplicationPermissions.Adjudications.Start,
-          policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Adjudications.Start)));
+          options.AddPolicy(GrantApplicationPermissions.Assessments.Start,
+          policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Start)));
         context.Services.AddAuthorization(options =>
-          options.AddPolicy(GrantApplicationPermissions.Adjudications.Complete,
-          policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Adjudications.Complete)));
+          options.AddPolicy(GrantApplicationPermissions.Assessments.Complete,
+          policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Complete)));
 
         context.Services.AddAuthorization(options =>
            options.AddPolicy(GrantApplicationPermissions.Approvals.Default,
