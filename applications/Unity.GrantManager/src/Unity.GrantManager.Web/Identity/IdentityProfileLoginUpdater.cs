@@ -60,7 +60,7 @@ namespace Unity.GrantManager.Web.Identity
             if (validatedTokenContext != null
                 && validatedTokenContext.TokenEndpointResponse != null)
             {
-                validatedTokenContext.Principal!.AddClaim("AccessToken", validatedTokenContext.TokenEndpointResponse.AccessToken);              
+                validatedTokenContext.Principal!.AddClaim("AccessToken", validatedTokenContext.TokenEndpointResponse.AccessToken);
             }
         }
 
@@ -85,9 +85,14 @@ namespace Unity.GrantManager.Web.Identity
                     var userPermissions = (await _permissionManager.GetAllForUserAsync(user.Id)).Where(s => s.IsGranted);
 
                     foreach (var permission in userPermissions)
-                        principal.AddClaim("Permission", permission.Name);
+                    {
+                        if (!principal.HasClaim("Permission", permission.Name))
+                        {
+                            principal.AddClaim("Permission", permission.Name);
+                        }
+                    }
                 }
-   
+
             principal.AddClaim("Permission", GrantManagerPermissions.Default);
             principal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
         }
