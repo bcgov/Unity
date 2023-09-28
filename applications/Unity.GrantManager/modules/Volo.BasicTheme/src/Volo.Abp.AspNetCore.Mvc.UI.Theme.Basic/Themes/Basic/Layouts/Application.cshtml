@@ -1,4 +1,5 @@
-﻿@using Volo.Abp.AspNetCore.Mvc.UI.Components.LayoutHook
+﻿@using Volo.Abp.AspNetCore.Mvc.AntiForgery;
+@using Volo.Abp.AspNetCore.Mvc.UI.Components.LayoutHook
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.ContentTitle
@@ -13,11 +14,13 @@
 @using Volo.Abp.Ui.LayoutHooks
 @inject IBrandingProvider BrandingProvider
 @inject IPageLayout PageLayout
+@inject IAbpAntiForgeryManager AbpAntiForgeryManager
 @{
     Layout = null;
     //var containerClass = ViewBag.FluidLayout == true ? "container-fluid" : "container"; //TODO: Better and type-safe options
     var containerClass = "container-fluid";
 
+    AbpAntiForgeryManager.SetCookie();
     var pageTitle = ViewBag.Title == null ? BrandingProvider.AppName : ViewBag.Title; //TODO: Discard to get from Title
 
     if (PageLayout.Content.Title != null)

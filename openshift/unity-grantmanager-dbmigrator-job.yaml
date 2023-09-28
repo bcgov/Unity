@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: unity-grantmanager-dbmigrator
+  namespace: d18498-dev
+  labels:
+    job-name: unity-grantmanager-dbmigrator
+    app.openshift.io/runtime: build
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 1
+  selector: {}
+  template:
+    metadata:
+      name: unity-grantmanager-dbmigrator
+    spec:
+      containers:
+        - name: unity-grantmanager-dbmigrator
+          image: >-
+            image-registry.openshift-image-registry.svc:5000/d18498-dev/unity-grantmanager-dbmigrator:github-latest
+          env:
+            - name: UNITY_DB_PORT
+              value: '5432'
+            - name: UNITY_DB_HOST
+              value: unity-database
+            - name: UNITY_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: unity-database
+                  key: database-name
+            - name: UNITY_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: unity-database
+                  key: database-user
+            - name: UNITY_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: unity-database
+                  key: database-password
+            - name: ConnectionStrings__Default
+              value: >-
+                Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+      restartPolicy: Never

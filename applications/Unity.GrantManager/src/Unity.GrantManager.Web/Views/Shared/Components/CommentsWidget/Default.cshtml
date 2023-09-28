@@ -21,7 +21,7 @@
     </div>
 </div>
 
-<div id="comments-div@(Model.OwnerId)" class="mt-2" data-type="@Model.CommentType" data-count="@Model.Comments.Count" data-counttag="application_comments_count">
+<div id="comments-div@(Model.OwnerId)" class="mt-2 comments-container" data-type="@Model.CommentType" data-count="@Model.Comments.Count" data-counttag="application_comments_count">
     @foreach (var comment in Model.Comments)
     {
         @if (comment != null)
