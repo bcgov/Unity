@@ -26,10 +26,10 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             reviewPermissions.AddChild(GrantApplicationPermissions.Reviews.StartInitial, L("Permission:GrantApplicationManagement.Reviews.StartInitial"));
             reviewPermissions.AddChild(GrantApplicationPermissions.Reviews.CompleteInitial, L("Permission:GrantApplicationManagement.Reviews.CompleteInitial"));
 
-            // Adjudication
-            var adjudicationPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Adjudications.Default, L("Permission:GrantApplicationManagement.Adjudications.Default"));
-            adjudicationPermissions.AddChild(GrantApplicationPermissions.Adjudications.Start, L("Permission:GrantApplicationManagement.Adjudications.Start"));
-            adjudicationPermissions.AddChild(GrantApplicationPermissions.Adjudications.Complete, L("Permission:GrantApplicationManagement.Adjudications.Complete"));
+            // Assessment
+            var assessmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assessments.Default, L("Permission:GrantApplicationManagement.Assessments.Default"));
+            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Start, L("Permission:GrantApplicationManagement.Assessments.Start"));
+            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Complete, L("Permission:GrantApplicationManagement.Assessments.Complete"));
 
             // Approval
             var approvalPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Approvals.Default, L("Permission:GrantApplicationManagement.Approvals.Default"));

@@ -28,9 +28,9 @@
             public const string CompleteInitial = Default + ".CompleteInitial";
         }
 
-        public static class Adjudications
+        public static class Assessments
         {
-            public const string Default = GroupName + ".Adjudications";
+            public const string Default = GroupName + ".Assessments";
             public const string Start = Default + ".Start";
             public const string Complete = Default + ".Complete";
         }

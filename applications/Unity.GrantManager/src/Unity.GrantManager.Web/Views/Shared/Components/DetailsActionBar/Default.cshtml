@@ -22,18 +22,18 @@
                         icon="fl fl-dislike"
                         button-type="Light" />
         }
-        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Adjudications.Start))
+        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Assessments.Start))
         {
-            <abp-button id="startAdjudication"
-                        text="@L["ApplicationList:StartAdjudicationButton"].Value"
+            <abp-button id="startAssessment"
+                        text="@L["ApplicationList:StartAssessmentButton"].Value"
                         icon-type="Other"
                         icon="fl fl-startpoint"
                         button-type="Light" />
         }
-        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Adjudications.Complete))
+        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Assessments.Complete))
         {
-            <abp-button id="completeAdjudication"
-                        text="@L["ApplicationList:CompleteAdjudicationButton"].Value"
+            <abp-button id="completeAssessment"
+                        text="@L["ApplicationList:CompleteAssessmentButton"].Value"
                         icon-type="Other"
                         icon="fl fl-endpoint"
                         button-type="Light" />
