@@ -20,9 +20,9 @@ namespace Unity.GrantManager.Controllers
 
         [HttpGet]
         [Route("download")]
-        public async Task<IActionResult> DownloadAsync(string s3Guid, string name)
+        public async Task<IActionResult> DownloadAsync(string s3ObjectKey, string name)
         {
-            var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3Guid = new Guid(s3Guid), Name = name }); 
+            var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = s3ObjectKey, Name = name }); 
             return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
         }
 

@@ -24,7 +24,7 @@ namespace Unity.GrantManager.Attachments
 
         async Task<BlobDto> IFileAppService.GetBlobAsync(GetBlobRequestDto getBlobRequestDto)
         {
-            var blob = await _fileContainer.GetAllBytesAsync(getBlobRequestDto.S3Guid.ToString());
+            var blob = await _fileContainer.GetAllBytesAsync(getBlobRequestDto.S3ObjectKey);
             var mimeType = GetMimeType(getBlobRequestDto.Name);
             return new BlobDto{ Name = getBlobRequestDto.Name,Content = blob, ContentType = mimeType};
         }
@@ -36,7 +36,7 @@ namespace Unity.GrantManager.Attachments
 
         async Task<bool> IFileAppService.DeleteBlobAsync(DeleteBlobRequestDto deleteBlobRequestDto)
         {             
-            return await _fileContainer.DeleteAsync(deleteBlobRequestDto.S3Guid.ToString());  
+            return await _fileContainer.DeleteAsync(deleteBlobRequestDto.S3ObjectKey);  
         }
 
         private string GetMimeType(string fileName)

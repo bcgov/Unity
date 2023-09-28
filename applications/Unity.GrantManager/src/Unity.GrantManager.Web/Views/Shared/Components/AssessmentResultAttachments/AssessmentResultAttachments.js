@@ -56,12 +56,12 @@
                 },
                 {
                     title: '',
-                    data: 's3Guid',
+                    data: 's3ObjectKey',
                     render: function (data, type, full, meta) {
                         var html = '<div class="dropdown" style="float:right;">';
                         html += '<button class="btn btn-light dropbtn" type="button"><i class="fl fl-attachment-more" ></i></button>';
                         html += '<div class="dropdown-content">';
-                        html += '<a href="/download?S3Guid=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
+                        html += '<a href="/download?S3ObjectKey=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
                         html += '" target="_blank" download="' + data + '" class="fullwidth">';
                         html += '<button class="btn fullWidth" style="margin:20px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
                         html += '<button class="btn fullWidth" style="margin:20px" type="button" onclick="deleteAdjudicationAttachment(\'' + data;
@@ -105,11 +105,13 @@ var deleteAdjudicationAttachmentModal = new abp.ModalManager({
     viewUrl: '../Attachments/DeleteAttachmentModal'
 });
 
-function deleteAdjudicationAttachment(s3guid, fileName) {    
+function deleteAdjudicationAttachment(s3ObjectKey, fileName) {
+    var assessmentId = decodeURIComponent($("#AssessmentId").val());
     deleteAdjudicationAttachmentModal.open({
-        s3guid: s3guid,
+        s3ObjectKey: s3ObjectKey,
         fileName: fileName,
         attachmentType: 'Adjudication',
+        attachmentTypeId: assessmentId,
     });
 }
 

@@ -19,11 +19,13 @@ public class DeleteAttachmentModalModel : AbpPageModel
 {
         
     [BindProperty]
-    public string S3Guid { get; set; } = "";
+    public string S3ObjectKey { get; set; } = "";
     [BindProperty]
     public string FileName { get; set; } = "";
     [BindProperty]
     public string AttachmentType { get; set; } = "";
+    [BindProperty]
+    public string AttachmentTypeId { get; set; } = "";
 
     private readonly IFileAppService _fileAppService;
 
@@ -32,18 +34,19 @@ public class DeleteAttachmentModalModel : AbpPageModel
         _fileAppService = fileAppService;
     }
 
-    public async Task OnGetAsync(string s3guid, string fileName, string attachmentType)
+    public async Task OnGetAsync(string s3ObjectKey, string fileName, string attachmentType, string attachmentTypeId)
     {
-        S3Guid = s3guid;
+        S3ObjectKey = s3ObjectKey;
         FileName = fileName;
         AttachmentType = attachmentType;
+        AttachmentTypeId = attachmentTypeId;
     }     
 
     public async Task<IActionResult> OnPostAsync()
     {
         try
         {
-            bool isdeleted = await _fileAppService.DeleteBlobAsync(new DeleteBlobRequestDto { S3Guid = new Guid(S3Guid), Name = FileName });
+            bool isdeleted = await _fileAppService.DeleteBlobAsync(new DeleteBlobRequestDto { S3ObjectKey = S3ObjectKey, Name = FileName });
             if(!isdeleted)
             {
                 throw new AbpValidationException("Failed to delete " + FileName + ".");
