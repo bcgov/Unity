@@ -77,21 +77,23 @@ namespace Unity.GrantManager.Web.Identity
                 }
             }
             else
+            {
                 foreach (var role in user.Roles)
                 {
                     var dbRole = await _identityRoleManager.GetByIdAsync(role.RoleId);
                     principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
+                }
 
-                    var userPermissions = (await _permissionManager.GetAllForUserAsync(user.Id)).Where(s => s.IsGranted);
+                var userPermissions = (await _permissionManager.GetAllForUserAsync(user.Id)).Where(s => s.IsGranted);
 
-                    foreach (var permission in userPermissions)
+                foreach (var permission in userPermissions)
+                {
+                    if (!principal.HasClaim("Permission", permission.Name))
                     {
-                        if (!principal.HasClaim("Permission", permission.Name))
-                        {
-                            principal.AddClaim("Permission", permission.Name);
-                        }
+                        principal.AddClaim("Permission", permission.Name);
                     }
                 }
+            }
 
             principal.AddClaim("Permission", GrantManagerPermissions.Default);
             principal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
