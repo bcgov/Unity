@@ -175,7 +175,7 @@ $(function () {
         wrapper: '#assessmentUserDetailsWidget',
         filterCallback: function () {
             return {
-                'displayName': selectedReviewDetails.adjudicatorName,
+                'displayName': selectedReviewDetails.assessorName,
                 'title': 'Title, Role'
             };
         }
