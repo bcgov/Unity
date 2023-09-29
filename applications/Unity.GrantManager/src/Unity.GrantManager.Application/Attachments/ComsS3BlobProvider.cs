@@ -4,25 +4,16 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Assessments;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Users;
 using Volo.Abp.Validation;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
-using System.IO.Compression;
-using System.Data.SqlTypes;
 using System.Text.RegularExpressions;
-using System.Security.AccessControl;
-using System.Threading;
 
 namespace Unity.GrantManager.Attachments;
 
