@@ -21,6 +21,8 @@ using Microsoft.Extensions.Configuration;
 using System.IO.Compression;
 using System.Data.SqlTypes;
 using System.Text.RegularExpressions;
+using System.Security.AccessControl;
+using System.Threading;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -109,22 +111,28 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
     public override async Task<Stream> GetOrNullAsync(BlobProviderGetArgs args)
     {
         var queryParams = _httpContextAccessor.HttpContext.Request.Query;
-        if (queryParams.TryGetValue("S3Guid", out StringValues s3guid))
-        {              
-            return await DownloadAttachment(args, s3guid.ToString());            
+        if (queryParams.TryGetValue("S3ObjectKey", out StringValues s3ObjectKey))
+        {
+            var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+
+            var getObjectRequest = new GetObjectRequest
+            {
+                BucketName = config.Bucket,
+                Key = escapeKeyFileName(s3ObjectKey.ToString())
+            }; 
+            using GetObjectResponse response = await _amazonS3Client.GetObjectAsync(getObjectRequest);
+            MemoryStream memoryStream = new MemoryStream();
+            using (Stream responseStream = response.ResponseStream)
+            {
+                responseStream.CopyTo(memoryStream);
+                return memoryStream;
+            }
         }
         else
         {
-            throw new Exception("Missing parameter:AttachmentType");
+            throw new AbpValidationException("Missing parameter:S3ObjectKey");
         }      
     }    
-
-    private async Task<Stream> DownloadAttachment(BlobProviderGetArgs args, string s3guid)
-    {
-        throw new NotImplementedException();
-    }
-
-    
 
     private string GetMimeType(string fileName)
     {
