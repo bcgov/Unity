@@ -127,7 +127,7 @@
     display: flex;
 }
 
-.adjudication-action-btn {
+.assessment-action-btn {
     justify-content: center;
     align-items: center;
     gap: 8px;
@@ -245,4 +245,7 @@ select.selected{
 }
 .details-nav .nav-link .fl{
     margin-right:4px;
+}
+.comments-title {
+    margin: 0.5rem 0rem 0rem 0.4rem;
 }

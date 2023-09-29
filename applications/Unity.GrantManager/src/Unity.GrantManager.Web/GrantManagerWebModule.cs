@@ -25,6 +25,7 @@ using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
@@ -33,6 +34,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theming;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
@@ -51,7 +53,7 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
     typeof(AbpIdentityWebModule),
-    typeof(AbpSettingManagementWebModule),    
+    typeof(AbpSettingManagementWebModule),
     typeof(AbpAspNetCoreMvcUiBasicThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
@@ -60,7 +62,7 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
 )]
 [DependsOn(typeof(AbpBlobStoringModule))]
-    public class GrantManagerWebModule : AbpModule
+public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -103,6 +105,19 @@ namespace Unity.GrantManager.Web;
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
+
+        Configure<AbpBackgroundJobOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = false; //Disables job execution
+        });
+
+        Configure<AbpAntiForgeryOptions>(options =>
+        {
+            options.TokenCookie.Expiration = TimeSpan.FromDays(365);
+            options.TokenCookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.TokenCookie.SameSite = SameSiteMode.None;
+            options.TokenCookie.HttpOnly = false;
+        });
     }
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
@@ -328,7 +343,12 @@ namespace Unity.GrantManager.Web;
             {
                 HttpOnly = HttpOnlyPolicy.Always,
                 Secure = CookieSecurePolicy.Always,
-                MinimumSameSitePolicy = SameSiteMode.None
+                MinimumSameSitePolicy = SameSiteMode.None,
+                OnAppendCookie = cookieContext =>
+                {
+                    if (cookieContext.CookieName.Equals("XSRF-TOKEN"))
+                        cookieContext.CookieOptions.HttpOnly = false;
+                }
             });
         }
 
