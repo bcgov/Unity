@@ -26,7 +26,7 @@ using System.Threading;
 
 namespace Unity.GrantManager.Attachments;
 
-public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
+public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
@@ -37,16 +37,18 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
-        _adjudicationAttachmentRepository = adjudicationAttachmentRepository;  
-       
-        AmazonS3Config s3config = new AmazonS3Config();
-        s3config.RegionEndpoint = null;
-        s3config.ServiceURL = configuration["S3:Endpoint"];
-        s3config.AllowAutoRedirect = true;
-        s3config.ForcePathStyle = true;
+        _adjudicationAttachmentRepository = adjudicationAttachmentRepository;
+
+        AmazonS3Config s3config = new()
+        {
+            RegionEndpoint = null,
+            ServiceURL = configuration["S3:Endpoint"],
+            AllowAutoRedirect = true,
+            ForcePathStyle = true
+        };
 
 
-        AmazonS3Client s3Client = new AmazonS3Client(
+        AmazonS3Client s3Client = new(
                 configuration["S3:AccessKeyId"],
                 configuration["S3:SecretAccessKey"],
                 s3config
@@ -60,18 +62,22 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         var attachmentType = _httpContextAccessor.HttpContext.Request.Form["AttachmentType"];
         var attachmentTypeId = _httpContextAccessor.HttpContext.Request.Form["AttachmentTypeId"];
         var config = args.Configuration.GetComsS3BlobProviderConfiguration();
-
+        
         var deleteObjectRequest = new DeleteObjectRequest
         {
             BucketName = config.Bucket,
-            Key = escapeKeyFileName(s3ObjectKey)
+            Key = EscapeKeyFileName(s3ObjectKey)
         };
         
         await _amazonS3Client.DeleteObjectAsync(deleteObjectRequest);
         if (attachmentType == "Application")
         {
+            if (attachmentTypeId.IsNullOrEmpty())
+            {
+                throw new AbpValidationException("Missing ApplicationId");
+            }
             IQueryable<ApplicationAttachment> queryableAttachment = _applicationAttachmentRepository.GetQueryableAsync().Result;
-            ApplicationAttachment attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.ApplicationId.Equals(new Guid(attachmentTypeId)));
+            ApplicationAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.ApplicationId.Equals(new Guid(attachmentTypeId.ToString())));
             if (attachment != null)
             {
                 await _applicationAttachmentRepository.DeleteAsync(attachment);
@@ -79,8 +85,12 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         }
         else if (attachmentType == "Adjudication")
         {
+            if (attachmentTypeId.IsNullOrEmpty())
+            {
+                throw new AbpValidationException("Missing AssessmentId");
+            }
             IQueryable<AdjudicationAttachment> queryableAttachment = _adjudicationAttachmentRepository.GetQueryableAsync().Result;
-            AdjudicationAttachment attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.AdjudicationId.Equals(new Guid(attachmentTypeId)));
+            AdjudicationAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.AdjudicationId.Equals(new Guid(attachmentTypeId.ToString())));
             if (attachment != null)
             {
                 await _adjudicationAttachmentRepository.DeleteAsync(attachment);
@@ -95,13 +105,17 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         
     }
 
-    private string escapeKeyFileName(string s3ObjectKey)
-    {        
-        string[] keys = Regex.Split(s3ObjectKey, "(/)");
-        string escapedName = Uri.EscapeDataString(keys[keys.Length - 1]);
-        keys[keys.Length - 1] = escapedName;
+    private static string EscapeKeyFileName(string s3ObjectKey)
+    {
+        Regex regex= S3KeysRegex();
+        string[] keys = regex.Split(s3ObjectKey);
+        string escapedName = Uri.EscapeDataString(keys[^1]);
+        keys[^1] = escapedName;
         return string.Join("", keys);
     }
+
+    [GeneratedRegex("(/)")]
+    private static partial Regex S3KeysRegex();
 
     public override Task<bool> ExistsAsync(BlobProviderExistsArgs args)
     {
@@ -118,15 +132,13 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
             var getObjectRequest = new GetObjectRequest
             {
                 BucketName = config.Bucket,
-                Key = escapeKeyFileName(s3ObjectKey.ToString())
+                Key = EscapeKeyFileName(s3ObjectKey.ToString())
             }; 
             using GetObjectResponse response = await _amazonS3Client.GetObjectAsync(getObjectRequest);
-            MemoryStream memoryStream = new MemoryStream();
-            using (Stream responseStream = response.ResponseStream)
-            {
-                responseStream.CopyTo(memoryStream);
-                return memoryStream;
-            }
+            MemoryStream memoryStream = new();
+            using Stream responseStream = response.ResponseStream;
+            responseStream.CopyTo(memoryStream);
+            return memoryStream;
         }
         else
         {
@@ -151,21 +163,15 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         {
             if(attachmentType.ToString() == "Application")
             {
-                StringValues applicationId;
-                StringValues currentUserId;
-                StringValues currentUserName;
-                queryParams.TryGetValue("ApplicationId", out applicationId);
-                queryParams.TryGetValue("CurrentUserId", out currentUserId);
-                queryParams.TryGetValue("CurrentUserName", out currentUserName);                
+                queryParams.TryGetValue("ApplicationId", out StringValues applicationId);
+                queryParams.TryGetValue("CurrentUserId", out StringValues currentUserId);
+                queryParams.TryGetValue("CurrentUserName", out StringValues currentUserName);                
                 await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString(), currentUserName.ToString());
             } else if (attachmentType.ToString() == "Adjudication")
             {
-                StringValues assessmentId;
-                StringValues currentUserId;
-                StringValues currentUserName;
-                queryParams.TryGetValue("AssessmentId", out assessmentId);
-                queryParams.TryGetValue("CurrentUserId", out currentUserId);
-                queryParams.TryGetValue("CurrentUserName", out currentUserName);               
+                queryParams.TryGetValue("AssessmentId", out StringValues assessmentId);
+                queryParams.TryGetValue("CurrentUserId", out StringValues currentUserId);
+                queryParams.TryGetValue("CurrentUserName", out StringValues currentUserName);               
                 await UploadAdjudicationAttachment(args, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
             } else
             {
@@ -192,7 +198,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         var mimeType = GetMimeType(args.BlobName);
         await UploadToS3(args, bucket, escapedKey, mimeType);
         IQueryable<AdjudicationAttachment> queryableAttachment = _adjudicationAttachmentRepository.GetQueryableAsync().Result;
-        AdjudicationAttachment attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.AdjudicationId.Equals(new Guid(assessmentId)));
+        AdjudicationAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.AdjudicationId.Equals(new Guid(assessmentId)));
         if (attachment == null)
         {
             await _adjudicationAttachmentRepository.InsertAsync(
@@ -234,7 +240,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         var mimeType = GetMimeType(args.BlobName);
         await UploadToS3(args,bucket, escapedKey, mimeType);
         IQueryable<ApplicationAttachment> queryableAttachment = _applicationAttachmentRepository.GetQueryableAsync().Result;
-        ApplicationAttachment attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.ApplicationId.Equals(new Guid(applicationId)));
+        ApplicationAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.ApplicationId.Equals(new Guid(applicationId)));
         if (attachment == null)
         {
             await _applicationAttachmentRepository.InsertAsync(
@@ -262,7 +268,7 @@ public class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
 
     public async Task UploadToS3(BlobProviderSaveArgs args, string bucket, string key, string mimeType)
     {
-        PutObjectRequest putRequest = new PutObjectRequest
+        PutObjectRequest putRequest = new()
         {
             BucketName = bucket,
             Key = key,

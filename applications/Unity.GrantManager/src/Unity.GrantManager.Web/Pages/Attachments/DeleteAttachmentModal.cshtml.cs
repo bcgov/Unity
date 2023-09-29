@@ -34,7 +34,9 @@ public class DeleteAttachmentModalModel : AbpPageModel
         _fileAppService = fileAppService;
     }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public async Task OnGetAsync(string s3ObjectKey, string fileName, string attachmentType, string attachmentTypeId)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     {
         S3ObjectKey = s3ObjectKey;
         FileName = fileName;

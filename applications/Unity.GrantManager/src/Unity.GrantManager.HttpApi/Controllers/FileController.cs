@@ -35,16 +35,14 @@ namespace Unity.GrantManager.Controllers
             {
                 try
                 {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await source.CopyToAsync(memoryStream);
-                        await _fileAppService.SaveBlobAsync(
-                            new SaveBlobInputDto
-                            {
-                                Name = source.FileName,
-                                Content = memoryStream.ToArray()
-                            });
-                    }
+                    using var memoryStream = new MemoryStream();
+                    await source.CopyToAsync(memoryStream);
+                    await _fileAppService.SaveBlobAsync(
+                        new SaveBlobInputDto
+                        {
+                            Name = source.FileName,
+                            Content = memoryStream.ToArray()
+                        });
                 }
                 catch (Exception ex)
                 {
