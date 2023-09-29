@@ -1,15 +1,7 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Text;
-
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Volo.Abp.Application.Services;
 using Volo.Abp.BlobStoring;
-using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Attachments
 {
@@ -39,7 +31,7 @@ namespace Unity.GrantManager.Attachments
             return await _fileContainer.DeleteAsync(deleteBlobRequestDto.S3ObjectKey);  
         }
 
-        private string GetMimeType(string fileName)
+        private static string GetMimeType(string fileName)
         {
             var provider = new FileExtensionContentTypeProvider();
             if (!provider.TryGetContentType(fileName, out var contentType))

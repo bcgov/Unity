@@ -214,25 +214,25 @@ $(function () {
 });
 
 function uploadApplicationFiles(inputId) {    
-    var applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
-    var currentUserId = decodeURIComponent($("#CurrentUserId").val());  
-    var currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    var url = "/uploader?AttachmentType=Application&ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
+    let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
+    let currentUserId = decodeURIComponent($("#CurrentUserId").val());  
+    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
+    let url = "/uploader?AttachmentType=Application&ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
     uploadFiles(inputId, url, 'refresh_application_attachment_list');     
 }
 
 function uploadAssessmentFiles(inputId) {    
-    var assessmentId = decodeURIComponent($("#AssessmentId").val());
-    var currentUserId = decodeURIComponent($("#CurrentUserId").val());
-    var currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    var url = "/uploader?AttachmentType=Adjudication&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
+    let assessmentId = decodeURIComponent($("#AssessmentId").val());
+    let currentUserId = decodeURIComponent($("#CurrentUserId").val());
+    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
+    let url = "/uploader?AttachmentType=Adjudication&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
     uploadFiles(inputId, url, 'refresh_adjudication_attachment_list');        
 }
 
 function uploadFiles(inputId, urlStr, channel) {
-    var input = document.getElementById(inputId);    
-    var files = input.files;
-    var formData = new FormData();
+    let input = document.getElementById(inputId);    
+    let files = input.files;
+    let formData = new FormData();
     const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
     const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
 
@@ -304,7 +304,7 @@ const update_application_attachment_count_subscription = PubSub.subscribe(
 );
 
 const checkCurrentUser = function (data) {
-    var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+    let currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
 
     if (currentUserId == data.creatorId) {
         $('#recommendation_select').prop('disabled', false);

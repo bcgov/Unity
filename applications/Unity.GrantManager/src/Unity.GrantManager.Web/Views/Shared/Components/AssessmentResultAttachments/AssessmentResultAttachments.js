@@ -86,7 +86,7 @@
     dataTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
             const deselectedData = dataTable.row(indexes).data();
-            
+            console.log('Selected Data:', deselectedData);
         }
     });
     dataTable.on('click', 'tbody tr', function (e) {

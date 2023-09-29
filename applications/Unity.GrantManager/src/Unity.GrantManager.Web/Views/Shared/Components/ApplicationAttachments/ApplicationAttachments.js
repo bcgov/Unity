@@ -62,7 +62,7 @@
                         title: '',
                         data: 's3ObjectKey',
                         render: function (data, type, full, meta) {
-                            var html = '<div class="dropdown" style="float:right;">';
+                            let html = '<div class="dropdown" style="float:right;">';
                             html += '<button class="btn btn-light dropbtn" type="button"><i class="fl fl-attachment-more" ></i></button>';
                             html += '<div class="dropdown-content">';
                             html += '<a href="/download?S3ObjectKey=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
@@ -86,14 +86,14 @@
         if (type === 'row') {
             const selectedData = dataTable.row(indexes).data();
             console.log('Selected Data:', selectedData);
-            //PubSub.publish('select_application', selectedData);
+            
         }
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
             const deselectedData = dataTable.row(indexes).data();
-            //PubSub.publish('deselect_application', deselectedData);
+            console.log('Selected Data:', deselectedData);
         }
     });
     dataTable.on('click', 'tbody tr', function (e) {
@@ -108,12 +108,12 @@
     );
 });
 
-var deleteAttachmentModal = new abp.ModalManager({
+let deleteAttachmentModal = new abp.ModalManager({
     viewUrl: '../Attachments/DeleteAttachmentModal'
 });
 
 function deleteApplicationAttachment(s3ObjectKey, fileName) {
-    var applicationId = decodeURIComponent($("#DetailsViewApplicationId").val()); 
+    let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val()); 
     deleteAttachmentModal.open({
         s3ObjectKey: s3ObjectKey,
         fileName: fileName,

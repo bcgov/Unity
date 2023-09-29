@@ -137,7 +137,7 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         }      
     }    
 
-    private string GetMimeType(string fileName)
+    private static string GetMimeType(string fileName)
     {
         var provider = new FileExtensionContentTypeProvider();
         if (!provider.TryGetContentType(fileName, out var contentType))
