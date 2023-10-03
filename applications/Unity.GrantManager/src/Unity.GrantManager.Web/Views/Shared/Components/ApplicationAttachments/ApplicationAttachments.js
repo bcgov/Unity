@@ -67,8 +67,8 @@
                             html += '<div class="dropdown-content">';
                             html += '<a href="/download?S3ObjectKey=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
                             html += '" target="_blank" download="' + data + '" class="fullwidth">';
-                            html += '<button class="btn fullWidth" style="margin:20px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
-                            html += '<button class="btn fullWidth" style="margin:20px" type="button" onclick="deleteApplicationAttachment(\'' + data;
+                            html += '<button class="btn fullWidth" style="margin:10px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
+                            html += '<button class="btn fullWidth" style="margin:10px" type="button" onclick="deleteApplicationAttachment(\'' + data;
                             html += '\',\'' + full.fileName + '\')"><i class="fl fl-cancel"></i><span>Delete Attachment</span></button>';
                             html += '</div>';
                             html += '</div>';
