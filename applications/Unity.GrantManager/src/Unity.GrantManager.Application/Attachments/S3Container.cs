@@ -3,7 +3,7 @@
 namespace Unity.GrantManager.Attachments
 {
     [BlobContainerName("unity-s3-container")]
-    public class ComsS3Container
+    public class S3Container
     {
     }
 }

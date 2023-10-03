@@ -37,9 +37,9 @@ public class GrantManagerApplicationModule : AbpModule
         var configuration = context.Services.GetConfiguration();
         Configure<AbpBlobStoringOptions>(options =>
         {
-            options.Containers.Configure<ComsS3Container>(container =>
+            options.Containers.Configure<S3Container>(container =>
             {
-                container.UseComsS3CustomBlobProvider(provider =>
+                container.UseS3CustomBlobProvider(provider =>
                 {
                     provider.AccessKeyId = configuration["S3:AccessKeyId"] ?? "";
                     provider.Bucket = configuration["S3:Bucket"] ?? "";

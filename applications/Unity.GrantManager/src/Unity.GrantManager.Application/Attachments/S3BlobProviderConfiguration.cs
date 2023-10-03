@@ -2,10 +2,10 @@
 
 namespace Unity.GrantManager.Attachments;
 
-public class ComsS3BlobProviderConfiguration
+public class S3BlobProviderConfiguration
 {
     private readonly BlobContainerConfiguration _containerConfiguration;
-    public ComsS3BlobProviderConfiguration(
+    public S3BlobProviderConfiguration(
             BlobContainerConfiguration containerConfiguration)
     {
         _containerConfiguration = containerConfiguration;
@@ -13,43 +13,43 @@ public class ComsS3BlobProviderConfiguration
     public string AccessKeyId
     {
         get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.AccessKeyId");
+                .GetConfiguration<string>("S3BlobProvider.AccessKeyId");
         set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.AccessKeyId", value);
+            .SetConfiguration("S3BlobProvider.AccessKeyId", value);
     }
     public string Bucket
     {
         get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.Bucket");
+                .GetConfiguration<string>("S3BlobProvider.Bucket");
         set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.Bucket", value);
+            .SetConfiguration("S3BlobProvider.Bucket", value);
     }
     public string Endpoint
     {
         get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.Endpoint");
+                .GetConfiguration<string>("S3BlobProvider.Endpoint");
         set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.Endpoint", value);
+            .SetConfiguration("S3BlobProvider.Endpoint", value);
     }
     public string SecretAccessKey
     {
         get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.SecretAccessKey");
+                .GetConfiguration<string>("S3BlobProvider.SecretAccessKey");
         set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.SecretAccessKey", value);
+            .SetConfiguration("S3BlobProvider.SecretAccessKey", value);
     }
     public string ApplicationS3Folder
     {
         get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.ApplicationS3Folder");
+                .GetConfiguration<string>("S3BlobProvider.ApplicationS3Folder");
         set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.ApplicationS3Folder", value);
+            .SetConfiguration("S3BlobProvider.ApplicationS3Folder", value);
     }
     public string AssessmentS3Folder
     {
         get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.AssessmentS3Folder");
+                .GetConfiguration<string>("S3BlobProvider.AssessmentS3Folder");
         set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.AssessmentS3Folder", value);
+            .SetConfiguration("S3BlobProvider.AssessmentS3Folder", value);
     }    
 }

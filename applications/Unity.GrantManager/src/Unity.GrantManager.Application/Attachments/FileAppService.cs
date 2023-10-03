@@ -7,9 +7,9 @@ namespace Unity.GrantManager.Attachments
 {
     public class FileAppService : ApplicationService, IFileAppService
     {
-        private readonly IBlobContainer<ComsS3Container> _fileContainer;
+        private readonly IBlobContainer<S3Container> _fileContainer;
 
-        public FileAppService(IBlobContainer<ComsS3Container> fileContainer)
+        public FileAppService(IBlobContainer<S3Container> fileContainer)
         {
             _fileContainer = fileContainer;
         }

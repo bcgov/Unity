@@ -17,14 +17,14 @@ using System.Text.RegularExpressions;
 
 namespace Unity.GrantManager.Attachments;
 
-public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
+public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
     private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;    
     private readonly AmazonS3Client _amazonS3Client;
 
-    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IConfiguration configuration)
+    public S3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IConfiguration configuration)
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
@@ -52,7 +52,7 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         string s3ObjectKey = args.BlobName;
         var attachmentType = _httpContextAccessor.HttpContext.Request.Form["AttachmentType"];
         var attachmentTypeId = _httpContextAccessor.HttpContext.Request.Form["AttachmentTypeId"];
-        var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+        var config = args.Configuration.GetS3BlobProviderConfiguration();
         
         var deleteObjectRequest = new DeleteObjectRequest
         {
@@ -118,7 +118,7 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         var queryParams = _httpContextAccessor.HttpContext.Request.Query;
         if (queryParams.TryGetValue("S3ObjectKey", out StringValues s3ObjectKey))
         {
-            var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+            var config = args.Configuration.GetS3BlobProviderConfiguration();
 
             var getObjectRequest = new GetObjectRequest
             {
@@ -176,9 +176,9 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
     
     private async Task UploadAssessmentAttachment(BlobProviderSaveArgs args, string assessmentId, string currentUserId, string currentUserName)
     {
-        var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+        var config = args.Configuration.GetS3BlobProviderConfiguration();
         var bucket = config.Bucket;
-        var folder = args.Configuration.GetComsS3BlobProviderConfiguration().AssessmentS3Folder;
+        var folder = args.Configuration.GetS3BlobProviderConfiguration().AssessmentS3Folder;
         if (!folder.EndsWith('/'))
         {
             folder += "/";
@@ -218,9 +218,9 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
 
     private async Task UploadApplicationAttachment(BlobProviderSaveArgs args, string applicationId, string currentUserId, string currentUserName)
     {
-        var config = args.Configuration.GetComsS3BlobProviderConfiguration();
+        var config = args.Configuration.GetS3BlobProviderConfiguration();
         var bucket = config.Bucket;
-        var folder = args.Configuration.GetComsS3BlobProviderConfiguration().ApplicationS3Folder;
+        var folder = args.Configuration.GetS3BlobProviderConfiguration().ApplicationS3Folder;
         if (!folder.EndsWith('/'))
         {
             folder += "/";
