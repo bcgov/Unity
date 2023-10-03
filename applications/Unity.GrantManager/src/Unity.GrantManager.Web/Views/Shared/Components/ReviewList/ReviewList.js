@@ -44,7 +44,7 @@
             action: function (e, dt, button, config) {
                 let selectedRow = dt.rows({ selected: true }).data()[0];
                 if (typeof (selectedRow) === 'object') {
-                    unity.grantManager.assessments.assessments.executeAssessmentAction(selectedRow.id, config.name, {})
+                    unity.grantManager.assessments.assessment.executeAssessmentAction(selectedRow.id, config.name, {})
                         .then(function (result) {
                             PubSub.publish('refresh_review_list', selectedRow.id);
                             abp.notify.success(
@@ -59,7 +59,7 @@
             extend: 'unityWorkflow',
             init: function (dt, button, config) {
                 var that = this;
-                unity.grantManager.assessments.assessments.getCurrentUserAssessmentId($("#PageApplicationId").val(), {})
+                unity.grantManager.assessments.assessment.getCurrentUserAssessmentId($("#PageApplicationId").val(), {})
                     .done(function (data) {
                         if (data == null) {
                             that.enable();
@@ -71,7 +71,7 @@
             },
             action: function (e, dt, button, config) {
                 let applicationId = decodeURIComponent($("#PageApplicationId").val());
-                unity.grantManager.assessments.assessments.createAssessment({ "applicationId": applicationId }, {})
+                unity.grantManager.assessments.assessment.createAssessment({ "applicationId": applicationId }, {})
                     .done(function (data) {
                         PubSub.publish('add_review');
                         PubSub.publish('refresh_review_list', data.id);
@@ -83,7 +83,7 @@
 
     let actionArray = [];
     // NOTE: FIND A BETTER WAY OF DOING THIS USING PROMISES
-    unity.grantManager.assessments.assessments.getAllActions({
+    unity.grantManager.assessments.assessment.getAllActions({
         async: false,
         success: function (data) {
             actionArray.push(...data);
@@ -137,7 +137,7 @@
             scrollX: true,
             lengthChange: false,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.assessments.assessments.getList, inputAction, responseCallback
+                unity.grantManager.assessments.assessment.getList, inputAction, responseCallback
             ),
             buttons: assessmentButtonsGroup,
             columnDefs: [
@@ -200,7 +200,7 @@
 
         if (assessmentId)
         {
-            unity.grantManager.assessments.assessments.getAvailableActions(assessmentId, {})
+            unity.grantManager.assessments.assessment.getAvailableActions(assessmentId, {})
                 .then(function (actionListResult) {
                     // Check permissions
                     let enabledButtons = actionListResult.map((x) => x + ':name');
