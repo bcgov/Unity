@@ -10,12 +10,12 @@ namespace Unity.GrantManager.Assessments
     public class AssessmentCommentsAppServiceTests : GrantManagerApplicationTestBase
     {
         private readonly IAssessmentCommentsService _assessmentsCommentsService;
-        private readonly IAssessmentsService _assessmentsService;
+        private readonly IAssessmentAppService _assessmentsService;
         private readonly IGrantApplicationAppService _grantApplicationAppService;
 
         public AssessmentCommentsAppServiceTests()
         {
-            _assessmentsService = GetRequiredService<IAssessmentsService>();
+            _assessmentsService = GetRequiredService<IAssessmentAppService>();
             _assessmentsCommentsService = GetRequiredService<IAssessmentCommentsService>();
             _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
         }
@@ -23,7 +23,7 @@ namespace Unity.GrantManager.Assessments
         protected override IServiceCollection CreateServiceCollection()
         {
             var serviceCollection = base.CreateServiceCollection();
-            serviceCollection.AddTransient<IAssessmentsService>();
+            serviceCollection.AddTransient<IAssessmentAppService>();
             serviceCollection.AddTransient<IAssessmentCommentsService>();
             serviceCollection.AddTransient<IGrantApplicationAppService>();
             return serviceCollection;

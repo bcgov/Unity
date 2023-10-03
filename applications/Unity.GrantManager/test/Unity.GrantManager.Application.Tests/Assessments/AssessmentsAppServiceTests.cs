@@ -10,18 +10,18 @@ namespace Unity.GrantManager.Assessments
     public class AssessmentsAppServiceTests : GrantManagerApplicationTestBase
     {
         private readonly IGrantApplicationAppService _grantApplicationAppService;
-        private readonly IAssessmentsService _assessmentsService;
+        private readonly IAssessmentAppService _assessmentsService;
 
         public AssessmentsAppServiceTests()
         {
-            _assessmentsService = GetRequiredService<IAssessmentsService>();
+            _assessmentsService = GetRequiredService<IAssessmentAppService>();
             _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
         }
 
         protected override IServiceCollection CreateServiceCollection()
         {
             var serviceCollection = base.CreateServiceCollection();
-            serviceCollection.AddTransient<IAssessmentsService>();
+            serviceCollection.AddTransient<IAssessmentAppService>();
             serviceCollection.AddTransient<IGrantApplicationAppService>();
             return serviceCollection;
         }

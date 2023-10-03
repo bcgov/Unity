@@ -7,7 +7,7 @@ using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Assessments;
 
-public interface IAssessmentsService : IApplicationService
+public interface IAssessmentAppService : IApplicationService
 {
     Task<AssessmentDto> CreateAssessment(CreateAssessmentDto dto);
     Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto);

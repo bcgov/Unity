@@ -16,15 +16,15 @@ namespace Unity.GrantManager.Assessments
 {
     [Authorize]
     [Dependency(ReplaceServices = true)]
-    [ExposeServices(typeof(AssessmentsAppService), typeof(IAssessmentsService))]
-    public class AssessmentsAppService : ApplicationService, IAssessmentsService
+    [ExposeServices(typeof(AssessmentAppService), typeof(IAssessmentAppService))]
+    public class AssessmentAppService : ApplicationService, IAssessmentAppService
     {
         private readonly IAssessmentsRepository _assessmentsRepository;
         private readonly AssessmentManager _assessmentManager;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IIdentityUserLookupAppService _userLookupProvider;
 
-        public AssessmentsAppService(
+        public AssessmentAppService(
             IAssessmentsRepository assessmentsRepository,
             AssessmentManager assessmentManager,
             IApplicationRepository applicationRepository,
