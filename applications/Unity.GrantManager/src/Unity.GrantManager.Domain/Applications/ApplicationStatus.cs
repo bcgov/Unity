@@ -5,11 +5,11 @@ namespace Unity.GrantManager.Applications;
 
 public class ApplicationStatus : AuditedAggregateRoot<Guid>
 {
-    public string ExternalStatus { get; set; }
+    public string ExternalStatus { get; set; } = string.Empty;
 
-    public string InternalStatus { get; set; }
+    public string InternalStatus { get; set; } = string.Empty;
 
-    public string StatusCode { get; set; }
+    public string StatusCode { get; set; } = string.Empty;
 
     public ApplicationStatus(string statusCode, string externalStatus, string internalStatus)
     {

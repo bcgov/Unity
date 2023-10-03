@@ -20,6 +20,7 @@ namespace Unity.GrantManager.Assessments
         public bool IsComplete { get; set; }
 
         public bool? ApprovalRecommended { get; set; }
+        public string? AdjudicatorName { get; set; }
 
         public AssessmentState Status { get; private set; }
         private StateMachine<AssessmentState, AssessmentAction> _workflow { get; set; }

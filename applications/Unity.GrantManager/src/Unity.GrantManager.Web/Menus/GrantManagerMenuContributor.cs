@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Localization;
+using Unity.GrantManager.Permissions;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Web.Navigation;
 using Volo.Abp.UI.Navigation;
@@ -19,10 +20,8 @@ public class GrantManagerMenuContributor : IMenuContributor
         }
     }
 
-    private Task ConfigureMainMenuAsync(MenuConfigurationContext context)
+    private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
-        // var administration = context.Menu.GetAdministration();
-
         var l = context.GetLocalizer<GrantManagerResource>();
 
         context.Menu.Items.Insert(
@@ -107,6 +106,30 @@ public class GrantManagerMenuContributor : IMenuContributor
                 requiredPermissionName: IdentityPermissions.Users.Default
             )
         );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.Intakes,
+                l["Menu:Intakes"],
+                "~/Intakes",
+                icon: "fl fl-settings",
+                order: 8,
+                requiredPermissionName: GrantManagerPermissions.Intakes.Default
+            )
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.ApplicationForms,
+                l["Menu:ApplicationForms"],
+                "~/ApplicationForms",
+                icon: "fl fl-settings",
+                order: 9,
+                requiredPermissionName: GrantManagerPermissions.ApplicationForms.Default
+            )
+        );
+
+        // var administration = context.Menu.GetAdministration();
 
         //if (MultiTenancyConsts.IsEnabled)
         //{

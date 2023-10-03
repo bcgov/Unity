@@ -1,6 +1,6 @@
 namespace Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Demo.Pages.Menus;
 
-public class BootstrapDemoMenus
+public static class BootstrapDemoMenus
 {
     private const string Prefix = "BootstrapDemo";
     public const string Home = Prefix + ".Home";

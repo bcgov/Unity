@@ -1,17 +1,14 @@
-﻿using System;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.JSInterop;
+using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Components.Web.Security;
 using Volo.Abp.UI.Navigation;
 
 namespace Volo.Abp.AspNetCore.Components.WebAssembly.BasicTheme.Themes.Basic;
 
-public partial class LoginDisplay : IDisposable
+public partial class LoginDisplay
 {
     [Inject]
     protected IMenuManager MenuManager { get; set; }
@@ -41,12 +38,6 @@ public partial class LoginDisplay : IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose()
-    {
-        Navigation.LocationChanged -= OnLocationChanged;
-        ApplicationConfigurationChangedService.Changed -= ApplicationConfigurationChanged;
-    }
-
     private async Task NavigateToAsync(string uri, string target = null)
     {
         if (target == "_blank")
@@ -63,4 +54,24 @@ public partial class LoginDisplay : IDisposable
     {
         Navigation.NavigateToLogout("authentication/logout");
     }
+
+    #region Disposable base class implementation
+    // To detect redundant calls
+    private bool _disposed;
+
+    // Protected implementation of Dispose pattern.
+    protected override void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                Navigation.LocationChanged -= OnLocationChanged;
+                ApplicationConfigurationChangedService.Changed -= ApplicationConfigurationChanged;
+            }
+            _disposed = true;
+        }
+        base.Dispose(disposing);
+    }
+    #endregion
 }

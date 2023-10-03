@@ -7,7 +7,7 @@ namespace Unity.GrantManager.Web.Pages.GrantPrograms;
 public class CreateModalModel : GrantManagerPageModel
 {
     [BindProperty]
-    public CreateUpdateGrantProgramDto GrantProgram { get; set; }
+    public CreateUpdateGrantProgramDto GrantProgram { get; set; } = new();
 
     private readonly IGrantProgramAppService _grantProgramAppService;
 

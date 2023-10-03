@@ -1,10 +1,11 @@
 $(function () {
-    var selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());    
+    let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());    
     
-    var approveApplicationsModal = new abp.ModalManager({
+    let approveApplicationsModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
-    var dontApproveApplicationsModal = new abp.ModalManager({
+
+    let dontApproveApplicationsModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });       
     
@@ -38,43 +39,43 @@ $(function () {
         });
     });
 
-    var startAdjudicationModal = new abp.ModalManager({
+    let startAssessmentModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
 
-    startAdjudicationModal.onResult(function () {
+    startAssessmentModal.onResult(function () {
         abp.notify.success(
-            'Adjudication is now started for this application',
-            'Start Adjudication'
+            'Assessment is now started for this application',
+            'Start Assessment'
         );
     });
 
-    $('#startAdjudication').click(function () {
-        startAdjudicationModal.open({
+    $('#startAssessment').click(function () {
+        startAssessmentModal.open({
             applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
-            operation: 'UNDER_ADJUDICATION',
-            message: 'Are you sure you want to start adjudication for this application?',
-            title: 'Start Adjudication',
+            operation: 'UNDER_ASSESSMENT',
+            message: 'Are you sure you want to start assessment for this application?',
+            title: 'Start Assessment',
         });
     });
 
-    var completeAdjudicationModal = new abp.ModalManager({
+    let completeAssessmentModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
 
-    completeAdjudicationModal.onResult(function () {
+    completeAssessmentModal.onResult(function () {
         abp.notify.success(
-            'Adjudication is now completed for this application',
-            'Completed Adjudication'
+            'Assessment is now completed for this application',
+            'Completed Assessment'
         );
     });
 
-    $('#completeAdjudication').click(function () {
-        completeAdjudicationModal.open({
+    $('#completeAssessment').click(function () {
+        completeAssessmentModal.open({
             applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
-            operation: 'ADJUDICATION_COMPLETED',
-            message: 'Are you sure you want to complete adjudication for this application?',
-            title: 'Complete Adjudication',
+            operation: 'ASSESSMENT_COMPLETED',
+            message: 'Are you sure you want to complete assessment for this application?',
+            title: 'Complete Assessment',
         });
     });
 
@@ -84,18 +85,21 @@ $(function () {
         const applicationId = urlParams.get('ApplicationId');
 
         try {
-            unity.grantManager.assessments.assessments.createAssessment({ "applicationId": applicationId }, {})
+            unity.grantManager.assessments.assessment.create({ "applicationId": applicationId, "approvalRecommended": null, "startDate" : new Date() }, {})
                 .done(function (data) {
                     PubSub.publish('add_review');
                     PubSub.publish('refresh_review_list',data.id);
-
-
                 });
 
-        } catch (error) { }
-
-    });
-
-
-        
+        } catch (error) {
+            console.log(error);
+        }
+    }); 
+    
+    PubSub.subscribe(
+        'add_review',
+        (msg, data) => {
+            $('#detailsTab a[href="#nav-review-and-assessment"]').tab('show');
+        }
+    );
 });

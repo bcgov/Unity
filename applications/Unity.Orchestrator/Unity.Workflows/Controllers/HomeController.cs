@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using Unity.Workflows.Models;
 
 namespace Unity.Workflows.Controllers;
@@ -26,6 +26,7 @@ public class HomeController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
+        _logger.LogError("Generic error with ID: {errorMessage}", Activity.Current?.Id ?? HttpContext.TraceIdentifier);
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }

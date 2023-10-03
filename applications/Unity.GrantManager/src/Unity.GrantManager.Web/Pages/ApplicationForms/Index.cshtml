@@ -1,0 +1,34 @@
+﻿@page
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.GrantManager.Web.Pages.ApplicationForms
+@using Microsoft.Extensions.Localization
+@model IndexModel
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.MenuItemName = "GrantManager.ApplicationForms";
+    PageLayout.Content.Title = L["ApplicationForms"].Value;
+    ViewBag.PageTitle = "ApplicationForms";
+}
+@section scripts
+    {
+    <abp-script src="/Pages/ApplicationForms/Index.js" />
+}
+
+<div class="container-fluid px-2">
+    <div class="d-flex my-1 p-2">
+        <abp-column size="_6">
+            <abp-card-title>@L["ApplicationForms"]</abp-card-title>
+        </abp-column>
+        <abp-column size="_6" class="d-flex justify-content-end">
+            <abp-button id="CreateApplicationFormButton"
+                        text="@L["Common:Command:Create"].Value"
+                        icon-type="Other"
+                        icon="fl fl-add-to"
+                        button-type="Light" />
+        </abp-column>
+    </div>
+    <abp-table id="ApplicationFormsTable"></abp-table>
+</div>
+

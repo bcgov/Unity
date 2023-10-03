@@ -1,0 +1,20 @@
+﻿@using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Unity.GrantManager.Web.Pages.GrantApplications;
+
+@model UserInfoWidgetViewModel
+@{
+    Layout = null;
+}
+<div id="reviewDetailsCard">
+
+    <h6 class="fw-bold px-3 py-4 m-0">Reviewer Name</h6>
+
+    <div class="py-2 px-4 d-flex align-items-center unity-user-fullname">
+        <div class="unity-user-initials me-2">@Model.Badge</div>
+        <div>
+            <div class="user-name-full">@Model.DisplayName</div>
+            <div class="user-role-full">@Model.Title</div>
+        </div>
+    </div>
+</div>

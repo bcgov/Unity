@@ -1,0 +1,62 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: unity-networkpolicy
+metadata:
+  name: unity-networkpolicy
+  # This template yaml file uses a separate parameter .env file to 
+  # override the default values defined in this section. A template 
+  # usage guide can be found in the readme.md and wiki documents.
+parameters:
+  # Common project parameters
+  - name: PROJECT_NAMESPACE
+    displayName: "Project Namespace"
+    description: "The OpenShift project license plate 6 charater alpha numberic."
+    required: true
+    generate: expression
+    from: "[a-z0-9]{6}"
+  - name: ENV_NAME
+    displayName: "Environment name"
+    description: "The OpenShift environment name [tools, dev, test, prod]."
+    required: true
+    value: "tools"
+  # Additional parameters (Optional)
+objects:
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: deny-by-default
+    spec:
+      # The default posture for a security first namespace is to
+      # deny all traffic. If not added this rule will be added
+      # by Platform Services during environment cut-over.
+      podSelector: {}
+      ingress: []
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-from-openshift-ingress
+    spec:
+      # This policy allows any pod with a route & service combination
+      # to accept traffic from the OpenShift router pods. This is
+      # required for things outside of OpenShift (like the Internet)
+      # to reach your pods.
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+      podSelector: {}
+      policyTypes:
+        - Ingress
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: allow-same-namespace
+    spec:
+      # Allow all pods within the current namespace to communicate
+      # to one another.
+      podSelector:
+      ingress:
+      - from:
+        - podSelector: {}

@@ -1,19 +1,18 @@
-﻿using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System;
 using Volo.Abp.Application.Services;
+using Unity.GrantManager.Comments;
 
 namespace Unity.GrantManager.Assessments;
 
-public interface IAssessmentAppService : IApplicationService
+public interface IAssessmentAppService : IApplicationService, ICommentsService
 {
-    Task<AssessmentDto> CreateAssessment(CreateAssessmentDto dto);
-    Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto);
+    Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto);
     Task<IList<AssessmentDto>> GetListAsync(Guid applicationId);
-    Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId);
+    Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto);
     List<string?> GetAllActions();
-    Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction = AssessmentAction.SendToTeamLead);
+    Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId);
+    Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction);
     Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId);
 }

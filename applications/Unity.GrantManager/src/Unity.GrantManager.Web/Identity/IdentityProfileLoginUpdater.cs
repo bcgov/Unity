@@ -51,6 +51,17 @@ namespace Unity.GrantManager.Web.Identity
             }
 
             await UpdatePrincipal(validatedTokenContext.Principal!, user!);
+            SetTokens(validatedTokenContext);
+        }
+
+        private static void SetTokens(TokenValidatedContext validatedTokenContext)
+        {
+            // Minimal required for now to enable access to COMS
+            if (validatedTokenContext != null
+                && validatedTokenContext.TokenEndpointResponse != null)
+            {
+                validatedTokenContext.Principal!.AddClaim("AccessToken", validatedTokenContext.TokenEndpointResponse.AccessToken);
+            }
         }
 
         private async Task UpdatePrincipal(ClaimsPrincipal principal, IdentityUser user)
@@ -66,18 +77,24 @@ namespace Unity.GrantManager.Web.Identity
                 }
             }
             else
+            {
                 foreach (var role in user.Roles)
                 {
                     var dbRole = await _identityRoleManager.GetByIdAsync(role.RoleId);
                     principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
-
-                    var userPermissions = (await _permissionManager.GetAllForUserAsync(user.Id)).Where(s => s.IsGranted);
-
-                    foreach (var permission in userPermissions)
-                        principal.AddClaim("Permission", permission.Name);
                 }
 
-            // This gets added as a Claim Provider through ABP - give this to all users for now
+                var userPermissions = (await _permissionManager.GetAllForUserAsync(user.Id)).Where(s => s.IsGranted);
+
+                foreach (var permission in userPermissions)
+                {
+                    if (!principal.HasClaim("Permission", permission.Name))
+                    {
+                        principal.AddClaim("Permission", permission.Name);
+                    }
+                }
+            }
+
             principal.AddClaim("Permission", GrantManagerPermissions.Default);
             principal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
         }

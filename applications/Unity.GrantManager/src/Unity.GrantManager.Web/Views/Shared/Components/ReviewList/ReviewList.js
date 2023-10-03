@@ -1,5 +1,4 @@
-﻿$(document).ready(function () {
-    console.log('Script loaded');
+$(function () {
     const l = abp.localization.getResource('GrantManager');
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
@@ -8,10 +7,6 @@
     }
 
     let responseCallback = function (result) {
-
-        // your custom code.
-        console.log(result)
-
         return {
             data: result
         };
@@ -71,7 +66,7 @@
             },
             action: function (e, dt, button, config) {
                 let applicationId = decodeURIComponent($("#PageApplicationId").val());
-                unity.grantManager.assessments.assessment.createAssessment({ "applicationId": applicationId }, {})
+                unity.grantManager.assessments.assessment.createAsync({ "applicationId": applicationId }, {})
                     .done(function (data) {
                         PubSub.publish('add_review');
                         PubSub.publish('refresh_review_list', data.id);
@@ -147,14 +142,18 @@
                     visible: false,
                 },
                 {
+                    title: '<i class="fl fl-review-user" ></i>',
+                    orderable: false,
+                    render: function (data) {
+                        return '<i class="fl fl-review-user" ></i>';
+                    },
+                },
+                {
                     title: l('ReviewerList:ReviewerName'),
-                    data: 'assignedUserId',
+                    data: 'adjudicatorName',
                     className: 'data-table-header',
                     render: function (data) {
-                        if (abp.currentUser.id === data) {
-                            return 'Patrick Lavoie';
-                        }
-                        return data;
+                        return data || '';
                     },
                 },
                 {
@@ -180,7 +179,11 @@
                     data: 'approvalRecommended',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data === null ? '' : (data === true ? 'Recommended for Approval' : 'Recommended for Denial');
+                        if (data !== null) {
+                            return data === true ? 'Recommended for Approval' : 'Recommended for Denial'
+                        } else {
+                            return '';
+                        }                        
                     },
                 }
             ],
@@ -212,7 +215,6 @@
     reviewListTable.on('select', function (e, dt, type, indexes) {
         if (type === 'row') {
             let selectedData = reviewListTable.row(indexes).data();
-            console.log('Selected Data:', selectedData);
             PubSub.publish('select_application_review', selectedData);
             e.currentTarget.classList.toggle('selected');
             refreshActionButtons(dt, selectedData.id);
@@ -222,19 +224,19 @@
     reviewListTable.on('deselect', function (e, dt, type, indexes) {
         if (type === 'row') {
             let deselectedData = reviewListTable.row(indexes).data();
-            PubSub.publish('select_application_review', null);
+            PubSub.publish('deselect_application_review', deselectedData);
             e.currentTarget.classList.toggle('selected');
             refreshActionButtons(dt, null);
         }
     });
 
-    const refresh_review_list_subscription = PubSub.subscribe(
+    PubSub.subscribe(
         'refresh_review_list',
          (msg, data) => {
              reviewListTable.ajax.reload(function (json) {
                  if (data) {
                      let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
-                         return reviewListTable.cell(rowIdx, 0).data() === data ? true : false;
+                         return reviewListTable.cell(rowIdx, 0).data() === data;
                      });
 
                      reviewListTable.row(indexes).select();

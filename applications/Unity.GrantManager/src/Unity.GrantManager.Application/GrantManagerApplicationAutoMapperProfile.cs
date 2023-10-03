@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
-using System.Collections.Generic;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Comments;
+using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Intake;
 
 namespace Unity.GrantManager;
 
@@ -17,13 +20,19 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<Application, GrantApplicationDto>();
         CreateMap<ApplicationUserAssignment, GrantApplicationAssigneeDto>();
         CreateMap<ApplicationStatus, ApplicationStatusDto>();
-        CreateMap<AssessmentComment, AssessmentCommentDto>();
-        CreateMap<ApplicationComment, ApplicationCommentDto>();
-        
+        CreateMap<AssessmentComment, CommentDto>()
+            .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.AssessmentId));
+        CreateMap<ApplicationComment, CommentDto>()
+            .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicationId));
         CreateMap<Assessment, AssessmentDto>()
             .ForMember(
                 dest => dest.StartDate,
                 opts => opts.MapFrom(src => src.CreationTime));
+        CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
+        CreateMap<GrantPrograms.Intake, IntakeDto>();
+        CreateMap<ApplicationForm, ApplicationFormDto>();
+        CreateMap<CreateUpdateIntakeDto, GrantPrograms.Intake>();
+        CreateMap<CreateUpdateApplicationFormDto, ApplicationForm>();
     }
 }
 

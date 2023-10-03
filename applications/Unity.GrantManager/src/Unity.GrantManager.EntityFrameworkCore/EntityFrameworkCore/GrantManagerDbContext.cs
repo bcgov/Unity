@@ -4,6 +4,7 @@ using System.Linq;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationUserRoles;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Comments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -98,14 +99,6 @@ public class GrantManagerDbContext :
         modelBuilder.ConfigureTenantManagement();
 
         /* Configure your own tables/entities inside here */
-
-        //modelBuilder.Entity<YourEntity>(b =>
-        //{
-        //    b.ToTable(GrantManagerConsts.DbTablePrefix + "YourEntities", GrantManagerConsts.DbSchema);
-        //    b.ConfigureByConvention(); //auto configure for the base class props
-        //    //...
-        //});
-
 
         modelBuilder.Entity<GrantProgram>(b =>
         {
@@ -230,6 +223,14 @@ public class GrantManagerDbContext :
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
 
+        modelBuilder.Entity<ApplicationAttachment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationAttachment", GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+        });
+
         modelBuilder.Entity<Assessment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment", GrantManagerConsts.DbSchema);
@@ -270,16 +271,12 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId);
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
+        
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
-        foreach (var t in allEntityTypes)
+        foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
         {
-            if (t.ClrType != typeof(ExtraPropertyDictionary))
-            {
-                var entityBuilder = modelBuilder.Entity(t.ClrType);
-
-                entityBuilder.TryConfigureExtraProperties();
-            }
+            var entityBuilder = modelBuilder.Entity(type);
+            entityBuilder.TryConfigureExtraProperties();
         }
-
     }
 }

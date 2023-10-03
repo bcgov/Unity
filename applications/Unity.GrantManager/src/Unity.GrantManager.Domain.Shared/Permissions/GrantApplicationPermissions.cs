@@ -30,13 +30,6 @@ namespace Unity.GrantManager.Permissions
             public const string CompleteInitial = Default + ".CompleteInitial";
         }
 
-        public static class Adjudications
-        {
-            public const string Default = GroupName + ".Adjudications";
-            public const string Start = Default + ".Start";
-            public const string Complete = Default + ".Complete";
-        }
-
         public static class Approvals
         {
             public const string Default = GroupName + ".Approvals";

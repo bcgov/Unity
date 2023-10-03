@@ -50,7 +50,7 @@ public class GrantManagerDataSeederContributor
                 {
                     ProgramName = "Space Farms Grant Program",
                     Type = GrantProgramType.Agriculture,
-                    PublishDate = new DateTime(2023, 6, 8),
+                    PublishDate = new DateTime(2023, 6, 8, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
             );
@@ -63,7 +63,7 @@ public class GrantManagerDataSeederContributor
                  {
                      ProgramName = "Fictional Arts Accelerator Grant",
                      Type = GrantProgramType.Arts,
-                     PublishDate = new DateTime(2023, 5, 15),
+                     PublishDate = new DateTime(2023, 5, 15, 0, 0, 0, DateTimeKind.Utc),
                  },
                  autoSave: true
              );
@@ -76,7 +76,7 @@ public class GrantManagerDataSeederContributor
                 {
                     ProgramName = "New Approaches in Counting Grant",
                     Type = GrantProgramType.Research,
-                    PublishDate = new DateTime(2020, 5, 15),
+                    PublishDate = new DateTime(2020, 5, 15, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
             );
@@ -89,7 +89,7 @@ public class GrantManagerDataSeederContributor
                 {
                     ProgramName = "BizBusiness Fund",
                     Type = GrantProgramType.Business,
-                    PublishDate = new DateTime(1992, 01, 01),
+                    PublishDate = new DateTime(1992, 01, 01, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
             );
@@ -102,7 +102,7 @@ public class GrantManagerDataSeederContributor
                 {
                     ProgramName = "Historically Small Books Preservation Grant",
                     Type = GrantProgramType.Arts,
-                    PublishDate = new DateTime(2002, 01, 01),
+                    PublishDate = new DateTime(2002, 01, 01, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
             );
@@ -113,8 +113,8 @@ public class GrantManagerDataSeederContributor
                 new Intake
                 {
                     IntakeName = "2022 Intake",
-                    StartDate = new DateOnly(2022, 1, 1),
-                    EndDate = new DateOnly(2023, 1, 1),
+                    StartDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 },
                 autoSave: true
         );
@@ -124,8 +124,8 @@ public class GrantManagerDataSeederContributor
             new Intake
             {
                 IntakeName = "2023 Intake",
-                StartDate = new DateOnly(2023, 1, 1),
-                EndDate = new DateOnly(2024, 1, 1),
+                StartDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             },
             autoSave: true
         );
@@ -208,8 +208,8 @@ public class GrantManagerDataSeederContributor
             new ApplicationStatus(statusCode: ApplicationStatusConsts.CLOSED, externalStatus: "Closed", internalStatus: "Closed"),
             new ApplicationStatus(statusCode: ApplicationStatusConsts.UNDER_INITIAL_REVIEW, externalStatus: "Under Review", internalStatus: "Under Initial Review"),
             new ApplicationStatus(statusCode: ApplicationStatusConsts.INITITAL_REVIEW_COMPLETED, externalStatus: "Under Review", internalStatus: "Initial Review Completed"),
-            new ApplicationStatus(statusCode: ApplicationStatusConsts.UNDER_ADJUDICATION, externalStatus: "Under Review", internalStatus: "Under Adjudication"),
-            new ApplicationStatus(statusCode: ApplicationStatusConsts.ADJUDICATION_COMPLETED, externalStatus: "Under Review", internalStatus: "Adjudication Completed"),
+            new ApplicationStatus(statusCode: ApplicationStatusConsts.UNDER_ASSESSMENT, externalStatus: "Under Review", internalStatus: "Under Assessment"),
+            new ApplicationStatus(statusCode: ApplicationStatusConsts.ASSESSMENT_COMPLETED, externalStatus: "Under Review", internalStatus: "Assessment Completed"),
             new ApplicationStatus(statusCode: ApplicationStatusConsts.GRANT_APPROVED, externalStatus: "Grant Approved", internalStatus: "Grant Approved"),
             new ApplicationStatus(statusCode: ApplicationStatusConsts.GRANT_NOT_APPROVED, externalStatus: "Grant Not Approved", internalStatus: "Grant Not Approved")
         };

@@ -4,14 +4,16 @@ The project is in the very early stages of development. The codebase will be cha
 
 ## Directory Structure
 
+    .github                    - GitHub Actions
     applications/              - Application Root
     ├── Unity.GrantManager/    - Grant manager and adjudication solution
     ├── Unity.Orchestrator/    - Workflow orchestrator solution
+    cypress/                   - Cypress functional tests
     database/                  - Database configuration files
     documentation/             - Solution documentation and assets
     openshift/                 - OpenShift-deployment files
-    pipelines/                 - Shared pipeline files
     COMPLIANCE.yaml            - BCGov PIA/STRA compliance status
+    CONTRIBUTING.md            - How to contribute
     LICENSE                    - License
     SECURITY.md                - Security Policy and Reporting
 

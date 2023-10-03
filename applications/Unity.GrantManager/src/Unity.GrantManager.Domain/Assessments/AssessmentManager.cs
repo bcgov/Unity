@@ -9,10 +9,10 @@ using Volo.Abp.Users;
 namespace Unity.GrantManager.Assessments;
 public class AssessmentManager : DomainService
 {
-    private readonly IAssessmentsRepository _assessmentRepository;
+    private readonly IAssessmentRepository _assessmentRepository;
 
     public AssessmentManager(
-        IAssessmentsRepository assessmentRepository)
+        IAssessmentRepository assessmentRepository)
     {
         _assessmentRepository = assessmentRepository;
     }

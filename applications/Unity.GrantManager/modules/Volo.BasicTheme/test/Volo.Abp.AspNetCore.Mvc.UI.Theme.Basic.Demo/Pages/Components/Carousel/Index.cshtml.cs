@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Demo.Pages.Components.Carousel;
 
@@ -11,6 +6,6 @@ public class IndexModel : PageModel
 {
     public void OnGet()
     {
-
+        //Placeholder. Nothing to do here.
     }
 }

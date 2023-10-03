@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -75,7 +74,9 @@ namespace Unity.GrantManager.Web.Identity
 
             if (claimsPrincipal != null
                 && claimsPrincipal.Claims.Any(s => s.Type == "Permission" && s.Value == name))
-            isGranted = true;
+            {
+                isGranted = true;
+            }
 
             return isGranted;
         }
@@ -94,9 +95,6 @@ namespace Unity.GrantManager.Web.Identity
             {
                 return result;
             }
-
-            var multiTenancySide = claimsPrincipal?.GetMultiTenancySide() ??
-                                   CurrentTenant.GetMultiTenancySide();
 
             if (claimsPrincipal != null)
             {

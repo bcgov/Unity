@@ -5,7 +5,7 @@ namespace Unity.GrantManager.GrantPrograms;
 
 public class GrantProgramDto : AuditedEntityDto<Guid>
 {
-    public string ProgramName { get; set; }
+    public string ProgramName { get; set; } = string.Empty;
 
     public GrantProgramType Type { get; set; }
 

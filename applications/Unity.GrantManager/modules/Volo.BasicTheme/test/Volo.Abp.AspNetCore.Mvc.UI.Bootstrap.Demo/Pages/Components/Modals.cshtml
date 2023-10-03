@@ -7,26 +7,22 @@
 
 @section styles {
     <abp-style-bundle>
+        <abp-style src="/libs/highlight.js/styles/default.css" />
         <abp-style src="/css/demo.css" />
     </abp-style-bundle>
 }
 
 @section scripts {
     <abp-script-bundle>
-        @*<abp-script src="/libs/highlight.js/lib/highlight.js" />
-            <abp-script src="/Pages/Components/highlightCode.js" />*@
+        <abp-script src="/libs/highlight.js/lib/highlight.js" />
+        <abp-script src="/Pages/Components/highlightCode.js" />
     </abp-script-bundle>
+    <script>hljs.initHighlightingOnLoad();</script>
 }
-
-<link rel="stylesheet"
-      href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/default.min.css">
-<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
-
 
 <h2>Modals</h2>
 
-<p>Based on <a href="https://getbootstrap.com/docs/4.1/components/modal/" target="_blank"> Bootstrap Modal</a>.</p>
+<p>Based on <a href="https://getbootstrap.com/docs/4.1/components/modal/" target="_blank" rel="noopener"> Bootstrap Modal</a>.</p>
 
 <h4>Example</h4>
 

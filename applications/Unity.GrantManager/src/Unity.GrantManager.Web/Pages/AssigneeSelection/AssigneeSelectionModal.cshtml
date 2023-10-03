@@ -7,13 +7,14 @@
 
 <form method="post" asp-page-handler="OnPostAsync">
 <abp-modal>
-    <abp-modal-header title="Adjudication Users"></abp-modal-header>
+    <abp-modal-header title="Assessment Users"></abp-modal-header>
     <abp-modal-body>
         <div>
             <abp-select  asp-for="@Model.AssigneeId" asp-items="@Model.AssigneeList" label="Users">
                 <option value="">Select a user</option>
             </abp-select>
             <abp-input type="hidden" asp-for="@Model.SelectedApplicationIds" />
+            <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
         </div>       
     </abp-modal-body>
     <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>

@@ -30,8 +30,6 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assignments.AssignInitial,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
-                    GrantApplicationPermissions.Adjudications.Start,
-                    GrantApplicationPermissions.Adjudications.Complete,
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles
@@ -61,7 +59,6 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
-                    GrantApplicationPermissions.Adjudications.Start,
                     GrantApplicationPermissions.Comments.Add,
 
                     // Assessments
@@ -79,8 +76,6 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assignments.AssignInitial,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
-                    GrantApplicationPermissions.Adjudications.Start,
-                    GrantApplicationPermissions.Adjudications.Complete,
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
@@ -128,6 +123,8 @@ namespace Unity.GrantManager.Permissions
                     SettingManagementSeedPermissions.EmailingTest,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
+                    GrantManagerPermissions.Intakes.Default,
+                    GrantManagerPermissions.ApplicationForms.Default,
 
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
