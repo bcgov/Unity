@@ -54,7 +54,7 @@ $(function () {
             extend: 'unityWorkflow',
             init: function (dt, button, config) {
                 var that = this;
-                unity.grantManager.assessments.assessment.getCurrentUserAssessmentId($("#PageApplicationId").val(), {})
+                unity.grantManager.assessments.assessment.getCurrentUserAssessmentId($("#DetailsViewApplicationId").val(), {})
                     .done(function (data) {
                         if (data == null) {
                             that.enable();
@@ -65,8 +65,8 @@ $(function () {
                     });
             },
             action: function (e, dt, button, config) {
-                let applicationId = decodeURIComponent($("#PageApplicationId").val());
-                unity.grantManager.assessments.assessment.createAsync({ "applicationId": applicationId }, {})
+                let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
+                unity.grantManager.assessments.assessment.create({ "applicationId": applicationId }, {})
                     .done(function (data) {
                         PubSub.publish('add_review');
                         PubSub.publish('refresh_review_list', data.id);

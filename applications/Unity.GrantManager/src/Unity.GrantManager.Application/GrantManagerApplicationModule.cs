@@ -1,16 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using RestSharp;
-using RestSharp.Authenticators;
 using RestSharp.Serializers.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
-using Unity.GrantManager.Permissions;
 using Volo.Abp.Account;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BlobStoring;
