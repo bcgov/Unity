@@ -12,6 +12,5 @@ namespace Unity.GrantManager.Assessments
         public bool? ApprovalRecommended { get; set; }
         public string? AssessorName { get; set; }        
         public Guid? S3BucketId { get; set; }
-
     }
 }

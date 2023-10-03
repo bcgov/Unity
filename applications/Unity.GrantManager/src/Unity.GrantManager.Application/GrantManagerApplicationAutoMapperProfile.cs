@@ -30,7 +30,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationForm, ApplicationFormDto>();
         CreateMap<CreateUpdateIntakeDto, GrantPrograms.Intake>();
         CreateMap<CreateUpdateApplicationFormDto, ApplicationForm>();
-        CreateMap<AdjudicationAttachment, AdjudicationAttachmentDto>();
+        CreateMap<AssessmentAttachment, AssessmentAttachmentDto>();
     }
 }
 

@@ -7,7 +7,7 @@
         Awaiting,
         OnHold,
         Approved,
-        Adjudicating,
+        Assessing,
         Declined
     }
 }

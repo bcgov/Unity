@@ -5,9 +5,9 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Applications;
 
-public interface IAdjudicationAttachmentRepository : IRepository<AdjudicationAttachment, Guid>
+public interface IAssessmentAttachmentRepository : IRepository<AssessmentAttachment, Guid>
 {
-    Task<List<AdjudicationAttachment>> GetListAsync(
+    Task<List<AssessmentAttachment>> GetListAsync(
             int skipCount,
             int maxResultCount,
             string sorting,

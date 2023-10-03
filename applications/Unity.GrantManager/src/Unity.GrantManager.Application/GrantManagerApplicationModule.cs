@@ -46,7 +46,7 @@ public class GrantManagerApplicationModule : AbpModule
                     provider.Endpoint = configuration["S3:Endpoint"] ?? "";
                     provider.SecretAccessKey = configuration["S3:SecretAccessKey"] ?? "";
                     provider.ApplicationS3Folder = configuration["S3:ApplicationS3Folder"] ?? "";
-                    provider.AdjudicationS3Folder = configuration["S3:AdjudicationS3Folder"] ?? "";
+                    provider.AssessmentS3Folder = configuration["S3:AssessmentS3Folder"] ?? "";
                 });
             });
         });

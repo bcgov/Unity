@@ -45,11 +45,11 @@ public class ComsS3BlobProviderConfiguration
         set => _containerConfiguration
             .SetConfiguration("ComsS3BlobProvider.ApplicationS3Folder", value);
     }
-    public string AdjudicationS3Folder
+    public string AssessmentS3Folder
     {
         get => _containerConfiguration
-                .GetConfiguration<string>("ComsS3BlobProvider.AdjudicationS3Folder");
+                .GetConfiguration<string>("ComsS3BlobProvider.AssessmentS3Folder");
         set => _containerConfiguration
-            .SetConfiguration("ComsS3BlobProvider.AdjudicationS3Folder", value);
+            .SetConfiguration("ComsS3BlobProvider.AssessmentS3Folder", value);
     }    
 }

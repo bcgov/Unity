@@ -6,9 +6,9 @@ using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Applications
 {
-    public interface IAdjudicationAttachmentService : IApplicationService
+    public interface IAssessmentAttachmentService : IApplicationService
     {        
-        Task<IList<AdjudicationAttachmentDto>> GetListAsync(Guid assessmentId);
+        Task<IList<AssessmentAttachmentDto>> GetListAsync(Guid assessmentId);
 
     }
 }

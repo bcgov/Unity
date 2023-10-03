@@ -49,7 +49,7 @@
     "Enum:GrantApplicationStatus.2": "Awaiting",
     "Enum:GrantApplicationStatus.3": "On Hold",
     "Enum:GrantApplicationStatus.4": "Approved",
-    "Enum:GrantApplicationStatus.5": "Adjudicating",
+    "Enum:GrantApplicationStatus.5": "Assessing",
     "Enum:GrantApplicationStatus.6": "Declined",
 
     "ProjectName": "Project Name",

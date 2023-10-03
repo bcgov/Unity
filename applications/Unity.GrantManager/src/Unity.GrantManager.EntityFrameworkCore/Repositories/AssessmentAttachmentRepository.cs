@@ -14,19 +14,19 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Repositories
 {
     [Dependency(ReplaceServices = true)]
-    [ExposeServices(typeof(IAdjudicationAttachmentRepository))]
-    public class AdjudicationAttachmentRepository : EfCoreRepository<GrantManagerDbContext, AdjudicationAttachment, Guid>, IAdjudicationAttachmentRepository
+    [ExposeServices(typeof(IAssessmentAttachmentRepository))]
+    public class AssessmentAttachmentRepository : EfCoreRepository<GrantManagerDbContext, AssessmentAttachment, Guid>, IAssessmentAttachmentRepository
     {
-        public AdjudicationAttachmentRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
+        public AssessmentAttachmentRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
         {
         }
-        public async Task<List<AdjudicationAttachment>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter)
+        public async Task<List<AssessmentAttachment>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter)
         {
             var dbSet = await GetDbSetAsync();
             return await dbSet
                 .WhereIf(
                     !filter.IsNullOrWhiteSpace(),
-                    adjudicationAttachment => adjudicationAttachment.FileName.Contains(filter)
+                    assessmentAttachment => assessmentAttachment.FileName.Contains(filter)
                  )
                 .OrderBy(sorting)
                 .Skip(skipCount)

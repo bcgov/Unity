@@ -3,7 +3,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications
 {
-    public class AdjudicationAttachmentDto : EntityDto<Guid>
+    public class AssessmentAttachmentDto : EntityDto<Guid>
     {
         public string? FileName { get; set; }
         public string? AttachedBy { get; set; }

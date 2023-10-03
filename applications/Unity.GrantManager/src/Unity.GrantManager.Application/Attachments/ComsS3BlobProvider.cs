@@ -21,14 +21,14 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
-    private readonly IAdjudicationAttachmentRepository _adjudicationAttachmentRepository;    
+    private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;    
     private readonly AmazonS3Client _amazonS3Client;
 
-    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAdjudicationAttachmentRepository adjudicationAttachmentRepository, IConfiguration configuration)
+    public ComsS3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IConfiguration configuration)
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
-        _adjudicationAttachmentRepository = adjudicationAttachmentRepository;
+        _assessmentAttachmentRepository = assessmentAttachmentRepository;
 
         AmazonS3Config s3config = new()
         {
@@ -74,17 +74,17 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
                 await _applicationAttachmentRepository.DeleteAsync(attachment);
             }
         }
-        else if (attachmentType == "Adjudication")
+        else if (attachmentType == "Assessment")
         {
             if (attachmentTypeId.IsNullOrEmpty())
             {
                 throw new AbpValidationException("Missing AssessmentId");
             }
-            IQueryable<AdjudicationAttachment> queryableAttachment = _adjudicationAttachmentRepository.GetQueryableAsync().Result;
-            AdjudicationAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.AdjudicationId.Equals(new Guid(attachmentTypeId.ToString())));
+            IQueryable<AssessmentAttachment> queryableAttachment = _assessmentAttachmentRepository.GetQueryableAsync().Result;
+            AssessmentAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.AssessmentId.Equals(new Guid(attachmentTypeId.ToString())));
             if (attachment != null)
             {
-                await _adjudicationAttachmentRepository.DeleteAsync(attachment);
+                await _assessmentAttachmentRepository.DeleteAsync(attachment);
             }
         }
         else
@@ -158,12 +158,12 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
                 queryParams.TryGetValue("CurrentUserId", out StringValues currentUserId);
                 queryParams.TryGetValue("CurrentUserName", out StringValues currentUserName);                
                 await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString(), currentUserName.ToString());
-            } else if (attachmentType.ToString() == "Adjudication")
+            } else if (attachmentType.ToString() == "Assessment")
             {
                 queryParams.TryGetValue("AssessmentId", out StringValues assessmentId);
                 queryParams.TryGetValue("CurrentUserId", out StringValues currentUserId);
                 queryParams.TryGetValue("CurrentUserName", out StringValues currentUserName);               
-                await UploadAdjudicationAttachment(args, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
+                await UploadAssessmentAttachment(args, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
             } else
             {
                 throw new AbpValidationException("Invalid AttachmentType:" + attachmentType.ToString());
@@ -174,11 +174,11 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         }
     }    
     
-    private async Task UploadAdjudicationAttachment(BlobProviderSaveArgs args, string assessmentId, string currentUserId, string currentUserName)
+    private async Task UploadAssessmentAttachment(BlobProviderSaveArgs args, string assessmentId, string currentUserId, string currentUserName)
     {
         var config = args.Configuration.GetComsS3BlobProviderConfiguration();
         var bucket = config.Bucket;
-        var folder = args.Configuration.GetComsS3BlobProviderConfiguration().AdjudicationS3Folder;
+        var folder = args.Configuration.GetComsS3BlobProviderConfiguration().AssessmentS3Folder;
         if (!folder.EndsWith('/'))
         {
             folder += "/";
@@ -188,14 +188,14 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
         var escapedKey = folder + "/" + Uri.EscapeDataString(args.BlobName);
         var mimeType = GetMimeType(args.BlobName);
         await UploadToS3(args, bucket, escapedKey, mimeType);
-        IQueryable<AdjudicationAttachment> queryableAttachment = _adjudicationAttachmentRepository.GetQueryableAsync().Result;
-        AdjudicationAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.AdjudicationId.Equals(new Guid(assessmentId)));
+        IQueryable<AssessmentAttachment> queryableAttachment = _assessmentAttachmentRepository.GetQueryableAsync().Result;
+        AssessmentAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.AssessmentId.Equals(new Guid(assessmentId)));
         if (attachment == null)
         {
-            await _adjudicationAttachmentRepository.InsertAsync(
-               new AdjudicationAttachment
+            await _assessmentAttachmentRepository.InsertAsync(
+               new AssessmentAttachment
                {
-                   AdjudicationId = new Guid(assessmentId),
+                   AssessmentId = new Guid(assessmentId),
                    S3ObjectKey = key,
                    UserId = new Guid(currentUserId),
                    FileName = args.BlobName,
@@ -209,7 +209,7 @@ public partial class ComsS3BlobProvider : BlobProviderBase, ITransientDependency
             attachment.FileName = args.BlobName;
             attachment.AttachedBy = currentUserName;
             attachment.Time = DateTime.Now;
-            await _adjudicationAttachmentRepository.UpdateAsync(attachment);
+            await _assessmentAttachmentRepository.UpdateAsync(attachment);
         }
 
        

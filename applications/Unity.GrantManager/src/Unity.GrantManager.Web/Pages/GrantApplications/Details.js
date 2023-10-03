@@ -225,8 +225,8 @@ function uploadAssessmentFiles(inputId) {
     let assessmentId = decodeURIComponent($("#AssessmentId").val());
     let currentUserId = decodeURIComponent($("#CurrentUserId").val());
     let currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    let url = "/uploader?AttachmentType=Adjudication&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
-    uploadFiles(inputId, url, 'refresh_adjudication_attachment_list');        
+    let url = "/uploader?AttachmentType=Assessment&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
+    uploadFiles(inputId, url, 'refresh_assessment_attachment_list');        
 }
 
 function uploadFiles(inputId, urlStr, channel) {

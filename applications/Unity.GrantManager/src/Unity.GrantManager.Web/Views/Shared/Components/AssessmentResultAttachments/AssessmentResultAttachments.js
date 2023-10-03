@@ -27,7 +27,7 @@
             info: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.grantApplications.adjudicationAttachment.getList, inputAction, responseCallback
+                unity.grantManager.grantApplications.assessmentAttachment.getList, inputAction, responseCallback
             ),
             columnDefs: [
                 {
@@ -64,7 +64,7 @@
                         html += '<a href="/download?S3ObjectKey=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
                         html += '" target="_blank" download="' + data + '" class="fullwidth">';
                         html += '<button class="btn fullWidth" style="margin:20px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
-                        html += '<button class="btn fullWidth" style="margin:20px" type="button" onclick="deleteAdjudicationAttachment(\'' + data;
+                        html += '<button class="btn fullWidth" style="margin:20px" type="button" onclick="deleteAssessmentAttachment(\'' + data;
                         html += '\',\'' + full.fileName + '\')"><i class="fl fl-cancel"></i><span>Delete Attachment</span></button>';
                         html += '</div>';
                         html += '</div>';
@@ -94,31 +94,31 @@
     });
 
     PubSub.subscribe(
-        'refresh_adjudication_attachment_list',
+        'refresh_assessment_attachment_list',
         (msg, data) => {
             dataTable.ajax.reload();
         }
     );
 });
 
-let deleteAdjudicationAttachmentModal = new abp.ModalManager({
+let deleteAssessmentAttachmentModal = new abp.ModalManager({
     viewUrl: '../Attachments/DeleteAttachmentModal'
 });
 
-function deleteAdjudicationAttachment(s3ObjectKey, fileName) {
+function deleteAssessmentAttachment(s3ObjectKey, fileName) {
     let assessmentId = decodeURIComponent($("#AssessmentId").val());
-    deleteAdjudicationAttachmentModal.open({
+    deleteAssessmentAttachmentModal.open({
         s3ObjectKey: s3ObjectKey,
         fileName: fileName,
-        attachmentType: 'Adjudication',
+        attachmentType: 'Assessment',
         attachmentTypeId: assessmentId,
     });
 }
 
-deleteAdjudicationAttachmentModal.onResult(function () {
+deleteAssessmentAttachmentModal.onResult(function () {
     abp.notify.success(
         'Attachment is successfully deleted.',
         'Delete Attachment'
     );
-    PubSub.publish('refresh_adjudication_attachment_list');
+    PubSub.publish('refresh_assessment_attachment_list');
 });
