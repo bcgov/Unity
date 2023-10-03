@@ -51,8 +51,8 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assessments.SendToTeamLead
                 });            
 
-            // - Adjudicator
-            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Adjudicator,
+            // - Assessor
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Assessor,
                new List<string>
                {
                     GrantManagerPermissions.Default,

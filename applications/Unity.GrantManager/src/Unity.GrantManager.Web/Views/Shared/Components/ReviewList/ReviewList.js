@@ -150,7 +150,7 @@ $(function () {
                 },
                 {
                     title: l('ReviewerList:ReviewerName'),
-                    data: 'adjudicatorName',
+                    data: 'assessorName',
                     className: 'data-table-header',
                     render: function (data) {
                         return data || '';
