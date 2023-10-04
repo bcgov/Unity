@@ -17,8 +17,6 @@ namespace Unity.GrantManager.Assessments
 
         public bool? ApprovalRecommended { get; set; }
 
-        public string? AssessorName { get; set; }
-
         public AssessmentState Status { get; private set; }
 
         [NotMapped]
