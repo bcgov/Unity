@@ -31,7 +31,7 @@
                 info: false,
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
-                    unity.grantManager.grantApplications.applicationAttachment.getList, inputAction, responseCallback
+                    unity.grantManager.grantApplications.attachment.getApplication, inputAction, responseCallback
                 ),
                 columnDefs: [
                     {
