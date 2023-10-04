@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +8,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Permissions;
+using Unity.GrantManager.Workflow;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -27,22 +27,19 @@ namespace Unity.GrantManager.Assessments
         private readonly IApplicationRepository _applicationRepository;
         private readonly IIdentityUserLookupAppService _userLookupProvider;
         private readonly ICommentsManager _commentsManager;
-        private readonly ICurrentUser _currentUser;
 
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
             AssessmentManager assessmentManager,
             IApplicationRepository applicationRepository,
             IIdentityUserLookupAppService userLookupProvider,
-            ICommentsManager commentsManager,
-            ICurrentUser currentUser)
+            ICommentsManager commentsManager)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
             _applicationRepository = applicationRepository;
             _userLookupProvider = userLookupProvider;
             _commentsManager = commentsManager;
-            _currentUser = currentUser;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -61,8 +58,15 @@ namespace Unity.GrantManager.Assessments
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(comments.OrderByDescending(s => s.CreationTime).ToList()));
         }
 
+        public async Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId)
+        {
+            var assessment = await _assessmentRepository
+                .FindAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
+            return assessment?.Id;
+        }
+
         public async Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto)
-        {            
+        {
             var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
             if (assessment != null)
             {
@@ -71,7 +75,7 @@ namespace Unity.GrantManager.Assessments
             }
         }
 
-        /* Assessment Comments */
+        #region ASSESSMENT COMMENTS
         public async Task<CommentDto> CreateCommentAsync(Guid id, CreateCommentDto dto)
         {
             return ObjectMapper.Map<AssessmentComment, CommentDto>((AssessmentComment)
@@ -105,57 +109,54 @@ namespace Unity.GrantManager.Assessments
                 ? throw new InvalidCommentParametersException()
                 : ObjectMapper.Map<AssessmentComment, CommentDto>((AssessmentComment)comment);
         }
+        #endregion ASSESSMENT COMMENTS
 
-        /* Workflows */
-        public async Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId)
+        #region ASSESSMENT WORKFLOW
+        public List<AssessmentAction> GetAllActions()
         {
-            var assessment = await _assessmentRepository
-                .FindAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
-            return assessment?.Id;
+            var blankAssessment = new Assessment();
+            return blankAssessment.Workflow.GetAllActions().ToList();
         }
 
-        public List<string?> GetAllActions()
-        {
-            // NOTE: Replace with static wokflow class
-            var blankAssessment = new Assessment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-            var allTriggers = blankAssessment.GetAllWorkflowActions();
-            return allTriggers.ToList();
-        }
-
-        public static string? GetWorkflowDiagram()
-        {
-            // NOTE: Replace with static wokflow class
-            var blankAssessment = new Assessment(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-            return blankAssessment.GetWorkflowDiagram();
-        }
-
-        public async Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId)
+        public async Task<List<AssessmentAction>> GetPermittedActions(Guid assessmentId)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
-            var workflowActions = assessment.GetActions();
+            var workflowActions = assessment.Workflow.GetPermittedActions();
 
             List<AssessmentAction> permittedActions = new();
-            foreach (var action in workflowActions)
+            foreach (var triggerAction in workflowActions)
             {
-                var currentRequirement = new OperationAuthorizationRequirement { Name = GrantApplicationPermissions.Assessments.Default + "." + action };
+                var currentRequirement = GetActionAuthorizationRequirement(triggerAction);
                 if (await AuthorizationService.IsGrantedAsync(assessment, currentRequirement))
                 {
-                    permittedActions.Add(action);
+                    permittedActions.Add(triggerAction);
                 }
             }
 
             return permittedActions;
         }
 
-        public async Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction = AssessmentAction.SendToTeamLead)
+        public static string? GetWorkflowDiagram()
+        {
+            var assessment = new Assessment();
+            return assessment.Workflow.GetWorkflowDiagram();
+        }
+
+        public async Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
 
-            var authorizationAction = GrantApplicationPermissions.Assessments.Default + "." + triggerAction;
-            await AuthorizationService.CheckAsync(assessment,
-                new OperationAuthorizationRequirement { Name = authorizationAction });
-            var newAssessment = await assessment.ExecuteActionAsync(triggerAction);
-            return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentRepository.UpdateAsync(newAssessment, autoSave: true));
+            await AuthorizationService.CheckAsync(assessment, GetActionAuthorizationRequirement(triggerAction));
+
+            await assessment.Workflow.ExecuteActionAsync(triggerAction);
+
+            return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentRepository.UpdateAsync(assessment, autoSave: true));
         }
+
+        private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(AssessmentAction triggerAction)
+        {
+            return new OperationAuthorizationRequirement { Name = $"{GrantApplicationPermissions.Assessments.Default}.{triggerAction}" };
+        }
+        #endregion ASSESSMENT WORKFLOW
     }
 }

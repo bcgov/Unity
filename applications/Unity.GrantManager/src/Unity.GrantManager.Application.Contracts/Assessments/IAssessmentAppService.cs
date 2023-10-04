@@ -11,8 +11,8 @@ public interface IAssessmentAppService : IApplicationService, ICommentsService
     Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto);
     Task<IList<AssessmentDto>> GetListAsync(Guid applicationId);
     Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto);
-    List<string?> GetAllActions();
-    Task<List<AssessmentAction>> GetAvailableActions(Guid assessmentId);
+    List<AssessmentAction> GetAllActions();
+    Task<List<AssessmentAction>> GetPermittedActions(Guid assessmentId);
     Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction);
     Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId);
 }

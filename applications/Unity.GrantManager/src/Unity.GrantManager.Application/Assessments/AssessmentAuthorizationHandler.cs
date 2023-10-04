@@ -1,15 +1,13 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
+using System;
 using System.Linq;
 using System.Security.Claims;
-using System.Security.Principal;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Unity.GrantManager.Permissions;
 using Volo.Abp;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Security.Claims;
 
 namespace Unity.GrantManager.Assessments;
 public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuthorizationRequirement, Assessment>, ISingletonDependency
@@ -26,8 +24,8 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         OperationAuthorizationRequirement requirement,
         Assessment resource)
     {
-        
-        if (requirement.Name.Equals(GrantApplicationPermissions.Assessments.SendToTeamLead) 
+
+        if (requirement.Name.Equals(GrantApplicationPermissions.Assessments.SendToTeamLead)
             && await HasSendToTeamLeadPermissionAsync(context, resource))
         {
             context.Succeed(requirement);

@@ -3,7 +3,6 @@ using Unity.GrantManager.Applications;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
-using Volo.Abp.Identity;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Assessments;

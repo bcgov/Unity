@@ -43,7 +43,7 @@ $(function () {
                         .then(function (result) {
                             PubSub.publish('refresh_review_list', selectedRow.id);
                             abp.notify.success(
-                                String(result),
+                                "Completed Successfully",
                                 l(`Enum:AssessmentAction.${config.name}`)
                             );
                         });
@@ -203,7 +203,7 @@ $(function () {
 
         if (assessmentId)
         {
-            unity.grantManager.assessments.assessment.getAvailableActions(assessmentId, {})
+            unity.grantManager.assessments.assessment.getPermittedActions(assessmentId, {})
                 .then(function (actionListResult) {
                     // Check permissions
                     let enabledButtons = actionListResult.map((x) => x + ':name');

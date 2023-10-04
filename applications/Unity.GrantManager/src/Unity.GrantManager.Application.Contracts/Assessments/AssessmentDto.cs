@@ -1,15 +1,13 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Auditing;
 
 namespace Unity.GrantManager.Assessments
 {
     [Serializable]
     public class AssessmentDto : EntityDto<Guid>
     {
-        public Guid ApplicationId { get; set;  }
+        public Guid ApplicationId { get; set; }
         public Guid AssignedUserId { get; set; }
-        //public string? AssignedUserDisplayName { get; set; }
 
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
