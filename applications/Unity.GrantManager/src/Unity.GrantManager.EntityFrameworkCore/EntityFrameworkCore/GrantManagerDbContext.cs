@@ -244,7 +244,7 @@ public class GrantManagerDbContext :
 
             b.HasOne<IdentityUser>()
                 .WithMany()
-                .HasForeignKey(x => x.AssignedUserId)
+                .HasForeignKey(x => x.AssessorId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.NoAction);
 

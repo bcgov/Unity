@@ -128,7 +128,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         (
                 id: Guid.NewGuid(),
                 applicationId: application1.Id,
-                assignedUserId: applicant1.Id
+                assessorId: applicant1.Id
             ),
             autoSave: true
         );

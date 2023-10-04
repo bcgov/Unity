@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Repositories
         {
             var dbSet = await GetDbSetAsync();
             return await dbSet.AnyAsync(x =>
-                x.ApplicationId == applicationId && x.AssignedUserId == userId);
+                x.ApplicationId == applicationId && x.AssessorId == userId);
         }
     }
 }

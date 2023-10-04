@@ -54,7 +54,7 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         }
 
         // Only the assigned user or the creator of the assessment can act
-        if (resource.AssignedUserId == currentUserId || resource.CreatorId == currentUserId)
+        if (resource.AssessorId == currentUserId || resource.CreatorId == currentUserId)
         {
             return await PermissionChecker.IsGrantedAsync(context.User,
                    GrantApplicationPermissions.Assessments.SendToTeamLead);

@@ -61,7 +61,7 @@ namespace Unity.GrantManager.Assessments
         public async Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId)
         {
             var assessment = await _assessmentRepository
-                .FindAsync(x => x.ApplicationId == applicationId && x.AssignedUserId == CurrentUser.GetId());
+                .FindAsync(x => x.ApplicationId == applicationId && x.AssessorId == CurrentUser.GetId());
             return assessment?.Id;
         }
 

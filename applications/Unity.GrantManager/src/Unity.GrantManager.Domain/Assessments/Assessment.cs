@@ -9,7 +9,7 @@ namespace Unity.GrantManager.Assessments
     public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentState, AssessmentAction>
     {
         public Guid ApplicationId { get; set; }
-        public Guid AssignedUserId { get; private set; }
+        public Guid AssessorId { get; private set; }
 
         public DateTime? EndDate { get; set; }
 
@@ -33,12 +33,12 @@ namespace Unity.GrantManager.Assessments
         public Assessment(
             Guid id,
             Guid applicationId,
-            Guid assignedUserId,
+            Guid assessorId,
             AssessmentState status = AssessmentState.IN_PROGRESS)
             : base(id)
         {
             ApplicationId = applicationId;
-            AssignedUserId = assignedUserId;
+            AssessorId = assessorId;
             Status = status;
 
             Workflow = new UnityWorkflow<AssessmentState, AssessmentAction>(() => Status, s => Status = s, ConfigureWorkflow);

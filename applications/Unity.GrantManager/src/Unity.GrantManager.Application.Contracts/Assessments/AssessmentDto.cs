@@ -7,7 +7,7 @@ namespace Unity.GrantManager.Assessments
     public class AssessmentDto : EntityDto<Guid>
     {
         public Guid ApplicationId { get; set; }
-        public Guid AssignedUserId { get; set; }
+        public Guid AssessorId { get; set; }
 
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }

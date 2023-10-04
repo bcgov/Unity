@@ -16,12 +16,21 @@ public class AssessmentManager : DomainService
         _assessmentRepository = assessmentRepository;
     }
 
+    /// <summary>
+    /// Creates and inserts a new <see cref="Assessment"/> for a user.
+    /// </summary>
+    /// <param name="application">The application being assessed.</param>
+    /// <param name="assessorUser">A user assessing the application.</param>
+    /// <returns>A new <see cref="Assessment"/> for an <see cref="Application"/>.</returns>
+    /// <exception cref="BusinessException">
+    /// One or more business domain rules are invalid.
+    /// </exception>
     public async Task<Assessment> CreateAsync(
         Application application,
-        IUserData assignedUser)
+        IUserData assessorUser)
     {
         // Domain Rule: A user can't be assigned to two assessments under the same application
-        if (await IsAssignedAsync(application, assignedUser))
+        if (await IsAssignedAsync(application, assessorUser))
         {
             throw new BusinessException(GrantManagerDomainErrorCodes.AssessmentUserAssignmentAlreadyExists);
         }
@@ -30,16 +39,24 @@ public class AssessmentManager : DomainService
             new Assessment(
                 GuidGenerator.Create(),
                 application.Id,
-                assignedUser.Id),
+                assessorUser.Id),
             autoSave: true);
     }
 
+    /// <summary>
+    /// Checks if a user has already been assigned an <see cref="Assessment"/> for an <see cref="Application"/>.
+    /// </summary>
+    /// <param name="application">The application being assessed.</param>
+    /// <param name="assessorUser">A user assessing the application.</param>
+    /// <returns>
+    /// True if the user is currently assigned to an <see cref="Assessment"/> on an <see cref="Application"/>.
+    /// </returns>
     public async Task<bool> IsAssignedAsync(
             Application application,
-            IUserData assignedUser)
+            IUserData assessorUser)
     {
         return await _assessmentRepository
             .AnyAsync(x =>
-                x.ApplicationId == application.Id && x.AssignedUserId == assignedUser.Id);
+                x.ApplicationId == application.Id && x.AssessorId == assessorUser.Id);
     }
 }
