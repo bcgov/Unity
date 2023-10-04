@@ -3,17 +3,18 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Controllers
 {
-    public class FileController : AbpController
+    public class AttachmentController : AbpController
     {
         private readonly IFileAppService _fileAppService;
 
-        public FileController(IFileAppService fileAppService)
+        public AttachmentController(IFileAppService fileAppService)
         {
             _fileAppService = fileAppService;
         }
@@ -27,8 +28,20 @@ namespace Unity.GrantManager.Controllers
         }
 
         [HttpPost]
-        [Route("uploader")]
-        public async Task<IActionResult> Index(IList<IFormFile> files)
+        [Route("/api/app/attachment/assessment/{assessmentId}/upload")]
+        public async Task<IActionResult> UploadAssessmentAttachments(Guid assessmentId, IList<IFormFile> files, string userId, string userName)
+        {
+            return await UploadFiles(files);            
+        }
+
+        [HttpPost]
+        [Route("/api/app/attachment/application/{applicationId}/upload")]
+        public async Task<IActionResult> UploadApplicationAttachments(Guid applicationId, IList<IFormFile> files, string userId, string userName)
+        {
+            return await UploadFiles(files);
+        }
+
+        private async Task<IActionResult> UploadFiles(IList<IFormFile> files)
         {
             List<string> ErrorList = new();
             foreach (IFormFile source in files)

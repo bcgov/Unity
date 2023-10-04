@@ -14,6 +14,9 @@ using Volo.Abp.Validation;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Routing;
+using Polly;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -150,28 +153,30 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
     public override async Task SaveAsync(BlobProviderSaveArgs args)
     {
         var queryParams = _httpContextAccessor.HttpContext.Request.Query;
-        if (queryParams.TryGetValue("AttachmentType", out StringValues attachmentType))
-        {
-            if(attachmentType.ToString() == "Application")
-            {
-                queryParams.TryGetValue("ApplicationId", out StringValues applicationId);
-                queryParams.TryGetValue("CurrentUserId", out StringValues currentUserId);
-                queryParams.TryGetValue("CurrentUserName", out StringValues currentUserName);                
-                await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString(), currentUserName.ToString());
-            } else if (attachmentType.ToString() == "Assessment")
-            {
-                queryParams.TryGetValue("AssessmentId", out StringValues assessmentId);
-                queryParams.TryGetValue("CurrentUserId", out StringValues currentUserId);
-                queryParams.TryGetValue("CurrentUserName", out StringValues currentUserName);               
-                await UploadAssessmentAttachment(args, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
-            } else
-            {
-                throw new AbpValidationException("Invalid AttachmentType:" + attachmentType.ToString());
-            }
-        } else
-        {
-            throw new AbpValidationException("Missing parameter:AttachmentType");
+        var routeData = _httpContextAccessor.HttpContext.GetRouteData();
+        var assessmentId = routeData.Values["assessmentId"];
+        
+        if (assessmentId != null)
+        {            
+            queryParams.TryGetValue("userId", out StringValues currentUserId);
+            queryParams.TryGetValue("userName", out StringValues currentUserName);
+            await UploadAssessmentAttachment(args, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
         }
+        else
+        {
+            var applicationId = routeData.Values["applicationId"];
+            if(applicationId != null)
+            {
+                queryParams.TryGetValue("userId", out StringValues currentUserId);
+                queryParams.TryGetValue("userName", out StringValues currentUserName);
+                await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString(), currentUserName.ToString());
+            }
+            else
+            {
+                throw new AbpValidationException("Missing parameter: applicationId/assessmentId");
+            }
+        }       
+       
     }    
     
     private async Task UploadAssessmentAttachment(BlobProviderSaveArgs args, string assessmentId, string currentUserId, string currentUserName)

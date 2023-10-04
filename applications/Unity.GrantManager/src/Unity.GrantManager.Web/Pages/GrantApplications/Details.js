@@ -217,7 +217,7 @@ function uploadApplicationFiles(inputId) {
     let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
     let currentUserId = decodeURIComponent($("#CurrentUserId").val());  
     let currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    let url = "/uploader?AttachmentType=Application&ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
+    let url = "/api/app/attachment/application/" + applicationId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
     uploadFiles(inputId, url, 'refresh_application_attachment_list');     
 }
 
@@ -225,7 +225,7 @@ function uploadAssessmentFiles(inputId) {
     let assessmentId = decodeURIComponent($("#AssessmentId").val());
     let currentUserId = decodeURIComponent($("#CurrentUserId").val());
     let currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    let url = "/uploader?AttachmentType=Assessment&AssessmentId=" + assessmentId + "&CurrentUserId=" + currentUserId + "&CurrentUserName=" + currentUserName;
+    let url = "/api/app/attachment/assessment/" + assessmentId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
     uploadFiles(inputId, url, 'refresh_assessment_attachment_list');        
 }
 
