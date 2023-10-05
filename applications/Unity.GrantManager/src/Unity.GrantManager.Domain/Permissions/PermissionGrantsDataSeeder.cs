@@ -30,8 +30,8 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assignments.AssignInitial,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
-                    GrantApplicationPermissions.Adjudications.Start,
-                    GrantApplicationPermissions.Adjudications.Complete,
+                    GrantApplicationPermissions.Assessments.Start,
+                    GrantApplicationPermissions.Assessments.Complete,
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles
@@ -48,15 +48,15 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Comments.Add
                 });            
 
-            // - Adjudicator
-            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Adjudicator,
+            // - Assessor
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Assessor,
                new List<string>
                {
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
-                    GrantApplicationPermissions.Adjudications.Start,
+                    GrantApplicationPermissions.Assessments.Start,
                     GrantApplicationPermissions.Comments.Add
                });
 
@@ -69,8 +69,8 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assignments.AssignInitial,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
-                    GrantApplicationPermissions.Adjudications.Start,
-                    GrantApplicationPermissions.Adjudications.Complete,
+                    GrantApplicationPermissions.Assessments.Start,
+                    GrantApplicationPermissions.Assessments.Complete,
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles

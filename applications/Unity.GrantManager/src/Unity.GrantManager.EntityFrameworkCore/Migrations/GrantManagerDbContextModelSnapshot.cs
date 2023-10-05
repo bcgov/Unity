@@ -385,6 +385,7 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("ExtraProperties");
 
                     b.Property<string>("FileName")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("LastModificationTime")
@@ -656,14 +657,14 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdjudicatorName")
-                        .HasColumnType("text");
-
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
                     b.Property<bool?>("ApprovalRecommended")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("AssessorName")
+                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
