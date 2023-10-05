@@ -5,6 +5,10 @@ using Volo.Abp;
 using Volo.Abp.Modularity;
 using Volo.Abp.Uow;
 using Volo.Abp.Testing;
+using Volo.Abp.Users;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Identity;
 
 namespace Unity.GrantManager;
 
@@ -13,6 +17,13 @@ namespace Unity.GrantManager;
 public abstract class GrantManagerTestBase<TStartupModule> : AbpIntegratedTest<TStartupModule>
     where TStartupModule : IAbpModule
 {
+    protected ICurrentUser CurrentUser { get; }
+
+    protected GrantManagerTestBase()
+    {
+        CurrentUser = GetRequiredService<ICurrentUser>();
+    }
+
     protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
     {
         options.UseAutofac();
@@ -56,5 +67,24 @@ public abstract class GrantManagerTestBase<TStartupModule> : AbpIntegratedTest<T
                 return result;
             }
         }
+    }
+
+    protected virtual async Task<IdentityUser> GetUserOrNullAsync(Guid id)
+    {
+        var userRepository = GetRequiredService<IRepository<IdentityUser, Guid>>();
+        return await WithUnitOfWorkAsync(
+            () => userRepository.FindAsync(id)
+        );
+    }
+
+    protected virtual async Task<IdentityUser> GetUserAsync(Guid id)
+    {
+        var user = await GetUserOrNullAsync(id);
+        if (user == null)
+        {
+            throw new EntityNotFoundException(typeof(IdentityUser), id);
+        }
+
+        return user;
     }
 }
