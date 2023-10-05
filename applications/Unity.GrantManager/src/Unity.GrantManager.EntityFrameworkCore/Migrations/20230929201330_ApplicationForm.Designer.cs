@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230929201330_ApplicationForm")]
+    partial class ApplicationForm
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -310,8 +313,8 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<double>("EligibleAmount")
-                        .HasColumnType("double precision");
+                    b.Property<decimal>("EligibleAmount")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("text")
@@ -340,19 +343,13 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<double>("RequestedAmount")
-                        .HasColumnType("double precision");
+                    b.Property<decimal>("RequestedAmount")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("SubmissionDate")
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ApplicantId");
-
-                    b.HasIndex("ApplicationFormId");
-
-                    b.HasIndex("ApplicationStatusId");
 
                     b.ToTable("UnityApplication", (string)null);
                 });
@@ -506,6 +503,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("ApplicationFormId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ApplicationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ChefsSubmissionGuid")
                         .IsRequired()
                         .HasColumnType("text");
@@ -545,6 +545,8 @@ namespace Unity.GrantManager.Migrations
                     b.HasIndex("ApplicantId");
 
                     b.HasIndex("ApplicationFormId");
+
+                    b.HasIndex("ApplicationId");
 
                     b.ToTable("UnityApplicationFormSubmission", (string)null);
                 });
@@ -666,14 +668,14 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AdjudicatorName")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
                     b.Property<bool?>("ApprovalRecommended")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("AssessorName")
-                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -2650,27 +2652,6 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicationFormId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationStatus", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicationStatusId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Application", null)
@@ -2702,6 +2683,10 @@ namespace Unity.GrantManager.Migrations
                         .HasForeignKey("ApplicationFormId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationId");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationUserAssignment", b =>

@@ -117,6 +117,7 @@
     "ApplicationForms": "Application Forms",
     "ApplicationForms:Description": "Description",
     "ApplicationForms:ChefsFormId": "CHEFS Form Id",
+    "ApplicationForms:SubmissionHeaderMapping": "Mapping",
     "ApplicationForms:ChefsCriteriaFormId": "CHEFS Criteria Form Id",
     "ApplicationForms:ChefsFormApiKey": "CHEFS Form Api Key",
 
