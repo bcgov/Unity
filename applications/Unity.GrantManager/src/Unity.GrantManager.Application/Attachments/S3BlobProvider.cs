@@ -117,27 +117,19 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
     }
 
     public override async Task<Stream> GetOrNullAsync(BlobProviderGetArgs args)
-    {
-        var queryParams = _httpContextAccessor.HttpContext.Request.Query;
-        if (queryParams.TryGetValue("S3ObjectKey", out StringValues s3ObjectKey))
-        {
-            var config = args.Configuration.GetS3BlobProviderConfiguration();
+    {       
+        var config = args.Configuration.GetS3BlobProviderConfiguration();
 
-            var getObjectRequest = new GetObjectRequest
-            {
-                BucketName = config.Bucket,
-                Key = EscapeKeyFileName(s3ObjectKey.ToString())
-            }; 
-            using GetObjectResponse response = await _amazonS3Client.GetObjectAsync(getObjectRequest);
-            MemoryStream memoryStream = new();
-            using Stream responseStream = response.ResponseStream;
-            responseStream.CopyTo(memoryStream);
-            return memoryStream;
-        }
-        else
+        var getObjectRequest = new GetObjectRequest
         {
-            throw new AbpValidationException("Missing parameter:S3ObjectKey");
-        }      
+            BucketName = config.Bucket,
+            Key = EscapeKeyFileName(args.BlobName)
+        }; 
+        using GetObjectResponse response = await _amazonS3Client.GetObjectAsync(getObjectRequest);
+        MemoryStream memoryStream = new();
+        using Stream responseStream = response.ResponseStream;
+        responseStream.CopyTo(memoryStream);
+        return memoryStream;              
     }    
 
     private static string GetMimeType(string fileName)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,23 +8,37 @@ using System.Net;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Controllers
 {
     public class AttachmentController : AbpController
     {
         private readonly IFileAppService _fileAppService;
+        private readonly IConfiguration _configuration;
 
-        public AttachmentController(IFileAppService fileAppService)
+        public AttachmentController(IFileAppService fileAppService, IConfiguration configuration)
         {
             _fileAppService = fileAppService;
+            _configuration = configuration;
         }
 
         [HttpGet]
-        [Route("download")]
-        public async Task<IActionResult> DownloadAsync(string s3ObjectKey, string name)
+        [Route("/api/app/attachment/application/{applicationId}/download/{fileName}")]
+        public async Task<IActionResult> DownloadApplicationAttachment(string applicationId, string fileName)
         {
-            var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = s3ObjectKey, Name = name }); 
+            var folder = _configuration["S3:ApplicationS3Folder"];
+            if(folder==null)
+            {
+                throw new AbpValidationException("Missing server configuration: S3:ApplicationS3Folder");
+            }
+            if (!folder.EndsWith('/'))
+            {
+                folder += "/";
+            }
+            folder += applicationId;
+            var key = folder + "/" + fileName;
+            var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName }); 
             return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
         }
 
