@@ -9,8 +9,6 @@ using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Guids;
-using Volo.Abp.Identity;
 
 namespace Unity.GrantManager;
 
@@ -62,11 +60,11 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         ApplicationStatus? appStatus1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.SUBMITTED);
         appStatus1 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "SUBMITTED",
-                externalStatus: "Submitted",
-                internalStatus: "Submitted"
-            ),
+            {
+                StatusCode = "SUBMITTED",
+                ExternalStatus = "Submitted",
+                InternalStatus = "Submitted"
+            },
             autoSave: true
         );
 
@@ -99,13 +97,13 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             new Application
             {
                 ApplicantId = applicant1.Id,
-                ProjectName = "Application For Integration Test Funding",                
+                ProjectName = "Application For Integration Test Funding",
                 ApplicationFormId = appForm1.Id,
                 ApplicationStatusId = appStatus1.Id,
                 ReferenceNo = "TEST12345",
                 EligibleAmount = 12345.51,
                 RequestedAmount = 3456.13,
-                ProposalDate =  new DateTime(2022, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
+                ProposalDate = new DateTime(2022, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
                 SubmissionDate = new DateTime(2023, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
                 Payload = "{\"Name\":\"John Smith\",\"Age\":34,\"Address\":\"British Columbia\"}"
             },
@@ -124,7 +122,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
 
         Assessment assessment1 = await _assessmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
         assessment1 ??= await _assessmentRepository.InsertAsync(
-            new Assessment
+        new Assessment
         (
                 id: Guid.NewGuid(),
                 applicationId: application1.Id,

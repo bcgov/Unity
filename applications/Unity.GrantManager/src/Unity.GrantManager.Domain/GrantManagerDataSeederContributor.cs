@@ -37,6 +37,8 @@ public class GrantManagerDataSeederContributor
 
     public async Task SeedAsync(DataSeedContext context)
     {
+        // TODO: Neaten up with Upsert
+
         if (!await _grantProgramRepository.AnyAsync(s => s.ProgramName == "Space Farms Grant Program"))
         {
             await _grantProgramRepository.InsertAsync(
@@ -159,111 +161,111 @@ public class GrantManagerDataSeederContributor
         ApplicationStatus? status1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.IN_PROGRESS);
         status1 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: ApplicationStatusConsts.IN_PROGRESS,
-                externalStatus: "In progress",
-                internalStatus: "In progress"
-            )
+            {
+                StatusCode = ApplicationStatusConsts.IN_PROGRESS,
+                ExternalStatus = "In progress",
+                InternalStatus = "In progress"
+            }
         );
 
         ApplicationStatus? status2 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.SUBMITTED);
         status2 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "SUBMITTED",
-                externalStatus: "Submitted",
-                internalStatus: "Submitted"
-            )
+            {
+                StatusCode = "SUBMITTED",
+                ExternalStatus = "Submitted",
+                InternalStatus = "Submitted"
+            }
         );
 
         ApplicationStatus? status3 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.ASSIGNED);
         status3 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "ASSIGNED",
-                externalStatus: "Under Review",
-                internalStatus: "Assigned"
-            )
+            {
+                StatusCode = "ASSIGNED",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Assigned"
+            }
         );
 
         ApplicationStatus? status4 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.WITHDRAWN);
         status4 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "WITHDRAWN",
-                externalStatus: "Withdrawn",
-                internalStatus: "Withdrawn"
-            )
+            {
+                StatusCode = "WITHDRAWN",
+                ExternalStatus = "Withdrawn",
+                InternalStatus = "Withdrawn"
+            }
         );
 
         ApplicationStatus? status5 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.CLOSED);
         status5 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "CLOSED",
-                externalStatus: "Closed",
-                internalStatus: "Closed"
-            )
+            {
+                StatusCode = "CLOSED",
+                ExternalStatus = "Closed",
+                InternalStatus = "Closed"
+            }
         );
 
         ApplicationStatus? status6 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.UNDER_INITIAL_REVIEW);
         status6 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "UNDER_INITIAL_REVIEW",
-                externalStatus: "Under Review",
-                internalStatus: "Under Initial Review"
-            )
+            {
+                StatusCode = "UNDER_INITIAL_REVIEW",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Under Initial Review"
+            }
         );
 
         ApplicationStatus? status7 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.INITITAL_REVIEW_COMPLETED);
         status7 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "INITITAL_REVIEW_COMPLETED",
-                externalStatus: "Under Review",
-                internalStatus: "Initial Review Completed"
-            )
+            {
+                StatusCode = "INITITAL_REVIEW_COMPLETED",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Initial Review Completed"
+            }
         );
 
         ApplicationStatus? status8 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.UNDER_ASSESSMENT);
         status8 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "UNDER_ASSESSMENT",
-                externalStatus: "Under Review",
-                internalStatus: "Under Assessment"
-            )
+            {
+                StatusCode = "UNDER_ASSESSMENT",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Under Assessment"
+            }
         );
 
         ApplicationStatus? status9 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.ASSESSMENT_COMPLETED);
         status9 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "ASSESSMENT_COMPLETED",
-                externalStatus: "Under Review",
-                internalStatus: "Assessment Completed"
-            )
+            {
+                StatusCode = "ASSESSMENT_COMPLETED",
+                ExternalStatus = "Under Review",
+                InternalStatus = "Assessment Completed"
+            }
         );
 
         ApplicationStatus? status10 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.GRANT_APPROVED);
         status10 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "GRANT_APPROVED",
-                externalStatus: "Grant Approved",
-                internalStatus: "Grant Approved"
-            )
+            {
+                StatusCode = "GRANT_APPROVED",
+                ExternalStatus = "Grant Approved",
+                InternalStatus = "Grant Approved"
+            }
         );
 
         ApplicationStatus? status11 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.GRANT_NOT_APPROVED);
         status11 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
-            (
-                statusCode: "GRANT_NOT_APPROVED",
-                externalStatus: "Grant Not Approved",
-                internalStatus: "Grant Not Approved"
-            )
+            {
+                StatusCode = "GRANT_NOT_APPROVED",
+                ExternalStatus = "Grant Not Approved",
+                InternalStatus = "Grant Not Approved"
+            }
         );
 
         // Seed some application users for testing

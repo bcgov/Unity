@@ -10,11 +10,4 @@ public class ApplicationStatus : AuditedAggregateRoot<Guid>
     public string InternalStatus { get; set; } = string.Empty;
 
     public string StatusCode { get; set; } = string.Empty;
-
-    public ApplicationStatus(string statusCode, string externalStatus, string internalStatus)
-    {
-        StatusCode = statusCode;
-        ExternalStatus = externalStatus;
-        InternalStatus = internalStatus;
-    }
 }
