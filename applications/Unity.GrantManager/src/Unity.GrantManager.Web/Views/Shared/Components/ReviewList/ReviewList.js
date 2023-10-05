@@ -250,14 +250,14 @@ function unityWorkflowButtonAction(e, dt, button, config) {
     }
 }
 
-function executeAssessmentAction(id, name) {
-    unity.grantManager.assessments.assessment.executeAssessmentAction(id, name, {})
+function executeAssessmentAction(assessmentId, triggerAction) {
+    unity.grantManager.assessments.assessment.executeAssessmentAction(assessmentId, triggerAction, {})
         .then(function (result) {
             PubSub.publish('assessment_action_completed');
-            PubSub.publish('refresh_review_list', id);
+            PubSub.publish('refresh_review_list', assessmentId);
             abp.notify.success(
                 "Completed Successfully",
-                l(`Enum:AssessmentAction.${name}`)
+                l(`Enum:AssessmentAction.${triggerAction}`)
             );
         });
 }
