@@ -14,9 +14,7 @@
             <abp-input type="hidden" asp-for="@Model.SelectedApplicationIds" />
             <abp-input type="hidden" asp-for="@Model.OperationStatusCode" />
         </abp-modal-body>
-        <abp-modal-footer> 
-            <abp-modal-footer buttons="@AbpModalButtons.Cancel"></abp-modal-footer>
-            <abp-button text="Yes" button-type="Primary" type="submit" icon="check"/>             
+        <abp-modal-footer buttons="@(AbpModalButtons.Save|AbpModalButtons.Cancel)">
         </abp-modal-footer>
         
     </abp-modal>

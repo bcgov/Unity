@@ -49,7 +49,7 @@
 }
 <abp-row class="m-0 h-100">
     <abp-column size="_8" class="p-0">
-        <abp-card class="h-100">
+        <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
 
                 @*-------- Application Summary Section ---------*@
@@ -108,7 +108,7 @@
             </abp-tabs>
         </abp-card>
     </abp-column>
-    <abp-column size="_4" class="pe-0 ps-2">
+    <abp-column size="_4" class="pe-0 ps-1">
         <abp-card>
             <ul class="nav nav-tabs details-nav" id="myTab" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -129,7 +129,7 @@
             </ul>
 
 
-            <div class="tab-content" id="myTabContent">
+            <div class="tab-content details-scrollable" id="myTabContent">
 
                 @*-------- Details Tab Section ---------*@
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
@@ -178,8 +178,8 @@
 
                 @*-------- Comments Tab Section ---------*@
                 <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <h6 class="fw-bold comments-title">Comments</h6>
-                    <div class="p-1" id="applicationCommentsWidget">
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Comments</h6>
+                    <div class="px-3 pb-2" id="applicationCommentsWidget">
                         @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
                     </div>
                 </div>
