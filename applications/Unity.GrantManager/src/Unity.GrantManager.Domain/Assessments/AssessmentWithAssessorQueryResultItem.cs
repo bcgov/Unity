@@ -1,6 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
-using Volo.Abp.Auditing;
 
 namespace Unity.GrantManager.Assessments;
 public class AssessmentWithAssessorQueryResultItem
