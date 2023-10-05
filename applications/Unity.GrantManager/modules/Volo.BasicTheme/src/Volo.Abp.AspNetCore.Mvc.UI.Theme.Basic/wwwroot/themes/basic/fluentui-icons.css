@@ -281,3 +281,7 @@
 .fl-export:before {
     content: '\EDE2';
 }
+
+.fl-pdf:before {
+    content: '\EA90';
+}

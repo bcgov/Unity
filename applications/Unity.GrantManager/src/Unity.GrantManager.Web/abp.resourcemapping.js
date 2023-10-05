@@ -12,5 +12,7 @@ module.exports = {
         '@node_modules/datatables.net-select-bs/css': '@libs/datatables/css',
         '@node_modules/pubsub-js/src': '@libs/pubsub-js/src',
         '@node_modules/datatables.net-buttons/js': '@libs/datatables.net-buttons/js',
+        '@node_modules/jspdf/dist/': '@libs/jspdf/dist',
+        '@node_modules/html2canvas/dist/': '@libs/html2canvas/dist',
     },
 };

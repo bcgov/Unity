@@ -249,3 +249,14 @@ select.selected{
 .comments-title {
     margin: 0.5rem 0rem 0rem 0.4rem;
 }
+.pdf-icon {
+    display: block;
+    margin-left: auto;
+    margin-right: 0;
+    padding-top: 0;
+
+}
+.pdf-icon:hover{
+    cursor:pointer;
+    box-shadow:none;
+}
