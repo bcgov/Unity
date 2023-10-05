@@ -233,7 +233,7 @@ function uploadFiles(inputId, urlStr, channel) {
     let input = document.getElementById(inputId);    
     let files = input.files;
     let formData = new FormData();
-    const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
+    const disallowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
     const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
 
     let isAllowedTypeError = false;
@@ -244,7 +244,7 @@ function uploadFiles(inputId, urlStr, channel) {
 
     for (let file of files) {
         console.log(file);
-        if (allowedTypes.includes(file.type)) {
+        if (disallowedTypes.includes(file.type)) {
             isAllowedTypeError = true;
         }
         if ((file.size * 0.000001) > maxFileSize) {
