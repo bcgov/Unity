@@ -152,7 +152,9 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
         {            
             queryParams.TryGetValue("userId", out StringValues currentUserId);
             queryParams.TryGetValue("userName", out StringValues currentUserName);
+#pragma warning disable CS8604 // Possible null reference argument.
             await UploadAssessmentAttachment(args, assessmentId.ToString(), currentUserId.ToString(), currentUserName.ToString());
+#pragma warning restore CS8604 // Possible null reference argument.
         }
         else
         {
@@ -161,7 +163,9 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             {
                 queryParams.TryGetValue("userId", out StringValues currentUserId);
                 queryParams.TryGetValue("userName", out StringValues currentUserName);
+#pragma warning disable CS8604 // Possible null reference argument.
                 await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString(), currentUserName.ToString());
+#pragma warning restore CS8604 // Possible null reference argument.
             }
             else
             {

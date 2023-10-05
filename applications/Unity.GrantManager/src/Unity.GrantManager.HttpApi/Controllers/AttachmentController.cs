@@ -27,11 +27,7 @@ namespace Unity.GrantManager.Controllers
         [Route("/api/app/attachment/application/{applicationId}/download/{fileName}")]
         public async Task<IActionResult> DownloadApplicationAttachment(string applicationId, string fileName)
         {
-            var folder = _configuration["S3:ApplicationS3Folder"];
-            if(folder==null)
-            {
-                throw new AbpValidationException("Missing server configuration: S3:ApplicationS3Folder");
-            }
+            var folder = _configuration["S3:ApplicationS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicationS3Folder");
             if (!folder.EndsWith('/'))
             {
                 folder += "/";
@@ -46,11 +42,7 @@ namespace Unity.GrantManager.Controllers
         [Route("/api/app/attachment/assessment/{assessmentId}/download/{fileName}")]
         public async Task<IActionResult> DownloadAssessmentAttachment(string assessmentId, string fileName)
         {
-            var folder = _configuration["S3:AssessmentS3Folder"];
-            if (folder == null)
-            {
-                throw new AbpValidationException("Missing server configuration: S3:AssessmentS3Folder");
-            }
+            var folder = _configuration["S3:AssessmentS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:AssessmentS3Folder");
             if (!folder.EndsWith('/'))
             {
                 folder += "/";
@@ -63,14 +55,18 @@ namespace Unity.GrantManager.Controllers
 
         [HttpPost]
         [Route("/api/app/attachment/assessment/{assessmentId}/upload")]
+#pragma warning disable IDE0060 // Remove unused parameter
         public async Task<IActionResult> UploadAssessmentAttachments(Guid assessmentId, IList<IFormFile> files, string userId, string userName)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             return await UploadFiles(files);            
         }
 
         [HttpPost]
         [Route("/api/app/attachment/application/{applicationId}/upload")]
+#pragma warning disable IDE0060 // Remove unused parameter
         public async Task<IActionResult> UploadApplicationAttachments(Guid applicationId, IList<IFormFile> files, string userId, string userName)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             return await UploadFiles(files);
         }
