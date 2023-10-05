@@ -22,7 +22,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IRepository<Assessment, Guid> _assessmentRepository;
     private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentRepository;
-
+    private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
+    private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
 
     public GrantManagerTestDataSeedContributor(IRepository<Application, Guid> applicationRepository,
         IRepository<ApplicationStatus, Guid> applicationStatusRepository,
@@ -31,7 +32,9 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         IRepository<Intake, Guid> intakeRepository,
         IRepository<Assessment, Guid> assessmentRepository,
         IRepository<AssessmentComment, Guid> assessmentCommentRepository,
-        IRepository<ApplicationComment, Guid> applicationCommentRepository)
+        IRepository<ApplicationComment, Guid> applicationCommentRepository,
+        IApplicationAttachmentRepository applicationAttachmentRepository,
+        IAssessmentAttachmentRepository assessmentAttachmentRepository)
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
@@ -41,6 +44,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         _assessmentRepository = assessmentRepository;
         _assessmentCommentRepository = assessmentCommentRepository;
         _applicationCommentRepository = applicationCommentRepository;
+        _applicationAttachmentRepository = applicationAttachmentRepository;
+        _assessmentAttachmentRepository = assessmentAttachmentRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
@@ -120,11 +125,39 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
+        ApplicationAttachment applicationAttachment1 = await _applicationAttachmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
+        applicationAttachment1 ??= await _applicationAttachmentRepository.InsertAsync(
+            new ApplicationAttachment
+            {
+                ApplicationId = application1.Id,
+                S3ObjectKey = "Unity/Development/Application/report.pdf",
+                UserId = "00000000-0000-0000-0000-000000000000",
+                FileName = "report.pdf",
+                AttachedBy =  "John Doe",
+                Time = DateTime.Now,
+            },
+            autoSave: true
+        );
+
         Assessment assessment1 = await _assessmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
         assessment1 ??= await _assessmentRepository.InsertAsync(
             new Assessment
             {
                 ApplicationId = application1.Id                
+            },
+            autoSave: true
+        );
+
+        AssessmentAttachment assessmentAttachment1 = await _assessmentAttachmentRepository.FirstOrDefaultAsync(s => s.AssessmentId == assessment1.Id);
+        assessmentAttachment1 ??= await _assessmentAttachmentRepository.InsertAsync(
+            new AssessmentAttachment
+            {
+                AssessmentId = assessment1.Id,
+                S3ObjectKey = "Unity/Development/Assessment/result.pdf",
+                UserId = Guid.NewGuid(),
+                FileName = "result.pdf",
+                AttachedBy = "John Doe",
+                Time = DateTime.Now,
             },
             autoSave: true
         );
