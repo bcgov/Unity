@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.Intake;
+using Unity.GrantManager.Intakes;
 
 namespace Unity.GrantManager.Web.Pages.Intakes;
 

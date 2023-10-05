@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Unity.GrantManager.Intake;
+using Unity.GrantManager.Intakes;
 
 namespace Unity.GrantManager.Web.Mapping
 {

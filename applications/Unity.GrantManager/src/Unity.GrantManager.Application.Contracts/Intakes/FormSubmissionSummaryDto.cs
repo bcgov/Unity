@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.Intake;
+namespace Unity.GrantManager.Intakes;
 
 [Serializable]
 public class FormSubmissionSummaryDto

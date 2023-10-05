@@ -12,7 +12,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
 
-namespace Unity.GrantManager.Intake;
+namespace Unity.GrantManager.Intakes;
 
 [Authorize]
 public class SubmissionAppService : GrantManagerAppService, ISubmissionAppService

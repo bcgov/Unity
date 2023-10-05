@@ -50,7 +50,6 @@ namespace Unity.GrantManager.Intakes
                 OidcSub = Guid.Empty.ToString(),
                 ApplicantId = application.ApplicantId,
                 ApplicationFormId = applicationForm.Id,
-                ApplicationId = application.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}"
             });
             await uow.SaveChangesAsync();
@@ -68,7 +67,7 @@ namespace Unity.GrantManager.Intakes
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = (await _applicationStatusRepository.FirstAsync(s => s.StatusCode == "SUBMITTED")).Id,
                     ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID Missing}",
-                    RequestedAmount = decimal.Parse(intakeMap.RequestedAmount ?? "0"),
+                    RequestedAmount = double.Parse(intakeMap.RequestedAmount ?? "0"),
                     SubmissionDate = DateTime.Parse(intakeMap.SubmissionDate ?? DateTime.UtcNow.ToString(), CultureInfo.InvariantCulture)
                 }
             );
