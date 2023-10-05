@@ -77,7 +77,7 @@ $(function () {
             scrollX: true,
             lengthChange: false,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.assessments.assessment.getList, inputAction, responseCallback
+                unity.grantManager.assessments.assessment.getDisplayList, inputAction, responseCallback
             ),
             buttons: assessmentButtonsGroup,
             columnDefs: [
@@ -94,8 +94,8 @@ $(function () {
                     },
                 },
                 {
-                    title: l('ReviewerList:ReviewerName'),
-                    data: 'assessorName',
+                    title: l('ReviewerList:AssessorName'),
+                    data: 'assessorDisplayName',
                     className: 'data-table-header',
                     render: function (data) {
                         return data ?? nullPlaceholder;

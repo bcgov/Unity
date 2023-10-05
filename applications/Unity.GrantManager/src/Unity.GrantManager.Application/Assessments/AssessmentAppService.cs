@@ -54,8 +54,16 @@ namespace Unity.GrantManager.Assessments
         public async Task<IList<AssessmentDto>> GetListAsync(Guid applicationId)
         {
             IQueryable<Assessment> queryableAssessments = _assessmentRepository.GetQueryableAsync().Result;
-            var comments = queryableAssessments.Where(c => c.ApplicationId.Equals(applicationId)).ToList();
-            return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(comments.OrderByDescending(s => s.CreationTime).ToList()));
+            var assessments = queryableAssessments.Where(c => c.ApplicationId.Equals(applicationId)).ToList();
+            return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(assessments.OrderByDescending(s => s.CreationTime).ToList()));
+        }
+
+        public async Task<List<AssessmentListItemDto>> GetDisplayList(Guid applicationId)
+        {
+            return ObjectMapper.Map<
+                List<AssessmentWithAssessorQueryResultItem>,
+                List<AssessmentListItemDto>>
+                (await _assessmentRepository.GetListWithAssessorsAsync(applicationId));
         }
 
         /// <summary>

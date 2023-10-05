@@ -78,7 +78,7 @@
     "ApplicationList:StartAssessmentButton": "Start Assessment",
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
 
-    "ReviewerList:ReviewerName": "Reviewer Name",
+    "ReviewerList:AssessorName": "Assessor Name",
     "ReviewerList:StartDate": "Start Date",
     "ReviewerList:EndDate": "End Date",
     "ReviewerList:Status": "Status",
