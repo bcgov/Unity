@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Assessments
         private readonly IRepository<Assessment, Guid> _assessmentRepository;
         private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
-        private ICurrentUser _currentUser;
+        private ICurrentUser? _currentUser;
 
         public AssessmentAppServiceTests()
         {
@@ -40,8 +40,8 @@ namespace Unity.GrantManager.Assessments
 
         private void Login(Guid userId)
         {
-            _currentUser.Id.Returns(userId);
-            _currentUser.IsAuthenticated.Returns(true);
+            _currentUser?.Id.Returns(userId);
+            _currentUser?.IsAuthenticated.Returns(true);
         }
 
         [Fact]

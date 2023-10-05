@@ -3,7 +3,7 @@
 namespace Unity.GrantManager.Assessments;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum AssessmentAction : int
+public enum AssessmentAction
 {
     Create,
     SendTo,
