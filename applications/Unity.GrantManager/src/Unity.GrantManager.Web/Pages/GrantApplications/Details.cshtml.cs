@@ -54,7 +54,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             _configuration = configuration;
-            Extensions =  _configuration["S3:FileTypes"] ?? "";
+            Extensions =  _configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = _configuration["S3:MaxFileSize"] ?? "";
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

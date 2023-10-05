@@ -244,7 +244,7 @@ function uploadFiles(inputId, urlStr, channel) {
 
     for (let file of files) {
         console.log(file);
-        if (!allowedTypes.includes(file.type)) {
+        if (allowedTypes.includes(file.type)) {
             isAllowedTypeError = true;
         }
         if ((file.size * 0.000001) > maxFileSize) {
