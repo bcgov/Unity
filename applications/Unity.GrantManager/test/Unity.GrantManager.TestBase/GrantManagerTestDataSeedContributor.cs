@@ -9,6 +9,7 @@ using Unity.GrantManager.GrantPrograms;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Identity;
 
 namespace Unity.GrantManager;
 
@@ -23,15 +24,19 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentRepository;
 
+    private readonly IIdentityUserRepository _userRepository;
 
-    public GrantManagerTestDataSeedContributor(IRepository<Application, Guid> applicationRepository,
+    public GrantManagerTestDataSeedContributor(
+        IRepository<Application, Guid> applicationRepository,
         IRepository<ApplicationStatus, Guid> applicationStatusRepository,
         IRepository<Applicant, Guid> applicantRepository,
         IRepository<ApplicationForm, Guid> applicationFormRepository,
         IRepository<Intake, Guid> intakeRepository,
         IRepository<Assessment, Guid> assessmentRepository,
         IRepository<AssessmentComment, Guid> assessmentCommentRepository,
-        IRepository<ApplicationComment, Guid> applicationCommentRepository)
+        IRepository<ApplicationComment, Guid> applicationCommentRepository,
+        IIdentityUserRepository userRepository
+        )
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
@@ -41,10 +46,12 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         _assessmentRepository = assessmentRepository;
         _assessmentCommentRepository = assessmentCommentRepository;
         _applicationCommentRepository = applicationCommentRepository;
+        _userRepository = userRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
     {
+        await CreateUsersAsync();
         /* Data seeded in the app is also seeded in the tests */
         /* Seed additional test data... */
 
@@ -122,11 +129,12 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
 
         Assessment assessment1 = await _assessmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
         assessment1 ??= await _assessmentRepository.InsertAsync(
-        new Assessment
-        (
+            new Assessment
+            (
                 id: Guid.NewGuid(),
                 applicationId: application1.Id,
-                assessorId: applicant1.Id
+                assessorId: GrantManagerTestData.User_Assessor1_UserId,
+                AssessmentState.IN_PROGRESS
             ),
             autoSave: true
         );
@@ -139,6 +147,25 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 Comment = "Test Comment"
             },
             autoSave: true
+        );
+    }
+
+    private async Task CreateUsersAsync()
+    {
+        await _userRepository.InsertAsync(
+            new IdentityUser(
+                GrantManagerTestData.User_Assessor1_UserId,
+                GrantManagerTestData.User_Assessor1_UserName,
+                GrantManagerTestData.User_Assessor1_EmailAddress
+            )
+        );
+
+        await _userRepository.InsertAsync(
+            new IdentityUser(
+                GrantManagerTestData.User_Assessor2_UserId,
+                GrantManagerTestData.User_Assessor2_UserName,
+                GrantManagerTestData.User_Assessor2_EmailAddress
+            )
         );
     }
 }

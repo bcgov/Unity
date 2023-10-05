@@ -1,4 +1,6 @@
-﻿using Shouldly;
+﻿using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
+using Shouldly;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +9,7 @@ using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
+using Volo.Abp.Users;
 using Xunit;
 
 namespace Unity.GrantManager.Assessments
@@ -18,6 +21,7 @@ namespace Unity.GrantManager.Assessments
         private readonly IRepository<Assessment, Guid> _assessmentRepository;
         private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
+        private ICurrentUser _currentUser;
 
         public AssessmentAppServiceTests()
         {
@@ -28,12 +32,26 @@ namespace Unity.GrantManager.Assessments
             _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
         }
 
+        protected override void AfterAddApplication(IServiceCollection services)
+        {
+            _currentUser = Substitute.For<ICurrentUser>();
+            services.AddSingleton(_currentUser);
+        }
+
+        private void Login(Guid userId)
+        {
+            _currentUser.Id.Returns(userId);
+            _currentUser.IsAuthenticated.Returns(true);
+        }
+
         [Fact]
         [Trait("Category", "Integration")]
         public async Task CreateAsync_Should_Create_Assessment()
         {
             // Arrange
-            using var uow = _unitOfWorkManager.Begin();            
+            Login(GrantManagerTestData.User_Assessor2_UserId);
+
+            using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
             var assessments = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList();
             var count = assessments.Count;
