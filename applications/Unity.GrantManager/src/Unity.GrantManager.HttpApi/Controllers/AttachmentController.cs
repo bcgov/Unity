@@ -42,6 +42,25 @@ namespace Unity.GrantManager.Controllers
             return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
         }
 
+        [HttpGet]
+        [Route("/api/app/attachment/assessment/{assessmentId}/download/{fileName}")]
+        public async Task<IActionResult> DownloadAssessmentAttachment(string assessmentId, string fileName)
+        {
+            var folder = _configuration["S3:AssessmentS3Folder"];
+            if (folder == null)
+            {
+                throw new AbpValidationException("Missing server configuration: S3:AssessmentS3Folder");
+            }
+            if (!folder.EndsWith('/'))
+            {
+                folder += "/";
+            }
+            folder += assessmentId;
+            var key = folder + "/" + fileName;
+            var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName });
+            return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+        }
+
         [HttpPost]
         [Route("/api/app/attachment/assessment/{assessmentId}/upload")]
         public async Task<IActionResult> UploadAssessmentAttachments(Guid assessmentId, IList<IFormFile> files, string userId, string userName)

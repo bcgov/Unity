@@ -58,10 +58,11 @@
                     title: '',
                     data: 's3ObjectKey',
                     render: function (data, type, full, meta) {
+                        let assessmentId = decodeURIComponent($("#AssessmentId").val());
                         let html = '<div class="dropdown" style="float:right;">';
                         html += '<button class="btn btn-light dropbtn" type="button"><i class="fl fl-attachment-more" ></i></button>';
                         html += '<div class="dropdown-content">';
-                        html += '<a href="/download?S3ObjectKey=' + encodeURIComponent(data) + '&Name=' + encodeURIComponent(full.fileName);
+                        html += '<a href="/api/app/attachment/assessment/' + encodeURIComponent(assessmentId) + '/download/' + encodeURIComponent(full.fileName);
                         html += '" target="_blank" download="' + data + '" class="fullwidth">';
                         html += '<button class="btn fullWidth" style="margin:10px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
                         html += '<button class="btn fullWidth" style="margin:10px" type="button" onclick="deleteAssessmentAttachment(\'' + data;
