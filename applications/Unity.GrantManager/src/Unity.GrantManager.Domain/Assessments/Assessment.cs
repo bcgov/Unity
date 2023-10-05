@@ -8,12 +8,12 @@ namespace Unity.GrantManager.Assessments
 {
     public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentState, AssessmentAction>
     {
-        public Guid ApplicationId { get; set; }
+        public Guid ApplicationId { get; private set; }
         public Guid AssessorId { get; private set; }
 
-        public DateTime? EndDate { get; set; }
+        public DateTime? EndDate { get; private set; }
 
-        public bool IsComplete { get; set; }
+        public bool IsComplete { get; private set; }
 
         public bool? ApprovalRecommended { get; set; }
 
