@@ -58,6 +58,14 @@ namespace Unity.GrantManager.Assessments
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(comments.OrderByDescending(s => s.CreationTime).ToList()));
         }
 
+        /// <summary>
+        /// If exists, returns the current user's Assessment for an Application.
+        /// </summary>
+        /// <param name="applicationId">The application under assessment.</param>
+        /// <returns>
+        /// Returns the assessmentId for the current user assigned to the application.
+        /// Returns null if the current user has no assessment for the application.
+        /// </returns>
         public async Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId)
         {
             var assessment = await _assessmentRepository
@@ -112,12 +120,18 @@ namespace Unity.GrantManager.Assessments
         #endregion ASSESSMENT COMMENTS
 
         #region ASSESSMENT WORKFLOW
+        /// <summary>
+        /// Get all actions configured for the Assessment workflow.
+        /// </summary>
         public List<AssessmentAction> GetAllActions()
         {
             var blankAssessment = new Assessment();
             return blankAssessment.Workflow.GetAllActions().ToList();
         }
 
+        /// <summary>
+        /// Get all permitted actions for an Assessment given it's state.
+        /// </summary>
         public async Task<List<AssessmentAction>> GetPermittedActions(Guid assessmentId)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
@@ -136,12 +150,20 @@ namespace Unity.GrantManager.Assessments
             return permittedActions;
         }
 
+        /// <summary>
+        /// Generate a DOT graph from the Asssessment workflow.
+        /// </summary>
         public static string? GetWorkflowDiagram()
         {
             var assessment = new Assessment();
             return assessment.Workflow.GetWorkflowDiagram();
         }
 
+        /// <summary>
+        /// Transitions the Assessment's workflow state machine given an action.
+        /// </summary>
+        /// <param name="assessmentId">The Assessment</param>
+        /// <param name="triggerAction">The action to be invoked on an Assessment</param>
         public async Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
