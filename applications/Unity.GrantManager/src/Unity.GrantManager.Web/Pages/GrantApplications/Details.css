@@ -127,7 +127,7 @@
     display: flex;
 }
 
-.adjudication-action-btn {
+.assessment-action-btn {
     justify-content: center;
     align-items: center;
     gap: 8px;
@@ -259,4 +259,14 @@ select.selected{
 .pdf-icon:hover{
     cursor:pointer;
     box-shadow:none;
+}
+
+.details-scrollable {
+    overflow-y: scroll;
+    height: calc(100vh - 240px);
+}
+
+#detailsTabContent {
+    overflow-y: scroll;
+    height: calc(100vh - 256px);
 }

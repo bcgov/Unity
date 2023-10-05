@@ -144,3 +144,8 @@ th.close-icon:before {
     margin: auto;
     float: right;
 }
+
+.application-scrollable-content {
+    overflow-y: scroll;
+    height: calc(100vh - 240px);
+}

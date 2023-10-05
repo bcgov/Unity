@@ -57,6 +57,9 @@ body {
     display: flex;
     align-items: center;
     min-height: 2.13rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
     .btn i {
@@ -326,3 +329,11 @@ div.dataTables_wrapper div.dataTables_length label {
         opacity: var(--bs-btn-disabled-opacity);
         background-blend-mode: difference;
     }
+
+.card {
+    --bs-card-border-color: transparent;
+}
+
+.modal-dialog .modal-footer .btn {
+    min-height: 2.7rem;
+}

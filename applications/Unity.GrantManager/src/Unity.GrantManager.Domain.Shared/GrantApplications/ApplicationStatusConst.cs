@@ -11,8 +11,8 @@ public static class ApplicationStatusConsts
     public const string CLOSED = "CLOSED";
     public const string UNDER_INITIAL_REVIEW = "UNDER_INITIAL_REVIEW";
     public const string INITITAL_REVIEW_COMPLETED = "INITITAL_REVIEW_COMPLETED";
-    public const string UNDER_ADJUDICATION = "UNDER_ADJUDICATION";
-    public const string ADJUDICATION_COMPLETED = "ADJUDICATION_COMPLETED";
+    public const string UNDER_ASSESSMENT = "UNDER_ASSESSMENT";
+    public const string ASSESSMENT_COMPLETED = "ASSESSMENT_COMPLETED";
     public const string GRANT_APPROVED = "GRANT_APPROVED";
     public const string GRANT_NOT_APPROVED = "GRANT_NOT_APPROVED";
 }

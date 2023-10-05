@@ -50,7 +50,7 @@
 }
 <abp-row class="m-0 h-100">
     <abp-column size="_8" class="p-0">
-        <abp-card class="h-100">
+        <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
 
                 @*-------- Application Summary Section ---------*@
@@ -77,16 +77,16 @@
                 </abp-tab>
                 @*-------- Application Summary Section END ---------*@
 
-                @*-------- Review & Adjudication Section ---------*@
-                <abp-tab name="nav-review-and-adudication" title="Review & Adjudication">
-                    <div class="w-100 px-2" id="adjudicationMainView">
+                @*-------- Review & Assessment Section ---------*@
+                <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
+                    <div class="w-100 px-2" id="assessmentMainView">
                         <div class="d-flex align-items-center pb-2 border-bottom mb-2">
                             <i class="fl fl-review-list ms-2 me-3"></i>
                             <h6 class="text-uppercase m-0 fw-bold">Review List</h6>
                         </div>
                         @await Component.InvokeAsync("ReviewList")
                     </div>
-                    <abp-row id="adjudicationAddReviewView" class="p-2" style="display:none;">
+                    <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
                         <abp-column size="_12">
                             <abp-row>
                                 <abp-column size="_12" class="back-button-container">
@@ -103,7 +103,7 @@
                         </abp-column>
                     </abp-row>
                 </abp-tab>
-                @*-------- Review & Adjudication Section END ---------*@
+                @*-------- Review & Assessment Section END ---------*@
 
                 @*-------- Approval Section ---------*@
                 <abp-tab name="nav-approval" title="Approval">
@@ -135,7 +135,7 @@
             </ul>
 
 
-            <div class="tab-content" id="myTabContent">
+            <div class="tab-content details-scrollable" id="myTabContent">
 
                 @*-------- Details Tab Section ---------*@
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
@@ -184,8 +184,8 @@
 
                 @*-------- Comments Tab Section ---------*@
                 <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <h6 class="fw-bold comments-title">Comments</h6>
-                    <div class="p-1" id="applicationCommentsWidget">
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Comments</h6>
+                    <div class="px-3 pb-2" id="applicationCommentsWidget">
                         @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
                     </div>
                 </div>
