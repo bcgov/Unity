@@ -26,11 +26,6 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             reviewPermissions.AddChild(GrantApplicationPermissions.Reviews.StartInitial, L("Permission:GrantApplicationManagement.Reviews.StartInitial"));
             reviewPermissions.AddChild(GrantApplicationPermissions.Reviews.CompleteInitial, L("Permission:GrantApplicationManagement.Reviews.CompleteInitial"));
 
-            // Assessment
-            var assessmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assessments.Default, L("Permission:GrantApplicationManagement.Assessments.Default"));
-            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Start, L("Permission:GrantApplicationManagement.Assessments.Start"));
-            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Complete, L("Permission:GrantApplicationManagement.Assessments.Complete"));
-
             // Approval
             var approvalPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Approvals.Default, L("Permission:GrantApplicationManagement.Approvals.Default"));
             approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.Complete, L("Permission:GrantApplicationManagement.Approvals.Complete"));
@@ -38,6 +33,13 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             // Comments
             var appCommentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Comments.Default, L("Permission:GrantApplicationManagement.Comments.Default"));
             appCommentPermissions.AddChild(GrantApplicationPermissions.Comments.Add, L("Permission:GrantApplicationManagement.Comments.Add"));
+
+            // Assessments
+            var assessmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assessments.Default, L("Permission:GrantApplicationPermissions.Assessments.Default"));
+            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Create, L("Permission:GrantApplicationPermissions.Assessments.Create"));
+            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.SendToTeamLead, L("Permission:GrantApplicationPermissions.Assessments.SendToTeamLead"));
+            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.SendBack, L("Permission:GrantApplicationPermissions.Assessments.SendBack"));
+            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Confirm, L("Permission:GrantApplicationPermissions.Assessments.Confirm"));
         }
 
         private static LocalizableString L(string name)

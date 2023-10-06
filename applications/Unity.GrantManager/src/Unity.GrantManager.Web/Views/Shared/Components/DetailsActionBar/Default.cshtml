@@ -7,43 +7,11 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 
-<div class="action-bar active p-2">
-    <div class="d-flex align-items-start justify-content-start gap-2"> 
-        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Approvals.Complete))
-        {
-            <abp-button id="approveApplicationsDetails"
-                        text="@L["ApplicationList:ApprovedButton"].Value"
-                        icon-type="Other"
-                        icon="fl fl-like"
-                        button-type="Light" />
-            <abp-button id="dontApproveApplicationsDetails"
-                        text="@L["ApplicationList:NotApprovedButton"].Value"
-                        icon-type="Other"
-                        icon="fl fl-dislike"
-                        button-type="Light" />
-        }
-        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Assessments.Start))
-        {
-            <abp-button id="startAssessment"
-                        text="@L["ApplicationList:StartAssessmentButton"].Value"
-                        icon-type="Other"
-                        icon="fl fl-startpoint"
-                        button-type="Light" />
-        }
-        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Assessments.Complete))
-        {
-            <abp-button id="completeAssessment"
-                        text="@L["ApplicationList:CompleteAssessmentButton"].Value"
-                        icon-type="Other"
-                        icon="fl fl-endpoint"
-                        button-type="Light" />
-        }
-
-        <abp-button id="addReview"
-                    text="@L["ApplicationList:AddReviewButton"].Value"
-                    icon-type="Other"
-                    icon="fl fl-review"
-                    button-type="Light" />
+<div class="action-bar p-2">
+    <div id="DetailsActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
+        @* Items are included here through the Review List JS*@
+    </div>
+    <div id="DetailsActionBarEnd" class="d-flex align-items-stretch justify-content-end gap-2">
         <abp-button text="@L["ApplicationList:CopyLinkButton"].Value"
                     disabled="true"
                     icon-type="Other"
@@ -56,5 +24,4 @@
                     icon="fl fl-download"
                     button-type="Light" />
     </div>
-    
 </div>

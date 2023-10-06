@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    // ApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
                     ApplicationFormSubmissionId = table.Column<Guid>(type: "uuid", nullable: false),
                     Comment = table.Column<string>(type: "text", nullable: false),
                     ExtraProperties = table.Column<string>(type: "text", nullable: true),

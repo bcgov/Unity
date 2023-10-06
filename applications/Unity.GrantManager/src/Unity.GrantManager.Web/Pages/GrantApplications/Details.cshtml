@@ -1,6 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
 @using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -20,7 +21,9 @@
     {
     <abp-script src="/Pages/GrantApplications/Details.js" />
     <abp-script src="/libs/formiojs/formio.form.js" />
-}
+    <abp-script src="/libs/jspdf/dist/jspdf.umd.js" />
+    <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
+   }
 
 @await Component.InvokeAsync("DetailsActionBar", new { ApplicationId = @Model.ApplicationFormSubmissionId })
 
@@ -48,22 +51,16 @@
 }
 <abp-row class="m-0 h-100">
     <abp-column size="_8" class="p-0">
-        <abp-card class="h-100">
+        <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
 
                 @*-------- Application Summary Section ---------*@
                 <abp-tab name="nav-summery" active="true" title="Application Summary">
-                    <abp-row>
-                        <abp-column size="_12" class="spinner-loader">
-                            <div class="spinner-grow" role="status">
-                                <span class="sr-only">Loading...</span>
-                            </div>
-                        </abp-column>
-                    </abp-row>
+                  
                     <div class="container-fluid">
                         <abp-row>
                             <abp-column size="_12">
-
+                                <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
                                 @*TODO: Put FormIO handler here!*@
                                 <div id="formio"></div>
 
@@ -71,16 +68,19 @@
 
                         </abp-row>
                     </div>
+                    <abp-row>
+                        <abp-column size="_12" class="spinner-loader">
+                            <div class="spinner-grow" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </abp-column>
+                    </abp-row>
                 </abp-tab>
                 @*-------- Application Summary Section END ---------*@
 
                 @*-------- Review & Assessment Section ---------*@
                 <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
                     <div class="w-100 px-2" id="assessmentMainView">
-                        <div class="d-flex align-items-center pb-2 border-bottom mb-2">
-                            <i class="fl fl-review-list ms-2 me-3"></i>
-                            <h6 class="text-uppercase m-0 fw-bold">Review List</h6>
-                        </div>
                         @await Component.InvokeAsync("ReviewList")
                     </div>
                     <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">
@@ -112,7 +112,7 @@
         </abp-card>
     </abp-column>
     <abp-column size="_4" class="pe-0 ps-2">
-        <abp-card>
+        <abp-card class="right-card">
             <ul class="nav nav-tabs details-nav" id="myTab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
@@ -132,7 +132,7 @@
             </ul>
 
 
-            <div class="tab-content" id="myTabContent">
+            <div class="tab-content details-scrollable" id="myTabContent">
 
                 @*-------- Details Tab Section ---------*@
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
@@ -186,8 +186,8 @@
 
                 @*-------- Comments Tab Section ---------*@
                 <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <h6 class="fw-bold comments-title">Comments</h6>
-                    <div class="p-1" id="applicationCommentsWidget">
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Comments</h6>
+                    <div class="px-3 pb-2" id="applicationCommentsWidget">
                         @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
                     </div>
                 </div>

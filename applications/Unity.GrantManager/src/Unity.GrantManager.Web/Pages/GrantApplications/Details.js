@@ -211,6 +211,70 @@ $(function () {
     });
 
     initCommentsWidget();
+
+    $('#printPdf').click(function () {
+
+        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
+        unity.grantManager.intake.submission
+            .getSubmission(submissionId)
+            .done(function (result) {
+                
+                let data = JSON.parse(formatChefComponents(result));
+                const formElement = document.createElement('div');
+                Formio.createForm(
+                    formElement,
+                    data.version.schema,
+                    {
+                        readOnly: true,
+                        renderMode: 'html',
+                        flatten: true,
+                    }
+                ).then(function (form) {
+                    form.submission = data.submission.submission;
+
+                }).then(data => {
+
+                    const h4Elements = formElement.querySelectorAll('h4');
+
+                    h4Elements.forEach(element => {
+                        element.style.wordSpacing = '10px';
+                    });
+
+                    printPDF(formElement);
+                });
+
+            });
+
+    });
+
+    function printPDF(html) {
+        const { jsPDF } = window.jspdf;
+        let doc = new jsPDF('p', 'pt', 'a4');
+
+        doc.setCharSpace(0.01);
+        doc.setLineHeightFactor(1.5)
+
+        doc.html(html, {
+            x: 15,
+            y: 15,
+            margin: [50, 20, 70, 30],
+            width: 180, // Target width in the PDF document
+            windowWidth: 650, //window width in CSS pixels,
+            autoPaging: 'text',
+            html2canvas: {
+                allowTaint: true,
+                dpi: 300,
+                letterRendering: true,
+                logging: false,
+                scale: 0.8
+            },
+
+            callback: function () {
+                doc.save('Application.pdf');
+              
+            },
+        });
+    }
 });
 
 function uploadFiles(inputId) {
@@ -285,10 +349,12 @@ const update_application_attachment_count_subscription = PubSub.subscribe(
     }
 );
 
-const checkCurrentUser = function (data) {
-    var currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+function getCurrentUser() {
+    return abp.currentUser.id;
+}
 
-    if (currentUserId == data.creatorId) {
+const checkCurrentUser = function (data) {
+    if (getCurrentUser() == data.assessorId && data.status == "IN_PROGRESS") {
         $('#recommendation_select').prop('disabled', false);
         $('#assessment_upload_btn').prop('disabled', false);
     }
