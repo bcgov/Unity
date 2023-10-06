@@ -13,10 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    [Migration("20230908164120_add_new_column_in_assessment_table")]
-#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
-    partial class addnewcolumninassessmenttable
-#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
+    [Migration("20231004210358_AssessmentStateManager")]
+    partial class AssessmentStateManager
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -362,17 +360,14 @@ namespace Unity.GrantManager.Migrations
                     b.ToTable("UnityApplication", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationComment", b =>
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -392,6 +387,10 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -400,17 +399,30 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<Guid>("S3Guid")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Time")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
 
-                    b.ToTable("UnityApplicationComment", (string)null);
+                    b.ToTable("UnityApplicationAttachment", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationForm", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("ApiKey")
+                        .HasColumnType("text");
 
                     b.Property<string>("ApplicationFormDescription")
                         .HasColumnType("text");
@@ -421,11 +433,9 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("character varying(250)");
 
                     b.Property<string>("ChefsApplicationFormGuid")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ChefsCriteriaFormGuid")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -656,6 +666,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<bool?>("ApprovalRecommended")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid>("AssessorId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
@@ -688,15 +701,70 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.HasIndex("AssessorId");
 
                     b.ToTable("UnityAssessment", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Assessments.AssessmentComment", b =>
+            modelBuilder.Entity("Unity.GrantManager.Comments.ApplicationComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Commenter")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.ToTable("UnityApplicationComment", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Comments.AssessmentComment", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -705,6 +773,10 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Commenter")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -860,8 +932,8 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("DeletionTime");
 
-                    b.Property<DateOnly>("EndDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("text")
@@ -886,8 +958,8 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -2599,7 +2671,7 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationComment", b =>
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Application", null)
                         .WithMany()
@@ -2645,7 +2717,31 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Assessments.AssessmentComment", b =>
+            modelBuilder.Entity("Unity.GrantManager.Assessments.Assessment", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Volo.Abp.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("AssessorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Comments.ApplicationComment", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Comments.AssessmentComment", b =>
                 {
                     b.HasOne("Unity.GrantManager.Assessments.Assessment", null)
                         .WithMany()

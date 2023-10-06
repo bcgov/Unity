@@ -1,11 +1,12 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using RestSharp;
-using RestSharp.Authenticators;
 using RestSharp.Serializers.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
 using Volo.Abp.Account;
@@ -54,6 +55,8 @@ public class GrantManagerApplicationModule : AbpModule
         {
             options.AddMaps<GrantManagerApplicationModule>();
         });
+
+        context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
 
         Configure<IntakeClientOptions>(options =>
         {

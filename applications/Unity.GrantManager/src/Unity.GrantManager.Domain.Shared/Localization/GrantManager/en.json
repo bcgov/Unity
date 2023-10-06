@@ -78,7 +78,7 @@
     "ApplicationList:StartAssessmentButton": "Start Assessment",
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
 
-    "ReviewerList:ReviewerName": "Reviewer Name",
+    "ReviewerList:AssessorName": "Assessor Name",
     "ReviewerList:StartDate": "Start Date",
     "ReviewerList:EndDate": "End Date",
     "ReviewerList:Status": "Status",
@@ -89,6 +89,16 @@
     "AssessmentResultAttachments:UploadedDate": "Date",
     "AssessmentResultAttachments:AttachedBy": "Attached by",
 
+    "Enum:AssessmentState.IN_PROGRESS": "In Progress",
+    "Enum:AssessmentState.IN_REVIEW": "In Review",
+    "Enum:AssessmentState.COMPLETED": "Completed",
+
+    "Enum:AssessmentAction.Create": "Create Assessment",
+    "Enum:AssessmentAction.SendTo": "Send To...",
+    "Enum:AssessmentAction.SendToTeamLead": "Send for Team Lead Review",
+    "Enum:AssessmentAction.Confirm": "Complete Assessment",
+    "Enum:AssessmentAction.SendBack": "Send Back",
+    "Enum:AssessmentAction.UndoComplete": "Restart Assessment (Demo)",
 
     "Permission:GrantManagerManagement": "Grant Manager Management",
     "Permission:GrantManagerManagement.Default": "Default",
@@ -120,6 +130,15 @@
     "ApplicationForms:ChefsCriteriaFormId": "CHEFS Criteria Form Id",
     "ApplicationForms:ChefsFormApiKey": "CHEFS Form Api Key",
 
-    "Intakes": "Intakes"
+    "Intakes": "Intakes",
+    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
+
+    "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
+    "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
+    "Permission:GrantApplicationPermissions.Assessments.SendToTeamLead": "Send Assessment to Team Lead",
+    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
+    "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
+
+    "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user."
   }
 }

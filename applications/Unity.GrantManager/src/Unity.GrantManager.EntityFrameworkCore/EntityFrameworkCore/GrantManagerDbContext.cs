@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicationUserRoles;
@@ -232,10 +233,25 @@ public class GrantManagerDbContext :
 
         modelBuilder.Entity<Assessment>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment",
-                GrantManagerConsts.DbSchema);
-
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment", GrantManagerConsts.DbSchema);
             b.ConfigureByConvention();
+            
+            b.HasOne<Application>()
+                .WithMany()
+                .HasForeignKey(x => x.ApplicationId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            b.HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(x => x.AssessorId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            b.Property(x => x.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasConversion(new EnumToStringConverter<AssessmentState>());
         });
 
         modelBuilder.Entity<AssessmentAttachment>(b =>
@@ -263,6 +279,7 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId);
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
+        
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
         foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
         {

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 
 namespace Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
@@ -11,6 +12,9 @@ public class BasicThemeGlobalStyleContributor : BundleContributor
         context.Files.Add("/themes/basic/fonts.css");
         context.Files.Add("/themes/basic/layout.css");
         context.Files.Add("/themes/basic/unity-styles.css");
+
+        context.Files.AddIfNotContains("/libs/datatables.net-buttons-bs5/css/buttons.bootstrap5.css");
+        context.Files.AddIfNotContains("/libs/datatables.net-select-bs5/css/select.bootstrap5.css");
 
         // Add assets for "/themes/basic/fonts/**/*"
         context.Files.AddRange(new[] {

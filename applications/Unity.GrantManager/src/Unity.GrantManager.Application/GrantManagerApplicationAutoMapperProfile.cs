@@ -24,7 +24,11 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.AssessmentId));
         CreateMap<ApplicationComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicationId));
-        CreateMap<Assessment, AssessmentDto>();
+        CreateMap<Assessment, AssessmentDto>()
+            .ForMember(
+                dest => dest.StartDate,
+                opts => opts.MapFrom(src => src.CreationTime));
+        CreateMap<AssessmentWithAssessorQueryResultItem, AssessmentListItemDto>();
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<GrantPrograms.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();
