@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Events
             _formIntService = formIntService;
         }
 
-        public async Task<EventSubscriptionConfirmationDto> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto)
+        public async Task<bool> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto)
         {
             var applicationForm = (await _applicationFormRepository
                 .GetQueryableAsync())
@@ -41,8 +41,7 @@ namespace Unity.GrantManager.Events
             var submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
             var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, submissionData.submission.formVersionId) ?? throw new InvalidFormDataSubmissionException();
             var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
-
-            return new EventSubscriptionConfirmationDto() { ConfirmationId = result };
+            return !result.IsNullOrEmpty();
         }
     }
 }

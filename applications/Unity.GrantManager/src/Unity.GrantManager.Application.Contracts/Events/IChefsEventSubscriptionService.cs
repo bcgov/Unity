@@ -6,6 +6,6 @@ namespace Unity.GrantManager.Events
 {
     public interface IChefsEventSubscriptionService : IApplicationService
     {
-        Task<EventSubscriptionConfirmationDto> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto);
+        Task<bool> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto);
     }
 }
