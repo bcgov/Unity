@@ -6,6 +6,6 @@ namespace Unity.GrantManager.Intakes
 {
     public interface IIntakeSubmissionAppService : IApplicationService
     {
-        Task<EventSubscriptionConfirmationDto> CreateIntakeSubmissionAsync(EventSubscriptionDto intakeSubmission);
+        Task<EventSubscriptionConfirmationDto> CreateIntakeSubmissionAsync(EventSubscriptionDto eventSubscriptionDto);
     }
 }

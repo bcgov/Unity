@@ -23,7 +23,7 @@ namespace Unity.GrantManager.Intakes
         {             
              // check if the type is in 'datagrid', 'editgrid', 'dynamicWizard' 
              // check the visibility comp._visible
-             // check if the (nestedComp.component.type === 'panel') {
+             // check if the nestedComp.component.type equals 'panel'
             if (tokenComponents != null)
             {
                 // Iterate through tokenComponents.ChildTokens
