@@ -45,15 +45,12 @@ public class FormSubmissionSummaryDto
     [JsonPropertyName("lateEntry")]
     public bool LateEntry { get; set; }
 
-    // TODO: Change form standard
     [JsonPropertyName("totalRequestToMjf")]
     public int? EligibleAmount { get; set; }
 
-    // TODO: Change form standard
     [JsonPropertyName("eligibleCost")]
     public int? RequestedAmount { get; set; }
 
-    // TODO: Change form standard
     [JsonPropertyName("submissionDate")]
     public DateTime? SubmissionDate { get; set; }
 }

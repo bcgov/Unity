@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Services;
-using Volo.Abp.Uow;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Unity.GrantManager.Intakes
@@ -22,7 +21,7 @@ namespace Unity.GrantManager.Intakes
 
         public void getAllInputComponents(JToken? tokenComponents)
         {             
-             // check if the type is in ['datagrid', 'editgrid', 'dynamicWizard'];
+             // check if the type is in 'datagrid', 'editgrid', 'dynamicWizard' 
              // check the visibility comp._visible
              // check if the (nestedComp.component.type === 'panel') {
             if (tokenComponents != null)
