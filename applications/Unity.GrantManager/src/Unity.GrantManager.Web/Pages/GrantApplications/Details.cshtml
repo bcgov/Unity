@@ -137,12 +137,18 @@
 
                 @*-------- Details Tab Section ---------*@
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
+                    <div id="applicationDetails">
+                        <div id="applicationStatusWidget">
+                            @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
+                        </div>
+                    </div>
                     <div id="reviewDetails" style="display:none">
                         <input type="hidden" id="AssessmentId" value="" />
                         <div id="assessmentUserDetailsWidget">
                         @await Component.InvokeAsync("UserInfoWidget", new { displayName = "" , title = "" })
 
                         </div>
+
                         <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Result Attachments</h6>
 
                         @await Component.InvokeAsync("AssessmentResultAttachments")

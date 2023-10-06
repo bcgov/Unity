@@ -186,7 +186,7 @@ $(function () {
         (msg, data) => {
             if (data) {
                 selectedReviewDetails = data; 
-                $('#reviewDetails').show();
+                setDetailsContext('assessment');
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
@@ -194,14 +194,14 @@ $(function () {
                 checkCurrentUser(data);
             }
             else {
-                $('#reviewDetails').hide();
+                setDetailsContext('application');
             }
         }
     );
     PubSub.subscribe(
         'deselect_application_review',
         (msg, data) => {
-                $('#reviewDetails').hide();
+            setDetailsContext('application');
         }
     );
 
@@ -436,5 +436,12 @@ function initCommentsWidget() {
     );
 
     updateCommentsCounters();
+}
+
+function setDetailsContext(context) {
+    switch (context) {
+        case 'assessment': $('#reviewDetails').show(); $('#applicationDetails').hide(); break;
+        case 'application': $('#reviewDetails').hide(); $('#applicationDetails').show(); break;
+    }
 }
 
