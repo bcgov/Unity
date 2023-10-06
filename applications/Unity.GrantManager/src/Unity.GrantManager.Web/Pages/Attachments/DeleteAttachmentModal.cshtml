@@ -1,0 +1,25 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.Attachments.DeleteAttachmentModalModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@{
+    Layout = null;
+}
+
+
+<form method="post" asp-page-handler="OnPostAsync">
+    <abp-modal id="deleteAttachmentModal">
+        <abp-modal-header title="You are about to delete"></abp-modal-header>
+        <abp-modal-body>             
+            @Model.FileName
+            <abp-input type="hidden" asp-for="@Model.S3ObjectKey" />
+            <abp-input type="hidden" asp-for="@Model.FileName" />
+            <abp-input type="hidden" asp-for="@Model.AttachmentType" />
+            <abp-input type="hidden" asp-for="@Model.AttachmentTypeId" />
+        </abp-modal-body>
+        <abp-modal-footer> 
+            <abp-modal-footer buttons="@AbpModalButtons.Cancel"></abp-modal-footer>
+            <abp-button text="Delete" button-type="Primary" type="submit" icon="check"/>             
+        </abp-modal-footer>
+        
+    </abp-modal>
+</form>

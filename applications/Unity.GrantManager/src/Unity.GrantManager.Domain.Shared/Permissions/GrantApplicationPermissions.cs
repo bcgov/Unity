@@ -1,4 +1,6 @@
-﻿namespace Unity.GrantManager.Permissions
+﻿using Volo.Abp.Reflection;
+
+namespace Unity.GrantManager.Permissions
 {
     public static class GrantApplicationPermissions
     {
@@ -28,13 +30,6 @@
             public const string CompleteInitial = Default + ".CompleteInitial";
         }
 
-        public static class Assessments
-        {
-            public const string Default = GroupName + ".Assessments";
-            public const string Start = Default + ".Start";
-            public const string Complete = Default + ".Complete";
-        }
-
         public static class Approvals
         {
             public const string Default = GroupName + ".Approvals";
@@ -45,6 +40,20 @@
         {
             public const string Default = GroupName + ".Comments";
             public const string Add = Default + ".Add";
+        }
+
+        public static class Assessments
+        {
+            public const string Default = GroupName + ".Assessments";
+            public const string Create = Default + ".Create";
+            public const string SendToTeamLead = Default + ".SendToTeamLead";
+            public const string SendBack = Default + ".SendBack";
+            public const string Confirm = Default + ".Confirm";
+        }
+
+        public static string[] GetAll()
+        {
+            return ReflectionHelper.GetPublicConstantsRecursively(typeof(GrantApplicationPermissions));
         }
     }
 }

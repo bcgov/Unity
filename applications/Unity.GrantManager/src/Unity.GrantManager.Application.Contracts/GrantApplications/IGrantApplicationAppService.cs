@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -11,5 +12,6 @@ namespace Unity.GrantManager.GrantApplications
             PagedAndSortedResultRequestDto,
             CreateUpdateGrantApplicationDto>, ICommentsService
     {
+        Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id);
     }
 }
