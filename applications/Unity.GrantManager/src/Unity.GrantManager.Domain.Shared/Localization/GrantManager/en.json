@@ -90,7 +90,7 @@
     "AssessmentResultAttachments:AttachedBy": "Attached by",
 
     "Enum:AssessmentState.IN_PROGRESS": "In Progress",
-    "Enum:AssessmentState.IN_REVIEW": "In Review",
+    "Enum:AssessmentState.IN_REVIEW": "Under Review by Team Lead",
     "Enum:AssessmentState.COMPLETED": "Completed",
 
     "Enum:AssessmentAction.Create": "Create Assessment",
@@ -98,7 +98,6 @@
     "Enum:AssessmentAction.SendToTeamLead": "Send for Team Lead Review",
     "Enum:AssessmentAction.Confirm": "Complete Assessment",
     "Enum:AssessmentAction.SendBack": "Send Back",
-    "Enum:AssessmentAction.UndoComplete": "Restart Assessment (Demo)",
 
     "Permission:GrantManagerManagement": "Grant Manager Management",
     "Permission:GrantManagerManagement.Default": "Default",
