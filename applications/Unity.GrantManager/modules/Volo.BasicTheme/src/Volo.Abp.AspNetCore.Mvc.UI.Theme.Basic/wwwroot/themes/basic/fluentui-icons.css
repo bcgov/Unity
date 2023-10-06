@@ -282,6 +282,10 @@
     content: '\EDE2';
 }
 
+.fl-pdf:before {
+    content: '\EA90';
+}
+
 .fl-send:before {
     content: '\E724';
 }

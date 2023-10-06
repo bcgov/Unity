@@ -14,6 +14,8 @@ module.exports = {
         '@node_modules/datatables.net-buttons-bs5/js/': '@libs/datatables.net-buttons-bs5/js/' ,
         '@node_modules/datatables.net-select/js/': '@libs/datatables.net-select/js/',
         '@node_modules/datatables.net-select-bs5/css/': '@libs/datatables.net-select-bs5/css/',
-        '@node_modules/datatables.net-select-bs5/js/': '@libs/datatables.net-select-bs5/js/'
+        '@node_modules/datatables.net-select-bs5/js/': '@libs/datatables.net-select-bs5/js/',
+        '@node_modules/jspdf/dist/': '@libs/jspdf/dist',
+        '@node_modules/html2canvas/dist/': '@libs/html2canvas/dist'
     },
 };
