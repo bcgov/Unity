@@ -1,4 +1,4 @@
-﻿/** Segoe Fluent Icons*/
+/** Segoe Fluent Icons*/
 
 
 @font-face {
@@ -280,4 +280,28 @@
 
 .fl-export:before {
     content: '\EDE2';
+}
+
+.fl-pdf:before {
+    content: '\EA90';
+}
+
+.fl-attachment-more:before {
+    content: '\E712';
+}
+
+.fl-attachment:before {
+    content: '\E723';
+}
+
+.fl-send:before {
+    content: '\E724';
+}
+
+.fl-send-mirrored:before {
+    content: '\EA63';
+}
+
+.fl-checkbox-checked:before {
+    content: '\E73A';
 }

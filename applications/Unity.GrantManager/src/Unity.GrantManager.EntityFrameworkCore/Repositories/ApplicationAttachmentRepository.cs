@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Repositories
             return await dbSet
                 .WhereIf(
                     !filter.IsNullOrWhiteSpace(),
-                    applicationAttachment => applicationAttachment.FileName.Contains(filter)
+                    attachment => attachment!=null && attachment.FileName!=null && attachment.FileName.Contains(filter)
                  )
                 .OrderBy(sorting)
                 .Skip(skipCount)

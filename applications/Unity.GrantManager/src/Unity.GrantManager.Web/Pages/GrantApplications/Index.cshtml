@@ -24,12 +24,6 @@
         </script>
         <abp-script src="/libs/select2/js/select2.full.min.js"/>
         <abp-script src="/Pages/GrantApplications/Index.js" />
-        <abp-script src="/libs/datatables/js/dataTables.select.min.js" />
-        <abp-script src="/libs/datatables/js/select.bootstrap.min.js" />
-        <abp-script src="/libs/pubsub-js/src/pubsub.js" />
-        <abp-script src="/libs/datatables.net-buttons/js/dataTables.buttons.min.js" />
-        <abp-script src="/libs/datatables.net-buttons/js/buttons.html5.min.js" />
-
     }
     else
     {
@@ -38,29 +32,28 @@
 }
 
 @section styles {
-    <abp-style src="/libs/datatables/css/select.bootstrap.min.css" />
     <abp-style src="/Pages/GrantApplications/Index.css" />
 }
 
-
-
 <div class="container-fluid px-2">
     @await Component.InvokeAsync("ActionBar")
-    <div id="users-div" style="width: auto;" class="hidden">
-        <abp-select id="users" 
-                    asp-for="@Model.AssigneeId" 
-                    asp-items="@Model.AssigneeList" 
-                    label="Users"
-                    multiple="multiple"  
-                    suppress-label="true"
-                    data-placeholder="Select a user"
-                    placeholder="Select a user"
-                    data-allow-clear="true"
-                    class="select2-selection select2-selection--multiple">
-        </abp-select>
-    </div>
+    <div class="application-scrollable-content">
+        <div id="users-div" style="width: auto;" class="hidden">
+            <abp-select id="users" 
+                        asp-for="@Model.AssigneeId" 
+                        asp-items="@Model.AssigneeList" 
+                        label="Users"
+                        multiple="multiple"  
+                        suppress-label="true"
+                        data-placeholder="Select a user"
+                        placeholder="Select a user"
+                        data-allow-clear="true"
+                        class="select2-selection select2-selection--multiple">
+            </abp-select>
+        </div>
 
-    <abp-table id="GrantApplicationsTable"></abp-table>
+        <abp-table id="GrantApplicationsTable"></abp-table>
+    </div>
 </div>
 
 <input type="hidden" id="PassFormIdToJavaScript" value=@Model.FormId>
