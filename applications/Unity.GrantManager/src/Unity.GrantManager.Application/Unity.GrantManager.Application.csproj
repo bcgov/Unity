@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Intake\**" />
+    <EmbeddedResource Remove="Intake\**" />
+    <None Remove="Intake\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
   </ItemGroup>
@@ -24,10 +30,6 @@
     <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="7.3.0" />
     <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="7.3.0" />
     <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="7.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Intake\" />
   </ItemGroup>
 
 </Project>

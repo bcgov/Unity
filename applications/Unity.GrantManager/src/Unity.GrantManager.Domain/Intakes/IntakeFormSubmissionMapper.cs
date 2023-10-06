@@ -16,31 +16,15 @@ namespace Unity.GrantManager.Intakes
 {
     public class IntakeFormSubmissionMapper : DomainService, IIntakeFormSubmissionMapper
     {
-        private readonly IUnitOfWorkManager _unitOfWorkManager;
-        private readonly IApplicantRepository _applicantRepository;
-        private readonly IApplicationRepository _applicationRepository;
-        private readonly IApplicationStatusRepository _applicationStatusRepository;
-        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
-        private Dictionary<string, string> components = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> components = new Dictionary<string, string>();
 
-        public IntakeFormSubmissionMapper(IUnitOfWorkManager unitOfWorkManager,
-            IApplicantRepository applicantRepository,
-            IApplicationRepository applicationRepository,
-            IApplicationStatusRepository applicationStatusRepository,
-            IApplicationFormSubmissionRepository applicationFormSubmissionRepository)
-        {
-            _unitOfWorkManager = unitOfWorkManager;
-            _applicantRepository = applicantRepository;
-            _applicationRepository = applicationRepository;
-            _applicationStatusRepository = applicationStatusRepository; 
-            _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
-        }
+        public IntakeFormSubmissionMapper() { }
 
         public void getAllInputComponents(JToken? tokenComponents)
         {             
-             //const dataArrayComponents = ['datagrid', 'editgrid', 'dynamicWizard'];
-             //const visibleComponents = currentComponents.filter(comp => comp._visible);
-             // if (nestedComp.component.type === 'panel') {
+             // check if the type is in ['datagrid', 'editgrid', 'dynamicWizard'];
+             // check the visibility comp._visible
+             // check if the (nestedComp.component.type === 'panel') {
             if (tokenComponents != null)
             {
                 // Iterate through tokenComponents.ChildTokens
@@ -123,7 +107,7 @@ namespace Unity.GrantManager.Intakes
             };
         }
 
-        private IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data)
+        private static IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data)
         {
             var configMap = JsonConvert.DeserializeObject<dynamic>(submissionHeaderMapping)!;
             IntakeMapping intakeMapping = new IntakeMapping();
@@ -141,11 +125,18 @@ namespace Unity.GrantManager.Intakes
                         Type intakeType = typeof(IntakeMapping);
 
                         // Change the static property value.
+#pragma warning disable CS8602 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8604 // Possible null reference argument.
                         PropertyInfo intakePropInfo = intakeType.GetProperty(intakeProperty);
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+
                         if (intakePropInfo != null)
                         {
                             intakePropInfo.SetValue(intakeMapping, dataValue.Value.ToString());
                         }
+#pragma warning restore CS8602 // Converting null literal or possible null value to non-nullable type.
                     }
                 }
             }
