@@ -1,6 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
 @using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -78,10 +79,6 @@
                 @*-------- Review & Assessment Section ---------*@
                 <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
                     <div class="w-100 px-2" id="assessmentMainView">
-                        <div class="d-flex align-items-center pb-2 border-bottom mb-2">
-                            <i class="fl fl-review-list ms-2 me-3"></i>
-                            <h6 class="text-uppercase m-0 fw-bold">Review List</h6>
-                        </div>
                         @await Component.InvokeAsync("ReviewList")
                     </div>
                     <abp-row id="assessmentAddReviewView" class="p-2" style="display:none;">

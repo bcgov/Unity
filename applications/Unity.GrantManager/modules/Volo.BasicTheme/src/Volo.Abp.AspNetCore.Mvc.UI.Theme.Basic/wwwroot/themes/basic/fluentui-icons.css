@@ -1,4 +1,4 @@
-﻿/** Segoe Fluent Icons*/
+/** Segoe Fluent Icons*/
 
 
 @font-face {
@@ -290,3 +290,10 @@
     content: '\E723';
 }
 
+.fl-send-mirrored:before {
+    content: '\EA63';
+}
+
+.fl-checkbox-checked:before {
+    content: '\E73A';
+}

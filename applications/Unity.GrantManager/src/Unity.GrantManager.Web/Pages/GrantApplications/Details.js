@@ -303,10 +303,12 @@ const update_application_attachment_count_subscription = PubSub.subscribe(
     }
 );
 
-const checkCurrentUser = function (data) {
-    let currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+function getCurrentUser() {
+    return abp.currentUser.id;
+}
 
-    if (currentUserId == data.creatorId) {
+const checkCurrentUser = function (data) {
+    if (getCurrentUser() == data.assessorId && data.status == "IN_PROGRESS") {
         $('#recommendation_select').prop('disabled', false);
         $('#assessment_upload_btn').prop('disabled', false);
     }
