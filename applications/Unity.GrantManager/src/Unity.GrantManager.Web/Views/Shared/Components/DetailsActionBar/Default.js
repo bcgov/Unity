@@ -78,28 +78,4 @@ $(function () {
             title: 'Complete Assessment',
         });
     });
-
-    $('#addReview').click(function () {
-        console.log("Add review")
-        const urlParams = new URL(window.location.toLocaleString()).searchParams;
-        const applicationId = urlParams.get('ApplicationId');
-
-        try {
-            unity.grantManager.assessments.assessment.create({ "applicationId": applicationId, "approvalRecommended": null, "startDate" : new Date() }, {})
-                .done(function (data) {
-                    PubSub.publish('add_review');
-                    PubSub.publish('refresh_review_list',data.id);
-                });
-
-        } catch (error) {
-            console.log(error);
-        }
-    }); 
-    
-    PubSub.subscribe(
-        'add_review',
-        (msg, data) => {
-            $('#detailsTab a[href="#nav-review-and-assessment"]').tab('show');
-        }
-    );
 });

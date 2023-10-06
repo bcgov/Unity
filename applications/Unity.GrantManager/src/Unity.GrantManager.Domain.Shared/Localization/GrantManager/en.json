@@ -49,7 +49,7 @@
     "Enum:GrantApplicationStatus.2": "Awaiting",
     "Enum:GrantApplicationStatus.3": "On Hold",
     "Enum:GrantApplicationStatus.4": "Approved",
-    "Enum:GrantApplicationStatus.5": "Adjudicating",
+    "Enum:GrantApplicationStatus.5": "Assessing",
     "Enum:GrantApplicationStatus.6": "Declined",
 
     "ProjectName": "Project Name",
@@ -78,7 +78,7 @@
     "ApplicationList:StartAssessmentButton": "Start Assessment",
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
 
-    "ReviewerList:ReviewerName": "Reviewer Name",
+    "ReviewerList:AssessorName": "Assessor Name",
     "ReviewerList:StartDate": "Start Date",
     "ReviewerList:EndDate": "End Date",
     "ReviewerList:Status": "Status",
@@ -89,6 +89,15 @@
     "AssessmentResultAttachments:UploadedDate": "Date",
     "AssessmentResultAttachments:AttachedBy": "Attached by",
 
+    "Enum:AssessmentState.IN_PROGRESS": "In Progress",
+    "Enum:AssessmentState.IN_REVIEW": "Under Review by Team Lead",
+    "Enum:AssessmentState.COMPLETED": "Completed",
+
+    "Enum:AssessmentAction.Create": "Create Assessment",
+    "Enum:AssessmentAction.SendTo": "Send To...",
+    "Enum:AssessmentAction.SendToTeamLead": "Send for Team Lead Review",
+    "Enum:AssessmentAction.Confirm": "Complete Assessment",
+    "Enum:AssessmentAction.SendBack": "Send Back",
 
     "Permission:GrantManagerManagement": "Grant Manager Management",
     "Permission:GrantManagerManagement.Default": "Default",
@@ -121,6 +130,15 @@
     "ApplicationForms:ChefsCriteriaFormId": "CHEFS Criteria Form Id",
     "ApplicationForms:ChefsFormApiKey": "CHEFS Form Api Key",
 
-    "Intakes": "Intakes"
+    "Intakes": "Intakes",
+    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
+
+    "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
+    "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
+    "Permission:GrantApplicationPermissions.Assessments.SendToTeamLead": "Send Assessment to Team Lead",
+    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
+    "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
+
+    "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user."
   }
 }

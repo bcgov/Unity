@@ -99,7 +99,7 @@ public class GrantApplicationAppService :
     public async Task<List<GrantApplicationAssigneeDto>> GetAssigneesAsync(Guid applicationId)
     {
         IQueryable<ApplicationUserAssignment> queryableAssignment = (await _userAssignmentRepository.GetQueryableAsync());
-        var assignments =  queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).ToList();
+        var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).ToList();
         return ObjectMapper.Map<List<ApplicationUserAssignment>, List<GrantApplicationAssigneeDto>>(assignments);
     }
 
@@ -161,7 +161,7 @@ public class GrantApplicationAppService :
             {
                 var application = await _applicationRepository.GetAsync(applicationId);
                 var assignees = await GetAssigneesAsync(applicationId);
-                if (application != null && (assignees == null || assignees.FindIndex(a => a.OidcSub == AssigneeKeycloakId) == -1) )
+                if (application != null && (assignees == null || assignees.FindIndex(a => a.OidcSub == AssigneeKeycloakId) == -1))
                 {
                     await _userAssignmentRepository.InsertAsync(
                         new ApplicationUserAssignment
@@ -217,7 +217,7 @@ public class GrantApplicationAppService :
                 if (currentApplicationId != previousApplication)
                 {
                     // Changed applications ids
-                    foreach(var userAssignment in userAssignments)
+                    foreach (var userAssignment in userAssignments)
                     {
                         await _userAssignmentRepository.DeleteAsync(userAssignment);
                     }
@@ -227,7 +227,7 @@ public class GrantApplicationAppService :
 
                 foreach (JToken assigneeToken in item.Value.Children())
                 {
-                    Debug.WriteLine(assigneeToken); 
+                    Debug.WriteLine(assigneeToken);
                     string assigneeDisplayName = assigneeToken.Value<string?>("assigneeDisplayName") ?? "";
                     string oidcSub = assigneeToken.Value<string?>("oidcSub") ?? "";
                     Guid[] applicationIds = new Guid[1];
@@ -272,5 +272,11 @@ public class GrantApplicationAppService :
         return comment == null
             ? throw new InvalidCommentParametersException()
             : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
+    }
+
+    public async Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+        return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
     }
 }

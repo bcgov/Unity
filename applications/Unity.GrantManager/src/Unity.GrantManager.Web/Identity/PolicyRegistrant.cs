@@ -80,16 +80,6 @@ internal static class PolicyRegistrant
            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Reviews.CompleteInitial)));
 
         context.Services.AddAuthorization(options =>
-           options.AddPolicy(GrantApplicationPermissions.Assessments.Default,
-           policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Default)));
-        context.Services.AddAuthorization(options =>
-          options.AddPolicy(GrantApplicationPermissions.Assessments.Start,
-          policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Start)));
-        context.Services.AddAuthorization(options =>
-          options.AddPolicy(GrantApplicationPermissions.Assessments.Complete,
-          policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Complete)));
-
-        context.Services.AddAuthorization(options =>
            options.AddPolicy(GrantApplicationPermissions.Approvals.Default,
            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Approvals.Default)));
         context.Services.AddAuthorization(options =>
@@ -109,5 +99,23 @@ internal static class PolicyRegistrant
         context.Services.AddAuthorization(options =>
             options.AddPolicy(GrantManagerPermissions.ApplicationForms.Default,
             policy => policy.RequireClaim("Permission", GrantManagerPermissions.ApplicationForms.Default)));
+
+        // Assessments
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(GrantApplicationPermissions.Assessments.Default,
+            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Default)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(GrantApplicationPermissions.Assessments.Create,
+            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Create)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(GrantApplicationPermissions.Assessments.SendToTeamLead,
+            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.SendToTeamLead)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(GrantApplicationPermissions.Assessments.SendBack,
+            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.SendBack)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(GrantApplicationPermissions.Assessments.Confirm,
+            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Confirm)));
     }
 }
+

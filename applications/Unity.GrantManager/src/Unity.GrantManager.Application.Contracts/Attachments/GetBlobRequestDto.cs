@@ -6,6 +6,7 @@ namespace Unity.GrantManager.Attachments
     public class GetBlobRequestDto
     {
         [Required]
-        public Guid S3Guid { get; set; }
+        public string S3ObjectKey { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
 }
