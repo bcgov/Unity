@@ -1,0 +1,16 @@
+﻿@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationStatusWidget;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+
+@model ApplicationStatusWidgetViewModel
+@{
+    Layout = null;
+}
+
+<div class="px-3 pt-4 pb-2">
+    <div>
+        <h6 class="fw-bold">Application Status</h6>
+    </div>
+    <div>
+        @Model.ApplicationStatus
+    </div>
+</div>
