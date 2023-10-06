@@ -185,7 +185,7 @@ $(function () {
         'select_application_review',
         (msg, data) => {
             if (data) {
-                selectedReviewDetails = data;
+                selectedReviewDetails = data; 
                 setDetailsContext('assessment');
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
@@ -277,22 +277,38 @@ $(function () {
     }
 });
 
-function uploadFiles(inputId) {
-    const input = document.getElementById(inputId);
-    const applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
-    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
-    const files = input.files;
-    const formData = new FormData();
-    const allowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val()));
-    const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
+function uploadApplicationFiles(inputId) {    
+    let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
+    let currentUserId = decodeURIComponent($("#CurrentUserId").val());  
+    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
+    let url = "/api/app/attachment/application/" + applicationId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
+    uploadFiles(inputId, url, 'refresh_application_attachment_list');     
+}
+
+function uploadAssessmentFiles(inputId) {    
+    let assessmentId = decodeURIComponent($("#AssessmentId").val());
+    let currentUserId = decodeURIComponent($("#CurrentUserId").val());
+    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
+    let url = "/api/app/attachment/assessment/" + assessmentId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
+    uploadFiles(inputId, url, 'refresh_assessment_attachment_list');        
+}
+
+function uploadFiles(inputId, urlStr, channel) {
+    let input = document.getElementById(inputId);    
+    let files = input.files;
+    let formData = new FormData();
+    const disallowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
+    const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
+
     let isAllowedTypeError = false;
     let isMaxFileSizeError = false;
     if (files.length == 0) {
         return;
     }
+
     for (let file of files) {
         console.log(file);
-        if (!allowedTypes.includes(file.type)) {
+        if (disallowedTypes.includes(file.type)) {
             isAllowedTypeError = true;
         }
         if ((file.size * 0.000001) > maxFileSize) {
@@ -317,7 +333,7 @@ function uploadFiles(inputId) {
 
     $.ajax(
         {
-            url: "/uploader?ApplicationId=" + applicationId + "&CurrentUserId=" + currentUserId,
+            url: urlStr,
             data: formData,
             processData: false,
             contentType: false,
@@ -326,19 +342,21 @@ function uploadFiles(inputId) {
                 abp.notify.success(
                     data.responseText,
                     'File Upload Is Successful'
-                );
 
-                PubSub.publish('refresh_application_attachment_list');
+                ); 
+                PubSub.publish(channel);  
             },
             error: function (data) {
                 abp.notify.error(
                     data.responseText,
                     'File Upload Not Successful'
                 );
+                PubSub.publish(channel);
             }
         }
     );
 }
+
 
 const update_application_attachment_count_subscription = PubSub.subscribe(
     'update_application_attachment_count',
@@ -426,3 +444,4 @@ function setDetailsContext(context) {
         case 'application': $('#reviewDetails').hide(); $('#applicationDetails').show(); break;
     }
 }
+

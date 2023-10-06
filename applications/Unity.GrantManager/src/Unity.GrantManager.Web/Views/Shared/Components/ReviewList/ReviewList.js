@@ -160,7 +160,10 @@ $(function () {
 function handleRowSelection(e, dt, type, indexes, reviewListTable) {
     if (type === 'row') {
         let selectedData = reviewListTable.row(indexes).data();
+            console.log('Selected Data:', selectedData);
+            document.getElementById("AssessmentId").value = selectedData.id;
         PubSub.publish('select_application_review', selectedData);
+            PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
         e.currentTarget.classList.toggle('selected');
         refreshActionButtons(dt, selectedData.id);
     }

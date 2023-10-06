@@ -23,9 +23,11 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IRepository<Assessment, Guid> _assessmentRepository;
     private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentRepository;
-
+    private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
+    private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
     private readonly IIdentityUserRepository _userRepository;
 
+#pragma warning disable S107 // Methods should not have too many parameters
     public GrantManagerTestDataSeedContributor(
         IRepository<Application, Guid> applicationRepository,
         IRepository<ApplicationStatus, Guid> applicationStatusRepository,
@@ -35,8 +37,10 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         IRepository<Assessment, Guid> assessmentRepository,
         IRepository<AssessmentComment, Guid> assessmentCommentRepository,
         IRepository<ApplicationComment, Guid> applicationCommentRepository,
-        IIdentityUserRepository userRepository
-        )
+        IApplicationAttachmentRepository applicationAttachmentRepository,
+        IAssessmentAttachmentRepository assessmentAttachmentRepository,
+        IIdentityUserRepository userRepository)
+#pragma warning restore S107 // Methods should not have too many parameters
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
@@ -46,7 +50,9 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         _assessmentRepository = assessmentRepository;
         _assessmentCommentRepository = assessmentCommentRepository;
         _applicationCommentRepository = applicationCommentRepository;
+        _applicationAttachmentRepository = applicationAttachmentRepository;
         _userRepository = userRepository;
+        _assessmentAttachmentRepository = assessmentAttachmentRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
@@ -127,6 +133,20 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
+        ApplicationAttachment applicationAttachment1 = await _applicationAttachmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
+        applicationAttachment1 ??= await _applicationAttachmentRepository.InsertAsync(
+            new ApplicationAttachment
+            {
+                ApplicationId = application1.Id,
+                S3ObjectKey = "Unity/Development/Application/report.pdf",
+                UserId = "00000000-0000-0000-0000-000000000000",
+                FileName = "report.pdf",
+                AttachedBy = "John Doe",
+                Time = DateTime.Now,
+            },
+            autoSave: true
+        );
+
         Assessment assessment1 = await _assessmentRepository.FirstOrDefaultAsync(s => s.ApplicationId == application1.Id);
         assessment1 ??= await _assessmentRepository.InsertAsync(
             new Assessment
@@ -135,7 +155,18 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 applicationId: application1.Id,
                 assessorId: GrantManagerTestData.User_Assessor1_UserId,
                 AssessmentState.IN_PROGRESS
-            ),
+            ));
+        AssessmentAttachment assessmentAttachment1 = await _assessmentAttachmentRepository.FirstOrDefaultAsync(s => s.AssessmentId == assessment1.Id);
+        assessmentAttachment1 ??= await _assessmentAttachmentRepository.InsertAsync(
+            new AssessmentAttachment
+            {
+                AssessmentId = assessment1.Id,
+                S3ObjectKey = "Unity/Development/Assessment/result.pdf",
+                UserId = Guid.NewGuid(),
+                FileName = "result.pdf",
+                AttachedBy = "John Doe",
+                Time = DateTime.Now
+            },
             autoSave: true
         );
 

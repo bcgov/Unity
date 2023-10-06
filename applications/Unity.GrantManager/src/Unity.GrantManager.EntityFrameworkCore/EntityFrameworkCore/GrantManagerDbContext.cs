@@ -254,6 +254,14 @@ public class GrantManagerDbContext :
                 .HasConversion(new EnumToStringConverter<AssessmentState>());
         });
 
+        modelBuilder.Entity<AssessmentAttachment>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentAttachment", GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AssessmentId).IsRequired();
+        });
+
         modelBuilder.Entity<AssessmentComment>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentComment", GrantManagerConsts.DbSchema);

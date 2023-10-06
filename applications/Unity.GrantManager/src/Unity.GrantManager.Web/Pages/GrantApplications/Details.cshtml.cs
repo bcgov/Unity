@@ -38,6 +38,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public Guid? CurrentUserId { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public string? CurrentUserName { get; set; }
+
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
@@ -49,8 +52,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {            
             _grantApplicationAppService = grantApplicationAppService;
             CurrentUserId = currentUser.Id;
+            CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             _configuration = configuration;
-            Extensions =  _configuration["S3:FileTypes"] ?? "";
+            Extensions =  _configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = _configuration["S3:MaxFileSize"] ?? "";
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
