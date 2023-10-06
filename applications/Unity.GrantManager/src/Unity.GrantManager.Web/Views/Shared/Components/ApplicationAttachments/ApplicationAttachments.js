@@ -10,7 +10,7 @@
 
         // your custom code.
         console.log(result)
-        if (result && result.length) {
+        if (result) {
             PubSub.publish('update_application_attachment_count', result.length);
         }
 
