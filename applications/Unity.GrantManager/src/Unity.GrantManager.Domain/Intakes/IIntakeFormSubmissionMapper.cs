@@ -5,7 +5,7 @@ namespace Unity.GrantManager.Intakes
 {
     public interface IIntakeFormSubmissionMapper
     {        
-        Task<string> InitializeAvailableFormFields(ApplicationForm applicationForm, dynamic formVersion);
+        string InitializeAvailableFormFields(ApplicationForm applicationForm, dynamic formVersion);
 
         Task<IntakeMapping> MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission);
     }

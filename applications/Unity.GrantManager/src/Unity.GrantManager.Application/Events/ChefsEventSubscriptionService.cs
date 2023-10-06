@@ -40,7 +40,7 @@ namespace Unity.GrantManager.Events
 
             var submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
             var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, submissionData.submission.formVersionId) ?? throw new InvalidFormDataSubmissionException();
-            var result = await _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
+            var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
 
             return new EventSubscriptionConfirmationDto() { ConfirmationId = result };
         }

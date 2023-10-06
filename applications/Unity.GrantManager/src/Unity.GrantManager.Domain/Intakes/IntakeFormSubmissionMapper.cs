@@ -28,13 +28,14 @@ namespace Unity.GrantManager.Intakes
             if (tokenComponents != null)
             {
                 // Iterate through tokenComponents.ChildTokens
-                foreach (JToken childToken in tokenComponents.Children())
+                foreach (JToken? childToken in tokenComponents.Children())
                 {
-                    if(childToken.Type == JTokenType.Object)
+                    if(childToken != null && childToken.Type == JTokenType.Object)
                     {
-                        dynamic tokenInput = childToken["input"];
-                        dynamic tokenType = childToken["type"];
+                        dynamic? tokenInput = childToken["input"];
+                        dynamic? tokenType = childToken["type"];
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                         if (tokenInput != null && tokenInput.ToString() == "True")
                         {
                             dynamic? key = childToken["key"];
@@ -45,24 +46,28 @@ namespace Unity.GrantManager.Intakes
                                 var jsonValue = "{ \"type\": \""+ tokenType.ToString() + " \" \"label\":  \"" + label.ToString() + "\" }";
                                 components.Add(key.ToString(), jsonValue);
                             }
+
                         }
-                        else if (tokenType.ToString() == "tabs")
+                        else if (tokenType != null && tokenType.ToString() == "tabs")
                         {
                             // For each nested component container
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
                             dynamic nestedTokenComponents = childToken.SelectToken("components");
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
                             foreach (JToken nestedTokenComponent in nestedTokenComponents.Children())
                             {
                                 getAllInputComponents(((JObject)nestedTokenComponent).SelectToken("components"));
                             }
-                        } else if (tokenType.ToString() == "columns") {
+                        } else if (tokenType != null && tokenType.ToString() == "columns") {
                             getAllInputComponents(childToken);
                         }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
                 }
             }
         }
 
-        public async Task<string> InitializeAvailableFormFields(ApplicationForm applicationForm, dynamic formVersion)
+        public string InitializeAvailableFormFields(ApplicationForm applicationForm, dynamic formVersion)
         {
             // Check The Version of the form to make sure it is current
             JToken? tokenComponents = ((JObject)formVersion).SelectToken("schema.components");
@@ -70,7 +75,7 @@ namespace Unity.GrantManager.Intakes
             return JsonSerializer.Serialize(components);
         }
 
-        public async Task<IntakeMapping> MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission)
+        public Task<IntakeMapping> MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission)
         {
             string? submissionHeaderMapping = applicationForm.SubmissionHeaderMapping;
             var submission = formSubmission.submission;

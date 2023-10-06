@@ -32,7 +32,7 @@ namespace Unity.GrantManager.Controllers
             case  ChefsEventTypesConsts.FORM_PUBLISHED:
                 return await _iChefsEventSubscriptionService.CreateIntakeMappingAsync(eventSubscriptionDto);
             default:
-                return null;
+                return await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto);
             }
         }
     }
