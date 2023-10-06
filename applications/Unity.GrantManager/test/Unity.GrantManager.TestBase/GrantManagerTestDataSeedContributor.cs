@@ -27,6 +27,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
     private readonly IIdentityUserRepository _userRepository;
 
+#pragma warning disable S107 // Methods should not have too many parameters
     public GrantManagerTestDataSeedContributor(
         IRepository<Application, Guid> applicationRepository,
         IRepository<ApplicationStatus, Guid> applicationStatusRepository,
@@ -37,9 +38,9 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         IRepository<AssessmentComment, Guid> assessmentCommentRepository,
         IRepository<ApplicationComment, Guid> applicationCommentRepository,
         IApplicationAttachmentRepository applicationAttachmentRepository,
-        IAssessmentAttachmentRepository assessmentAttachmentRepository)
-        IIdentityUserRepository userRepository
-        )
+        IAssessmentAttachmentRepository assessmentAttachmentRepository,
+        IIdentityUserRepository userRepository)
+#pragma warning restore S107 // Methods should not have too many parameters
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
@@ -140,7 +141,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 S3ObjectKey = "Unity/Development/Application/report.pdf",
                 UserId = "00000000-0000-0000-0000-000000000000",
                 FileName = "report.pdf",
-                AttachedBy =  "John Doe",
+                AttachedBy = "John Doe",
                 Time = DateTime.Now,
             },
             autoSave: true
@@ -154,7 +155,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 applicationId: application1.Id,
                 assessorId: GrantManagerTestData.User_Assessor1_UserId,
                 AssessmentState.IN_PROGRESS
-            ),
+            ));
         AssessmentAttachment assessmentAttachment1 = await _assessmentAttachmentRepository.FirstOrDefaultAsync(s => s.AssessmentId == assessment1.Id);
         assessmentAttachment1 ??= await _assessmentAttachmentRepository.InsertAsync(
             new AssessmentAttachment
@@ -164,7 +165,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 UserId = Guid.NewGuid(),
                 FileName = "result.pdf",
                 AttachedBy = "John Doe",
-                Time = DateTime.Now,
+                Time = DateTime.Now
+            },
             autoSave: true
         );
 
