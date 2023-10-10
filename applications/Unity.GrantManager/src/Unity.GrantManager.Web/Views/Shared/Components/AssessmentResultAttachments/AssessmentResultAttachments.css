@@ -10,3 +10,7 @@
 #AssessmentResultAttachmentsTable {
     padding-bottom: 80px;
 }
+
+#AssessmentResultAttachmentsTable_wrapper .dataTables_scrollBody {
+    overflow: unset !important;
+}

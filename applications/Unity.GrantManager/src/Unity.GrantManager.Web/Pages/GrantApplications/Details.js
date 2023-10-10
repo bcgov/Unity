@@ -344,7 +344,8 @@ function uploadFiles(inputId, urlStr, channel) {
                     'File Upload Is Successful'
 
                 ); 
-                PubSub.publish(channel);  
+                PubSub.publish(channel);
+                input.value = null;
             },
             error: function (data) {
                 abp.notify.error(
@@ -352,6 +353,7 @@ function uploadFiles(inputId, urlStr, channel) {
                     'File Upload Not Successful'
                 );
                 PubSub.publish(channel);
+                input.value = null;
             }
         }
     );
