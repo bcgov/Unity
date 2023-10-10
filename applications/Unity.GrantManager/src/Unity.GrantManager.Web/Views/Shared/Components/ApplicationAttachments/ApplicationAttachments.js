@@ -69,8 +69,14 @@
                             html += '<a href="/api/app/attachment/application/' + encodeURIComponent(applicationId) + '/download/' + encodeURIComponent(full.fileName);
                             html += '" target="_blank" download="' + data + '" class="fullwidth">';
                             html += '<button class="btn fullWidth" style="margin:10px" type="button"><i class="fl fl-download"></i><span>Download Attachment</span></button></a>';
-                            html += '<button class="btn fullWidth" style="margin:10px" type="button" onclick="deleteApplicationAttachment(\'' + data;
-                            html += '\',\'' + full.fileName + '\')"><i class="fl fl-cancel"></i><span>Delete Attachment</span></button>';
+                            if (abp.currentUser.id == full.creatorId) {
+                                html += '<button class="btn fullWidth" style="margin:10px" type="button" onclick="deleteApplicationAttachment(\'' + data;
+                                html += '\',\'' + full.fileName + '\')"><i class="fl fl-cancel"></i><span>Delete Attachment</span></button>';
+                            } else {
+                                //disable delete button
+                                html += '<button class="btn fullWidth" style="margin:10px" disabled type="button" ';
+                                html += '"><i class="fl fl-cancel"></i><span>Delete Attachment</span></button>';
+                            }
                             html += '</div>';
                             html += '</div>';
                             return html;
