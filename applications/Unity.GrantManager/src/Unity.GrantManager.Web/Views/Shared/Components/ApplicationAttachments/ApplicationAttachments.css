@@ -53,3 +53,7 @@
 #ApplicationAttachmentsTable {
     padding-bottom: 80px;
 }
+
+#ApplicationAttachmentsTable_wrapper .dataTables_scrollBody {
+    overflow: unset !important;
+}
