@@ -66,8 +66,8 @@ $(function () {
     let reviewListTable = $('#ReviewListTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             dom: 'Bfrtip',
-            serverSide: true,
-            order: [],
+            serverSide: false,
+            order: [[3, 'asc']],
             searching: false,
             paging: false,
             select: {
@@ -155,6 +155,10 @@ $(function () {
             $('#detailsTab a[href="#nav-review-and-assessment"]').tab('show');
         }
     );
+
+    $('#nav-review-and-assessment-tab').one('click', function () {
+        reviewListTable.columns.adjust();
+         });
 });
 
 function handleRowSelection(e, dt, type, indexes, reviewListTable) {
@@ -286,3 +290,4 @@ function createButtonAction(e, dt, button, config) {
         });
     this.disable();
 }
+
