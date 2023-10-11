@@ -18,6 +18,10 @@ public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentSta
     public bool? ApprovalRecommended { get; set; }
 
     public AssessmentState Status { get; private set; }
+    public int? FinancialAnalysis { get; set; }
+    public int? EconomicImpact { get; set; }
+    public int? InclusiveGrowth { get; set; }
+    public int? CleanGrowth { get; set; }
 
     [NotMapped]
     public UnityWorkflow<AssessmentState, AssessmentAction> Workflow { get; private set; }
@@ -67,3 +71,4 @@ public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentSta
         EndDate = null;
     }
 }
+
