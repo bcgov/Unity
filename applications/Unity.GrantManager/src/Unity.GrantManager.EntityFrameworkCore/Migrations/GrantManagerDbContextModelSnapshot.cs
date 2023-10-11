@@ -752,6 +752,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("AssessorId")
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("CleanGrowth")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
@@ -766,12 +769,21 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<int?>("EconomicImpact")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
+
+                    b.Property<int?>("FinancialAnalysis")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InclusiveGrowth")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsComplete")
                         .HasColumnType("boolean");
