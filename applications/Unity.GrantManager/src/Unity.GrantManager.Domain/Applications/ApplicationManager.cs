@@ -7,9 +7,8 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Workflow;
 using Volo.Abp.Domain.Services;
 
-
 namespace Unity.GrantManager.Applications;
-public class ApplicationManager : DomainService
+public class ApplicationManager : DomainService, IApplicationManager
 {
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
