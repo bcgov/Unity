@@ -33,6 +33,7 @@ public class GrantApplicationAppService :
 {
 
     private readonly IApplicationRepository _applicationRepository;
+    private readonly IApplicationManager _applicationManager;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
     private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
@@ -41,6 +42,7 @@ public class GrantApplicationAppService :
 
     public GrantApplicationAppService(
         IRepository<GrantApplication, Guid> repository,
+        IApplicationManager applicationManager,
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
         IApplicationUserAssignmentRepository userAssignmentRepository,
@@ -51,6 +53,7 @@ public class GrantApplicationAppService :
          : base(repository)
     {
         _applicationRepository = applicationRepository;
+        _applicationManager = applicationManager;
         _applicationStatusRepository = applicationStatusRepository;
         _userAssignmentRepository = userAssignmentRepository;
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
@@ -272,9 +275,34 @@ public class GrantApplicationAppService :
             : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
     }
 
+    #region APPLICATION WORKFLOW
     public async Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id)
     {
         var application = await _applicationRepository.GetAsync(id);
         return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
     }
+
+    public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId)
+    {
+        var actionList = await _applicationManager.GetActions(applicationId);
+        var actionDtos = ObjectMapper.Map<List<ApplicationActionResultItem>, List<ApplicationActionDto>>(actionList);
+
+        // NOTE: Authorization is applied on the AppService layer and is false by default
+        // TODO: Replace placeholder loop with authorization handler mapped to permissions
+        actionDtos.ForEach(item => { item.IsAuthorized = true; });
+
+        return new ListResultDto<ApplicationActionDto>(actionDtos);
+    }
+
+    /// <summary>
+    /// Transitions the Assessment's workflow state machine given an action.
+    /// </summary>
+    /// <param name="assessmentId">The Assessment</param>
+    /// <param name="triggerAction">The action to be invoked on an Assessment</param>
+    public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
+    {
+        var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+    #endregion APPLICATION WORKFLOW
 }
