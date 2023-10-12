@@ -108,7 +108,7 @@ public class GrantApplicationAppService :
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
     {
         ApplicationFormSubmission applicationFormSubmission = new();
-        var application = await _applicationRepository.GetAsync(applicationId);
+        var application = await _applicationRepository.GetAsync(applicationId, false);
         if (application != null)
         {
             IQueryable<ApplicationFormSubmission> queryableFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
@@ -140,7 +140,7 @@ public class GrantApplicationAppService :
         {
             try
             {
-                var application = await _applicationRepository.GetAsync(applicationId);
+                var application = await _applicationRepository.GetAsync(applicationId, false);
                 if (application != null)
                 {
                     application.ApplicationStatusId = statusId;
@@ -161,7 +161,7 @@ public class GrantApplicationAppService :
         {
             try
             {
-                var application = await _applicationRepository.GetAsync(applicationId);
+                var application = await _applicationRepository.GetAsync(applicationId, false);
                 var assignees = await GetAssigneesAsync(applicationId);
                 if (application != null && (assignees == null || assignees.FindIndex(a => a.OidcSub == AssigneeKeycloakId) == -1))
                 {
@@ -187,7 +187,7 @@ public class GrantApplicationAppService :
     {
         foreach (Guid applicationId in applicationIds)
         {
-            var application = await _applicationRepository.GetAsync(applicationId);
+            var application = await _applicationRepository.GetAsync(applicationId, false);
             IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(AssigneeKeycloakId)).ToList();
             // Only remove the assignee if they were already assigned
@@ -278,7 +278,7 @@ public class GrantApplicationAppService :
     #region APPLICATION WORKFLOW
     public async Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id)
     {
-        var application = await _applicationRepository.GetAsync(id);
+        var application = await _applicationRepository.GetAsync(id, true);
         return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
     }
 

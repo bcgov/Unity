@@ -86,6 +86,7 @@ public class ApplicationManager : DomainService, IApplicationManager
                 ApplicationAction = trigger,
                 IsPermitted = permittedActions.Contains(trigger)
             })
+            .OrderBy(x => (int) x.ApplicationAction)
             .ToList();
 
         return actionsList;

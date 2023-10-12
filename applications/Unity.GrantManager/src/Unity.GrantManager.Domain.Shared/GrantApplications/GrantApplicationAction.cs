@@ -5,23 +5,22 @@ namespace Unity.GrantManager.GrantApplications;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum GrantApplicationAction
 {
-    // Top Level Actions
-    Open,
-    Close,
-
     // Opening Actions
+    Open,
     Submit,
 
-    Assign, // Review assignment as a state
-
-    StartReview,
-    CompleteReview,
+    Assign,
 
     StartAssessment,
     CompleteAssessment,
 
+    StartReview,
+    CompleteReview,
+
     // Closing Actions
-    Withdraw,
     Approve,
-    Deny
+    Deny,
+
+    Close,
+    Withdraw
 }

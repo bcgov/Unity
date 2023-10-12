@@ -1,8 +1,10 @@
-﻿
-@using Microsoft.AspNetCore.Authorization;
+﻿@using Microsoft.AspNetCore.Authorization;
 @using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Permissions;
+@using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
+
+@model DetailsActionBarViewModel;
 
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
@@ -10,6 +12,26 @@
 <div class="action-bar p-2">
     <div id="DetailsActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
         @* Items are included here through the Review List JS*@
+
+        <abp-dropdown>
+            <abp-dropdown-button 
+                button-type="Light"
+                text="@L["GrantApplication:ActionButtonName"].Value" />
+            <ul class="dropdown-menu">
+                @foreach (var item in Model.ApplicationActions.Items.Where(x=> x.IsAuthorized))
+                {
+                    <li>
+                        <abp-button 
+                            id="@($"Application_{item.ApplicationAction}Button")"
+                            button-type="Light"
+                            class="dropdown-item"
+                            disabled=@(!item.IsPermitted)>
+                            @L[$"Enum:GrantApplicationAction.{item.ApplicationAction}"].Value
+                        </abp-button>
+                    </li>
+                }
+            </ul>
+        </abp-dropdown>
     </div>
     <div id="DetailsActionBarEnd" class="d-flex align-items-stretch justify-content-end gap-2">
         <abp-button text="@L["ApplicationList:CopyLinkButton"].Value"
