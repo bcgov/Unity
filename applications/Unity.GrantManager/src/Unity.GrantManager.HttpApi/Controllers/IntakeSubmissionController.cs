@@ -94,7 +94,7 @@ namespace Unity.GrantManager.Controllers
             try
             {
                 var statusList = await _applicationStatusRepository.GetListAsync();
-                var submittedStatus = statusList.Find(x => x.StatusCode == ApplicationStatusConsts.SUBMITTED);
+                var submittedStatus = statusList.Find(x => x.StatusCode.Equals(ApplicationStatusConsts.SUBMITTED));
                 var intake = await GetApplicationKeyFields(intakeSubmission);
                 if (intake != null)
                 {

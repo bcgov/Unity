@@ -70,11 +70,11 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
-        ApplicationStatus? appStatus1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.SUBMITTED);
+        ApplicationStatus? appStatus1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode.Equals(ApplicationStatusConsts.SUBMITTED));
         appStatus1 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus
             {
-                StatusCode = "SUBMITTED",
+                StatusCode = GrantApplicationState.SUBMITTED,
                 ExternalStatus = "Submitted",
                 InternalStatus = "Submitted"
             },
