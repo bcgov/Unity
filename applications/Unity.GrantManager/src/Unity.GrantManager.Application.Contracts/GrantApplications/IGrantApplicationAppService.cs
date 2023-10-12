@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Dtos;
@@ -13,5 +14,6 @@ namespace Unity.GrantManager.GrantApplications
             CreateUpdateGrantApplicationDto>, ICommentsService
     {
         Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id);
+        Task<IReadOnlyList<ApplicationActionDto>> GetActions(Guid applicationId);
     }
 }
