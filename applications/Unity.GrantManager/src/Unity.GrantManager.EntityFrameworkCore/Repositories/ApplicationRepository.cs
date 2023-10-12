@@ -33,4 +33,23 @@ public class ApplicationRepository : EfCoreRepository<GrantManagerDbContext, App
             .Take(maxResultCount)
             .ToListAsync();
     }
+
+    // TODO: Add query parameters
+    public async Task<List<Application>> GetDetailsListAsync()
+    {
+        return await (await GetDbSetAsync())
+            .IncludeDetails()
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Include defined sub-collections
+    /// </summary>
+    /// <remarks>See Best Practice: https://docs.abp.io/en/abp/latest/Best-Practices/Entity-Framework-Core-Integration#repository-implementation</remarks>
+    /// <returns></returns>
+    public override async Task<IQueryable<Application>> WithDetailsAsync()
+    {
+        // Uses the extension method defined above
+        return (await GetQueryableAsync()).IncludeDetails();
+    }
 }
