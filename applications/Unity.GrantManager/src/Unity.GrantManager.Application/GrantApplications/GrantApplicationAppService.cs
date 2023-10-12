@@ -282,6 +282,11 @@ public class GrantApplicationAppService :
         return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
     }
 
+    /// <summary>
+    /// Fetches the list of actions and their status context for a given application.
+    /// </summary>
+    /// <param name="applicationId">The application</param>
+    /// <returns>A list of application actions with their state machine permitted and authorization status.</returns>
     public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId)
     {
         var actionList = await _applicationManager.GetActions(applicationId);
@@ -295,10 +300,10 @@ public class GrantApplicationAppService :
     }
 
     /// <summary>
-    /// Transitions the Assessment's workflow state machine given an action.
+    /// Transitions the Application workflow state machine given an action.
     /// </summary>
-    /// <param name="assessmentId">The Assessment</param>
-    /// <param name="triggerAction">The action to be invoked on an Assessment</param>
+    /// <param name="applicationId">The application</param>
+    /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
         var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
