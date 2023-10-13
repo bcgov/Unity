@@ -1,4 +1,4 @@
-﻿$(function () {
+$(function () {
     const l = abp.localization.getResource('GrantManager');
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;

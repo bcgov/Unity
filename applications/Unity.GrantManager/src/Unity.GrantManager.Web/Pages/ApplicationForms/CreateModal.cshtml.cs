@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Forms;
-using Unity.GrantManager.Intake;
+using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Web.ViewModels;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationForms;

@@ -432,6 +432,9 @@ namespace Unity.GrantManager.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
+                    b.Property<string>("AvailableChefsFields")
+                        .HasColumnType("text");
+
                     b.Property<string>("ChefsApplicationFormGuid")
                         .HasColumnType("text");
 
@@ -480,6 +483,12 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<string>("SubmissionHeaderMapping")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("Version")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
