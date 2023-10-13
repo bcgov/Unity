@@ -10,7 +10,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
 [Widget(
     ScriptFiles = new[] { "/Views/Shared/Components/DetailsActionBar/Default.js" },
     StyleFiles = new[] { "/Views/Shared/Components/ActionBar/Default.css" },
-    AutoInitialize = true
+    AutoInitialize = true,
+    RefreshUrl = "Widgets/DetailsActionBar/Refresh"
 )]
 public class DetailsActionBar : AbpViewComponent
 {

@@ -24,8 +24,9 @@
                         <abp-button 
                             id="@($"Application_{item.ApplicationAction}Button")"
                             button-type="Light"
-                            class="dropdown-item"
-                            disabled=@(!item.IsPermitted)>
+                            class="dropdown-item details-dropdown-action"
+                            disabled=@(!item.IsPermitted)
+                            data-app-action="@item.ApplicationAction.ToString()">
                             @L[$"Enum:GrantApplicationAction.{item.ApplicationAction}"].Value
                         </abp-button>
                     </li>
