@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Intakes
 
         public IntakeFormSubmissionMapper() { }
 
-        public void getAllInputComponents(JToken? tokenComponents)
+        public void GetAllInputComponents(JToken? tokenComponents)
         {             
              // check if the type is in 'datagrid', 'editgrid', 'dynamicWizard' 
              // check the visibility comp._visible
@@ -55,10 +55,10 @@ namespace Unity.GrantManager.Intakes
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
                             foreach (JToken nestedTokenComponent in nestedTokenComponents.Children())
                             {
-                                getAllInputComponents(((JObject)nestedTokenComponent).SelectToken("components"));
+                                GetAllInputComponents(((JObject)nestedTokenComponent).SelectToken("components"));
                             }
                         } else if (tokenType != null && tokenType.ToString() == "columns") {
-                            getAllInputComponents(childToken);
+                            GetAllInputComponents(childToken);
                         }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
@@ -70,16 +70,16 @@ namespace Unity.GrantManager.Intakes
         {
             // Check The Version of the form to make sure it is current
             JToken? tokenComponents = ((JObject)formVersion).SelectToken("schema.components");
-            getAllInputComponents(tokenComponents);
+            GetAllInputComponents(tokenComponents);
             return JsonSerializer.Serialize(components);
         }
 
-        public Task<IntakeMapping> MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission)
+        public IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission)
         {
             string? submissionHeaderMapping = applicationForm.SubmissionHeaderMapping;
             var submission = formSubmission.submission;
             var data = submission.submission.data;
-            var form = submission.form;
+            var form = formSubmission.form;
 
             if (submissionHeaderMapping != null)
             {

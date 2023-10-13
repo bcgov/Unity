@@ -51,14 +51,16 @@ namespace Unity.GrantManager.Intakes
             if (applicationForm.AvailableChefsFields == null)
             {
                 JToken? token = submissionData.SelectToken("submission.formVersionId");
-                if(token != null)
+                if (token != null)
                 {
                     using var uow = _unitOfWorkManager.Begin();
-                    Guid formVersionId = Guid.Parse(token.ToString());
-                    var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, formVersionId) ?? throw new InvalidFormDataSubmissionException();
-                    applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
-                    await _applicationFormRepository.UpdateAsync(applicationForm);
-                    await uow.SaveChangesAsync();
+                    {
+                        Guid formVersionId = Guid.Parse(token.ToString());
+                        var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, formVersionId) ?? throw new InvalidFormDataSubmissionException();
+                        applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
+                        await _applicationFormRepository.UpdateAsync(applicationForm);
+                        await uow.SaveChangesAsync();
+                    }
                 }
             }
 

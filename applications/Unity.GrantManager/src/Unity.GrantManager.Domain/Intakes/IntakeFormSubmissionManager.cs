@@ -81,6 +81,5 @@ namespace Unity.GrantManager.Intakes
                     ApplicantName = applicantName ?? "{Applicant Name Missing}",
                 });
         }
-
     }
 }
