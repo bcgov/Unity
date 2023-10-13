@@ -43,7 +43,7 @@ namespace Unity.GrantManager.Migrations
                 name: "AvailableChefsFields",
                 table: "UnityApplicationForm");
             
-            migrationBuilder.DropColumn<string>(
+            migrationBuilder.DropColumn(
                 name: "SubmissionHeaderMapping",
                 table: "UnityApplicationForm");
         }
