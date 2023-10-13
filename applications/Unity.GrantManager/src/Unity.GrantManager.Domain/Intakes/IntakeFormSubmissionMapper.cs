@@ -85,7 +85,7 @@ namespace Unity.GrantManager.Intakes
             {
                 try
                 {
-                    return ApplyConfigurationMapping(submissionHeaderMapping!, data);
+                    return ApplyConfigurationMapping(submissionHeaderMapping!, data, form);
                 }
                 catch (Exception ex)
                 {
@@ -107,40 +107,30 @@ namespace Unity.GrantManager.Intakes
                 ApplicantName = data.applicantName,
                 Sector = data.sector,
                 TotalProjectBudget = data.totalProjectBudget,
-                RequestedAmount = data.requestedAmount
+                RequestedAmount = data.requestedAmount,
+                City = data.city,
+                EconomicRegion = data.economicRegion
             };
         }
 
-        private static IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data)
+        private static IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data, dynamic form)
         {
             var configMap = JsonConvert.DeserializeObject<dynamic>(submissionHeaderMapping)!;
-            IntakeMapping intakeMapping = new IntakeMapping();
+            IntakeMapping intakeMapping = ApplyDefaultConfigurationMapping(data, form);
             if (configMap != null)
             {
                 foreach (JProperty property in configMap.Properties())
                 {
                     var dataKey = property.Name;
                     var intakeProperty = property.Value.ToString();
-                    var dataValue = data.SelectToken(dataKey)?.ToString();
+                    var dataValue = data.SelectToken(intakeProperty)?.ToString();
 
-                    if (intakeProperty != null && dataValue != null)
+                    if (intakeProperty != null && dataValue != null && dataKey != null)
                     {
                         // Get a type object that represents the IntakeMapping.
-                        Type intakeType = typeof(IntakeMapping);
-
-                        // Change the static property value.
-#pragma warning disable CS8602 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8604 // Possible null reference argument.
-                        PropertyInfo intakePropInfo = intakeType.GetProperty(intakeProperty);
-#pragma warning restore CS8604 // Possible null reference argument.
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-
-                        if (intakePropInfo != null)
-                        {
-                            intakePropInfo.SetValue(intakeMapping, dataValue.Value.ToString());
-                        }
-#pragma warning restore CS8602 // Converting null literal or possible null value to non-nullable type.
+                        Type intakeType = typeof(IntakeMapping);                        
+                        PropertyInfo? intakePropInfo = intakeType.GetProperty(dataKey!);
+                        intakePropInfo?.SetValue(intakeMapping, dataValue?.ToString());
                     }
                 }
             }
@@ -159,6 +149,8 @@ namespace Unity.GrantManager.Intakes
         public string? ConfirmationId { get; set; }
         public string? SubmissionId { get; set; }
         public string? SubmissionDate { get; set; }
+        public string? City { get; internal set; }
+        public string? EconomicRegion { get; internal set; }
     }
 
     public static class MapperExtensions
