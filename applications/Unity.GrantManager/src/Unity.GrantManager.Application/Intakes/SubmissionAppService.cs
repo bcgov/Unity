@@ -32,7 +32,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
                 "contactName",
                 "organizationLegalName",
                 "eligibleCost",
-                "totalRequestToMjf"
+                "totalRequest"
             });
         }
     }

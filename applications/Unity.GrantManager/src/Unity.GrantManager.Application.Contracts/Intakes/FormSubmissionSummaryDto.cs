@@ -45,7 +45,7 @@ public class FormSubmissionSummaryDto
     [JsonPropertyName("lateEntry")]
     public bool LateEntry { get; set; }
 
-    [JsonPropertyName("totalRequestToMjf")]
+    [JsonPropertyName("totalRequest")]
     public int? EligibleAmount { get; set; }
 
     [JsonPropertyName("eligibleCost")]
