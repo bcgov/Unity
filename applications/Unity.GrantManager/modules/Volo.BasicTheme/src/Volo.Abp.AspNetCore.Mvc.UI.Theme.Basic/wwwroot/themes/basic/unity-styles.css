@@ -89,6 +89,7 @@
 
 
 .unity-side-nav {
+    min-width: 50px;
     width: 210px;
     height: calc(100vh - 128px);
     overflow-y: scroll;

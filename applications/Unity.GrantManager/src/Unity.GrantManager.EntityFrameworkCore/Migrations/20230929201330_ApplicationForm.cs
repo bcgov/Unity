@@ -24,6 +24,12 @@ namespace Unity.GrantManager.Migrations
                 type: "text",
                 nullable: true);
 
+            migrationBuilder.AddColumn<string>(
+                name: "SubmissionHeaderMapping",
+                table: "UnityApplicationForm",
+                type: "text",
+                nullable: true);
+                
         }
 
         /// <inheritdoc />
@@ -35,6 +41,10 @@ namespace Unity.GrantManager.Migrations
 
             migrationBuilder.DropColumn(
                 name: "AvailableChefsFields",
+                table: "UnityApplicationForm");
+            
+            migrationBuilder.DropColumn(
+                name: "SubmissionHeaderMapping",
                 table: "UnityApplicationForm");
         }
     }

@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Services;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -19,7 +18,7 @@ namespace Unity.GrantManager.Intakes
 
         public IntakeFormSubmissionMapper() { }
 
-        public void getAllInputComponents(JToken? tokenComponents)
+        public void GetAllInputComponents(JToken? tokenComponents)
         {             
              // check if the type is in 'datagrid', 'editgrid', 'dynamicWizard' 
              // check the visibility comp._visible
@@ -55,10 +54,10 @@ namespace Unity.GrantManager.Intakes
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
                             foreach (JToken nestedTokenComponent in nestedTokenComponents.Children())
                             {
-                                getAllInputComponents(((JObject)nestedTokenComponent).SelectToken("components"));
+                                GetAllInputComponents(((JObject)nestedTokenComponent).SelectToken("components"));
                             }
                         } else if (tokenType != null && tokenType.ToString() == "columns") {
-                            getAllInputComponents(childToken);
+                            GetAllInputComponents(childToken);
                         }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }
@@ -70,22 +69,22 @@ namespace Unity.GrantManager.Intakes
         {
             // Check The Version of the form to make sure it is current
             JToken? tokenComponents = ((JObject)formVersion).SelectToken("schema.components");
-            getAllInputComponents(tokenComponents);
+            GetAllInputComponents(tokenComponents);
             return JsonSerializer.Serialize(components);
         }
 
-        public Task<IntakeMapping> MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission)
+        public IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission)
         {
             string? submissionHeaderMapping = applicationForm.SubmissionHeaderMapping;
             var submission = formSubmission.submission;
             var data = submission.submission.data;
-            var form = submission.form;
+            var form = formSubmission.form;
 
             if (submissionHeaderMapping != null)
             {
                 try
                 {
-                    return ApplyConfigurationMapping(submissionHeaderMapping!, data);
+                    return ApplyConfigurationMapping(submissionHeaderMapping!, data, form);
                 }
                 catch (Exception ex)
                 {
@@ -107,40 +106,30 @@ namespace Unity.GrantManager.Intakes
                 ApplicantName = data.applicantName,
                 Sector = data.sector,
                 TotalProjectBudget = data.totalProjectBudget,
-                RequestedAmount = data.requestedAmount
+                RequestedAmount = data.requestedAmount,
+                City = data.city,
+                EconomicRegion = data.economicRegion
             };
         }
 
-        private static IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data)
+        private static IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data, dynamic form)
         {
             var configMap = JsonConvert.DeserializeObject<dynamic>(submissionHeaderMapping)!;
-            IntakeMapping intakeMapping = new IntakeMapping();
+            IntakeMapping intakeMapping = ApplyDefaultConfigurationMapping(data, form);
             if (configMap != null)
             {
                 foreach (JProperty property in configMap.Properties())
                 {
                     var dataKey = property.Name;
                     var intakeProperty = property.Value.ToString();
-                    var dataValue = data.SelectToken(dataKey)?.ToString();
+                    var dataValue = data.SelectToken(intakeProperty)?.ToString();
 
-                    if (intakeProperty != null && dataValue != null)
+                    if (intakeProperty != null && dataValue != null && dataKey != null)
                     {
                         // Get a type object that represents the IntakeMapping.
-                        Type intakeType = typeof(IntakeMapping);
-
-                        // Change the static property value.
-#pragma warning disable CS8602 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8604 // Possible null reference argument.
-                        PropertyInfo intakePropInfo = intakeType.GetProperty(intakeProperty);
-#pragma warning restore CS8604 // Possible null reference argument.
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-
-                        if (intakePropInfo != null)
-                        {
-                            intakePropInfo.SetValue(intakeMapping, dataValue.Value.ToString());
-                        }
-#pragma warning restore CS8602 // Converting null literal or possible null value to non-nullable type.
+                        Type intakeType = typeof(IntakeMapping);                        
+                        PropertyInfo? intakePropInfo = intakeType.GetProperty(dataKey!);
+                        intakePropInfo?.SetValue(intakeMapping, dataValue?.ToString());
                     }
                 }
             }
@@ -159,6 +148,8 @@ namespace Unity.GrantManager.Intakes
         public string? ConfirmationId { get; set; }
         public string? SubmissionId { get; set; }
         public string? SubmissionDate { get; set; }
+        public string? City { get; internal set; }
+        public string? EconomicRegion { get; internal set; }
     }
 
     public static class MapperExtensions

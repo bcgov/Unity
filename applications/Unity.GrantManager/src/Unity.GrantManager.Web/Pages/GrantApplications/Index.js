@@ -297,8 +297,8 @@
                 },
                 { //3
                     title: 'Category',
-                    data: 'projectName',
-                    name: 'projectName',
+                    data: 'category',
+                    name: 'category',
                     className: 'data-table-header',
                 },
                 { //4
@@ -313,24 +313,30 @@
                     },
                 },
                 { //5
+                    title: 'Project Name',
+                    data: 'projectName',
+                    name: 'projectName',
+                    className: 'data-table-header',
+                },                               
+                { //6
                     title: 'Sector',
                     name: 'sector',
                     className: 'data-table-header',
-                    visible: false,
-                    render: function (data) {
-                        return '';
-                    },
-                },
-                { //6
-                    title: 'Total Project Budget',
-                    name: 'totalProjectBudget',
-                    className: 'data-table-header',
-                    visible: false,
+                    visible: true,
                     render: function (data) {
                         return '';
                     },
                 },
                 { //7
+                    title: 'Total Project Budget',
+                    name: 'totalProjectBudget',
+                    className: 'data-table-header',
+                    visible: true,
+                    render: function (data) {
+                        return '';
+                    },
+                },
+                { //8
                     title: l('Assignee'),
                     data: 'assignees',
                     name: 'assignees',
@@ -348,20 +354,20 @@
                         return disaplayText;
                     },
                 },
-                { //8
+                { //9
                     title: l('GrantApplicationStatus'),
                     data: 'status',
                     name: 'status',
                     className: 'data-table-header',
                     render: function (data) {
                         let disaplayText = ' ';
-                        if (data != null && data.length >= 0) {
+                        if (data != null) {
                             disaplayText = data;
                         }
                         return disaplayText;
                     },
                 },
-                { //9
+                { //10
                     title: l('RequestedAmount'),
                     data: 'requestedAmount',
                     name: 'requestedAmount',
@@ -370,7 +376,7 @@
                         return formatter.format(data);
                     },
                 },
-                { //10
+                { //11
                     title: 'Final Decision Date',
                     name: 'finalDecisionDate',
                     className: 'data-table-header',
@@ -379,7 +385,7 @@
                         return '';
                     },
                 },
-                { //11
+                { //12
                     title: 'Approved Amount',
                     name: 'approved Amount',
                     data: 'eligibleAmount',
@@ -388,6 +394,20 @@
                     render: function (data) {
                         return formatter.format(data);
                     },
+                },
+                { //13
+                    title: 'Economic Region',
+                    name: 'economic Region',
+                    data: 'economicRegion',
+                    className: 'data-table-header',
+                    visible: true,
+                },
+                { //14
+                    title: 'City',
+                    name: 'city',
+                    data: 'city',
+                    className: 'data-table-header',
+                    visible: true,
                 },
             ],
         })

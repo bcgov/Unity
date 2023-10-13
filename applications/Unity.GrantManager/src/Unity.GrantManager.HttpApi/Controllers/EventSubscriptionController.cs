@@ -24,15 +24,14 @@ namespace Unity.GrantManager.Controllers
         [HttpPost]
         public async Task<dynamic> PostEventSubscriptionAsync([FromBody] EventSubscriptionDto eventSubscriptionDto)
         {
-
-            switch(eventSubscriptionDto.SubscriptionEvent) 
+            switch (eventSubscriptionDto.SubscriptionEvent) 
             {
-            case ChefsEventTypesConsts.FORM_SUBMITTED:
-                return await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto);
-            case  ChefsEventTypesConsts.FORM_PUBLISHED:
-                return await _iChefsEventSubscriptionService.CreateIntakeMappingAsync(eventSubscriptionDto);
-            default:
-                return await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto);
+                case ChefsEventTypesConsts.FORM_SUBMITTED:
+                    return await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto);
+                case  ChefsEventTypesConsts.FORM_PUBLISHED:
+                    return await _iChefsEventSubscriptionService.CreateIntakeMappingAsync(eventSubscriptionDto);
+                default:
+                    return await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto);
             }
         }
     }

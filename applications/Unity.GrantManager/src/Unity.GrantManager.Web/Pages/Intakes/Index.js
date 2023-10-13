@@ -13,7 +13,7 @@
             order: [[1, "asc"]],
             searching: false,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(unity.grantManager.intake.intake.getList),
+            ajax: abp.libs.datatables.createAjax(unity.grantManager.intakes.intake.getList),
             columnDefs: [
                 {
                     title: l('Intake'),

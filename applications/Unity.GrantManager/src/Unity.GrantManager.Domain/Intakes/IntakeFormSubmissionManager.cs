@@ -66,7 +66,11 @@ namespace Unity.GrantManager.Intakes
                     ApplicationStatusId = (await _applicationStatusRepository.FirstAsync(s => s.StatusCode == "SUBMITTED")).Id,
                     ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID Missing}",
                     RequestedAmount = double.Parse(intakeMap.RequestedAmount ?? "0"),
-                    SubmissionDate = DateTime.Parse(intakeMap.SubmissionDate ?? DateTime.UtcNow.ToString(), CultureInfo.InvariantCulture)
+                    SubmissionDate = DateTime.Parse(intakeMap.SubmissionDate ?? DateTime.UtcNow.ToString(), CultureInfo.InvariantCulture),
+                    City = intakeMap.City ?? "{City Missing}",
+                    EconomicRegion = intakeMap.EconomicRegion ?? "{Economic Region Missing}",
+                    TotalProjectBudget = double.Parse(intakeMap.TotalProjectBudget ?? "0"),
+                    Sector = intakeMap.Sector ?? "{Sector Missing}"
                 }
             );
         }
@@ -81,6 +85,5 @@ namespace Unity.GrantManager.Intakes
                     ApplicantName = applicantName ?? "{Applicant Name Missing}",
                 });
         }
-
     }
 }
