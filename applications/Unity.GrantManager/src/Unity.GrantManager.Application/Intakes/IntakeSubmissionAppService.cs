@@ -45,7 +45,7 @@ namespace Unity.GrantManager.Intakes
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault() ?? throw new EntityNotFoundException("Application Form Not Registered");
 
-            JObject submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();            
+            JObject submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
 
             // If there are no mappings on the headers then initialize the mappings
             if (applicationForm.AvailableChefsFields == null)
@@ -53,19 +53,22 @@ namespace Unity.GrantManager.Intakes
                 JToken? token = submissionData.SelectToken("submission.formVersionId");
                 if (token != null)
                 {
-                    using var uow = _unitOfWorkManager.Begin();
-                    {
-                        Guid formVersionId = Guid.Parse(token.ToString());
-                        var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, formVersionId) ?? throw new InvalidFormDataSubmissionException();
-                        applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
-                        await _applicationFormRepository.UpdateAsync(applicationForm);
-                        await uow.SaveChangesAsync();
-                    }
+                    await StoreChefsFieldMappingAsync(eventSubscriptionDto, applicationForm, token);
                 }
             }
 
             var result = await _intakeFormSubmissionManager.ProcessFormSubmissionAsync(applicationForm, submissionData);
             return new EventSubscriptionConfirmationDto() { ConfirmationId = result };
+        }
+
+        private async Task StoreChefsFieldMappingAsync(EventSubscriptionDto eventSubscriptionDto, ApplicationForm applicationForm, JToken token)
+        {
+            var uow = _unitOfWorkManager.Begin();
+            Guid formVersionId = Guid.Parse(token.ToString());
+            var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, formVersionId) ?? throw new InvalidFormDataSubmissionException();
+            applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
+            await _applicationFormRepository.UpdateAsync(applicationForm);
+            await uow.SaveChangesAsync();
         }
     }
 }
