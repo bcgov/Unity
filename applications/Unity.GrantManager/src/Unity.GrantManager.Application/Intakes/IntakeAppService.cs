@@ -5,7 +5,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 
-namespace Unity.GrantManager.Intake
+namespace Unity.GrantManager.Intakes
 {
     [Authorize(GrantManagerPermissions.Intakes.Default)]
     public class IntakeAppService :

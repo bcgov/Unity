@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace Unity.GrantManager.Intake;
+namespace Unity.GrantManager.Intakes;
 
 [Serializable]
 public class ApiException : Exception

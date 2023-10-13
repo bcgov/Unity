@@ -10,5 +10,6 @@ namespace Unity.GrantManager.Forms
         public string? ChefsApplicationFormGuid { get; set; }
         public string? ChefsCriteriaFormGuid { get; set; }
         public string? ApiKey { get; set; }
+        public string? SubmissionHeaderMapping { get; set; }
     }
 }
