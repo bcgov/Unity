@@ -73,7 +73,7 @@ $(function () {
     async function getSubmission() {
         try {
             let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-            unity.grantManager.intake.submission
+            unity.grantManager.intakes.submission
                 .getSubmission(submissionId)
                 .done(function (result) {
                     console.log(result);
@@ -215,7 +215,7 @@ $(function () {
     $('#printPdf').click(function () {
 
         let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-        unity.grantManager.intake.submission
+        unity.grantManager.intakes.submission
             .getSubmission(submissionId)
             .done(function (result) {
                 
