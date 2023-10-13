@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace Unity.GrantManager.Intake;
+namespace Unity.GrantManager.Intakes;
 
 /// <summary>
 /// Represents a collection of functions to interact with the CHEFS Form API endpoints

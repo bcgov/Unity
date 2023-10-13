@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -99,7 +99,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             {
                 IntakeId = spaceFarmsIntake1.Id,
                 ApplicationFormName = "Integration Tests Form 1",
-                ChefsApplicationFormGuid = "123456",
+                ChefsApplicationFormGuid = "ca4eab41-b655-40c8-870b-5d3b0d5b68e6",
+                ApiKey = "",
                 ChefsCriteriaFormGuid = "213121"
             },
             autoSave: true

@@ -5,7 +5,7 @@ using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.Intake;
+using Unity.GrantManager.Intakes;
 
 namespace Unity.GrantManager;
 

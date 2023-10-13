@@ -1,19 +1,16 @@
 ﻿using System;
-using System.ComponentModel;
+using Volo.Abp.Application.Dtos;
 
-namespace Unity.GrantManager.Intake
+namespace Unity.GrantManager.Intakes
 {
-    public class CreateUpdateIntakeDto
+    public class IntakeDto : AuditedEntityDto<Guid>
     {
         public decimal Budget { get; set; }
 
-        [DisplayName("Common:StartDate")]        
         public DateTime StartDate { get; set; }
 
-        [DisplayName("Common:EndDate")]
         public DateTime EndDate { get; set; }
 
-        [DisplayName("Common:Name")]
         public string IntakeName { get; set; } = string.Empty;
     }
 }
