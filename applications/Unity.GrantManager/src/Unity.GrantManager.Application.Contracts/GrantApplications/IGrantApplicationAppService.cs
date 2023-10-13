@@ -14,6 +14,6 @@ namespace Unity.GrantManager.GrantApplications
             CreateUpdateGrantApplicationDto>, ICommentsService
     {
         Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id);
-        Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId);
+        Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false);
     }
 }

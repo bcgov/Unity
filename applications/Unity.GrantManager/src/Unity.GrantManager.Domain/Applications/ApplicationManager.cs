@@ -33,7 +33,7 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         stateMachine.Configure(GrantApplicationState.SUBMITTED)
             .SubstateOf(GrantApplicationState.OPEN)
-            .Permit(GrantApplicationAction.Assign, GrantApplicationState.ASSIGNED);                               // 2.1 - Assign;            Role: Team Lead
+            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED);                      // 2.1 - Internal_Assign;            Role: Team Lead
 
         stateMachine.Configure(GrantApplicationState.ASSIGNED)
             .SubstateOf(GrantApplicationState.OPEN)
@@ -84,7 +84,8 @@ public class ApplicationManager : DomainService, IApplicationManager
             new ApplicationActionResultItem
             {
                 ApplicationAction = trigger,
-                IsPermitted = permittedActions.Contains(trigger)
+                IsPermitted = permittedActions.Contains(trigger),
+                IsInternal = trigger.ToString().StartsWith("Internal_")
             })
             .OrderBy(x => (int) x.ApplicationAction)
             .ToList();
@@ -110,7 +111,6 @@ public class ApplicationManager : DomainService, IApplicationManager
         
         // NOTE: Is this required or can the navigation property be set on its own?
         application.ApplicationStatusId = statusChangedTo.Id;
-        application.ApplicationStatus = statusChangedTo;
 
         return await _applicationRepository.UpdateAsync(application);
     }

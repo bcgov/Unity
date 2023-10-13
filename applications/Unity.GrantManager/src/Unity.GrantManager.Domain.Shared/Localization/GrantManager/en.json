@@ -130,7 +130,6 @@
     "ApplicationForms:ChefsFormApiKey": "CHEFS Form Api Key",
 
     "Intakes": "Intakes",
-    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
 
     "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
     "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
@@ -143,7 +142,7 @@
     "GrantApplication:ActionButtonName": "Status Actions",
     "Enum:GrantApplicationAction.Open": "Open",
     "Enum:GrantApplicationAction.Submit": "Submit",
-    "Enum:GrantApplicationAction.Assign": "Assign",
+    "Enum:GrantApplicationAction.Internal_Assign": "Assign",
     "Enum:GrantApplicationAction.StartReview": "Start Review",
     "Enum:GrantApplicationAction.CompleteReview": "Complete Review",
     "Enum:GrantApplicationAction.StartAssessment": "Start Assessment",

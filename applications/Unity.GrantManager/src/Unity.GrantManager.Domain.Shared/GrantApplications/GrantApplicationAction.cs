@@ -9,7 +9,7 @@ public enum GrantApplicationAction
     Open,
     Submit,
 
-    Assign,
+    Internal_Assign,
 
     StartAssessment,
     CompleteAssessment,

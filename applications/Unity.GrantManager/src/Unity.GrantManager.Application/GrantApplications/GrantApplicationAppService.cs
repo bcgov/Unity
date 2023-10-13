@@ -287,13 +287,19 @@ public class GrantApplicationAppService :
     /// </summary>
     /// <param name="applicationId">The application</param>
     /// <returns>A list of application actions with their state machine permitted and authorization status.</returns>
-    public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId)
+    public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false)
     {
         var actionList = await _applicationManager.GetActions(applicationId);
-        var actionDtos = ObjectMapper.Map<List<ApplicationActionResultItem>, List<ApplicationActionDto>>(actionList);
+
+        // Note: Remove internal state change actions that are side-effects of domain events
+        var externalActionsList = actionList.Where(a => includeInternal || !a.IsInternal).ToList();
+        var actionDtos = ObjectMapper.Map<
+            List<ApplicationActionResultItem>, 
+            List<ApplicationActionDto>>(externalActionsList);
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // TODO: Replace placeholder loop with authorization handler mapped to permissions
+        // AUTHORIZATION HANDLING
         actionDtos.ForEach(item => { item.IsAuthorized = true; });
 
         return new ListResultDto<ApplicationActionDto>(actionDtos);
@@ -307,6 +313,7 @@ public class GrantApplicationAppService :
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
         var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
+        // TODO: AUTHORIZATION HANDLING
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
     #endregion APPLICATION WORKFLOW
