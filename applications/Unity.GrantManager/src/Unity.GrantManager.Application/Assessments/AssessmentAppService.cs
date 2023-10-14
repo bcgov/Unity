@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
@@ -14,6 +16,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Identity;
 using Volo.Abp.Users;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -188,5 +191,30 @@ namespace Unity.GrantManager.Assessments
             return new OperationAuthorizationRequirement { Name = $"{GrantApplicationPermissions.Assessments.Default}.{triggerAction}" };
         }
         #endregion ASSESSMENT WORKFLOW
+
+        public async Task UpdateAssessmentScore(AssessmentScoresDto input)
+        {
+            try
+            {
+                var assessment = await _assessmentRepository.GetAsync(input.AssessmentId);
+                if (assessment != null)
+                {
+                    assessment.FinancialAnalysis = input.FinancialAnalysis;
+                    assessment.EconomicImpact = input.EconomicImpact;
+                    assessment.InclusiveGrowth = input.InclusiveGrowth;
+                    assessment.CleanGrowth = input.CleanGrowth;
+                    await _assessmentRepository.UpdateAsync(assessment);
+                }
+                else
+                {
+                    throw new AbpValidationException("AssessmentId Not Found: " + input.AssessmentId + ".");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new AbpValidationException(ex.Message, ex);
+            }
+            
+        }
     }
 }
