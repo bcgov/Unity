@@ -20,3 +20,12 @@
         console.log(error);
     }
 };
+
+function enableSaveButton(inputText) {
+    if (inputText.value.trim() != "") {
+        $('#saveAssessmentScoresBtn').prop('disabled', false);
+    } else {
+        $('#saveAssessmentScoresBtn').prop('disabled', true);
+    }
+    
+}

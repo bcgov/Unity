@@ -14,27 +14,27 @@
                 <tr>
                     <td>
                         Financial Analysis
-                    <input type="number" size="10" name="FinancialAnalysis" id="financialAnalysis" value="@Model.FinancialAnalysis" />
+                    <input type="number" size="10" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" value="@Model.FinancialAnalysis" />
                     </td>
                     <td style="float:right">                    
                         Economic Impact
-                    <input type="number" size="10" name="EconomicImpact" id="economicImpact" value="@Model.EconomicImpact" />
+                    <input type="number" size="10" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" value="@Model.EconomicImpact" />
                     </td>
                 </tr>
                 <tr>
                     <td>
                         Inclusive Growth
-                    <input type="number" size="10" name="InclusiveGrowth" id="inclusiveGrowth" value="@Model.InclusiveGrowth" />
+                    <input type="number" size="10" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" value="@Model.InclusiveGrowth" />
                     </td>
                     <td style ="float:right">
                         Clean Growth
-                    <input type="number" size="10" name="CleanGrowth" id="cleanGrowth" value="@Model.CleanGrowth" />
+                    <input type="number" size="10" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" value="@Model.CleanGrowth" />
                     </td>
                 </tr>
                 <tr>
                     <td></td>
                     <td style="float:right">
-                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" style="margin:20px" />
+                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" style="margin:20px" />
                     </td>
                 </tr>
             </table>
