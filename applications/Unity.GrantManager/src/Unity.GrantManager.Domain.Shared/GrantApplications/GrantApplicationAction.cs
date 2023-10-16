@@ -11,11 +11,11 @@ public enum GrantApplicationAction
 
     Internal_Assign,
 
-    StartAssessment,
-    CompleteAssessment,
-
     StartReview,
     CompleteReview,
+
+    StartAssessment,
+    CompleteAssessment,
 
     // Closing Actions
     Approve,
