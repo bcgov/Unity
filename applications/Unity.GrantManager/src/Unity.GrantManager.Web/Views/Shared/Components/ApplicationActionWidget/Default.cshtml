@@ -9,24 +9,22 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 
-<div id="AppActionDropdownWidget">
-    <abp-dropdown>
-        <abp-dropdown-button 
-            button-type="Light"
-            text="@L["GrantApplication:ActionButtonName"].Value" />
-        <ul class="dropdown-menu">
-            @foreach (var item in Model.ApplicationActions.Items.Where(x => x.IsAuthorized))
-            {
-                <li>
-                    <abp-button id="@($"Application_{item.ApplicationAction}Button")"
-                                button-type="Light"
-                                class="dropdown-item details-dropdown-action"
-                                disabled=@(!item.IsPermitted)
-                                data-app-action="@item.ApplicationAction.ToString()">
-                        @L[$"Enum:GrantApplicationAction.{item.ApplicationAction}"].Value
-                    </abp-button>
-                </li>
-            }
-        </ul>
-    </abp-dropdown>
-</div>
+<abp-dropdown id="ApplicationActionDropdown">
+    <abp-dropdown-button 
+        button-type="Light"
+        text="@L["GrantApplication:ActionButtonName"].Value" />
+    <ul class="dropdown-menu">
+        @foreach (var item in Model.ApplicationActions.Items.Where(x => x.IsAuthorized))
+        {
+            <li>
+                <abp-button id="@($"Application_{item.ApplicationAction}Button")"
+                            button-type="Light"
+                            class="dropdown-item details-dropdown-action"
+                            disabled=@(!item.IsPermitted)
+                            data-app-action="@item.ApplicationAction.ToString()">
+                    @L[$"Enum:GrantApplicationAction.{item.ApplicationAction}"].Value
+                </abp-button>
+            </li>
+        }
+    </ul>
+</abp-dropdown>

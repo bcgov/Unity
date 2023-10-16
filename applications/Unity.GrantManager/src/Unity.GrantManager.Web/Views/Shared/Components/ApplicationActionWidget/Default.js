@@ -8,7 +8,9 @@
             $actionButtons.each(function () {
                 let $this = $(this);
                 $this.on("click", function () {
-                    let triggerAction = $(this).data("appAction");
+                    $(this).buttonBusy();
+                    $('#ApplicationActionDropdown .dropdown-toggle').buttonBusy();
+                    let triggerAction = $(this).data('appAction');
                     unity.grantManager.grantApplications.grantApplication
                         .triggerAction(widgetAppId, triggerAction, {})
                         .then(function (result) {
