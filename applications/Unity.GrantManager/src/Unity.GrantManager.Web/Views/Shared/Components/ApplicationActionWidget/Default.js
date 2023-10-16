@@ -1,37 +1,37 @@
-﻿const detailsActionBarAppId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
+﻿(function () {
+    abp.widgets.ApplicationActionWidget = function ($wrapper) {
+        let widgetManager = $wrapper.data('abp-widget-manager');
+        let $actionButtons = $wrapper.find('.details-dropdown-action');
+        let widgetAppId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
 
-$(function () {
-
-    // TODO: REAPPLY ON REFRESH - THIS IS CURRENTLY BROKEN
-    // NOTE: ENSURE DEBOUNCE
-    $('.details-dropdown-action').each(function () {
-        let $this = $(this);
-        $this.on("click", function () {
-            let triggerAction = $(this).data("appAction");
-            console.log(triggerAction); // TODO: Remove after debugging
-            executeApplicationAction(detailsActionBarAppId, triggerAction);
-        });
-
-    });
-});
-
-function executeApplicationAction(assessmentId, triggerAction) {
-    unity.grantManager.grantApplications.grantApplication.triggerAction(assessmentId, triggerAction, {})
-        .then(function (result) {
-            // TODO: PUBSUB & REFRESH WIDGET
-            abp.notify.success(
-                l(`Enum:GrantApplicationAction.${triggerAction}`),
-                "Application Status Changed"
-            );
-            applicationActionManager.refresh();
-        });
-}
-
-let applicationActionManager = new abp.WidgetManager({
-    wrapper: '#DetailsActionBarStart', // TODO: Find way to refrence self
-    filterCallback: function () {
-        return {
-            'applicationId': detailsActionBarAppId
+        function init (filters) {
+            $actionButtons.each(function () {
+                let $this = $(this);
+                $this.on("click", function () {
+                    let triggerAction = $(this).data("appAction");
+                    unity.grantManager.grantApplications.grantApplication
+                        .triggerAction(widgetAppId, triggerAction, {})
+                        .then(function (result) {
+                            // TODO: PUBSUB & REFRESH WIDGET
+                            widgetManager.refresh();
+                            abp.notify.success(
+                                l(`Enum:GrantApplicationAction.${triggerAction}`),
+                                "Application Status Changed"
+                            );
+                        });
+                });
+            });
         };
-    }
-});
+
+        function getFilters() {
+            return {
+                applicationId: widgetAppId
+            };
+        }
+
+        return {
+            init: init,
+            getFilters: getFilters
+        };
+    };
+})();

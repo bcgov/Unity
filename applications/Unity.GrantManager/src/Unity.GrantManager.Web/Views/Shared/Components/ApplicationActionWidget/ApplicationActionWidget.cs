@@ -7,7 +7,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationActionWidget;
 
-[ViewComponent(Name = "AppActionDropdown")]
+[ViewComponent(Name = "ApplicationActionWidget")]
 [Widget(
     ScriptFiles = new[] { "/Views/Shared/Components/ApplicationActionWidget/Default.js" },
     StyleFiles = new[] { "/Views/Shared/Components/ActionBar/Default.css" },
