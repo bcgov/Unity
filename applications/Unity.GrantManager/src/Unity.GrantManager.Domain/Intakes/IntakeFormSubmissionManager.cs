@@ -60,17 +60,17 @@ namespace Unity.GrantManager.Intakes
             return await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = intakeMap.ProjectName ?? "{Project Name Missing}",
+                    ProjectName = intakeMap.ProjectName ?? "{Project Name}",
                     ApplicantId = (await CreateApplicantAsync(intakeMap.ApplicantName)).Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = (await _applicationStatusRepository.FirstAsync(s => s.StatusCode == "SUBMITTED")).Id,
-                    ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID Missing}",
+                    ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
                     RequestedAmount = double.Parse(intakeMap.RequestedAmount ?? "0"),
                     SubmissionDate = DateTime.Parse(intakeMap.SubmissionDate ?? DateTime.UtcNow.ToString(), CultureInfo.InvariantCulture),
-                    City = intakeMap.City ?? "{City Missing}",
-                    EconomicRegion = intakeMap.EconomicRegion ?? "{Economic Region Missing}",
+                    City = intakeMap.City ?? "{City}", // To be determined from the applicant
+                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", // TBD how to calculate this - spacial lookup?
                     TotalProjectBudget = double.Parse(intakeMap.TotalProjectBudget ?? "0"),
-                    Sector = intakeMap.Sector ?? "{Sector Missing}"
+                    Sector = intakeMap.Sector ?? "{Sector}" // TBD how to calculate this
                 }
             );
         }
@@ -82,7 +82,7 @@ namespace Unity.GrantManager.Intakes
             else
                 return await _applicantRepository.InsertAsync(new Applicant
                 {
-                    ApplicantName = applicantName ?? "{Applicant Name Missing}",
+                    ApplicantName = applicantName ?? "{Applicant Name}",
                 });
         }
     }
