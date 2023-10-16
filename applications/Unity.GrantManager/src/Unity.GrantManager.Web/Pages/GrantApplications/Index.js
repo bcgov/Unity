@@ -316,24 +316,24 @@
                     title: 'Project Name',
                     data: 'projectName',
                     name: 'projectName',
-                    className: 'data-table-header',
+                    className: 'data-table-header',                    
                 },                               
                 { //6
                     title: 'Sector',
                     name: 'sector',
+                    data: 'sector',
                     className: 'data-table-header',
-                    visible: true,
                     render: function (data) {
-                        return '';
+                        return data ?? '{Sector}';
                     },
                 },
                 { //7
                     title: 'Total Project Budget',
                     name: 'totalProjectBudget',
-                    className: 'data-table-header',
-                    visible: true,
+                    data: 'totalProjectBudget',
+                    className: 'data-table-header',                    
                     render: function (data) {
-                        return '';
+                        return formatter.format(data);
                     },
                 },
                 { //8
@@ -343,71 +343,71 @@
                     className: 'dt-editable',
                     createdCell: createdCell,
                     render: function (data, type, row) {
-                        let disaplayText = ' ';
+                        let displayText = ' ';
 
                         if (data != null && data.length == 1) {
-                            disaplayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
+                            displayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
                         } else if (data.length > 1) {
-                            disaplayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
+                            displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
                         }
 
-                        return disaplayText;
+                        return displayText;
                     },
                 },
                 { //9
                     title: l('GrantApplicationStatus'),
                     data: 'status',
                     name: 'status',
-                    className: 'data-table-header',
+                    className: 'data-table-header',                    
                     render: function (data) {
-                        let disaplayText = ' ';
+                        let displayText = ' ';
                         if (data != null) {
-                            disaplayText = data;
+                            displayText = data;
                         }
-                        return disaplayText;
+                        return displayText;
                     },
                 },
                 { //10
                     title: l('RequestedAmount'),
                     data: 'requestedAmount',
                     name: 'requestedAmount',
-                    className: 'data-table-header',
+                    className: 'data-table-header',                    
                     render: function (data) {
                         return formatter.format(data);
                     },
                 },
+                //{ // -- 
+                //    title: 'Final Decision Date',
+                //    name: 'finalDecisionDate',
+                //    className: 'data-table-header',
+                //    visible: false,                    
+                //},
                 { //11
-                    title: 'Final Decision Date',
-                    name: 'finalDecisionDate',
-                    className: 'data-table-header',
-                    visible: false,
-                    render: function (data) {
-                        return '';
-                    },
-                },
-                { //12
                     title: 'Approved Amount',
                     name: 'approved Amount',
                     data: 'eligibleAmount',
-                    className: 'data-table-header',
-                    visible: false,
+                    className: 'data-table-header',                    
                     render: function (data) {
                         return formatter.format(data);
                     },
                 },
-                { //13
+                { //12
                     title: 'Economic Region',
                     name: 'economic Region',
                     data: 'economicRegion',
                     className: 'data-table-header',
-                    visible: true,
+                    render: function (data) {
+                        return data ?? '{Region}';
+                    },
                 },
-                { //14
+                { //13
                     title: 'City',
                     name: 'city',
                     data: 'city',
                     className: 'data-table-header',
-                    visible: true,
+                    render: function (data) {
+                        return data ?? '{City}';
+                    },
                 },
             ],
         })
