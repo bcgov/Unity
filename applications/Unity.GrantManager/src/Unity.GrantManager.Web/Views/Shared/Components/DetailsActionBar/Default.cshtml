@@ -1,5 +1,12 @@
+@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationActionWidget;
+
+@inject IStringLocalizer<GrantManagerResource> L
+
 <div class="action-bar p-2">
     <div id="DetailsActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
+        @await Component.InvokeAsync(typeof(ApplicationActionWidget), new { applicationId = @Model.ApplicationId })
         @* Items are included here through the Review List JS*@
     </div>
     <div id="DetailsActionBarEnd" class="d-flex align-items-stretch justify-content-end gap-2">
