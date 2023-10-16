@@ -53,7 +53,11 @@ public class AssessmentRepository : EfCoreRepository<GrantManagerDbContext, Asse
                     EndDate = assessment.EndDate,
                     Status = assessment.Status,
                     IsComplete = assessment.IsComplete,
-                    ApprovalRecommended = assessment.ApprovalRecommended
+                    ApprovalRecommended = assessment.ApprovalRecommended,
+                    FinancialAnalysis = assessment.FinancialAnalysis,
+                    EconomicImpact = assessment.EconomicImpact,
+                    InclusiveGrowth = assessment.InclusiveGrowth,
+                    CleanGrowth = assessment.CleanGrowth
                 });
 
         return await query.ToListAsync();
