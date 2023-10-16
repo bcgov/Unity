@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
@@ -192,22 +190,22 @@ namespace Unity.GrantManager.Assessments
         }
         #endregion ASSESSMENT WORKFLOW
 
-        public async Task UpdateAssessmentScore(AssessmentScoresDto input)
+        public async Task UpdateAssessmentScore(AssessmentScoresDto dto)
         {
             try
             {
-                var assessment = await _assessmentRepository.GetAsync(input.AssessmentId);
+                var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
                 if (assessment != null)
                 {
-                    assessment.FinancialAnalysis = input.FinancialAnalysis;
-                    assessment.EconomicImpact = input.EconomicImpact;
-                    assessment.InclusiveGrowth = input.InclusiveGrowth;
-                    assessment.CleanGrowth = input.CleanGrowth;
+                    assessment.FinancialAnalysis = dto.FinancialAnalysis;
+                    assessment.EconomicImpact = dto.EconomicImpact;
+                    assessment.InclusiveGrowth = dto.InclusiveGrowth;
+                    assessment.CleanGrowth = dto.CleanGrowth;
                     await _assessmentRepository.UpdateAsync(assessment);
                 }
                 else
                 {
-                    throw new AbpValidationException("AssessmentId Not Found: " + input.AssessmentId + ".");
+                    throw new AbpValidationException("AssessmentId Not Found: " + dto.AssessmentId + ".");
                 }
             }
             catch (Exception ex)

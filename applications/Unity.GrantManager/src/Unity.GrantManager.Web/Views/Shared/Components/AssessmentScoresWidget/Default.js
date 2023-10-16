@@ -2,9 +2,9 @@
     try {
         let data = {
             "financialAnalysis": $("#financialAnalysis").val(),
-            "economicImpact": $("#financialAnalysis").val(),
+            "economicImpact": $("#economicImpact").val(),
             "inclusiveGrowth": $("#inclusiveGrowth").val(),
-            "cleanGrowth": $("#inclusiveGrowth").val(),
+            "cleanGrowth": $("#cleanGrowth").val(),
             "assessmentId": $("#AssessmentId").val(),
         }        
         unity.grantManager.assessments.assessment.updateAssessmentScore(data)
