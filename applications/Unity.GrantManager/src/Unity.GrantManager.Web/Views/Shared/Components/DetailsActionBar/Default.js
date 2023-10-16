@@ -1,40 +1,27 @@
-const detailsActionBarAppId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
 $(function () {
-    $('.details-dropdown-action').each(function () {
-        let $this = $(this);
-        $this.on("click", function () {
-            let triggerAction = $(this).data("appAction");
-            console.log(triggerAction); // TODO: Remove after debugging
-            executeApplicationAction(detailsActionBarAppId, triggerAction);
-            // TODO: REFRESH WIDGET
-        });
-        
-    });
+    let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());
 
-    // Older functions, may be obsolete
-    let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());    
-    
     let approveApplicationsModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
     });
 
     let dontApproveApplicationsModal = new abp.ModalManager({
         viewUrl: '../Approve/ApproveApplicationsModal'
-    });       
-    
+    });
+
     approveApplicationsModal.onResult(function () {
         abp.notify.success(
             'This application has been successfully approved',
             'Approve Application'
-        );        
+        );
     });
     dontApproveApplicationsModal.onResult(function () {
         abp.notify.success(
             'This application has now been disapproved',
             'Not Approve Application'
-        );        
+        );
     });
-           
+
     $('#approveApplicationsDetails').click(function () {
         approveApplicationsModal.open({
             applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
@@ -47,7 +34,7 @@ $(function () {
         dontApproveApplicationsModal.open({
             applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
             operation: 'GRANT_NOT_APPROVED',
-            message: 'Are you sure you want to disapprove this application?', 
+            message: 'Are you sure you want to disapprove this application?',
             title: 'Not Approve Applications',
         });
     });
@@ -92,14 +79,3 @@ $(function () {
         });
     });
 });
-
-function executeApplicationAction(assessmentId, triggerAction) {
-    unity.grantManager.grantApplications.grantApplication.triggerAction(assessmentId, triggerAction, {})
-        .then(function (result) {
-            // TODO: PUBSUB & REFRESH WIDGET
-            abp.notify.success(
-                l(`Enum:GrantApplicationAction.${triggerAction}`),
-                "Application Status Changed"
-            );
-        });
-}
