@@ -4,6 +4,10 @@
     }
 }
 
+.application-details-container {
+    width: 100%;
+}
+
 .card-header {
     padding-bottom: 1.5rem !important;
 }
@@ -264,6 +268,7 @@ select.selected{
 .details-scrollable {
     overflow-y: scroll;
     height: calc(100vh - 240px);
+    margin-right: -6px;
 }
 
 #detailsTabContent {

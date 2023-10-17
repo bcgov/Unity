@@ -73,7 +73,7 @@ $(function () {
     async function getSubmission() {
         try {
             let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-            unity.grantManager.intake.submission
+            unity.grantManager.intakes.submission
                 .getSubmission(submissionId)
                 .done(function (result) {
                     console.log(result);
@@ -215,7 +215,7 @@ $(function () {
     $('#printPdf').click(function () {
 
         let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-        unity.grantManager.intake.submission
+        unity.grantManager.intakes.submission
             .getSubmission(submissionId)
             .done(function (result) {
                 
@@ -344,7 +344,8 @@ function uploadFiles(inputId, urlStr, channel) {
                     'File Upload Is Successful'
 
                 ); 
-                PubSub.publish(channel);  
+                PubSub.publish(channel);
+                input.value = null;
             },
             error: function (data) {
                 abp.notify.error(
@@ -352,6 +353,7 @@ function uploadFiles(inputId, urlStr, channel) {
                     'File Upload Not Successful'
                 );
                 PubSub.publish(channel);
+                input.value = null;
             }
         }
     );

@@ -296,6 +296,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("ApplicationStatusId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("City")
+                        .HasColumnType("text");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(40)
@@ -309,6 +312,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid?>("CreatorId")
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
+
+                    b.Property<string>("EconomicRegion")
+                        .HasColumnType("text");
 
                     b.Property<double>("EligibleAmount")
                         .HasColumnType("double precision");
@@ -333,7 +339,7 @@ namespace Unity.GrantManager.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
-                    b.Property<DateTime>("ProposalDate")
+                    b.Property<DateTime?>("ProposalDate")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ReferenceNo")
@@ -343,8 +349,14 @@ namespace Unity.GrantManager.Migrations
                     b.Property<double>("RequestedAmount")
                         .HasColumnType("double precision");
 
+                    b.Property<string>("Sector")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("SubmissionDate")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<double>("TotalProjectBudget")
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
@@ -432,6 +444,12 @@ namespace Unity.GrantManager.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
+                    b.Property<string>("AvailableChefsFields")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
+
                     b.Property<string>("ChefsApplicationFormGuid")
                         .HasColumnType("text");
 
@@ -480,6 +498,12 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<string>("SubmissionHeaderMapping")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("Version")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
