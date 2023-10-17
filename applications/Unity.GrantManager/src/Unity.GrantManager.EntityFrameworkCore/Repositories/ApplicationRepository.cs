@@ -34,7 +34,6 @@ public class ApplicationRepository : EfCoreRepository<GrantManagerDbContext, App
             .ToListAsync();
     }
 
-    // TODO: Add query parameters
     public async Task<List<Application>> GetDetailsListAsync()
     {
         return await (await GetDbSetAsync())
