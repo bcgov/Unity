@@ -158,16 +158,6 @@ public class GrantManagerDataSeederContributor
             }, autoSave: true
         );
 
-        ApplicationStatus? status1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.IN_PROGRESS);
-        status1 ??= await _applicationStatusRepository.InsertAsync(
-            new ApplicationStatus
-            {
-                StatusCode = ApplicationStatusConsts.IN_PROGRESS,
-                ExternalStatus = "In progress",
-                InternalStatus = "In progress"
-            }
-        );
-
         ApplicationStatus? status2 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.SUBMITTED);
         status2 ??= await _applicationStatusRepository.InsertAsync(
             new ApplicationStatus

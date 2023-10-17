@@ -337,3 +337,8 @@ div.dataTables_wrapper div.dataTables_length label {
 .modal-dialog .modal-footer .btn {
     min-height: 2.7rem;
 }
+
+.dropdown-toggle {
+    background-color: var(--bc-colors-grey-pressed) !important;
+    color: var(--bc-colors-grey-text-500)!important;
+}

@@ -131,10 +131,10 @@ $(function () {
 
     if (abp.auth.isGranted('GrantApplicationManagement.Assessments.Create')) {
         let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
-        createButtons.container().appendTo("#DetailsActionBarStart");
+        createButtons.container().prependTo("#DetailsActionBarStart");
     }
 
-    reviewListTable.buttons(0, null).container().appendTo("#DetailsActionBarStart");
+    reviewListTable.buttons(0, null).container().prependTo("#DetailsActionBarStart");
     $("#DetailsActionBarStart .dt-buttons").contents().unwrap();
 
     reviewListTable.on('select', function (e, dt, type, indexes) {

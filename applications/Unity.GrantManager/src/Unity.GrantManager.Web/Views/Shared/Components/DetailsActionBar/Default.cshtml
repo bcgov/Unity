@@ -10,6 +10,24 @@
 <div class="action-bar p-2">
     <div id="DetailsActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
         @* Items are included here through the Review List JS*@
+        <abp-dropdown>
+            <abp-dropdown-button  button-type="Light" class="status-actions" text="Status Actions" />
+            <abp-dropdown-menu>
+              
+                @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Approvals.Complete))
+                {
+                    <abp-dropdown-item href="#" id="approveApplicationsDetails">
+                        <i class="fl fl-like"> @L["ApplicationList:ApprovedButton"].Value</i>
+                    </abp-dropdown-item>
+                    <abp-dropdown-item href="#" id="disApproveApplicationsDetails">
+                        <i class="fl fl-dislike"> @L["ApplicationList:NotApprovedButton"].Value</i>
+                  
+                    </abp-dropdown-item>
+                }
+                </abp-dropdown-menu>
+
+        </abp-dropdown>
+       
     </div>
     <div id="DetailsActionBarEnd" class="d-flex align-items-stretch justify-content-end gap-2">
         <abp-button text="@L["ApplicationList:CopyLinkButton"].Value"
