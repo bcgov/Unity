@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -66,6 +66,17 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             new Applicant
             {
                 ApplicantName = "Integration Tester 1"
+            },
+            autoSave: true
+        );
+
+        ApplicationStatus? appStatus1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.SUBMITTED);
+        appStatus1 ??= await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = "SUBMITTED",
+                ExternalStatus = "Submitted",
+                InternalStatus = "Submitted"
             },
             autoSave: true
         );
