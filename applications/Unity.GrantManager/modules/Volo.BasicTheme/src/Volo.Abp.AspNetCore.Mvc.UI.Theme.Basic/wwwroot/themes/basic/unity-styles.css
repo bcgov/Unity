@@ -73,6 +73,7 @@
 
 .unity-app-main-container {
     padding: 0 0.5rem;
+    width: calc(100vw - 210px);
 }
 
 .unity-user-initials {
