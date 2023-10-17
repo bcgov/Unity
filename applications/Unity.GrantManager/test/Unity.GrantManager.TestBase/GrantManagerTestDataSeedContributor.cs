@@ -70,17 +70,6 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
-        ApplicationStatus? appStatus1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode.Equals(ApplicationStatusConsts.SUBMITTED));
-        appStatus1 ??= await _applicationStatusRepository.InsertAsync(
-            new ApplicationStatus
-            {
-                StatusCode = GrantApplicationState.SUBMITTED,
-                ExternalStatus = "Submitted",
-                InternalStatus = "Submitted"
-            },
-            autoSave: true
-        );
-
         Intake? spaceFarmsIntake1 = await _intakeRepository.FirstOrDefaultAsync(s => s.IntakeName == "Integration Tests Intake");
         spaceFarmsIntake1 ??= await _intakeRepository.InsertAsync(
                 new Intake
@@ -113,7 +102,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 ApplicantId = applicant1.Id,
                 ProjectName = "Application For Integration Test Funding",
                 ApplicationFormId = appForm1.Id,
-                ApplicationStatusId = appStatus1.Id,
+                ApplicationStatusId = (await _applicationStatusRepository.GetAsync(x => x.StatusCode == GrantApplicationState.SUBMITTED)).Id,
                 ReferenceNo = "TEST12345",
                 EligibleAmount = 12345.51,
                 RequestedAmount = 3456.13,
