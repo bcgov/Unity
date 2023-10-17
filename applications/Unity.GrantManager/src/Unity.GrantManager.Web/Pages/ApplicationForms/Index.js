@@ -50,8 +50,8 @@
                             [
                                 {
                                     text: 'Mapping',
-                                    action: (data) => location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id  
-
+                                    action: (data) => location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id,
+                                    enabled: (data) => { return false; }
                                 }
                             ]
                     }

@@ -73,6 +73,7 @@
 
 .unity-app-main-container {
     padding: 0 0.5rem;
+    width: calc(100vw - 210px);
 }
 
 .unity-user-initials {
@@ -89,9 +90,11 @@
 
 
 .unity-side-nav {
+    min-width: 50px;
     width: 210px;
     height: calc(100vh - 128px);
     overflow-y: scroll;
+    overflow-x: hidden;
 }
 
     .unity-side-nav a, .unity-side-nav .unity-user-name a {

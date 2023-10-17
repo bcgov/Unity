@@ -16,7 +16,6 @@
     outline: 0;
     border-bottom: 0.5px solid #D6D6D6 !important;
     border-radius: 0px;
-    resize: none;
 }
 
     .comment-input.selected {
@@ -100,6 +99,12 @@
 
 .comment-lbl {
     display: block;
+    margin-top: 0.25rem;
+    width: 99%;
+    max-height: 180px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    position: relative;
 }
 
 .comment-edit-btn-wrapper {
@@ -122,7 +127,8 @@
     border-radius: 0.25rem;
     font-size: var(--bc-font-size-xs);
     color: var(--bc-colors-grey-text-300);
-    flex:1;
+    flex: 1;
+    width: 90%;
 }
 
     .unity-comment-block .commented-time {

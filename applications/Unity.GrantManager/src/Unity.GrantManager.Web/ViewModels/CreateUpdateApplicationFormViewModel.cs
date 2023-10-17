@@ -35,5 +35,8 @@ namespace Unity.GrantManager.Web.ViewModels
         [Required]
         [DisplayName("ApplicationForms:ChefsFormApiKey")]
         public string? ApiKey { get; set; }
+
+        [DisplayName("ApplicationForms:Category")]
+        public string? Category { get; set; }
     }
 }

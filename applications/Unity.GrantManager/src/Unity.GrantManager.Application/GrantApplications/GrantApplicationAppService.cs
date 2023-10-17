@@ -40,6 +40,7 @@ public class GrantApplicationAppService :
     private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
     private readonly IApplicantRepository _applicantRepository;
     private readonly ICommentsManager _commentsManager;
+    private readonly IApplicationFormRepository _applicationFormRepository;
 
     public GrantApplicationAppService(
         IRepository<GrantApplication, Guid> repository,
@@ -49,7 +50,8 @@ public class GrantApplicationAppService :
         IApplicationUserAssignmentRepository userAssignmentRepository,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IApplicantRepository applicantRepository,
-        ICommentsManager commentsManager
+        ICommentsManager commentsManager,
+        IApplicationFormRepository applicationFormRepository
         )
          : base(repository)
     {
@@ -60,6 +62,7 @@ public class GrantApplicationAppService :
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _applicantRepository = applicantRepository;
         _commentsManager = commentsManager;
+        _applicationFormRepository = applicationFormRepository;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -70,7 +73,8 @@ public class GrantApplicationAppService :
         var query = from application in queryable
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                    select new { application, appStatus, applicant };
+                    join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
+                    select new { application, appStatus, applicant, appForm };
 
 
         query = query
@@ -86,6 +90,7 @@ public class GrantApplicationAppService :
             appDto.Status = x.appStatus.InternalStatus;
             appDto.Assignees = await GetAssigneesAsync(x.application.Id);
             appDto.Applicant = x.applicant.ApplicantName;
+            appDto.Category = x.appForm.Category ?? string.Empty;
             return appDto;
         }).ToList();
 

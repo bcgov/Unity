@@ -25,7 +25,7 @@ $(function () {
             scrollX: true,
             ajax:
                 abp.libs.datatables.createAjax(
-                    unity.grantManager.intake.submission.getSubmissionsList, inputAction),
+                    unity.grantManager.intakes.submission.getSubmissionsList, inputAction),
             columnDefs: [
                 {
                     title: l('ProjectName'),

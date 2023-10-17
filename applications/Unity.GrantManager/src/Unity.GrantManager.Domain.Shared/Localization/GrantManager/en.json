@@ -129,6 +129,7 @@
     "ApplicationForms:SubmissionHeaderMapping": "Mapping",
     "ApplicationForms:ChefsCriteriaFormId": "CHEFS Criteria Form Id",
     "ApplicationForms:ChefsFormApiKey": "CHEFS Form Api Key",
+    "ApplicationForms:Category": "Category",
 
     "Intakes": "Intakes",
 
