@@ -94,6 +94,7 @@
     width: 210px;
     height: calc(100vh - 128px);
     overflow-y: scroll;
+    overflow-x: hidden;
 }
 
     .unity-side-nav a, .unity-side-nav .unity-user-name a {

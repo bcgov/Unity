@@ -147,5 +147,5 @@ th.close-icon:before {
 
 .application-scrollable-content {
     overflow-y: scroll;
-    height: calc(100vh - 240px);
+    height: calc(100vh - 190px);
 }
