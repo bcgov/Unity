@@ -13,7 +13,11 @@ public class Application : AuditedAggregateRoot<Guid>
     public string ReferenceNo { get; set; } = string.Empty;
     public double EligibleAmount { get; set; }
     public double RequestedAmount { get; set; }
-    public DateTime ProposalDate { get; set; }
+    public double TotalProjectBudget { get; set; }
+    public string? Sector { get; set; } = null;
+    public string? EconomicRegion { get; set;} = null;
+    public string? City { get; set; } = null;
+    public DateTime? ProposalDate { get; set; }
     public DateTime SubmissionDate { get; set; }
 
     [Column(TypeName = "jsonb")]

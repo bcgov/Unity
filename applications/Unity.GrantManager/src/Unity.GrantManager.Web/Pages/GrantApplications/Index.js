@@ -297,8 +297,8 @@
                 },
                 { //3
                     title: 'Category',
-                    data: 'projectName',
-                    name: 'projectName',
+                    data: 'category',
+                    name: 'category',
                     className: 'data-table-header',
                 },
                 { //4
@@ -313,80 +313,100 @@
                     },
                 },
                 { //5
+                    title: 'Project Name',
+                    data: 'projectName',
+                    name: 'projectName',
+                    className: 'data-table-header',                    
+                },                               
+                { //6
                     title: 'Sector',
                     name: 'sector',
+                    data: 'sector',
                     className: 'data-table-header',
-                    visible: false,
                     render: function (data) {
-                        return '';
-                    },
-                },
-                { //6
-                    title: 'Total Project Budget',
-                    name: 'totalProjectBudget',
-                    className: 'data-table-header',
-                    visible: false,
-                    render: function (data) {
-                        return '';
+                        return data ?? '{Sector}';
                     },
                 },
                 { //7
+                    title: 'Total Project Budget',
+                    name: 'totalProjectBudget',
+                    data: 'totalProjectBudget',
+                    className: 'data-table-header',                    
+                    render: function (data) {
+                        return formatter.format(data);
+                    },
+                },
+                { //8
                     title: l('Assignee'),
                     data: 'assignees',
                     name: 'assignees',
                     className: 'dt-editable',
                     createdCell: createdCell,
                     render: function (data, type, row) {
-                        let disaplayText = ' ';
+                        let displayText = ' ';
 
                         if (data != null && data.length == 1) {
-                            disaplayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
+                            displayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
                         } else if (data.length > 1) {
-                            disaplayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
+                            displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
                         }
 
-                        return disaplayText;
-                    },
-                },
-                { //8
-                    title: l('GrantApplicationStatus'),
-                    data: 'status',
-                    name: 'status',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        let disaplayText = ' ';
-                        if (data != null && data.length >= 0) {
-                            disaplayText = data;
-                        }
-                        return disaplayText;
+                        return displayText;
                     },
                 },
                 { //9
+                    title: l('GrantApplicationStatus'),
+                    data: 'status',
+                    name: 'status',
+                    className: 'data-table-header',                    
+                    render: function (data) {
+                        let displayText = ' ';
+                        if (data != null) {
+                            displayText = data;
+                        }
+                        return displayText;
+                    },
+                },
+                { //10
                     title: l('RequestedAmount'),
                     data: 'requestedAmount',
                     name: 'requestedAmount',
-                    className: 'data-table-header',
+                    className: 'data-table-header',                    
                     render: function (data) {
                         return formatter.format(data);
                     },
                 },
-                { //10
-                    title: 'Final Decision Date',
-                    name: 'finalDecisionDate',
-                    className: 'data-table-header',
-                    visible: false,
-                    render: function (data) {
-                        return '';
-                    },
-                },
+                //{ // -- 
+                //    title: 'Final Decision Date',
+                //    name: 'finalDecisionDate',
+                //    className: 'data-table-header',
+                //    visible: false,                    
+                //},
                 { //11
                     title: 'Approved Amount',
                     name: 'approved Amount',
                     data: 'eligibleAmount',
-                    className: 'data-table-header',
-                    visible: false,
+                    className: 'data-table-header',                    
                     render: function (data) {
                         return formatter.format(data);
+                    },
+                },
+                { //12
+                    title: 'Economic Region',
+                    name: 'economic Region',
+                    data: 'economicRegion',
+                    className: 'data-table-header',
+                    render: function (data) {
+                        return data ?? '{Region}';
+                    },
+                },
+                { //13
+                    title: 'City',
+                    name: 'city',
+                    data: 'city',
+                    className: 'data-table-header',
+                    render: function (data) {
+                        return data ?? '{City}';
                     },
                 },
             ],

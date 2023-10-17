@@ -18,5 +18,9 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public DateTime ProposalDate { get; set; }
 
     public string ApplicationName { get; set; } = string.Empty;
-
+    public string Category { get; set; } = string.Empty;
+    public string EconomicRegion { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public double TotalProjectBudget { get; set; }
+    public string Sector { get; set; } = string.Empty;
 }

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Unity.GrantManager.Intake
+namespace Unity.GrantManager.Intakes
 {
     [Authorize]
     public class FormAppService : GrantManagerAppService, IFormAppService

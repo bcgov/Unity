@@ -42,6 +42,19 @@
                                 }
                             ]
                     }
+                },
+                {
+                    title: 'Mapping',
+                    rowAction: {
+                        items:
+                            [
+                                {
+                                    text: 'Mapping',
+                                    action: (data) => location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id,
+                                    enabled: (data) => { return false; }
+                                }
+                            ]
+                    }
                 }
             ]
         })
