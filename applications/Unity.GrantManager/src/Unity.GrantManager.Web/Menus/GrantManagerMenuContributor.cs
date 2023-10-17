@@ -24,16 +24,14 @@ public class GrantManagerMenuContributor : IMenuContributor
     {
         var l = context.GetLocalizer<GrantManagerResource>();
 
-        context.Menu.Items.Insert(
-            0,
-            new ApplicationMenuItem(
-                GrantManagerMenus.Dashboard,
-                l["Menu:Dashboard"],
-                "~/",
-                icon: "fl fl-view-dashboard",
-                order: 0
-            )
-        );
+        context.Menu.AddItem(
+        new ApplicationMenuItem(
+            GrantManagerMenus.Welcome,
+            l["Menu:Welcome"],
+            "~/",
+            icon: "fl fl-street",
+            order: 0
+        ));
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
@@ -55,35 +53,6 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                GrantManagerMenus.Scoring,
-                l["Menu:Scoring"],
-                "~/Payments",
-                icon: "fl fl-bullseye",
-                order: 3
-            )
-        );
-
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                GrantManagerMenus.Reporting,
-                l["Menu:Reporting"],
-                "~/",
-                icon: "fl fl-lexicon",
-                order: 4
-            )
-        );
-
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                GrantManagerMenus.Welcome,
-                l["Menu:Welcome"],
-                "~/",
-                icon: "fl fl-street",
-                order: 5                
-            )
-        );
 
         context.Menu.AddItem(
                new ApplicationMenuItem(
@@ -91,7 +60,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                    l["Menu:Roles"],
                    "~/Identity/Roles",
                    icon: "fl fl-settings",
-                   order: 6,
+                   order: 3,
                    requiredPermissionName: IdentityPermissions.Roles.Default
                )
            );
@@ -102,7 +71,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Users"],
                 "~/Identity/Users",
                 icon: "fl fl-other-user",
-                order: 7,
+                order: 4,
                 requiredPermissionName: IdentityPermissions.Users.Default
             )
         );
@@ -113,7 +82,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Intakes"],
                 "~/Intakes",
                 icon: "fl fl-settings",
-                order: 8,
+                order: 5,
                 requiredPermissionName: GrantManagerPermissions.Intakes.Default
             )
         );
@@ -124,25 +93,30 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:ApplicationForms"],
                 "~/ApplicationForms",
                 icon: "fl fl-settings",
-                order: 9,
+                order: 6,
                 requiredPermissionName: GrantManagerPermissions.ApplicationForms.Default
             )
         );
 
-        // var administration = context.Menu.GetAdministration();
 
-        //if (MultiTenancyConsts.IsEnabled)
-        //{
-        //    administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
-        //}
-        //else
-        //{
-        //    administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
-        //}
+#pragma warning disable S125 // Sections of code should not be commented out
+        /* - will complete later after fixing ui sub menu issue
+                var administration = context.Menu.GetAdministration();
 
-        //administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
-        //administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
+                //if (MultiTenancyConsts.IsEnabled)
+                //{
+                //    administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
+                //}
+                //else
+                //{
+                //    administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
+                //}
+
+                //administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
+                //administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
+                */
 
         return Task.CompletedTask;
+#pragma warning restore S125 // Sections of code should not be commented out
     }
 }
