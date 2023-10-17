@@ -70,17 +70,6 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
-        ApplicationStatus? appStatus1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == ApplicationStatusConsts.SUBMITTED);
-        appStatus1 ??= await _applicationStatusRepository.InsertAsync(
-            new ApplicationStatus
-            {
-                StatusCode = "SUBMITTED",
-                ExternalStatus = "Submitted",
-                InternalStatus = "Submitted"
-            },
-            autoSave: true
-        );
-
         Intake? spaceFarmsIntake1 = await _intakeRepository.FirstOrDefaultAsync(s => s.IntakeName == "Integration Tests Intake");
         spaceFarmsIntake1 ??= await _intakeRepository.InsertAsync(
                 new Intake
