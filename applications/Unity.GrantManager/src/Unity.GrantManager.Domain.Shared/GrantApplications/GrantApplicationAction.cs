@@ -10,6 +10,7 @@ public enum GrantApplicationAction
     Submit,
 
     Internal_Assign,
+    Internal_Unasign,
 
     StartReview,
     CompleteReview,

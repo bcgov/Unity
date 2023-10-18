@@ -27,7 +27,8 @@ public class ApplicationManager : DomainService, IApplicationManager
         stateMachine.Configure(GrantApplicationState.OPEN)
             .InitialTransition(GrantApplicationState.SUBMITTED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)                             // 2.2 - Withdraw;          Role: Reviewer
-            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);                                  // 2.4 - Close Application; Role: Reviewer
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)                                   // 2.4 - Close Application; Role: Reviewer
+            .Permit(GrantApplicationAction.Internal_Unasign, GrantApplicationState.SUBMITTED);
 
         stateMachine.Configure(GrantApplicationState.CLOSED);
 
@@ -111,6 +112,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         
         // NOTE: Is this required or can the navigation property be set on its own?
         application.ApplicationStatusId = statusChangedTo.Id;
+        application.ApplicationStatus = statusChangedTo;
 
         return await _applicationRepository.UpdateAsync(application);
     }

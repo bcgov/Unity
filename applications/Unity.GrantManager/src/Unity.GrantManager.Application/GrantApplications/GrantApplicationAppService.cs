@@ -167,7 +167,7 @@ public class GrantApplicationAppService :
         {
             try
             {
-                var application = await _applicationRepository.GetAsync(applicationId, false);
+                var application = await _applicationRepository.GetAsync(applicationId, true);
                 var assignees = await GetAssigneesAsync(applicationId);
                 if (application != null && (assignees == null || assignees.FindIndex(a => a.OidcSub == AssigneeKeycloakId) == -1))
                 {
@@ -180,6 +180,13 @@ public class GrantApplicationAppService :
                             AssignmentTime = DateTime.Now
                         }
                     );
+
+                    // BUSINES RULE: If an application is in the SUBMITTED state and has
+                    // a user assigned, move to the ASSIGNED state.
+                    if (application.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
+                    {
+                        await _applicationManager.TriggerAction(applicationId, GrantApplicationAction.Internal_Assign);
+                    }
                 }
             }
             catch (Exception ex)
@@ -187,6 +194,8 @@ public class GrantApplicationAppService :
                 Debug.WriteLine(ex.ToString());
             }
         }
+
+        
     }
 
     public async Task DeleteAssigneeAsync(Guid[] applicationIds, string AssigneeKeycloakId)
@@ -204,6 +213,13 @@ public class GrantApplicationAppService :
                 {
                     await _userAssignmentRepository.DeleteAsync(assignment);
                 }
+            }
+
+            // BUSINESS RULE: IF an application has all of its assignees removed,
+            // set the application status back to SUBMITTED
+            if (!(await GetAssigneesAsync(applicationId)).Any())
+            {
+                await _applicationManager.TriggerAction(applicationId, GrantApplicationAction.Internal_Unasign);
             }
         }
     }
@@ -227,6 +243,7 @@ public class GrantApplicationAppService :
                     // Changed applications ids
                     foreach (var userAssignment in userAssignments)
                     {
+                        // TODO: ENSURE STATUS IS ENFORCED IF ALL ASSIGNEES ARE REMOVED
                         await _userAssignmentRepository.DeleteAsync(userAssignment);
                     }
                     // Would like to use BatchDeleteAsync
@@ -242,6 +259,23 @@ public class GrantApplicationAppService :
                     applicationIds.SetValue(currentGuid, 0);
                     await InsertAssigneeAsync(applicationIds, oidcSub, assigneeDisplayName);
                 }
+
+                // TODO: STATE CHANGE FROM INLINE ASIGNEE EDIT
+                //var currentAssignees = await GetAssigneesAsync(currentGuid);
+                //var currentApplication = await _applicationRepository.GetAsync(currentGuid, true);
+                //if (!currentAssignees.Any())
+                //{   
+                //    // BUSINESS RULE: IF an application has all of its assignees removed,
+                //    // set the application status back to SUBMITTED
+                //    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Unasign);
+                //}
+                //else if (currentApplication.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
+                //{
+                //    // BUSINES RULE: If an application is in the SUBMITTED state and has
+                //    // a user assigned, move to the ASSIGNED state.
+                //    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Assign);
+                //}
+
                 previousApplication = currentApplicationId;
             }
         }
