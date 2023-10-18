@@ -11,9 +11,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         
         [HttpGet]
         [Route("RefreshAssessmentScores")]
-        public IActionResult AssessmentScores(Guid assessmentId)
+        public IActionResult AssessmentScores(Guid assessmentId, Guid currentUserId)
         {
-            return ViewComponent("AssessmentScoresWidget", new { assessmentId });
+            return ViewComponent("AssessmentScoresWidget", new { assessmentId, currentUserId });
         }
         
     }

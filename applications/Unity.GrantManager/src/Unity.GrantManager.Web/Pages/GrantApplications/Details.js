@@ -184,7 +184,10 @@ $(function () {
     let assessmentScoresWidgetManager = new abp.WidgetManager({
         wrapper: '#assessmentScoresWidgetArea',
         filterCallback: function () {
-            return { 'assessmentId': decodeURIComponent($("#AssessmentId").val()) }
+            return {
+                'assessmentId': decodeURIComponent($("#AssessmentId").val()),
+                'currentUserId': decodeURIComponent(abp.currentUser.id),
+            }
         }
     });
     PubSub.subscribe(

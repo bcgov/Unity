@@ -12,9 +12,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         public int? CleanGrowth { get; set; }
         public AssessmentState? Status { get; set; }
 
+        public Guid CurrentUserId { get; set; }
+        public Guid AssessorId { get; set; }
+
         public bool IsDisabled()
         {
-            if (Status.Equals(AssessmentState.COMPLETED))
+            if(CurrentUserId != AssessorId)
+            {
+                return true;
+            } 
+            else if (Status.Equals(AssessmentState.COMPLETED))
             {
                 return true;
             }

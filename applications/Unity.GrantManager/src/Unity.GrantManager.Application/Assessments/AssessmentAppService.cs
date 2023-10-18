@@ -197,6 +197,14 @@ namespace Unity.GrantManager.Assessments
                 var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
                 if (assessment != null)
                 {
+                    if(CurrentUser.GetId() != assessment.AssessorId)
+                    {
+                        throw new AbpValidationException("Error: You do not own this assessment record.");
+                    }
+                    if (assessment.Status.Equals(AssessmentState.COMPLETED))
+                    {
+                        throw new AbpValidationException("Error: This assessment is already completed.");
+                    }
                     assessment.FinancialAnalysis = dto.FinancialAnalysis;
                     assessment.EconomicImpact = dto.EconomicImpact;
                     assessment.InclusiveGrowth = dto.InclusiveGrowth;

@@ -6,6 +6,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Web.Identity;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 {
@@ -22,7 +23,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             _assessmentRepository = assessmentRepository;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId)
         {
             if(assessmentId == Guid.Empty)
             {
@@ -38,6 +39,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 InclusiveGrowth = assessment.InclusiveGrowth,
                 CleanGrowth = assessment.CleanGrowth,
                 Status = assessment.Status,
+                CurrentUserId = currentUserId,
+                AssessorId = assessment.AssessorId,
             };
 
             return View(model);
