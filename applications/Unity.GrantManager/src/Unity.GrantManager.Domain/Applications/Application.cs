@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Net;
 using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Unity.GrantManager.Applications;
