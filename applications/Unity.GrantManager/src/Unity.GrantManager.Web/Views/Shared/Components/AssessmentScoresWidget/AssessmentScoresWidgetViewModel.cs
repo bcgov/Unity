@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.GrantManager.Assessments;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 {
@@ -9,5 +10,18 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         public int? EconomicImpact { get; set; }
         public int? InclusiveGrowth { get; set; } 
         public int? CleanGrowth { get; set; }
+        public AssessmentState? Status { get; set; }
+
+        public bool IsDisabled()
+        {
+            if (Status.Equals(AssessmentState.COMPLETED))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 }

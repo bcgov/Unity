@@ -18,21 +18,21 @@
                 <tr>
                     <td>
                         Financial Analysis
-                    <input type="number" size="10" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" value="@Model.FinancialAnalysis" />
+                    <input type="number" size="10" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" value="@Model.FinancialAnalysis" />
                     </td>
                     <td style="float:right">                    
                         Economic Impact
-                    <input type="number" size="10" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" value="@Model.EconomicImpact" />
+                    <input type="number" size="10" disabled="@Model.IsDisabled()" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" value="@Model.EconomicImpact" />
                     </td>
                 </tr>
                 <tr>
                     <td>
                         Inclusive Growth
-                    <input type="number" size="10" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" value="@Model.InclusiveGrowth" />
+                    <input type="number" size="10" disabled="@Model.IsDisabled()" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" value="@Model.InclusiveGrowth" />
                     </td>
                     <td style ="float:right">
                         Clean Growth
-                    <input type="number" size="10" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" value="@Model.CleanGrowth" />
+                    <input type="number" size="10" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" value="@Model.CleanGrowth" />
                     </td>
                 </tr>
                 <tr>

@@ -37,6 +37,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 EconomicImpact = assessment.EconomicImpact,
                 InclusiveGrowth = assessment.InclusiveGrowth,
                 CleanGrowth = assessment.CleanGrowth,
+                Status = assessment.Status,
             };
 
             return View(model);
