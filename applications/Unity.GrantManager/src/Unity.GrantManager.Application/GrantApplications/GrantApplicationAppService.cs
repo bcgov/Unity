@@ -34,6 +34,7 @@ public class GrantApplicationAppService :
 {
 
     private readonly IApplicationRepository _applicationRepository;
+    private readonly IApplicationManager _applicationManager;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
     private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
@@ -43,6 +44,7 @@ public class GrantApplicationAppService :
 
     public GrantApplicationAppService(
         IRepository<GrantApplication, Guid> repository,
+        IApplicationManager applicationManager,
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
         IApplicationUserAssignmentRepository userAssignmentRepository,
@@ -54,6 +56,7 @@ public class GrantApplicationAppService :
          : base(repository)
     {
         _applicationRepository = applicationRepository;
+        _applicationManager = applicationManager;
         _applicationStatusRepository = applicationStatusRepository;
         _userAssignmentRepository = userAssignmentRepository;
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
@@ -111,7 +114,7 @@ public class GrantApplicationAppService :
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
     {
         ApplicationFormSubmission applicationFormSubmission = new();
-        var application = await _applicationRepository.GetAsync(applicationId);
+        var application = await _applicationRepository.GetAsync(applicationId, false);
         if (application != null)
         {
             IQueryable<ApplicationFormSubmission> queryableFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
@@ -143,7 +146,7 @@ public class GrantApplicationAppService :
         {
             try
             {
-                var application = await _applicationRepository.GetAsync(applicationId);
+                var application = await _applicationRepository.GetAsync(applicationId, false);
                 if (application != null)
                 {
                     application.ApplicationStatusId = statusId;
@@ -164,7 +167,7 @@ public class GrantApplicationAppService :
         {
             try
             {
-                var application = await _applicationRepository.GetAsync(applicationId);
+                var application = await _applicationRepository.GetAsync(applicationId, true);
                 var assignees = await GetAssigneesAsync(applicationId);
                 if (application != null && (assignees == null || assignees.FindIndex(a => a.OidcSub == AssigneeKeycloakId) == -1))
                 {
@@ -177,6 +180,13 @@ public class GrantApplicationAppService :
                             AssignmentTime = DateTime.Now
                         }
                     );
+
+                    // BUSINES RULE: If an application is in the SUBMITTED state and has
+                    // a user assigned, move to the ASSIGNED state.
+                    if (application.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
+                    {
+                        await _applicationManager.TriggerAction(applicationId, GrantApplicationAction.Internal_Assign);
+                    }
                 }
             }
             catch (Exception ex)
@@ -184,13 +194,15 @@ public class GrantApplicationAppService :
                 Debug.WriteLine(ex.ToString());
             }
         }
+
+        
     }
 
     public async Task DeleteAssigneeAsync(Guid[] applicationIds, string AssigneeKeycloakId)
     {
         foreach (Guid applicationId in applicationIds)
         {
-            var application = await _applicationRepository.GetAsync(applicationId);
+            var application = await _applicationRepository.GetAsync(applicationId, false);
             IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(AssigneeKeycloakId)).ToList();
             // Only remove the assignee if they were already assigned
@@ -201,6 +213,13 @@ public class GrantApplicationAppService :
                 {
                     await _userAssignmentRepository.DeleteAsync(assignment);
                 }
+            }
+
+            // BUSINESS RULE: IF an application has all of its assignees removed,
+            // set the application status back to SUBMITTED
+            if (!(await GetAssigneesAsync(applicationId)).Any())
+            {
+                await _applicationManager.TriggerAction(applicationId, GrantApplicationAction.Internal_Unasign);
             }
         }
     }
@@ -224,6 +243,7 @@ public class GrantApplicationAppService :
                     // Changed applications ids
                     foreach (var userAssignment in userAssignments)
                     {
+                        // TODO: ENSURE STATUS IS ENFORCED IF ALL ASSIGNEES ARE REMOVED
                         await _userAssignmentRepository.DeleteAsync(userAssignment);
                     }
                     // Would like to use BatchDeleteAsync
@@ -239,6 +259,23 @@ public class GrantApplicationAppService :
                     applicationIds.SetValue(currentGuid, 0);
                     await InsertAssigneeAsync(applicationIds, oidcSub, assigneeDisplayName);
                 }
+
+                // TODO: STATE CHANGE FROM INLINE ASIGNEE EDIT
+                //var currentAssignees = await GetAssigneesAsync(currentGuid);
+                //var currentApplication = await _applicationRepository.GetAsync(currentGuid, true);
+                //if (!currentAssignees.Any())
+                //{   
+                //    // BUSINESS RULE: IF an application has all of its assignees removed,
+                //    // set the application status back to SUBMITTED
+                //    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Unasign);
+                //}
+                //else if (currentApplication.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
+                //{
+                //    // BUSINES RULE: If an application is in the SUBMITTED state and has
+                //    // a user assigned, move to the ASSIGNED state.
+                //    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Assign);
+                //}
+
                 previousApplication = currentApplicationId;
             }
         }
@@ -279,9 +316,46 @@ public class GrantApplicationAppService :
             : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
     }
 
+    #region APPLICATION WORKFLOW
     public async Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id)
     {
-        var application = await _applicationRepository.GetAsync(id);
+        var application = await _applicationRepository.GetAsync(id, true);
         return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
     }
+
+    /// <summary>
+    /// Fetches the list of actions and their status context for a given application.
+    /// </summary>
+    /// <param name="applicationId">The application</param>
+    /// <returns>A list of application actions with their state machine permitted and authorization status.</returns>
+    public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false)
+    {
+        var actionList = await _applicationManager.GetActions(applicationId);
+
+        // Note: Remove internal state change actions that are side-effects of domain events
+        var externalActionsList = actionList.Where(a => includeInternal || !a.IsInternal).ToList();
+        var actionDtos = ObjectMapper.Map<
+            List<ApplicationActionResultItem>, 
+            List<ApplicationActionDto>>(externalActionsList);
+
+        // NOTE: Authorization is applied on the AppService layer and is false by default
+        // TODO: Replace placeholder loop with authorization handler mapped to permissions
+        // AUTHORIZATION HANDLING
+        actionDtos.ForEach(item => { item.IsAuthorized = true; });
+
+        return new ListResultDto<ApplicationActionDto>(actionDtos);
+    }
+
+    /// <summary>
+    /// Transitions the Application workflow state machine given an action.
+    /// </summary>
+    /// <param name="applicationId">The application</param>
+    /// <param name="triggerAction">The action to be invoked on an Application</param>
+    public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
+    {
+        var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
+        // TODO: AUTHORIZATION HANDLING
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+    #endregion APPLICATION WORKFLOW
 }

@@ -1,14 +1,12 @@
-﻿
-@using Microsoft.AspNetCore.Authorization;
-@using Unity.GrantManager.Localization;
+﻿@using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
-@using Unity.GrantManager.Permissions;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationActionWidget;
 
 @inject IStringLocalizer<GrantManagerResource> L
-@inject IAuthorizationService AuthorizationService
 
 <div class="action-bar p-2">
     <div id="DetailsActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
+        @await Component.InvokeAsync(typeof(ApplicationActionWidget), new { applicationId = @Model.ApplicationId })
         @* Items are included here through the Review List JS*@
         <abp-dropdown>
             <abp-dropdown-button  button-type="Light" class="status-actions" text="Status Actions" />

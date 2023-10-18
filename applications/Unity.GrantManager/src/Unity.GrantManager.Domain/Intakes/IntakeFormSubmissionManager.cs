@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
@@ -57,13 +58,14 @@ namespace Unity.GrantManager.Intakes
         private async Task<Application> CreateNewApplicationAsync(IntakeMapping intakeMap,
             ApplicationForm applicationForm)
         {
+            var submittedStatus = await _applicationStatusRepository.FirstAsync(s => s.StatusCode.Equals(GrantApplicationState.SUBMITTED));
             return await _applicationRepository.InsertAsync(
                 new Application
                 {
                     ProjectName = intakeMap.ProjectName ?? "{Project Name}",
                     ApplicantId = (await CreateApplicantAsync(intakeMap.ApplicantName)).Id,
                     ApplicationFormId = applicationForm.Id,
-                    ApplicationStatusId = (await _applicationStatusRepository.FirstAsync(s => s.StatusCode == "SUBMITTED")).Id,
+                    ApplicationStatusId = submittedStatus.Id,
                     ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
                     RequestedAmount = double.Parse(intakeMap.RequestedAmount ?? "0"),
                     SubmissionDate = DateTime.Parse(intakeMap.SubmissionDate ?? DateTime.UtcNow.ToString(), CultureInfo.InvariantCulture),

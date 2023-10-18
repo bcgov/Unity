@@ -1,6 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
 @using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
 @using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
@@ -25,7 +26,7 @@
     <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
    }
 
-@await Component.InvokeAsync("DetailsActionBar", new { ApplicationId = @Model.ApplicationFormSubmissionId })
+@await Component.InvokeAsync(typeof(DetailsActionBar), new { applicationId = @Model.ApplicationId })
 
 <input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />

@@ -14,4 +14,5 @@ public interface IApplicationRepository : IRepository<Application, Guid>
         string filter = ""
     );
 
+    Task<List<Application>> GetDetailsListAsync();
 }

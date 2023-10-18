@@ -138,7 +138,7 @@ namespace Unity.GrantManager.Assessments
         }
 
         /// <summary>
-        /// Get all permitted actions for an Assessment given it's state.
+        /// Get all permitted actions for an Assessment given its state.
         /// </summary>
         public async Task<List<AssessmentAction>> GetPermittedActions(Guid assessmentId)
         {

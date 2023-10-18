@@ -2747,11 +2747,13 @@ namespace Unity.GrantManager.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationStatus", null)
-                        .WithMany()
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationStatus", "ApplicationStatus")
+                        .WithMany("Applications")
                         .HasForeignKey("ApplicationStatusId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("ApplicationStatus");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
@@ -2982,6 +2984,11 @@ namespace Unity.GrantManager.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>
+                {
+                    b.Navigation("Applications");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>

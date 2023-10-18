@@ -132,7 +132,6 @@
     "ApplicationForms:Category": "Category",
 
     "Intakes": "Intakes",
-    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
 
     "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
     "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
@@ -140,6 +139,19 @@
     "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
     "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
 
-    "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user."
+    "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
+
+    "GrantApplication:ActionButtonName": "Status Actions",
+    "Enum:GrantApplicationAction.Open": "Open",
+    "Enum:GrantApplicationAction.Submit": "Submit",
+    "Enum:GrantApplicationAction.Internal_Assign": "Assign",
+    "Enum:GrantApplicationAction.StartReview": "Start Review",
+    "Enum:GrantApplicationAction.CompleteReview": "Complete Review",
+    "Enum:GrantApplicationAction.StartAssessment": "Start Assessment",
+    "Enum:GrantApplicationAction.CompleteAssessment": "Complete Assessment",
+    "Enum:GrantApplicationAction.Close": "Close",
+    "Enum:GrantApplicationAction.Withdraw": "Withdraw",
+    "Enum:GrantApplicationAction.Approve": "Approve",
+    "Enum:GrantApplicationAction.Deny": "Deny"
   }
 }
