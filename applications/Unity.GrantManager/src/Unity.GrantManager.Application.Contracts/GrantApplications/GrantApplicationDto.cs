@@ -23,4 +23,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string City { get; set; } = string.Empty;
     public double TotalProjectBudget { get; set; }
     public string Sector { get; set; } = string.Empty;
+
+    public int AssessmentCount { get; set; }
+    public int AssessmentReviewCount { get; set; }
 }
