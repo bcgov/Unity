@@ -1,45 +1,110 @@
-apiVersion: batch/v1
-kind: Job
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: unity-grantmanager-dbmigrator-job
+message: |-
+  A job has been created in your project: unity-grantmanager-dbmigrator-job.
+  For more information about using this template, including OpenShift considerations, 
+  see template usage guide found in the project readme.md and wiki documents.
 metadata:
-  name: unity-grantmanager-dbmigrator
-  namespace: d18498-dev
-  labels:
-    job-name: unity-grantmanager-dbmigrator
-    app.openshift.io/runtime: build
-spec:
-  parallelism: 1
-  completions: 1
-  backoffLimit: 1
-  selector: {}
-  template:
-    metadata:
-      name: unity-grantmanager-dbmigrator
-    spec:
-      containers:
-        - name: unity-grantmanager-dbmigrator
-          image: >-
-            image-registry.openshift-image-registry.svc:5000/d18498-dev/unity-grantmanager-dbmigrator:github-latest
-          env:
-            - name: UNITY_DB_PORT
-              value: '5432'
-            - name: UNITY_DB_HOST
-              value: unity-database
-            - name: UNITY_POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: unity-database
-                  key: database-name
-            - name: UNITY_POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: unity-database
-                  key: database-user
-            - name: UNITY_POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: unity-database
-                  key: database-password
-            - name: ConnectionStrings__Default
-              value: >-
-                Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
-      restartPolicy: Never
+  name: unity-grantmanager-dbmigrator-job
+  # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
+  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # oc process -f .\openshift\unity-grantmanager-dbmigrator-job.yaml --param-file=.env | oc create -f -
+  annotations:
+    description: |-
+      Template for running a DotNet console application once in OpenShift.
+    iconClass: icon-build
+    openshift.io/display-name: DotNet console application
+    template.openshift.io/long-description: |-
+      This template defines resources needed to build and deploy a GitHub DotNet core console application.
+    tags: dotnet,unity-grantmanager-dbmigrator
+parameters:
+# Project namespace parameters
+- description: "The OpenShift project license plate 6 charater alpha numberic."
+  displayName: "Project Namespace"
+  name: PROJECT_NAMESPACE
+  required: true
+  generate: expression
+  from: "[a-z0-9]{6}"
+- description: "The OpenShift environment name [dev, test, prod]."
+  displayName: "Environment name"
+  name: ENV_NAME
+  required: true
+  value: "dev"
+- description: The name of the application.
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: true
+  value: unity-grantmanager-dbmigrator
+- description: The name of the application grouping.
+  displayName: Application Group
+  name: APPLICATION_GROUP
+  value: Triggers
+# Additional parameters for project application provisioning.
+- description: The name of the OpenShift Service exposed for the database.
+  displayName: Database Service Name
+  name: DATABASE_SERVICE_NAME
+  required: true
+  value: unity-database
+- description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
+  displayName: Application Version
+  name: IMAGE_STREAM_TAG
+  required: true
+  value: latest
+# Template objects to instantiate the project.
+objects:
+# RunOnce Job for Database Migrator
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      job-name: ${APPLICATION_NAME}
+      app.openshift.io/runtime: build
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    parallelism: 1
+    completions: 1
+    backoffLimit: 1
+    selector: {}
+    template:
+      metadata:
+        name: ${APPLICATION_NAME}
+        labels:
+          application: ${APPLICATION_NAME}
+      spec:
+        containers:
+          - name: ${APPLICATION_NAME}
+            image: >-
+              image-registry.openshift-image-registry.svc:5000/${PROJECT_NAMESPACE}-${ENV_NAME}/${APPLICATION_NAME}:${IMAGE_STREAM_TAG}
+            env:
+              - name: UNITY_DB_PORT
+                valueFrom:
+                  configMapKeyRef:
+                    name: ${DATABASE_SERVICE_NAME}
+                    key: UNITY_DB_PORT
+              - name: UNITY_DB_HOST
+                value: ${DATABASE_SERVICE_NAME}
+              - name: UNITY_POSTGRES_DB
+                valueFrom:
+                  secretKeyRef:
+                    name: ${DATABASE_SERVICE_NAME}
+                    key: database-name
+              - name: UNITY_POSTGRES_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: ${DATABASE_SERVICE_NAME}
+                    key: database-user
+              - name: UNITY_POSTGRES_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: ${DATABASE_SERVICE_NAME}
+                    key: database-password
+              - name: ConnectionStrings__Default
+                value: >-
+                  Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+        restartPolicy: Never

@@ -1,0 +1,122 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: unity-release-pipeline
+message: |-
+  A pipeline has been created in your project: unity-release.
+  For more information about using this template, including OpenShift considerations, 
+  see template usage guide found in the project readme.md and wiki documents.
+metadata:
+  name: unity-release-pipeline
+  # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
+  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # oc process -f .\openshift\unity-release-pipeline.yaml --param-file=.env | oc create -f -
+  annotations:
+    description: |-
+      Template for running an application build and deployment in OpenShift.
+    iconClass: icon-build
+    openshift.io/display-name: DotNet console application
+    template.openshift.io/long-description: |-
+      This template defines resources needed to build and deploy a GitHub DotNet core console application.
+    tags: dotnet,unity-release
+parameters:
+# Project namespace parameters
+- description: "The OpenShift project license plate 6 charater alpha numberic."
+  displayName: "Project Namespace"
+  name: PROJECT_NAMESPACE
+  required: true
+  generate: expression
+  from: "[a-z0-9]{6}"
+- description: "The OpenShift environment name [dev, test, prod]."
+  displayName: "Environment name"
+  name: ENV_NAME
+  required: true
+  value: "dev"
+- description: The name of the application grouping.
+  displayName: Application Group
+  name: APPLICATION_GROUP
+  value: unity-grantmanager
+- description: The name of the application.
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: true
+  value: unity-grantmanager-web
+# Template objects to instantiate the project.
+objects:
+# Pipeline for Database Migrator
+- apiVersion: tekton.dev/v1beta1
+  kind: Pipeline
+  metadata:
+    name: unity-release
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    params:
+      - description: The semantic version identifier
+        name: imagetag
+        type: string
+      - description: The version tag name identifier
+        name: tagname
+        type: string
+    tasks:
+      - name: describe-templates
+        params:
+          - name: SCRIPT
+            value: oc describe templates
+          - name: VERSION
+            value: latest
+        taskRef:
+          kind: ClusterTask
+          name: openshift-client
+      - name: clean-dbmigrator-jobs
+        params:
+          - name: SCRIPT
+            value: 'oc delete jobs unity-grantmanager-dbmigrator '
+          - name: VERSION
+            value: latest
+        runAfter:
+          - describe-templates
+        taskRef:
+          kind: ClusterTask
+          name: openshift-client
+      - name: run-dbmigrator-job
+        params:
+          - name: SCRIPT
+            value: >-
+              oc process unity-grantmanager-dbmigrator-job -p ENV_NAME=${ENV_NAME}  -p
+              PROJECT_NAMESPACE=${PROJECT_NAMESPACE} | oc create -f -
+          - name: VERSION
+            value: latest
+        runAfter:
+          - clean-dbmigrator-jobs
+          - start-build-unity-dbmigrator
+        taskRef:
+          kind: ClusterTask
+          name: openshift-client
+      - name: start-build-unity-grantmanager-web
+        params:
+          - name: SCRIPT
+            value: oc start-build unity-grantmanager-web --follow
+          - name: VERSION
+            value: latest
+        runAfter:
+          - describe-templates
+        taskRef:
+          kind: ClusterTask
+          name: openshift-client
+      - name: start-build-unity-dbmigrator
+        params:
+          - name: SCRIPT
+            value: oc start-build unity-grantmanager-dbmigrator --follow
+          - name: VERSION
+            value: latest
+        runAfter:
+          - start-build-unity-grantmanager-web
+        taskRef:
+          kind: ClusterTask
+          name: openshift-client
+
