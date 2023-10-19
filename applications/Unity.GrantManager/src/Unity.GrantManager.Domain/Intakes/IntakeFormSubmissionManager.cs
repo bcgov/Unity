@@ -49,6 +49,7 @@ namespace Unity.GrantManager.Intakes
                 OidcSub = Guid.Empty.ToString(),
                 ApplicantId = application.ApplicantId,
                 ApplicationFormId = applicationForm.Id,
+                ApplicationId = application.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}"
             });
             await uow.SaveChangesAsync();

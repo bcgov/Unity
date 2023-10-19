@@ -524,6 +524,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("ApplicationFormId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ChefsSubmissionGuid")
                         .IsRequired()
                         .HasColumnType("text");
