@@ -192,6 +192,11 @@ namespace Unity.GrantManager.Assessments
 
         public async Task UpdateAssessmentScore(AssessmentScoresDto dto)
         {
+            /*
+             * Important! Something to do in the future:
+             *    -- need to revisit scoring again post-MVP as right now it is only offline scoring
+             *    -- need to leverage state machine and domain layer during the revisit
+             */
             try
             {
                 var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
