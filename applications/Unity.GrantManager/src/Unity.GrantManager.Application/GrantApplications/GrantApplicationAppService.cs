@@ -260,21 +260,22 @@ public class GrantApplicationAppService :
                     await InsertAssigneeAsync(applicationIds, oidcSub, assigneeDisplayName);
                 }
 
-                // TODO: STATE CHANGE FROM INLINE ASIGNEE EDIT
-                //var currentAssignees = await GetAssigneesAsync(currentGuid);
-                //var currentApplication = await _applicationRepository.GetAsync(currentGuid, true);
-                //if (!currentAssignees.Any())
-                //{   
-                //    // BUSINESS RULE: IF an application has all of its assignees removed,
-                //    // set the application status back to SUBMITTED
-                //    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Unasign);
-                //}
-                //else if (currentApplication.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
-                //{
-                //    // BUSINES RULE: If an application is in the SUBMITTED state and has
-                //    // a user assigned, move to the ASSIGNED state.
-                //    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Assign);
-                //}
+           // TODO: STATE CHANGE FROM INLINE ASIGNEE EDIT
+               
+                var currentApplication = await _applicationRepository.GetAsync(currentGuid, true);
+                Console.WriteLine(item.Value.Children().Any());
+                if (!item.Value.Children().Any())
+                {
+                    // BUSINESS RULE: IF an application has all of its assignees removed,
+                    // set the application status back to SUBMITTED
+                    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Unasign);
+                }
+                else if (currentApplication.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
+                {
+                    // BUSINES RULE: If an application is in the SUBMITTED state and has
+                    // a user assigned, move to the ASSIGNED state.
+                    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Assign);
+                }
 
                 previousApplication = currentApplicationId;
             }

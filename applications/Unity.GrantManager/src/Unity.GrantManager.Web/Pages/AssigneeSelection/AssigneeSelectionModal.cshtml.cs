@@ -80,8 +80,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                 {
                     var selectedUser = await _identityUserLookupAppService.FindByIdAsync(AssigneeId);
                     var userName = $"{selectedUser.Name} {selectedUser.Surname}";
-                    var statusList = await _statusService.GetListAsync();
-                    var selectedStatus = statusList.ToList().Find(x => x.StatusCode == ApplicationStatusConsts.SUBMITTED);
+                   
 
                     if (ActionType == AssigneeConsts.ACTION_TYPE_ADD)
                     {
@@ -92,10 +91,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                         await _applicationService.DeleteAssigneeAsync(applicationIds.ToArray(), AssigneeId.ToString());
                     }
 
-                    if (selectedStatus != null)
-                    {
-                        await _applicationService.UpdateApplicationStatus(applicationIds.ToArray(), selectedStatus.Id);
-                    }
+                  
                 }
             }
             catch (Exception ex)
