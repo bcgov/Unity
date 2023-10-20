@@ -1,7 +1,4 @@
-﻿using System;
-using System.Text;
-
-namespace Unity.GrantManager.Intakes
+﻿namespace Unity.GrantManager.Intakes
 {
     public class IntakeMapping
     {
