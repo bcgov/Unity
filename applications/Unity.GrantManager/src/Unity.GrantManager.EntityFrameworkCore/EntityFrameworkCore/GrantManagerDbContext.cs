@@ -194,6 +194,13 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationStatus>().WithMany().HasForeignKey(x => x.ApplicationStatusId).IsRequired();
         });
 
+        modelBuilder.Entity<Address>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Address", GrantManagerConsts.DbSchema);
+            b.ConfigureByConvention(); //auto configure for the base class props
+            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId);
+        });        
+
         modelBuilder.Entity<ApplicantAgent>(b =>
             {
                 b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicantAgent",
