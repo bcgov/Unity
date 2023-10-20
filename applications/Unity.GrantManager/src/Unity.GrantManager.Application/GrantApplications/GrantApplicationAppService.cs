@@ -163,32 +163,26 @@ public class GrantApplicationAppService :
         }
     }
 
-    public async Task InsertAssigneeAsync(Guid[] applicationIds, string AssigneeKeycloakId, string AssigneeDisplayName)
+    public async Task InsertAssigneeAsync(Guid[] applicationIds, string oidcSub, string assigneeDisplayName)
     {
         foreach (Guid applicationId in applicationIds)
         {
             try
             {
-                var application = await _applicationRepository.GetAsync(applicationId, true);
                 var assignees = await GetAssigneesAsync(applicationId);
-                if (application != null && (assignees == null || assignees.FindIndex(a => a.OidcSub == AssigneeKeycloakId) == -1))
+                if (assignees == null || assignees.FindIndex(a => a.OidcSub == oidcSub) == -1)
                 {
-                    await _userAssignmentRepository.InsertAsync(
+                    var userAssignment = await _userAssignmentRepository.InsertAsync(
                         new ApplicationUserAssignment
                         {
-                            OidcSub = AssigneeKeycloakId,
-                            ApplicationId = application.Id,
-                            AssigneeDisplayName = AssigneeDisplayName,
+                            OidcSub = oidcSub,
+                            ApplicationId = applicationId,
+                            AssigneeDisplayName = assigneeDisplayName,
                             AssignmentTime = DateTime.Now
                         }
                     );
 
-                    // BUSINES RULE: If an application is in the SUBMITTED state and has
-                    // a user assigned, move to the ASSIGNED state.
-                    if (application.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
-                    {
-                        await _applicationManager.TriggerAction(applicationId, GrantApplicationAction.Internal_Assign);
-                    }
+                    await _applicationManager.AssignUserAsync(userAssignment);
                 }
             }
             catch (Exception ex)
@@ -196,19 +190,17 @@ public class GrantApplicationAppService :
                 Debug.WriteLine(ex.ToString());
             }
         }
-
-        
     }
 
-    public async Task DeleteAssigneeAsync(Guid[] applicationIds, string AssigneeKeycloakId)
+    public async Task DeleteAssigneeAsync(Guid[] applicationIds, string oidcSub)
     {
         foreach (Guid applicationId in applicationIds)
         {
             var application = await _applicationRepository.GetAsync(applicationId, false);
             IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
-            var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(AssigneeKeycloakId)).ToList();
+            List<ApplicationUserAssignment> assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(oidcSub)).ToList();
             // Only remove the assignee if they were already assigned
-            if (application != null && assignments != null)
+            if (application != null)
             {
                 var assignment = assignments.FirstOrDefault();
                 if (null != assignment)

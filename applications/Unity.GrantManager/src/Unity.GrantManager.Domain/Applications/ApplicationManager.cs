@@ -116,4 +116,14 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         return await _applicationRepository.UpdateAsync(application);
     }
+
+    public async Task AssignUserAsync(ApplicationUserAssignment userAssignment)
+    {
+        var application = await _applicationRepository.GetAsync(userAssignment.ApplicationId, true);
+
+        if (application != null && application.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
+        {
+            await TriggerAction(application.Id, GrantApplicationAction.Internal_Assign);
+        }
+    }
 }
