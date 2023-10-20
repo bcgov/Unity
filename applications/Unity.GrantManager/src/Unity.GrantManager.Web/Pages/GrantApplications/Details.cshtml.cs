@@ -33,6 +33,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public Guid ApplicationId { get; set; }
 
         [BindProperty(SupportsGet = true)]
+        public Guid AssessmentId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
         public string ApplicationFormSubmissionId { get; set; }
         
         [BindProperty(SupportsGet = true)]

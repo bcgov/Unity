@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231020212455_ABP-v740")]
+    partial class ABPv740
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -186,71 +189,6 @@ namespace Unity.GrantManager.Migrations
                     b.ToTable("UnityUserTeam", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.Address", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ApplicantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("City")
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<string>("Country")
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Postal")
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Province")
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Street")
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("Street2")
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("Unit")
-                        .HasColumnType("character varying(1000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicantId");
-
-                    b.ToTable("UnityAddress", (string)null);
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.Applicant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -261,14 +199,9 @@ namespace Unity.GrantManager.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
-                    b.Property<string>("ApproxNumberOfEmployees")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Community")
-                        .HasColumnType("text");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -281,18 +214,10 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<string>("EconomicRegion")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ElectoralDistrict")
-                        .HasColumnType("text");
-
                     b.Property<string>("ExtraProperties")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("IndigenousOrgInd")
-                        .HasColumnType("text");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
@@ -301,30 +226,6 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
-
-                    b.Property<string>("NonRegisteredBusinessName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OrgName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OrgNumber")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OrgStatus")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OrganizationType")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Sector")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SubSector")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -881,9 +782,6 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("AssessorId")
                         .HasColumnType("uuid");
 
-                    b.Property<int?>("CleanGrowth")
-                        .HasColumnType("integer");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -899,9 +797,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<int?>("EconomicImpact")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -909,12 +804,6 @@ namespace Unity.GrantManager.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
-
-                    b.Property<int?>("FinancialAnalysis")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("InclusiveGrowth")
-                        .HasColumnType("integer");
 
                     b.Property<bool>("IsComplete")
                         .HasColumnType("boolean");
@@ -2941,13 +2830,6 @@ namespace Unity.GrantManager.Migrations
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.Address", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicantId");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantAgent", b =>
