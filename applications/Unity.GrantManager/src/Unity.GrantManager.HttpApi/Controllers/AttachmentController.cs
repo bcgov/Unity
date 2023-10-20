@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -75,10 +76,10 @@ namespace Unity.GrantManager.Controllers
 
         private async Task<IActionResult> UploadFiles(IList<IFormFile> files)
         {
-            List<string> InvalidFileTypes = GetInvalidFileTypes(files);
+            List<ValidationResult> InvalidFileTypes = GetInvalidFileTypes(files);
             if (InvalidFileTypes.Count > 0)
             {
-                return BadRequest("ERROR: Following has invalid file types:<br>" + String.Join("<br>", InvalidFileTypes.ToArray()));
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors:InvalidFileTypes);
             }
             List<string> ErrorList = new();
             foreach (IFormFile source in files)
@@ -109,9 +110,9 @@ namespace Unity.GrantManager.Controllers
             return Ok("All Files Are Successfully Uploaded!");
         }
 
-        private List<string> GetInvalidFileTypes(IList<IFormFile> files)
+        private List<ValidationResult> GetInvalidFileTypes(IList<IFormFile> files)
         {
-            List<string> ErrorList = new();
+            List<ValidationResult> ErrorList = new();
             var InvalidFileTypes = _configuration["S3:DisallowedFileTypes"] ?? "";
             var DisallowedFileTypes = JsonConvert.DeserializeObject<string[]>(InvalidFileTypes);
             if(DisallowedFileTypes == null)
@@ -127,7 +128,7 @@ namespace Unity.GrantManager.Controllers
                 return DisallowedFileTypes.Contains(FileType.ToLower());
                 }))
             {
-                ErrorList.Add(source.FileName);
+                ErrorList.Add(new ValidationResult("Invalid file type for " + source.FileName, new[] { "FileName"}));
             }
             return ErrorList;
         }

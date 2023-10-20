@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Blazorise.Extensions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
@@ -7,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Controllers;
+using Volo.Abp.Validation;
 using Xunit;
 
 namespace Unity.GrantManager.Components
@@ -41,12 +44,12 @@ namespace Unity.GrantManager.Components
             var files = new List<IFormFile> { invalidFile };
 
             // Act
-            var response = await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
+            async Task<IActionResult> Action() => await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
 
             // Assert
-            Assert.IsType<BadRequestObjectResult>(response);
-            var badRequestResult = (BadRequestObjectResult)response;
-            Assert.Contains("ERROR: Following has invalid file types", badRequestResult?.Value?.ToString());
+            var result = await Assert.ThrowsAsync<AbpValidationException>(Action);
+            var badRequestResult = result.ValidationErrors[0].ErrorMessage;
+            Assert.Contains("Invalid file type", badRequestResult);
         }
     }
 }
