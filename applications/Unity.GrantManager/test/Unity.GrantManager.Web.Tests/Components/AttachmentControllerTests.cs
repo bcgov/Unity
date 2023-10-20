@@ -20,13 +20,8 @@ namespace Unity.GrantManager.Components
         public async Task UploadApplicationAttachments_InvalidInput_ReturnsBadRequest()
         {
             // Arrange
-            var myConfiguration = new Dictionary<string, string>
-            {
-                {"S3:DisallowedFileTypes", "[\"exe\"]"},
-            };
-            var configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(myConfiguration)
-                .Build();
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
+            var configuration = builder.Build();
             var fileAppService = Substitute.For<IFileAppService>();            
             var attachmentController = new AttachmentController(fileAppService, configuration);
             var applicationId = Guid.NewGuid();
@@ -34,7 +29,7 @@ namespace Unity.GrantManager.Components
             var userName = "testUserName";
 
             var invalidFile = new FormFile(
-                baseStream: new System.IO.MemoryStream(new byte[0]),
+                baseStream: new System.IO.MemoryStream(Array.Empty<byte>()),
                 baseStreamOffset: 0,
                 length: 0,
                 name: "invalidFile",
