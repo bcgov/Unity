@@ -1,3 +1,4 @@
+using Amazon.Runtime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -171,8 +172,7 @@ public class GrantApplicationAppService :
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.ToString());
-                throw;
+                Debug.WriteLine(ex.ToString());                
             }
         }
     }
@@ -186,17 +186,7 @@ public class GrantApplicationAppService :
                 var assignees = await GetAssigneesAsync(applicationId);
                 if (assignees == null || assignees.FindIndex(a => a.OidcSub == oidcSub) == -1)
                 {
-                    var userAssignment = await _userAssignmentRepository.InsertAsync(
-                        new ApplicationUserAssignment
-                        {
-                            OidcSub = oidcSub,
-                            ApplicationId = applicationId,
-                            AssigneeDisplayName = assigneeDisplayName,
-                            AssignmentTime = DateTime.Now
-                        }
-                    );
-
-                    await _applicationManager.AssignUserAsync(userAssignment);
+                    await _applicationManager.AssignUserAsync(applicationId, oidcSub, assigneeDisplayName);
                 }
             }
             catch (Exception ex)
@@ -210,24 +200,13 @@ public class GrantApplicationAppService :
     {
         foreach (Guid applicationId in applicationIds)
         {
-            var application = await _applicationRepository.GetAsync(applicationId, false);
-            IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
-            List<ApplicationUserAssignment> assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(oidcSub)).ToList();
-            // Only remove the assignee if they were already assigned
-            if (application != null)
+            try
             {
-                var assignment = assignments.FirstOrDefault();
-                if (null != assignment)
-                {
-                    await _userAssignmentRepository.DeleteAsync(assignment);
-                }
+                await _applicationManager.RemoveAssigneeAsync(applicationId, oidcSub);
             }
-
-            // BUSINESS RULE: IF an application has all of its assignees removed,
-            // set the application status back to SUBMITTED
-            if (!(await GetAssigneesAsync(applicationId)).Any())
+            catch (Exception ex)
             {
-                await _applicationManager.TriggerAction(applicationId, GrantApplicationAction.Internal_Unasign);
+                Debug.WriteLine(ex.ToString());
             }
         }
     }
@@ -238,54 +217,25 @@ public class GrantApplicationAppService :
         var dynamicObject = JsonConvert.DeserializeObject<dynamic>(modifiedAssignees);
         if (dynamicObject is IEnumerable)
         {
-            string previousApplication = "";
+            Guid previousApplicationId = Guid.Empty;
             foreach (JProperty item in dynamicObject)
             {
-                string currentApplicationId = item.Name;
-                Guid currentGuid = Guid.Parse(currentApplicationId);
-                IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
-                List<ApplicationUserAssignment> userAssignments = queryableAssignment.Where(a => a.ApplicationId.Equals(currentGuid)).ToList();
-
-                if (currentApplicationId != previousApplication)
+                Guid currentApplicationId = Guid.Parse(item.Name);
+                if (currentApplicationId != previousApplicationId)
                 {
-                    // Changed applications ids
-                    foreach (var userAssignment in userAssignments)
+                    var oidcSubs = new List<(string oidcSub, string displayName)>();
+                    
+                    foreach (JToken assigneeToken in item.Value.Children())
                     {
-                        // TODO: ENSURE STATUS IS ENFORCED IF ALL ASSIGNEES ARE REMOVED
-                        await _userAssignmentRepository.DeleteAsync(userAssignment);
+                        string oidcSub = assigneeToken.Value<string?>("oidcSub") ?? "";
+                        string assigneeDisplayName = assigneeToken.Value<string?>("assigneeDisplayName") ?? "";
+                        oidcSubs.Add(new (oidcSub, assigneeDisplayName));
                     }
-                    // Would like to use BatchDeleteAsync
-                    await UnitOfWorkManager.Current.SaveChangesAsync();
+
+                    await _applicationManager.SetAssigneesAsync(currentApplicationId, oidcSubs);
                 }
 
-                foreach (JToken assigneeToken in item.Value.Children())
-                {
-                    Debug.WriteLine(assigneeToken);
-                    string assigneeDisplayName = assigneeToken.Value<string?>("assigneeDisplayName") ?? "";
-                    string oidcSub = assigneeToken.Value<string?>("oidcSub") ?? "";
-                    Guid[] applicationIds = new Guid[1];
-                    applicationIds.SetValue(currentGuid, 0);
-                    await InsertAssigneeAsync(applicationIds, oidcSub, assigneeDisplayName);
-                }
-
-           // TODO: STATE CHANGE FROM INLINE ASIGNEE EDIT
-               
-                var currentApplication = await _applicationRepository.GetAsync(currentGuid, true);
-                Console.WriteLine(item.Value.Children().Any());
-                if (!item.Value.Children().Any())
-                {
-                    // BUSINESS RULE: IF an application has all of its assignees removed,
-                    // set the application status back to SUBMITTED
-                    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Unasign);
-                }
-                else if (currentApplication.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
-                {
-                    // BUSINES RULE: If an application is in the SUBMITTED state and has
-                    // a user assigned, move to the ASSIGNED state.
-                    await _applicationManager.TriggerAction(currentGuid, GrantApplicationAction.Internal_Assign);
-                }
-
-                previousApplication = currentApplicationId;
+                previousApplicationId = currentApplicationId;
             }
         }
     }
