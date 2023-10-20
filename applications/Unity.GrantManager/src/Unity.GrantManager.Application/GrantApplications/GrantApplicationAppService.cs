@@ -10,6 +10,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Volo.Abp.Application.Dtos;
@@ -40,6 +41,7 @@ public class GrantApplicationAppService :
     private readonly IApplicantRepository _applicantRepository;
     private readonly ICommentsManager _commentsManager;
     private readonly IApplicationFormRepository _applicationFormRepository;
+    private readonly IAssessmentRepository _assessmentRepository;
 
     public GrantApplicationAppService(
         IRepository<GrantApplication, Guid> repository,
@@ -49,7 +51,8 @@ public class GrantApplicationAppService :
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IApplicantRepository applicantRepository,
         ICommentsManager commentsManager,
-        IApplicationFormRepository applicationFormRepository
+        IApplicationFormRepository applicationFormRepository,
+        IAssessmentRepository assessmentRepository
         )
          : base(repository)
     {
@@ -60,19 +63,28 @@ public class GrantApplicationAppService :
         _applicantRepository = applicantRepository;
         _commentsManager = commentsManager;
         _applicationFormRepository = applicationFormRepository;
+        _assessmentRepository = assessmentRepository;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        var queryable = await _applicationRepository.GetQueryableAsync();
+        var applicationQueryable = await _applicationRepository.GetQueryableAsync();
         PagedAndSortedResultRequestDto.DefaultMaxResultCount = 1000;
 
-        var query = from application in queryable
+        var query = from application in applicationQueryable
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
                     join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
-                    select new { application, appStatus, applicant, appForm };
-
+                    join assessment in await _assessmentRepository.GetQueryableAsync() on application.Id equals assessment.ApplicationId into assessments
+                    select new 
+                    { 
+                        application, 
+                        appStatus, 
+                        applicant, 
+                        appForm,
+                        AssessmentCount = assessments.Count(),
+                        AssessmentReviewCount = assessments.Count(a => a.Status == AssessmentState.IN_REVIEW)
+                    };
 
         query = query
             .OrderBy(NormalizeSorting(input.Sorting))
@@ -88,6 +100,8 @@ public class GrantApplicationAppService :
             appDto.Assignees = await GetAssigneesAsync(x.application.Id);
             appDto.Applicant = x.applicant.ApplicantName;
             appDto.Category = x.appForm.Category ?? string.Empty;
+            appDto.AssessmentCount = x.AssessmentCount;
+            appDto.AssessmentReviewCount = x.AssessmentReviewCount;
             return appDto;
         }).ToList();
 
