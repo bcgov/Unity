@@ -4,6 +4,7 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
 @using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
 @using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
@@ -144,10 +145,16 @@
                         </div>
                     </div>
                     <div id="reviewDetails" style="display:none">
-                        <input type="hidden" id="AssessmentId" value="" />
+                        <input type="hidden" id="AssessmentId" value="@Model.AssessmentId" />
                         <div id="assessmentUserDetailsWidget">
                         @await Component.InvokeAsync("UserInfoWidget", new { displayName = "" , title = "" })
 
+                        </div>
+
+                        <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Scores</h6>
+
+                        <div id="assessmentScoresWidgetArea">
+                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId})
                         </div>
 
                         <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Result Attachments</h6>
@@ -228,6 +235,7 @@
         </abp-card>
     </abp-column>
 </abp-row>
+
 
 
 
