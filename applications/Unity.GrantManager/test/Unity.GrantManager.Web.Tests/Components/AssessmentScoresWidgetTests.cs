@@ -6,8 +6,6 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Assessments;
-using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.Web.Views.Shared.Components.ApplicationStatusWidget;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 using Xunit;
 
