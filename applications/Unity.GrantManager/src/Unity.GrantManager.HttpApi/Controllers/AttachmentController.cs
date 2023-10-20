@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Volo.Abp.AspNetCore.Mvc;
