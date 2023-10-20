@@ -69,7 +69,6 @@ public class GrantApplicationAppService :
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
         var applicationQueryable = await _applicationRepository.GetQueryableAsync();
-        var assessmentQueryable = await _assessmentRepository.GetQueryableAsync();
         PagedAndSortedResultRequestDto.DefaultMaxResultCount = 1000;
 
         var query = from application in applicationQueryable
