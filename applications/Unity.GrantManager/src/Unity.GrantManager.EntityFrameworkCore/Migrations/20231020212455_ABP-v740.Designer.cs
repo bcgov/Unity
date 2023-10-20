@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231020212455_ABP-v740")]
+    partial class ABPv740
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2859,13 +2862,11 @@ namespace Unity.GrantManager.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationStatus", "ApplicationStatus")
-                        .WithMany("Applications")
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationStatus", null)
+                        .WithMany()
                         .HasForeignKey("ApplicationStatusId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("ApplicationStatus");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
@@ -3096,11 +3097,6 @@ namespace Unity.GrantManager.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>
-                {
-                    b.Navigation("Applications");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>
