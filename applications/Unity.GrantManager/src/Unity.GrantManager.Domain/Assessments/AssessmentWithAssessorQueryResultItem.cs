@@ -16,4 +16,9 @@ public class AssessmentWithAssessorQueryResultItem
     public AssessmentState Status { get; set; }
     public bool IsComplete { get; set; }
     public bool? ApprovalRecommended { get; set; }
+    public int? FinancialAnalysis { get; set; }
+    public int? EconomicImpact { get; set; }
+    public int? InclusiveGrowth { get; set; }
+    public int? CleanGrowth { get; set; }
 }
+

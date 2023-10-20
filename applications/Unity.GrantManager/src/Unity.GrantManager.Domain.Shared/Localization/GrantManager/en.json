@@ -83,6 +83,10 @@
     "ReviewerList:EndDate": "End Date",
     "ReviewerList:Status": "Status",
     "ReviewerList:Recommended": "Recommendation",
+    "ReviewerList:FinancialAnalysis": "Financial Analysis",
+    "ReviewerList:EconomicImpact": "Economic Impact",
+    "ReviewerList:InclusiveGrowth": "Inclusive Growth",
+    "ReviewerList:CleanGrowth": "Clean Growth",
 
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",
@@ -143,3 +147,4 @@
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user."
   }
 }
+

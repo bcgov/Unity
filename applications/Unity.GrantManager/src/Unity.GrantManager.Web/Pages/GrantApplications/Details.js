@@ -181,6 +181,21 @@ $(function () {
         }
     });
 
+    let assessmentScoresWidgetManager = new abp.WidgetManager({
+        wrapper: '#assessmentScoresWidgetArea',
+        filterCallback: function () {
+            return {
+                'assessmentId': decodeURIComponent($("#AssessmentId").val()),
+                'currentUserId': decodeURIComponent(abp.currentUser.id),
+            }
+        }
+    });
+    PubSub.subscribe(
+        'refresh_assessment_scores',
+        (msg, data) => {
+            assessmentScoresWidgetManager.refresh();
+        }
+    );
     PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
@@ -191,6 +206,7 @@ $(function () {
                 selectElement.value = data.approvalRecommended;
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
                 assessmentUserDetailsWidgetManager.refresh();
+                assessmentScoresWidgetManager.refresh();
                 checkCurrentUser(data);
             }
             else {
