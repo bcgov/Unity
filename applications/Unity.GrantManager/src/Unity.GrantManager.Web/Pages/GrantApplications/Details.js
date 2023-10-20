@@ -323,8 +323,7 @@ function uploadFiles(inputId, urlStr, channel) {
     }
 
     for (let file of files) {
-        console.log(file);
-        if (disallowedTypes.includes(file.type)) {
+        if (disallowedTypes.includes(file.name.slice(file.name.lastIndexOf(".") + 1, file.name.length).toLowerCase())) {
             isAllowedTypeError = true;
         }
         if ((file.size * 0.000001) > maxFileSize) {
@@ -335,12 +334,14 @@ function uploadFiles(inputId, urlStr, channel) {
     }
 
     if (isAllowedTypeError) {
+        input.value = null;
         return abp.notify.error(
             'Error',
             'File type not supported'
         );
     }
     if (isMaxFileSizeError) {
+        input.value = null;
         return abp.notify.error(
             'Error',
             'File size exceeds ' + maxFileSize + 'MB'

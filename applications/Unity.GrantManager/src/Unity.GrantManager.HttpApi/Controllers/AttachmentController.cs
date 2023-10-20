@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Volo.Abp.AspNetCore.Mvc;
@@ -72,6 +76,11 @@ namespace Unity.GrantManager.Controllers
 
         private async Task<IActionResult> UploadFiles(IList<IFormFile> files)
         {
+            List<ValidationResult> InvalidFileTypes = GetInvalidFileTypes(files);
+            if (InvalidFileTypes.Count > 0)
+            {
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors:InvalidFileTypes);
+            }
             List<string> ErrorList = new();
             foreach (IFormFile source in files)
             {
@@ -99,6 +108,29 @@ namespace Unity.GrantManager.Controllers
             }
 
             return Ok("All Files Are Successfully Uploaded!");
+        }
+
+        private List<ValidationResult> GetInvalidFileTypes(IList<IFormFile> files)
+        {
+            List<ValidationResult> ErrorList = new();
+            var InvalidFileTypes = _configuration["S3:DisallowedFileTypes"] ?? "";
+            var DisallowedFileTypes = JsonConvert.DeserializeObject<string[]>(InvalidFileTypes);
+            if(DisallowedFileTypes == null)
+            {
+                return ErrorList;
+            }
+            foreach (var source in files.Where(file => {
+                string FileType = System.IO.Path.GetExtension(file.FileName);
+                if (FileType.StartsWith('.'))
+                {
+                    FileType = FileType[1..];
+                }
+                return DisallowedFileTypes.Contains(FileType.ToLower());
+                }))
+            {
+                ErrorList.Add(new ValidationResult("Invalid file type for " + source.FileName, new[] { "FileName"}));
+            }
+            return ErrorList;
         }
     }
 }
