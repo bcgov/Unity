@@ -12,8 +12,7 @@
     "formiojs": "^4.15.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
-    "pubsub-js": "^1.9.4",
-    "sweetalert2": "^11.7.32"
+    "pubsub-js": "^1.9.4"
   },
   "devDependencies": {
     "@types/jquery": "^3.5.18"
