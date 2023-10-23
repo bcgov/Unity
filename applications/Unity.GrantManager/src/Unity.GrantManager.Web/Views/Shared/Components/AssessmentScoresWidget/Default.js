@@ -1,10 +1,11 @@
 ﻿function saveAssessmentScores() {
     try {
+
         let data = {
-            "financialAnalysis": $("#financialAnalysis").val(),
-            "economicImpact": $("#economicImpact").val(),
-            "inclusiveGrowth": $("#inclusiveGrowth").val(),
-            "cleanGrowth": $("#cleanGrowth").val(),
+            "financialAnalysis": $("#financialAnalysis").val() == '' ? 0 : $("#financialAnalysis").val(),
+            "economicImpact": $("#economicImpact").val() == '' ? 0 : $("#economicImpact").val(),
+            "inclusiveGrowth": $("#inclusiveGrowth").val() == '' ? 0 : $("#inclusiveGrowth").val(),
+            "cleanGrowth": $("#cleanGrowth").val() == '' ? 0 : $("#cleanGrowth").val(),
             "assessmentId": $("#AssessmentId").val(),
         }        
         unity.grantManager.assessments.assessment.updateAssessmentScore(data)
