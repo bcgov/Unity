@@ -132,7 +132,6 @@
     "ApplicationForms:Category": "Category",
 
     "Intakes": "Intakes",
-    "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
 
     "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
     "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
@@ -140,6 +139,20 @@
     "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
     "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
 
-    "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user."
+    "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
+
+    "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",
+    "AssessmentResultsView:AssessmentResultsForm.ProjectSummary": "Project Summary",
+    "AssessmentResultsView:AssessmentResultsForm.RequestedAmount": "Requested Amount",
+    "AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget": "Total Project Budget",
+    "AssessmentResultsView:AssessmentResultsForm.RecommendedAmount": "Recommended Amount",
+    "AssessmentResultsView:AssessmentResultsForm.ApprovedAmount": "Approved Amount",
+    "AssessmentResultsView:AssessmentResultsForm.LikelihoodOfFunding": "Likelihood of Funding",
+    "AssessmentResultsView:AssessmentResultsForm.DueDilligenceStatus": "Due Dilligence Status",
+    "AssessmentResultsView:AssessmentResultsForm.Recommendation": "Recommendation",
+    "AssessmentResultsView:AssessmentResultsForm.DeclineRational": "Decline Rational",
+    "AssessmentResultsView:AssessmentResultsForm.Notes": "Notes",
+    "AssessmentResultsView:AssessmentResultsForm.TotalScore": "Total Score",
+    "AssessmentResultsView:AssessmentResultsForm.AssessmentResult": "Assessment Result"
   }
 }
