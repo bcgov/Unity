@@ -1,0 +1,25 @@
+﻿
+.assessment-results-container {
+    border-bottom: 0.25rem solid var(--bc-colors-white-background);
+}
+
+    .assessment-results-container .save_assessment_btn {
+        display: flex;
+        justify-content: center;
+        margin-top: 6.5rem;
+        width: 85%;
+    }
+
+    .assessment-results-container .form-label {
+        font-size: var(--bc-font-size-sm);
+        color: var(--bc-colors-grey-text-300);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0;
+    }
+
+    .assessment-results-container .form-select {
+        background-color: transparent;
+        border: var(--bs-border-width) solid var(--bs-border-color);
+    }
