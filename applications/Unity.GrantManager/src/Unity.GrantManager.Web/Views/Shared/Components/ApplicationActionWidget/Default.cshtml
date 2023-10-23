@@ -8,7 +8,10 @@
 
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
-
+@section scripts
+    {
+    <abp-script src="/libs/sweetalert2/src/sweetalert2.js" />
+   }
 <abp-dropdown id="ApplicationActionDropdown">
     <abp-dropdown-button 
         button-type="Light"
