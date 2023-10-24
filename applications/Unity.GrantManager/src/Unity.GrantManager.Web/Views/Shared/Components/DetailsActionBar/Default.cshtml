@@ -1,15 +1,13 @@
-﻿
-@using Microsoft.AspNetCore.Authorization;
-@using Unity.GrantManager.Localization;
+﻿@using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
-@using Unity.GrantManager.Permissions;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationActionWidget;
 
 @inject IStringLocalizer<GrantManagerResource> L
-@inject IAuthorizationService AuthorizationService
 
 <div class="action-bar p-2">
     <div id="DetailsActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
-        @* Items are included here through the Review List JS*@
+        @await Component.InvokeAsync(typeof(ApplicationActionWidget), new { applicationId = @Model.ApplicationId })
+        @* Items are included here through the Review List JS*@   
     </div>
     <div id="DetailsActionBarEnd" class="d-flex align-items-stretch justify-content-end gap-2">
         <abp-button text="@L["ApplicationList:CopyLinkButton"].Value"

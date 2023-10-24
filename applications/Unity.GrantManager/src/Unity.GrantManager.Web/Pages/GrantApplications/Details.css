@@ -95,11 +95,6 @@
     display: inline-block;
 }
 
-.dropdown-toggle {
-    background-color: #007bff;
-    color: #fff;
-}
-
 .dropdown-menu {
     position: absolute;
     top: 100%;
@@ -118,11 +113,16 @@
     color: #333;
     text-decoration: none;
     transition: background-color 0.2s ease;
+    cursor: pointer;
 }
 
-    .dropdown-item:hover {
-        background-color: #f8f9fa;
-    }
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item:disabled {
+    cursor: not-allowed;
+}
 
 .adj-act-btn-ctnr {
     justify-content: center;

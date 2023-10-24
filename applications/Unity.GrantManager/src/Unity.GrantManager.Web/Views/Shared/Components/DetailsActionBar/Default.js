@@ -30,7 +30,7 @@ $(function () {
             title: 'Approve Applications',
         });
     });
-    $('#dontApproveApplicationsDetails').click(function () {
+    $('#disApproveApplicationsDetails').click(function () {
         dontApproveApplicationsModal.open({
             applicationIds: JSON.stringify(new Array(selectedApplicationIds)),
             operation: 'GRANT_NOT_APPROVED',
