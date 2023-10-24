@@ -50,7 +50,7 @@ parameters:
   displayName: Database Service Name
   name: DATABASE_SERVICE_NAME
   required: true
-  value: unity-database
+  value: unity-data-postgres
 - description: The port exposed for the database.
   displayName: Database Service Port
   name: DATABASE_PORT
@@ -176,7 +176,7 @@ objects:
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
-    name: ${DATABASE_SERVICE_NAME}-backup
+    name: unity-data-backup
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
@@ -263,12 +263,17 @@ objects:
           volumeMounts:
           - mountPath: /var/lib/pgsql/data
             name: ${DATABASE_SERVICE_NAME}-data
+          - mountPath: /var/lib/pgsql/backups
+            name: unity-data-backups
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         volumes:
         - name: ${DATABASE_SERVICE_NAME}-data
           persistentVolumeClaim:
             claimName: ${DATABASE_SERVICE_NAME}
+        - name: unity-data-backups
+          persistentVolumeClaim:
+            claimName: unity-data-backup
     triggers:
     - imageChangeParams:
         automatic: true
