@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -18,7 +18,7 @@
     <PackageReference Include="HtmlAgilityPack" Version="1.11.42" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Tests\Unity.GrantManager.Application.Tests.csproj" />
     <ProjectReference Include="..\..\src\Unity.GrantManager.Web\Unity.GrantManager.Web.csproj" />
-    <PackageReference Include="Volo.Abp.AspNetCore.TestBase" Version="7.3.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.TestBase" Version="7.4.0" />
   </ItemGroup>
 
   <ItemGroup>

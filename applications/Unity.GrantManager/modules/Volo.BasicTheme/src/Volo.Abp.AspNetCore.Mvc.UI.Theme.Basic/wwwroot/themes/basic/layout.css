@@ -375,3 +375,11 @@ div.dataTables_wrapper div.dataTables_length label {
 ::-webkit-scrollbar-button {
     display: none;
 }
+.dropdown-toggle {
+    background-color: var(--bc-colors-grey-pressed) !important;
+    color: var(--bc-colors-grey-text-500)!important;
+}
+.swal2-confirm {
+    background-color: var(--bs-primary) !important;
+    color: var(--bc-colors-white-primary-500) !important;
+}

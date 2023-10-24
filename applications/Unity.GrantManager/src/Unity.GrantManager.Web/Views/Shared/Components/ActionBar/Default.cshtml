@@ -38,34 +38,16 @@
                     icon-type="Other"
                     icon="fl fl-player-settings"
                     button-type="Light" />
-        @if (await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Approvals.Complete))
-        {
-            <abp-button id="approveApplications"
-                data-selector="applications-table-actions"
-                text="@L["ApplicationList:ApprovedButton"].Value"
-                disabled="true"
-                icon-type="Other"
-                icon="fl fl-like"
-                button-type="Light" />
 
-            <abp-button id="dontApproveApplications"
-                data-selector="applications-table-actions"
-                text="@L["ApplicationList:NotApprovedButton"].Value"
-                disabled="true"
-                icon-type="Other"
-                icon="fl fl-dislike"
-                button-type="Light" />
-        }
-        <abp-button 
-                    data-selector="applications-table-actions"
+        <abp-button id="copyLink"
                     text="@L["ApplicationList:CopyLinkButton"].Value"
                     disabled="true"
                     icon-type="Other"
                     icon="fl fl-link"
                     button-type="Light" />
 
-        <abp-button 
-                    data-selector="applications-table-actions"
+        <abp-button id="downloadApplication"
+                   
                     text="@L["ApplicationList:DownloadButton"].Value"
                     disabled="true"
                     icon-type="Other"
@@ -90,7 +72,8 @@
                     button-type="Light" />
 
 
-        <abp-button data-selector="applications-table-actions"
+        <abp-button id="applicationLink"
+                  
                     text="@L["ApplicationList:InfoButton"].Value"
                     icon-type="Other"
                     icon="fl fl-open-pane"

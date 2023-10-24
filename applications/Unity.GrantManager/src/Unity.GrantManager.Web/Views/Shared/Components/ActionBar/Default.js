@@ -123,9 +123,15 @@ $(function () {
     function manageActionButtons() {
         if (selectedApplicationIds.length == 1) {
             $('#externalLink').prop('disabled', false);
+            $('#copyLink').prop('disabled', false);
+            $('#downloadApplication').prop('disabled', false);
+            $('#applicationLink').prop('disabled', false);
         }
         else {
             $('#externalLink').prop('disabled', true);
+            $('#copyLink').prop('disabled', true);
+            $('#downloadApplication').prop('disabled', true);
+            $('#applicationLink').prop('disabled', true);
 
         }
         if (selectedApplicationIds.length == 0) {
