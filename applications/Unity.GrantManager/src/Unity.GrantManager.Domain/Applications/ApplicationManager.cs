@@ -155,6 +155,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         var application = await _applicationRepository.GetAsync(applicationId, true);
         IQueryable<ApplicationUserAssignment> queryableAssignment = _applicationUserAssignmentRepository.GetQueryableAsync().Result;
         List<ApplicationUserAssignment> assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(oidcSub)).ToList();
+        var assignmentRemoved = false;
 
         // Only remove the assignee if they were already assigned
         if (application != null)
@@ -163,14 +164,15 @@ public class ApplicationManager : DomainService, IApplicationManager
             if (null != assignment)
             {
                 await _applicationUserAssignmentRepository.DeleteAsync(assignment);
+                assignmentRemoved = true;
             }
         }
 
         // BUSINESS RULE: IF an application has all of its assignees removed,
         // set the application status back to SUBMITTED.
-        var hasAssignees = (await _applicationUserAssignmentRepository.GetQueryableAsync()).Any(s => s.ApplicationId == applicationId);
+        var hasAssignees = (assignments.Count - 1) > 0 && assignmentRemoved;
 
-        if (!hasAssignees && application!.ApplicationStatus.StatusCode != GrantApplicationState.SUBMITTED)
+        if (!hasAssignees && application!.ApplicationStatus.StatusCode == GrantApplicationState.ASSIGNED)
         {
             await TriggerAction(applicationId, GrantApplicationAction.Internal_Unasign);
         }
@@ -232,7 +234,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             await TriggerAction(applicationId, GrantApplicationAction.Internal_Assign);
         }
 
-        if (!hasAssignees && hadAssignments && application.ApplicationStatus.StatusCode != GrantApplicationState.SUBMITTED) // If we now have no assignees but started with assignees trigger state change
+        if (!hasAssignees && hadAssignments && application.ApplicationStatus.StatusCode == GrantApplicationState.ASSIGNED) // If we now have no assignees but started with assignees trigger state change
         {
             await TriggerAction(applicationId, GrantApplicationAction.Internal_Unasign);
         }
