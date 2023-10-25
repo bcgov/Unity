@@ -165,17 +165,17 @@ public class ApplicationManager : DomainService, IApplicationManager
                 await _applicationUserAssignmentRepository.DeleteAsync(assignment);
             }
         }
-
+        await uow.SaveChangesAsync();
         // BUSINESS RULE: IF an application has all of its assignees removed,
         // set the application status back to SUBMITTED.
         var hasAssignees = (await _applicationUserAssignmentRepository.GetQueryableAsync()).Any(s => s.ApplicationId == applicationId);
 
-        if (!hasAssignees && application!.ApplicationStatus.StatusCode != GrantApplicationState.SUBMITTED)
+        if (!hasAssignees && application!.ApplicationStatus.StatusCode == GrantApplicationState.ASSIGNED)
         {
             await TriggerAction(applicationId, GrantApplicationAction.Internal_Unasign);
         }
 
-        await uow.SaveChangesAsync();
+     
     }
 
     public async Task SetAssigneesAsync(Guid applicationId, List<(string oidcSub, string displayName)> oidcSubs)
@@ -232,7 +232,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             await TriggerAction(applicationId, GrantApplicationAction.Internal_Assign);
         }
 
-        if (!hasAssignees && hadAssignments && application.ApplicationStatus.StatusCode != GrantApplicationState.SUBMITTED) // If we now have no assignees but started with assignees trigger state change
+        if (!hasAssignees && hadAssignments && application.ApplicationStatus.StatusCode == GrantApplicationState.ASSIGNED) // If we now have no assignees but started with assignees trigger state change
         {
             await TriggerAction(applicationId, GrantApplicationAction.Internal_Unasign);
         }
