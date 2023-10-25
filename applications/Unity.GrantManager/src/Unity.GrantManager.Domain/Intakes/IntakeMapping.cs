@@ -15,20 +15,19 @@
         public string? NonRegisteredBusinessName { get; set; }
         public string? ApproxNumberOfEmployees { get; set; }
         public string? IndigenousOrgInd { get; set; }
-
         public string? OrgName { get; set; }
         public string? OrgNumber { get; set; }
         public string? OrgStatus { get; set; }
         public string? OrganizationType { get; set; }
         public string? Sector { get; set; }
-        public string? SubSector { get; set; } // Naics codes?
+        public string? SubSector { get; set; }
 
-        // Address fields?
+
         public string? EconomicRegion { get; set; }
         public string? Community { get; set; }
         public string? ElectoralDistrict { get; set; }
 
-        // Address (Mailing Address and Physical Address)
+        // Address
         public string? MailingCity { get; set; }
         public string? MailingCountry { get; set; }
         public string? MailingProvince { get; set; }
@@ -44,5 +43,12 @@
         public string? PhysicalStreet { get; set; }
         public string? PhysicalStreet2 { get; set; }
         public string? PhysicalUnit { get; set; }
+
+        // Applicant Agent
+        public string ContactName { get; set; } = string.Empty;
+        public string ContactPhone { get; set; } = string.Empty;
+        public string ContactPhone2 { get; set; } = string.Empty;
+        public string ContactEmail { get; set; } = string.Empty;
+        public string ContactTitle { get; set; } = string.Empty;
     }
 }

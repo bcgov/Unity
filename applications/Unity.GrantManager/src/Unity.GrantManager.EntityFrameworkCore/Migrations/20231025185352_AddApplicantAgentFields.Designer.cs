@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,14 +13,16 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231025185352_AddApplicantAgentFields")]
+    partial class AddApplicantAgentFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("_Abp_DatabaseProvider", EfCoreDatabaseProvider.PostgreSql)
-                .HasAnnotation("ProductVersion", "7.0.10")
+                .HasAnnotation("ProductVersion", "7.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -32,7 +35,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -50,7 +52,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -75,7 +76,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -89,7 +89,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -144,7 +143,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -158,7 +156,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -196,17 +193,16 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("City")
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
 
                     b.Property<string>("Country")
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")
@@ -217,7 +213,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -230,19 +225,19 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("Postal")
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Province")
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Street")
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Street2")
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Unit")
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -347,7 +342,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -364,11 +358,10 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -387,6 +380,7 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("OidcSubUser")
@@ -394,20 +388,20 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Phone")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Phone2")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("RoleForApplicant")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Title")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -437,7 +431,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -457,7 +450,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("double precision");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -521,7 +513,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -535,7 +526,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -598,7 +588,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -620,7 +609,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("DeletionTime");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -675,7 +663,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -689,7 +676,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -721,7 +707,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -739,7 +724,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -788,7 +772,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -802,7 +785,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -844,7 +826,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -858,7 +839,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -905,12 +885,8 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("AssessorId")
                         .HasColumnType("uuid");
 
-                    b.Property<int?>("CleanGrowth")
-                        .HasColumnType("integer");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -923,22 +899,12 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<int?>("EconomicImpact")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
-
-                    b.Property<int?>("FinancialAnalysis")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("InclusiveGrowth")
-                        .HasColumnType("integer");
 
                     b.Property<bool>("IsComplete")
                         .HasColumnType("boolean");
@@ -983,7 +949,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -997,7 +962,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1034,7 +998,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1048,7 +1011,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1074,7 +1036,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1088,7 +1049,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1116,7 +1076,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1130,7 +1089,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1170,7 +1128,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1195,7 +1152,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1264,7 +1220,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1285,7 +1240,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1498,7 +1452,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1508,7 +1461,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("CreationTime");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1678,7 +1630,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1688,7 +1639,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1751,7 +1701,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1760,7 +1709,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1852,7 +1800,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1865,7 +1812,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -1914,7 +1860,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -1951,7 +1896,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -2234,7 +2178,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -2265,7 +2208,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -2344,7 +2286,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -2376,7 +2317,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -2434,7 +2374,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -2459,7 +2398,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("DeletionTime");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -2510,7 +2448,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -2544,7 +2481,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -2593,7 +2529,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -2621,7 +2556,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
@@ -2821,55 +2755,6 @@ namespace Unity.GrantManager.Migrations
                     b.ToTable("AbpSettings", (string)null);
                 });
 
-            modelBuilder.Entity("Volo.Abp.SettingManagement.SettingDefinitionRecord", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("DefaultValue")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ExtraProperties")
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsEncrypted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsInherited")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsVisibleToClients")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Providers")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("AbpSettingDefinitions", (string)null);
-                });
-
             modelBuilder.Entity("Volo.Abp.TenantManagement.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2877,7 +2762,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
@@ -2902,7 +2786,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("ExtraProperties")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 

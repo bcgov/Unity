@@ -13,6 +13,7 @@ namespace Unity.GrantManager.Intakes
     {
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IApplicantRepository _applicantRepository;
+        private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly IAddressRepository _addressRepository;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationStatusRepository _applicationStatusRepository;
@@ -21,6 +22,7 @@ namespace Unity.GrantManager.Intakes
 
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
             IApplicantRepository applicantRepository,
+            IApplicantAgentRepository applicantAgentRepository,
             IAddressRepository addressRepository,
             IApplicationRepository applicationRepository,
             IApplicationStatusRepository applicationStatusRepository,
@@ -29,6 +31,7 @@ namespace Unity.GrantManager.Intakes
         {
             _unitOfWorkManager = unitOfWorkManager;
             _applicantRepository = applicantRepository;
+            _applicantAgentRepository = applicantAgentRepository;
             _addressRepository = addressRepository;
             _applicationRepository = applicationRepository;
             _applicationStatusRepository = applicationStatusRepository;
@@ -59,11 +62,12 @@ namespace Unity.GrantManager.Intakes
         private async Task<Application> CreateNewApplicationAsync(IntakeMapping intakeMap,
             ApplicationForm applicationForm)
         {
+            var applicant = await CreateApplicantAsync(intakeMap);
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
                     ProjectName = intakeMap.ProjectName ?? "{Project Name}",
-                    ApplicantId = (await CreateApplicantAsync(intakeMap)).Id,
+                    ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = (await _applicationStatusRepository.FirstAsync(s => s.StatusCode == "SUBMITTED")).Id,
                     ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
@@ -73,10 +77,10 @@ namespace Unity.GrantManager.Intakes
                     EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", // TBD how to calculate this - spacial lookup?
                     TotalProjectBudget = double.Parse(intakeMap.TotalProjectBudget ?? "0"),
                     Sector = intakeMap.Sector ?? "{Sector}" // TBD how to calculate this
-                }
-            );           
+                }                
+            );   
+            await CreateApplicantAgentAsync(intakeMap, applicant, application);
             return application;
-
         }
 
         private async Task<Applicant> CreateApplicantAsync(IntakeMapping intakeMap)
@@ -86,7 +90,7 @@ namespace Unity.GrantManager.Intakes
 
                 applicant = await _applicantRepository.InsertAsync(new Applicant
                 {
-                    ApplicantName = intakeMap.ApplicantName ?? "{ApplicantName}",                    
+                    ApplicantName = intakeMap.ApplicantName ?? "{ApplicantName}",
                     NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
                     OrgName = intakeMap.OrgName ?? "{OrgName}",
                     OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
@@ -103,13 +107,31 @@ namespace Unity.GrantManager.Intakes
                 await CreateApplicantAddressAsync(intakeMap, applicant);
             }
 
-           
            return applicant;
+        }
+
+        private async Task<ApplicantAgent> CreateApplicantAgentAsync(IntakeMapping intakeMap, Applicant applicant, Application application)
+        {
+            var applicantAgent = new ApplicantAgent();
+            if (intakeMap.ContactName != null) {
+
+                applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
+                {
+                    ApplicantId = applicant.Id,
+                    ApplicationId = application.Id,
+                    Name = intakeMap.ContactName ?? "{ContactName}",
+                    Phone = intakeMap.ContactPhone ?? "{ContactPhone}",
+                    Phone2 = intakeMap.ContactPhone2 ?? "{ContactPhone2}",
+                    Email = intakeMap.ContactEmail ?? "{ContactEmail}",
+                    Title = intakeMap.ContactTitle ?? "{ContactTitle}"
+                });
+            }
+
+           return applicantAgent;
         }
 
         private async Task<Address> CreateApplicantAddressAsync(IntakeMapping intakeMap, Applicant applicant)
         {
-
             var address = new Address();
             if(!intakeMap.PhysicalStreet.IsNullOrEmpty()) {
                 address = await _addressRepository.InsertAsync(new Address
@@ -127,6 +149,5 @@ namespace Unity.GrantManager.Intakes
             }
             return address;
         }
-
     }
 }
