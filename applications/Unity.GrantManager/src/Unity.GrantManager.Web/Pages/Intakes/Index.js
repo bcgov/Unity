@@ -26,7 +26,7 @@
                         .DateTime
                         .fromISO(data, {
                             locale: abp.localization.currentCulture.name
-                        }).toLocaleString(luxon.DateTime.DATETIME_SHORT)
+                        }).toLocaleString(luxon.DateTime.DATE_SHORT)
                 },
                 {
                     title: l('Common:EndDate'),
@@ -35,7 +35,7 @@
                         .DateTime
                         .fromISO(data, {
                             locale: abp.localization.currentCulture.name
-                        }).toLocaleString(luxon.DateTime.DATETIME_SHORT)
+                        }).toLocaleString(luxon.DateTime.DATE_SHORT)
                 },
                 {
                     title: l("Budget"),
