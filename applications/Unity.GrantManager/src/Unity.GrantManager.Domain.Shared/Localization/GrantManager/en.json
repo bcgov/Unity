@@ -83,6 +83,10 @@
     "ReviewerList:EndDate": "End Date",
     "ReviewerList:Status": "Status",
     "ReviewerList:Recommended": "Recommendation",
+    "ReviewerList:FinancialAnalysis": "Financial Analysis",
+    "ReviewerList:EconomicImpact": "Economic Impact",
+    "ReviewerList:InclusiveGrowth": "Inclusive Growth",
+    "ReviewerList:CleanGrowth": "Clean Growth",
 
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",
@@ -153,6 +157,20 @@
     "AssessmentResultsView:AssessmentResultsForm.DeclineRational": "Decline Rational",
     "AssessmentResultsView:AssessmentResultsForm.Notes": "Notes",
     "AssessmentResultsView:AssessmentResultsForm.TotalScore": "Total Score",
-    "AssessmentResultsView:AssessmentResultsForm.AssessmentResult": "Assessment Result"
+    "AssessmentResultsView:AssessmentResultsForm.AssessmentResult": "Assessment Result",
+
+    "GrantApplication:ActionButtonName": "Status Actions",
+    "Enum:GrantApplicationAction.Open": "Open",
+    "Enum:GrantApplicationAction.Submit": "Submit",
+    "Enum:GrantApplicationAction.Internal_Assign": "Assign",
+    "Enum:GrantApplicationAction.StartReview": "Start Review",
+    "Enum:GrantApplicationAction.CompleteReview": "Complete Review",
+    "Enum:GrantApplicationAction.StartAssessment": "Start Assessment",
+    "Enum:GrantApplicationAction.CompleteAssessment": "Complete Assessment",
+    "Enum:GrantApplicationAction.Close": "Close",
+    "Enum:GrantApplicationAction.Withdraw": "Withdraw",
+    "Enum:GrantApplicationAction.Approve": "Approve",
+    "Enum:GrantApplicationAction.Deny": "Deny"
   }
 }
+

@@ -14,6 +14,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Identity;
 using Volo.Abp.Users;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -138,7 +139,7 @@ namespace Unity.GrantManager.Assessments
         }
 
         /// <summary>
-        /// Get all permitted actions for an Assessment given it's state.
+        /// Get all permitted actions for an Assessment given its state.
         /// </summary>
         public async Task<List<AssessmentAction>> GetPermittedActions(Guid assessmentId)
         {
@@ -188,5 +189,43 @@ namespace Unity.GrantManager.Assessments
             return new OperationAuthorizationRequirement { Name = $"{GrantApplicationPermissions.Assessments.Default}.{triggerAction}" };
         }
         #endregion ASSESSMENT WORKFLOW
+
+        public async Task UpdateAssessmentScore(AssessmentScoresDto dto)
+        {
+            /*
+             * Important! Something to do in the future:
+             *    -- need to revisit scoring again post-MVP as right now it is only offline scoring
+             *    -- need to leverage state machine and domain layer during the revisit
+             */
+            try
+            {
+                var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
+                if (assessment != null)
+                {
+                    if(CurrentUser.GetId() != assessment.AssessorId)
+                    {
+                        throw new AbpValidationException("Error: You do not own this assessment record.");
+                    }
+                    if (assessment.Status.Equals(AssessmentState.COMPLETED))
+                    {
+                        throw new AbpValidationException("Error: This assessment is already completed.");
+                    }
+                    assessment.FinancialAnalysis = dto.FinancialAnalysis;
+                    assessment.EconomicImpact = dto.EconomicImpact;
+                    assessment.InclusiveGrowth = dto.InclusiveGrowth;
+                    assessment.CleanGrowth = dto.CleanGrowth;
+                    await _assessmentRepository.UpdateAsync(assessment);
+                }
+                else
+                {
+                    throw new AbpValidationException("AssessmentId Not Found: " + dto.AssessmentId + ".");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new AbpValidationException(ex.Message, ex);
+            }
+            
+        }
     }
 }

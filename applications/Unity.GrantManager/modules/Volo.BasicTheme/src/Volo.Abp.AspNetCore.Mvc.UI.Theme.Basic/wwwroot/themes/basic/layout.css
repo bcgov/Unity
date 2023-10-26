@@ -232,6 +232,15 @@ body {
     }
 }
 
+.navbar-brand {
+    padding: 0px;
+    margin-left: -15px;
+}
+
+    .navbar-brand img {
+        height: 100%;
+    }
+
 .input-validation-error {
     border-color: #dc3545;
 }
@@ -291,12 +300,14 @@ div.dataTables_wrapper div.dataTables_length label {
     flex-wrap: nowrap;
     padding: 15px 7px 7px 12px;
 }
+
 .nav {
     --bs-nav-link-color: var(--bc-colors-grey-text-500);
     --bs-nav-link-hover-color: var(--bc-colors-grey-text-500);
 }
-.nav-item a{
-    padding : 1rem;
+
+.nav-item a {
+    padding: 1rem;
 }
 
 .fs-5 {
@@ -314,14 +325,17 @@ div.dataTables_wrapper div.dataTables_length label {
     border-radius: 0.1875rem;
     border: none;
 }
+
     .form-select:hover {
         box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
     }
+
     .form-select:focus, .form-select:active {
         background-color: var(--bc-colors-grey-pressed);
         color: var(--bc-colors-grey-text-500);
         font-weight: 700;
     }
+
     .form-select:disabled {
         color: var(--bc-colors-grey-text-100);
         pointer-events: none;
@@ -360,4 +374,12 @@ div.dataTables_wrapper div.dataTables_length label {
 /* set button(top and bottom of the scrollbar) */
 ::-webkit-scrollbar-button {
     display: none;
+}
+.dropdown-toggle {
+    background-color: var(--bc-colors-grey-pressed) !important;
+    color: var(--bc-colors-grey-text-500)!important;
+}
+.swal2-confirm {
+    background-color: var(--bs-primary) !important;
+    color: var(--bc-colors-white-primary-500) !important;
 }

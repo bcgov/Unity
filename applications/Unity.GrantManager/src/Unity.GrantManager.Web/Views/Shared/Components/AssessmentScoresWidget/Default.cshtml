@@ -1,0 +1,48 @@
+﻿@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Unity.GrantManager.Web.Pages.GrantApplications;
+
+@model AssessmentScoresWidgetViewModel
+@{
+    Layout = null;
+}
+
+
+<form id="assessmentScoresWidgetForm" action="Widgets/AssessmentScores/UpdateAssessmentScores" method="post" enctype="multipart/form-data">
+        <div class="container-fluid px-2">
+            <table aria-describedby="Assessment Scores">
+                <tr>
+                    <th></th>
+                    <th></th>
+                </tr>
+                <tr>
+                    <td>
+                        Financial Analysis <br/>
+                    <input type="number" size="10" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
+                    </td>
+                    <td style="float:right">
+                        Economic Impact <br />
+                    <input type="number" size="10" disabled="@Model.IsDisabled()" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.EconomicImpact" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Inclusive Growth <br />
+                    <input type="number" size="10" disabled="@Model.IsDisabled()" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.InclusiveGrowth" />
+                    </td>
+                    <td style ="float:right">
+                        Clean Growth <br />
+                    <input type="number" size="10" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td style="float:right">
+                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" style="margin:20px" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </form>
+
+
