@@ -1,0 +1,136 @@
+﻿@using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Unity.GrantManager.Web.Pages.GrantApplications;
+
+@model SummaryWidgetViewModel
+@{
+    Layout = null;
+}
+
+
+
+<div>
+    <h6 class="fw-bold px-3 pt-4 pb-2">Application Summary</h6>
+    <table aria-describedby="Application Summary" style="width:100%;border-collapse:separate;border-spacing: 10px 10px;">
+        <tr>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td colspan="2">
+                Funding Stream <br />
+                <input name="fundingStream" disabled id="fundingStream" style="width:100%;" value="@Model.FundingStream"/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Type <br />
+                <input name="type" id="applicationType" disabled style="width:100%;" value="@Model.ApplicationType"/>
+            </td>
+            <td>
+                Submission Date <br />
+                <input name="submissionDate" disabled id="submissionDate" style="width:100%;" value="@Model.SubmissionDate"/>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                Organization Name <br />
+                <input name="organizationName" disabled id="organizationName" style="width:100%;" value="@Model.OrganizationName"/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Organization # <br />
+                <input name="organizationNumber" disabled id="organizationNumber" style="width:100%;" value="@Model.OrganizationNumber"/>
+            </td>
+            <td>
+                Economic Region <br />
+                <input name="economicRegion" disabled id="economicRegion" style="width:100%;" value="@Model.EconomicRegion"/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                City <br />
+                <input name="city" disabled id="city" style="width:100%;" value="@Model.City"/>
+            </td>
+            <td>
+                Community <br />
+                <input name="community" disabled id="community" style="width:100%;" value="@Model.Community"/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Requested Amount <br />
+                <input name="requestedAmount" disabled id="requestedAmount" style="width:100%;" value="@Model.RequestedAmount"/>
+            </td>
+            <td>
+                Project Budget <br />
+                <input name="projectBudget" disabled id="projectBudget" style="width:100%;" value="@Model.ProjectBudget"/>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                Sector <br />
+                <input name="sector" disabled id="sector" style="width:100%;" value="@Model.Sector"/>
+            </td>
+        </tr>
+    </table>
+</div>
+<div>
+    <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Summary</h6>
+    <table aria-describedby="Assessment Summary" style="width:100%;border-collapse:separate;border-spacing: 10px 10px;">
+        <tr>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td style="vertical-align:bottom;">
+                Status <br />
+                <input name="status" disabled id="status" style="width:100%;" value="@Model.Status"/>
+            </td>
+            <td style="vertical-align:bottom;">
+                Likelihood Of Funding <br />
+                <input name="likelihoodOfFunding" disabled id="likelihoodOfFunding" style="width:100%;" value="@Model.LikelihoodOfFunding"/>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align:bottom;">
+                Assessment Start Date <br />
+                <input name="assessmentStartDate" disabled id="assessmentStartDate" style="width:100%;" value="@Model.AssessmentStartDate"/>
+            </td>
+            <td style="vertical-align:bottom;">
+                Final Decision Date <br />
+                <input name="finalDecisionDate" disabled id="finalDecisionDate" style="width:100%;" value="@Model.FinalDecisionDate"/>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align:bottom;">
+                Total Score <br />
+                <input name="totalScore" disabled id="totalScore" style="width:100%;" value="@Model.TotalScore" />
+            </td>
+            <td style="vertical-align:bottom;">
+                Assessment Result(Pass/Fail) <br />
+                <input name="assessmentResult" disabled id="assessmentResult" style="width:100%;" value="@Model.AssessmentResult"/>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align:bottom;">
+                Recommended Amount <br />
+                <input name="recommendedAmount" disabled id="recommendedAmount" style="width:100%;" value="@Model.RecommendedAmount"/>
+            </td>
+            <td style="vertical-align:bottom;">
+                Approved Amount <br />
+                <input name="approvedAmount" disabled id="approvedAmount" style="width:100%;" value="@Model.ApprovedAmount"/>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                Batch # <br />
+                <input name="batch" disabled id="batch" style="width:100%;" value="@Model.Batch"/>
+            </td>
+        </tr>
+    </table>
+</div>
+    
+
+
