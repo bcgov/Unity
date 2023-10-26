@@ -50,7 +50,7 @@
                          @comment.Comment
                         </div>
                     </div>
-                    <div class="commented-time mt-3">@comment.CreationTime.ToString("yyyy-MM-dd h:mm tt")</div>
+                    <div class="commented-time mt-3">@comment.CreationTime.ToLocalTime().ToString("yyyy-MM-dd h:mm tt")</div>
                 </div>
 
                 <div class="single-comment edit-mode" data-id="@comment.Id"  style="display: none;">
