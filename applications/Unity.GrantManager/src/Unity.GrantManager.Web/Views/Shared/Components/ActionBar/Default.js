@@ -66,7 +66,10 @@ $(function () {
 
     });
     PubSub.subscribe("deselect_application", (msg, data) => {
-        selectedApplicationIds.pop(data.id);
+        const index = selectedApplicationIds.indexOf(data.id);
+        if (index > -1) {
+            selectedApplicationIds.splice(index, 1);
+        }
         manageActionButtons();
 
     });
@@ -120,6 +123,14 @@ $(function () {
             selectedApplicationIds[0];
     });
 
+    let summaryWidgetManager = new abp.WidgetManager({
+        wrapper: '#summaryWidgetArea',
+        filterCallback: function () {
+            return {
+                'applicationId': selectedApplicationIds.length == 1 ? selectedApplicationIds[0] : "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    });
     function manageActionButtons() {
         const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
         if (selectedApplicationIds.length == 1) {
@@ -127,6 +138,7 @@ $(function () {
             $('#copyLink').prop('disabled', false);
             $('#downloadApplication').prop('disabled', false);
             $('#applicationLink').prop('disabled', false);
+            summaryWidgetManager.refresh();
             const rightSideCanvas = new bootstrap.Offcanvas(summaryCanvas);
             rightSideCanvas.show();
         }
