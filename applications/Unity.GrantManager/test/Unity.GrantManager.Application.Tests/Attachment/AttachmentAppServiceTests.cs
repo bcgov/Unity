@@ -4,13 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
-using Unity.GrantManager.Comments;
-using Unity.GrantManager.Exceptions;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Identity;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -22,10 +19,10 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
 
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
-    public AttachmentAppServiceTests()
+    public AttachmentAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
     {
         _attachmentAppServiceTest = GetRequiredService<AttachmentService>();
-        _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();   
+        _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
         _assessmentsRepository = GetRequiredService<IRepository<Assessment, Guid>>();
     }
