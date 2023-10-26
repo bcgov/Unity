@@ -8,6 +8,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Unity.GrantManager.Events
 {
@@ -20,7 +21,7 @@ namespace Unity.GrantManager.Events
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private ICurrentUser? _currentUser;
 
-        public ChefsEventSubscriptionServiceTests()
+        public ChefsEventSubscriptionServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
             _chefsEventSubscriptionService = GetRequiredService<ChefsEventSubscriptionService>();
             _applicationFormRepository = GetRequiredService<IApplicationFormRepository>();

@@ -10,6 +10,7 @@ using Volo.Abp.Identity;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -21,11 +22,11 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentsRepository;
     private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
     private readonly IIdentityUserLookupAppService _identityUserLookupAppService;
-
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
-    public ApplicationAppServiceTests()
+    public ApplicationAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
     {
+
         _grantApplicationAppServiceTest = GetRequiredService<GrantApplicationAppService>();
         _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
         _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
@@ -37,10 +38,10 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
     [Fact]
     public async Task AddRemoveAssigneeAsync_Should_AddRemove_Assignee()
-    {
+    {        
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
-        var application = (await _applicationsRepository.GetListAsync())[0];
+        var application = (await _applicationsRepository.GetListAsync())[0];        
 
         Guid[] applicationIds = new Guid[1];
         applicationIds.SetValue(application.Id, 0);
@@ -53,7 +54,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
             // Act
             await _grantApplicationAppServiceTest.InsertAssigneeAsync(applicationIds, oidcSub, assigneeDisplayName);
-            await _unitOfWorkManager.Current.SaveChangesAsync();
+            await uow.SaveChangesAsync();
 
 
             // Assert
@@ -63,13 +64,12 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
             // Act
             await _grantApplicationAppServiceTest.DeleteAssigneeAsync(applicationIds, oidcSub);
-            await _unitOfWorkManager.Current.SaveChangesAsync();
+            await uow.SaveChangesAsync();
 
             IQueryable<ApplicationUserAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments2 = queryableAssignment2.ToList();
             assignments2.Count.ShouldBe(0);
         }
-
     }
 
 
@@ -81,7 +81,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         var grantApplications = await _grantApplicationAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto() { MaxResultCount = 100 });
 
         // Assert
-        grantApplications.Items.Any(s => s.ProjectName == "Application For Integration Test Funding").ShouldBeTrue();
+        grantApplications.Items.Any(s => s.ProjectName == "Application For Integration Test Funding").ShouldBeTrue();        
     }
 
     [Fact]
