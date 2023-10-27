@@ -21,10 +21,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
     {
         private readonly IAssessmentRepository _assessmentRepository;
         private readonly IApplicationRepository _applicationRepository;
-        public SummaryWidgetViewComponent(IAssessmentRepository assessmentRepository, IApplicationRepository applicationRepository)
+        private readonly IApplicationFormRepository _applicationFormRepository;
+        public SummaryWidgetViewComponent(IAssessmentRepository assessmentRepository, IApplicationRepository applicationRepository, IApplicationFormRepository applicationFormRepository)
         {
             _assessmentRepository = assessmentRepository;
             _applicationRepository = applicationRepository;
+            _applicationFormRepository = applicationFormRepository; 
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -34,11 +36,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
                 return View(new SummaryWidgetViewModel());
             }
             var application = await _applicationRepository.GetAsync(applicationId);
-
+            var appForm = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
             SummaryWidgetViewModel model = new()
             {
-                FundingStream = "",
-                ApplicationType = "",
+                Category = appForm==null?string.Empty:appForm.Category,
                 SubmissionDate = application.CreationTime.ToShortDateString(),
                 OrganizationName = "",
                 OrganizationNumber = "",
