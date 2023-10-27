@@ -99,7 +99,7 @@ namespace Unity.GrantManager.Intakes
                     SubSector = intakeMap.SubSector ?? "{SubSector}",
                     ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
                     Community = intakeMap.Community ?? "{Community}",
-                    IndigenousOrgInd =  intakeMap.IndigenousOrgInd ?? "{IndigenousOrgInd}",
+                    IndigenousOrgInd =  intakeMap.IndigenousOrgInd ?? "N",
                     ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
                     EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
                 });
