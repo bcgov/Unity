@@ -3,8 +3,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
 {
     public class SummaryWidgetViewModel
     {        
-        public string? FundingStream { get; set; }
-        public string? ApplicationType { get; set; }
+        public string? Category { get; set; }
         public string? SubmissionDate { get; set; }
         public string? OrganizationName { get; set; }
         public string? OrganizationNumber { get; set; }

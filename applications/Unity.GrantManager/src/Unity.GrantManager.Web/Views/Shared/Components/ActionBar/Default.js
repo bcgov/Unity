@@ -115,7 +115,11 @@ $(function () {
         });
     });
 
-    
+    $('#applicationLink').click(function () {
+        const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
+        const rightSideCanvas = new bootstrap.Offcanvas(summaryCanvas);
+        rightSideCanvas.show();
+    });
 
     $('#externalLink').click(function () {
         location.href =
@@ -132,21 +136,19 @@ $(function () {
         }
     });
     function manageActionButtons() {
-        const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
         if (selectedApplicationIds.length == 1) {
             $('#externalLink').prop('disabled', false);
             $('#copyLink').prop('disabled', false);
             $('#downloadApplication').prop('disabled', false);
             $('#applicationLink').prop('disabled', false);
             summaryWidgetManager.refresh();
-            const rightSideCanvas = new bootstrap.Offcanvas(summaryCanvas);
-            rightSideCanvas.show();
         }
         else {
             $('#externalLink').prop('disabled', true);
             $('#copyLink').prop('disabled', true);
             $('#downloadApplication').prop('disabled', true);
             $('#applicationLink').prop('disabled', true);
+            const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
             summaryCanvas.classList.remove('show');
         }
         if (selectedApplicationIds.length == 0) {
