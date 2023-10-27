@@ -73,7 +73,7 @@
                 .done(function () {
                     abp.notify.success(
                         'The comment has been created.'
-                    );
+                    );                    
                     PubSub.publish(commentType + '_refresh');
                 });
 
@@ -81,5 +81,5 @@
         catch (error) {
             console.log(error);
         }
-    }
+    }    
 });
