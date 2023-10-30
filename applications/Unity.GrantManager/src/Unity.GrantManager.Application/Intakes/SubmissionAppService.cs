@@ -58,7 +58,12 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
             throw new ApiException(400, "Missing required parameter 'formId' when calling GetSubmission");
         }
 
-        ApplicationForm applicationForm = await getApplicationFormBySubmissionId(formSubmissionId);
+        ApplicationForm? applicationForm = await GetApplicationFormBySubmissionId(formSubmissionId);
+
+        if (applicationForm == null)
+        {
+            throw new ApiException(400, "Missing Form configuration");
+        }
 
         if (applicationForm.ChefsApplicationFormGuid == null)
         {
@@ -73,7 +78,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         var request = new RestRequest($"/submissions/{formSubmissionId}")
         {
             /** Authenticator as CHEFS form id + api key which is stored in db manually **/
-            Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!))
+            Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
         };
         var response = await _intakeClient.GetAsync(request);
 
@@ -90,9 +95,9 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
     }
 
 
-    public async Task<ApplicationForm> getApplicationFormBySubmissionId(Guid? formSubmissionId)
+    public async Task<ApplicationForm?> GetApplicationFormBySubmissionId(Guid? formSubmissionId)
     {
-        ApplicationForm applicationFormData = new();
+        ApplicationForm? applicationFormData = new();
 
         if (formSubmissionId != null)
         {
@@ -126,7 +131,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
             throw new ApiException((int)response.StatusCode, "Error calling ListFormSubmissions: " + response.ErrorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
         }
 
-        var submissionOptions = new System.Text.Json.JsonSerializerOptions
+        var submissionOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
             PropertyNameCaseInsensitive = true,
@@ -138,7 +143,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
 
         if (null == jsonResponse)
         {
-            return new PagedResultDto<FormSubmissionSummaryDto>(0, null);
+            return new PagedResultDto<FormSubmissionSummaryDto>(0, new List<FormSubmissionSummaryDto>());
         }
         else
         {

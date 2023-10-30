@@ -382,4 +382,6 @@ div.dataTables_wrapper div.dataTables_length label {
 .swal2-confirm {
     background-color: var(--bs-primary) !important;
     color: var(--bc-colors-white-primary-500) !important;
+    box-shadow: 0px 0px 0px 0px rgba(211, 212, 213) !important;
+   
 }
