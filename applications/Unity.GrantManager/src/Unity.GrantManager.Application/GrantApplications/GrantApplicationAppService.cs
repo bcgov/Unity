@@ -142,7 +142,12 @@ public class GrantApplicationAppService :
             application.Recommendation = input.Recommendation;
             application.DeclineRational = input.DeclineRational;
             application.TotalScore = input.TotalScore;
+            if(input.AssessmentResultStatus != application.AssessmentResultStatus)
+            {
+                application.AssessmentResultDate = DateTime.UtcNow;
+            }
             application.AssessmentResultStatus = input.AssessmentResultStatus;
+
             
         }
         await _applicationRepository.UpdateAsync(application, autoSave: true);

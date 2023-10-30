@@ -54,4 +54,6 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string? AssessmentResultStatus { get; set; }
 
+    public DateTime? AssessmentResultDate { get; set; }
+
 }
