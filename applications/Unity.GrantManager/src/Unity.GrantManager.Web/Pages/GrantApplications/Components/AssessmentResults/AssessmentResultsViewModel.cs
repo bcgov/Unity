@@ -94,6 +94,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
             public string? DeclineRational { get; set; }
 
             [TextArea(Rows = 2)]
+            [StringLength(200)]
             public string? Notes { get; set; }
 
             [SelectItems(nameof(AssessmentResultStatusList))]
