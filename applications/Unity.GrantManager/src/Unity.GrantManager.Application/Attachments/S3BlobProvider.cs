@@ -15,8 +15,6 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Routing;
-using Polly;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -116,7 +114,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
         throw new NotImplementedException();
     }
 
-    public override async Task<Stream> GetOrNullAsync(BlobProviderGetArgs args)
+    public override async Task<Stream?> GetOrNullAsync(BlobProviderGetArgs args)
     {       
         var config = args.Configuration.GetS3BlobProviderConfiguration();
 
