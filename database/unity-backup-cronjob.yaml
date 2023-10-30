@@ -54,10 +54,10 @@ parameters:
   value: registry.redhat.io/rhel9/postgresql-15
 - name: DATABASE_BACKUP_KEEP
   description: 'Number of backups to keep'
-  value: '10'
+  value: '28'
 - name: DATABASE_BACKUP_SCHEDULE
-  description: 'Cron-like schedule expression m h D M DayOfWeek'
-  value: '0 7,17 * * *'
+  description: 'Cron-like schedule expression m h D M DayOfWeek add +7/8 hours for UTC conversions'
+  value: '0 0,14 * * *'
 - name: DATABASE_BACKUP_VOLUME_CLAIM
   description: 'Name of the volume claim to be used as storage'
   required: true
@@ -97,7 +97,7 @@ objects:
                   - 'pipefail'
                   - '-c'
                   - > 
-                    trap "echo Backup failed; exit 0" ERR; 
+                    trap "echo Backup failed; exit 0" ERR; date;
                     FILENAME=backup-${DATABASE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
                     time (find /var/lib/pgsql/backups -type f -name "backup-${DATABASE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
                     PGPASSWORD="$DATABASE_PASSWORD" pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_NAME} | gzip > /var/lib/pgsql/backups/$FILENAME); 
