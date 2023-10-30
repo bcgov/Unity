@@ -10,7 +10,6 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string Applicant { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
-    public decimal EligibleAmount { get; set; }
     public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
     public DateTime SubmissionDate { get; set; }
     public string Status { get; set; } = string.Empty;

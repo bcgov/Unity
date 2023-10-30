@@ -22,7 +22,6 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
-    public double EligibleAmount { get; set; } // drop
     public double RequestedAmount { get; set; } // TODO: change to decimal
     public double TotalProjectBudget { get; set; } // TODO: change to decimal
     public string? Sector { get; set; } = null;
