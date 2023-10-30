@@ -50,10 +50,10 @@ public class AttachmentAppServiceTests : GrantManagerApplicationTestBase
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
-        var assessment = (await _assessmentsRepository.FirstOrDefaultAsync(s => s.ApplicationId.Equals(application.Id)));
+        var assessment = await _assessmentsRepository.FindAsync(s => s.ApplicationId.Equals(application.Id));        
 
         // Act
-        var assessmentAttachments = (await _attachmentAppServiceTest.GetAssessmentAsync(assessment.Id)).ToList();
+        var assessmentAttachments = (await _attachmentAppServiceTest.GetAssessmentAsync(assessment!.Id)).ToList();
 
         // Assert            
         assessmentAttachments.ShouldNotBeNull();

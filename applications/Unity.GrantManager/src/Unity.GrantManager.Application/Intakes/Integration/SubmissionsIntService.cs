@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Intakes.Integration
 
             var request = new RestRequest($"/submissions/{submissionId}")
             {
-                Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!))
+                Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
             };
 
             var response = await _intakeClient.GetAsync(request);
