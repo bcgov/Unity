@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Unity.GrantManager.Comments;
+using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form.DatePicker;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 {
@@ -18,7 +19,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
     }
 
     public class CommentViewModel : CommentDto
-    {
+    {        
         public string Badge { get; set; } = string.Empty;
     }
 }

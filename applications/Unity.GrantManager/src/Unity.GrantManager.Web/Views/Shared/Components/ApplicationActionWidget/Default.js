@@ -53,11 +53,11 @@
         function getConfirmationText(triggerAction) {
             switch (triggerAction) {
                 case 'Approve':
-                    return { isConfirmationRequired: true, title: 'Approve Applications', text: 'Are you sure you want to approve this application?', confirmButtonText: 'Approve', };
+                    return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to approve the application?', confirmButtonText: 'Confirm', };
 
                 case 'Deny':
 
-                    return { isConfirmationRequired: true, title: 'Not Approve Applications', text: 'Are you sure you want to disapprove this application?', confirmButtonText: 'Disapprove' };
+                    return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to decline the application?', confirmButtonText: 'Confirm' };
 
                 default:
                     return { isConfirmationRequired: false };

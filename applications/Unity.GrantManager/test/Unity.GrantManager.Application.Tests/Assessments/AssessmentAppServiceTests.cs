@@ -13,6 +13,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Unity.GrantManager.Assessments
 {
@@ -25,7 +26,7 @@ namespace Unity.GrantManager.Assessments
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private ICurrentUser? _currentUser;
 
-        public AssessmentAppServiceTests()
+        public AssessmentAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
             _assessmentAppService = GetRequiredService<IAssessmentAppService>();
             _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
@@ -136,7 +137,7 @@ namespace Unity.GrantManager.Assessments
         public async Task UpdateCommentAsync_Should_Update_Comment()
         {
             // Arrange
-            using var uow = _unitOfWorkManager.Begin(); 
+            using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
             var assessment = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList()[0];
             var assessmentComment = (await _assessmentCommentRepository.GetQueryableAsync()).Where(s => s.AssessmentId == assessment.Id).ToList()[0];
@@ -253,7 +254,7 @@ namespace Unity.GrantManager.Assessments
             assessment.ApprovalRecommended = true;
 
             // Act
-            var transitionedAssessment = 
+            var transitionedAssessment =
                 await _assessmentAppService.ExecuteAssessmentAction(assessment.Id, AssessmentAction.SendToTeamLead);
 
             // Assert            

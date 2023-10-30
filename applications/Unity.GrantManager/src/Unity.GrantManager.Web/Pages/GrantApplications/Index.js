@@ -9,30 +9,33 @@
     let dataTable, currentRow, previousRow, currentCell, previousCell, originalContent, previousUserOptionsSelected, currentUserOptionsSelected;
     let userDivChanged = false;
     let modifiedAssignments = new Map();
+    let mapTitles = new Map();
 
+    dataTable = initializeDataTable();
+    dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
+    
     const UIElements = {
         searchBar: $('#search-bar'),
-        btnFilter: $('#btn-sort'),
+        btnToggleFilter: $('#btn-toggle-filter'),
+        filterIcon: $(".fl-filter"),
         btnSave: $('#btn-save'),
         userDiv: $('#users-div'),
         users: $('#users'),
-        closeSort: $('#close-sort')
+        clearFilter: $('#btn-clear-filter')
     };
-
     init();
-    
     function init() {
         $('#users').select2();
-        bindUIEvents();
-        dataTable = initializeDataTable();
-        dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
         $('.csv-download').removeClass('dt-button buttons-csv buttons-html5');
         $('.csv-download').prepend('<i class="fl fl-export"></i>');
+        bindUIEvents();
+        UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html());
     }
 
     function bindUIEvents() {
-        UIElements.btnFilter.on('click', toggleFilterRow);
-        UIElements.closeSort.on('click', toggleFilterRow);
+        UIElements.btnToggleFilter.on('click', toggleFilterRow);
+        UIElements.filterIcon.on('click', toggleFilterRow);
+        UIElements.clearFilter.on('click', clearFilter);
         UIElements.btnSave.on('click', handleSave);
         UIElements.userDiv.on('change', markUserDivAsChanged);
         UIElements.userDiv.on('blur', checkUserDivChanged);
@@ -59,6 +62,20 @@
 
     function toggleFilterRow() {
         $('#dtFilterRow').toggleClass('hidden');
+    }
+
+    function clearFilter() {
+        $(".filter-input").each(function() {
+            if(this.value != "") {
+                this.value = "";
+                dataTable
+                .columns(mapTitles.get(this.placeholder))
+                .search(this.value)
+                .draw();
+            }
+        });
+
+        $('#btn-clear-filter')[0].disabled = true;
     }
 
     function markUserDivAsChanged() {
@@ -276,11 +293,10 @@
             },
             columnDefs: [
                 { //0
-                    title: '',
-                    className: 'select-checkbox',
+                    title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
                     orderable: false,
                     render: function (data) {
-                        return '';
+                        return '<div class="select-checkbox" title="Select Application" ></div>';
                     },
                 },
                 { //1
@@ -417,7 +433,6 @@
         trNode.classList.add('hidden');
         trNode.id = 'dtFilterRow';
 
-        let mapTitles = new Map();
         api.columns().every(function () {
             let column = this;
             let title = $(column.header()).text();
@@ -432,7 +447,6 @@
 
         children.forEach(function (child) {
             let label = child.attributes['aria-label'].value;
-            child.classList.remove('select-checkbox');
             child.classList.remove('sorting');
             child.classList.remove('sorting_asc');
             child.classList.add('grey-background');
@@ -445,6 +459,7 @@
                 inputFilter.classList.add('filter-input');
                 inputFilter.placeholder = firstElement;
                 inputFilter.addEventListener('keyup', function () {
+                    $('#btn-clear-filter')[0].disabled = false;
                     dataTable
                         .columns(mapTitles.get(this.placeholder))
                         .search(this.value)
@@ -452,8 +467,7 @@
                 });
                 child.appendChild(inputFilter);
             } else {
-                child.classList.add('close-icon');
-                child.addEventListener('click', toggleFilterRow);
+                child.addEventListener('click', clearFilter);
             }
             trNode.appendChild(child);
         });
