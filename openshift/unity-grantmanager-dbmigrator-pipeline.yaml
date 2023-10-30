@@ -55,13 +55,6 @@ objects:
       app.kubernetes.io/name: ${APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
-    params:
-      - description: The semantic version identifier
-        name: imagetag
-        type: string
-      - description: The version tag name identifier
-        name: tagname
-        type: string
     tasks:
       - name: describe-template
         params:
