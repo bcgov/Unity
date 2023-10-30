@@ -3,6 +3,12 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Threading.Tasks;
+using System;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Comments;
+using static Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults.AssessmentResultsPageModel;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults
 {
@@ -16,17 +22,35 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
     })]
     public class AssessmentResults : AbpViewComponent
     {
+        private readonly GrantApplicationAppService _grantApplicationAppService;
 
-        
-
-        public IViewComponentResult Invoke()
+        public AssessmentResults(GrantApplicationAppService grantApplicationAppService)
         {
-            AssessmentResultsViewModel model = new()
+            _grantApplicationAppService = grantApplicationAppService;
+        }
+
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        {
+            var application = await _grantApplicationAppService.GetAsync(applicationId);
+
+            AssessmentResultsPageModel model = new();
+
+            model.ApplicationId = applicationId;
+
+            model.AssessmentResults = new()
             {
-                ProjectSummary = "",
-                TotalScore = null,
-                ApprovedAmount = null,
-                Recommendation = null,
+                ProjectSummary = application.ProjectSummary,
+                RequestedAmount = application.RequestedAmount,
+                TotalProjectBudget = application.TotalProjectBudget,
+                RecommendedAmount = application.RecommendedAmount,
+                ApprovedAmount = application.ApprovedAmount,
+                LikelihoodOfFunding = application.LikelihoodOfFunding,
+                DueDilligenceStatus = application.DueDilligenceStatus,
+                Recommendation = application.Recommendation,
+                DeclineRational = application.DeclineRational,
+                TotalScore = application.TotalScore,
+                Notes = application.Notes,
+                AssessmentResultStatus = application.AssessmentResultStatus
             };
 
             return View(model);

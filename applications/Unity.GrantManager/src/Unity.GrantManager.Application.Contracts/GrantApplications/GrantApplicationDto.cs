@@ -26,4 +26,15 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
 
     public int AssessmentCount { get; set; } = 0;
     public int AssessmentReviewCount { get; set; } = 0;
+
+    public string ProjectSummary { get; set; } = string.Empty;
+    public decimal TotalScore { get; set; } = 0;
+    public decimal RecommendedAmount { get; set; } = 0;
+    public decimal ApprovedAmount { get; set; } = 0;
+    public string LikelihoodOfFunding { get; set; } = string.Empty;
+    public string DueDilligenceStatus { get; set; } = string.Empty;
+    public string Recommendation { get; set; } = string.Empty;
+    public string DeclineRational { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public string AssessmentResultStatus { get; set; } = string.Empty;
 }

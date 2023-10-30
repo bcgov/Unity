@@ -5,91 +5,86 @@
 @using Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults;
 
 @inject IStringLocalizer<GrantManagerResource> L
-@model AssessmentResultsViewModel
+@model AssessmentResultsPageModel
 @{
     Layout = null;
-    List<SelectListItem> RecommendationActionList = new List<SelectListItem>
-        {
-            new SelectListItem { Value = null, Text = ""},
-            new SelectListItem { Value = "APPROVE", Text = "Recommended for Approval"},
-            new SelectListItem { Value = "DENY", Text = "Recommended for Denial"}
-        };
-    List<SelectListItem> DeclineRationalActionList = new List<SelectListItem>
-        {
-            new SelectListItem { Value = null, Text = ""},
-            new SelectListItem { Value = "NO_READINESS", Text = "Lack of readiness"},
-            new SelectListItem { Value = "LOW_PRIORITY", Text = "Lower priority relative to other requests"},
-            new SelectListItem { Value = "NOT_ENOUGH_INFO", Text = "Insufficient information provided"},
-            new SelectListItem { Value = "INELIGIBLE_PROJECT", Text = "Ineligible Project"},
-            new SelectListItem { Value = "INELIGIBLE_APPLICANT", Text = "Ineligible Applicant"},
-            new SelectListItem { Value = "INSUFFICIENT_READINESS", Text = "Insufficient Readiness"},
-            new SelectListItem { Value = "SMALL_PROJECT", Text = "Project too small"},
-            new SelectListItem { Value = "DENY", Text = "Other"},
-        };
 }
+
+<input type="hidden" id="AssessmentResultViewApplicationId" value="@Model.ApplicationId" />
+
 <abp-row class="px-1 pb-2 mb-4 assessment-results-container">
     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
         <div id="AssessementResultsTitleRegion" class="d-flex align-items-stretch justify-content-start">
             <h6 class="ps-1 fw-bold">@L["AssessmentResultsView:AssessmentResultsTitle"].Value</h6>
         </div>
     </abp-column>
-    <abp-row class="m-0">
-        <abp-column size="_10" class="px-0">
-            <abp-column size="_12" class="px-1">
-                <abp-input asp-for="@Model.ProjectSummary" label="@L["AssessmentResultsView:AssessmentResultsForm.ProjectSummary"].Value" />
+    <form id="assessment_result_form">
+        <abp-row class="m-0">
+            <abp-column size="_10" class="px-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.AssessmentResults.ProjectSummary" label="@L["AssessmentResultsView:AssessmentResultsForm.ProjectSummary"].Value" />
+                </abp-column>
+                <abp-row class="m-0">
+                    <abp-column size="_3" class="px-1">
+                        <abp-input asp-for="@Model.AssessmentResults.RequestedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RequestedAmount"].Value" />
+                    </abp-column>
+                    <abp-column size="_3" class="px-1">
+                        <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget"].Value" />
+                    </abp-column>
+                    <abp-column size="_3" class="px-1">
+                        <abp-input asp-for="@Model.AssessmentResults.RecommendedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RecommendedAmount"].Value" />
+                    </abp-column>
+                    <abp-column size="_3" class="px-1">
+                        <abp-input asp-for="@Model.AssessmentResults.ApprovedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.ApprovedAmount"].Value" />
+                    </abp-column>
+                </abp-row>
+                <abp-row class="m-0">
+                    <abp-column size="_3" class="px-1">
+                        <abp-select asp-for="@Model.AssessmentResults.LikelihoodOfFunding" asp-items="@Model.FundingRiskList" label="@L["AssessmentResultsView:AssessmentResultsForm.LikelihoodOfFunding"].Value">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                    <abp-column size="_3" class="px-1">
+                        <abp-select asp-for="@Model.AssessmentResults.DueDilligenceStatus" asp-items="@Model.DueDilligenceList" label="@L["AssessmentResultsView:AssessmentResultsForm.DueDilligenceStatus"].Value">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                    <abp-column size="_3" class="px-1">
+                        <abp-select asp-for="@Model.AssessmentResults.Recommendation" asp-items="@Model.RecommendationActionList" label="@L["AssessmentResultsView:AssessmentResultsForm.Recommendation"].Value">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                    <abp-column size="_3" class="px-1">
+                        <abp-select asp-for="@Model.AssessmentResults.DeclineRational" asp-items="@Model.DeclineRationalActionList" label="@L["AssessmentResultsView:AssessmentResultsForm.DeclineRational"].Value">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                </abp-row>
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.AssessmentResults.Notes" label="@L["AssessmentResultsView:AssessmentResultsForm.Notes"].Value" />
+                </abp-column>
             </abp-column>
-            <abp-row class="m-0">
-                <abp-column size="_3" class="px-1">
-                    <abp-input asp-for="@Model.RequestedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RequestedAmount"].Value" />
+            <abp-column size="_2" class="px-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.AssessmentResults.TotalScore" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalScore"].Value" />
                 </abp-column>
-                <abp-column size="_3" class="px-1">
-                    <abp-input asp-for="@Model.TotalProjectBudget" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget"].Value" />
-                </abp-column>
-                <abp-column size="_3" class="px-1">
-                    <abp-input asp-for="@Model.RecommendedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RecommendedAmount"].Value" />
-                </abp-column>
-                <abp-column size="_3" class="px-1">
-                    <abp-input asp-for="@Model.ApprovedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.ApprovedAmount"].Value" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0">
-                <abp-column size="_3" class="px-1">
-                    <abp-select asp-for="@Model.LikelihoodOfFunding" label="@L["AssessmentResultsView:AssessmentResultsForm.LikelihoodOfFunding"].Value" />
-                </abp-column>
-                <abp-column size="_3" class="px-1">
-                    <abp-select asp-for="@Model.DueDilligenceStatus" label="@L["AssessmentResultsView:AssessmentResultsForm.DueDilligenceStatus"].Value" />
-                </abp-column>
-                <abp-column size="_3" class="px-1">
-                    <abp-select asp-for="@Model.Recommendation" asp-items="@RecommendationActionList" label="@L["AssessmentResultsView:AssessmentResultsForm.Recommendation"].Value">
-                        <option value="null" disabled>Please Choose...</option>
+                <abp-column size="_12" class="px-1">
+                    <abp-select asp-for="@Model.AssessmentResults.AssessmentResultStatus" asp-items="@Model.AssessmentResultStatusList" label="@L["AssessmentResultsView:AssessmentResultsForm.AssessmentResult"].Value">
+                        <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
-                <abp-column size="_3" class="px-1">
-                    <abp-select asp-for="@Model.DeclineRational" asp-items="@DeclineRationalActionList" label="@L["AssessmentResultsView:AssessmentResultsForm.DeclineRational"].Value" />
+                <abp-column size="_12" class="px-1 d-flex justify-content-end">
+                    <abp-button text="Save"
+                                id="save_assessment_results_btn"
+                                class="save_assessment_btn"
+                                icon-type="Other"
+                                icon="fl fl-save"
+                                button-type="Light"
+                                 />
                 </abp-column>
-            </abp-row>
-            <abp-column size="_12" class="px-1">
-                <abp-input asp-for="@Model.Notes" label="@L["AssessmentResultsView:AssessmentResultsForm.Notes"].Value" />
             </abp-column>
-        </abp-column>
-        <abp-column size="_2" class="px-0">
-            <abp-column size="_12" class="px-1">
-                <abp-input asp-for="@Model.TotalScore" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalScore"].Value" />
-            </abp-column>
-            <abp-column size="_12" class="px-1">
-                <abp-select asp-for="@Model.AssessmentResult" label="@L["AssessmentResultsView:AssessmentResultsForm.AssessmentResult"].Value" />
-            </abp-column>
-            <abp-column size="_12" class="px-1 d-flex justify-content-end">
-                <abp-button text="Save"
-                            id="save_assessment_results_btn"
-                            class="save_assessment_btn"
-                            icon-type="Other"
-                            icon="fl fl-save"
-                            button-type="Light" />
-            </abp-column>
-
-        </abp-column>
-    </abp-row>
+        </abp-row>
+    </form>
 </abp-row>
 
 

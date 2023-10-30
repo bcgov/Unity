@@ -85,7 +85,7 @@
                 @*-------- Review & Assessment Section ---------*@
                 <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
                     <div class="w-100 px-2" id="assessmentResultMainView">
-                        @await Component.InvokeAsync("AssessmentResults")
+                        @await Component.InvokeAsync("AssessmentResults", new { applicationId = @Model.ApplicationId })
                     </div>
                     <div class="w-100 px-2" id="assessmentMainView">
                         @await Component.InvokeAsync("ReviewList")

@@ -306,6 +306,12 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("ApplicationStatusId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("ApprovedAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("AssessmentResultStatus")
+                        .HasColumnType("text");
+
                     b.Property<string>("City")
                         .HasColumnType("text");
 
@@ -323,6 +329,12 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid?>("CreatorId")
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
+
+                    b.Property<string>("DeclineRational")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DueDilligenceStatus")
+                        .HasColumnType("text");
 
                     b.Property<string>("EconomicRegion")
                         .HasColumnType("text");
@@ -343,6 +355,12 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("LikelihoodOfFunding")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
                     b.Property<string>("Payload")
                         .HasColumnType("jsonb");
 
@@ -351,8 +369,17 @@ namespace Unity.GrantManager.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
+                    b.Property<string>("ProjectSummary")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("ProposalDate")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("RecommendedAmount")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("ReferenceNo")
                         .IsRequired()
@@ -369,6 +396,9 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<double>("TotalProjectBudget")
                         .HasColumnType("double precision");
+
+                    b.Property<decimal?>("TotalScore")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
