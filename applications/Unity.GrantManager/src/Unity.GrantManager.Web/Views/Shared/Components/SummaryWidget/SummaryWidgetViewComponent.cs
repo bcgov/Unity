@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
                 Community = "",
                 Status = application.ApplicationStatus.InternalStatus,
                 LikelihoodOfFunding = "",
-                AssessmentStartDate = "",
+                AssessmentStartDate = application.AssessmentStartDate?.ToShortDateString(),
                 FinalDecisionDate = "",
                 TotalScore = "",
                 AssessmentResult = "",

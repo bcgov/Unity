@@ -306,6 +306,9 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("ApplicationStatusId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("AssessmentStartDate")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("City")
                         .HasColumnType("text");
 
