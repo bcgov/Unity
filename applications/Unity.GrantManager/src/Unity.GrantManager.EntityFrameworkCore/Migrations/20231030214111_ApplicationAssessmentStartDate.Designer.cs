@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231030214111_ApplicationAssessmentStartDate")]
+    partial class ApplicationAssessmentStartDate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -309,15 +312,6 @@ namespace Unity.GrantManager.Migrations
                     b.Property<DateTime?>("AssessmentStartDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<decimal>("ApprovedAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime?>("AssessmentResultDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("AssessmentResultStatus")
-                        .HasColumnType("text");
-
                     b.Property<string>("City")
                         .HasColumnType("text");
 
@@ -336,14 +330,11 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<string>("DeclineRational")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DueDilligenceStatus")
-                        .HasColumnType("text");
-
                     b.Property<string>("EconomicRegion")
                         .HasColumnType("text");
+
+                    b.Property<double>("EligibleAmount")
+                        .HasColumnType("double precision");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -358,12 +349,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("LikelihoodOfFunding")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
                     b.Property<string>("Payload")
                         .HasColumnType("jsonb");
 
@@ -372,17 +357,8 @@ namespace Unity.GrantManager.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
-                    b.Property<string>("ProjectSummary")
-                        .HasColumnType("text");
-
                     b.Property<DateTime?>("ProposalDate")
                         .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Recommendation")
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("RecommendedAmount")
-                        .HasColumnType("numeric");
 
                     b.Property<string>("ReferenceNo")
                         .IsRequired()
@@ -399,9 +375,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<double>("TotalProjectBudget")
                         .HasColumnType("double precision");
-
-                    b.Property<decimal?>("TotalScore")
-                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 

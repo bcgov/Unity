@@ -29,6 +29,7 @@ public class Application : AuditedAggregateRoot<Guid>
     public string? City { get; set; } = null;
     public DateTime? ProposalDate { get; set; }
     public DateTime SubmissionDate { get; set; }
+    public DateTime? AssessmentStartDate { get; set; }
 
     [Column(TypeName = "jsonb")]
     public string? Payload { get; set; }

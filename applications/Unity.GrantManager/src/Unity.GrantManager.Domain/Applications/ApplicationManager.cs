@@ -121,6 +121,11 @@ public class ApplicationManager : DomainService, IApplicationManager
         application.ApplicationStatusId = statusChangedTo.Id;
         application.ApplicationStatus = statusChangedTo;
 
+        if(triggerAction == GrantApplicationAction.StartAssessment)
+        {
+            application.AssessmentStartDate = DateTime.Now;
+        }
+
         return await _applicationRepository.UpdateAsync(application);
     }
 
