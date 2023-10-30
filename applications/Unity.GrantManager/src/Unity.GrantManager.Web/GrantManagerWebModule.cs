@@ -41,6 +41,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.Web;
+using Volo.Abp.Timing;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
@@ -117,6 +118,10 @@ public class GrantManagerWebModule : AbpModule
             options.TokenCookie.SecurePolicy = CookieSecurePolicy.Always;
             options.TokenCookie.SameSite = SameSiteMode.None;
             options.TokenCookie.HttpOnly = false;
+        });
+        Configure<AbpClockOptions>(options =>
+        {
+            options.Kind = DateTimeKind.Utc;
         });
     }
 

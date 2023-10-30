@@ -2,7 +2,6 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
-
 @model CommentsWidgetViewModel
 @{
     Layout = null;
@@ -46,8 +45,7 @@
                     </div>
                     <div class="comment-lbl" data-id="@comment.Id">
                         <div>
-
-                         @comment.Comment
+                            @comment.Comment
                         </div>
                     </div>
                     <div class="commented-time mt-3">@comment.CreationTime.ToString("yyyy-MM-dd h:mm tt")</div>
@@ -64,4 +62,3 @@
         }
     }
 </div>
-

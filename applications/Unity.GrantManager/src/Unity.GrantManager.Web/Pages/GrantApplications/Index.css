@@ -8,47 +8,6 @@ table.dataTable>tbody>tr.even.selected>* {
     color: #003366;
 }
 
-table.dataTable>tbody>tr.odd.selected>.select-checkbox {
-    color: white;
-}
-
-table.dataTable>tbody>tr.even.selected>.select-checkbox {
-    color: white;
-}
-
-
-table.dataTable>tbody>tr>td.select-checkbox:before
-{
-    border: 1px solid #1A5A96;
-    border-radius: 26px;
-    color: white;
-    width: 17px;
-    height: 17px;
-    top: 55%;
-    left: 48%;
-    margin-top: -10px;
-    cursor: pointer;
-}
-
-table.dataTable>tbody>tr>td.select-checkbox:before:hover,
-table.dataTable>tbody>thead>th.select-checkbox:before:hover {
-    border: 1px solid #1A5A96;
-}
-
-table.dataTable>tbody>tr.selected>td.select-checkbox:before,
-table.dataTable>tbody>tr.selected>th.select-checkbox:before {
-    background-color: #1A5A96;
-}
-
-
-table.dataTable>tbody>tr.selected>td.select-checkbox:after,
-table.dataTable>tbody>tr.selected>th.select-checkbox:after {
-    content: "✓";
-    font-size: 15px;
-    margin-top: -11px;
-    margin-left: -5px;
-    text-align: center;
-}
 
 
 thead input {
@@ -125,7 +84,7 @@ td.dt-editable:before {
     color: var(--bc-colors-blue-background, #38598A);
 }
 
-th.close-icon:before {
+.clear-icon:before {
     content: '\E8BB';
     color: var(--bc-colors-white-primary-500, #FFF);
     font-family: 'Segoe-Fluent-Icons';
@@ -145,7 +104,113 @@ th.close-icon:before {
     float: right;
 }
 
+.select-checkbox {
+    border-radius: 8px;
+    color: 1px solid var(--bc-colors-blue-background, #38598A);
+    border: 1px solid var(--bc-colors-blue-background, #38598A);
+    width: 8px;
+    height: 8px;
+    padding: 7px;
+    margin: auto;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.select-checkbox:hover {
+    border: 1px solid var(--bc-colors-blue-background, #38598A);
+}
+
+.select-checkbox:before
+{
+    border: 1px solid #1A5A96;
+    border-radius: 26px;
+    color: white;
+    width: 17px;
+    top: 55%;
+    left: 48%;
+    margin-top: -10px;
+    cursor: pointer;
+}
+
+.select-checkbox:after {
+    content: "✓";
+    font-size: 14px;
+    float: inline-start;
+    margin: auto;
+    padding: 5px;
+    margin-top: -14px;
+    padding-left: 0px;
+    padding-right: 0px;
+    margin-left: -5px;
+    color: white;
+}
+
 .application-scrollable-content {
     overflow-y: scroll;
     height: calc(100vh - 190px);
+}
+
+
+#btn-clear-filter {
+    padding-left: 20px;
+}
+
+#btn-toggle-filter {
+    margin: auto;
+}
+
+th .fl-filter {
+    width: 45px;
+}
+
+
+tr.selected td div.select-checkbox {
+    background: var(--bc-colors-blue-background, #38598A);
+}
+
+tr.filter th.sorting_desc:before {
+    visibility: hidden;
+    display: none;
+    content: "" !important;
+}
+
+
+tr.filter th.sorting_desc:after {
+    visibility: hidden;
+    display: none;
+    content: "" !important;
+}
+
+
+tr.filter th.sorting_asc:before {
+    visibility: hidden;
+    display: none;
+    content: "" !important;
+}
+
+tr.filter th.sorting_asc:after {
+    visibility: hidden;
+    display: none;
+    content: "" !important;
+}
+
+.x-mark {
+    font-family: cursive;
+    font-weight: 600;
+    position: relative;
+    float: left;
+    margin-left: -22px;
+    left: 23px;
+    font-size: 12px;
+    top: 4px;
+}
+
+
+th #btn-toggle-filter {
+ display: none;
+}
+
+.fl-left {
+    margin-right: 8px;
 }
