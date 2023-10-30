@@ -1,0 +1,138 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+message: |-
+  A scheduled cronjob has been created in your project: unity-backup.
+  For more information about using this template, including OpenShift considerations, 
+  see template usage guide found in the project readme.md and wiki documents.
+metadata:
+  name: unity-backup-cronjob
+  # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
+  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # oc process -f .\openshift\unity-backup-cronjob.yaml --param-file=.env | oc create -f -
+  labels:
+    template: unity-backup-cronjob  
+  annotations:
+    description: |-
+      Template for running a recurring backup script in OpenShift.
+    iconClass: icon-build
+    openshift.io/display-name: Database Backup Cronjob
+    template.openshift.io/long-description: |-
+      This template defines resources needed to build and deploy a postgresql container application.
+    tags: unity-database,postgresql
+parameters:
+# Project namespace parameters
+- description: "The OpenShift project license plate 6 charater alpha numberic."
+  displayName: "Project Namespace"
+  name: PROJECT_NAMESPACE
+  required: true
+  generate: expression
+  from: "[a-z0-9]{6}"
+- description: "The OpenShift environment name [dev, test, prod]."
+  displayName: "Environment name"
+  name: ENV_NAME
+  required: true
+  value: "dev"
+- description: The name of the application.
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: true
+  value: unity-backup
+- description: The name of the application grouping.
+  displayName: Application Group
+  name: APPLICATION_GROUP
+  value: Triggers
+# Additional parameters for project application provisioning.
+- description: The name of the OpenShift Service exposed for the database.
+  displayName: Database Service Name
+  name: DATABASE_SERVICE_NAME
+  required: true
+  value: unity-data-postgres
+- description: The version of the postgresql container image to use, e.g. registry.redhat.io/rhel9/postgresql-15 
+  displayName: Regisrty container image to pull
+  name: IMAGE_STREAM_TAG
+  required: true
+  value: registry.redhat.io/rhel9/postgresql-15
+- name: DATABASE_BACKUP_KEEP
+  description: 'Number of backups to keep'
+  value: '10'
+- name: DATABASE_BACKUP_SCHEDULE
+  description: 'Cron-like schedule expression m h D M DayOfWeek'
+  value: '0 7,17 * * *'
+- name: DATABASE_BACKUP_VOLUME_CLAIM
+  description: 'Name of the volume claim to be used as storage'
+  required: true
+  value: unity-data-backup
+# Template objects to instantiate the project.
+objects:
+# Recurring cronjob for Database Backups
+- apiVersion: batch/v1
+  kind: CronJob
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      job-name: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    schedule: ${DATABASE_BACKUP_SCHEDULE}
+    concurrencyPolicy: Forbid
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: ${APPLICATION_NAME}
+                persistentVolumeClaim:
+                  claimName: ${DATABASE_BACKUP_VOLUME_CLAIM}
+            containers:
+              - name: ${APPLICATION_NAME}
+                image: ${IMAGE_STREAM_TAG}
+                command:
+                  - 'bash'
+                  - '-eo'
+                  - 'pipefail'
+                  - '-c'
+                  - > 
+                    trap "echo Backup failed; exit 0" ERR; 
+                    FILENAME=backup-${DATABASE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
+                    time (find /var/lib/pgsql/backups -type f -name "backup-${DATABASE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
+                    PGPASSWORD="$DATABASE_PASSWORD" pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_NAME} | gzip > /var/lib/pgsql/backups/$FILENAME); 
+                    echo "";
+                    echo "Backup successful"; du -h /var/lib/pgsql/backups/$FILENAME; 
+                    echo "to restore the backup to the serviced host use: $ psql --username=$DATABASE_USER --password --host=$DATABASE_HOST --port=$DATABASE_PORT postgres < /var/lib/pgsql/backups/<backupfile> (unpacked)";
+                    echo ""; du -hc /var/lib/pgsql/backups/*
+                env:
+                  - name: DATABASE_PORT
+                    valueFrom:
+                      configMapKeyRef:
+                        name: ${DATABASE_SERVICE_NAME}
+                        key: UNITY_DB_PORT
+                  - name: DATABASE_HOST
+                    value: ${DATABASE_SERVICE_NAME}
+                  - name: DATABASE_NAME
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${DATABASE_SERVICE_NAME}
+                        key: database-name
+                  - name: DATABASE_USER
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${DATABASE_SERVICE_NAME}
+                        key: database-user
+                  - name: DATABASE_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${DATABASE_SERVICE_NAME}
+                        key: database-password
+                  - name: DATABASE_BACKUP_KEEP
+                    value: ${DATABASE_BACKUP_KEEP}
+                  - name: TZ
+                    value: Canada/Pacific
+                volumeMounts:
+                  - name: ${APPLICATION_NAME}
+                    mountPath: /var/lib/pgsql/backups
+            restartPolicy: Never
