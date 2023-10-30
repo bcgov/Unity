@@ -1,11 +1,11 @@
 apiVersion: template.openshift.io/v1
 kind: Template
-labels:
-  template: tools-networkpolicy
 metadata:
   name: tools-networkpolicy
   # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
+  labels:
+    template: tools-networkpolicy
   annotations:
     description: |-
       Template for tools namespace comunications in OpenShift.

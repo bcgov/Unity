@@ -1,7 +1,5 @@
 apiVersion: template.openshift.io/v1
 kind: Template
-labels:
-  template: unity-grantmanager-dbmigrator-pipeline
 message: |-
   A pipeline has been created in your project: unity-grantmanager-dbmigrator.
   For more information about using this template, including OpenShift considerations, 
@@ -11,6 +9,8 @@ metadata:
   # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
   # oc process -f .\openshift\unity-grantmanager-dbmigrator-pipeline.yaml --param-file=.env | oc create -f -
+  labels:
+    template: unity-grantmanager-dbmigrator-pipeline
   annotations:
     description: |-
       Template for running a console application build and deployment in OpenShift.

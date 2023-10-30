@@ -1,7 +1,5 @@
 apiVersion: template.openshift.io/v1
 kind: Template
-labels:
-  template: unity-release-triggers
 message: |-
   A trigger setup has been created in your project: unity.
   For more information about using this template, including OpenShift considerations, 
@@ -11,6 +9,8 @@ metadata:
   # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
   # oc process -f .\openshift\unity-release-triggers.yaml --param-file=.env | oc create -f -
+  labels:
+    template: unity-release-triggers
   annotations:
     description: |-
       Template for triggering an application build pipeline in OpenShift.
