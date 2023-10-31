@@ -18,6 +18,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -116,6 +117,42 @@ public class GrantApplicationAppService :
             totalCount,
             applicationDtos
         );
+    }
+
+    public override async Task<GrantApplicationDto> GetAsync(Guid id)
+    {
+        var dto = await _applicationRepository.GetAsync(id);
+        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
+        return appDto;
+    }
+
+    public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
+    {
+        Application application = new();
+        application = await _applicationRepository.GetAsync(id);
+        if (application != null)
+        {
+            application.ProjectSummary = input.ProjectSummary;
+            application.RequestedAmount = input.RequestedAmount ?? 0;
+            application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
+            application.RecommendedAmount = input.RecommendedAmount ?? 0;
+            application.ApprovedAmount = input.ApprovedAmount ?? 0;
+            application.LikelihoodOfFunding = input.LikelihoodOfFunding;
+            application.DueDilligenceStatus = input.DueDilligenceStatus;
+            application.Recommendation = input.Recommendation;
+            application.DeclineRational = input.DeclineRational;
+            application.TotalScore = input.TotalScore;
+            if(input.AssessmentResultStatus != application.AssessmentResultStatus)
+            {
+                application.AssessmentResultDate = DateTime.UtcNow;
+            }
+            application.AssessmentResultStatus = input.AssessmentResultStatus;
+
+            
+        }
+        await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
     public async Task<List<GrantApplicationAssigneeDto>> GetAssigneesAsync(Guid applicationId)
