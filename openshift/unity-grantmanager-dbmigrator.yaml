@@ -1,7 +1,5 @@
 apiVersion: template.openshift.io/v1
 kind: Template
-labels:
-  template: unity-grantmanager-dbmigrator
 message: |-
   A build config has been created in your project: unity-grantmanager-dbmigrator.
   For more information about using this template, including OpenShift considerations, 
@@ -11,6 +9,8 @@ metadata:
   # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
   # oc process -f .\openshift\unity-grantmanager-dbmigrator.yaml --param-file=.env | oc create -f -
+  labels:
+    template: unity-grantmanager-dbmigrator
   annotations:
     description: |-
       Template for building a DotNet console application on OpenShift.
@@ -60,45 +60,8 @@ parameters:
   displayName: Context Directory
   name: CONTEXT_DIR
   value: /applications/Unity.GrantManager
-- description: GitHub build trigger secret (Incomming Webhook)
-  displayName: Github Webhook Secret
-  from: '[a-zA-Z0-9]{26}'
-  generate: expression
-  name: GITHUB_WEBHOOK_SECRET
-  required: true
-- description: Generic build trigger secret (Incomming Webhook)
-  displayName: Generic Webhook Secret
-  from: '[a-zA-Z0-9]{26}'
-  generate: expression
-  name: GENERIC_WEBHOOK_SECRET
-  required: true
 # Template objects to instantiate the project.
 objects:
-# Secrets 
-- apiVersion: v1
-  kind: Secret
-  metadata:
-    name: ${APPLICATION_NAME}-github-webhook-secret
-    labels:
-      app: ${APPLICATION_NAME}
-      app.kubernetes.io/component: ${APPLICATION_NAME}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
-      app.kubernetes.io/name: ${APPLICATION_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  stringData:
-    WebHookSecretKey: ${GITHUB_WEBHOOK_SECRET}
-- apiVersion: v1
-  kind: Secret
-  metadata:
-    name: ${APPLICATION_NAME}-generic-webhook-secret
-    labels:
-      app: ${APPLICATION_NAME}
-      app.kubernetes.io/component: ${APPLICATION_NAME}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
-      app.kubernetes.io/name: ${APPLICATION_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  stringData:
-    WebHookSecretKey: ${GENERIC_WEBHOOK_SECRET}
 # Imagestream
 - apiVersion: image.openshift.io/v1
   kind: ImageStream
@@ -147,11 +110,3 @@ objects:
         type: Docker
     triggers:
     - type: ConfigChange
-    - generic:
-        secretReference:
-          name: ${APPLICATION_NAME}-generic-webhook-secret
-      type: Generic
-    - github:
-        secretReference:
-          name: ${APPLICATION_NAME}-github-webhook-secret
-      type: GitHub

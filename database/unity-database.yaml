@@ -1,7 +1,5 @@
 apiVersion: template.openshift.io/v1
 kind: Template
-labels:
-  template: unity-database
 message: |-
   The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.
 
@@ -17,6 +15,8 @@ metadata:
   # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
   # oc process -f .\database\unity-database.yaml --param-file=.env | oc create -f -
+  labels:
+    template: unity-database
   annotations:
     description: |-
       PostgreSQL database service, with persistent storage.
@@ -185,7 +185,7 @@ objects:
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
     accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
     resources:
       requests:
         storage: ${VOLUME_CAPACITY}
