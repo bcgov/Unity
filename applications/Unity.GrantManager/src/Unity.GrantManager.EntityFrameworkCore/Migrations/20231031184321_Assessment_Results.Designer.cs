@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    [Migration("20231030164443_Assessment_Results_StatusDate")]
-    partial class AssessmentResultsStatusDate
+    [Migration("20231031184321_Assessment_Results")]
+    partial class AssessmentResults
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -344,9 +344,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("EconomicRegion")
                         .HasColumnType("text");
-
-                    b.Property<double>("EligibleAmount")
-                        .HasColumnType("double precision");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
