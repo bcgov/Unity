@@ -91,7 +91,7 @@ public class GrantApplicationAppService :
                     };
 
         query = query
-            .OrderBy(NormalizeSorting(input.Sorting))
+            .OrderBy(NormalizeSorting(input.Sorting ?? string.Empty))
             .Skip(input.SkipCount)
             .Take(input.MaxResultCount);
 
