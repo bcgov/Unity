@@ -1,9 +1,8 @@
 ﻿$(function () {
-
     $('body').on('click', '#save_assessment_results_btn', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
-        var formData = $("#assessment_result_form").serializeArray()
-        var assessmentResultObj = {};
+        let formData = $("#assessment_result_form").serializeArray()
+        let assessmentResultObj = {};
         $.each(formData, function (key, input) {
             assessmentResultObj[input.name.split(".")[1]] = input.value;
         });
@@ -20,5 +19,4 @@
             console.log(error);
         }
     });
-
 });
