@@ -7,23 +7,18 @@
 @{
     string currentPath = Context.Request.Path;
 }
-<div class="unity-side-nav">
+<div id="unity_app_sidebar" class="unity-side-nav">
     <div class="d-flex flex-column align-items-center align-items-sm-start text-white">
         <div class="d-flex align-items-center mb-md-0 me-md-auto px-3 py-4 unity-user-name">
-            @*<a href="#" class="fw-bold d-sm-inline text-decoration-none">Fenske, Melissa JEDI:EX</a>*@
-
             @if (CurrentUser.IsAuthenticated)
             {                
                 <a href="#" class="fw-bold d-sm-inline text-decoration-none">
                     <span><span>@CurrentUser.Name </span><span> @CurrentUser.SurName</span></span>
                 </a>
-                
-                @*<form asp-page-handler="cancel" method="post">
-                    <button class="btn btn-default">Logout</button>
-                </form>*@
             }
         </div>
-        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100" id="menu">
+        <div id="unity_app_sidebar_menu_wrapper">
+            <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100" id="menu">
             @foreach (var menuItem in Model.Items)
             {
                 var elementId = string.IsNullOrEmpty(menuItem.ElementId) ? string.Empty : $"id=\"{menuItem.ElementId}\"";
@@ -93,5 +88,12 @@
             }
 
         </ul>
+        </div>
+    </div>
+    <div id="unity_sidebar_menu_footer" class="d-flex align-items-center px-8 pb-10">
+        <div class="text-gray-900 order-2 order-md-1">
+            <span class="text-muted fw-semibold me-1">Unity</span>
+            <a href="#" target="_blank" class="text-gray-800">v0.0.1.4321</a>
+        </div>
     </div>
 </div>
