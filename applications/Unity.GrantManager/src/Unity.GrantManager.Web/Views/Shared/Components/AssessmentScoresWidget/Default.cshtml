@@ -15,7 +15,7 @@
                 <div class="scores-block-left">
                     <div class="scores-block-score">
                         <label for="financialAnalysis">Financial Analysis</label>
-                        <input type="number" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
+                        <input type="number" size="18" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
                     </div>
 
                     <div class="scores-block-score">
