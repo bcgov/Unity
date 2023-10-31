@@ -1,1 +1,23 @@
-﻿
+﻿.scores-block label,input {
+    display: block;
+}
+
+.scores-block {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 5px;
+}
+
+.scores-block-save {
+    flex-basis: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin: 5px 0px 5px 0px;
+}
+
+.scores-block-wrapper {
+    display: inline-block;
+}
