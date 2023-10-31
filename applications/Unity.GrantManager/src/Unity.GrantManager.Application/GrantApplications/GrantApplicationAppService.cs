@@ -18,6 +18,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -79,11 +80,11 @@ public class GrantApplicationAppService :
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
                     join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
                     join assessment in await _assessmentRepository.GetQueryableAsync() on application.Id equals assessment.ApplicationId into assessments
-                    select new 
-                    { 
-                        application, 
-                        appStatus, 
-                        applicant, 
+                    select new
+                    {
+                        application,
+                        appStatus,
+                        applicant,
                         appForm,
                         AssessmentCount = assessments.Count(),
                         AssessmentReviewCount = assessments.Count(a => a.Status == AssessmentState.IN_REVIEW)
@@ -116,6 +117,44 @@ public class GrantApplicationAppService :
             totalCount,
             applicationDtos
         );
+    }
+
+    public override async Task<GrantApplicationDto> GetAsync(Guid id)
+    {
+        var dto = await _applicationRepository.GetAsync(id);
+        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
+        return appDto;
+    }
+
+    public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+        if (application != null)
+        {
+            application.ProjectSummary = input.ProjectSummary;
+            application.RequestedAmount = input.RequestedAmount ?? 0;
+            application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
+            application.RecommendedAmount = input.RecommendedAmount ?? 0;
+            application.ApprovedAmount = input.ApprovedAmount ?? 0;
+            application.LikelihoodOfFunding = input.LikelihoodOfFunding;
+            application.DueDilligenceStatus = input.DueDilligenceStatus;
+            application.Recommendation = input.Recommendation;
+            application.DeclineRational = input.DeclineRational;
+            application.TotalScore = input.TotalScore;
+            if (input.AssessmentResultStatus != application.AssessmentResultStatus)
+            {
+                application.AssessmentResultDate = DateTime.UtcNow;
+            }
+            application.AssessmentResultStatus = input.AssessmentResultStatus;
+
+            await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+        }
+        else
+        {
+            throw new EntityNotFoundException();
+        }
     }
 
     public async Task<List<GrantApplicationAssigneeDto>> GetAssigneesAsync(Guid applicationId)
@@ -171,7 +210,7 @@ public class GrantApplicationAppService :
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.ToString());                
+                Debug.WriteLine(ex.ToString());
             }
         }
     }
@@ -223,12 +262,12 @@ public class GrantApplicationAppService :
                 if (currentApplicationId != previousApplicationId)
                 {
                     var oidcSubs = new List<(string oidcSub, string displayName)>();
-                    
+
                     foreach (JToken assigneeToken in item.Value.Children())
                     {
                         string oidcSub = assigneeToken.Value<string?>("oidcSub") ?? "";
                         string assigneeDisplayName = assigneeToken.Value<string?>("assigneeDisplayName") ?? "";
-                        oidcSubs.Add(new (oidcSub, assigneeDisplayName));
+                        oidcSubs.Add(new(oidcSub, assigneeDisplayName));
                     }
 
                     await _applicationManager.SetAssigneesAsync(currentApplicationId, oidcSubs);
@@ -293,7 +332,7 @@ public class GrantApplicationAppService :
         // Note: Remove internal state change actions that are side-effects of domain events
         var externalActionsList = actionList.Where(a => includeInternal || !a.IsInternal).ToList();
         var actionDtos = ObjectMapper.Map<
-            List<ApplicationActionResultItem>, 
+            List<ApplicationActionResultItem>,
             List<ApplicationActionDto>>(externalActionsList);
 
         // NOTE: Authorization is applied on the AppService layer and is false by default

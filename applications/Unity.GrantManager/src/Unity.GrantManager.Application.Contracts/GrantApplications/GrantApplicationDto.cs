@@ -10,7 +10,6 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string Applicant { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
-    public decimal EligibleAmount { get; set; }
     public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
     public DateTime SubmissionDate { get; set; }
     public string Status { get; set; } = string.Empty;
@@ -26,4 +25,16 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
 
     public int AssessmentCount { get; set; } = 0;
     public int AssessmentReviewCount { get; set; } = 0;
+
+    public string ProjectSummary { get; set; } = string.Empty;
+    public decimal TotalScore { get; set; } = 0;
+    public decimal RecommendedAmount { get; set; } = 0;
+    public decimal ApprovedAmount { get; set; } = 0;
+    public string LikelihoodOfFunding { get; set; } = string.Empty;
+    public string DueDilligenceStatus { get; set; } = string.Empty;
+    public string Recommendation { get; set; } = string.Empty;
+    public string DeclineRational { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
+    public string AssessmentResultStatus { get; set; } = string.Empty;
+    public DateTime AssessmentResultDate { get; set; }
 }

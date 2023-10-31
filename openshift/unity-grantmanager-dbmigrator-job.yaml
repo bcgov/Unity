@@ -1,7 +1,5 @@
 apiVersion: template.openshift.io/v1
 kind: Template
-labels:
-  template: unity-grantmanager-dbmigrator-job
 message: |-
   A job has been created in your project: unity-grantmanager-dbmigrator-job.
   For more information about using this template, including OpenShift considerations, 
@@ -11,13 +9,15 @@ metadata:
   # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
   # oc process -f .\openshift\unity-grantmanager-dbmigrator-job.yaml --param-file=.env | oc create -f -
+  labels:
+    template: unity-grantmanager-dbmigrator-job
   annotations:
     description: |-
-      Template for running a DotNet console application once in OpenShift.
+      Template for running a dotnet console application once in OpenShift.
     iconClass: icon-build
-    openshift.io/display-name: DotNet console application
+    openshift.io/display-name: Database Migrator Job
     template.openshift.io/long-description: |-
-      This template defines resources needed to build and deploy a GitHub DotNet core console application.
+      This template defines resources needed to build and deploy a container application.
     tags: dotnet,unity-grantmanager-dbmigrator
 parameters:
 # Project namespace parameters
@@ -71,6 +71,8 @@ objects:
     completions: 1
     backoffLimit: 1
     selector: {}
+    successfulJobsHistoryLimit: 2
+    failedJobsHistoryLimit: 2
     template:
       metadata:
         name: ${APPLICATION_NAME}
