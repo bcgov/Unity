@@ -13,7 +13,7 @@
     "Menu:Roles": "Roles",
     "Menu:Users": "Users",
     "Menu:Intakes": "Intakes",
-    "Menu:ApplicationForms": "Application Forms",
+    "Menu:ApplicationForms": "Forms",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
@@ -125,9 +125,9 @@
     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
     "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
-    "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Application Forms",
+    "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
 
-    "ApplicationForms": "Application Forms",
+    "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",
     "ApplicationForms:ChefsFormId": "CHEFS Form Id",
     "ApplicationForms:SubmissionHeaderMapping": "Mapping",

@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Intakes
 
                             if (key != null && label != null && tokenType != null && tokenType.ToString() != "button")
                             {
-                                var jsonValue = "{ \"type\": \""+ tokenType.ToString() + " \" \"label\":  \"" + label.ToString() + "\" }";
+                                var jsonValue = "{ \"type\": \""+ tokenType.ToString() + " \", \"label\":  \"" + label.ToString() + "\" }";
                                 components.Add(key.ToString(), jsonValue);
                             }
 

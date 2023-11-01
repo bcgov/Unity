@@ -3,7 +3,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.ApplicationForms
 @using Microsoft.Extensions.Localization
-@model IndexModel
+@model MappingModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @{
@@ -12,19 +12,60 @@
     ViewBag.PageTitle = "ApplicationFormsMapping";
 }
 @section scripts
-    {
+{
     <abp-script src="/Pages/ApplicationForms/Mapping.js" />
 }
 
+@section styles {
+    <abp-style src="/Pages/ApplicationForms/Mapping.css" />
+}
+
+<input type="hidden" id="intakeProperties" value="@Model.IntakeProperties">
+<input type="hidden" id="applicationFormDtoString" value="@Model.ApplicationFormDtoString">
+<input type="hidden" id="availableChefsFields" value="@Model.ApplicationFormDto.AvailableChefsFields">
+<input type="hidden" id="existingMapping" value="@Model.ApplicationFormDto.SubmissionHeaderMapping">
+<input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto.Id">
+
+
 <div class="container-fluid px-2">
     <div class="d-flex my-1 p-2">
-        <abp-column size="_6">
-            <abp-card-title>Application Form Mapping</abp-card-title>
-        </abp-column>
-        <abp-column size="_6" class="d-flex justify-content-end">
-
-        </abp-column>
+        <abp-card-title>Form Mapping - @Model.ApplicationFormDto.ApplicationFormName </abp-card-title>
     </div>
-    <abp-table id="ApplicationFormsTable"></abp-table>
-</div>
 
+    <div class="main-content">
+        <div class="table-div left">
+            <abp-table id="ApplicationFormsTable" class="chef-field-table">
+                <caption>
+                    Chefs Available Fields
+                </caption>
+                <thead>
+                    <tr>
+                        <th>Label</th>
+                        <th>Property Name</th>
+                        <th>Type</th>
+                        <th>Map To</th>
+                    </tr>
+                </thead>
+            </abp-table>
+        </div>
+        <div class="right intake-map-col">
+            <div class="title">Available Intake Mapping Fields</div>
+            <div id="intake-map-available-fields-column" class="col" style="overflow-y:scroll">
+            </div>
+        </div>
+       <div class="buttons-div">
+            <abp-button id="btn-save"
+                        text="Save"
+                        disabled="true"
+                        icon-type="Other"
+                        icon="fl fl-save"
+                        button-type="Primary" />
+            &nbsp;&nbsp;
+            <abp-button id="btn-back"
+                        text="Back"
+                        icon-type="Other"
+                        icon="fl fl-open-pane"
+                        button-type="Light" />
+    </div>
+    </div>
+</div>
