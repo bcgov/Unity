@@ -8,6 +8,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
+using Xunit.Abstractions;
 
 namespace Unity.GrantManager.Comments
 {
@@ -20,7 +21,7 @@ namespace Unity.GrantManager.Comments
         private readonly IRepository<AssessmentComment, Guid> _assessmentCommentsRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
 
-        public CommentAppServiceTests()
+        public CommentAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
             _commentsAppService = GetRequiredService<ICommentAppService>();
             _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();

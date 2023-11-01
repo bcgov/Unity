@@ -1,12 +1,16 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Autofac.Core;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Diagnostics;
+using Unity.GrantManager.Uow;
 using Volo.Abp;
 using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Data;
-using Volo.Abp.Linq;
 using Volo.Abp.Modularity;
 using Volo.Abp.Threading;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager;
 
@@ -25,6 +29,8 @@ public class GrantManagerTestBaseModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddSingleton(typeof(UnitOfWorkManager));
+
         Configure<AbpBackgroundJobOptions>(options =>
         {
             options.IsJobExecutionEnabled = false;
@@ -42,12 +48,10 @@ public class GrantManagerTestBaseModule : AbpModule
     {
         AsyncHelper.RunSync(async () =>
         {
-            using (var scope = context.ServiceProvider.CreateScope())
-            {
-                await scope.ServiceProvider
-                    .GetRequiredService<IDataSeeder>()
-                    .SeedAsync();
-            }
+            using var scope = context.ServiceProvider.CreateScope();
+            await scope.ServiceProvider
+                .GetRequiredService<IDataSeeder>()
+                .SeedAsync();
         });
     }
 }

@@ -177,7 +177,13 @@ public class GrantManagerDbContext :
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.StatusCode).IsRequired().HasMaxLength(250);
+            // TODO: Enum mapping could be better implemented with
+            // using an int for the ID of ApplicationStatus table
+            // which maps to the GrantApplicationState enum value
+            b.Property(x => x.StatusCode)
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasConversion(new EnumToStringConverter<GrantApplicationState>());
             b.HasIndex(x => x.StatusCode).IsUnique();
         });
 
@@ -191,7 +197,11 @@ public class GrantManagerDbContext :
             b.Property(x => x.Payload).HasColumnType("jsonb");
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
             b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
-            b.HasOne<ApplicationStatus>().WithMany().HasForeignKey(x => x.ApplicationStatusId).IsRequired();
+
+            b.HasOne(a => a.ApplicationStatus)
+                .WithMany(s => s.Applications)
+                .HasForeignKey(x => x.ApplicationStatusId)
+                .IsRequired();
         });
 
         modelBuilder.Entity<Address>(b =>
@@ -217,7 +227,6 @@ public class GrantManagerDbContext :
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention(); //auto configure for the base class props                             
-            //b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
             b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
         });
@@ -242,7 +251,7 @@ public class GrantManagerDbContext :
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment", GrantManagerConsts.DbSchema);
             b.ConfigureByConvention();
-            
+
             b.HasOne<Application>()
                 .WithMany()
                 .HasForeignKey(x => x.ApplicationId)
@@ -280,13 +289,11 @@ public class GrantManagerDbContext :
             b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationUserAssignment",
                 GrantManagerConsts.DbSchema);
 
-            b.ConfigureByConvention(); //auto configure for the base class props                             
-            //b.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).IsRequired();
-            //b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
+            b.ConfigureByConvention(); //auto configure for the base class props
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId);
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
-        
+
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
         foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
         {
