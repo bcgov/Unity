@@ -141,6 +141,7 @@ public class GrantApplicationAppService :
             application.Recommendation = input.Recommendation;
             application.DeclineRational = input.DeclineRational;
             application.TotalScore = input.TotalScore;
+            application.Notes = input.Notes;
             if (input.AssessmentResultStatus != application.AssessmentResultStatus)
             {
                 application.AssessmentResultDate = DateTime.UtcNow;
