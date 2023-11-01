@@ -56,11 +56,11 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
             [TextArea(Rows = 1)]
             public string? ProjectSummary { get; set; }
 
-            public decimal? TotalScore { get; set; }
+            public int? TotalScore { get; set; }
 
             public decimal? RequestedAmount { get; set; }
 
-            public double? TotalProjectBudget { get; set; }
+            public decimal? TotalProjectBudget { get; set; }
 
             public decimal? RecommendedAmount { get; set; }
 

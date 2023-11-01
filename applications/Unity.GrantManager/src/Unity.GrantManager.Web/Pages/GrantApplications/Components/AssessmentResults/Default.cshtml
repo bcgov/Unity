@@ -26,16 +26,16 @@
                 </abp-column>
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
-                        <abp-input asp-for="@Model.AssessmentResults.RequestedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RequestedAmount"].Value" />
+                        <abp-input type="number" asp-for="@Model.AssessmentResults.RequestedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RequestedAmount"].Value" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
-                        <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget"].Value" />
+                        <abp-input type="number" asp-for="@Model.AssessmentResults.TotalProjectBudget" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget"].Value" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
-                        <abp-input asp-for="@Model.AssessmentResults.RecommendedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RecommendedAmount"].Value" />
+                        <abp-input type="number" asp-for="@Model.AssessmentResults.RecommendedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RecommendedAmount"].Value" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
-                        <abp-input asp-for="@Model.AssessmentResults.ApprovedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.ApprovedAmount"].Value" />
+                        <abp-input type="number" asp-for="@Model.AssessmentResults.ApprovedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.ApprovedAmount"].Value" />
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0">
@@ -66,7 +66,7 @@
             </abp-column>
             <abp-column size="_2" class="px-0">
                 <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.AssessmentResults.TotalScore" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalScore"].Value" />
+                    <abp-input type="number" asp-for="@Model.AssessmentResults.TotalScore" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalScore"].Value" />
                 </abp-column>
                 <abp-column size="_12" class="px-1">
                     <abp-select asp-for="@Model.AssessmentResults.AssessmentResultStatus" asp-items="@Model.AssessmentResultStatusList" label="@L["AssessmentResultsView:AssessmentResultsForm.AssessmentResult"].Value">
