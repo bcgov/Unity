@@ -1,14 +1,14 @@
 ﻿$(function () {
 
-	let dataTable;
+    let dataTable;
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
-	let existingMappingString = document.getElementById('existingMapping').value;
-	let intakeFieldsString = document.getElementById('intakeProperties').value;
-	let applicationFormId = document.getElementById('applicationFormId').value;
-	let allowableTypes = ['textarea', 'orgbook', 'simpletextfield', 'textfield', 'currency', 'datetime', 'checkbox'];	
-	let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId'];
+    let existingMappingString = document.getElementById('existingMapping').value;
+    let intakeFieldsString = document.getElementById('intakeProperties').value;
+    let applicationFormId = document.getElementById('applicationFormId').value;
+    let allowableTypes = ['textarea', 'orgbook', 'simpletextfield', 'textfield', 'currency', 'datetime', 'checkbox'];	
+    let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId'];
 
-	const UIElements = {
+    const UIElements = {
         btnBack: $('#btn-back'),
         btnSave: $('#btn-save'),
     };
@@ -18,51 +18,51 @@
     function init() {
         bindUIEvents();
         dataTable = initializeDataTable();
-		initializeIntakeMap();
-		bindExistingMaps();
+        initializeIntakeMap();
+        bindExistingMaps();
     }
 
     function bindUIEvents() {
         UIElements.btnBack.on('click', handleBack);
-		UIElements.btnSave.on('click', handleSave);
+        UIElements.btnSave.on('click', handleSave);
     }
 
-	function bindExistingMaps() {
-		if (existingMappingString+"" != "undefined" && existingMappingString != null) {
-			try {
-				let existingMapping = JSON.parse(existingMappingString);
-				let keys = Object.keys(existingMapping);
+    function bindExistingMaps() {
+        if (existingMappingString+"" != "undefined" && existingMappingString != null) {
+            try {
+                let existingMapping = JSON.parse(existingMappingString);
+                let keys = Object.keys(existingMapping);
 
-				for (i = 0; i < keys.length; ++i) {
-					let intakeProperty = keys[i];
-					let chefsMappingProperty = existingMapping[intakeProperty];
-					let intakeMappingCard = document.getElementById(intakeProperty);
-					let chefsMappingDiv = document.getElementById(chefsMappingProperty);
-					chefsMappingDiv.appendChild(intakeMappingCard);
-				}
-			} catch (err) {
-				console.log('Existing Mapping error');
-			}
-		}
-	}
+                for (i = 0; i < keys.length; ++i) {
+                    let intakeProperty = keys[i];
+                    let chefsMappingProperty = existingMapping[intakeProperty];
+                    let intakeMappingCard = document.getElementById(intakeProperty);
+                    let chefsMappingDiv = document.getElementById(chefsMappingProperty);
+                    chefsMappingDiv.appendChild(intakeMappingCard);
+                }
+            } catch (err) {
+                console.log('Existing Mapping error');
+            }
+        }
+    }
 
-	function initializeDataTable() {
-		return dt = new DataTable('#ApplicationFormsTable', {
-			info: false,
-			ordering: false,
-			paging: false,
-			columnDefs: [
-				{ 
-					render: function (data) {
-						return '<div id="'+data+'" class="col map-div" draggable="true"></div>';
-					},
-					targets: 3
-				}
-			]
-		});
-	}
+    function initializeDataTable() {
+        return dt = new DataTable('#ApplicationFormsTable', {
+            info: false,
+            ordering: false,
+            paging: false,
+            columnDefs: [
+                { 
+                    render: function (data) {
+                        return '<div id="'+data+'" class="col map-div" draggable="true"></div>';
+                    },
+                    targets: 3
+                }
+            ]
+        });
+    }
 
-	function handleSave() {
+    function handleSave() {
         let mappingDivs = $('.map-div');
         let mappingJson = {};
 
@@ -72,7 +72,7 @@
                 
                 let chefsKey = mappingDivs[i].id;
                 let intakeMappingChildren = chefMappingDiv.children;
-				
+                
                 for (let j = 0; j < intakeMappingChildren.length; j++) {
                     let intakeMappingChild = intakeMappingChildren[j];
                     mappingJson[intakeMappingChild.innerHTML] = chefsKey;
@@ -80,68 +80,68 @@
             }
         }
 
-		let formData = JSON.parse(document.getElementById('applicationFormDtoString').value);
-		formData["submissionHeaderMapping"] = JSON.stringify(mappingJson);
+        let formData = JSON.parse(document.getElementById('applicationFormDtoString').value);
+        formData["submissionHeaderMapping"] = JSON.stringify(mappingJson);
 
-		$.ajax(
-			{
-				url: "/api/app/application-form/" + applicationFormId,
-				data: JSON.stringify(formData),
-				contentType: "application/json",
-				type: "PUT",
-				success: function (data) {
-					abp.notify.success(
-						data.responseText,
-						'Mapping Saved Successfully'
-					); 
-				},
-				error: function (data) {
-					abp.notify.error(
-						data.responseText,
-						'Mapping Not Saved Successful'
-					);
-				}
-			}
-		);
+        $.ajax(
+            {
+                url: "/api/app/application-form/" + applicationFormId,
+                data: JSON.stringify(formData),
+                contentType: "application/json",
+                type: "PUT",
+                success: function (data) {
+                    abp.notify.success(
+                        data.responseText,
+                        'Mapping Saved Successfully'
+                    ); 
+                },
+                error: function (data) {
+                    abp.notify.error(
+                        data.responseText,
+                        'Mapping Not Saved Successful'
+                    );
+                }
+            }
+        );
     }
 
-	function handleBack() {
-		location.href = '/ApplicationForms';
-	}
+    function handleBack() {
+        location.href = '/ApplicationForms';
+    }
 
-	function initializeIntakeMap() {
-		try {
-			let availableChefsFields = JSON.parse(availableChefFieldsString);
-			let intakeFields = JSON.parse(intakeFieldsString);
-			const intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
-			
-			for (i = 0; i < intakeFields.length; ++i) {
-				let intakeField = JSON.parse(intakeFields[i]);
-				if(!excludedIntakeMappings.includes(intakeField.Name)) {
-					let dragableDiv = document.createElement('div');
-					dragableDiv.id = intakeField.Name;
-					dragableDiv.className = 'card';
-					dragableDiv.setAttribute("draggable", "true");
-					dragableDiv.innerHTML = intakeField.Name;
-					intakeMapColumn.appendChild(dragableDiv);
-				}
-			}
+    function initializeIntakeMap() {
+        try {
+            let availableChefsFields = JSON.parse(availableChefFieldsString);
+            let intakeFields = JSON.parse(intakeFieldsString);
+            const intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
+            
+            for (i = 0; i < intakeFields.length; ++i) {
+                let intakeField = JSON.parse(intakeFields[i]);
+                if(!excludedIntakeMappings.includes(intakeField.Name)) {
+                    let dragableDiv = document.createElement('div');
+                    dragableDiv.id = intakeField.Name;
+                    dragableDiv.className = 'card';
+                    dragableDiv.setAttribute("draggable", "true");
+                    dragableDiv.innerHTML = intakeField.Name;
+                    intakeMapColumn.appendChild(dragableDiv);
+                }
+            }
 
-			let keys = Object.keys(availableChefsFields);
-			for (i = 0; i < keys.length; ++i) {
+            let keys = Object.keys(availableChefsFields);
+            for (i = 0; i < keys.length; ++i) {
 
-				let jsonObj = JSON.parse(availableChefsFields[keys[i]]);
-				if(allowableTypes.includes(jsonObj.type.trim())) {
-					dt.row.add([jsonObj.label, keys[i], jsonObj.type, keys[i]]).draw();
-				}
-			}		
-		}
-		catch (err) {
-			console.log('Mapping error');
-		}
-	}
+                let jsonObj = JSON.parse(availableChefsFields[keys[i]]);
+                if(allowableTypes.includes(jsonObj.type.trim())) {
+                    dt.row.add([jsonObj.label, keys[i], jsonObj.type, keys[i]]).draw();
+                }
+            }		
+        }
+        catch (err) {
+            console.log('Mapping error');
+        }
+    }
 
-	document.addEventListener('dragstart', function () {
+    document.addEventListener('dragstart', function () {
         beingDragged(event);
     });
 
@@ -168,32 +168,32 @@
 
     function beingDragged(ev) {
         var draggedEl = ev.target;
-		if(draggedEl.classList+"" != "undefined") {
-			draggedEl.classList.add('dragging');
-		}
+        if(draggedEl.classList+"" != "undefined") {
+            draggedEl.classList.add('dragging');
+        }
     }
 
     function dragEnd(ev) {
         var draggedEl = ev.target;
-		if(draggedEl.classList+"" != "undefined") {
-        	draggedEl.classList.remove('dragging');
-		}
-		enableSave();
+        if(draggedEl.classList+"" != "undefined") {
+            draggedEl.classList.remove('dragging');
+        }
+        enableSave();
     }
 
-	function enableSave() {
-		let disableSave = true;
+    function enableSave() {
+        let disableSave = true;
 
-		let mappingDivs = $('.map-div');
-		for (i = 0; i < mappingDivs.length; ++i) {
-			if(mappingDivs[i].childElementCount > 0) {
-				disableSave = false;
-				UIElements.btnSave.prop("disabled", false);
-				return;
-			}
-		}
-		UIElements.btnSave.prop("disabled", disableSave);
-	}
+        let mappingDivs = $('.map-div');
+        for (i = 0; i < mappingDivs.length; ++i) {
+            if(mappingDivs[i].childElementCount > 0) {
+                disableSave = false;
+                UIElements.btnSave.prop("disabled", false);
+                return;
+            }
+        }
+        UIElements.btnSave.prop("disabled", disableSave);
+    }
 
     function allowDrop(ev) {
         ev.preventDefault();
