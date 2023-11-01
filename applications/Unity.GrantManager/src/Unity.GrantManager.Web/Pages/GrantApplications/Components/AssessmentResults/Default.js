@@ -1,5 +1,5 @@
 ﻿$(function () {
-    $('body').on('click', '#save_assessment_results_btn', function () {
+    $('body').on('click', '#saveAssessmentResultBtn', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessment_result_form").serializeArray()
         let assessmentResultObj = {};
@@ -20,3 +20,13 @@
         }
     });
 });
+
+
+function enableResultSaveBtn(inputText) {
+    if (inputText.value.trim() != "") {
+        $('#saveAssessmentResultBtn').prop('disabled', false);
+    } else {
+        $('#saveAssessmentResultBtn').prop('disabled', true);
+    }
+
+}
