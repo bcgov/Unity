@@ -99,8 +99,8 @@ body {
     --bs-btn-disabled-bg: var(--bc-colors-grey-hover);
 }
 
-.dataTables_wrapper .dataTables_scrollHeadInner {
-    width: 100% !important;
+.dataTables_scrollHeadInner  table{
+    width: auto!important;
 }
 
 .dataTables_wrapper .dataTables_scrollHead {
