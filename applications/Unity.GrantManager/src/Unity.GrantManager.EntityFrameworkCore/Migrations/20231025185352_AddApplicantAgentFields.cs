@@ -47,13 +47,6 @@ namespace Unity.GrantManager.Migrations
                 defaultValue: "");
 
             migrationBuilder.AddColumn<string>(
-                name: "Phone",
-                table: "UnityApplicantAgent",
-                type: "character varying(40)",
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.AddColumn<string>(
                 name: "Phone2",
                 table: "UnityApplicantAgent",
                 type: "character varying(40)",
@@ -90,10 +83,6 @@ namespace Unity.GrantManager.Migrations
 
             migrationBuilder.DropColumn(
                 name: "Name",
-                table: "UnityApplicantAgent");
-
-            migrationBuilder.DropColumn(
-                name: "Phone",
                 table: "UnityApplicantAgent");
 
             migrationBuilder.DropColumn(
