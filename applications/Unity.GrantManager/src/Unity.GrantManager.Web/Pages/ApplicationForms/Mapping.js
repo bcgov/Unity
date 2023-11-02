@@ -31,9 +31,8 @@
             try {
                 let existingMapping = JSON.parse(existingMappingString);
                 let keys = Object.keys(existingMapping);
-
-                for (let i = 0; i < keys.length; ++i) {
-                    let intakeProperty = keys[i];
+                for (let key of keys) {
+                    let intakeProperty = keys;
                     let chefsMappingProperty = existingMapping[intakeProperty];
                     let intakeMappingCard = document.getElementById(intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
@@ -72,7 +71,7 @@
                 let chefsKey = mappingDiv.id;
                 let intakeMappingChildren = chefMappingDiv.children;
                 
-                for (let intakeMappingChil of intakeMappingChildren) {
+                for (let intakeMappingChild of intakeMappingChildren) {
                     mappingJson[intakeMappingChild.innerHTML] = chefsKey;
                 }
             }
