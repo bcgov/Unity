@@ -32,7 +32,7 @@
                 let existingMapping = JSON.parse(existingMappingString);
                 let keys = Object.keys(existingMapping);
                 for (let key of keys) {
-                    let intakeProperty = keys;
+                    let intakeProperty = key;
                     let chefsMappingProperty = existingMapping[intakeProperty];
                     let intakeMappingCard = document.getElementById(intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
