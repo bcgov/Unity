@@ -119,7 +119,7 @@ $(function () {
                     cardBody.style.display = 'block';
                     header.classList.add('custom-active');
 
-                    header.scrollIntoView(true);
+                  
                 } else {
                     cardBody.style.display = 'none';
                     header.classList.remove('custom-active');
