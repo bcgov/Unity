@@ -65,15 +65,14 @@
         let mappingDivs = $('.map-div');
         let mappingJson = {};
 
-        for (let i = 0; i < mappingDivs.length; ++i) {
-            let chefMappingDiv = mappingDivs[i];
+        for (let mappingDiv of mappingDivs) {
+            let chefMappingDiv = mappingDiv;
             if (chefMappingDiv.childElementCount > 0) {
                 
-                let chefsKey = mappingDivs[i].id;
+                let chefsKey = mappingDiv.id;
                 let intakeMappingChildren = chefMappingDiv.children;
                 
-                for (let j = 0; j < intakeMappingChildren.length; ++j) {
-                    let intakeMappingChild = intakeMappingChildren[j];
+                for (let intakeMappingChil of intakeMappingChildren) {
                     mappingJson[intakeMappingChild.innerHTML] = chefsKey;
                 }
             }
@@ -114,24 +113,23 @@
             let intakeFields = JSON.parse(intakeFieldsString);
             const intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
             
-            for (i = 0; i < intakeFields.length; ++i) {
-                let intakeField = JSON.parse(intakeFields[i]);
-                if(!excludedIntakeMappings.includes(intakeField.Name)) {
+            for (let intakeField of intakeFields) {
+                let intakeFieldJson = JSON.parse(intakeField);
+                if(!excludedIntakeMappings.includes(intakeFieldJson.Name)) {
                     let dragableDiv = document.createElement('div');
-                    dragableDiv.id = intakeField.Name;
+                    dragableDiv.id = intakeFieldJson.Name;
                     dragableDiv.className = 'card';
                     dragableDiv.setAttribute("draggable", "true");
-                    dragableDiv.innerHTML = intakeField.Name;
+                    dragableDiv.innerHTML = intakeFieldJson.Name;
                     intakeMapColumn.appendChild(dragableDiv);
                 }
             }
 
             let keys = Object.keys(availableChefsFields);
-            for (i = 0; i < keys.length; ++i) {
-
-                let jsonObj = JSON.parse(availableChefsFields[keys[i]]);
+            for (let key of keys) {
+                let jsonObj = JSON.parse(availableChefsFields[key]);
                 if(allowableTypes.includes(jsonObj.type.trim())) {
-                    dt.row.add([jsonObj.label, keys[i], jsonObj.type, keys[i]]).draw();
+                    dt.row.add([jsonObj.label, key, jsonObj.type, key]).draw();
                 }
             }		
         }
@@ -184,8 +182,8 @@
         let disableSave = true;
 
         let mappingDivs = $('.map-div');
-        for (i = 0; i < mappingDivs.length; ++i) {
-            if(mappingDivs[i].childElementCount > 0) {
+        for (let mappingDiv of mappingDivs) {
+            if(mappingDiv.childElementCount > 0) {
                 disableSave = false;
                 UIElements.btnSave.prop("disabled", false);
                 return;
