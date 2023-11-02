@@ -126,6 +126,11 @@ public class ApplicationManager : DomainService, IApplicationManager
             application.AssessmentStartDate = DateTime.Now;
         }
 
+        if((triggerAction == GrantApplicationAction.Approve) || (triggerAction == GrantApplicationAction.Deny))
+        {
+            application.FinalDecisionDate = DateTime.Now;
+        }
+
         return await _applicationRepository.UpdateAsync(application);
     }
 

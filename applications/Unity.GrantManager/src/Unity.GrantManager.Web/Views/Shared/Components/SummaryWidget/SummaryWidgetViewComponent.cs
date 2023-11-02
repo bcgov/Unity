@@ -52,7 +52,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
                 Status = application.ApplicationStatus.InternalStatus,
                 LikelihoodOfFunding = application.LikelihoodOfFunding,
                 AssessmentStartDate = application.AssessmentStartDate?.ToShortDateString(),
-                FinalDecisionDate = "",
+                FinalDecisionDate = application.FinalDecisionDate?.ToShortDateString(),
                 TotalScore = application.TotalScore.ToString(),
                 AssessmentResult = application.AssessmentResultStatus,
                 RecommendedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.RecommendedAmount),
