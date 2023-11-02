@@ -1,7 +1,6 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NUglify.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -29,8 +28,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
         [BindProperty]
         public string? IntakeProperties { get; set; }
-
-
 
         public MappingModel(IApplicationFormAppService applicationFormAppService)
         {

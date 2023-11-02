@@ -1,6 +1,5 @@
 ﻿$(function () {
 
-    let dataTable;
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
@@ -17,7 +16,7 @@
     
     function init() {
         bindUIEvents();
-        dataTable = initializeDataTable();
+        initializeDataTable();
         initializeIntakeMap();
         bindExistingMaps();
     }
@@ -33,7 +32,7 @@
                 let existingMapping = JSON.parse(existingMappingString);
                 let keys = Object.keys(existingMapping);
 
-                for (i = 0; i < keys.length; ++i) {
+                for (let i = 0; i < keys.length; ++i) {
                     let intakeProperty = keys[i];
                     let chefsMappingProperty = existingMapping[intakeProperty];
                     let intakeMappingCard = document.getElementById(intakeProperty);
@@ -47,7 +46,7 @@
     }
 
     function initializeDataTable() {
-        return dt = new DataTable('#ApplicationFormsTable', {
+        return new DataTable('#ApplicationFormsTable', {
             info: false,
             ordering: false,
             paging: false,
@@ -73,7 +72,7 @@
                 let chefsKey = mappingDivs[i].id;
                 let intakeMappingChildren = chefMappingDiv.children;
                 
-                for (let j = 0; j < intakeMappingChildren.length; j++) {
+                for (let j = 0; j < intakeMappingChildren.length; ++j) {
                     let intakeMappingChild = intakeMappingChildren[j];
                     mappingJson[intakeMappingChild.innerHTML] = chefsKey;
                 }
@@ -141,16 +140,16 @@
         }
     }
 
-    document.addEventListener('dragstart', function () {
-        beingDragged(event);
+    document.addEventListener('dragstart', function (ev) {
+        beingDragged(ev);
     });
 
-    document.addEventListener('dragend', function () {
-        dragEnd(event);
+    document.addEventListener('dragend', function (ev) {
+        dragEnd(ev);
     });
 
-    document.addEventListener('dragover', function () {
-        var beingDragged = document.querySelector('.dragging');
+    document.addEventListener('dragover', function (event) {
+        let beingDragged = document.querySelector('.dragging');
         if (event.target.matches('.card')) {
             if (beingDragged.classList.contains('card')) {
                 allowDrop(event);
@@ -167,14 +166,14 @@
     });
 
     function beingDragged(ev) {
-        var draggedEl = ev.target;
+        let draggedEl = ev.target;
         if(draggedEl.classList+"" != "undefined") {
             draggedEl.classList.add('dragging');
         }
     }
 
     function dragEnd(ev) {
-        var draggedEl = ev.target;
+        let draggedEl = ev.target;
         if(draggedEl.classList+"" != "undefined") {
             draggedEl.classList.remove('dragging');
         }
@@ -198,13 +197,13 @@
     function allowDrop(ev) {
         ev.preventDefault();
 
-        var dragOver = ev.target;
-        var dragOverParent = dragOver.parentElement;
-        var beingDragged = document.querySelector('.dragging');
-        var draggedParent = beingDragged.parentElement;
+        let dragOver = ev.target;
+        let dragOverParent = dragOver.parentElement;
+        let beingDragged = document.querySelector('.dragging');
+        let draggedParent = beingDragged.parentElement;
 
-        var draggedIndex = whichChild(beingDragged);
-        var dragOverIndex = whichChild(dragOver);
+        let draggedIndex = whichChild(beingDragged);
+        let dragOverIndex = whichChild(dragOver);
 
         if (draggedParent === dragOverParent) {
             if (draggedIndex < dragOverIndex) {
@@ -221,9 +220,9 @@
     }
 
     function colDraggedOver(event) {
-        var dragOver = event.target;
-        var beingDragged = document.querySelector('.dragging');
-        var draggedParent = beingDragged.parentElement;
+        let dragOver = event.target;
+        let beingDragged = document.querySelector('.dragging');
+        let draggedParent = beingDragged.parentElement;
         if (
             draggedParent.id !== dragOver.id &&
             draggedParent.classList.contains('col') &&
@@ -236,7 +235,7 @@
     }
 
     function whichChild(el) {
-        var i = 0;
+        let i = 0;
         while ((el = el.previousSibling) != null) ++i;
         return i;
     }
