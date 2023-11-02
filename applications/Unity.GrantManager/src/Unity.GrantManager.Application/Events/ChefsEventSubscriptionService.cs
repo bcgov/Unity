@@ -18,8 +18,7 @@ namespace Unity.GrantManager.Events
         private readonly ISubmissionsIntService _submissionsIntService;
         private readonly IFormIntService _formIntService;
 
-        public ChefsEventSubscriptionService(IIntakeFormSubmissionManager intakeFormSubmissionManager,
-            IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
+        public ChefsEventSubscriptionService(IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             ISubmissionsIntService submissionsIntService,
             IApplicationFormRepository applicationFormRepository,
             IFormIntService formIntService)

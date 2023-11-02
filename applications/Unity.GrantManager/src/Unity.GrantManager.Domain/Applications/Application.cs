@@ -22,9 +22,8 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
-    public double EligibleAmount { get; set; }
-    public double RequestedAmount { get; set; }
-    public double TotalProjectBudget { get; set; }
+    public double RequestedAmount { get; set; } // TODO: change to decimal
+    public double TotalProjectBudget { get; set; } // TODO: change to decimal
     public string? Sector { get; set; } = null;
     public string? EconomicRegion { get; set;} = null;
     public string? City { get; set; } = null;
@@ -33,5 +32,27 @@ public class Application : AuditedAggregateRoot<Guid>
 
     [Column(TypeName = "jsonb")]
     public string? Payload { get; set; }
+
+    public string? ProjectSummary { get; set; }  
+
+    public decimal? TotalScore { get; set; } = null; 
+
+    public decimal RecommendedAmount { get; set; } = 0;
+
+    public decimal ApprovedAmount { get; set; } = 0;
+
+    public string? LikelihoodOfFunding { get; set; }
+
+    public string? DueDilligenceStatus { get; set; }
+
+    public string? Recommendation { get; set; }
+
+    public string? DeclineRational { get; set; }
+
+    public string? Notes { get; set; }
+
+    public string? AssessmentResultStatus { get; set; }
+
+    public DateTime? AssessmentResultDate { get; set; }
 
 }

@@ -146,9 +146,7 @@
     margin-top: 1rem;
 }
 
-.dataTables_scrollHeadInner {
-    width: auto !important;
-}
+
 
 .recom-select {
     background: #003366;
@@ -267,11 +265,13 @@ select.selected{
 
 .details-scrollable {
     overflow-y: scroll;
+    overflow-x: hidden;
     height: calc(100vh - 240px);
     margin-right: -6px;
 }
 
 #detailsTabContent {
     overflow-y: scroll;
+    overflow-x: hidden;
     height: calc(100vh - 256px);
 }

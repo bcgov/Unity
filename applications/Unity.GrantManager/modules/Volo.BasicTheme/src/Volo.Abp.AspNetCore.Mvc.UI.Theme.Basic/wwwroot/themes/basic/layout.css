@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 /** Layout/Component based styles */
 
@@ -383,3 +384,392 @@ div.dataTables_wrapper div.dataTables_length label {
     background-color: var(--bs-primary) !important;
     color: var(--bc-colors-white-primary-500) !important;
 }
+=======
+
+/** Layout/Component based styles */
+
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    font-size: 1rem !important;
+    font-family: 'BCSans', var(--bs-font-sans-serif) !important;
+}
+
+body {
+    overflow: hidden;
+}
+
+.input-group .input-group-prepend {
+    border: none;
+}
+
+    .input-group .input-group-prepend .input-group-text, .input-group .input-group-append .input-group-text {
+        height: var(--bc-input-field-height);
+        border-radius: 0.25rem;
+        background-color: var(--bc-colors-white-primary-500);
+        border: none;
+    }
+
+.input-group .form-control {
+    font-size: var(--bc-font-size);
+    line-height: 1;
+    height: var(--bc-input-field-height);
+    border: none;
+    color: var(--bc-colors-grey-text-500);
+    border-radius: .25rem;
+}
+
+.input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    margin-left: calc(var(--bs-border-width) * -4);
+}
+
+.form-control:focus {
+    box-shadow: none;
+}
+
+
+.btn {
+    --bs-btn-border-radius: 0.1875rem;
+    --bs-btn-border-color: transparent;
+    --bs-btn-hover-border-color: transparent;
+    --bs-btn-active-border-color: transparent;
+    --bs-btn-disabled-border-color: transparent;
+    --bs-btn-hover-color: var(--bs-btn-color);
+    --bs-btn-hover-bg: var(--bs-btn-bg);
+    --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    --bs-btn-line-height: 1;
+    --bs-btn-padding-x: 0.875rem;
+    --bs-btn-font-size: var(--bc-font-size);
+    display: flex;
+    align-items: center;
+    min-height: 2.13rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+    .btn i {
+        font-size: 1.25rem;
+    }
+
+        .btn i:first-child {
+            margin-right: 0.375rem;
+        }
+
+        .btn i:last-child {
+            margin-left: 0.375rem;
+        }
+
+    .btn:hover {
+        box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
+    }
+
+.btn-light {
+    --bs-btn-color: var(--bc-colors-grey-text-500);
+    --bs-btn-bg: var(--bc-colors-grey-pressed);
+    --bs-btn-focus-shadow-rgb: 211, 212, 213;
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
+    --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
+    --bs-btn-disabled-bg: var(--bc-colors-grey-hover);
+}
+
+
+.btn-primary {
+    --bs-btn-color: var(--bc-colors-white-primary-500);
+    --bs-btn-bg: var(--bs-primary);
+    --bs-btn-focus-shadow-rgb: 83, 117, 255;
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-text-links);
+    --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
+    --bs-btn-disabled-bg: var(--bc-colors-grey-hover);
+}
+
+.dataTables_scrollHeadInner  table{
+    width: auto!important;
+}
+
+.dataTables_wrapper .dataTables_scrollHead {
+    min-height: 44px;
+    background: #fff;
+}
+
+    .dataTables_wrapper .dataTables_scrollHead table {
+        margin-top: 0px !important;
+    }
+
+        .dataTables_wrapper .dataTables_scrollHead table th, .dataTables_wrapper .dataTables_scrollBody table td {
+            height: 28px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--bc-colors-grey-dividers);
+            font-size: var(--bc-font-size-sm);
+        }
+
+        .dataTables_wrapper .dataTables_scrollHead table th {
+            color: var(--bc-colors-grey-text-500);
+            font-weight: 800;
+        }
+
+.dataTables_wrapper .dataTables_scrollBody table td {
+    color: var(--bc-colors-grey-text-300);
+}
+
+.dataTables_wrapper .dataTable_footer {
+    align-items: baseline;
+    color: var(--bc-colors-grey-text-500);
+    font-size: var(--bc-font-size);
+}
+
+.dataTables_wrapper table th {
+    color: var(--bc-colors-grey-text-500);
+    font-weight: 800;
+}
+
+.pagination {
+    --bs-pagination-color: var(--bc-colors-grey-text-500);
+    --bs-pagination-bg: var(--bc-colors-grey-pressed);
+    --bs-pagination-border-radius: 0.1875rem;
+    --bs-pagination-hover-color: var(--bc-colors-white-primary-500);
+    --bs-pagination-hover-bg: var(--bc-colors-blue-primary-500);
+    --bs-pagination-focus-color: var(--bc-colors-white-primary-500);
+    --bs-pagination-focus-bg: var(--bc-colors-blue-text-links);
+    --bs-pagination-focus-box-shadow: none;
+    --bs-pagination-active-color: var(--bc-colors-white-primary-500);
+    --bs-pagination-active-bg: var(--bc-colors-blue-primary-500);
+    --bs-pagination-active-border-color: transparent;
+    --bs-pagination-disabled-color: var(--bc-colors-grey-text-100);
+    --bs-pagination-disabled-bg: var(--bc-colors-grey-hover);
+    --bs-pagination-font-size: var(--bc-font-size-sm);
+}
+
+.modal-dialog {
+    --bs-modal-border-radius: .25rem;
+    --bs-modal-inner-border-radius: .25rem;
+    --bs-modal-header-padding: 1.5rem 1.5rem 1rem 1.5rem;
+}
+
+    .modal-dialog .modal-header {
+        border-bottom: none;
+    }
+
+    .modal-dialog .modal-title {
+        font-weight: 700;
+    }
+
+    .modal-dialog .modal-body {
+        padding: 0.5rem 1.5rem;
+    }
+
+    .modal-dialog .modal-footer {
+        border-top: none;
+        padding: 0.5rem 1.5rem 1rem;
+    }
+
+
+
+
+#main-navbar-tools a.dropdown-toggle {
+    text-decoration: none;
+    color: #fff;
+}
+
+.navbar .dropdown-submenu {
+    position: relative;
+}
+
+.navbar .dropdown-menu {
+    margin: 0;
+    padding: 0;
+}
+
+    .navbar .dropdown-menu a {
+        font-size: .9em;
+        padding: 10px 15px;
+        display: block;
+        min-width: 210px;
+        text-align: left;
+        border-radius: 0.25rem;
+        min-height: 44px;
+    }
+
+.navbar .dropdown-submenu a::after {
+    transform: rotate(-90deg);
+    position: absolute;
+    right: 16px;
+    top: 18px;
+}
+
+.navbar .dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+}
+
+.container > .card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+@media screen and (min-width: 768px) {
+    .navbar .dropdown:hover > .dropdown-menu {
+        display: block;
+    }
+
+    .navbar .dropdown-submenu:hover > .dropdown-menu {
+        display: block;
+    }
+}
+
+.navbar-brand {
+    padding: 0px;
+    margin-left: -15px;
+}
+
+    .navbar-brand img {
+        height: 100%;
+    }
+
+.input-validation-error {
+    border-color: #dc3545;
+}
+
+.field-validation-error {
+    font-size: 0.8em;
+}
+
+
+div.dataTables_wrapper div.dataTables_info {
+    padding-top: 11px;
+    white-space: nowrap;
+}
+
+div.dataTables_wrapper div.dataTables_length label {
+    padding-top: 10px;
+    margin-bottom: 0;
+}
+
+.rtl .dropdown-menu-right {
+    right: auto;
+    left: 0;
+}
+
+    .rtl .dropdown-menu-right a {
+        text-align: right;
+    }
+
+.rtl .navbar .dropdown-menu a {
+    text-align: right;
+}
+
+.rtl .navbar .dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: auto;
+    right: 100%;
+}
+
+.rtl div.dataTables_wrapper div.dataTables_filter input {
+    margin-left: auto;
+    margin-right: 0.5em;
+}
+
+.rtl div.dataTables_wrapper div.dataTables_filter {
+    text-align: left;
+}
+
+.rtl table.dataTable thead th, table.dataTable thead td, table.dataTable tfoot th, table.dataTable tfoot td {
+    text-align: right;
+}
+
+.identity-toolbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    padding: 15px 7px 7px 12px;
+}
+
+.nav {
+    --bs-nav-link-color: var(--bc-colors-grey-text-500);
+    --bs-nav-link-hover-color: var(--bc-colors-grey-text-500);
+}
+
+.nav-item a {
+    padding: 1rem;
+}
+
+.fs-5 {
+    font-size: 0.83313rem !important;
+}
+
+.fs-6 {
+    font-size: 0.69438rem !important;
+}
+
+.form-select {
+    background-color: var(--bc-colors-grey-pressed);
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: 0.1875rem;
+    border: none;
+}
+
+    .form-select:hover {
+        box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
+    }
+
+    .form-select:focus, .form-select:active {
+        background-color: var(--bc-colors-grey-pressed);
+        color: var(--bc-colors-grey-text-500);
+        font-weight: 700;
+    }
+
+    .form-select:disabled {
+        color: var(--bc-colors-grey-text-100);
+        pointer-events: none;
+        background-color: var(--bc-colors-grey-hover);
+        opacity: var(--bs-btn-disabled-opacity);
+        background-blend-mode: difference;
+    }
+
+.card {
+    --bs-card-border-color: transparent;
+}
+
+.modal-dialog .modal-footer .btn {
+    min-height: 2.7rem;
+}
+
+/* total width */
+::-webkit-scrollbar {
+    background-color: transparent;
+    width: 6px;
+    height: 6px;
+}
+
+/* background of the scrollbar except button or resizer */
+::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* scrollbar itself */
+::-webkit-scrollbar-thumb {
+    background-color: #babac0;
+    border-radius: 16px;
+    border: 1px solid transparent;
+}
+
+/* set button(top and bottom of the scrollbar) */
+::-webkit-scrollbar-button {
+    display: none;
+}
+.dropdown-toggle {
+    background-color: var(--bc-colors-grey-pressed) !important;
+    color: var(--bc-colors-grey-text-500)!important;
+}
+.swal2-confirm {
+    background-color: var(--bs-primary) !important;
+    color: var(--bc-colors-white-primary-500) !important;
+    box-shadow: 0px 0px 0px 0px rgba(211, 212, 213) !important;
+   
+}
+>>>>>>> dev

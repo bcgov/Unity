@@ -1,1 +1,32 @@
-﻿
+﻿.scores-block label,input {
+    display: block;
+}
+
+.scores-block {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 5px;
+}
+
+.scores-block-save {
+    flex-basis: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin: 5px 0px 5px 0px;
+}
+
+.scores-block-wrapper {
+    display: inline-block;
+}
+
+.assessment-scores-container .form-label {
+        font-size: var(--bc-font-size-sm);
+        color: var(--bc-colors-grey-text-300);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0;
+    }

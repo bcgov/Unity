@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿@using Unity.GrantManager.Localization;
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.Extensions.Localization;
@@ -80,4 +81,87 @@
                     button-type="Light" />
 
     </div>
+=======
+﻿@using Unity.GrantManager.Localization;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.Extensions.Localization;
+@using Unity.GrantManager.Permissions;
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IAuthorizationService AuthorizationService
+
+<div class="action-bar p-2">
+    <div class="d-flex align-items-start justify-content-start gap-2">
+
+        <abp-button id="externalLink"
+                    text="@L["ApplicationList:OpenButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-mini-contract-2-mirrored"
+                    button-type="Primary" />
+
+        <abp-button id="assignApplication"
+                    data-selector="applications-table-actions"
+                    text="@L["ApplicationList:AssignButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-add-friend"
+                    button-type="Light" />
+
+        <abp-button id="unAssignApplication"
+                    data-selector="applications-table-actions"
+                    text="Un-Assign"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-remove-friend"
+                    button-type="Light" />
+
+
+        <abp-button id="copyLink"
+                    text="@L["ApplicationList:CopyLinkButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-link"
+                    button-type="Light" />
+
+        <abp-button id="downloadApplication"
+                   
+                    text="@L["ApplicationList:DownloadButton"].Value"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-download"
+                    button-type="Light" />
+    </div>
+    <div  id="dynamicButtonContainerId" class="d-flex align-items-end justify-content-end gap-2">
+
+        <abp-button id="btn-save"
+                    text="Save"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-save"
+                    button-type="Primary" />
+        <abp-button 
+                    text="Filter"
+                    disabled="false"
+                    id="btn-toggle-filter"
+                    icon-type="Other"
+                    icon="fl fl-filter"
+                    button-type="Light" />
+
+        <abp-button 
+                text="Clear Filter"
+                disabled="true"
+                id="btn-clear-filter"
+                icon-type="Other"
+                icon="fl fl-filter fl-left"
+                button-type="Light" />
+
+        <abp-button id="applicationLink"
+                  
+                    text="@L["ApplicationList:InfoButton"].Value"
+                    icon-type="Other"
+                    icon="fl fl-open-pane"
+                    button-type="Light" />
+
+    </div>
+>>>>>>> dev
 </div>

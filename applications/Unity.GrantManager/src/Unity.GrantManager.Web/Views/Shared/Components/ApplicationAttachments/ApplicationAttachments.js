@@ -75,4 +75,7 @@ $(function () {
             dataTable.ajax.reload();
         }
     );
+    $('#attachments-tab').one('click', function () {
+        dataTable.columns.adjust();
+    });
 });
