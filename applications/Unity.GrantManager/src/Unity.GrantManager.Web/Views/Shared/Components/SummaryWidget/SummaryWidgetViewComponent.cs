@@ -19,12 +19,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
         AutoInitialize = true)]
     public class SummaryWidgetViewComponent : AbpViewComponent
     {
-        private readonly IAssessmentRepository _assessmentRepository;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationFormRepository _applicationFormRepository;
-        public SummaryWidgetViewComponent(IAssessmentRepository assessmentRepository, IApplicationRepository applicationRepository, IApplicationFormRepository applicationFormRepository)
+        public SummaryWidgetViewComponent(IApplicationRepository applicationRepository, IApplicationFormRepository applicationFormRepository)
         {
-            _assessmentRepository = assessmentRepository;
             _applicationRepository = applicationRepository;
             _applicationFormRepository = applicationFormRepository; 
         }
