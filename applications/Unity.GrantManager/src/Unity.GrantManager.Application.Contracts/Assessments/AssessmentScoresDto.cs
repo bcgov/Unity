@@ -1,29 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using Unity.GrantManager.Attributes;
 
 namespace Unity.GrantManager.Assessments
 {
-    public class AssessmentScoresDto:IValidatableObject
+    public class AssessmentScoresDto
     {
         public Guid AssessmentId { get; set; }
-        public long? FinancialAnalysis { get; set; }
-        public long? EconomicImpact { get; set; }
-        public long? InclusiveGrowth { get; set; }
-        public long? CleanGrowth { get; set; }
 
-        IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
-        {
-            if((FinancialAnalysis != null && FinancialAnalysis > int.MaxValue) ||
-                (EconomicImpact!=null && EconomicImpact>int.MaxValue) ||
-                (InclusiveGrowth!=null && InclusiveGrowth>int.MaxValue) ||
-                (CleanGrowth!=null && CleanGrowth>int.MaxValue))
-            {
-                yield return new ValidationResult(
-                    "Invalid input!  Scores have maximum value of "+int.MaxValue+".",
-                    null
-                );
-            }
-        }
+        [MaxValue(int.MaxValue, "Financial Analysis")]
+        public int? FinancialAnalysis { get; set; }
+
+        [MaxValue(int.MaxValue, "Economic Impact")]
+        public int? EconomicImpact { get; set; }
+
+        [MaxValue(int.MaxValue, "Inclusive Growth")]
+        public int? InclusiveGrowth { get; set; }
+
+        [MaxValue(int.MaxValue, "Clean Growth")]
+        public int? CleanGrowth { get; set; }
     }
 }
