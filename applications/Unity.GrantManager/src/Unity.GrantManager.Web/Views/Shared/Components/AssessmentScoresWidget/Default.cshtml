@@ -10,29 +10,29 @@
 
 <form id="assessmentScoresWidgetForm" action="Widgets/AssessmentScores/UpdateAssessmentScores" method="post" enctype="multipart/form-data">
     <div class="container-fluid px-2">
-        <div class="scores-block-wrapper">
+        <div class="scores-block-wrapper assessment-scores-container">
             <div class="scores-block">
                 <div class="scores-block-left">
                     <div class="scores-block-score">
-                        <label for="financialAnalysis">Financial Analysis</label>
-                        <input type="number" size="18" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
+                        <label class="form-label" for="financialAnalysis">Financial Analysis</label>
+                        <input type="number" size="18" class="form-control" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="2147483647" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
                     </div>
 
                     <div class="scores-block-score">
-                        <label for="inclusiveGrowth">Inclusive Growth</label>
-                        <input type="number" size="18" disabled="@Model.IsDisabled()" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.InclusiveGrowth" />
+                        <label class="form-label" for="inclusiveGrowth">Inclusive Growth</label>
+                        <input type="number" size="18" class="form-control" disabled="@Model.IsDisabled()" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="2147483647" onkeydown="return positiveIntegersOnly(event);" value="@Model.InclusiveGrowth" />
                     </div>
                 </div>
 
                 <div class="scores-block-right">
                     <div class="scores-block-score">
-                        <label for="economicImpact">Economic Impact</label>
-                        <input type="number" size="18" disabled="@Model.IsDisabled()" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.EconomicImpact" />
+                        <label class="form-label" for="economicImpact">Economic Impact</label>
+                        <input type="number" size="18" class="form-control" disabled="@Model.IsDisabled()" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="2147483647" onkeydown="return positiveIntegersOnly(event);" value="@Model.EconomicImpact" />
                     </div>
 
                     <div class="scores-block-score">
-                        <label for="CleanGrowth">Clean Growth</label>
-                        <input type="number" size="18" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
+                        <label class="form-label" for="CleanGrowth">Clean Growth</label>
+                        <input type="number" size="18" class="form-control" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="2147483647" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
                     </div>
                 </div>
             </div>
