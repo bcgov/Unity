@@ -7,9 +7,12 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace Unity.GrantManager.Repositories
 {
+    
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(IApplicantAgentRepository))]
+    #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     public class ApplicantAgentRepository : EfCoreRepository<GrantManagerDbContext, ApplicantAgent, Guid>, IApplicantAgentRepository
+    #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
         public ApplicantAgentRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
         {
