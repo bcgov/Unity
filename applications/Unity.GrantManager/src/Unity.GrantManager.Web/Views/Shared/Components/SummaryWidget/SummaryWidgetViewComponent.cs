@@ -41,14 +41,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
             {
                 Category = appForm==null?string.Empty:appForm.Category,
                 SubmissionDate = application.CreationTime.ToShortDateString(),
-                OrganizationName = "",
-                OrganizationNumber = "",
+                OrganizationName = "", // to-do: merge code of 8819 and implement it here
+                OrganizationNumber = "", // to-do: merge code of 8819 and implement it here
                 EconomicRegion = application.EconomicRegion,
                 City = application.City,
                 RequestedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.RequestedAmount),
                 ProjectBudget = string.Format(new CultureInfo("en-CA"), "{0:C}", application.TotalProjectBudget),
                 Sector = application.Sector,
-                Community = "",
+                Community = "", // to-do: merge code of 8819 and implement it here
                 Status = application.ApplicationStatus.InternalStatus,
                 LikelihoodOfFunding = application.LikelihoodOfFunding,
                 AssessmentStartDate = application.AssessmentStartDate?.ToShortDateString(),
@@ -57,7 +57,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
                 AssessmentResult = application.AssessmentResultStatus,
                 RecommendedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.RecommendedAmount),
                 ApprovedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.ApprovedAmount),
-                Batch = ""
+                Batch = "" // to-do: ask BA for the implementation of Batch field
             };
 
             return View(model);
