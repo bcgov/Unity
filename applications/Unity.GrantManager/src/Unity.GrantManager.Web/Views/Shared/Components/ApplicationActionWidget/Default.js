@@ -69,13 +69,13 @@
         function triggerStatusAction(triggerAction) {
             unity.grantManager.grantApplications.grantApplication
                 .triggerAction(widgetAppId, triggerAction, {})
-                .then(function (result) {
-                    // TODO: PUBSUB & REFRESH WIDGET
+                .then(function (_) {                
                     widgetManager.refresh();
                     abp.notify.success(
                         l(`Enum:GrantApplicationAction.${triggerAction}`),
                         "Application Status Changed"
                     );
+                    PubSub.publish("application_status_changed", triggerAction);
                 });
         }
         return {
