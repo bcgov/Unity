@@ -50,13 +50,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
                 Sector = application.Sector,
                 Community = "",
                 Status = application.ApplicationStatus.InternalStatus,
-                LikelihoodOfFunding = "",
+                LikelihoodOfFunding = application.LikelihoodOfFunding,
                 AssessmentStartDate = application.AssessmentStartDate?.ToShortDateString(),
                 FinalDecisionDate = "",
-                TotalScore = "",
-                AssessmentResult = "",
-                RecommendedAmount = "",
-                ApprovedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.EligibleAmount),
+                TotalScore = application.TotalScore.ToString(),
+                AssessmentResult = application.AssessmentResultStatus,
+                RecommendedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.RecommendedAmount),
+                ApprovedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.ApprovedAmount),
                 Batch = ""
             };
 
