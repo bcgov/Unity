@@ -6,6 +6,7 @@
     let applicationFormId = document.getElementById('applicationFormId').value;
     let allowableTypes = ['textarea', 'orgbook', 'simpletextfield', 'textfield', 'currency', 'datetime', 'checkbox'];	
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId'];
+    let dataTable;
 
     const UIElements = {
         btnBack: $('#btn-back'),
@@ -16,7 +17,7 @@
     
     function init() {
         bindUIEvents();
-        initializeDataTable();
+        dataTable = initializeDataTable();
         initializeIntakeMap();
         bindExistingMaps();
     }
@@ -128,7 +129,7 @@
             for (let key of keys) {
                 let jsonObj = JSON.parse(availableChefsFields[key]);
                 if(allowableTypes.includes(jsonObj.type.trim())) {
-                    dt.row.add([jsonObj.label, key, jsonObj.type, key]).draw();
+                    dataTable.row.add([jsonObj.label, key, jsonObj.type, key]).draw();
                 }
             }		
         }
