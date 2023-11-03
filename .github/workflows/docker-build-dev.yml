@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - '.github/**'
       - '.gitignore'
-      - 'cypress/**'
       - 'database/**'
       - 'documentation/**'
       - 'openshift/**'
@@ -15,7 +14,10 @@ on:
       - 'LICENSE'
       - 'README.md'
       - 'SECURITY..md'
-    
+  # Allows manual triggering
+  workflow_dispatch:
+
+# Repository secrets OPENSHIFT_TOKEN_{DEV|TEST|PROD|TOOLS}
 env:
   CLUSTER: https://api.silver.devops.gov.bc.ca:6443
   AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN_DEV }}
@@ -25,9 +27,7 @@ env:
 jobs:
 
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Build application Docker images
@@ -46,5 +46,3 @@ jobs:
         docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
         docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest
         docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
-      
-      
