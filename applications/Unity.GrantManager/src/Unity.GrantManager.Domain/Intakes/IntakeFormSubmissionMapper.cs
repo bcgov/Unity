@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Intakes
 
                             if (key != null && label != null && tokenType != null && tokenType.ToString() != "button")
                             {
-                                var jsonValue = "{ \"type\": \""+ tokenType.ToString() + " \" \"label\":  \"" + label.ToString() + "\" }";
+                                var jsonValue = "{ \"type\": \""+ tokenType.ToString() + " \", \"label\":  \"" + label.ToString() + "\" }";
                                 components.Add(key.ToString(), jsonValue);
                             }
 
@@ -107,7 +107,7 @@ namespace Unity.GrantManager.Intakes
                 Sector = data.sector,
                 TotalProjectBudget = data.totalProjectBudget,
                 RequestedAmount = data.requestedAmount,
-                City = data.city,
+                PhysicalCity = data.city,
                 EconomicRegion = data.economicRegion
             };
         }
@@ -116,6 +116,7 @@ namespace Unity.GrantManager.Intakes
         {
             var configMap = JsonConvert.DeserializeObject<dynamic>(submissionHeaderMapping)!;
             IntakeMapping intakeMapping = ApplyDefaultConfigurationMapping(data, form);
+
             if (configMap != null)
             {
                 foreach (JProperty property in configMap.Properties())
@@ -127,7 +128,7 @@ namespace Unity.GrantManager.Intakes
                     if (intakeProperty != null && dataValue != null && dataKey != null)
                     {
                         // Get a type object that represents the IntakeMapping.
-                        Type intakeType = typeof(IntakeMapping);                        
+                        Type intakeType = typeof(IntakeMapping);
                         PropertyInfo? intakePropInfo = intakeType.GetProperty(dataKey!);
                         intakePropInfo?.SetValue(intakeMapping, dataValue?.ToString());
                     }
@@ -136,20 +137,6 @@ namespace Unity.GrantManager.Intakes
 
             return intakeMapping;
         }
-    }
-
-    public class IntakeMapping
-    {
-        public string? ProjectName { get; set; }
-        public string? ApplicantName { get; set; }
-        public string? Sector { get; set; }
-        public string? TotalProjectBudget { get; set; }
-        public string? RequestedAmount { get; set; }
-        public string? ConfirmationId { get; set; }
-        public string? SubmissionId { get; set; }
-        public string? SubmissionDate { get; set; }
-        public string? City { get; internal set; }
-        public string? EconomicRegion { get; internal set; }
     }
 
     public static class MapperExtensions
