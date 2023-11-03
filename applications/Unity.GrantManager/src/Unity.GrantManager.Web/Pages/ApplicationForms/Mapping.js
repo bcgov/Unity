@@ -4,7 +4,36 @@
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
     let applicationFormId = document.getElementById('applicationFormId').value;
-    let allowableTypes = ['textarea', 'orgbook', 'simpletextfield', 'textfield', 'currency', 'datetime', 'checkbox'];	
+
+    let allowableTypes = ['textarea', 
+                          'orgbook',
+                          'textfield', 
+                          'currency', 
+                          'datetime', 
+                          'checkbox',
+                          'simpletextfield', 
+                          'simpletextfieldadvanced',
+                          'simpletime',
+                          'simpletimeadvanced',
+                          'simplenumber',
+                          'simplenumberadvance',
+                          'simplephonenumber',
+                          'simplephonenumberadvanced',
+                          'simpleday',
+                          'simpledayadvanced',
+                          'simpleemail',
+                          'simpleemailadvanced',
+                          'simpledatetime',
+                          'simpledatetimeadvanced',
+                          'simpleurladvanced',
+                          'simplecheckbox',
+                          'simplecheckboxes',
+                          'simplecheckboxadvanced',
+                          'simplecurrencyadvanced', 
+                          'simpletextarea',
+                          'simpletextareaadvanced'];	
+
+
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId'];
     let dataTable;
 
