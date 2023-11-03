@@ -13,10 +13,12 @@
                     abp.notify.success(
                         'The application has been updated.'
                     );
+                    $('#saveAssessmentResultBtn').prop('disabled', true);
                 });
         }
         catch (error) {
             console.log(error);
+            $('#saveAssessmentResultBtn').prop('disabled', false);
         }
     });
 });

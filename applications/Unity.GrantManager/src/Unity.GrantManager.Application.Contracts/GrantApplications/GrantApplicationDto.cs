@@ -37,4 +37,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string Notes { get; set; } = string.Empty;
     public string AssessmentResultStatus { get; set; } = string.Empty;
     public DateTime AssessmentResultDate { get; set; }
+    public GrantApplicationState StatusCode { get; set; }
 }

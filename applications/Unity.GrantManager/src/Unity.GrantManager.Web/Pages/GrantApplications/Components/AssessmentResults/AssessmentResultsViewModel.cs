@@ -31,8 +31,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
             new SelectListItem { Value = "FAIL", Text = "Fail"},
             new SelectListItem { Value = "INELIGIBLE", Text = "Ineligible"},
         };
-        public Guid ApplicationId { get; set; }
-        public AssessmentResultsModel AssessmentResults { get; set; } = new();
         public List<SelectListItem> DeclineRationalActionList { get; set; } = new()
         {
             new SelectListItem { Value = "NO_READINESS", Text = "Lack of readiness"},
@@ -48,7 +46,11 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
         {
             new SelectListItem { Value = "APPROVE", Text = "Recommended for Approval"},
             new SelectListItem { Value = "DENY", Text = "Recommended for Denial"}
-        };        
+        };
+
+        public Guid ApplicationId { get; set; }
+        public bool isFinalDecisionMade { get; set; }
+        public AssessmentResultsModel AssessmentResults { get; set; } = new();
 
         public class AssessmentResultsModel
         {

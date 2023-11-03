@@ -143,6 +143,10 @@
     "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
     "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
 
+    "Permission:GrantApplicationPermissions.AssessmentResults.Default": "Assessment Results",
+    "Permission:GrantApplicationPermissions.AssessmentResults.Edit": "Assessment Results Update",
+    "Permission:GrantApplicationPermissions.AssessmentResults.EditApprovedAmount": "Assessment Results Edit Approved Amount",
+
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
 
     "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",

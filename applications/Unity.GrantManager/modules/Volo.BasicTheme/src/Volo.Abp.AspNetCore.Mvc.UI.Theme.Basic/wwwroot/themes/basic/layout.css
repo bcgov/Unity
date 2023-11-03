@@ -338,12 +338,13 @@ input.form-control, textarea.form-control, .form-select {
         font-weight: 700;
     }
 
-    input.form-control:disabled, textarea.form-control:disabled,  .form-select:disabled {
-        color: var(--bc-colors-grey-text-100);
+    input.form-control:disabled, textarea.form-control:disabled, .form-select:disabled {
+        color: var(--bc-colors-grey-text-200);
         pointer-events: none;
-        background-color: var(--bc-colors-grey-hover);
+        background-color: var(--bc-colors-grey-hover) !important;
         opacity: var(--bs-btn-disabled-opacity);
         background-blend-mode: difference;
+        border: none !important;
     }
 
 .form-select {

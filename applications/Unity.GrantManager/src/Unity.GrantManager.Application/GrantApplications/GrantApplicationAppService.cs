@@ -123,6 +123,7 @@ public class GrantApplicationAppService :
     {
         var dto = await _applicationRepository.GetAsync(id);
         var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
+        appDto.StatusCode = dto.ApplicationStatus.StatusCode;
         return appDto;
     }
 

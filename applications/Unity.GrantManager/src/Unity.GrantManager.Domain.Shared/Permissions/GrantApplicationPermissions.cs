@@ -51,6 +51,13 @@ namespace Unity.GrantManager.Permissions
             public const string Confirm = Default + ".Confirm";
         }
 
+        public static class AssessmentResults
+        {
+            public const string Default = GroupName + ".AssessmentResults";
+            public const string Edit = Default + ".Update";
+            public const string EditApprovedAmount = Default + ".EditApprovedAmount";
+        }
+
         public static string[] GetAll()
         {
             return ReflectionHelper.GetPublicConstantsRecursively(typeof(GrantApplicationPermissions));

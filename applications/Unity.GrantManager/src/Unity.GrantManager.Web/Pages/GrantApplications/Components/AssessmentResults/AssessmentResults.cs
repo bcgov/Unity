@@ -9,6 +9,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Comments;
 using static Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults.AssessmentResultsPageModel;
+using System.Linq;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults
 {
@@ -31,11 +32,19 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            var application = await _grantApplicationAppService.GetAsync(applicationId);
+            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
             AssessmentResultsPageModel model = new();
 
             model.ApplicationId = applicationId;
+
+            GrantApplicationState[] finalDecisionArr =  {
+                GrantApplicationState.GRANT_APPROVED,
+                GrantApplicationState.GRANT_NOT_APPROVED,
+                GrantApplicationState.CLOSED,
+                GrantApplicationState.WITHDRAWN,
+            };
+            model.isFinalDecisionMade = finalDecisionArr.Contains(application.StatusCode);
 
             model.AssessmentResults = new()
             {
