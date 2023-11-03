@@ -16,7 +16,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
 
     [Widget(
     ScriptFiles = new[] {
-        "/Pages/GrantApplications/Components/AssessmentResults/Default.js"
+        "/Pages/GrantApplications/Components/AssessmentResults/Default.js",
+        "/libs/jquery-maskmoney/jquery.maskMoney.min.js",
     },
     StyleFiles = new[] {
         "/Pages/GrantApplications/Components/AssessmentResults/Default.css"

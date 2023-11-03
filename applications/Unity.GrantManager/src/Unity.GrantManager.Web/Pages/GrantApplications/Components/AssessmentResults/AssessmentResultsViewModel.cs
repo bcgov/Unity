@@ -60,12 +60,16 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
 
             public int? TotalScore { get; set; }
 
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? RequestedAmount { get; set; }
 
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? TotalProjectBudget { get; set; }
 
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? RecommendedAmount { get; set; }
 
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? ApprovedAmount { get; set; }
 
             [SelectItems(nameof(FundingRiskList))]

@@ -11,7 +11,7 @@
     Layout = null;
     bool isEditGranted = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
     bool isEditEditApprovedAmount = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
-    if(isEditGranted) {
+    if (isEditGranted) {
         isEditGranted = !(Model.isFinalDecisionMade);
     }
 }
@@ -33,20 +33,20 @@
                 </abp-column>
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
-                        <abp-input type="number" asp-for="@Model.AssessmentResults.RequestedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RequestedAmount"].Value"
-                                   onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" />
+                        <abp-input asp-for="@Model.AssessmentResults.RequestedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RequestedAmount"].Value"
+                                   onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" class="currency-input" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
-                        <abp-input type="number" asp-for="@Model.AssessmentResults.TotalProjectBudget" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget"].Value"
-                                   onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" />
+                        <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget"].Value"
+                                   onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" class="currency-input" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
-                        <abp-input type="number" asp-for="@Model.AssessmentResults.RecommendedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RecommendedAmount"].Value"
-                                   onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" />
+                        <abp-input asp-for="@Model.AssessmentResults.RecommendedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RecommendedAmount"].Value"
+                                   onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" class="currency-input" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
-                        <abp-input type="number" asp-for="@Model.AssessmentResults.ApprovedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.ApprovedAmount"].Value"
-                                   onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted && !isEditEditApprovedAmount)" />
+                        <abp-input asp-for="@Model.AssessmentResults.ApprovedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.ApprovedAmount"].Value"
+                                   onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted && !isEditEditApprovedAmount)" class="currency-input" />
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0">

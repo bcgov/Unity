@@ -1,10 +1,17 @@
 ﻿$(function () {
+
+    $('.currency-input').maskMoney();
+
     $('body').on('click', '#saveAssessmentResultBtn', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
-        let formData = $("#assessment_result_form").serializeArray()
+        let formData = $("#assessment_result_form").serializeArray();
         let assessmentResultObj = {};
         $.each(formData, function (key, input) {
-            assessmentResultObj[input.name.split(".")[1]] = input.value;
+            if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "AssessmentResults.Notes")) {
+                assessmentResultObj[input.name.split(".")[1]] = input.value;
+            } else {
+                assessmentResultObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+            }
         });
         try {
             unity.grantManager.grantApplications.grantApplication
