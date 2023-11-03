@@ -40,6 +40,11 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.SendToTeamLead, L("Permission:GrantApplicationPermissions.Assessments.SendToTeamLead"));
             assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.SendBack, L("Permission:GrantApplicationPermissions.Assessments.SendBack"));
             assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Confirm, L("Permission:GrantApplicationPermissions.Assessments.Confirm"));
+
+            // Assessment Results
+            var assessmentResultPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.AssessmentResults.Default, L("Permission:GrantApplicationPermissions.AssessmentResults.Default"));
+            assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.Edit, L("Permission:GrantApplicationPermissions.AssessmentResults.Edit"));
+            assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount, L("Permission:GrantApplicationPermissions.AssessmentResults.EditApprovedAmount"));
         }
 
         private static LocalizableString L(string name)

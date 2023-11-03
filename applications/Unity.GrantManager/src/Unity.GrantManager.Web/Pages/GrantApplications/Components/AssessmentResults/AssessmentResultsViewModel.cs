@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System;
-using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults
 {
     public class AssessmentResultsPageModel : PageModel
     {
+        // MOVE these lists to central shared location (Domain.shared) as key value pairing (not specific to select list)
         public List<SelectListItem> FundingRiskList { get; set; } = new()
         {
             new SelectListItem { Value = "LOW", Text = "Low"},
@@ -31,8 +31,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
             new SelectListItem { Value = "FAIL", Text = "Fail"},
             new SelectListItem { Value = "INELIGIBLE", Text = "Ineligible"},
         };
-        public Guid ApplicationId { get; set; }
-        public AssessmentResultsModel AssessmentResults { get; set; } = new();
         public List<SelectListItem> DeclineRationalActionList { get; set; } = new()
         {
             new SelectListItem { Value = "NO_READINESS", Text = "Lack of readiness"},
@@ -48,7 +46,11 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
         {
             new SelectListItem { Value = "APPROVE", Text = "Recommended for Approval"},
             new SelectListItem { Value = "DENY", Text = "Recommended for Denial"}
-        };        
+        };
+
+        public Guid ApplicationId { get; set; }
+        public bool IsFinalDecisionMade { get; set; }
+        public AssessmentResultsModel AssessmentResults { get; set; } = new();
 
         public class AssessmentResultsModel
         {
@@ -56,14 +58,18 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
             [TextArea(Rows = 1)]
             public string? ProjectSummary { get; set; }
 
-            public decimal? TotalScore { get; set; }
+            public int? TotalScore { get; set; }
 
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? RequestedAmount { get; set; }
 
-            public double? TotalProjectBudget { get; set; }
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
+            public decimal? TotalProjectBudget { get; set; }
 
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? RecommendedAmount { get; set; }
 
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? ApprovedAmount { get; set; }
 
             [SelectItems(nameof(FundingRiskList))]

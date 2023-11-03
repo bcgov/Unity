@@ -75,11 +75,11 @@ namespace Unity.GrantManager.Intakes
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
                     ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
-                    RequestedAmount = double.Parse(intakeMap.RequestedAmount ?? "0"),
+                    RequestedAmount = decimal.Parse(intakeMap.RequestedAmount ?? "0"),
                     SubmissionDate = DateTime.Parse(intakeMap.SubmissionDate ?? DateTime.UtcNow.ToString(), CultureInfo.InvariantCulture),
                     City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
                     EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", // TBD how to calculate this - spacial lookup?
-                    TotalProjectBudget = double.Parse(intakeMap.TotalProjectBudget ?? "0"),
+                    TotalProjectBudget = decimal.Parse(intakeMap.TotalProjectBudget ?? "0"),
                     Sector = intakeMap.Sector ?? "{Sector}" // TBD how to calculate this
                 }                
             );   
