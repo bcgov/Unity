@@ -71,7 +71,7 @@ $(function () {
         return components;
     }
     async function getSubmission() {
-        try {
+        try {            
             let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
             unity.grantManager.intakes.submission
                 .getSubmission(submissionId)
@@ -290,7 +290,22 @@ $(function () {
               
             },
         });
-    }
+    }    
+    let applicationStatusWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationStatusWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val()
+            };
+        }
+    });
+    PubSub.subscribe(
+        'application_status_changed',
+        (msg, data) => {
+            console.log(msg, data);
+            applicationStatusWidgetManager.refresh();
+        }
+    );
 });
 
 function uploadApplicationFiles(inputId) {    
