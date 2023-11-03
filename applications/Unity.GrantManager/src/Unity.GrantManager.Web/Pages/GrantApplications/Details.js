@@ -71,7 +71,7 @@ $(function () {
         return components;
     }
     async function getSubmission() {
-        try {
+        try {            
             let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
             unity.grantManager.intakes.submission
                 .getSubmission(submissionId)

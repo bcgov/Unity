@@ -54,7 +54,8 @@ namespace Unity.GrantManager.Intakes
                 OidcSub = Guid.Empty.ToString(),
                 ApplicantId = application.ApplicantId,
                 ApplicationFormId = applicationForm.Id,
-                ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}"
+                ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
+                ApplicationId = application.Id,
             });
             await uow.SaveChangesAsync();
             return applicationFormSubmission.Id;
@@ -116,7 +117,7 @@ namespace Unity.GrantManager.Intakes
         private async Task<ApplicantAgent> CreateApplicantAgentAsync(IntakeMapping intakeMap, Applicant applicant, Application application)
         {
             var applicantAgent = new ApplicantAgent();
-            if (intakeMap.ContactName != null) {
+            if (!string.IsNullOrEmpty(intakeMap.ContactName)) {
 
                 applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
                 {
