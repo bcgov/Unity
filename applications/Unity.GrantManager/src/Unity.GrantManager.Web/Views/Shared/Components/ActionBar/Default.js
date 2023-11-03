@@ -66,10 +66,7 @@ $(function () {
 
     });
     PubSub.subscribe("deselect_application", (msg, data) => {
-        const index = selectedApplicationIds.indexOf(data.id);
-        if (index > -1) {
-            selectedApplicationIds.splice(index, 1);
-        }
+        selectedApplicationIds.pop(data.id);
         manageActionButtons();
 
     });

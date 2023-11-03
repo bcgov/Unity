@@ -51,7 +51,7 @@
                                 {
                                     text: 'Mapping',
                                     action: (data) => location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id,
-                                    enabled: (data) => { return false; }
+                                    enabled: (data) => { return true; }
                                 }
                             ]
                     }
