@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
 using Unity.GrantManager.Applications;
 using System.Globalization;
