@@ -30,17 +30,19 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
         {
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
-            AssessmentResultsPageModel model = new();
+            AssessmentResultsPageModel model = new()
+            {
+                ApplicationId = applicationId
+            };
 
-            model.ApplicationId = applicationId;
-
+            // Need to leverage state machine / domain layer for this logic
             GrantApplicationState[] finalDecisionArr =  {
                 GrantApplicationState.GRANT_APPROVED,
                 GrantApplicationState.GRANT_NOT_APPROVED,
                 GrantApplicationState.CLOSED,
                 GrantApplicationState.WITHDRAWN,
             };
-            model.isFinalDecisionMade = finalDecisionArr.Contains(application.StatusCode);
+            model.IsFinalDecisionMade = finalDecisionArr.Contains(application.StatusCode);
 
             model.AssessmentResults = new()
             {

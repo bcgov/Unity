@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System;
-using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults
 {
     public class AssessmentResultsPageModel : PageModel
     {
+        // MOVE these lists to central shared location (Domain.shared) as key value pairing (not specific to select list)
         public List<SelectListItem> FundingRiskList { get; set; } = new()
         {
             new SelectListItem { Value = "LOW", Text = "Low"},
@@ -49,7 +49,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
         };
 
         public Guid ApplicationId { get; set; }
-        public bool isFinalDecisionMade { get; set; }
+        public bool IsFinalDecisionMade { get; set; }
         public AssessmentResultsModel AssessmentResults { get; set; } = new();
 
         public class AssessmentResultsModel

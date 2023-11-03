@@ -12,7 +12,7 @@
     bool isEditGranted = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
     bool isEditEditApprovedAmount = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
     if (isEditGranted) {
-        isEditGranted = !(Model.isFinalDecisionMade);
+        isEditGranted = !(Model.IsFinalDecisionMade);
     }
 }
 
