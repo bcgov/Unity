@@ -20,6 +20,8 @@
     <Content Remove="Logs\**" />
     <EmbeddedResource Remove="Logs\**" />
     <None Remove="Logs\**" />
+    <None Remove="Pages\GrantApplications\Components\" />
+    <None Remove="Pages\GrantApplications\Components\AssessmentResults\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,4 +66,8 @@
 	<PackageReference Include="IdentityModel.AspNetCore" Version="4.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Pages\GrantApplications\Components\" />
+    <Folder Include="Pages\GrantApplications\Components\AssessmentResults\" />
+  </ItemGroup>
 </Project>

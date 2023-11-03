@@ -35,13 +35,14 @@ services:
       - common-network
 
   unity-data-postgres:
-    image: postgres:latest
+    image: ${UNITY_PGIMAGE:-postgres:latest}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:${UNITY_PGDATA:-/var/lib/postgresql/data}
     environment:
       - POSTGRES_DB=${UNITY_POSTGRES_DB:-postgres}
       - POSTGRES_USER=${UNITY_POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${UNITY_POSTGRES_PASSWORD:-admin}
+      - POSTGRESQL_ADMIN_PASSWORD=${UNITY_POSTGRES_PASSWORD:-admin}
       - PGPORT=${UNITY_DB_PORT:-5432}
     ports:
       - "${UNITY_DB_PORT:-5432}:${UNITY_DB_PORT:-5432}"

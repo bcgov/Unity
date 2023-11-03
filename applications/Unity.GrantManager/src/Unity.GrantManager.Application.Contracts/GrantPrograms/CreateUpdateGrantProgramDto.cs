@@ -14,5 +14,5 @@ public class CreateUpdateGrantProgramDto
 
     [Required]
     [DataType(DataType.Date)]
-    public DateTime PublishDate { get; set; } = DateTime.Now;
+    public DateTime PublishDate { get; set; } = DateTime.UtcNow;
 }

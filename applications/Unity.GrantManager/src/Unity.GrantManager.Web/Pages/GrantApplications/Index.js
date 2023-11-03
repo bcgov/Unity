@@ -398,7 +398,7 @@
                 { //11
                     title: 'Approved Amount',
                     name: 'approved Amount',
-                    data: 'eligibleAmount',
+                    data: 'approvedAmount',
                     className: 'data-table-header',                    
                     render: function (data) {
                         return formatter.format(data);

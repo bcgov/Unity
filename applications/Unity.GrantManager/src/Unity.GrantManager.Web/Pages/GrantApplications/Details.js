@@ -71,7 +71,7 @@ $(function () {
         return components;
     }
     async function getSubmission() {
-        try {
+        try {            
             let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
             unity.grantManager.intakes.submission
                 .getSubmission(submissionId)
@@ -119,7 +119,7 @@ $(function () {
                     cardBody.style.display = 'block';
                     header.classList.add('custom-active');
 
-                    header.scrollIntoView(true);
+                  
                 } else {
                     cardBody.style.display = 'none';
                     header.classList.remove('custom-active');
