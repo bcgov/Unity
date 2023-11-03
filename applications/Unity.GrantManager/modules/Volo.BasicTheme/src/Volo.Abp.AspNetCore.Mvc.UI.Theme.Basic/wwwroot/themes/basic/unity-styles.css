@@ -135,3 +135,8 @@
     color: var(--bc-colors-grey-text-200);
     text-overflow: ellipsis;
 }
+
+.unity-fill-available {
+    width: -webkit-fill-available;
+    width: -moz-available;
+}
