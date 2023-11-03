@@ -1,14 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Threading.Tasks;
 using System;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.Comments;
-using static Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults.AssessmentResultsPageModel;
 using System.Linq;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults
@@ -17,7 +12,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
     [Widget(
     ScriptFiles = new[] {
         "/Pages/GrantApplications/Components/AssessmentResults/Default.js",
-        "/libs/jquery-maskmoney/jquery.maskMoney.min.js",
+        "/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js",
     },
     StyleFiles = new[] {
         "/Pages/GrantApplications/Components/AssessmentResults/Default.css"

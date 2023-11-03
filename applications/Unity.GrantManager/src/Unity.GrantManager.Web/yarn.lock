@@ -2068,6 +2068,13 @@ jquery-form@^4.3.0:
   dependencies:
     jquery ">=1.7.2"
 
+jquery-maskmoney@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/jquery-maskmoney/-/jquery-maskmoney-3.0.2.tgz#f18de4f06b8c66ad97cae8b320571c936ac637b7"
+  integrity sha512-tmhGSfx3QTwrYcZYgELsr8qgcvRcR72+p6D+YrZrlkUdVE6g9vuRLwbl4FuL5X84KBfWBtoX6k2HawYjv2WVag==
+  dependencies:
+    jquery ">=1.6"
+
 jquery-mousewheel@>=3.0.6:
   version "3.1.13"
   resolved "https://registry.npmjs.org/jquery-mousewheel/-/jquery-mousewheel-3.1.13.tgz"
@@ -2090,6 +2097,11 @@ jquery@>=1.10, jquery@>=1.12.0, "jquery@>=1.5.0 <4.0", jquery@>=1.7, jquery@>=1.
   version "3.7.0"
   resolved "https://registry.npmjs.org/jquery/-/jquery-3.7.0.tgz"
   integrity sha512-umpJ0/k8X0MvD1ds0P9SfowREz2LenHsQaxSohMZ5OMNEU2r0tf8pdeEFTHMFxWVxKNyU9rTtK3CWzUCTKJUeQ==
+
+jquery@>=1.6:
+  version "3.7.1"
+  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.7.1.tgz#083ef98927c9a6a74d05a6af02806566d16274de"
+  integrity sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==
 
 jquery@~3.6.0:
   version "3.6.4"
