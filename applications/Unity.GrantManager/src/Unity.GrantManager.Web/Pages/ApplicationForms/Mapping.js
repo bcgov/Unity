@@ -31,8 +31,7 @@
                           'simplecheckboxadvanced',
                           'simplecurrencyadvanced', 
                           'simpletextarea',
-                          'simpletextareaadvanced'];	
-
+                          'simpletextareaadvanced'];
 
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId'];
     let dataTable;
