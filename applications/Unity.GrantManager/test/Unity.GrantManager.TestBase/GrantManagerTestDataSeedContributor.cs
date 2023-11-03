@@ -134,7 +134,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 UserId = "00000000-0000-0000-0000-000000000000",
                 FileName = "report.pdf",
                 AttachedBy = "John Doe",
-                Time = DateTime.Now,
+                Time = DateTime.UtcNow,
             },
             autoSave: true
         );

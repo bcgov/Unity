@@ -63,12 +63,10 @@ namespace Unity.GrantManager.Intakes
 
         private async Task StoreChefsFieldMappingAsync(EventSubscriptionDto eventSubscriptionDto, ApplicationForm applicationForm, JToken token)
         {
-            var uow = _unitOfWorkManager.Begin();
             Guid formVersionId = Guid.Parse(token.ToString());
             var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, formVersionId) ?? throw new InvalidFormDataSubmissionException();
             applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
             await _applicationFormRepository.UpdateAsync(applicationForm);
-            await uow.SaveChangesAsync();
         }
     }
 }

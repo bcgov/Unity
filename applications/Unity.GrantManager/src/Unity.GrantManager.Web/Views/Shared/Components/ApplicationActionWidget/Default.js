@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     abp.widgets.ApplicationActionWidget = function ($wrapper) {
         let widgetManager = $wrapper.data('abp-widget-manager');
         let $actionButtons = $wrapper.find('.details-dropdown-action');
