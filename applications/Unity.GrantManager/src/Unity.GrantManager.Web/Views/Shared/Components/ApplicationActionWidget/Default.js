@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     abp.widgets.ApplicationActionWidget = function ($wrapper) {
         let widgetManager = $wrapper.data('abp-widget-manager');
         let $actionButtons = $wrapper.find('.details-dropdown-action');
@@ -69,13 +69,13 @@
         function triggerStatusAction(triggerAction) {
             unity.grantManager.grantApplications.grantApplication
                 .triggerAction(widgetAppId, triggerAction, {})
-                .then(function (result) {
-                    // TODO: PUBSUB & REFRESH WIDGET
+                .then(function (_) {                
                     widgetManager.refresh();
                     abp.notify.success(
                         l(`Enum:GrantApplicationAction.${triggerAction}`),
                         "Application Status Changed"
                     );
+                    PubSub.publish("application_status_changed", triggerAction);
                 });
         }
         return {
