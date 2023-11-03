@@ -121,6 +121,16 @@ public class ApplicationManager : DomainService, IApplicationManager
         application.ApplicationStatusId = statusChangedTo.Id;
         application.ApplicationStatus = statusChangedTo;
 
+        if(triggerAction == GrantApplicationAction.StartAssessment)
+        {
+            application.AssessmentStartDate = DateTime.UtcNow;
+        }
+
+        if((triggerAction == GrantApplicationAction.Approve) || (triggerAction == GrantApplicationAction.Deny))
+        {
+            application.FinalDecisionDate = DateTime.UtcNow;
+        }
+
         return await _applicationRepository.UpdateAsync(application);
     }
 
@@ -133,7 +143,7 @@ public class ApplicationManager : DomainService, IApplicationManager
                 OidcSub = oidcSub,
                 ApplicationId = applicationId,
                 AssigneeDisplayName = assigneeDisplayName,
-                AssignmentTime = DateTime.Now
+                AssignmentTime = DateTime.UtcNow
             });
 
         var application = await _applicationRepository.GetAsync(userAssignment.ApplicationId, true);

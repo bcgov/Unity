@@ -199,7 +199,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
                    UserId = new Guid(currentUserId),
                    FileName = args.BlobName,
                    AttachedBy = currentUserName,
-                   Time = DateTime.Now,
+                   Time = DateTime.UtcNow,
                });
         }
         else
@@ -207,7 +207,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             attachment.UserId = new Guid(currentUserId);
             attachment.FileName = args.BlobName;
             attachment.AttachedBy = currentUserName;
-            attachment.Time = DateTime.Now;
+            attachment.Time = DateTime.UtcNow;
             await _assessmentAttachmentRepository.UpdateAsync(attachment);
         }
 
@@ -241,7 +241,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
                     UserId = currentUserId,
                     FileName = args.BlobName,
                     AttachedBy = currentUserName,
-                    Time = DateTime.Now,
+                    Time = DateTime.UtcNow,
                 });
         }
         else
@@ -249,7 +249,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             attachment.UserId = currentUserId;
             attachment.FileName = args.BlobName;
             attachment.AttachedBy = currentUserName;
-            attachment.Time = DateTime.Now;
+            attachment.Time = DateTime.UtcNow;
             await _applicationAttachmentRepository.UpdateAsync(attachment);
         }
         
