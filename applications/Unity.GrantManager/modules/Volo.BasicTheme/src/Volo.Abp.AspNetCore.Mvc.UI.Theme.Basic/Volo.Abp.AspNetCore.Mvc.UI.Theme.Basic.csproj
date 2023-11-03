@@ -22,6 +22,10 @@
 
   <ItemGroup>
     <Content Remove="wwwroot\**\*.*" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.multitenancy\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy.abppkg.analyze.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.multitenancy\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy.abppkg.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.analyze.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.json" />
     <Content Remove="wwwroot\themes\basic\fonts\" />
     <Content Remove="wwwroot\themes\basic\fonts\icons\" />
     <Content Remove="wwwroot\themes\basic\fonts\BCSans\" />
