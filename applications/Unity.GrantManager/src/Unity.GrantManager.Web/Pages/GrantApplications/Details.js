@@ -290,7 +290,22 @@ $(function () {
               
             },
         });
-    }
+    }    
+    let applicationStatusWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationStatusWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val()
+            };
+        }
+    });
+    PubSub.subscribe(
+        'application_status_changed',
+        (msg, data) => {
+            console.log(msg, data);
+            applicationStatusWidgetManager.refresh();
+        }
+    );
 });
 
 function uploadApplicationFiles(inputId) {    
