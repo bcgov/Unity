@@ -1,8 +1,4 @@
-﻿using Autofac.Core;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using System.Diagnostics;
-using Unity.GrantManager.Uow;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
@@ -24,7 +20,7 @@ public class GrantManagerTestBaseModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
-
+        context.Services.AddDataMigrationEnvironment();
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
