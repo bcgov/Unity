@@ -3,9 +3,9 @@
     public class CreateUpdateGrantApplicationDto
     {
         public string? ProjectSummary { get; set; }
-        public decimal? TotalScore { get; set; }
-        public double? RequestedAmount { get; set; }
-        public double? TotalProjectBudget { get; set; }
+        public int? TotalScore { get; set; }
+        public decimal? RequestedAmount { get; set; }
+        public decimal? TotalProjectBudget { get; set; }
         public decimal? RecommendedAmount { get; set; }
         public decimal? ApprovedAmount { get; set; }
         public string? LikelihoodOfFunding { get; set; }

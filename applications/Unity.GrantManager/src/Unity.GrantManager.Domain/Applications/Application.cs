@@ -22,8 +22,8 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
-    public double RequestedAmount { get; set; } // TODO: change to decimal
-    public double TotalProjectBudget { get; set; } // TODO: change to decimal
+    public decimal RequestedAmount { get; set; } // TODO: change to decimal
+    public decimal TotalProjectBudget { get; set; } // TODO: change to decimal
     public string? Sector { get; set; } = null;
     public string? EconomicRegion { get; set;} = null;
     public string? City { get; set; } = null;
@@ -37,7 +37,7 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string? ProjectSummary { get; set; }  
 
-    public decimal? TotalScore { get; set; } = null; 
+    public int? TotalScore { get; set; } = null; 
 
     public decimal RecommendedAmount { get; set; } = 0;
 
