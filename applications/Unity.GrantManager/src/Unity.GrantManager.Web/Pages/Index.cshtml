@@ -26,6 +26,7 @@
     PageSections.Add(new PageSection() { Id = 4, Title = "Access Grant Programs", Url = "/GrantPrograms" });
     PageSections.Add(new PageSection() { Id = 5, Title = "Review Current Applications", Url = "/GrantApplications" });
     PageSections.Add(new PageSection() { Id = 6, Title = "Tools for Creating Forms" });
+    PageSections.Add(new PageSection() { Id = 7, Title = "Unity Contact Information" });
 }
 
 
@@ -54,34 +55,60 @@
         </div>
     </div>
 
-    <div class="unity-content-container">
-        <div class="col-3">
-            <div class="landing-navigation" action="">
-                @foreach (var item in PageSections)
-                {                                        
-                    <div class="landing-navigation-child" data-id="@item.Id">
-                    <div class="landing-navigation-child-indicator"></div>
-                        @if (item.Url.IsNullOrEmpty())
-                        {
-                            @item.Title
-                        }
-                        else
-                        {
-                            var target = item.UrlTarget ?? "_self";
+    <div class="unity-content-container ">
+        <div class="row">
+            <div class="col-3">
+                <div class="landing-navigation" action="">
+                    <ul class="nav  nav-tabs flex-column" id="mainApplication" role="tablist">
 
-                            <a target="@target" href="@item.Url">@item.Title</a>
-                        }
+                        <li class="nav-item" role="presentation">
+                            @foreach (var item in PageSections)
+                            {
+                                var target = item.UrlTarget ?? "_self";
 
+                                @if (target == "_self")
+                                {
+
+                                    var selfTarget = "#section-" + item.Id.ToString();
+                                    var tabId = "tab-" + item.Id.ToString();
+                                    <div class="landing-navigation-child nav-link" id="@tabId" data-id="@item.Id" data-bs-toggle="tab" role="tab" aria-selected="false" aria-controls="@selfTarget" data-bs-target="@selfTarget">
+                                        <div class="landing-navigation-child-indicator"></div>
+                                        @if (item.Url.IsNullOrEmpty())
+                                        {
+                                            @item.Title
+                                        }
+                                        else
+                                        {
+                                            <a target="@target" href="@item.Url">@item.Title</a>
+                                        }
+
+                                    </div>
+                                }
+
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-9">
+                <div class="tab-content">
+                    <div id="section-1" class="tab-pane  fade show active" role="tabpanel" aria-labelledby="section-1">
+                        <div class="unity-content-title">
+                            What is Unity Grant Manager?
+                        </div>
+                        <div class="unity-content">
+                            Your all-in-one solution for seamless grant management. Unity Grant Manager has been developed as a comprehensive and user-friendly platform designed to optimize the entire lifecycle of grant management and funding initiatives. Equipped with a robust toolkit, it guides you through each stage of the process—from initial application handling to oversight of post-award reporting. Unity Grant Manager is your partner for efficient and effective grant management.
+                        </div>
                     </div>
-                }
-            </div>
-        </div>
-        <div class="col-9">
-            <div class="unity-content-title">
-                What is Unity Grant Manager?
-            </div>
-            <div class="unity-content">
-                Your all-in-one solution for seamless grant management. Unity Grant Manager has been developed as a comprehensive and user-friendly platform designed to optimize the entire lifecycle of grant management and funding initiatives. Equipped with a robust toolkit, it guides you through each stage of the process—from initial application handling to oversight of post-award reporting. Unity Grant Manager is your partner for efficient and effective grant management.
+
+                    <div id="section-7" class="tab-pane" role="tabpanel" aria-labelledby="section-7">
+                        <div class="unity-content-without-heading">
+                            For onboarding and product design questions please contact: Christopher Carmack at <a href="mailto: Christopher.Carmack@gov.bc.ca">Christopher.Carmack@gov.bc.ca</a>
+                            <br />
+                            For Unity Support please contact: Stephan McColm at <a href="mailto: unitysupport@gov.bc.ca">unitysupport@gov.bc.ca</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
