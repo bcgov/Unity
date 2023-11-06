@@ -45,10 +45,10 @@ RUN abp install-libs
 
 ARG BUILD_VERSION
 ARG UGM_VERSION=${BUILD_VERSION:-0.0.0}
-RUN dotnet build "Unity.GrantManager.Web.csproj" -c Release /p:Version=${UGM_VERSION} -o /app/build
+RUN dotnet build "Unity.GrantManager.Web.csproj" -c Release -p:Version=${UGM_VERSION} -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -p:Version=${UGM_VERSION} -p:UseAppHost=false -o /app/publish 
 
 FROM base AS final
 WORKDIR /app
