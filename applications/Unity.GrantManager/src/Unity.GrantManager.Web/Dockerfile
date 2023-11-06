@@ -44,7 +44,7 @@ RUN dotnet dev-certs https --trust
 RUN abp install-libs
 
 ARG BUILD_VERSION
-ARG UGM_VERSION=${BUILD_VERSION:-0.0.1.0}
+ARG UGM_VERSION=${BUILD_VERSION:-0.0.0}
 RUN dotnet build "Unity.GrantManager.Web.csproj" -c Release /p:Version=${UGM_VERSION} -o /app/build
 
 FROM build AS publish
