@@ -47,9 +47,9 @@ namespace Unity.GrantManager.Events
             Login(GrantManagerTestData.User_Assessor2_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
-            EventSubscriptionDto eventSubscriptionDto = new EventSubscriptionDto();
+            EventSubscriptionDto eventSubscriptionDto = new();
             ApplicationForm? appForm1 = await _applicationFormRepository.FirstOrDefaultAsync(s => s.ApplicationFormName == "Integration Tests Form 1");
-            eventSubscriptionDto.FormId = appForm1.ChefsApplicationFormGuid != null ? Guid.Parse(appForm1.ChefsApplicationFormGuid) : Guid.Parse("ca4eab41-b655-40c8-870b-5d3b0d5b68e6");
+            eventSubscriptionDto.FormId = appForm1!.ChefsApplicationFormGuid != null ? Guid.Parse(appForm1.ChefsApplicationFormGuid) : Guid.Parse("ca4eab41-b655-40c8-870b-5d3b0d5b68e6");
             eventSubscriptionDto.SubmissionId = Guid.Parse("dad04994-6d8b-4a40-89eb-a490175ef077");
             var mockChefsEventSubscriptionService = new Mock<IChefsEventSubscriptionService>();
 

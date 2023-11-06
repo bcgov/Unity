@@ -13,7 +13,7 @@
     "Menu:Roles": "Roles",
     "Menu:Users": "Users",
     "Menu:Intakes": "Intakes",
-    "Menu:ApplicationForms": "Application Forms",
+    "Menu:ApplicationForms": "Forms",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
@@ -125,9 +125,9 @@
     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
     "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
-    "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Application Forms",
+    "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
 
-    "ApplicationForms": "Application Forms",
+    "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",
     "ApplicationForms:ChefsFormId": "CHEFS Form Id",
     "ApplicationForms:SubmissionHeaderMapping": "Mapping",
@@ -143,7 +143,25 @@
     "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
     "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
 
+    "Permission:GrantApplicationPermissions.AssessmentResults.Default": "Assessment Results",
+    "Permission:GrantApplicationPermissions.AssessmentResults.Edit": "Assessment Results Update",
+    "Permission:GrantApplicationPermissions.AssessmentResults.EditApprovedAmount": "Assessment Results Edit Approved Amount",
+
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
+
+    "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",
+    "AssessmentResultsView:AssessmentResultsForm.ProjectSummary": "Project Summary",
+    "AssessmentResultsView:AssessmentResultsForm.RequestedAmount": "Requested Amount",
+    "AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget": "Total Project Budget",
+    "AssessmentResultsView:AssessmentResultsForm.RecommendedAmount": "Recommended Amount",
+    "AssessmentResultsView:AssessmentResultsForm.ApprovedAmount": "Approved Amount",
+    "AssessmentResultsView:AssessmentResultsForm.LikelihoodOfFunding": "Likelihood of Funding",
+    "AssessmentResultsView:AssessmentResultsForm.DueDilligenceStatus": "Due Dilligence Status",
+    "AssessmentResultsView:AssessmentResultsForm.Recommendation": "Recommendation",
+    "AssessmentResultsView:AssessmentResultsForm.DeclineRational": "Decline Rational",
+    "AssessmentResultsView:AssessmentResultsForm.Notes": "Notes",
+    "AssessmentResultsView:AssessmentResultsForm.TotalScore": "Total Score",
+    "AssessmentResultsView:AssessmentResultsForm.AssessmentResult": "Assessment Result",
 
     "GrantApplication:ActionButtonName": "Status Actions",
     "Enum:GrantApplicationAction.Open": "Open",

@@ -15,8 +15,6 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Routing;
-using Polly;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -116,7 +114,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
         throw new NotImplementedException();
     }
 
-    public override async Task<Stream> GetOrNullAsync(BlobProviderGetArgs args)
+    public override async Task<Stream?> GetOrNullAsync(BlobProviderGetArgs args)
     {       
         var config = args.Configuration.GetS3BlobProviderConfiguration();
 
@@ -201,7 +199,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
                    UserId = new Guid(currentUserId),
                    FileName = args.BlobName,
                    AttachedBy = currentUserName,
-                   Time = DateTime.Now,
+                   Time = DateTime.UtcNow,
                });
         }
         else
@@ -209,7 +207,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             attachment.UserId = new Guid(currentUserId);
             attachment.FileName = args.BlobName;
             attachment.AttachedBy = currentUserName;
-            attachment.Time = DateTime.Now;
+            attachment.Time = DateTime.UtcNow;
             await _assessmentAttachmentRepository.UpdateAsync(attachment);
         }
 
@@ -243,7 +241,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
                     UserId = currentUserId,
                     FileName = args.BlobName,
                     AttachedBy = currentUserName,
-                    Time = DateTime.Now,
+                    Time = DateTime.UtcNow,
                 });
         }
         else
@@ -251,7 +249,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             attachment.UserId = currentUserId;
             attachment.FileName = args.BlobName;
             attachment.AttachedBy = currentUserName;
-            attachment.Time = DateTime.Now;
+            attachment.Time = DateTime.UtcNow;
             await _applicationAttachmentRepository.UpdateAsync(attachment);
         }
         

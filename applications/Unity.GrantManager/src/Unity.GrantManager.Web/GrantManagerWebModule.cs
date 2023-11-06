@@ -29,8 +29,8 @@ using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AspNetCore.Mvc.UI.Theming;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
@@ -98,8 +98,7 @@ public class GrantManagerWebModule : AbpModule
         ConfigurePolicies(context);
         ConfigureAuthentication(context, configuration);
         ConfigureUrls(configuration);
-        ConfigureTheming(configuration);
-        ConfigureBundles(configuration);
+        ConfigureBundles();
         ConfigureAutoMapper();
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
@@ -249,25 +248,16 @@ public class GrantManagerWebModule : AbpModule
         });
     }
 
-    private void ConfigureTheming(IConfiguration configuration)
-    {
-        Configure<AbpThemingOptions>(options =>
-        {
-            options.DefaultThemeName = configuration["Theme:Name"];
-        });
-    }
-
-    private void ConfigureBundles(IConfiguration configuration)
+    private void ConfigureBundles()
     {
         Configure<AbpBundlingOptions>(options =>
         {
-            options.StyleBundles.Configure(
-                string.Concat(configuration["Theme:Name"], ".Global"),
-                bundle =>
+            options
+                .StyleBundles
+                .Configure(BasicThemeBundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
-                }
-            );
+                });
         });
     }
 

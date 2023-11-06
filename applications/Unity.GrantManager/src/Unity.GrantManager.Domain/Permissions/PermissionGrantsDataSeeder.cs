@@ -48,7 +48,9 @@ namespace Unity.GrantManager.Permissions
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.SendToTeamLead
+                    GrantApplicationPermissions.Assessments.SendToTeamLead,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
                 });            
 
             // - Assessor
@@ -64,7 +66,10 @@ namespace Unity.GrantManager.Permissions
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.SendToTeamLead
+                    GrantApplicationPermissions.Assessments.SendToTeamLead,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
                });
 
             // - TeamLead
@@ -85,7 +90,10 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assessments.Create,
                     GrantApplicationPermissions.Assessments.SendToTeamLead,
                     GrantApplicationPermissions.Assessments.SendBack,
-                    GrantApplicationPermissions.Assessments.Confirm
+                    GrantApplicationPermissions.Assessments.Confirm,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
                });            
 
             // - Approver
@@ -95,7 +103,11 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Approvals.Complete,
-                    GrantApplicationPermissions.Comments.Add
+                    GrantApplicationPermissions.Comments.Add,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
+                    GrantApplicationPermissions.AssessmentResults.Edit,
+                    GrantApplicationPermissions.AssessmentResults.EditApprovedAmount,
               });
 
             // - BusinessAreaAdmin
