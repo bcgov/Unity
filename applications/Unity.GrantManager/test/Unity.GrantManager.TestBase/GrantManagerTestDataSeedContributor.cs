@@ -107,7 +107,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 ApplicationStatusId = (await _applicationStatusRepository.GetAsync(x => x.StatusCode == GrantApplicationState.SUBMITTED)).Id,
                 ReferenceNo = "TEST12345",
                 ApprovedAmount = 12345.51m,
-                RequestedAmount = 3456.13,
+                RequestedAmount = 3456.13m,
                 ProposalDate = new DateTime(2022, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
                 SubmissionDate = new DateTime(2023, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
                 Payload = "{\"Name\":\"John Smith\",\"Age\":34,\"Address\":\"British Columbia\"}"

@@ -1,21 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Threading.Tasks;
 using System;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.Comments;
-using static Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults.AssessmentResultsPageModel;
+using System.Linq;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults
 {
 
     [Widget(
     ScriptFiles = new[] {
-        "/Pages/GrantApplications/Components/AssessmentResults/Default.js"
+        "/Pages/GrantApplications/Components/AssessmentResults/Default.js",
+        "/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js",
     },
     StyleFiles = new[] {
         "/Pages/GrantApplications/Components/AssessmentResults/Default.css"
@@ -31,11 +28,21 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            var application = await _grantApplicationAppService.GetAsync(applicationId);
+            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
-            AssessmentResultsPageModel model = new();
+            AssessmentResultsPageModel model = new()
+            {
+                ApplicationId = applicationId
+            };
 
-            model.ApplicationId = applicationId;
+            // Need to leverage state machine / domain layer for this logic
+            GrantApplicationState[] finalDecisionArr =  {
+                GrantApplicationState.GRANT_APPROVED,
+                GrantApplicationState.GRANT_NOT_APPROVED,
+                GrantApplicationState.CLOSED,
+                GrantApplicationState.WITHDRAWN,
+            };
+            model.IsFinalDecisionMade = finalDecisionArr.Contains(application.StatusCode);
 
             model.AssessmentResults = new()
             {

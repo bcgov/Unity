@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - '.github/**'
       - '.gitignore'
-      - 'cypress/**'
       - 'database/**'
       - 'documentation/**'
       - 'openshift/**'
@@ -16,18 +15,67 @@ on:
       - 'README.md'
       - 'SECURITY..md'
 
+# Repository secrets TEAMSWEBHOOK https://bcgov.webhook.office.com/webhookb2/... OPENSHIFT_TOKEN_{DEV|TEST|PROD|TOOLS}
+# Repository variables VERSION_MAJOR_MINOR 0.1 VERSION_MESSAGE Dev to Test - VERSION_PREFIX v
+
 env:
-  CLUSTER: https://api.silver.devops.gov.bc.ca:6443
-  AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN_TEST }}
-  TARGET_PROJECT: d18498
-  TARGET_ENV: test
-  
+  OPENSHIFT_CLUSTER: https://api.silver.devops.gov.bc.ca:6443
+  OPENSHIFT_AUTH_TOKEN: ${{secrets.OPENSHIFT_TOKEN_TEST}}
+  RELEASE_PREFIX: ${{vars.VERSION_PREFIX}}
+  RELEASE_VERSION: ${{vars.VERSION_MAJOR_MINOR}}
+  RELEASE_MESSAGE: ${{vars.VERSION_MESSAGE}} 
+  TEAMS_WEBHOOK: ${{secrets.TEAMSWEBHOOK}}
+
 jobs:
-
-  build:
-
+  # This workflow contains a jobs called "GenerateTag" "PushTag" "Build" "PushAlert"
+  GenerateTag:
     runs-on: ubuntu-latest
-
+    outputs: 
+      TAGNAME: ${{steps.nexttag.outputs.gittag}}
+      IMAGETAG: ${{steps.nexttag.outputs.imagetag}}
+      TAGMESSAGE: ${{steps.nexttag.outputs.tagmsg}}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: '0'
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
+    - name: Generate Next Git Tag
+      id: nexttag
+      run: |
+        VERSION_PATCH=$(git tag --list "${{env.RELEASE_PREFIX}}${{env.RELEASE_VERSION}}.*" --sort=-version:refname | head -n 1 | grep -oE '[0-9]+$')
+        if [ -z "$VERSION_PATCH" ]; then
+          VERSION_PATCH=0
+        else
+          VERSION_PATCH=$((VERSION_PATCH + 1))
+        fi
+        echo "gittag=${{env.RELEASE_PREFIX}}${{env.RELEASE_VERSION}}.${VERSION_PATCH}" >> $GITHUB_OUTPUT
+        echo "imagetag=v${{env.RELEASE_VERSION}}.${VERSION_PATCH}" >> $GITHUB_OUTPUT
+        echo "tagmsg=${{env.RELEASE_MESSAGE}} ${{steps.date.outputs.date}}" >> $GITHUB_OUTPUT
+  PushTag:
+    needs: [GenerateTag]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: '0'   
+    - name: Push Git Tag
+      env:
+        TAGNAME: ${{needs.GenerateTag.outputs.TAGNAME}}
+        TAGMESSAGE: ${{needs.GenerateTag.outputs.TAGMESSAGE}}
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "github-actions@users.noreply.github.com"
+        git tag ${{env.TAGNAME}} -m "${{env.TAGMESSAGE}}"
+        git push origin ${{env.TAGNAME}}
+  Build:
+    needs: [GenerateTag, PushTag]
+    runs-on: ubuntu-latest
+    outputs: 
+      PROJECT: ${{steps.project.outputs.TARGET_PROJECT}}
     steps:
     - uses: actions/checkout@v3
     - name: Build application Docker images
@@ -36,15 +84,28 @@ jobs:
         docker compose build
       working-directory: ./applications/Unity.GrantManager
     - name: Connect to OpenShift API
+      id: project
       run: |
-        oc login --token=$AUTH_TOKEN --server=$CLUSTER
-        oc project $TARGET_PROJECT-$TARGET_ENV
+        oc login --token=${{env.OPENSHIFT_AUTH_TOKEN}} --server=${{env.OPENSHIFT_CLUSTER}}
+        echo "PROJECT=$(oc project | grep -oE '[0-9a-z]*-[dev\|test\|prod\|tools]*')" >> $GITHUB_OUTPUT
         oc registry login
-    - name: Push application images to OpenShift container registry
+    - name: Push build images to OpenShift container registry
       run: | 
-        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest
-        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
-        docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest
-        docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
-      
-      
+        echo project = ${{steps.project.outputs.PROJECT}}
+        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
+        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
+        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
+        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
+    - name: Push build version to OpenShift config map
+      run: | 
+        oc set data cm/unity-grantmanager-web Application_Version=${{needs.GenerateTag.outputs.IMAGETAG}}
+  PushAlert:
+    needs: [GenerateTag, PushTag, Build]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Push Alert to Microsoft Teams Channel Webhook
+      env:
+        TAGNAME: ${{needs.GenerateTag.outputs.TAGNAME}}
+        TAGMESSAGE: ${{needs.GenerateTag.outputs.TAGMESSAGE}}
+      run: |
+        curl -H "Content-Type: application/json" --data-raw "{\"text\":\"${{env.TAGNAME}} ${{env.TAGMESSAGE}}\"}" -X POST -k ${{env.TEAMS_WEBHOOK}}

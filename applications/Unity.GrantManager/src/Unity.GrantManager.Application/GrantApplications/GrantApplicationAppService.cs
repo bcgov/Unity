@@ -123,6 +123,7 @@ public class GrantApplicationAppService :
     {
         var dto = await _applicationRepository.GetAsync(id);
         var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
+        appDto.StatusCode = dto.ApplicationStatus.StatusCode;
         return appDto;
     }
 
@@ -141,6 +142,7 @@ public class GrantApplicationAppService :
             application.Recommendation = input.Recommendation;
             application.DeclineRational = input.DeclineRational;
             application.TotalScore = input.TotalScore;
+            application.Notes = input.Notes;
             if (input.AssessmentResultStatus != application.AssessmentResultStatus)
             {
                 application.AssessmentResultDate = DateTime.UtcNow;
