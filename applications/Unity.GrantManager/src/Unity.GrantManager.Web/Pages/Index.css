@@ -142,7 +142,7 @@
 .unity-content-title {
     color: var(--bc-colors-grey-text-500);
     font-size: 1.875rem;
-    font-weight: 200;
+    font-weight: 300;
     line-height: normal;
     width: 80%;
     margin: 5% 10% 30px 20px;
@@ -153,9 +153,9 @@
     font-size: 1.125rem;
     font-style: normal;
     font-weight: 200;
-    line-height: 30px;
-    width: 60%;
-/*    border-bottom: 1px solid var(--bc-colors-grey-dividers);*/
+    line-height: 1.6875rem;
+    width: 70%;
+    /*    border-bottom: 1px solid var(--bc-colors-grey-dividers);*/
     padding-bottom: 90px;
     margin: 0 10% 10px 20px;
 }
