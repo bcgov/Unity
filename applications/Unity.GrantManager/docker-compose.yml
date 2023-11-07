@@ -4,10 +4,12 @@ name: unity_local
 
 services:
   unity-grantmanager-web:
-    image: 'unity-grantmanager-web'
+    image: 'unity-grantmanager-web:${UNITY_BUILD_VERSION:-0.0.0}'
     build:
       context: .
       dockerfile: src/Unity.GrantManager.Web/Dockerfile
+      args:
+        BUILD_VERSION: ${UNITY_BUILD_VERSION:-0.0.0}
     container_name: unity-grantmanager-web
     depends_on:
       unity-data-postgres:
@@ -19,7 +21,7 @@ services:
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
     ports:
         - "${UNITY_WEB_PORT_EXT_HTTPS:-44342}:${UNITY_WEB_PORT_INT_HTTPS:-443}"
-        - "${UNITY_WEB_PORT_EXT:-8080}:${UNITY_WEB_PORT_INT:-80}"
+        - "${UNITY_WEB_PORT_EXT:-8082}:${UNITY_WEB_PORT_INT:-80}"
     networks: 
       - common-network
 
