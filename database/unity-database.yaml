@@ -12,7 +12,6 @@ message: |-
   usage guide found in the project readme.md and wiki documents.
 metadata:
   name: unity-database
-  # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
   # oc process -f .\database\unity-database.yaml --param-file=.env | oc create -f -
   labels:
@@ -30,17 +29,6 @@ metadata:
     tags: unity-database,postgresql
 parameters:
 # Project namespace parameters
-- description: "The OpenShift project license plate 6 charater alpha numberic."
-  displayName: "Project Namespace"
-  name: PROJECT_NAMESPACE
-  required: true
-  generate: expression
-  from: "[a-z0-9]{6}"
-- description: "The OpenShift environment name [dev, test, prod]."
-  displayName: "Environment name"
-  name: ENV_NAME
-  required: true
-  value: "dev"
 - description: The name of the application grouping.
   displayName: Application Group
   name: APPLICATION_GROUP
@@ -82,15 +70,23 @@ parameters:
   name: MEMORY_LIMIT
   required: true
   value: 512Mi
-- description: The OpenShift Namespace where the ImageStream resides.
-  displayName: Namespace
-  name: IMAGE_NAMESPACE
-  value: openshift
-- description: Version of PostgreSQL image to be used (13-el9, 10-el8, or latest).
-  displayName: Version of PostgreSQL Image
-  name: POSTGRESQL_VERSION
+- description: The Namespace where the database container image resides default=redhat cluster=openshift, project=tools
+  displayName: Registry Namespace
+  name: IMAGEPULL_NAMESPACE
+  value: redhat
+- description: The Registry ImageStream Name the released version stream
+  displayName: Registry imagestream name
+  name: IMAGESTREAM_NAME
+  value: postgresql-15  
+- description: The version of the postgresql container image to use.
+  displayName: Registry container image  to pull
+  name: IMAGESTREAM_TAG
   required: true
-  value: 13-el9
+  value: latest
+- description: The registry path of the postgresql container image to use.
+  displayName: Registry container image to pull
+  name: IMAGEPULL_REGISTRY
+  value: registry.redhat.io/rhel9/
 # Template objects to instantiate the project database.
 objects:
 # Secrets 
@@ -105,7 +101,6 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-${ENV_NAME}
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
   stringData:
@@ -121,7 +116,6 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-${ENV_NAME}
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   data:
@@ -137,7 +131,6 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-${ENV_NAME}
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
   spec:
@@ -161,7 +154,6 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-${ENV_NAME}
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
@@ -180,7 +172,6 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-${ENV_NAME}
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
@@ -202,7 +193,6 @@ objects:
       app: ${DATABASE_SERVICE_NAME}
       app.openshift.io/runtime: postgresql
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-${ENV_NAME}
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
@@ -281,8 +271,8 @@ objects:
         - postgresql
         from:
           kind: ImageStreamTag
-          name: postgresql:${POSTGRESQL_VERSION}
-          namespace: ${IMAGE_NAMESPACE}
+          name: ${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+          namespace: ${IMAGEPULL_NAMESPACE}
         lastTriggeredImage: ""
       type: ImageChange
     - type: ConfigChange
