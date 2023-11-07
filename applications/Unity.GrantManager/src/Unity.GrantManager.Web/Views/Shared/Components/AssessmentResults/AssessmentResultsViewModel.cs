@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System;
 
-namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults
+namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
     public class AssessmentResultsPageModel : PageModel
     {

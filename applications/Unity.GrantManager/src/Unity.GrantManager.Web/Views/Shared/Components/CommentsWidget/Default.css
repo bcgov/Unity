@@ -12,11 +12,16 @@
 }
 
 .comment-input {
-    border: 0;
+    border: 0 !important;
     outline: 0;
     border-bottom: 0.5px solid #D6D6D6 !important;
     border-radius: 0px;
 }
+
+    .comment-input:hover {
+        box-shadow: none !important;
+        border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
+    }
 
     .comment-input.selected {
         border: 0 !important;
@@ -66,11 +71,16 @@
 }
 
 .comment-input-mutliple {
-    border: 0;
+    border: 0 !important;
     outline: 0;
     border-bottom: 0.5px solid #D6D6D6;
     border-radius: 0px;
 }
+
+    .comment-input-multiple:hover {
+        box-shadow: none !important;
+        border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
+    }
 
     .comment-input-mutliple.selected {
         border: 0 !important;

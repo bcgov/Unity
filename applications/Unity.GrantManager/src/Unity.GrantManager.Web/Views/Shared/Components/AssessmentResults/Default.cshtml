@@ -2,7 +2,7 @@
 @using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Permissions;
-@using Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults;
+@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
@@ -11,14 +11,13 @@
     Layout = null;
     bool isEditGranted = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
     bool isEditApprovedAmount = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
-    if (isEditGranted) {
+    if (isEditGranted)
+    {
         isEditGranted = !(Model.IsFinalDecisionMade);
     }
 }
 
 <input type="hidden" id="AssessmentResultViewApplicationId" value="@Model.ApplicationId" />
-<input type="hidden" id="isEditGranted" value="@(isEditGranted.ToString())" />
-<input type="hidden" id="isEditApprovedAmount" value="@(isEditApprovedAmount.ToString())" />
 
 <abp-row class="px-1 pb-2 mb-4 assessment-results-container">
     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
@@ -31,65 +30,65 @@
             <abp-column size="_10" class="px-0">
                 <abp-column size="_12" class="px-1">
                     <abp-input asp-for="@Model.AssessmentResults.ProjectSummary" label="@L["AssessmentResultsView:AssessmentResultsForm.ProjectSummary"].Value"
-                               onchange="enableResultSaveBtn(this)" />
+                               onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" />
                 </abp-column>
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
                         <abp-input asp-for="@Model.AssessmentResults.RequestedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RequestedAmount"].Value"
-                                   onchange="enableResultSaveBtn(this)" class="currency-input" />
+                                   onchange="enableResultSaveBtn(this)" class="currency-input" disabled="@(!isEditGranted)" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget"].Value"
-                                   onchange="enableResultSaveBtn(this)" class="currency-input" />
+                                   onchange="enableResultSaveBtn(this)" class="currency-input" disabled="@(!isEditGranted)" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <abp-input asp-for="@Model.AssessmentResults.RecommendedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.RecommendedAmount"].Value"
-                                   onchange="enableResultSaveBtn(this)" class="currency-input" />
+                                   onchange="enableResultSaveBtn(this)" class="currency-input" disabled="@(!isEditGranted)" />
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <abp-input asp-for="@Model.AssessmentResults.ApprovedAmount" label="@L["AssessmentResultsView:AssessmentResultsForm.ApprovedAmount"].Value"
-                                   onchange="enableResultSaveBtn(this)" class="currency-input" id="approvedAmountInput" />
+                                   onchange="enableResultSaveBtn(this)" class="currency-input" id="approvedAmountInput" disabled="@(!isEditGranted && !isEditApprovedAmount)" />
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.LikelihoodOfFunding" asp-items="@Model.FundingRiskList" label="@L["AssessmentResultsView:AssessmentResultsForm.LikelihoodOfFunding"].Value"
-                                    onchange="enableResultSaveBtn(this)">
+                                    onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.DueDilligenceStatus" asp-items="@Model.DueDilligenceList" label="@L["AssessmentResultsView:AssessmentResultsForm.DueDilligenceStatus"].Value"
-                                    onchange="enableResultSaveBtn(this)">
+                                    onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.Recommendation" asp-items="@Model.RecommendationActionList" label="@L["AssessmentResultsView:AssessmentResultsForm.Recommendation"].Value"
-                                    onchange="enableResultSaveBtn(this)">
+                                    onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.DeclineRational" asp-items="@Model.DeclineRationalActionList" label="@L["AssessmentResultsView:AssessmentResultsForm.DeclineRational"].Value"
-                                    onchange="enableResultSaveBtn(this)">
+                                    onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
                 </abp-row>
                 <abp-column size="_12" class="px-1">
                     <abp-input asp-for="@Model.AssessmentResults.Notes" label="@L["AssessmentResultsView:AssessmentResultsForm.Notes"].Value"
-                               onchange="enableResultSaveBtn(this)" />
+                               onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" />
                 </abp-column>
             </abp-column>
             <abp-column size="_2" class="px-0">
                 <abp-column size="_12" class="px-1">
                     <abp-input type="number" asp-for="@Model.AssessmentResults.TotalScore" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalScore"].Value"
-                               onchange="enableResultSaveBtn(this)" />
+                               onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)" />
                 </abp-column>
                 <abp-column size="_12" class="px-1">
                     <abp-select asp-for="@Model.AssessmentResults.AssessmentResultStatus" asp-items="@Model.AssessmentResultStatusList" label="@L["AssessmentResultsView:AssessmentResultsForm.AssessmentResult"].Value"
-                                onchange="enableResultSaveBtn(this)">
+                                onchange="enableResultSaveBtn(this)" disabled="@(!isEditGranted)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
