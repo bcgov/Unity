@@ -8,11 +8,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Reflection;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -132,26 +134,45 @@ public class GrantApplicationAppService :
         var application = await _applicationRepository.GetAsync(id);
         if (application != null)
         {
-            application.ProjectSummary = input.ProjectSummary;
-            application.RequestedAmount = input.RequestedAmount ?? 0;
-            application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
-            application.RecommendedAmount = input.RecommendedAmount ?? 0;
-            application.ApprovedAmount = input.ApprovedAmount ?? 0;
-            application.LikelihoodOfFunding = input.LikelihoodOfFunding;
-            application.DueDilligenceStatus = input.DueDilligenceStatus;
-            application.Recommendation = input.Recommendation;
-            application.DeclineRational = input.DeclineRational;
-            application.TotalScore = input.TotalScore;
-            application.Notes = input.Notes;
-            if (input.AssessmentResultStatus != application.AssessmentResultStatus)
+            bool IsEditGranted = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
+            bool IsEditApprovedAmount = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
+            bool IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.ApplicationStatus.StatusCode);
+            if (!IsEditGranted)
             {
-                application.AssessmentResultDate = DateTime.UtcNow;
+                throw new UnauthorizedAccessException(message: "No permission to update");
             }
-            application.AssessmentResultStatus = input.AssessmentResultStatus;
+            else if (IsFinalDecisionMade && !IsEditApprovedAmount)
+            {
+                throw new UnauthorizedAccessException(message: "Final decision is made, Update not allowed!");
+            } else
+            {
+                if(IsEditApprovedAmount && IsFinalDecisionMade) // Only users with EditApprovedAmount permission can edit the value after final decision
+                {
+                    application.ApprovedAmount = input.ApprovedAmount ?? 0;
+                } else
+                {
+                    application.ProjectSummary = input.ProjectSummary;
+                    application.RequestedAmount = input.RequestedAmount ?? 0;
+                    application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
+                    application.RecommendedAmount = input.RecommendedAmount ?? 0;
+                    application.ApprovedAmount = input.ApprovedAmount ?? 0;
+                    application.LikelihoodOfFunding = input.LikelihoodOfFunding;
+                    application.DueDilligenceStatus = input.DueDilligenceStatus;
+                    application.Recommendation = input.Recommendation;
+                    application.DeclineRational = input.DeclineRational;
+                    application.TotalScore = input.TotalScore;
+                    application.Notes = input.Notes;
+                    if (input.AssessmentResultStatus != application.AssessmentResultStatus)
+                    {
+                        application.AssessmentResultDate = DateTime.UtcNow;
+                    }
+                    application.AssessmentResultStatus = input.AssessmentResultStatus;
+                }
 
-            await _applicationRepository.UpdateAsync(application, autoSave: true);
+                await _applicationRepository.UpdateAsync(application, autoSave: true);
 
-            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+                return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+            }
         }
         else
         {

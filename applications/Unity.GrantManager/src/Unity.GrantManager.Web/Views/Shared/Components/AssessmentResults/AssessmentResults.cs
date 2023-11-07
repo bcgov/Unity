@@ -34,14 +34,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                 ApplicationId = applicationId
             };
 
-            // Need to leverage state machine / domain layer for this logic
-            GrantApplicationState[] finalDecisionArr =  {
-                GrantApplicationState.GRANT_APPROVED,
-                GrantApplicationState.GRANT_NOT_APPROVED,
-                GrantApplicationState.CLOSED,
-                GrantApplicationState.WITHDRAWN,
-            };
-            model.IsFinalDecisionMade = finalDecisionArr.Contains(application.StatusCode);
+            model.IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
 
             model.AssessmentResults = new()
             {

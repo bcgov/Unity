@@ -30,27 +30,7 @@
         }
     });
 
-    //PubSub.subscribe(
-    //    'application_status_changed',
-    //    (msg, data) => {
-    //        console.log(msg, data);
-    //        if (['Approve', 'Deny', 'Close', 'WithDraw'].includes(data)) {
-    //            disableForm(true);
-    //        }
-    //    }
-    //);
 });
-
-//function disableForm(doDisable = false) {
-//    let isEditGranted = (document.getElementById('isEditGranted').value == 'True');
-//    let isEditApprovedAmount = (document.getElementById('isEditApprovedAmount').value == 'True');
-//    if (!isEditGranted || doDisable) {
-//        $('.assessment-result-form .form-control').prop('disabled', true);
-//    }
-//    if (isEditApprovedAmount) {
-//        $('#approvedAmountInput').prop('disabled', false);
-//    }
-//}
 
 
 function enableResultSaveBtn(inputText) {
