@@ -4,49 +4,17 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System;
+using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
     public class AssessmentResultsPageModel : PageModel
     {
-        // MOVE these lists to central shared location (Domain.shared) as key value pairing (not specific to select list)
-        public List<SelectListItem> FundingRiskList { get; set; } = new()
-        {
-            new SelectListItem { Value = "LOW", Text = "Low"},
-            new SelectListItem { Value = "MEDIUM", Text = "Medium"},
-            new SelectListItem { Value = "HIGH", Text = "High"},
-        };
-        public List<SelectListItem> DueDilligenceList { get; set; } = new()
-        {
-            new SelectListItem { Value = "COMPLETE", Text = "Complete"},
-            new SelectListItem { Value = "UNDERWAY", Text = "Underway"},
-            new SelectListItem { Value = "PAUSED", Text = "Paused"},
-            new SelectListItem { Value = "WITHDRAWN", Text = "Withdrawn"},
-            new SelectListItem { Value = "INELIGIBLE", Text = "Ineligible"},
-            new SelectListItem { Value = "FAILED", Text = "Failed"},
-        };
-        public List<SelectListItem> AssessmentResultStatusList { get; set; } = new()
-        {
-            new SelectListItem { Value = "PASS", Text = "Pass"},
-            new SelectListItem { Value = "FAIL", Text = "Fail"},
-            new SelectListItem { Value = "INELIGIBLE", Text = "Ineligible"},
-        };
-        public List<SelectListItem> DeclineRationalActionList { get; set; } = new()
-        {
-            new SelectListItem { Value = "NO_READINESS", Text = "Lack of readiness"},
-            new SelectListItem { Value = "LOW_PRIORITY", Text = "Lower priority relative to other requests"},
-            new SelectListItem { Value = "NOT_ENOUGH_INFO", Text = "Insufficient information provided"},
-            new SelectListItem { Value = "INELIGIBLE_PROJECT", Text = "Ineligible Project"},
-            new SelectListItem { Value = "INELIGIBLE_APPLICANT", Text = "Ineligible Applicant"},
-            new SelectListItem { Value = "INSUFFICIENT_READINESS", Text = "Insufficient Readiness"},
-            new SelectListItem { Value = "SMALL_PROJECT", Text = "Project too small"},
-            new SelectListItem { Value = "DENY", Text = "Other"},
-        };
-        public List<SelectListItem> RecommendationActionList { get; set; } = new()
-        {
-            new SelectListItem { Value = "APPROVE", Text = "Recommended for Approval"},
-            new SelectListItem { Value = "DENY", Text = "Recommended for Denial"}
-        };
+        public List<SelectListItem> FundingRiskList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.FundingList);
+        public List<SelectListItem> DueDilligenceList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.DueDilligenceList);
+        public List<SelectListItem> AssessmentResultStatusList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.AssessmentResultStatusList);
+        public List<SelectListItem> DeclineRationalActionList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList);
+        public List<SelectListItem> RecommendationActionList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.RecommendationActionList);
 
         public Guid ApplicationId { get; set; }
         public bool IsFinalDecisionMade { get; set; }
@@ -91,6 +59,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             [SelectItems(nameof(AssessmentResultStatusList))]
             public string? AssessmentResultStatus { get; set; }
 
+        }
+
+        public static List<SelectListItem> formatOptionsList(Dictionary<string, string> optionsList)
+        {
+            List<SelectListItem> optionsFormattedList = new();
+            foreach (KeyValuePair<string, string> entry in optionsList)
+            {
+                optionsFormattedList.Add(new SelectListItem { Value = entry.Key, Text = entry.Value });
+            }
+            return optionsFormattedList;
         }
     }
 }
