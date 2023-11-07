@@ -6,8 +6,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
-using Unity.GrantManager.Applications;
-using System.Globalization;
+using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 {
@@ -18,12 +17,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
         AutoInitialize = true)]
     public class SummaryWidgetViewComponent : AbpViewComponent
     {
-        private readonly IApplicationRepository _applicationRepository;
-        private readonly IApplicationFormRepository _applicationFormRepository;
-        public SummaryWidgetViewComponent(IApplicationRepository applicationRepository, IApplicationFormRepository applicationFormRepository)
+        private readonly GrantApplicationAppService _grantApplicationService;
+        public SummaryWidgetViewComponent(GrantApplicationAppService grantApplicationAppService)
         {
-            _applicationRepository = applicationRepository;
-            _applicationFormRepository = applicationFormRepository; 
+            _grantApplicationService = grantApplicationAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -32,32 +29,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
             {
                 return View(new SummaryWidgetViewModel());
             }
-            var application = await _applicationRepository.GetAsync(applicationId);
-            var appForm = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
-            SummaryWidgetViewModel model = new()
-            {
-                Category = appForm==null?string.Empty:appForm.Category,
-                SubmissionDate = application.CreationTime.ToShortDateString(),
-                OrganizationName = "", // to-do: merge code of 8819 and implement it here
-                OrganizationNumber = "", // to-do: merge code of 8819 and implement it here
-                EconomicRegion = application.EconomicRegion,
-                City = application.City,
-                RequestedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.RequestedAmount),
-                ProjectBudget = string.Format(new CultureInfo("en-CA"), "{0:C}", application.TotalProjectBudget),
-                Sector = application.Sector,
-                Community = "", // to-do: merge code of 8819 and implement it here
-                Status = application.ApplicationStatus.InternalStatus,
-                LikelihoodOfFunding = application.LikelihoodOfFunding,
-                AssessmentStartDate = application.AssessmentStartDate?.ToShortDateString(),
-                FinalDecisionDate = application.FinalDecisionDate?.ToShortDateString(),
-                TotalScore = application.TotalScore.ToString(),
-                AssessmentResult = application.AssessmentResultStatus,
-                RecommendedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.RecommendedAmount),
-                ApprovedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.ApprovedAmount),
-                Batch = "" // to-do: ask BA for the implementation of Batch field
-            };
 
-            return View(model);
+            var summaryDto = await _grantApplicationService.GetSummaryAsync(applicationId);
+
+            return View(ObjectMapper.Map<GetSummaryDto,SummaryWidgetViewModel>(summaryDto));
         } 
         
     }
