@@ -144,12 +144,15 @@ public class GrantApplicationAppService :
             else if (IsFinalDecisionMade && !IsEditApprovedAmount)
             {
                 throw new UnauthorizedAccessException(message: "Final decision is made, Update not allowed!");
-            } else
+            }
+            else
             {
-                if(IsEditApprovedAmount && IsFinalDecisionMade) // Only users with EditApprovedAmount permission can edit the value after final decision
+                // These are some business rules that should be pushed further down into domain
+                if (IsEditApprovedAmount && IsFinalDecisionMade) // Only users with EditApprovedAmount permission can edit the value after final decision
                 {
                     application.ApprovedAmount = input.ApprovedAmount ?? 0;
-                } else
+                }
+                else
                 {
                     application.ProjectSummary = input.ProjectSummary;
                     application.RequestedAmount = input.RequestedAmount ?? 0;
