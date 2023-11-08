@@ -43,12 +43,10 @@ ENV PATH="${PATH}:/root/.dotnet/tools"
 RUN dotnet dev-certs https --trust
 RUN abp install-libs
 
-ARG BUILD_VERSION
-ARG UGM_VERSION=${BUILD_VERSION:-0.0.0}
-RUN dotnet build "Unity.GrantManager.Web.csproj" -c Release -p:Version=${UGM_VERSION} -o /app/build
-
 FROM build AS publish
-RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -p:Version=${UGM_VERSION} -p:UseAppHost=false -o /app/publish 
+ARG UNITY_BUILD_VERSION
+ARG UNITY_BUILD_REVISION
+RUN dotnet publish "Unity.GrantManager.Web.csproj" -c Release -p:Version=${UNITY_BUILD_VERSION:-1.0.0} -p:SourceRevisionId=${UNITY_BUILD_REVISION:-ee369fd} -p:UseAppHost=false -o /app/publish 
 
 FROM base AS final
 WORKDIR /app
