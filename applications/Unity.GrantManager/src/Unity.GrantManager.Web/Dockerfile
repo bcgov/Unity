@@ -39,7 +39,7 @@ COPY . .
 WORKDIR "/src/src/Unity.GrantManager.Web"
 
 RUN dotnet tool install -g Volo.Abp.Cli
-ARG PATH="${PATH}:/root/.dotnet/tools"
+ENV PATH="${PATH}:/root/.dotnet/tools"
 RUN dotnet dev-certs https --trust
 RUN abp install-libs
 
