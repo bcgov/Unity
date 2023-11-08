@@ -4,12 +4,13 @@ name: unity_local
 
 services:
   unity-grantmanager-web:
-    image: 'unity-grantmanager-web:${UNITY_BUILD_VERSION:-0.0.0}'
+    image: 'unity-grantmanager-web:latest'
     build:
       context: .
       dockerfile: src/Unity.GrantManager.Web/Dockerfile
       args:
-        BUILD_VERSION: ${UNITY_BUILD_VERSION:-0.0.0}
+        UNITY_BUILD_VERSION: ${UNITY_BUILD_VERSION:-0.0.0}
+        UNITY_BUILD_REVISION: ${UNITY_BUILD_REVISION:-0000000}
     container_name: unity-grantmanager-web
     depends_on:
       unity-data-postgres:
