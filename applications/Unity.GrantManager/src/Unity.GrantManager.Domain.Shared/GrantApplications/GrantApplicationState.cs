@@ -20,3 +20,14 @@ public enum GrantApplicationState
     GRANT_APPROVED = 11,
     GRANT_NOT_APPROVED = 12
 }
+
+
+public static class GrantApplicationStateGroups
+{
+    public static readonly GrantApplicationState[] FinalDecisionStates =  {
+        GrantApplicationState.GRANT_APPROVED,
+        GrantApplicationState.GRANT_NOT_APPROVED,
+        GrantApplicationState.CLOSED,
+        GrantApplicationState.WITHDRAWN,
+    };
+}

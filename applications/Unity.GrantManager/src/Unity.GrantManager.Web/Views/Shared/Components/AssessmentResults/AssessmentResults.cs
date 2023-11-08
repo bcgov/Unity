@@ -5,18 +5,17 @@ using System.Threading.Tasks;
 using System;
 using Unity.GrantManager.GrantApplications;
 using System.Linq;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using System.Collections.Generic;
 
-namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults
+namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
 
     [Widget(
-    ScriptFiles = new[] {
-        "/Pages/GrantApplications/Components/AssessmentResults/Default.js",
-        "/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js",
-    },
-    StyleFiles = new[] {
-        "/Pages/GrantApplications/Components/AssessmentResults/Default.css"
-    })]
+        RefreshUrl = "Widget/AssessmentResults/Refresh",
+        ScriptTypes = new[] { typeof(AssessmentResultsScriptBundleContributor) },
+        StyleTypes = new[] { typeof(AssessmentResultsStyleBundleContributor) },
+        AutoInitialize = true)]
     public class AssessmentResults : AbpViewComponent
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
@@ -35,14 +34,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
                 ApplicationId = applicationId
             };
 
-            // Need to leverage state machine / domain layer for this logic
-            GrantApplicationState[] finalDecisionArr =  {
-                GrantApplicationState.GRANT_APPROVED,
-                GrantApplicationState.GRANT_NOT_APPROVED,
-                GrantApplicationState.CLOSED,
-                GrantApplicationState.WITHDRAWN,
-            };
-            model.IsFinalDecisionMade = finalDecisionArr.Contains(application.StatusCode);
+            model.IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
 
             model.AssessmentResults = new()
             {
@@ -61,6 +53,26 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentRe
             };
 
             return View(model);
+        }
+    }
+
+    public class AssessmentResultsStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/AssessmentResults/Default.css");
+        }
+    }
+
+    public class AssessmentResultsScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/AssessmentResults/Default.js");
+            context.Files
+              .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
         }
     }
 }

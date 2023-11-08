@@ -21,8 +21,7 @@
     <Content Remove="Logs\**" />
     <EmbeddedResource Remove="Logs\**" />
     <None Remove="Logs\**" />
-    <None Remove="Pages\GrantApplications\Components\" />
-    <None Remove="Pages\GrantApplications\Components\AssessmentResults\" />
+    <None Remove="Views\Shared\Components\AssessmentResults\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -67,7 +66,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Pages\GrantApplications\Components\" />
-    <Folder Include="Pages\GrantApplications\Components\AssessmentResults\" />
+    <Folder Include="Views\Shared\Components\AssessmentResults\" />
   </ItemGroup>
 </Project>
