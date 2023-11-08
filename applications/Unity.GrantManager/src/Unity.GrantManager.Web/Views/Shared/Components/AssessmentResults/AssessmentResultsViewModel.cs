@@ -5,16 +5,17 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System;
 using Unity.GrantManager.GrantApplications;
+using System.Collections.Immutable;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
     public class AssessmentResultsPageModel : PageModel
     {
-        public List<SelectListItem> FundingRiskList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.FundingList);
-        public List<SelectListItem> DueDilligenceList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.DueDilligenceList);
-        public List<SelectListItem> AssessmentResultStatusList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.AssessmentResultStatusList);
-        public List<SelectListItem> DeclineRationalActionList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList);
-        public List<SelectListItem> RecommendationActionList { get; set; } = formatOptionsList(AssessmentResultsOptionsList.RecommendationActionList);
+        public List<SelectListItem> FundingRiskList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.FundingList);
+        public List<SelectListItem> DueDilligenceList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DueDilligenceList);
+        public List<SelectListItem> AssessmentResultStatusList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.AssessmentResultStatusList);
+        public List<SelectListItem> DeclineRationalActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList);
+        public List<SelectListItem> RecommendationActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.RecommendationActionList);
 
         public Guid ApplicationId { get; set; }
         public bool IsFinalDecisionMade { get; set; }
@@ -61,7 +62,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
         }
 
-        public static List<SelectListItem> formatOptionsList(Dictionary<string, string> optionsList)
+        public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)
         {
             List<SelectListItem> optionsFormattedList = new();
             foreach (KeyValuePair<string, string> entry in optionsList)
