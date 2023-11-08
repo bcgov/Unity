@@ -24,7 +24,7 @@ public enum GrantApplicationState
 
 public static class GrantApplicationStateGroups
 {
-    public static GrantApplicationState[] FinalDecisionStates =  {
+    public static readonly GrantApplicationState[] FinalDecisionStates =  {
         GrantApplicationState.GRANT_APPROVED,
         GrantApplicationState.GRANT_NOT_APPROVED,
         GrantApplicationState.CLOSED,
