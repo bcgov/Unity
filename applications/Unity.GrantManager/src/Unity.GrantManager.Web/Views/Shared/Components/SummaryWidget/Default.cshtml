@@ -1,6 +1,10 @@
 ﻿@using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
+@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization;
+
+@inject IStringLocalizer<GrantManagerResource> L
 
 @model SummaryWidgetViewModel
 @{
@@ -9,71 +13,61 @@
 
 
 
-<div>
-    <h6 class="fw-bold px-3 pt-4 pb-2">Application Summary</h6>
-    <table aria-describedby="Application Summary" style="width:100%;border-collapse:separate;border-spacing: 10px 10px;">
+<abp-row class="px-1 pb-2 mb-4 summary-container">
+    <h6 class="ps-1 fw-bold">@L["Summary:ApplicationSummaryTitle"].Value</h6>
+    <table aria-describedby="Application Summary" style="width:100%;border-collapse:separate;">
         <tr>
             <th></th>
             <th></th>
         </tr>
         <tr>
             <td colspan="2">
-                Category <br />
-                <input name="category" disabled id="category" style="width:100%;" value="@Model.Category"/>
+                <abp-input asp-for="@Model.Category" style="width:100%;" label="@L["Summary:Application.Category"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td>
-                Economic Region <br />
-                <input name="economicRegion" disabled id="economicRegion" style="width:100%;" value="@Model.EconomicRegion" />
+                <abp-input asp-for="@Model.EconomicRegion" style="width:100%;" label="@L["Summary:Application.EconomicRegion"].Value" disabled="true" />
             </td>
             <td>
-                Submission Date <br />
-                <input name="submissionDate" disabled id="submissionDate" style="width:100%;" value="@Model.SubmissionDate"/>
+                <abp-input asp-for="@Model.SubmissionDate" style="width:100%;" label="@L["Summary:Application.SubmissionDate"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td colspan="2">
-                Organization Name <br />
-                <input name="organizationName" disabled id="organizationName" style="width:100%;" value="@Model.OrganizationName"/>
+                <abp-input asp-for="@Model.OrganizationName" style="width:100%;" label="@L["Summary:Application.OrganizationName"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td colspan="2">
-                Organization # <br />
-                <input name="organizationNumber" disabled id="organizationNumber" style="width:100%;" value="@Model.OrganizationNumber"/>
+                <abp-input asp-for="@Model.OrganizationNumber" style="width:100%;" label="@L["Summary:Application.OrganizationNumber"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td>
-                City <br />
-                <input name="city" disabled id="city" style="width:100%;" value="@Model.City"/>
+                <abp-input asp-for="@Model.City" style="width:100%;" label="@L["Summary:Application.City"].Value" disabled="true" />
             </td>
             <td>
-                Community <br />
-                <input name="community" disabled id="community" style="width:100%;" value="@Model.Community"/>
+                <abp-input asp-for="@Model.Community" style="width:100%;" label="@L["Summary:Application.Community"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td>
-                Requested Amount <br />
-                <input name="requestedAmount" disabled id="requestedAmount" style="width:100%;" value="@Model.RequestedAmount"/>
+                <abp-input asp-for="@Model.RequestedAmount" style="width:100%;" label="@L["Summary:Application.RequestedAmount"].Value" disabled="true" />
             </td>
             <td>
-                Project Budget <br />
-                <input name="projectBudget" disabled id="projectBudget" style="width:100%;" value="@Model.ProjectBudget"/>
+                <abp-input asp-for="@Model.ProjectBudget" style="width:100%;" label="@L["Summary:Application.ProjectBudget"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td colspan="2">
-                Sector <br />
-                <input name="sector" disabled id="sector" style="width:100%;" value="@Model.Sector"/>
+                <abp-input asp-for="@Model.Sector" style="width:100%;" label="@L["Summary:Application.Sector"].Value" disabled="true" />
             </td>
         </tr>
     </table>
-</div>
-<div>
-    <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Summary</h6>
+</abp-row>
+<abp-row class="px-1 pb-2 mb-4 summary-container">
+    <h6 class="ps-1 fw-bold">@L["Summary:AssessmentSummaryTitle"].Value</h6>
     <table aria-describedby="Assessment Summary" style="width:100%;border-collapse:separate;border-spacing: 10px 10px;">
         <tr>
             <th></th>
@@ -81,52 +75,43 @@
         </tr>
         <tr>
             <td style="vertical-align:bottom;">
-                Status <br />
-                <input name="status" disabled id="status" style="width:100%;" value="@Model.Status"/>
+                <abp-input asp-for="@Model.Status" style="width:100%;" label="@L["Summary:Assessment.Status"].Value" disabled="true" />
             </td>
             <td style="vertical-align:bottom;">
-                Likelihood Of Funding <br />
-                <input name="likelihoodOfFunding" disabled id="likelihoodOfFunding" style="width:100%;" value="@Model.LikelihoodOfFunding"/>
+                <abp-input asp-for="@Model.LikelihoodOfFunding" style="width:100%;" label="@L["Summary:Assessment.LikelihoodOfFunding"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td style="vertical-align:bottom;">
-                Assessment Start Date <br />
-                <input name="assessmentStartDate" disabled id="assessmentStartDate" style="width:100%;" value="@Model.AssessmentStartDate"/>
+                <abp-input asp-for="@Model.AssessmentStartDate" style="width:100%;" label="@L["Summary:Assessment.AssessmentStartDate"].Value" disabled="true" />
             </td>
             <td style="vertical-align:bottom;">
-                Final Decision Date <br />
-                <input name="finalDecisionDate" disabled id="finalDecisionDate" style="width:100%;" value="@Model.FinalDecisionDate"/>
+                <abp-input asp-for="@Model.FinalDecisionDate" style="width:100%;" label="@L["Summary:Assessment.FinalDecisionDate"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td style="vertical-align:bottom;">
-                Total Score <br />
-                <input name="totalScore" disabled id="totalScore" style="width:100%;" value="@Model.TotalScore" />
+                <abp-input asp-for="@Model.TotalScore" style="width:100%;" label="@L["Summary:Assessment.TotalScore"].Value" disabled="true" />
             </td>
             <td style="vertical-align:bottom;">
-                Assessment Result(Pass/Fail) <br />
-                <input name="assessmentResult" disabled id="assessmentResult" style="width:100%;" value="@Model.AssessmentResult"/>
+                <abp-input asp-for="@Model.AssessmentResult" style="width:100%;" label="@L["Summary:Assessment.AssessmentResult"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td style="vertical-align:bottom;">
-                Recommended Amount <br />
-                <input name="recommendedAmount" disabled id="recommendedAmount" style="width:100%;" value="@Model.RecommendedAmount"/>
+                <abp-input asp-for="@Model.RecommendedAmount" style="width:100%;" label="@L["Summary:Assessment.RecommendedAmount"].Value" disabled="true" />
             </td>
             <td style="vertical-align:bottom;">
-                Approved Amount <br />
-                <input name="approvedAmount" disabled id="approvedAmount" style="width:100%;" value="@Model.ApprovedAmount"/>
+                <abp-input asp-for="@Model.ApprovedAmount" style="width:100%;" label="@L["Summary:Assessment.ApprovedAmount"].Value" disabled="true" />
             </td>
         </tr>
         <tr>
             <td colspan="2">
-                Batch # <br />
-                <input name="batch" disabled id="batch" style="width:100%;" value="@Model.Batch"/>
+                <abp-input asp-for="@Model.Batch" style="width:100%;" label="@L["Summary:Assessment.Batch"].Value" disabled="true" />
             </td>
         </tr>
     </table>
-</div>
+</abp-row>
     
 
 
