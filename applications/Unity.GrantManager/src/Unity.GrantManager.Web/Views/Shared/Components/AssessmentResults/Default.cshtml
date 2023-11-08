@@ -84,7 +84,7 @@
             <abp-column size="_2" class="px-0">
                 <abp-column size="_12" class="px-1">
                     <abp-input type="number" asp-for="@Model.AssessmentResults.TotalScore" label="@L["AssessmentResultsView:AssessmentResultsForm.TotalScore"].Value"
-                               onchange="enableResultSaveBtn(this)" disabled="@(!IsEditGranted)" />
+                               onchange="enableResultSaveBtn(this)" disabled="@(!IsEditGranted)" min="0" max="2147483647" />
                 </abp-column>
                 <abp-column size="_12" class="px-1">
                     <abp-select asp-for="@Model.AssessmentResults.AssessmentResultStatus" asp-items="@Model.AssessmentResultStatusList" label="@L["AssessmentResultsView:AssessmentResultsForm.AssessmentResult"].Value"
@@ -107,3 +107,8 @@
 </abp-row>
 
 
+<script defer>
+    (function () {
+        $('.currency-input').maskMoney();
+    })();
+</script>
