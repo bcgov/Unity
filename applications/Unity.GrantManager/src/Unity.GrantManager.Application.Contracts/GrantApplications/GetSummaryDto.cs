@@ -13,8 +13,8 @@ public class GetSummaryDto
     public string? EconomicRegion { get; set; }
     public string? City { get; set; }
     public string? Community { get; set; }
-    public string? RequestedAmount { get; set; }
-    public string? ProjectBudget { get; set; }
+    public decimal? RequestedAmount { get; set; }
+    public decimal? ProjectBudget { get; set; }
     public string? Sector { get; set; }
     public string? Status { get; set; }
     public string? LikelihoodOfFunding { get; set; }
@@ -22,7 +22,7 @@ public class GetSummaryDto
     public string? FinalDecisionDate { get; set; }
     public string? TotalScore { get; set; }
     public string? AssessmentResult { get; set; }
-    public string? RecommendedAmount { get; set; }
-    public string? ApprovedAmount { get; set; }
+    public decimal? RecommendedAmount { get; set; }
+    public decimal? ApprovedAmount { get; set; }
     public string? Batch { get; set; }
 }

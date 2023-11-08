@@ -142,8 +142,8 @@ public class GrantApplicationAppService :
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
                         City = application.City,
-                        RequestedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.RequestedAmount),
-                        ProjectBudget = string.Format(new CultureInfo("en-CA"), "{0:C}", application.TotalProjectBudget),
+                        RequestedAmount = application.RequestedAmount,
+                        ProjectBudget = application.TotalProjectBudget,
                         Sector = application.Sector,
                         Community = applicant.Community,
                         Status = application.ApplicationStatus.InternalStatus,
@@ -152,8 +152,8 @@ public class GrantApplicationAppService :
                         FinalDecisionDate = string.Format("{0:MM/dd/yyyy}",application.FinalDecisionDate),
                         TotalScore = application.TotalScore.ToString(),
                         AssessmentResult = application.AssessmentResultStatus,
-                        RecommendedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.RecommendedAmount),
-                        ApprovedAmount = string.Format(new CultureInfo("en-CA"), "{0:C}", application.ApprovedAmount),
+                        RecommendedAmount = application.RecommendedAmount,
+                        ApprovedAmount = application.ApprovedAmount,
                         Batch = "" // to-do: ask BA for the implementation of Batch field
                     };
 
