@@ -53,10 +53,16 @@
         </tr>
         <tr>
             <td>
-                <abp-input asp-for="@Model.RequestedAmount" style="width:100%;" label="@L["Summary:Application.RequestedAmount"].Value" disabled="true" />
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input asp-for="@Model.RequestedAmount" class="currency-input" style="width:100%;" label="@L["Summary:Application.RequestedAmount"].Value" disabled="true" />
+                </div>
             </td>
             <td>
-                <abp-input asp-for="@Model.ProjectBudget" style="width:100%;" label="@L["Summary:Application.ProjectBudget"].Value" disabled="true" />
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input asp-for="@Model.ProjectBudget" class="currency-input" style="width:100%;" label="@L["Summary:Application.ProjectBudget"].Value" disabled="true" />
+                </div>
             </td>
         </tr>
         <tr>
@@ -99,10 +105,16 @@
         </tr>
         <tr>
             <td style="vertical-align:bottom;">
-                <abp-input asp-for="@Model.RecommendedAmount" style="width:100%;" label="@L["Summary:Assessment.RecommendedAmount"].Value" disabled="true" />
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input asp-for="@Model.RecommendedAmount" class="currency-input" style="width:100%;" label="@L["Summary:Assessment.RecommendedAmount"].Value" disabled="true" />
+                </div>
             </td>
             <td style="vertical-align:bottom;">
-                <abp-input asp-for="@Model.ApprovedAmount" style="width:100%;" label="@L["Summary:Assessment.ApprovedAmount"].Value" disabled="true" />
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input asp-for="@Model.ApprovedAmount" class="currency-input" style="width:100%;" label="@L["Summary:Assessment.ApprovedAmount"].Value" disabled="true" />
+                </div>
             </td>
         </tr>
         <tr>
@@ -113,5 +125,9 @@
     </table>
 </abp-row>
     
-
+<script defer>
+    (function () {
+        $('.currency-input').maskMoney();
+    })();
+</script>
 
