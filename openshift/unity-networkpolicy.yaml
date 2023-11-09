@@ -2,7 +2,6 @@ apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
   name: unity-networkpolicy
-  # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
   # oc process -f .\openshift\unity-network-policy.yaml --param-file=.env | oc create -f -
   labels:
@@ -11,18 +10,7 @@ metadata:
     description: |-
       Template for commuication rules in OpenShift.
 parameters:
-# Common project parameters
-- name: PROJECT_NAMESPACE
-  displayName: "Project Namespace"
-  description: "The OpenShift project license plate 6 charater alpha numberic."
-  required: true
-  generate: expression
-  from: "[a-z0-9]{6}"
-- name: ENV_NAME
-  displayName: "Environment name"
-  description: "The OpenShift environment name [tools, dev, test, prod]."
-  required: true
-  value: "tools"
+# Project namespace parameters
 - description: The name of the application grouping.
   displayName: Application Group
   name: APPLICATION_GROUP
@@ -41,7 +29,7 @@ objects:
       labels:
         app: ${APPLICATION_NAME}
         app.kubernetes.io/component: ${APPLICATION_NAME}
-        app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
+        app.kubernetes.io/instance: ${APPLICATION_NAME}-1
         app.kubernetes.io/name: ${APPLICATION_NAME}
         app.kubernetes.io/part-of: ${APPLICATION_GROUP}
     spec:
@@ -57,7 +45,7 @@ objects:
       labels:
         app: ${APPLICATION_NAME}
         app.kubernetes.io/component: ${APPLICATION_NAME}
-        app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
+        app.kubernetes.io/instance: ${APPLICATION_NAME}-1
         app.kubernetes.io/name: ${APPLICATION_NAME}
         app.kubernetes.io/part-of: ${APPLICATION_GROUP}
     spec:
@@ -80,7 +68,7 @@ objects:
       labels:
         app: ${APPLICATION_NAME}
         app.kubernetes.io/component: ${APPLICATION_NAME}
-        app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
+        app.kubernetes.io/instance: ${APPLICATION_NAME}-1
         app.kubernetes.io/name: ${APPLICATION_NAME}
         app.kubernetes.io/part-of: ${APPLICATION_GROUP}
     spec:

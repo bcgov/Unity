@@ -10,7 +10,7 @@ metadata:
     description: |-
       Template for tools namespace comunications in OpenShift.
 parameters:
-  # Common project parameters
+# Project namespace parameters
   - name: PROJECT_NAMESPACE
     displayName: "Project Namespace"
     description: "The OpenShift project license plate 6 charater alpha numberic."

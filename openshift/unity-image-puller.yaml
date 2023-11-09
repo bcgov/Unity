@@ -1,0 +1,20 @@
+# oc import-image rhel9/postgresql-15:1-28.1697636666 --from=registry.redhat.io/rhel9/postgresql-15:1-28.1697636666 --confirm
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: 'system:image-puller'
+  namespace: ${PROJECT_NAMESPACE}-tools
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: ${PROJECT_NAMESPACE}-dev
+  - kind: ServiceAccount
+    name: default
+    namespace: ${PROJECT_NAMESPACE}-test
+  - kind: ServiceAccount
+    name: default
+    namespace: ${PROJECT_NAMESPACE}-prod
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 'system:image-puller'
