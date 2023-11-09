@@ -71,14 +71,18 @@ objects:
     name: ${APPLICATION_NAME}
     labels:
       job-name: ${APPLICATION_NAME}
-      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  # Cronjob script works with both database or instance backup commands
+  # pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_NAME} 
+  # pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean
   spec:
     schedule: ${DATABASE_BACKUP_SCHEDULE}
     concurrencyPolicy: Forbid
-    successfulJobsHistoryLimit: 2
-    failedJobsHistoryLimit: 2
+    successfulJobsHistoryLimit: 1
+    failedJobsHistoryLimit: 1
     jobTemplate:
       spec:
         template:
@@ -97,12 +101,12 @@ objects:
                   - '-c'
                   - > 
                     trap "echo Backup failed; exit 0" ERR; date;
-                    FILENAME=backup-${DATABASE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
-                    time (find /var/lib/pgsql/backups -type f -name "backup-${DATABASE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
-                    PGPASSWORD="$DATABASE_PASSWORD" pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_NAME} | gzip > /var/lib/pgsql/backups/$FILENAME); 
+                    FILENAME=dumpall-${DATABASE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
+                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
+                    PGPASSWORD="$DATABASE_PASSWORD" pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME); 
                     echo "";
                     echo "Backup successful"; du -h /var/lib/pgsql/backups/$FILENAME; 
-                    echo "to restore the backup to the serviced host use: $ psql --username=$DATABASE_USER --password --host=$DATABASE_HOST --port=$DATABASE_PORT postgres < /var/lib/pgsql/backups/<backupfile> (unpacked)";
+                    echo "to restore the backup to the serviced host use: $ psql --username=$DATABASE_USER --password --host=$DATABASE_HOST --port=$DATABASE_PORT postgres < /var/lib/pgsql/backups/<backupfile> (unpacked with gunzip)";
                     echo ""; du -hc /var/lib/pgsql/backups/*
                 env:
                   - name: DATABASE_PORT

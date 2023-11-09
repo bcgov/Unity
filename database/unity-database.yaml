@@ -101,6 +101,7 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
   stringData:
@@ -116,6 +117,7 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   data:
@@ -131,6 +133,7 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
   spec:
@@ -154,6 +157,7 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
@@ -172,6 +176,7 @@ objects:
     labels:
       app: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
@@ -193,6 +198,7 @@ objects:
       app: ${DATABASE_SERVICE_NAME}
       app.openshift.io/runtime: postgresql
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
