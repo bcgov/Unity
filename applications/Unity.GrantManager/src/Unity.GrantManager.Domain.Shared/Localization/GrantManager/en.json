@@ -195,7 +195,7 @@
     "Summary:Assessment.TotalScore": "Total Score",
     "Summary:Assessment.AssessmentResult": "Assessment Result",
     "Summary:Assessment.RecommendedAmount": "Recommended Amount",
-    "Summary:Assessment.ApprovedAmount": "ApprovedAmount",
+    "Summary:Assessment.ApprovedAmount": "Approved Amount",
     "Summary:Assessment.Batch": "Batch #"
   }
 }

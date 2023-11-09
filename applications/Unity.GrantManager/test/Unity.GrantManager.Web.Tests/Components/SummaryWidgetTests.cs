@@ -86,7 +86,7 @@ namespace Unity.GrantManager.Components
             resultModel!.Sector.ShouldBe(expectedSector);
             resultModel!.Status.ShouldBe(expectedStatus);
             resultModel!.LikelihoodOfFunding.ShouldBe(expectedLikelihoodOfFunding);
-            resultModel!.TotalScore.ShouldBe(expectedTotalScore.ToString());
+            resultModel.TotalScore.ShouldBe(expectedTotalScore);
             resultModel!.AssessmentResult.ShouldBe(expectedAssessmentResult);
         }
     }
