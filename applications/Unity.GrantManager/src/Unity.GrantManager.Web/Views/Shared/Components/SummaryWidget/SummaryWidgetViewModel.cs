@@ -12,7 +12,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
         public string? EconomicRegion { get; set; }
         public string? City { get; set; }
         public string? Community { get; set; }
-        [DataType(DataType.Currency)]
+        
+        [DataType(DataType.Currency)]        
         public decimal? RequestedAmount { get; set; }
         [DataType(DataType.Currency)]
         public decimal? ProjectBudget { get; set; }

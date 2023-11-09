@@ -17,24 +17,24 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
         AutoInitialize = true)]
     public class SummaryWidgetViewComponent : AbpViewComponent
     {
-        private readonly GrantApplicationAppService _grantApplicationService;
-        public SummaryWidgetViewComponent(GrantApplicationAppService grantApplicationAppService)
+        private readonly IGrantApplicationAppService _grantApplicationService;        
+
+        public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService)
         {
             _grantApplicationService = grantApplicationAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            if(applicationId == Guid.Empty)
+            if (applicationId == Guid.Empty)
             {
                 return View(new SummaryWidgetViewModel());
             }
 
             var summaryDto = await _grantApplicationService.GetSummaryAsync(applicationId);
 
-            return View(ObjectMapper.Map<GetSummaryDto,SummaryWidgetViewModel>(summaryDto));
-        } 
-        
+            return View(ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto));
+        }
     }
 
     public class SummaryWidgetStyleBundleContributor : BundleContributor

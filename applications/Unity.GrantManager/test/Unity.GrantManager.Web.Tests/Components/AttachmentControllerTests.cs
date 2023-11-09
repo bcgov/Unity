@@ -20,7 +20,7 @@ namespace Unity.GrantManager.Components
             // Arrange
             var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
             var configuration = builder.Build();
-            var fileAppService = Substitute.For<IFileAppService>();            
+            var fileAppService = Substitute.For<IFileAppService>();
             var attachmentController = new AttachmentController(fileAppService, configuration);
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
