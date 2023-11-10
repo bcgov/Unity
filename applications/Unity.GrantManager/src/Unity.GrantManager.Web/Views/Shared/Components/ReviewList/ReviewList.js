@@ -301,7 +301,6 @@ function createButtonInit(dt, button, config) {
                 that.enable();
             } else {
                 that.disable();
-                PubSub.publish('refresh_review_list', data);
             }
         });
 }
