@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using AutoMapper.Internal.Mappers;
 using Localization.Resources.AbpUi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Localization;
@@ -34,7 +35,7 @@ public class GrantManagerWebTestModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         ConfigureLocalizationServices(context.Services);
-        ConfigureNavigationServices(context.Services);
+        ConfigureNavigationServices(context.Services);        
     }
 
     private static void ConfigureLocalizationServices(IServiceCollection services)

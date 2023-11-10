@@ -127,6 +127,47 @@ public class GrantApplicationAppService :
         return appDto;
     }
 
+    public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
+    {
+        var query = from application in await _applicationRepository.GetQueryableAsync()
+                    join applicationForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals applicationForm.Id
+                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    where application.Id == applicationId
+                    select new GetSummaryDto
+                    {
+                        Category = applicationForm == null ? string.Empty : applicationForm.Category,
+                        SubmissionDate = application.CreationTime.ToShortDateString(),
+                        OrganizationName = applicant.OrgName,
+                        OrganizationNumber = applicant.OrgNumber,
+                        EconomicRegion = application.EconomicRegion,
+                        City = application.City,
+                        RequestedAmount = application.RequestedAmount,
+                        ProjectBudget = application.TotalProjectBudget,
+                        Sector = application.Sector,
+                        Community = applicant.Community,
+                        Status = application.ApplicationStatus.InternalStatus,
+                        LikelihoodOfFunding = application.LikelihoodOfFunding,
+                        AssessmentStartDate = string.Format("{0:MM/dd/yyyy}",application.AssessmentStartDate),
+                        FinalDecisionDate = string.Format("{0:MM/dd/yyyy}",application.FinalDecisionDate),
+                        TotalScore = application.TotalScore.ToString(),
+                        AssessmentResult = application.AssessmentResultStatus,
+                        RecommendedAmount = application.RecommendedAmount,
+                        ApprovedAmount = application.ApprovedAmount,
+                        Batch = "" // to-do: ask BA for the implementation of Batch field
+                    };
+
+        var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
+        if(queryResult != null)
+        {
+            return queryResult;
+        }
+        else
+        {
+            return await Task.FromResult<GetSummaryDto>(new GetSummaryDto());
+        }
+
+     }
+
     public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
