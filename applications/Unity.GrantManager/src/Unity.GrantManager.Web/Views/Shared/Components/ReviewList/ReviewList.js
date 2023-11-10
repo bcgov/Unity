@@ -154,8 +154,19 @@ $(function () {
     );
 
     if (abp.auth.isGranted('GrantApplicationManagement.Assessments.Create')) {
+        CreateAssessmentButton();
+    }
+    async function CreateAssessmentButton(){
         let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
         createButtons.container().prependTo("#DetailsActionBarStart");
+        let isPermitted = await CheckAssessmentCreateButton();
+        if (!isPermitted) {
+            reviewListTable.buttons('Create:name').disable();
+        }
+    }
+    async function CheckAssessmentCreateButton() {
+        let applicationStatus = await getActionButtonConfigMap();
+        return applicationStatus.statusCode != "GRANT_NOT_APPROVED" && applicationStatus.statusCode != "GRANT_APPROVED" && applicationStatus.statusCode != "CLOSED" && applicationStatus.statusCode != "WITHDRAWN";
     }
 
     reviewListTable.buttons(0, null).container().prependTo("#DetailsActionBarStart");
@@ -177,6 +188,15 @@ $(function () {
         'assessment_action_completed',
         (msg, data) => {
             $('#detailsTab a[href="#nav-review-and-assessment"]').tab('show');
+        }
+    );
+    PubSub.subscribe(
+        'application_status_changed',
+       async (msg, data) => {
+            let isPermitted = await CheckAssessmentCreateButton();
+            if (!isPermitted) {
+                reviewListTable.buttons('Create:name').disable();
+            }
         }
     );
 
@@ -245,6 +265,10 @@ function refreshActionButtons(dataTableContext, assessmentId) {
                 dataTableContext.buttons(enabledButtons).enable();
             });
     }
+    let isPermitted = CheckAssessmentCreateButton();
+    if (!isPermitted) {
+        dataTableContext.buttons('Create:name').disable();
+    }
 }
 
 function renderApproval(data) {
@@ -254,7 +278,13 @@ function renderApproval(data) {
         return nullPlaceholder;
     }
 }
-
+async function getActionButtonConfigMap() {
+    let applicationId = document.getElementById('DetailsViewApplicationId').value;
+    let applicationStatus = await unity.grantManager.grantApplications.grantApplication.getApplicationStatus(applicationId).then(data => {
+        return data;
+    });
+    return applicationStatus;
+}
 function renderUnityWorkflowButton(actionValue) {
     let buttonConfig = actionButtonConfigMap[actionValue] ?? actionButtonConfigMap['_Fallback']
 
