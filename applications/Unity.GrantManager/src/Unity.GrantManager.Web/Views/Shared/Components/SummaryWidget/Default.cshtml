@@ -1,132 +1,174 @@
-﻿@using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
+﻿@using System.Globalization;
+@using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
+@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization;
+
+@inject IStringLocalizer<GrantManagerResource> L
 
 @model SummaryWidgetViewModel
 @{
     Layout = null;
 }
 
-
-
-<div>
-    <h6 class="fw-bold px-3 pt-4 pb-2">Application Summary</h6>
-    <table aria-describedby="Application Summary" style="width:100%;border-collapse:separate;border-spacing: 10px 10px;">
+<abp-row class="px-1 pb-2 mb-4 summary-container">
+    <h6 class="ps-1 fw-bold">@L["Summary:ApplicationSummaryTitle"].Value</h6>
+    <table aria-describedby="Application Summary" class="summary-table">
         <tr>
             <th></th>
             <th></th>
         </tr>
         <tr>
             <td colspan="2">
-                Category <br />
-                <input name="category" disabled id="category" style="width:100%;" value="@Model.Category"/>
+                @Html.LabelFor(model => model.Category, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.Category)
+                </div>
             </td>
         </tr>
         <tr>
             <td>
-                Economic Region <br />
-                <input name="economicRegion" disabled id="economicRegion" style="width:100%;" value="@Model.EconomicRegion" />
+                @Html.LabelFor(model => model.EconomicRegion, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.EconomicRegion)
+                </div>
             </td>
             <td>
-                Submission Date <br />
-                <input name="submissionDate" disabled id="submissionDate" style="width:100%;" value="@Model.SubmissionDate"/>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                Organization Name <br />
-                <input name="organizationName" disabled id="organizationName" style="width:100%;" value="@Model.OrganizationName"/>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                Organization # <br />
-                <input name="organizationNumber" disabled id="organizationNumber" style="width:100%;" value="@Model.OrganizationNumber"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                City <br />
-                <input name="city" disabled id="city" style="width:100%;" value="@Model.City"/>
-            </td>
-            <td>
-                Community <br />
-                <input name="community" disabled id="community" style="width:100%;" value="@Model.Community"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                Requested Amount <br />
-                <input name="requestedAmount" disabled id="requestedAmount" style="width:100%;" value="@Model.RequestedAmount"/>
-            </td>
-            <td>
-                Project Budget <br />
-                <input name="projectBudget" disabled id="projectBudget" style="width:100%;" value="@Model.ProjectBudget"/>
+                @Html.LabelFor(model => model.SubmissionDate, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.SubmissionDate)
+                </div>
             </td>
         </tr>
         <tr>
             <td colspan="2">
-                Sector <br />
-                <input name="sector" disabled id="sector" style="width:100%;" value="@Model.Sector"/>
+                @Html.LabelFor(model => model.OrganizationName, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.OrganizationName)
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                @Html.LabelFor(model => model.OrganizationNumber, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.OrganizationNumber)
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                @Html.LabelFor(model => model.City, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.City)
+                </div>
+            </td>
+            <td>
+                @Html.LabelFor(model => model.Community, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.Community)
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                @Html.LabelFor(model => model.RequestedAmount, new { @class= "display-input-label" })
+                <div class="display-input display-input-currency">
+                    @Html.DisplayFor(model => model.RequestedAmount)
+                </div>
+            </td>
+            <td>
+                @Html.LabelFor(model => model.ProjectBudget, new { @class= "display-input-label" })
+                <div class="display-input display-input-currency">
+                    @Html.DisplayFor(model => model.ProjectBudget)
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                @Html.LabelFor(model => model.Sector, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.Sector)
+                </div>
             </td>
         </tr>
     </table>
-</div>
-<div>
-    <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Summary</h6>
-    <table aria-describedby="Assessment Summary" style="width:100%;border-collapse:separate;border-spacing: 10px 10px;">
+</abp-row>
+<abp-row class="px-1 pb-2 mb-4 summary-container">
+    <h6 class="ps-1 fw-bold">@L["Summary:AssessmentSummaryTitle"].Value</h6>
+    <table aria-describedby="Assessment Summary" class="summary-table">
         <tr>
             <th></th>
             <th></th>
         </tr>
         <tr>
-            <td style="vertical-align:bottom;">
-                Status <br />
-                <input name="status" disabled id="status" style="width:100%;" value="@Model.Status"/>
+            <td>
+                @Html.LabelFor(model => model.Status, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.Status)
+                </div>
             </td>
-            <td style="vertical-align:bottom;">
-                Likelihood Of Funding <br />
-                <input name="likelihoodOfFunding" disabled id="likelihoodOfFunding" style="width:100%;" value="@Model.LikelihoodOfFunding"/>
-            </td>
-        </tr>
-        <tr>
-            <td style="vertical-align:bottom;">
-                Assessment Start Date <br />
-                <input name="assessmentStartDate" disabled id="assessmentStartDate" style="width:100%;" value="@Model.AssessmentStartDate"/>
-            </td>
-            <td style="vertical-align:bottom;">
-                Final Decision Date <br />
-                <input name="finalDecisionDate" disabled id="finalDecisionDate" style="width:100%;" value="@Model.FinalDecisionDate"/>
+            <td>
+                @Html.LabelFor(model => model.LikelihoodOfFunding, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.LikelihoodOfFunding)
+                </div>
             </td>
         </tr>
         <tr>
-            <td style="vertical-align:bottom;">
-                Total Score <br />
-                <input name="totalScore" disabled id="totalScore" style="width:100%;" value="@Model.TotalScore" />
+            <td>
+                @Html.LabelFor(model => model.AssessmentStartDate, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.AssessmentStartDate)
+                </div>
             </td>
-            <td style="vertical-align:bottom;">
-                Assessment Result(Pass/Fail) <br />
-                <input name="assessmentResult" disabled id="assessmentResult" style="width:100%;" value="@Model.AssessmentResult"/>
+            <td>
+                @Html.LabelFor(model => model.FinalDecisionDate, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.FinalDecisionDate)
+                </div>
             </td>
         </tr>
         <tr>
-            <td style="vertical-align:bottom;">
-                Recommended Amount <br />
-                <input name="recommendedAmount" disabled id="recommendedAmount" style="width:100%;" value="@Model.RecommendedAmount"/>
+            <td>
+                @Html.LabelFor(model => model.TotalScore, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.TotalScore)
+                </div>
             </td>
-            <td style="vertical-align:bottom;">
-                Approved Amount <br />
-                <input name="approvedAmount" disabled id="approvedAmount" style="width:100%;" value="@Model.ApprovedAmount"/>
+            <td>
+                @Html.LabelFor(model => model.AssessmentResult, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.AssessmentResult)
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                @Html.LabelFor(model => model.RecommendedAmount, new { @class= "display-input-label" })
+                <div class="display-input display-input-currency">
+                    @Html.DisplayFor(model => model.RecommendedAmount)
+                </div>
+            </td>
+            <td>
+                @Html.LabelFor(model => model.ApprovedAmount, new { @class= "display-input-label" })
+                <div class="display-input display-input-currency">
+                    @Html.DisplayFor(model => model.ApprovedAmount)
+                </div>
             </td>
         </tr>
         <tr>
             <td colspan="2">
-                Batch # <br />
-                <input name="batch" disabled id="batch" style="width:100%;" value="@Model.Batch"/>
+                @Html.LabelFor(model => model.Batch, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.Batch)
+                </div>
             </td>
         </tr>
     </table>
-</div>
-    
+</abp-row>
+
+
 
 
