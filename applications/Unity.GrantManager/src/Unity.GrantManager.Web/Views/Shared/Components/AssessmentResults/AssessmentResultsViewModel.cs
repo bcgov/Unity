@@ -20,6 +20,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public Guid ApplicationId { get; set; }
         public bool IsFinalDecisionMade { get; set; }
         public AssessmentResultsModel AssessmentResults { get; set; } = new();
+        public bool IsEditGranted { get; set; }
+        public bool IsEditApprovedAmount { get; set; }
 
         public class AssessmentResultsModel
         {
@@ -29,16 +31,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
             public int? TotalScore { get; set; }
 
+            
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.RequestedAmount")]
             [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? RequestedAmount { get; set; }
 
-            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
+
+            //[DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = true)]
             public decimal? TotalProjectBudget { get; set; }
 
-            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
+            [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = true)]
             public decimal? RecommendedAmount { get; set; }
 
-            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
+            [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = true)]
             public decimal? ApprovedAmount { get; set; }
 
             [SelectItems(nameof(FundingRiskList))]

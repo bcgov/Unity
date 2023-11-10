@@ -1,4 +1,6 @@
 $(function () {
+    console.log(abp);
+
     let selectedReviewDetails = null;
     abp.localization.getResource('GrantManager');
 
