@@ -29,28 +29,3 @@
     text-align: right;
     border-radius: 0 0.1875rem 0.1875rem 0 !important;
 }
-
-.input-prefix-wrapper {
-    display: inline-flex;
-}
-
-.display-input-label {
-    font-size: var(--bc-font-size-sm);
-    color: var(--bc-colors-grey-text-300);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 0;
-}
-
-.unity-input-prefix {
-    border-radius: 0.1875rem 0 0 0.1875rem;
-    padding: 5px;
-    border: var(--bs-border-width) solid var(--bs-gray-400);
-    border-right: none;
-    background: var(--bs-gray-400);
-    color: #fff;
-    display: table-cell;
-    text-align: center;
-    vertical-align: middle;
-}

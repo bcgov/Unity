@@ -38,7 +38,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             AssessmentResultsPageModel model = new()
             {
                 ApplicationId = applicationId,
-                IsFinalDecisionMade = finalDecisionMade,
                 IsEditGranted = (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit)) && !finalDecisionMade,
                 IsEditApprovedAmount = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount),
 

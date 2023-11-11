@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public List<SelectListItem> RecommendationActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.RecommendationActionList);
 
         public Guid ApplicationId { get; set; }
-        public bool IsFinalDecisionMade { get; set; }
+
         public AssessmentResultsModel AssessmentResults { get; set; } = new();
         public bool IsEditGranted { get; set; }
         public bool IsEditApprovedAmount { get; set; }
@@ -26,9 +26,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public class AssessmentResultsModel
         {
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.ProjectSummary")]
             [TextArea(Rows = 1)]
             public string? ProjectSummary { get; set; }
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.TotalScore")]
             public int? TotalScore { get; set; }
 
             
@@ -36,32 +38,40 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? RequestedAmount { get; set; }
 
-
-            //[DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = true)]
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.TotalProjectBudget")]
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? TotalProjectBudget { get; set; }
 
-            [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = true)]
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.RecommendedAmount")]
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? RecommendedAmount { get; set; }
 
-            [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = true)]
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.ApprovedAmount")]
+            [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
             public decimal? ApprovedAmount { get; set; }
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.LikelihoodOfFunding")]
             [SelectItems(nameof(FundingRiskList))]
             public string? LikelihoodOfFunding { get; set; }
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.DueDilligenceStatus")]
             [SelectItems(nameof(DueDilligenceList))]
             public string? DueDilligenceStatus { get; set; }
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.Recommendation")]
             [SelectItems(nameof(RecommendationActionList))]
             public string? Recommendation { get; set; }
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.DeclineRational")]
             [SelectItems(nameof(DeclineRationalActionList))]
             public string? DeclineRational { get; set; }
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.Notes")]
             [TextArea(Rows = 2)]
             [StringLength(200)]
             public string? Notes { get; set; }
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.AssessmentResult")]
             [SelectItems(nameof(AssessmentResultStatusList))]
             public string? AssessmentResultStatus { get; set; }
 

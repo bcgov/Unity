@@ -11,7 +11,6 @@
             } else {
                 // This will not work if the culture is different and uses a different decimal separator
                 assessmentResultObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
-                console.log(input);
 
                 if (isNumberField(input)) {
                     if (assessmentResultObj[input.name.split(".")[1]] == '') {
