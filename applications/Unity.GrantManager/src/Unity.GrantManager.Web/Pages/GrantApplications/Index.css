@@ -214,3 +214,46 @@ th #btn-toggle-filter {
 .fl-left {
     margin-right: 8px;
 }
+
+body {
+    font: 90%/1.45em "Helvetica Neue", HelveticaNeue, Verdana, Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #333;
+    background-color: #fff;
+}
+
+table.fixedHeader-floating {
+    position: fixed !important;
+    background-color: white
+}
+
+    table.fixedHeader-floating.no-footer {
+        border-bottom-width: 0
+    }
+
+table.fixedHeader-locked {
+    position: absolute !important;
+    background-color: white
+}
+
+
+
+table.dataTable.fixedHeader-floating {
+    display: none !important; /* Hide the fixedHeader since we dont need it*/
+}
+
+.dataTables_scrollHeadInner {
+    margin-left: 0px;
+    width: 100% !important;
+    position: fixed;
+    display: block;
+    overflow: hidden;
+    margin-right: 30px;
+    background: white;
+    z-index: 1000;
+}
+
+.dataTables_scrollBody {
+    padding-top: 40px;
+}

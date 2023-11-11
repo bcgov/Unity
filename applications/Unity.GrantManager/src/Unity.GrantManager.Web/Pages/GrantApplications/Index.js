@@ -238,8 +238,13 @@
 
     function initializeDataTable() {
        return dt.DataTable(
-        abp.libs.datatables.normalizeConfiguration({
-            fixedHeader: true,
+           abp.libs.datatables.normalizeConfiguration({
+              // fixedHeader: true,
+               fixedHeader: {
+                   header: true,
+                   footer: false,
+                   headerOffset:0
+               },
             serverSide: false,
             paging: true,
             order: [[4, 'desc']],
