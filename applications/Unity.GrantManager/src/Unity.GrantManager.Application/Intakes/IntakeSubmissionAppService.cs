@@ -20,12 +20,10 @@ namespace Unity.GrantManager.Intakes
         private readonly IFormIntService _formIntService;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly ISubmissionsIntService _submissionsIntService;
-        private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public IntakeSubmissionAppService(IIntakeFormSubmissionManager intakeFormSubmissionManager,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IFormIntService formIntService,
-            IUnitOfWorkManager unitOfWorkManager,
             ISubmissionsIntService submissionsIntService,
             IApplicationFormRepository applicationFormRepository)
         {
@@ -34,7 +32,6 @@ namespace Unity.GrantManager.Intakes
             _submissionsIntService = submissionsIntService;
             _applicationFormRepository = applicationFormRepository;
             _formIntService = formIntService;
-            _unitOfWorkManager = unitOfWorkManager;
         }
 
         public async Task<EventSubscriptionConfirmationDto> CreateIntakeSubmissionAsync(EventSubscriptionDto eventSubscriptionDto)
