@@ -72,7 +72,7 @@
                 .then(function (_) {                
                     widgetManager.refresh();
                     abp.notify.success(
-                        l(`Enum:GrantApplicationAction.${triggerAction}`),
+                        l(`Enum:GrantApplicationAction.Message.${triggerAction}`),
                         "Application Status Changed"
                     );
                     PubSub.publish("application_status_changed", triggerAction);

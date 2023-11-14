@@ -140,3 +140,22 @@
     width: -webkit-fill-available;
     width: -moz-available;
 }
+
+.unity-input-group {
+    position: relative;
+}
+
+.unity-input-group .unity-input-prepend {
+    position: absolute;
+    margin-top: 32px;
+    margin-left: 12px;
+    color: var(--bc-colors-grey-text-300);
+}
+
+.unity-input-group input {
+    padding-left: 22px;
+}
+
+.unity-currency-input {
+    text-align: right;
+}
