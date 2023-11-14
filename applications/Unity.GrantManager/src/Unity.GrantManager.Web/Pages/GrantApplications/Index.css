@@ -228,19 +228,17 @@ table.fixedHeader-floating {
     background-color: white
 }
 
-    table.fixedHeader-floating.no-footer {
-        border-bottom-width: 0
-    }
+table.fixedHeader-floating.no-footer {
+    border-bottom-width: 0
+}
 
 table.fixedHeader-locked {
     position: absolute !important;
     background-color: white
 }
 
-
-
 table.dataTable.fixedHeader-floating {
-    display: none !important; /* Hide the fixedHeader since we dont need it*/
+    display: none !important;
 }
 
 .dataTables_scrollHeadInner {
