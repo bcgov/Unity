@@ -239,7 +239,6 @@
     function initializeDataTable() {
        return dt.DataTable(
            abp.libs.datatables.normalizeConfiguration({
-              // fixedHeader: true,
                fixedHeader: {
                    header: true,
                    footer: false,
