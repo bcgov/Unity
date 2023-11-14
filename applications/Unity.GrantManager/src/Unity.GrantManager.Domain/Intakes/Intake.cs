@@ -1,7 +1,7 @@
 ﻿using System;
 using Volo.Abp.Domain.Entities.Auditing;
 
-namespace Unity.GrantManager.GrantPrograms;
+namespace Unity.GrantManager.Intakes;
 
 public class Intake : FullAuditedAggregateRoot<Guid>
 {

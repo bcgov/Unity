@@ -14,5 +14,6 @@ namespace Unity.GrantManager.ApplicationForms
         public string? SubmissionHeaderMapping { get; set; }
         public string? AvailableChefsFields { get; set; }
         public string? Category { get; set; }
+        public int? Version { get; set; }
     }
 }

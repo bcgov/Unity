@@ -12,5 +12,6 @@ namespace Unity.GrantManager.Forms
         public string? ApiKey { get; set; }
         public string? SubmissionHeaderMapping { get; set; }
         public string? Category { get; set; }
+        public int? Version { get; set; }
     }
 }
