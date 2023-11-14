@@ -30,28 +30,28 @@
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
                             <abp-input asp-for="@Model.AssessmentResults.RequestedAmount"
-                                       onchange="enableResultSaveBtn(this)" class="currency-input" disabled="@(!Model.IsEditGranted)" />
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsEditGranted)" />
                         </div>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
                             <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget"
-                                       onchange="enableResultSaveBtn(this)" class="currency-input" disabled="@(!Model.IsEditGranted)" />
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsEditGranted)" />
                         </div>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
                             <abp-input asp-for="@Model.AssessmentResults.RecommendedAmount"
-                                       onchange="enableResultSaveBtn(this)" class="currency-input" disabled="@(!Model.IsEditGranted)" />
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsEditGranted)" />
                         </div>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
                             <abp-input asp-for="@Model.AssessmentResults.ApprovedAmount"
-                                       onchange="enableResultSaveBtn(this)" class="currency-input" id="approvedAmountInput" disabled="@(!Model.IsEditGranted && !Model.IsEditApprovedAmount)" />
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" id="approvedAmountInput" disabled="@(!Model.IsEditGranted && !Model.IsEditApprovedAmount)" />
                         </div>
                     </abp-column>
                 </abp-row>
@@ -115,7 +115,7 @@
 <script defer>
     (function () {
         if (window.jQuery) {
-            $('.currency-input').maskMoney();
+            $('.unity-currency-input').maskMoney();
         }
     })();
 </script>

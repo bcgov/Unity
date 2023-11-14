@@ -1,5 +1,5 @@
 ﻿$(function () {    
-    $('.currency-input').maskMoney();
+    $('.unity-currency-input').maskMoney();
 
     $('body').on('click', '#saveAssessmentResultBtn', function () {       
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
