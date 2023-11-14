@@ -6,7 +6,6 @@ message: |-
   see template usage guide found in the project readme.md and wiki documents.
 metadata:
   name: unity-grantmanager-dbmigrator
-  # namespace: ${PROJECT_NAMESPACE}-${ENV_NAME}
   # This template uses a separate parameter .env file to override the default values defined in this section. 
   # oc process -f .\openshift\unity-grantmanager-dbmigrator.yaml --param-file=.env | oc create -f -
   labels:
@@ -21,17 +20,6 @@ metadata:
     tags: dotnet,unity-grantmanager-dbmigrator
 parameters:
 # Project namespace parameters
-- description: "The OpenShift project license plate 6 charater alpha numberic."
-  displayName: "Project Namespace"
-  name: PROJECT_NAMESPACE
-  required: true
-  generate: expression
-  from: "[a-z0-9]{6}"
-- description: "The OpenShift environment name [dev, test, prod]."
-  displayName: "Environment name"
-  name: ENV_NAME
-  required: true
-  value: "dev"
 - description: The name of the application.
   displayName: Application Name
   name: APPLICATION_NAME
@@ -70,9 +58,12 @@ objects:
     labels:
       app: ${APPLICATION_NAME}
       app.kubernetes.io/component: ${APPLICATION_NAME}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
       app.kubernetes.io/name: ${APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    lookupPolicy:
+      local: true
 # Build Config 
 - apiVersion: build.openshift.io/v1
   kind: BuildConfig
@@ -81,7 +72,7 @@ objects:
     labels:
       app: ${APPLICATION_NAME}
       app.kubernetes.io/component: ${APPLICATION_NAME}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-${ENV_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
       app.kubernetes.io/name: ${APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
