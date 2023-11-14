@@ -4,7 +4,7 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
 @using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
 @using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
-@using Unity.GrantManager.Web.Pages.GrantApplications.Components.AssessmentResults;
+@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -84,8 +84,8 @@
 
                 @*-------- Review & Assessment Section ---------*@
                 <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
-                    <div class="w-100 px-2" id="assessmentResultMainView">
-                        @await Component.InvokeAsync("AssessmentResults", new { applicationId = @Model.ApplicationId })
+                    <div class="w-100 px-2" id="assessmentResultWidget">
+                        @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId })
                     </div>
                     <div class="w-100 px-2" id="assessmentMainView">
                         @await Component.InvokeAsync("ReviewList")

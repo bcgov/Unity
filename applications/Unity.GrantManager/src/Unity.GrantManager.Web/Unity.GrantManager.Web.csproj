@@ -13,6 +13,7 @@
     <MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish>
     <PreserveCompilationReferences>true</PreserveCompilationReferences>
     <UserSecretsId>Unity.GrantManager-4681b4fd-151f-4221-84a4-929d86723e4c</UserSecretsId>
+    <Version>0.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,8 +21,7 @@
     <Content Remove="Logs\**" />
     <EmbeddedResource Remove="Logs\**" />
     <None Remove="Logs\**" />
-    <None Remove="Pages\GrantApplications\Components\" />
-    <None Remove="Pages\GrantApplications\Components\AssessmentResults\" />
+    <None Remove="Views\Shared\Components\AssessmentResults\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -66,7 +66,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Pages\GrantApplications\Components\" />
-    <Folder Include="Pages\GrantApplications\Components\AssessmentResults\" />
+    <Folder Include="Views\Shared\Components\AssessmentResults\" />
   </ItemGroup>
 </Project>

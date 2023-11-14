@@ -25,11 +25,13 @@ namespace Unity.GrantManager.Components
             var assessmentId = Guid.NewGuid();
             var currentUserId = Guid.NewGuid();
             var httpContext = new DefaultHttpContext();
-            assessmentRepository.GetAsync(assessmentId).Returns(await Task.FromResult(new Assessment() { 
-                FinancialAnalysis= expectedFinancialAnalysis, 
-                EconomicImpact= expectedEconomicImpact, 
-                InclusiveGrowth= expectedInclusiveGrowth, 
-                CleanGrowth= expectedCleanGrowth }));            
+            assessmentRepository.GetAsync(assessmentId).Returns(await Task.FromResult(new Assessment()
+            {
+                FinancialAnalysis = expectedFinancialAnalysis,
+                EconomicImpact = expectedEconomicImpact,
+                InclusiveGrowth = expectedInclusiveGrowth,
+                CleanGrowth = expectedCleanGrowth
+            }));
 
             var viewContext = new ViewContext
             {
@@ -46,7 +48,7 @@ namespace Unity.GrantManager.Components
             };
 
             //Act
-            var result = await viewComponent.InvokeAsync(assessmentId,currentUserId) as ViewViewComponentResult;
+            var result = await viewComponent.InvokeAsync(assessmentId, currentUserId) as ViewViewComponentResult;
             AssessmentScoresWidgetViewModel? resultModel;
 
             resultModel = result!.ViewData!.Model! as AssessmentScoresWidgetViewModel;
