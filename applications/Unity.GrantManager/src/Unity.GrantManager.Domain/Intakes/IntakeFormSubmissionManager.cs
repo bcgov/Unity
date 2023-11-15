@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Intakes
         {
             IntakeMapping intakeMap = _intakeFormSubmissionMapper.MapFormSubmissionFields(applicationForm, formSubmission);
             intakeMap.SubmissionId = formSubmission.submission.id;
-            intakeMap.SubmissionDate = formSubmission.submission.date;
+            intakeMap.SubmissionDate = formSubmission.submission.createdAt;
             intakeMap.ConfirmationId = formSubmission.submission.confirmationId;
             using var uow = _unitOfWorkManager.Begin();
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
