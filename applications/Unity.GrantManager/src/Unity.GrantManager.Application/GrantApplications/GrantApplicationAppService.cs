@@ -13,12 +13,12 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -127,31 +127,94 @@ public class GrantApplicationAppService :
         return appDto;
     }
 
+    public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
+    {
+        var query = from application in await _applicationRepository.GetQueryableAsync()
+                    join applicationForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals applicationForm.Id
+                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    where application.Id == applicationId
+                    select new GetSummaryDto
+                    {
+                        Category = applicationForm == null ? string.Empty : applicationForm.Category,
+                        SubmissionDate = application.CreationTime.ToShortDateString(),
+                        OrganizationName = applicant.OrgName,
+                        OrganizationNumber = applicant.OrgNumber,
+                        EconomicRegion = application.EconomicRegion,
+                        City = application.City,
+                        RequestedAmount = application.RequestedAmount,
+                        ProjectBudget = application.TotalProjectBudget,
+                        Sector = application.Sector,
+                        Community = applicant.Community,
+                        Status = application.ApplicationStatus.InternalStatus,
+                        LikelihoodOfFunding = application.LikelihoodOfFunding,
+                        AssessmentStartDate = string.Format("{0:MM/dd/yyyy}",application.AssessmentStartDate),
+                        FinalDecisionDate = string.Format("{0:MM/dd/yyyy}",application.FinalDecisionDate),
+                        TotalScore = application.TotalScore.ToString(),
+                        AssessmentResult = application.AssessmentResultStatus,
+                        RecommendedAmount = application.RecommendedAmount,
+                        ApprovedAmount = application.ApprovedAmount,
+                        Batch = "" // to-do: ask BA for the implementation of Batch field
+                    };
+
+        var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
+        if(queryResult != null)
+        {
+            return queryResult;
+        }
+        else
+        {
+            return await Task.FromResult<GetSummaryDto>(new GetSummaryDto());
+        }
+
+     }
+
     public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
         if (application != null)
         {
-            application.ProjectSummary = input.ProjectSummary;
-            application.RequestedAmount = input.RequestedAmount ?? 0;
-            application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
-            application.RecommendedAmount = input.RecommendedAmount ?? 0;
-            application.ApprovedAmount = input.ApprovedAmount ?? 0;
-            application.LikelihoodOfFunding = input.LikelihoodOfFunding;
-            application.DueDilligenceStatus = input.DueDilligenceStatus;
-            application.Recommendation = input.Recommendation;
-            application.DeclineRational = input.DeclineRational;
-            application.TotalScore = input.TotalScore;
-            application.Notes = input.Notes;
-            if (input.AssessmentResultStatus != application.AssessmentResultStatus)
+            bool IsEditGranted = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
+            bool IsEditApprovedAmount = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
+            bool IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.ApplicationStatus.StatusCode);
+            if (!IsEditGranted)
             {
-                application.AssessmentResultDate = DateTime.UtcNow;
+                throw new UnauthorizedAccessException(message: "No permission to update");
             }
-            application.AssessmentResultStatus = input.AssessmentResultStatus;
+            else if (IsFinalDecisionMade && !IsEditApprovedAmount)
+            {
+                throw new UnauthorizedAccessException(message: "Final decision is made, Update not allowed!");
+            }
+            else
+            {
+                // These are some business rules that should be pushed further down into domain
+                if (IsEditApprovedAmount && IsFinalDecisionMade) // Only users with EditApprovedAmount permission can edit the value after final decision
+                {
+                    application.ApprovedAmount = input.ApprovedAmount ?? 0;
+                }
+                else
+                {
+                    application.ProjectSummary = input.ProjectSummary;
+                    application.RequestedAmount = input.RequestedAmount ?? 0;
+                    application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
+                    application.RecommendedAmount = input.RecommendedAmount ?? 0;
+                    application.ApprovedAmount = input.ApprovedAmount ?? 0;
+                    application.LikelihoodOfFunding = input.LikelihoodOfFunding;
+                    application.DueDilligenceStatus = input.DueDilligenceStatus;
+                    application.Recommendation = input.Recommendation;
+                    application.DeclineRational = input.DeclineRational;
+                    application.TotalScore = input.TotalScore;
+                    application.Notes = input.Notes;
+                    if (input.AssessmentResultStatus != application.AssessmentResultStatus)
+                    {
+                        application.AssessmentResultDate = DateTime.UtcNow;
+                    }
+                    application.AssessmentResultStatus = input.AssessmentResultStatus;
+                }
 
-            await _applicationRepository.UpdateAsync(application, autoSave: true);
+                await _applicationRepository.UpdateAsync(application, autoSave: true);
 
-            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+                return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+            }
         }
         else
         {
