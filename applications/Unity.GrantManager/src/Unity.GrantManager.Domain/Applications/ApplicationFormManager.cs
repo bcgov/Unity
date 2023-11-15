@@ -4,9 +4,7 @@ using Unity.GrantManager.Events;
 using Volo.Abp.Domain.Services;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.Domain.Repositories;
-using Unity.GrantManager.Intakes.Integration;
 using Newtonsoft.Json.Linq;
-using Unity.GrantManager.ApplicationForms;
 
 namespace Unity.GrantManager.Applications
 {
@@ -16,17 +14,13 @@ namespace Unity.GrantManager.Applications
         private readonly IIntakeRepository _intakeRepository;
 
         private readonly IFormAppService _formAppService;
-        private readonly IApplicationFormAppService _applicationFormAppService;
 
         public ApplicationFormManager(IIntakeRepository intakeRepository, 
-            IApplicationFormRepository applicationFormRepository,
-            IApplicationFormAppService applicationFormAppService,
-            IFormAppService formAppService,
-            IFormIntService formIntService)
+            IApplicationFormRepository applicationFormRepository,            
+            IFormAppService formAppService)
         {
             _intakeRepository = intakeRepository;
             _applicationFormRepository = applicationFormRepository;
-            _applicationFormAppService = applicationFormAppService;
             _formAppService = formAppService;
         }
 
@@ -57,8 +51,8 @@ namespace Unity.GrantManager.Applications
         {
             if (applicationForm.Version == null && formVersion != null)
             {
-                var version = ((JObject)formVersion).SelectToken("version");
-                var published = ((JObject)formVersion).SelectToken("published");
+                var version = ((JObject)formVersion!).SelectToken("version");                
+                var published = ((JObject)formVersion!).SelectToken("published");
 
                 if (published != null && ((JToken)published).ToString() == "True" 
                     && version != null 
@@ -82,5 +76,4 @@ namespace Unity.GrantManager.Applications
             return applicationForm;
         }
     }
-
 }
