@@ -320,6 +320,21 @@ $(function () {
             assessmentResultWidgetManager.refresh();                  
         }
     );
+
+    let summaryWidgetManager = new abp.WidgetManager({
+        wrapper: '#summaryWidgetArea',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val() != null ? $('#DetailsViewApplicationId').val() : "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    });
+    PubSub.subscribe('refresh_detail_panel_summary',
+        (msg, data) => {
+            summaryWidgetManager.refresh();
+        }
+    );
+
 });
 
 function uploadApplicationFiles(inputId) {    

@@ -149,6 +149,9 @@
                         <div id="applicationStatusWidget">
                             @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
                         </div>
+                        <div id="summaryWidgetArea" class="px-3 pt-4 pb-2">
+                            @await Component.InvokeAsync("SummaryWidget", new { applicationId = Model.ApplicationId })
+                        </div>
                     </div>
                     <div id="reviewDetails" style="display:none">
                         <input type="hidden" id="AssessmentId" value="@Model.AssessmentId" />
