@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -6,7 +7,6 @@ using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Integration;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
-
 
 namespace Unity.GrantManager.Events
 {
@@ -54,14 +54,20 @@ namespace Unity.GrantManager.Events
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault();
 
-            if (applicationForm != null && applicationForm.ApiKey != null) {
-                // Go grab the new name/description/version and map the new available fields
+            if (applicationForm != null
+                && applicationForm.ApiKey != null
+                && applicationForm.ChefsApplicationFormGuid != null)
+            {
+                // Go grab the new name/description/version and map the new available fields                
                 var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.FormVersion);
-                applicationForm = await _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion);
+                dynamic form = await _formIntService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid));
+                applicationForm = await _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
                 applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
-            } else {
-                applicationForm = await _applicationFormManager.InitializeApplicationForm(eventSubscriptionDto);
+            }
+            else
+            {
+                applicationForm = await _applicationFormManager.InitializeApplicationForm(ObjectMapper.Map<EventSubscriptionDto, EventSubscription>(eventSubscriptionDto));
             }
 
             return applicationForm != null;

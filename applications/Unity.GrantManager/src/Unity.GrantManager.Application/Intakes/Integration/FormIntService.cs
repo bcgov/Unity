@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Intakes.Integration
 
             var request = new RestRequest($"/forms/{chefsFormId}/versions/{chefsFormVersionId}")
             {
-                Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!))
+                Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
             };
 
             var response = await _intakeClient.GetAsync(request);
@@ -52,6 +52,14 @@ namespace Unity.GrantManager.Intakes.Integration
             }
 
             return null;
+        }
+
+        public async Task<object> GetForm(Guid? formId)
+        {
+            var request = new RestRequest($"/forms/{formId}");
+            var response = await _intakeClient.GetAsync(request);
+
+            return response.Content ?? "Error";
         }
     }
 }
