@@ -213,8 +213,7 @@
         for (let mappingDiv of mappingDivs) {
             if(mappingDiv.childElementCount > 0) {
                 disableSave = false;
-                UIElements.btnSave.prop("disabled", false);
-                return;
+                break;
             }
         }
         UIElements.btnSave.prop("disabled", disableSave);

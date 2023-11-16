@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Intakes;
 using Unity.GrantManager.ApplicationUserRoles;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;

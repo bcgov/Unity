@@ -10,14 +10,14 @@ namespace Unity.GrantManager.Intakes
     [Authorize(GrantManagerPermissions.Intakes.Default)]
     public class IntakeAppService :
             CrudAppService<
-            GrantPrograms.Intake,
+            Intake,
             IntakeDto,
             Guid,
             PagedAndSortedResultRequestDto,
             CreateUpdateIntakeDto>,
             IIntakeAppService
     {
-        public IntakeAppService(IRepository<GrantPrograms.Intake, Guid> repository)
+        public IntakeAppService(IRepository<Intake, Guid> repository)
             : base(repository)
         {
         }
