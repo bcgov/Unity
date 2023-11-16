@@ -325,7 +325,7 @@ $(function () {
         wrapper: '#summaryWidgetArea',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val() != null ? $('#DetailsViewApplicationId').val() : "00000000-0000-0000-0000-000000000000"
+                'applicationId': $('#DetailsViewApplicationId').val() ?? "00000000-0000-0000-0000-000000000000"
             }
         }
     });
