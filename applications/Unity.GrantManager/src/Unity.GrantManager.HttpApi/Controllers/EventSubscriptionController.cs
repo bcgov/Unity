@@ -27,7 +27,7 @@ namespace Unity.GrantManager.Controllers
             return eventSubscriptionDto.SubscriptionEvent switch
             {
                 ChefsEventTypesConsts.FORM_SUBMITTED => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
-                ChefsEventTypesConsts.FORM_PUBLISHED => await _iChefsEventSubscriptionService.CreateIntakeMappingAsync(eventSubscriptionDto),
+                ChefsEventTypesConsts.FORM_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
                 _ => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
             };
         }
