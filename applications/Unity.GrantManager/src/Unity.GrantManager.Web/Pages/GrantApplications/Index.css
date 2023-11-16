@@ -215,35 +215,6 @@ th #btn-toggle-filter {
     margin-right: 8px;
 }
 
-table.fixedHeader-floating {
-    position: fixed !important;
-    background-color: white
-}
-
-table.fixedHeader-floating.no-footer {
-    border-bottom-width: 0
-}
-
-table.fixedHeader-locked {
-    position: absolute !important;
-    background-color: white
-}
-
-table.dataTable.fixedHeader-floating {
-    display: none !important;
-}
-
-.dataTables_scrollHeadInner {
-    margin-left: 0px;
-    width: 100% !important;
-    position: fixed;
-    display: block;
-    overflow: hidden;
-    margin-right: 30px;
-    background: white;
-    z-index: 1000;
-}
-
-.dataTables_scrollBody {
-    padding-top: 40px;
+#GrantApplicationsTable_wrapper .dataTables_scrollBody {
+    height: calc(100vh - 345px);
 }
