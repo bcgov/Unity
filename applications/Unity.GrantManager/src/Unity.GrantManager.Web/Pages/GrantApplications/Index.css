@@ -214,7 +214,3 @@ th #btn-toggle-filter {
 .fl-left {
     margin-right: 8px;
 }
-
-#GrantApplicationsTable_wrapper .dataTables_scrollBody {
-    height: calc(100vh - 345px);
-}

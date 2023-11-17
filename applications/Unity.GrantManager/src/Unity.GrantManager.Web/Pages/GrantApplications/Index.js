@@ -290,6 +290,7 @@
                     $('.dataTables_info').css('display', 'block');
                     $('.dataTables_paginate').css('display', 'block');
                 }
+                setTableHeighDynamic();
             },
             initComplete: function () {
                 let api = this.api();
@@ -430,6 +431,18 @@
             ],
         })
        );
+    }
+    window.addEventListener('resize', setTableHeighDynamic);
+    function setTableHeighDynamic() {
+        let tableHeight = $("#GrantApplicationsTable")[0].clientHeight;
+        let docHeight = document.body.clientHeight;
+        let tableOffset = 345;
+
+        if ((tableHeight + tableOffset) > docHeight) {
+            $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: docHeight - tableOffset });
+        } else {
+            $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: tableHeight });
+        }
     }
 
     function addFilterRow(api) {
