@@ -20,7 +20,5 @@ module.exports = {
         '@node_modules/sweetalert2/src/': '@libs/sweetalert2/src',
         '@node_modules/jquery-maskmoney/': '@libs/jquery-maskmoney',
         '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',
-        '@node_modules/datatables.net-responsive/js': '@libs/datatables.net-responsive/js/',
-        '@node_modules/datatables.net-dt/css':'@libs/datatables.net-dt/css/',
     },
 };

@@ -441,7 +441,7 @@
         if ((tableHeight + tableOffset) > docHeight) {
             $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: docHeight - tableOffset });
         } else {
-            $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: tableHeight });
+            $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: tableHeight + 10 });
         }
     }
 
