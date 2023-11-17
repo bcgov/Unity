@@ -29,8 +29,11 @@ namespace Unity.GrantManager.Web.ViewModels
         [DisplayName("ApplicationForms:SubmissionHeaderMapping")]
         public string? SubmissionHeaderMapping { get; set; }
 
+        [DisplayName("ApplicationForms:ChefsFormVersionGuid")]
+        public string? ChefsFormVersionGuid { get; set; }
+
         [DisplayName("ApplicationForms:ChefsCriteriaFormId")]
-        public string? ChefsCriteriaFormGuid { get; set; } = Guid.Empty.ToString();
+        public string? ChefsCriteriaFormGuid { get; set; }
 
         [Required]
         [DisplayName("ApplicationForms:ChefsFormApiKey")]

@@ -58,16 +58,17 @@ namespace Unity.GrantManager.Events
                 && applicationForm.ApiKey != null
                 && applicationForm.ChefsApplicationFormGuid != null)
             {
-                // Go grab the new name/description/version and map the new available fields                
+                // Go grab the new name/description/version and map the new available fields
                 var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.FormVersion);
                 dynamic form = await _formIntService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid));
-                applicationForm = await _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
+                applicationForm = _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
                 applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
             }
             else
             {
-                applicationForm = await _applicationFormManager.InitializeApplicationForm(ObjectMapper.Map<EventSubscriptionDto, EventSubscription>(eventSubscriptionDto));
+                EventSubscription eventSubscription = ObjectMapper.Map<EventSubscriptionDto, EventSubscription>(eventSubscriptionDto);
+                applicationForm = await _applicationFormManager.InitializeApplicationForm(eventSubscription);
             }
 
             return applicationForm != null;
