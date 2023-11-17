@@ -4,6 +4,9 @@
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
     let applicationFormId = document.getElementById('applicationFormId').value;
+    let chefsFormId = document.getElementById('chefsFormId').value;
+    let chefsFormVersionId = document.getElementById('chefsFormVersionId').value;
+    let intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
 
     let allowableTypes = ['textarea', 
                           'orgbook',
@@ -39,6 +42,8 @@
     const UIElements = {
         btnBack: $('#btn-back'),
         btnSave: $('#btn-save'),
+        btnSync: $('#btn-sync'),
+        btnReset: $('#btn-reset'),
     };
 
     init();
@@ -46,17 +51,20 @@
     function init() {
         bindUIEvents();
         dataTable = initializeDataTable();
-        initializeIntakeMap();
+        let availableChefsFields = JSON.parse(availableChefFieldsString)
+        initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
     }
 
     function bindUIEvents() {
         UIElements.btnBack.on('click', handleBack);
         UIElements.btnSave.on('click', handleSave);
+        UIElements.btnSync.on('click', handleSync);
+        UIElements.btnReset.on('click', handleReset);
     }
 
     function bindExistingMaps() {
-        if (existingMappingString+"" != "undefined" && existingMappingString != null) {
+        if (existingMappingString+"" != "undefined" && existingMappingString != null && existingMappingString != "") {
             try {
                 let existingMapping = JSON.parse(existingMappingString);
                 let keys = Object.keys(existingMapping);
@@ -87,6 +95,31 @@
                 }
             ]
         });
+    }
+    
+    function handleSync() {
+        $.ajax(
+            {
+                url: `/api/app/form/${chefsFormId}/version/${chefsFormVersionId}`,
+                type: "POST",
+                success: function (data) {
+
+                    let availableChefsFields = JSON.parse(data.availableChefsFields)
+                    initializeIntakeMap(availableChefsFields);
+
+                    abp.notify.success(
+                        data.responseText,
+                        'Mapping Synchronized Successfully'
+                    ); 
+                },
+                error: function (data) {
+                    abp.notify.error(
+                        data.responseText,
+                        'Mapping Not Synchronized Successful'
+                    );
+                }
+            }
+        );
     }
 
     function handleSave() {
@@ -130,16 +163,21 @@
             }
         );
     }
+    
+    function handleReset() {
+        $(intakeMapColumn).empty();
+        let availableChefsFields = JSON.parse(availableChefFieldsString)
+        initializeIntakeMap(availableChefsFields);
+        bindExistingMaps();
+    }
 
     function handleBack() {
         location.href = '/ApplicationForms';
     }
 
-    function initializeIntakeMap() {
+    function initializeIntakeMap(availableChefsFields) {
         try {
-            let availableChefsFields = JSON.parse(availableChefFieldsString);
             let intakeFields = JSON.parse(intakeFieldsString);
-            const intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
             
             for (let intakeField of intakeFields) {
                 let intakeFieldJson = JSON.parse(intakeField);
@@ -154,6 +192,7 @@
             }
 
             let keys = Object.keys(availableChefsFields);
+            dataTable.clear();
             for (let key of keys) {
                 let jsonObj = JSON.parse(availableChefsFields[key]);
                 if(allowableTypes.includes(jsonObj.type.trim())) {

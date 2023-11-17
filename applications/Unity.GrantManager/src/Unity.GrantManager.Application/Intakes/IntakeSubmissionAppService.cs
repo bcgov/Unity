@@ -8,7 +8,6 @@ using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Intakes.Integration;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Intakes
 {
