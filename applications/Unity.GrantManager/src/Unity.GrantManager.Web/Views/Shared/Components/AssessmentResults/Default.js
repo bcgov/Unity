@@ -29,7 +29,8 @@
                         'The application has been updated.'
                     );
                     $('#saveAssessmentResultBtn').prop('disabled', true);
-                    PubSub.publish('application_assessment_results_saved');                    
+                    PubSub.publish('application_assessment_results_saved');
+                    PubSub.publish('refresh_detail_panel_summary');
                 });
         }
         catch (error) {

@@ -6,6 +6,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("Widgets/Summary")]
+    [Route("GrantApplications/Widgets/Summary")]
     public class SummaryWidgetController : AbpController
     {
         
