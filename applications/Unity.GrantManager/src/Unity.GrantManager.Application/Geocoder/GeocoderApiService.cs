@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -15,10 +16,12 @@ namespace Unity.GrantManager.Geocoder
     public class GeocoderApiService : ApplicationService, IGeocoderService
     {
         private readonly RestClient _restClient;
+        private readonly IConfiguration _configuration;
 
-        public GeocoderApiService(RestClient restClient)
+        public GeocoderApiService(RestClient restClient, IConfiguration configuration)
         {
             _restClient = restClient;
+            _configuration = configuration;
         }
 
 
@@ -56,7 +59,7 @@ namespace Unity.GrantManager.Geocoder
 
                 return addressDetailsDto;
             }
-            catch (Exception)
+            catch (Exception Ex)
             {
                 return new AddressDetailsDto();
             }
@@ -64,17 +67,31 @@ namespace Unity.GrantManager.Geocoder
 
         private RegionalDistrictDto? MapToRegionalDistrict(dynamic dynamic)
         {
-            return new RegionalDistrictDto();
+            return new RegionalDistrictDto()
+            {
+                Id = dynamic?.features[0]?.properties?.LGL_ADMIN_AREA_ID,
+                Name = dynamic?.features[0]?.properties?.ADMIN_AREA_NAME,
+            };
         }
 
         private EconomicRegionDto? MapToEconomicRegion(dynamic dynamic)
         {
-            return new EconomicRegionDto();
+            return new EconomicRegionDto()
+            {
+                Id = dynamic?.features[0]?.properties?.ECONOMIC_REGION_ID,
+                Name = dynamic?.features[0]?.properties?.ECONOMIC_REGION_NAME,
+            };
         }
 
         private ElectoralDistrictDto? MapToElectoralDistrict(dynamic dynamic)
         {
-            return new ElectoralDistrictDto();
+            return new ElectoralDistrictDto()
+            {
+                Id = dynamic?.features[0]?.properties?.ELECTORAL_DISTRICT_ID,
+                Abbreviation = dynamic?.features[0]?.properties?.ED_ABBREVIATION,
+                Name = dynamic?.features[0]?.properties?.ED_NAME,
+
+            };
         }
 
         private static LocationDto? MapToLocation(dynamic locationResult)
@@ -83,68 +100,120 @@ namespace Unity.GrantManager.Geocoder
 
             return new LocationDto()
             {
+                Score = locationResult?.features[0]?.properties?.score,
+                FullAddress = locationResult?.features[0]?.properties?.fullAddress,
+                StreetName = locationResult?.features[0]?.properties?.streetName,
+                StreetType = locationResult?.features[0]?.properties?.streetType,
+                LocalityName = locationResult?.features[0]?.properties?.localityName,
+                LocalityType = locationResult?.features[0]?.properties?.localityType,
+                ProvinceCode = locationResult?.features[0]?.properties?.provinceCode,
+                ElectoralArea = locationResult?.features[0]?.properties?.electoralArea,
                 Coordinates = new((double)locationCoordinates[0], (double)locationCoordinates[1])
             };
         }
 
         private async Task<dynamic?> GetLocationDetails(string address)
         {
-            var request = new RestRequest($"https://geocoder.api.gov.bc.ca/addresses.json?outputSRS=3005&addressString={address}");
-
-            var response = await _restClient.GetAsync(request);
-
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
+            try
             {
-                string content = response.Content;
-                return JsonConvert.DeserializeObject<dynamic>(content)!;
-            }
 
-            //polly library for retry on transiene errors and rate limit
-            return null;
+
+                var request = new RestRequest($"{_configuration["Geocoder:LocationDetails:BaseUri"]}/addresses.json?outputSRS=3005&addressString={address}");
+
+                var response = await _restClient.GetAsync(request);
+
+                if (response != null
+                    && response.Content != null
+                    && response.IsSuccessStatusCode)
+                {
+                    string content = response.Content;
+                    return JsonConvert.DeserializeObject<dynamic>(content)!;
+                }
+
+                //polly library for retry on transiene errors and rate limit
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
+
 
 
 
         private async Task<dynamic?> GetElectoralDistrict(LocationCoordinates coordinates)
         {
-            var request = new RestRequest("https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=pub%3AWHSE_ADMIN_BOUNDARIES.EBC_PROV_ELECTORAL_DIST_SVW&srsname=EPSG%3A4326&propertyName=ED_NAME&outputFormat=application%2Fjson&cql_filter=INTERSECTS(SHAPE%2CPOINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
-
-            var response = await _restClient.GetAsync(request);
-
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
+            try
             {
-                string content = response.Content;
-                return JsonConvert.DeserializeObject<dynamic>(content)!;
-            }
 
-            return null;
+                var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
+                $"{_configuration["Geocoder:ElectoralDistrict:feature"]}" +
+                $"&srsname=EPSG:4326" +
+                $"&propertyName={_configuration["Geocoder:ElectoralDistrict:property"]}" +
+                $"&outputFormat=application/json" +
+                $"&cql_filter=INTERSECTS({_configuration["Geocoder:ElectoralDistrict:querytype"]}" +
+                $",POINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
+
+                var response = await _restClient.GetAsync(request);
+
+                if (response != null
+                    && response.Content != null
+                    && response.IsSuccessStatusCode)
+                {
+                    string content = response.Content;
+                    return JsonConvert.DeserializeObject<dynamic>(content)!;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         private async Task<dynamic?> GetEconomicRegion(LocationCoordinates coordinates)
         {
-            var request = new RestRequest("https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=pub%3AWHSE_HUMAN_CULTURAL_ECONOMIC.CEN_ECONOMIC_REGIONS_SVW&srsname=EPSG%3A4326&propertyName=ECONOMIC_REGION_NAME&outputFormat=application%2Fjson&cql_filter=INTERSECTS(GEOMETRY%2CPOINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
-
-            var response = await _restClient.GetAsync(request);
-
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
+            try
             {
-                string content = response.Content;
-                return JsonConvert.DeserializeObject<dynamic>(content)!;
-            }
 
-            return null;
+                var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
+                 $"{_configuration["Geocoder:EconomicRegion:feature"]}" +
+                 $"&srsname=EPSG:4326" +
+                 $"&propertyName={_configuration["Geocoder:EconomicRegion:property"]}" +
+                 $"&outputFormat=application%2Fjson" +
+                 $"&cql_filter=INTERSECTS({_configuration["Geocoder:EconomicRegion:querytype"]}" +
+                 $",POINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
+
+
+                var response = await _restClient.GetAsync(request);
+
+                if (response != null
+                    && response.Content != null
+                    && response.IsSuccessStatusCode)
+                {
+                    string content = response.Content;
+                    return JsonConvert.DeserializeObject<dynamic>(content)!;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         private async Task<dynamic?> GetRegionalDistrict(LocationCoordinates coordinates)
         {
-            var request = new RestRequest("https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=pub%3AWHSE_LEGAL_ADMIN_BOUNDARIES.ABMS_REGIONAL_DISTRICTS_SP&srsname=EPSG%3A4326&propertyName=ADMIN_AREA_NAME&outputFormat=application%2Fjson&cql_filter=INTERSECTS(SHAPE%2CPOINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
-
+            var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
+               $"{_configuration["Geocoder:RegionalDistrict:feature"]}" +
+               $"&srsname=EPSG:4326" +
+               $"&propertyName={_configuration["Geocoder:RegionalDistrict:property"]}" +
+               $"&outputFormat=application/json" +
+               $"&cql_filter=INTERSECTS({_configuration["Geocoder:RegionalDistrict:querytype"]}" +
+               $",POINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
             var response = await _restClient.GetAsync(request);
 
             if (response != null
