@@ -73,13 +73,9 @@
         createModal.open();
     });
 
-    $('#search-bar').on('keyup', function (e) {
-        handleSearch(e);
-    });
+});
 
-    function handleSearch(e) {
-        let filterValue = e.currentTarget.value;
-        let oTable = $('#ApplicationFormsTable').dataTable();
-        oTable.fnFilter(filterValue);
-    }
+
+$('#search-bar').on('keyup', function (e) {
+    handleSearch(e, 'ApplicationFormsTable');
 });

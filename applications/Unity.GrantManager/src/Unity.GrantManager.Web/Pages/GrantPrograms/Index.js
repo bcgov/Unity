@@ -78,13 +78,10 @@
      * Grant Programs: UPDATE
      */
 
-    $('#search-bar').on('keyup', function (e) {
-        handleSearch(e);
-    });
+    
+});
 
-    function handleSearch(e) {
-        let filterValue = e.currentTarget.value;
-        let oTable = $('#GrantProgramsTable').dataTable();
-        oTable.fnFilter(filterValue);
-    }
+
+$('#search-bar').on('keyup', function (e) {
+    handleSearch(e, 'GrantProgramsTable');
 });

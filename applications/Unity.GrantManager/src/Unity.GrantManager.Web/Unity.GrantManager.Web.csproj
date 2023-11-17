@@ -66,6 +66,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Pages\_Shared\" />
     <Folder Include="Views\Shared\Components\AssessmentResults\" />
   </ItemGroup>
 </Project>
