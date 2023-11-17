@@ -8,10 +8,10 @@
      */
     let dataTable = $('#IntakesTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            serverSide: true,
+            serverSide: false,
             paging: true,
             order: [[1, "asc"]],
-            searching: false,
+            searching: true,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(unity.grantManager.intakes.intake.getList),
             columnDefs: [
@@ -69,4 +69,14 @@
         e.preventDefault();
         createModal.open();
     });
+
+    $('#search-bar').on('keyup', function (e) {
+        handleSearch(e);
+    });
+
+    function handleSearch(e) {
+        let filterValue = e.currentTarget.value;
+        let oTable = $('#IntakesTable').dataTable();
+        oTable.fnFilter(filterValue);
+    }
 });
