@@ -1,0 +1,123 @@
+﻿@using Microsoft.AspNetCore.Authorization;
+@using Unity.GrantManager.Localization
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Permissions;
+@using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
+
+@inject IAuthorizationService AuthorizationService
+@inject IStringLocalizer<GrantManagerResource> L
+@model ProjectInfoViewModel
+@{
+    Layout = null;
+}
+
+<input type="hidden" id="ProjectInfoViewApplicationId" value="@Model.ApplicationId" />
+
+<abp-row class="px-1 pb-2 mb-4 project-info-container">
+    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
+        <div id="ProjectInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+            <h6 class="ps-1 fw-bold">@L["ProjectInfoView:ProjectInfoTitle"].Value</h6>
+        </div>
+    </abp-column>
+    <form id="projectInfoForm">
+        <abp-row class="m-0 project-info-form">
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ProjectName" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ProjectStartDate" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ProjectEndDate" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ProjectSummary" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ProjectLocation" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ProjectFundingTotal" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-select asp-for="@Model.ProjectInfo.Sector" asp-items="@Model.FundingRiskList"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-select asp-for="@Model.ProjectInfo.SubSector" asp-items="@Model.DueDilligenceList"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.Community" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-select asp-for="@Model.ProjectInfo.EconomicRegion" asp-items="@Model.RecommendationActionList"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-select asp-for="@Model.ProjectInfo.ElectoralDistrict" asp-items="@Model.DeclineRationalActionList"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.CommunityPopulation" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.Acquisition" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-select asp-for="@Model.ProjectInfo.Forestry" asp-items="@Model.DeclineRationalActionList"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-select asp-for="@Model.ProjectInfo.ForestryFocus" asp-items="@Model.DeclineRationalActionList"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+            </abp-row>
+            <abp-column size="_12" class="px-1 d-flex justify-content-end mt-2">
+                <abp-button text="Save" id="saveProjectInfoBtn" class="save-project-btn" icon-type="Other"
+                    icon="fl fl-save" button-type="Light" disabled="true" />
+            </abp-column>
+        </abp-row>
+    </form>
+</abp-row>
+
+
+<script defer>
+    (function () {
+        $('.currency-input').maskMoney();
+    })();
+</script>
