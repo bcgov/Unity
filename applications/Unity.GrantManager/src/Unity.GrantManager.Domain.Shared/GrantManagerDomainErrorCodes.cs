@@ -15,5 +15,4 @@ public static class GrantManagerDomainErrorCodes
     public const string AssessmentUserAssignmentAlreadyExists = "GrantManager:AssessmentUserAssignmentAlreadyExists";
     public const string CantCreateAssessmentForClosedApplication = "GrantManager:CantCreateAssessmentForClosedApplication";
     public const string CantUpdateAssessmentForClosedApplication = "GrantManager:CantUpdateAssessmentForClosedApplication";
-    public const string CantCreateAssessmentForFinalState = "GrantManager:CantCreateAssessmentForFinalState";
 }
