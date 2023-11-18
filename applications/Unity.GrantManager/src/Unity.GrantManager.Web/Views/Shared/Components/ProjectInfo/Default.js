@@ -66,8 +66,8 @@
 });
 
 
-function enableSaveBtn(inputText) {    
-    if (inputText.value.trim() != "") {
+function enableSaveBtn(inputText) {
+    if (inputText?.value?.trim() != "") {
         $('#saveProjectInfoBtn').prop('disabled', false);
     } else {
         $('#saveProjectInfoBtn').prop('disabled', true);

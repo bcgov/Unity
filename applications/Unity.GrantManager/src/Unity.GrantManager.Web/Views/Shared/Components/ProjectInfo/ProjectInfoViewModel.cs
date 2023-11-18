@@ -17,6 +17,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public List<SelectListItem> DeclineRationalActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList);
         public List<SelectListItem> RecommendationActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.RecommendationActionList);
 
+        public List<SelectListItem> ForestryList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.ForestryList);
+
+        public List<SelectListItem> ForestryFocusList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.ForestryFocusList);
+
+        public List<SelectListItem> AcquisitionList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.AcquisitionList);
+
         public Guid ApplicationId { get; set; }
         public bool IsFinalDecisionMade { get; set; }
         public ProjectInfoViewModelModel ProjectInfo { get; set; } = new();
@@ -32,13 +38,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? ProjectSummary { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ProjectStartDate")]
-            public string? ProjectStartDate { get; set; }
+            public DateTime? ProjectStartDate { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ProjectEndDate")]
-            public string? ProjectEndDate { get; set; }
-
-            [Display(Name = "ProjectInfoView:ProjectInfo.ProjectLocation")]
-            public string? ProjectLocation { get; set; }
+            public DateTime? ProjectEndDate { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.RequestedAmount")]
             [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
@@ -78,14 +81,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? CommunityPopulation { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.Acquisition")]
+            [SelectItems(nameof(AcquisitionList))]
             public string? Acquisition { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.Forestry")]
-            [SelectItems(nameof(DeclineRationalActionList))]
+            [SelectItems(nameof(ForestryList))]
             public string? Forestry { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ForestryFocus")]
-            [SelectItems(nameof(DeclineRationalActionList))]
+            [SelectItems(nameof(ForestryFocusList))]
             public string? ForestryFocus { get; set; }
 
         }

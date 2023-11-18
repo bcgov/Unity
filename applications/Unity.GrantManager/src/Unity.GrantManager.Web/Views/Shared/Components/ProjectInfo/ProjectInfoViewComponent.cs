@@ -38,6 +38,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             model.ProjectInfo = new()
             {
+                ProjectName = application.ProjectName,
                 ProjectSummary = application.ProjectSummary,
                 RequestedAmount = application.RequestedAmount,
                 TotalProjectBudget = application.TotalProjectBudget,
