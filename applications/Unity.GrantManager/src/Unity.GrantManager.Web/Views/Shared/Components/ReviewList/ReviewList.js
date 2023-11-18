@@ -10,6 +10,13 @@ const actionButtonConfigMap = {
     _Fallback: { buttonType: 'unityWorkflow', order: 100, icon: 'fl-endpoint' }
 }
 
+const finalDecisionStates = [
+    'GRANT_NOT_APPROVED',
+    'GRANT_APPROVED',
+    'CLOSED',
+    'WITHDRAWN'
+];
+
 $(function () {
     
     let inputAction = function (requestData, dataTableSettings) {
@@ -165,8 +172,8 @@ $(function () {
         }
     }
     async function CheckAssessmentCreateButton() {
-        let applicationStatus = await getActionButtonConfigMap();
-        return applicationStatus.statusCode != "GRANT_NOT_APPROVED" && applicationStatus.statusCode != "GRANT_APPROVED" && applicationStatus.statusCode != "CLOSED" && applicationStatus.statusCode != "WITHDRAWN";
+        let applicationStatus = await getActionButtonConfigMap();        
+        return !finalDecisionStates.includes(applicationStatus.statusCode);        
     }
 
     reviewListTable.buttons(0, null).container().prependTo("#DetailsActionBarStart");

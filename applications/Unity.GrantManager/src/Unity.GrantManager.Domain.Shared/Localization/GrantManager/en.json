@@ -148,6 +148,7 @@
     "Permission:GrantApplicationPermissions.AssessmentResults.EditApprovedAmount": "Assessment Results Edit Approved Amount",
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
+    "GrantManager:CantCreateAssessmentForFinalState": "Business Exception: You cannot create an assessment for an application in a final state.",
 
     "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",
     "AssessmentResultsView:AssessmentResultsForm.ProjectSummary": "Project Summary",
