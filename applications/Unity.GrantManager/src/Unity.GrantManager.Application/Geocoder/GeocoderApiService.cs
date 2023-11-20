@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Polly;
+using Polly.CircuitBreaker;
+using Polly.Wrap;
 using RestSharp;
 using System;
 using System.Threading.Tasks;
@@ -117,21 +120,37 @@ namespace Unity.GrantManager.Geocoder
             try
             {
 
+                var retryPolicy = Policy
+               .Handle<Exception>() // Customize this based on your API's exception types
+               .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),onRetry: (exception, retryAttempt) =>
+               {
+                   Console.WriteLine("Error: " + exception.Message + "... Retry Count " + retryAttempt);
+               });
 
-                var request = new RestRequest($"{_configuration["Geocoder:LocationDetails:BaseUri"]}/addresses.json?outputSRS=3005&addressString={address}");
 
-                var response = await _restClient.GetAsync(request);
+                var circuitBreakerPolicy = Policy
+                .Handle<Exception>()
+                .CircuitBreakerAsync(3, TimeSpan.FromMinutes(1));
 
-                if (response != null
-                    && response.Content != null
-                    && response.IsSuccessStatusCode)
-                {
-                    string content = response.Content;
-                    return JsonConvert.DeserializeObject<dynamic>(content)!;
-                }
 
-                //polly library for retry on transiene errors and rate limit
-                return null;
+                var policyWrap = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy);
+
+
+                var result = await policyWrap.ExecuteAsync<dynamic?>(async () => {
+                    var request = new RestRequest($"{_configuration["Geocoder:LocationDetails:BaseUri"]}/addresses.json?outputSRS=3005&addressString={address}");
+
+                    var response = await _restClient.GetAsync(request);
+
+                    if (response != null
+                        && response.Content != null
+                        && response.IsSuccessStatusCode)
+                    {
+                        string content = response.Content;
+                        return JsonConvert.DeserializeObject<dynamic>(content)!;
+                    }
+                    throw new Exception(response.ErrorMessage);
+                });
+                return result;
             }
             catch (Exception ex)
             {
@@ -146,8 +165,22 @@ namespace Unity.GrantManager.Geocoder
         {
             try
             {
+                var retryPolicy = Policy
+              .Handle<Exception>() // Customize this based on your API's exception types
+              .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), onRetry: (exception, retryAttempt) =>
+              {
+                  Console.WriteLine("Error: " + exception.Message + "... Retry Count " + retryAttempt);
+              });
 
-                var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
+
+                var circuitBreakerPolicy = Policy
+                .Handle<Exception>()
+                .CircuitBreakerAsync(3, TimeSpan.FromMinutes(1));
+
+
+                var policyWrap = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy);
+                var result = await policyWrap.ExecuteAsync<dynamic?>(async () => { 
+                    var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
                 $"{_configuration["Geocoder:ElectoralDistrict:feature"]}" +
                 $"&srsname=EPSG:4326" +
                 $"&propertyName={_configuration["Geocoder:ElectoralDistrict:property"]}" +
@@ -165,7 +198,9 @@ namespace Unity.GrantManager.Geocoder
                     return JsonConvert.DeserializeObject<dynamic>(content)!;
                 }
 
-                return null;
+                return new Exception(response.ErrorMessage);
+                });
+                return result;
             }
             catch (Exception ex)
             {
@@ -178,7 +213,22 @@ namespace Unity.GrantManager.Geocoder
             try
             {
 
-                var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
+                var retryPolicy = Policy
+                .Handle<Exception>() // Customize this based on your API's exception types
+                .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), onRetry: (exception, retryAttempt) =>
+                {
+                    Console.WriteLine("Error: " + exception.Message + "... Retry Count " + retryAttempt);
+                });
+
+
+                var circuitBreakerPolicy = Policy
+                .Handle<Exception>()
+                .CircuitBreakerAsync(3, TimeSpan.FromMinutes(1));
+                var policyWrap = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy);
+                var result = await policyWrap.ExecuteAsync<dynamic?>(async () =>
+                {
+
+                    var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
                  $"{_configuration["Geocoder:EconomicRegion:feature"]}" +
                  $"&srsname=EPSG:4326" +
                  $"&propertyName={_configuration["Geocoder:EconomicRegion:property"]}" +
@@ -187,6 +237,50 @@ namespace Unity.GrantManager.Geocoder
                  $",POINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
 
 
+                    var response = await _restClient.GetAsync(request);
+
+                    if (response != null
+                        && response.Content != null
+                        && response.IsSuccessStatusCode)
+                    {
+                        string content = response.Content;
+                        return JsonConvert.DeserializeObject<dynamic>(content)!;
+                    }
+
+                 return new Exception(response.ErrorMessage);
+                });
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        private async Task<dynamic?> GetRegionalDistrict(LocationCoordinates coordinates)
+        {
+            var retryPolicy = Policy
+               .Handle<Exception>() // Customize this based on your API's exception types
+               .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), onRetry: (exception, retryAttempt) =>
+               {
+                   Console.WriteLine("Error: " + exception.Message + "... Retry Count " + retryAttempt);
+               });
+
+
+            var circuitBreakerPolicy = Policy
+            .Handle<Exception>()
+            .CircuitBreakerAsync(3, TimeSpan.FromMinutes(1));
+            var policyWrap = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy);
+            var result = await policyWrap.ExecuteAsync<dynamic?>(async () =>
+            {
+
+                var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
+               $"{_configuration["Geocoder:RegionalDistrict:feature"]}" +
+               $"&srsname=EPSG:4326" +
+               $"&propertyName={_configuration["Geocoder:RegionalDistrict:property"]}" +
+               $"&outputFormat=application/json" +
+               $"&cql_filter=INTERSECTS({_configuration["Geocoder:RegionalDistrict:querytype"]}" +
+               $",POINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
                 var response = await _restClient.GetAsync(request);
 
                 if (response != null
@@ -197,34 +291,9 @@ namespace Unity.GrantManager.Geocoder
                     return JsonConvert.DeserializeObject<dynamic>(content)!;
                 }
 
-                return null;
-            }
-            catch (Exception ex)
-            {
-                return null;
-            }
-        }
-
-        private async Task<dynamic?> GetRegionalDistrict(LocationCoordinates coordinates)
-        {
-            var request = new RestRequest($"{_configuration["Geocoder:BaseUri"]}" +
-               $"{_configuration["Geocoder:RegionalDistrict:feature"]}" +
-               $"&srsname=EPSG:4326" +
-               $"&propertyName={_configuration["Geocoder:RegionalDistrict:property"]}" +
-               $"&outputFormat=application/json" +
-               $"&cql_filter=INTERSECTS({_configuration["Geocoder:RegionalDistrict:querytype"]}" +
-               $",POINT(" + coordinates.Latitude.ToString() + " " + coordinates.Longitude.ToString() + "))");
-            var response = await _restClient.GetAsync(request);
-
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
-            {
-                string content = response.Content;
-                return JsonConvert.DeserializeObject<dynamic>(content)!;
-            }
-
-            return null;
+                return new Exception(response.ErrorMessage); ;
+            });
+            return result;
         }
     }
 }
