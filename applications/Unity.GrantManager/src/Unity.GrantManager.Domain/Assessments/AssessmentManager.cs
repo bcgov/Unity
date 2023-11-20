@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -33,6 +35,12 @@ public class AssessmentManager : DomainService
         if (await IsAssignedAsync(application, assessorUser))
         {
             throw new BusinessException(GrantManagerDomainErrorCodes.AssessmentUserAssignmentAlreadyExists);
+        }
+
+        // Domain Rule: An assessment cannot be created for an application in final state
+        if (GrantApplicationStateGroups.FinalDecisionStates.Contains(application.ApplicationStatus.StatusCode))
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.CantCreateAssessmentForFinalStateApplication);
         }
 
         return await _assessmentRepository.InsertAsync(

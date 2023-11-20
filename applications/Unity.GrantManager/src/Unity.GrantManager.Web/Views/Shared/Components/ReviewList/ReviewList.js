@@ -10,8 +10,15 @@ const actionButtonConfigMap = {
     _Fallback: { buttonType: 'unityWorkflow', order: 100, icon: 'fl-endpoint' }
 }
 
+const finalApplicationStates = [
+    'GRANT_NOT_APPROVED',
+    'GRANT_APPROVED',
+    'CLOSED',
+    'WITHDRAWN'
+];
+
 $(function () {
-    
+
     let inputAction = function (requestData, dataTableSettings) {
         const applicationId = pageApplicationId
         return applicationId;
@@ -80,7 +87,7 @@ $(function () {
                 unity.grantManager.assessments.assessment.getDisplayList, inputAction, responseCallback
             ),
             buttons: assessmentButtonsGroup,
-            columnDefs: [                
+            columnDefs: [
                 {
                     title: '',
                     data: 'id',
@@ -156,7 +163,7 @@ $(function () {
     if (abp.auth.isGranted('GrantApplicationManagement.Assessments.Create')) {
         CreateAssessmentButton();
     }
-    async function CreateAssessmentButton(){
+    async function CreateAssessmentButton() {
         let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
         createButtons.container().prependTo("#DetailsActionBarStart");
         let isPermitted = await CheckAssessmentCreateButton();
@@ -166,7 +173,7 @@ $(function () {
     }
     async function CheckAssessmentCreateButton() {
         let applicationStatus = await getActionButtonConfigMap();
-        return applicationStatus.statusCode != "GRANT_NOT_APPROVED" && applicationStatus.statusCode != "GRANT_APPROVED" && applicationStatus.statusCode != "CLOSED" && applicationStatus.statusCode != "WITHDRAWN";
+        return !finalApplicationStates.includes(applicationStatus.statusCode);
     }
 
     reviewListTable.buttons(0, null).container().prependTo("#DetailsActionBarStart");
@@ -192,7 +199,7 @@ $(function () {
     );
     PubSub.subscribe(
         'application_status_changed',
-       async (msg, data) => {
+        async (msg, data) => {
             let isPermitted = await CheckAssessmentCreateButton();
             if (!isPermitted) {
                 reviewListTable.buttons('Create:name').disable();
@@ -202,16 +209,16 @@ $(function () {
 
     $('#nav-review-and-assessment-tab').one('click', function () {
         reviewListTable.columns.adjust();
-         });
+    });
 });
 
 function handleRowSelection(e, dt, type, indexes, reviewListTable) {
     if (type === 'row') {
         let selectedData = reviewListTable.row(indexes).data();
-            console.log('Selected Data:', selectedData);
-            document.getElementById("AssessmentId").value = selectedData.id;
+        console.log('Selected Data:', selectedData);
+        document.getElementById("AssessmentId").value = selectedData.id;
         PubSub.publish('select_application_review', selectedData);
-            PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
+        PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
         e.currentTarget.classList.toggle('selected');
         refreshActionButtons(dt, selectedData.id);
     }
