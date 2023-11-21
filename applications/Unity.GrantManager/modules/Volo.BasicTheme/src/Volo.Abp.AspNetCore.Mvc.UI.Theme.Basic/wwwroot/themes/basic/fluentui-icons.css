@@ -229,7 +229,6 @@
     content: '\E8CB';
 }
 
-
 .fl-review:before {
     content: '\F32A';
 }
@@ -274,6 +273,15 @@
 .fl-save:before {
     content: '\E74E';
 }
+
+.fl-synch:before {
+    content: '\E895';
+}
+
+.fl-undo:before {
+    content: '\E7A7';
+}
+
 
 .fl-edit:before {
     content: '\E70F';

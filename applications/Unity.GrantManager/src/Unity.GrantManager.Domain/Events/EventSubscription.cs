@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Unity.GrantManager.Intakes
+namespace Unity.GrantManager.Events
 {
     public class EventSubscription
     {        

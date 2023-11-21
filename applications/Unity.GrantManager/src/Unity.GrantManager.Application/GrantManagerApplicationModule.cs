@@ -33,6 +33,8 @@ namespace Unity.GrantManager;
     )]
 public class GrantManagerApplicationModule : AbpModule
 {
+    //Set some defaults 
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();

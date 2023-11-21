@@ -25,13 +25,16 @@
 <input type="hidden" id="availableChefsFields" value="@Model.ApplicationFormDto.AvailableChefsFields">
 <input type="hidden" id="existingMapping" value="@Model.ApplicationFormDto.SubmissionHeaderMapping">
 <input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto.Id">
-
+<input type="hidden" id="chefsFormId" value="@Model.ApplicationFormDto.ChefsApplicationFormGuid">
+<input type="hidden" id="chefsFormVersionId" value="@Model.ApplicationFormDto.ChefsFormVersionGuid">
 
 <div class="container-fluid px-2">
     <div class="d-flex my-1 p-2">
         <abp-card-title>Form Mapping - @Model.ApplicationFormDto.ApplicationFormName </abp-card-title>
     </div>
-
+    <div class="d-flex my-1 p-2">
+        <abp-card-title>Version - @Model.ApplicationFormDto.Version </abp-card-title>
+    </div>    
     <div class="main-content">
         <div class="table-div left">
             <abp-table id="ApplicationFormsTable" class="chef-field-table">
@@ -53,19 +56,36 @@
             <div id="intake-map-available-fields-column" class="col" style="overflow-y:scroll">
             </div>
         </div>
-       <div class="buttons-div">
+    </div>
+    <div class="content-div">
+        <div class="buttons">
+            <div class="buttons-div">
+            <abp-button id="btn-sync"
+                        text="Sync Available"
+                        disabled="false"
+                        icon-type="Other"
+                        icon="fl fl-synch"
+                        button-type="Success" />
+                &nbsp;&nbsp;
             <abp-button id="btn-save"
-                        text="Save"
+                        text="Save Mapping"
                         disabled="true"
                         icon-type="Other"
                         icon="fl fl-save"
                         button-type="Primary" />
             &nbsp;&nbsp;
+            <abp-button id="btn-reset"
+                        text="Reset Mapping"
+                        icon-type="Other"
+                        icon="fl fl-undo"
+                        button-type="Light" />
+                &nbsp;&nbsp;
             <abp-button id="btn-back"
                         text="Back"
                         icon-type="Other"
                         icon="fl fl-open-pane"
                         button-type="Light" />
-    </div>
+            </div>
+        </div>
     </div>
 </div>

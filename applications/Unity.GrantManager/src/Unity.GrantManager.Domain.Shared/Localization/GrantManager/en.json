@@ -131,6 +131,7 @@
     "ApplicationForms:Description": "Description",
     "ApplicationForms:ChefsFormId": "CHEFS Form Id",
     "ApplicationForms:SubmissionHeaderMapping": "Mapping",
+    "ApplicationForms:ChefsFormVersionGuid": "CHEFS Form Version",
     "ApplicationForms:ChefsCriteriaFormId": "CHEFS Criteria Form Id",
     "ApplicationForms:ChefsFormApiKey": "CHEFS Form Api Key",
     "ApplicationForms:Category": "Category",
@@ -148,6 +149,7 @@
     "Permission:GrantApplicationPermissions.AssessmentResults.EditApprovedAmount": "Assessment Results Edit Approved Amount",
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
+    "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
 
     "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",
     "AssessmentResultsView:AssessmentResultsForm.ProjectSummary": "Project Summary",

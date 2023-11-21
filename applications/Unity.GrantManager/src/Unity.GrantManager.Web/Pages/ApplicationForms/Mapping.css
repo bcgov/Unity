@@ -1,7 +1,7 @@
 ﻿.main-content {
     background-color: #f9f7f7;
     border: 1px solid black;
-    height: 700px;
+    height: 630px;
     padding: 4px
 }
 
@@ -105,6 +105,19 @@ td {
     background-color: transparent !important;
 }
 tr:nth-child(even) {background-color: #f2f2f2;}
+
+.content-div {
+    width: 100%;
+    height: auto;
+    margin: 0 auto;
+    position: relative;
+}
+
+.buttons {
+    margin: auto;
+    width: fit-content;
+    display: block;
+}
 
 .buttons-div {
     display: inline-flex;

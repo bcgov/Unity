@@ -92,7 +92,11 @@
         </div>
         <div id="unity_sidebar_menu_footer" class="align-self-center px-4 py-2">
             <div id="unity_version_number">
-                <span class="badge border text-muted">UGM @(Assembly.GetEntryAssembly().GetName().Version)</span>
+                <span class="badge border text-muted">UGM @(Assembly
+                    .GetEntryAssembly()
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                    .InformationalVersion)
+                </span>
             </div>
         </div>
     </div>
