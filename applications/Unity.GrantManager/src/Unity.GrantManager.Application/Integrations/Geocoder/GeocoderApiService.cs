@@ -57,7 +57,7 @@ namespace Unity.GrantManager.Integrations.Geocoder
                  $"&cql_filter=INTERSECTS({_configuration["Geocoder:EconomicRegion:querytype"]}" +
                  $",POINT(" + locationCoordinates.Latitude.ToString() + " " + locationCoordinates.Longitude.ToString() + "))";
 
-            return ResultMapper.MapToElectoralDistrict(await GetGeoCodeDataSegmentAsync(resource));
+            return ResultMapper.MapToEconomicRegion(await GetGeoCodeDataSegmentAsync(resource));
         }
 
         public async Task<RegionalDistrictDto> GetRegionalDistrictAsync(LocationCoordinates locationCoordinates)
@@ -70,7 +70,7 @@ namespace Unity.GrantManager.Integrations.Geocoder
                $"&cql_filter=INTERSECTS({_configuration["Geocoder:RegionalDistrict:querytype"]}" +
                $",POINT(" + locationCoordinates.Latitude.ToString() + " " + locationCoordinates.Longitude.ToString() + "))";
 
-            return ResultMapper.MapToElectoralDistrict(await GetGeoCodeDataSegmentAsync(resource));
+            return ResultMapper.MapToRegionalDistrict(await GetGeoCodeDataSegmentAsync(resource));
         }
 
         private async Task<dynamic?> GetGeoCodeDataSegmentAsync(string resource)
