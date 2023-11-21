@@ -92,10 +92,10 @@ jobs:
     - name: Push build images to OpenShift container registry
       run: | 
         echo project = ${{steps.project.outputs.PROJECT}}
-        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
-        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
-        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
-        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
+#        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
+#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
+#        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
+#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
     - name: Push build version to OpenShift config map
       run: | 
         oc set data cm/unity-grantmanager-web Application_Version=${{needs.GenerateTag.outputs.IMAGETAG}}
