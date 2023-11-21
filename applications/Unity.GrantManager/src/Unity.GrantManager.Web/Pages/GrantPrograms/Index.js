@@ -82,6 +82,3 @@
 });
 
 
-$('#search-bar').on('keyup', function (e) {
-    handleSearch(e, 'GrantProgramsTable');
-});
