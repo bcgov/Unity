@@ -5,6 +5,9 @@ namespace Unity.GrantManager.Geocoder
 {
     public interface IGeocoderService : IApplicationService
     {
-        Task<AddressDetailsDto> GetAddressDetails(string address);
+        Task<AddressDetailsDto> GetAddressDetailsAsync(string address);
+        Task<ElectoralDistrictDto> GetElectoralDistrictAsync(LocationCoordinates locationCoordinates);
+        Task<EconomicRegionDto> GetEconomicRegionAsync(LocationCoordinates locationCoordinates);
+        Task<RegionalDistrictDto> GetRegionalDistrictAsync(LocationCoordinates locationCoordinates);
     }
 }

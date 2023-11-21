@@ -1,12 +1,17 @@
 ﻿namespace Unity.GrantManager.Geocoder
 {
     public class AddressDetailsDto
-    {
-        public string RequestedAddress { get; set; } = string.Empty;
-        public ElectoralDistrictDto? ElectoralDistrict { get;set; }
-        public EconomicRegionDto? EconomicRegion { get; set; }
-        public RegionalDistrictDto? RegionalDistrict { get; set; }
-        public LocationDto? Location { get; set; }
+    {        
+        public LocationCoordinates? Coordinates { get; set; }
+
+        public int? Score { get; set; }
+        public string? FullAddress { get; set; }
+        public string? StreetName { get; set; }
+        public string? StreetType { get; set; }
+        public string? LocalityName { get; set; }
+        public string? LocalityType { get; set; }
+        public string? ProvinceCode { get; set; }
+        public string? ElectoralArea { get; set; }
     }
 
     public class ElectoralDistrictDto
@@ -27,22 +32,6 @@
     {
         public int? Id { get; set; }
         public string? Name { get; set; }
-    }
-
-    public class LocationDto
-    {
-        public LocationCoordinates? Coordinates { get; set; }
-
-        public int? Score { get; set; }
-        public string? FullAddress { get; set; }
-        public string? StreetName { get; set; }
-        public string? StreetType { get; set; }
-        public string? LocalityName { get; set; }
-        public string? LocalityType { get; set; }
-        public string? ProvinceCode { get; set; }
-        public string? ElectoralArea { get; set; }
-
-
     }
 
     public class LocationCoordinates
