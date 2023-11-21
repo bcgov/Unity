@@ -2,10 +2,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Polly;
 using RestSharp;
 using RestSharp.Serializers.Json;
-using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unity.GrantManager.Assessments;
@@ -36,8 +34,7 @@ namespace Unity.GrantManager;
 public class GrantManagerApplicationModule : AbpModule
 {
     //Set some defaults 
-    private static int _maxRetryAttempts = 2;
-    private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
