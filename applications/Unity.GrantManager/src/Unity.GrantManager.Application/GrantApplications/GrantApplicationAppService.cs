@@ -146,11 +146,11 @@ public class GrantApplicationAppService :
                         Sector = application.Sector,
                         Community = applicant.Community,
                         Status = application.ApplicationStatus.InternalStatus,
-                        LikelihoodOfFunding = application.LikelihoodOfFunding,
+                        LikelihoodOfFunding = application.LikelihoodOfFunding!=null&&application.LikelihoodOfFunding!=""? AssessmentResultsOptionsList.FundingList[application.LikelihoodOfFunding]:"",
                         AssessmentStartDate = string.Format("{0:MM/dd/yyyy}",application.AssessmentStartDate),
                         FinalDecisionDate = string.Format("{0:MM/dd/yyyy}",application.FinalDecisionDate),
                         TotalScore = application.TotalScore.ToString(),
-                        AssessmentResult = application.AssessmentResultStatus,
+                        AssessmentResult = application.AssessmentResultStatus!=null&&application.AssessmentResultStatus!=""? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus]:"",
                         RecommendedAmount = application.RecommendedAmount,
                         ApprovedAmount = application.ApprovedAmount,
                         Batch = "" // to-do: ask BA for the implementation of Batch field

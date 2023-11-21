@@ -7,5 +7,7 @@ namespace Unity.GrantManager.Events
     public interface IChefsEventSubscriptionService : IApplicationService
     {
         Task<bool> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto);
+
+        Task<bool> PublishedFormAsync(EventSubscriptionDto eventSubscriptionDto);
     }
 }

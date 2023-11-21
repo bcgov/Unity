@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
+﻿using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Intakes
 {

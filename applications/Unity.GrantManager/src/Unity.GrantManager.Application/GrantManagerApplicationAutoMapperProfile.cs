@@ -3,6 +3,7 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Events;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
@@ -30,12 +31,14 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
                 opts => opts.MapFrom(src => src.CreationTime));
         CreateMap<AssessmentWithAssessorQueryResultItem, AssessmentListItemDto>();
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
-        CreateMap<GrantPrograms.Intake, IntakeDto>();
+        CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();
-        CreateMap<CreateUpdateIntakeDto, GrantPrograms.Intake>();
+        CreateMap<CreateUpdateIntakeDto, Intakes.Intake>();
         CreateMap<CreateUpdateApplicationFormDto, ApplicationForm>();
         CreateMap<AssessmentAttachment, AssessmentAttachmentDto>();
         CreateMap<ApplicationActionResultItem, ApplicationActionDto>();
+        CreateMap<EventSubscription, EventSubscriptionDto>();
+        CreateMap<EventSubscriptionDto, EventSubscription>();
     }
 }
 
