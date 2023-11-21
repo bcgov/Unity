@@ -1,16 +1,19 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RestSharp;
 using System.Threading.Tasks;
 using Unity.GrantManager.Geocoder;
 using Unity.GrantManager.Integrations.Exceptions;
 using Unity.GrantManager.Integrations.Http;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Integrations.Geocoder
 {
-    //[RemoteService(false)]
+    [RemoteService(false)]
+    [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderService))]
     public class GeocoderApiService : ApplicationService, IGeocoderService
@@ -83,7 +86,7 @@ namespace Unity.GrantManager.Integrations.Geocoder
             }
             else
             {
-                throw new IntegrationServiceException($"Error with integration to: {resource}");
+                throw new IntegrationServiceException($"Error with integrating with request resource");
             }
         }
     }

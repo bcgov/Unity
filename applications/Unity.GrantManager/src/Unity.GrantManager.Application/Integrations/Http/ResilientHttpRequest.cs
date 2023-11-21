@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Integrations.Http
     public class ResilientHttpRequest : GrantManagerAppService, IResilientHttpRequest
     {
         private readonly RestClient _restClient;
-        private static int _maxRetryAttempts = 5;
+        private static int _maxRetryAttempts = 3;
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(10);
 
         public ResilientHttpRequest(RestClient restClient)
@@ -32,6 +32,21 @@ namespace Unity.GrantManager.Integrations.Http
         }
 
         public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, Dictionary<string, string>? headers = null, object? requestObject = null)
+        {
+            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject);
+        }
+
+        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, AsyncRetryPolicy<RestResponse> retryPolicy, Dictionary<string, string>? headers = null, object? requestObject = null)
+        {
+            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, retryPolicy);
+        }
+
+        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, AsyncRetryPolicy<RestResponse> retryPolicy, AsyncCircuitBreakerPolicy<RestResponse> circuitBreakerPolicy, Dictionary<string, string>? headers = null, object? requestObject = null)
+        {
+            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, retryPolicy, circuitBreakerPolicy);
+        }
+
+        private async Task<RestResponse> ExecuteRequestAsync(Method httpVerb, string resource, Dictionary<string, string>? headers, object? requestObject, AsyncRetryPolicy<RestResponse>? retryPolicy = null, AsyncCircuitBreakerPolicy<RestResponse>? circuitBreakerPolicy = null)
         {
             RestResponse? restResponse;
 
@@ -53,7 +68,7 @@ namespace Unity.GrantManager.Integrations.Http
                     restRequest.RequestFormat = DataFormat.Json;
                     restRequest.AddParameter("application/json; charset=utf-8", json, ParameterType.RequestBody);
                 }
-                restResponse = await RestResponseWithPolicyAsync(restRequest);
+                restResponse = await RestResponseWithPolicyAsync(restRequest, retryPolicy, circuitBreakerPolicy);
             }
             catch (Exception ex)
             {
@@ -69,18 +84,18 @@ namespace Unity.GrantManager.Integrations.Http
             return await Task.FromResult(restResponse);
         }
 
-        private async Task<RestResponse> RestResponseWithPolicyAsync(RestRequest restRequest)
+        private async Task<RestResponse> RestResponseWithPolicyAsync(RestRequest restRequest, AsyncRetryPolicy<RestResponse>? retryPolicy = null, AsyncCircuitBreakerPolicy<RestResponse>? circuitBreakerPolicy = null)
         {
-            var retryPolicy = Policy
-                .HandleResult<RestResponse>(x => !x.IsSuccessful)
-                .WaitAndRetryAsync(_maxRetryAttempts, x => _pauseBetweenFailures, async (iRestResponse, timeSpan, retryCount, context) =>
-                {
-                    await Task.Run(() => Logger.LogError("The request failed. HttpStatusCode={statusCode}. Waiting {timeSpan} seconds before retry. Number attempt {retryCount}. Uri={responseUri}; RequestResponse={responseContent}", iRestResponse.Result.StatusCode, timeSpan, retryCount, iRestResponse.Result.ResponseUri, iRestResponse.Result.Content));
-                });
+            retryPolicy ??= Policy
+                    .HandleResult<RestResponse>(x => !x.IsSuccessful)
+                    .WaitAndRetryAsync(_maxRetryAttempts, x => _pauseBetweenFailures, async (iRestResponse, timeSpan, retryCount, context) =>
+                    {
+                        await Task.Run(() => Logger.LogError("The request failed. HttpStatusCode={statusCode}. Waiting {timeSpan} seconds before retry. Number attempt {retryCount}. Uri={responseUri}; RequestResponse={responseContent}", iRestResponse.Result.StatusCode, timeSpan, retryCount, iRestResponse.Result.ResponseUri, iRestResponse.Result.Content));
+                    });
 
-            var circuitBreakerPolicy = Policy
+            circuitBreakerPolicy ??= Policy
                 .HandleResult<RestResponse>(x => x.StatusCode == HttpStatusCode.ServiceUnavailable)
-                .CircuitBreakerAsync(1, TimeSpan.FromSeconds(60), onBreak: async (iRestResponse, timespan, context) =>
+                .CircuitBreakerAsync(1, TimeSpan.FromSeconds(30), onBreak: async (iRestResponse, timespan, context) =>
                 {
                     await Task.Run(() => Logger.LogError("Circuit went into a fault state. Reason: {resultContent}", iRestResponse.Result.Content));
                 },
@@ -98,15 +113,5 @@ namespace Unity.GrantManager.Integrations.Http
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
-
-        public Task<RestResponse> HttpAsync(Method httpVerb, string resource, RetryPolicy<RestResponse> retryPolicy, Dictionary<string, string>? headers = null, object? requestObject = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<RestResponse> HttpAsync(Method httpVerb, string resource, RetryPolicy<RestResponse> retryPolicy, CircuitBreakerPolicy<RestResponse> circuitBreakerPolicy, Dictionary<string, string>? headers = null, object? requestObject = null)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
