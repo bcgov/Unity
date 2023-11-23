@@ -97,6 +97,11 @@ table.dataTable thead th {
     background-color: #38598a4d;
 }
 
+table.dataTable td {
+    word-wrap: break-word;
+    max-width: 250px;
+}
+
 .odd {
     background-color: #efefef !important;
 }
