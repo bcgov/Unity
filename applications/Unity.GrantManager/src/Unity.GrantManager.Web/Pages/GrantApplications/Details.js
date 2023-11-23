@@ -76,11 +76,9 @@ $(function () {
             unity.grantManager.intakes.submission
                 .getSubmission(submissionId)
                 .done(function (result) {
-                    console.log(result);
                     $('.spinner-grow').hide();
                     Formio.icons = 'fontawesome';
                     let data = JSON.parse(formatChefComponents(result));
-                    console.log(data);
                     Formio.createForm(
                         document.getElementById('formio'),
                         data.version.schema,
