@@ -1977,6 +1977,9 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("DeletionTime");
 
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("text");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -2049,6 +2052,9 @@ namespace Unity.GrantManager.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("NormalizedUserName");
+
+                    b.Property<string>("OidcSub")
+                        .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(256)
