@@ -1,4 +1,6 @@
-﻿namespace Unity.GrantManager.GrantApplications
+﻿using System;
+
+namespace Unity.GrantManager.GrantApplications
 {
     public class CreateUpdateGrantApplicationDto
     {
@@ -14,5 +16,6 @@
         public string? DeclineRational { get; set; }
         public string? Notes { get; set; }
         public string? AssessmentResultStatus { get; set; }
+        public DateTime? FinalDecisionDate { get; set; }
     }
 }
