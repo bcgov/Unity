@@ -44,7 +44,7 @@ $(function () {
         components = components.replace(/bcaddress/g, 'address');
         components = components.replace(/simplebtnreset/g, 'button');
         components = components.replace(/simplebtnsubmit/g, 'button');
-        components = components.replace(/simplecheckboxes/g, 'checkbox');
+        components = components.replace(/simplecheckboxes/g, 'selectboxes');
         components = components.replace(/simplecheckbox/g, 'checkbox');
         components = components.replace(/simplecols2/g, 'columns');
         components = components.replace(/simplecols3/g, 'columns');
