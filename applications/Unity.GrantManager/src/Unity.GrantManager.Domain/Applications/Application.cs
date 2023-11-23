@@ -61,9 +61,9 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public DateTime? ProjectEndDate { get; set; }
 
-    public float? PercentageTotalProjectBudget { get; set; }
+    public double? PercentageTotalProjectBudget { get; set; }
 
-    public double? ProjectFundingTotal { get; set; }
+    public decimal? ProjectFundingTotal { get; set; }
 
     public string? Community { get; set; }
 

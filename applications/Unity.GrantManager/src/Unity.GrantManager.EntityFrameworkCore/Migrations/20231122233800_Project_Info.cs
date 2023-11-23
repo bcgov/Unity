@@ -53,10 +53,10 @@ namespace Unity.GrantManager.Migrations
                 type: "timestamp without time zone",
                 nullable: true);
 
-            migrationBuilder.AddColumn<double>(
+            migrationBuilder.AddColumn<decimal>(
                 name: "ProjectFundingTotal",
                 table: "UnityApplication",
-                type: "double precision",
+                type: "numeric",
                 nullable: true);
 
             migrationBuilder.AddColumn<DateTime>(

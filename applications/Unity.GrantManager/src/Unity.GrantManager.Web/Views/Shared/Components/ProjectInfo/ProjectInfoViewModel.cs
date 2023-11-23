@@ -52,7 +52,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public decimal? TotalProjectBudget { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.PercentageTotalProjectBudget")]    
-            public decimal? PercentageTotalProjectBudget { get; set; }
+            public double? PercentageTotalProjectBudget { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ProjectFundingTotal")]
             [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
@@ -78,7 +78,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? ElectoralDistrict { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.CommunityPopulation")]
-            public string? CommunityPopulation { get; set; }
+            public int? CommunityPopulation { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.Acquisition")]
             [SelectItems(nameof(AcquisitionList))]

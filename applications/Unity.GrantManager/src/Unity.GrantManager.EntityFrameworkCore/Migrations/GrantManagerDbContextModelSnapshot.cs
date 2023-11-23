@@ -520,8 +520,8 @@ namespace Unity.GrantManager.Migrations
                     b.Property<DateTime?>("ProjectEndDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<double?>("ProjectFundingTotal")
-                        .HasColumnType("double precision");
+                    b.Property<decimal?>("ProjectFundingTotal")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("ProjectName")
                         .IsRequired()

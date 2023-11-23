@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    [Migration("20231121214822_Project_Info")]
+    [Migration("20231122233800_Project_Info")]
     partial class ProjectInfo
     {
         /// <inheritdoc />
@@ -523,8 +523,8 @@ namespace Unity.GrantManager.Migrations
                     b.Property<DateTime?>("ProjectEndDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<double?>("ProjectFundingTotal")
-                        .HasColumnType("double precision");
+                    b.Property<decimal?>("ProjectFundingTotal")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("ProjectName")
                         .IsRequired()

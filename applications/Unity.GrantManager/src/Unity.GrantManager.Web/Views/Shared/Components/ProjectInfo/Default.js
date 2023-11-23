@@ -4,30 +4,29 @@
     $('body').on('click', '#saveProjectInfoBtn', function () {       
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
-        let assessmentResultObj = {};
+        let projectInfoObj = {};
         $.each(formData, function (key, input) {
-            if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "AssessmentResults.Notes")) {
-                assessmentResultObj[input.name.split(".")[1]] = input.value;
+            if ((input.name == "ProjectInfo.ProjectName") || (input.name == "ProjectInfo.ProjectSummary") || (input.name == "ProjectInfo.Community")) {
+                projectInfoObj[input.name.split(".")[1]] = input.value;
             } else {
                 // This will not work if the culture is different and uses a different decimal separator
-                assessmentResultObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
-                console.log(input);
+                projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
 
                 if (isNumberField(input)) {
-                    if (assessmentResultObj[input.name.split(".")[1]] == '') {
-                        assessmentResultObj[input.name.split(".")[1]] = 0;
-                    } else if (assessmentResultObj[input.name.split(".")[1]] > getMaxNumberField(input)) {
-                        assessmentResultObj[input.name.split(".")[1]] = getMaxNumberField(input);
+                    if (projectInfoObj[input.name.split(".")[1]] == '') {
+                        projectInfoObj[input.name.split(".")[1]] = 0;
+                    } else if (projectInfoObj[input.name.split(".")[1]] > getMaxNumberField(input)) {
+                        projectInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
                     }
                 }
             }
         });
         try {
             unity.grantManager.grantApplications.grantApplication
-                .update(applicationId, assessmentResultObj)
+                .updateProjectInfo(applicationId, projectInfoObj)
                 .done(function () {
                     abp.notify.success(
-                        'The application has been updated.'
+                        'The project info has been updated.'
                     );
                     $('#saveProjectInfoBtn').prop('disabled', true);
                     PubSub.publish('project_info_saved');                    
@@ -53,15 +52,15 @@
     }
 
     function isCurrencyField(input) {
-        const currencyFields = ['AssessmentResults.RequestedAmount',
-            'AssessmentResults.TotalProjectBudget',
-            'AssessmentResults.RecommendedAmount',
-            'AssessmentResults.ApprovedAmount'];
+        const currencyFields = ['ProjectInfo.RequestedAmount',
+            'ProjectInfo.TotalProjectBudget',
+            'ProjectInfo.PercentageTotalProjectBudget',
+            'ProjectInfo.ProjectFundingTotal'];
         return currencyFields.includes(input.name);
     }
 
     function isScoreField(input) {
-        return input.name == 'AssessmentResults.TotalScore';
+        return input.name == 'ProjectInfo.TotalScore';
     }
 });
 
