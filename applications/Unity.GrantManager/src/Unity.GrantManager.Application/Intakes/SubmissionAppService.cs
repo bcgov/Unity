@@ -75,23 +75,13 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
             throw new ApiException(400, "Missing CHEFS Api Key");
         }
 
-        var request = new RestRequest($"/submissions/{formSubmissionId}")
+        ApplicationFormSubmission? applicationFormSubmisssion = await GetApplicationFormSubmissionBySubmissionId(formSubmissionId);
+        if (applicationFormSubmisssion == null)
         {
-            /** Authenticator as CHEFS form id + api key which is stored in db manually **/
-            Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
-        };
-        var response = await _intakeClient.GetAsync(request);
-
-        if (((int)response.StatusCode) >= 400)
-        {
-            throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
-        }
-        else if (((int)response.StatusCode) == 0)
-        {
-            throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.ErrorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
+            throw new ApiException(400, "Missing Form Submission");
         }
 
-        return response.Content;
+        return applicationFormSubmisssion.Submission;
     }
 
 
@@ -108,6 +98,20 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
             applicationFormData = await AsyncExecuter.FirstOrDefaultAsync(query);
         }
         return applicationFormData;
+    }
+
+    public async Task<ApplicationFormSubmission?> GetApplicationFormSubmissionBySubmissionId(Guid? formSubmissionId)
+    {
+        ApplicationFormSubmission? applicationFormSubmissionData = new();
+
+        if (formSubmissionId != null)
+        {
+            var query = from applicationFormSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()                       
+                        where applicationFormSubmission.ChefsSubmissionGuid == formSubmissionId.ToString()
+                        select applicationFormSubmission;
+            applicationFormSubmissionData = await AsyncExecuter.FirstOrDefaultAsync(query);
+        }
+        return applicationFormSubmissionData;
     }
 
     public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(Guid? formId)
