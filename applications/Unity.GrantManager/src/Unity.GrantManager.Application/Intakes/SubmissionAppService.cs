@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using RestSharp;
-using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +18,6 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
 {
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
-    private readonly IStringEncryptionService _stringEncryptionService;
     private readonly RestClient _intakeClient;
     private static List<string> SummaryFieldsFilter
     {
@@ -47,7 +45,6 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _applicationFormRepository = applicationFormRepository;
         _intakeClient = restClient;
-        _stringEncryptionService = stringEncryptionService;
     }
 
 
