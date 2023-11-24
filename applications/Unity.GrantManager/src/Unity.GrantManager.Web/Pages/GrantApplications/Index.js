@@ -13,7 +13,7 @@
 
     dataTable = initializeDataTable();
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
-    
+    dataTable.on('search.dt', () => handleSearch());
     const UIElements = {
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
@@ -40,9 +40,6 @@
         UIElements.userDiv.on('change', markUserDivAsChanged);
         UIElements.userDiv.on('blur', checkUserDivChanged);
         UIElements.users.on('blur', checkUserDivChanged);
-        UIElements.searchBar.on('keyup', function(e) {
-            handleSearch(e);
-        });
     }
 
     dataTable.on('select', function(e, dt, type, indexes) {
@@ -89,10 +86,8 @@
         modifyAssignmentsOnServer();
     }
 
-    function handleSearch(e) {
-        let filterValue = e.currentTarget.value;
-        let oTable = $('#GrantApplicationsTable').dataTable();
-        oTable.fnFilter(filterValue);
+    function handleSearch() {
+        let filterValue = $('.dataTables_filter input').val();
         if (filterValue.length > 0) {
             $('#externalLink').prop('disabled', true);
             Array.from(document.getElementsByClassName('selected')).forEach(
@@ -278,8 +273,6 @@
                 if (rows <= maxRowsPerPage) {
                     $('.dataTables_info').css('display', 'none');
                     $('.dataTables_paginate').css('display', 'none');
-
-                    $('.dataTables_filter').css('display', 'none');
                     $('.dataTables_length').css('display', 'none');
                 } else if (pages === 1) {
                     // With this current length setting, not more than 1 page, hide pagination

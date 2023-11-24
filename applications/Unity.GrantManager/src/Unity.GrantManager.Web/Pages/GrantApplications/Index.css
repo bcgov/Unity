@@ -14,10 +14,6 @@ thead input {
     width: 100%;
 }
 
-.dataTables_filter {
-    display: none;
-}
-
 .hidden {
     display: none;
 }
@@ -213,4 +209,18 @@ th #btn-toggle-filter {
 
 .fl-left {
     margin-right: 8px;
+}
+
+#GrantApplicationsTable_filter label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+    margin-right: 5px;
+}
+
+#GrantApplicationsTable_filter input {
+    margin: 0.25rem;
 }
