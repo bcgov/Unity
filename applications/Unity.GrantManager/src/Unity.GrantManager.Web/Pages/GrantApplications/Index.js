@@ -42,13 +42,13 @@
         UIElements.users.on('blur', checkUserDivChanged);
     }
 
-    dataTable.on('select', function(e, dt, type, indexes) {
+    dataTable.on('select', function (e, dt, type, indexes) {
         selectApplication(type, indexes, 'select_application');
     });
 
-    dataTable.on('deselect', function(e, dt, type, indexes) {
+    dataTable.on('deselect', function (e, dt, type, indexes) {
         selectApplication(type, indexes, 'deselect_application');
-    });    
+    });
 
     function selectApplication(type, indexes, action) {
         if (type === 'row') {
@@ -62,13 +62,13 @@
     }
 
     function clearFilter() {
-        $(".filter-input").each(function() {
-            if(this.value != "") {
+        $(".filter-input").each(function () {
+            if (this.value != "") {
                 this.value = "";
                 dataTable
-                .columns(mapTitles.get(this.placeholder))
-                .search(this.value)
-                .draw();
+                    .columns(mapTitles.get(this.placeholder))
+                    .search(this.value)
+                    .draw();
             }
         });
 
@@ -150,7 +150,7 @@
     function getUserOptionSelectedCount() {
         let userOptionSelectedCount = 0;
         for (let userOption of userOptions) {
-            if($(userOption).prop('selected')) {
+            if ($(userOption).prop('selected')) {
                 userOptionSelectedCount++;
             }
         }
@@ -162,31 +162,31 @@
             cell.setAttribute('contenteditable', true);
             cell.addEventListener('focus', function (e) {
                 checkUserDivChanged();
-                
-                if (e.target.children.length == 0) {
-
+                if (e.target.children.length == 0 ||
+                    (e.target.children.length == 1
+                    && e.target.children[0].className.includes('dt-select-assignees'))) {
                     let currentContent = e.target.textContent;
                     e.target.textContent = '';
                     currentRow = e.target.parentElement._DT_RowIndex;
                     let assigness = dataTable.row(e.target.parentElement).context[0]
                         .aoData[currentRow]._aData.assignees;
                     let assigneeIds = [];
-    
+
                     $(assigness).each(function (key, assignee) {
                         assigneeIds.push(assignee.oidcSub);
                     });
 
                     previousUserOptionsSelected = getUserOptionSelectedCount();
 
-                    if(originalContent != "" 
-                        && previousCell+"" != "undefined"
+                    if (originalContent != ""
+                        && previousCell + "" != "undefined"
                         && previousCell.textContent == ""
                         && previousUserOptionsSelected > 0
                         && currentRow != previousRow
-                    )  {
+                    ) {
                         previousCell.textContent = originalContent;
-                    } 
-                    
+                    }
+
                     for (let userOption of userOptions) {
                         $(userOption).prop(
                             'selected',
@@ -194,12 +194,12 @@
                         );
                     }
 
-                    if(originalContent != " " 
-                        && previousCell+"" != "undefined"
-                        && currentUserOptionsSelected+"" != "undefined"
+                    if (originalContent != " "
+                        && previousCell + "" != "undefined"
+                        && currentUserOptionsSelected + "" != "undefined"
                         && previousUserOptionsSelected == currentUserOptionsSelected
                         && currentRow != previousRow
-                    )  {
+                    ) {
                         previousCell.textContent = originalContent;
                     }
 
@@ -213,11 +213,11 @@
                     originalContent = currentContent;
                     previousCell = this;
                     previousRow = currentRow;
-                    
+                    setTableHeighDynamic();
                 }
-                currentCell = this;
+                currentCell = this;                
             });
-    
+
             cell.addEventListener('blur', function (e) {
                 if (
                     e.relatedTarget != null &&
@@ -232,198 +232,217 @@
 
 
     function initializeDataTable() {
-       return dt.DataTable(
-           abp.libs.datatables.normalizeConfiguration({
-               fixedHeader: {
-                   header: true,
-                   footer: false,
-                   headerOffset:0
-               },
-            serverSide: false,
-            paging: true,
-            order: [[4, 'desc']],
-            searching: true,
-            pageLength: maxRowsPerPage,
-            scrollX: true,
-            ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.grantApplications.grantApplication.getList
-            ),
-            select: {
-                style: 'multiple',
-                selector: 'td:not(:nth-child(8))',
-            },
-            dom: 'Bfrtip',
-            buttons: [
-                {
-                    extend: 'csv',
-                    text: 'Export',
-                    className: 'btn btn-light csv-download',
-                    exportOptions: {
-                        columns: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11],
-                        orthogonal: 'fullName',
-                    }
-                }
-            ],
-            drawCallback: function () {
-                let $api = this.api();
-                let pages = $api.page.info().pages;
-                let rows = $api.data().length;
-
-                // Tailor the settings based on the row count
-                if (rows <= maxRowsPerPage) {
-                    $('.dataTables_info').css('display', 'none');
-                    $('.dataTables_paginate').css('display', 'none');
-                    $('.dataTables_length').css('display', 'none');
-                } else if (pages === 1) {
-                    // With this current length setting, not more than 1 page, hide pagination
-                    $('.dataTables_info').css('display', 'none');
-                    $('.dataTables_paginate').css('display', 'none');
-                } else {
-                    // SHow everything
-                    $('.dataTables_info').css('display', 'block');
-                    $('.dataTables_paginate').css('display', 'block');
-                }
-                setTableHeighDynamic();
-            },
-            initComplete: function () {
-                let api = this.api();
-                addFilterRow(api);
-                api.columns.adjust();
-            },
-            columnDefs: [
-                { //0
-                    title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
-                    orderable: false,
-                    render: function (data) {
-                        return '<div class="select-checkbox" title="Select Application" ></div>';
-                    },
+        return dt.DataTable(
+            abp.libs.datatables.normalizeConfiguration({
+                fixedHeader: {
+                    header: true,
+                    footer: false,
+                    headerOffset: 0
                 },
-                { //1
-                    title: 'Applicant Name',
-                    data: 'applicant',
-                    name: 'applicant',
-                    className: 'data-table-header',
+                serverSide: false,
+                paging: true,
+                order: [[4, 'desc']],
+                searching: true,
+                pageLength: maxRowsPerPage,
+                scrollX: true,
+                ajax: abp.libs.datatables.createAjax(
+                    unity.grantManager.grantApplications.grantApplication.getList
+                ),
+                select: {
+                    style: 'multiple',
+                    selector: 'td:not(:nth-child(8))',
                 },
-                { //2
-                    title: 'Application #',
-                    data: 'referenceNo',
-                    name: 'referenceNo',
-                    className: 'data-table-header',
-                },
-                { //3
-                    title: 'Category',
-                    data: 'category',
-                    name: 'category',
-                    className: 'data-table-header',
-                },
-                { //4
-                    title: l('SubmissionDate'),
-                    data: 'submissionDate',
-                    name: 'submissionDate',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        return luxon.DateTime.fromISO(data, {
-                            locale: abp.localization.currentCulture.name,
-                        }).toLocaleString();
-                    },
-                },
-                { //5
-                    title: 'Project Name',
-                    data: 'projectName',
-                    name: 'projectName',
-                    className: 'data-table-header',                    
-                },                               
-                { //6
-                    title: 'Sector',
-                    name: 'sector',
-                    data: 'sector',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        return data ?? '{Sector}';
-                    },
-                },
-                { //7
-                    title: 'Total Project Budget',
-                    name: 'totalProjectBudget',
-                    data: 'totalProjectBudget',
-                    className: 'data-table-header',                    
-                    render: function (data) {
-                        return formatter.format(data);
-                    },
-                },
-                { //8
-                    title: l('Assignee'),
-                    data: 'assignees',
-                    name: 'assignees',
-                    className: 'dt-editable',
-                    createdCell: createdCell,
-                    render: function (data, type, row) {
-                        let displayText = ' ';
-
-                        if (data != null && data.length == 1) {
-                            displayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
-                        } else if (data.length > 1) {
-                            displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'csv',
+                        text: 'Export',
+                        className: 'btn btn-light csv-download',
+                        exportOptions: {
+                            columns: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11],
+                            orthogonal: 'fullName',
                         }
+                    }
+                ],
+                drawCallback: function () {
+                    let $api = this.api();
+                    let pages = $api.page.info().pages;
+                    let rows = $api.data().length;
 
-                        return displayText;
-                    },
+                    // Tailor the settings based on the row count
+                    if (rows <= maxRowsPerPage) {
+                        $('.dataTables_info').css('display', 'none');
+                        $('.dataTables_paginate').css('display', 'none');
+                        $('.dataTables_length').css('display', 'none');
+                    } else if (pages === 1) {
+                        // With this current length setting, not more than 1 page, hide pagination
+                        $('.dataTables_info').css('display', 'none');
+                        $('.dataTables_paginate').css('display', 'none');
+                    } else {
+                        // SHow everything
+                        $('.dataTables_info').css('display', 'block');
+                        $('.dataTables_paginate').css('display', 'block');
+                    }
+                    setTableHeighDynamic();
                 },
-                { //9
-                    title: l('GrantApplicationStatus'),
-                    data: 'status',
-                    name: 'status',
-                    className: 'data-table-header',                    
-                    render: function (data, type, row) {
-                        let fill = row.assessmentReviewCount > 0 ? 'fas' : 'far';
-                        return `<span class="d-flex align-items-center"><i class="${fill} fa-bookmark text-primary"></i><span class="ps-2 flex-fill">${row.status}</span></span>`;
-                    },
+                initComplete: function () {
+                    let api = this.api();
+                    addFilterRow(api);
+                    api.columns.adjust();
                 },
-                { //10
-                    title: l('RequestedAmount'),
-                    data: 'requestedAmount',
-                    name: 'requestedAmount',
-                    className: 'data-table-header',                    
-                    render: function (data) {
-                        return formatter.format(data);
+                columnDefs: [
+                    { //0
+                        title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
+                        orderable: false,
+                        render: function (data) {
+                            return '<div class="select-checkbox" title="Select Application" ></div>';
+                        },
                     },
-                },
-                //{ // -- 
-                //    title: 'Final Decision Date',
-                //    name: 'finalDecisionDate',
-                //    className: 'data-table-header',
-                //    visible: false,                    
-                //},
-                { //11
-                    title: 'Approved Amount',
-                    name: 'approved Amount',
-                    data: 'approvedAmount',
-                    className: 'data-table-header',                    
-                    render: function (data) {
-                        return formatter.format(data);
+                    { //1
+                        title: 'Applicant Name',
+                        data: 'applicant',
+                        name: 'applicant',
+                        className: 'data-table-header',
                     },
-                },
-                { //12
-                    title: 'Economic Region',
-                    name: 'economic Region',
-                    data: 'economicRegion',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        return data ?? '{Region}';
+                    { //2
+                        title: 'Application #',
+                        data: 'referenceNo',
+                        name: 'referenceNo',
+                        className: 'data-table-header',
                     },
-                },
-                { //13
-                    title: 'City',
-                    name: 'city',
-                    data: 'city',
-                    className: 'data-table-header',
-                    render: function (data) {
-                        return data ?? '{City}';
+                    { //3
+                        title: 'Category',
+                        data: 'category',
+                        name: 'category',
+                        className: 'data-table-header',
                     },
-                },
-            ],
-        })
-       );
+                    { //4
+                        title: l('SubmissionDate'),
+                        data: 'submissionDate',
+                        name: 'submissionDate',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return luxon.DateTime.fromISO(data, {
+                                locale: abp.localization.currentCulture.name,
+                            }).toLocaleString();
+                        },
+                    },
+                    { //5
+                        title: 'Project Name',
+                        data: 'projectName',
+                        name: 'projectName',
+                        className: 'data-table-header',
+                    },
+                    { //6
+                        title: 'Sector',
+                        name: 'sector',
+                        data: 'sector',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Sector}';
+                        },
+                    },
+                    { //7
+                        title: 'Total Project Budget',
+                        name: 'totalProjectBudget',
+                        data: 'totalProjectBudget',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return formatter.format(data);
+                        },
+                    },
+                    { //8
+                        title: l('Assignee'),
+                        data: 'assignees',
+                        name: 'assignees',
+                        className: 'dt-editable',
+                        createdCell: createdCell,                        
+                        render: function (data, type, row) {
+                            let displayText = ' ';
+
+                            if (data != null && data.length == 1) {
+                                displayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
+                            } else if (data.length > 1) {
+                                displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
+                            }
+
+                            return `<span class="d-flex align-items-center dt-select-assignees">
+                                <i class="fl fl-edit"></i>
+                                <span class="ps-2 flex-fill" data-toggle="tooltip" title="`
+                                + getNames(data) + '">' + displayText + '</span>' +
+                                `</span>`;
+                        },
+                    },
+                    { //9
+                        title: l('Assignee'),
+                        data: 'assignees',
+                        name: 'assignees-hidden',
+                        visible: false,
+                        render: function (data, type, row) {
+                            let displayText = ' ';
+
+                            if (data != null) {
+                                displayText = getNames(data);
+                            }
+                            return displayText;
+                        },
+                    },
+                    { //10
+                        title: l('GrantApplicationStatus'),
+                        data: 'status',
+                        name: 'status',
+                        className: 'data-table-header',
+                        render: function (data, type, row) {
+                            let fill = row.assessmentReviewCount > 0 ? 'fas' : 'far';
+                            return `<span class="d-flex align-items-center"><i class="${fill} fa-bookmark text-primary"></i><span class="ps-2 flex-fill">${row.status}</span></span>`;
+                        },
+                    },
+                    { //11
+                        title: l('RequestedAmount'),
+                        data: 'requestedAmount',
+                        name: 'requestedAmount',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return formatter.format(data);
+                        },
+                    },
+                    //{ // -- 
+                    //    title: 'Final Decision Date',
+                    //    name: 'finalDecisionDate',
+                    //    className: 'data-table-header',
+                    //    visible: false,                    
+                    //},
+                    { //12
+                        title: 'Approved Amount',
+                        name: 'approved Amount',
+                        data: 'approvedAmount',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return formatter.format(data);
+                        },
+                    },
+                    { //13
+                        title: 'Economic Region',
+                        name: 'economic Region',
+                        data: 'economicRegion',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Region}';
+                        },
+                    },
+                    { //14
+                        title: 'City',
+                        name: 'city',
+                        data: 'city',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{City}';
+                        },
+                    },
+
+                ],
+            })
+        );
     }
     window.addEventListener('resize', setTableHeighDynamic);
     function setTableHeighDynamic() {
