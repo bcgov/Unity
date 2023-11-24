@@ -164,6 +164,7 @@
     "AssessmentResultsView:AssessmentResultsForm.Notes": "Notes",
     "AssessmentResultsView:AssessmentResultsForm.TotalScore": "Total Score",
     "AssessmentResultsView:AssessmentResultsForm.AssessmentResult": "Assessment Result",
+    "AssessmentResultsView:AssessmentResultsForm.FinalDecisionDate": "Decision Date",
 
     "GrantApplication:ActionButtonName": "Status Actions",
     "Enum:GrantApplicationAction.Open": "Open",
