@@ -48,20 +48,23 @@
     }
 
     function isNumberField(input) {
-        return isCurrencyField(input) || isScoreField(input);
+        return isCurrencyField(input) || isPercentageField(input);
     }
 
     function isCurrencyField(input) {
         const currencyFields = ['ProjectInfo.RequestedAmount',
             'ProjectInfo.TotalProjectBudget',
-            'ProjectInfo.PercentageTotalProjectBudget',
             'ProjectInfo.ProjectFundingTotal'];
         return currencyFields.includes(input.name);
     }
 
-    function isScoreField(input) {
-        return input.name == 'ProjectInfo.TotalScore';
+    function isPercentageField(input) {
+        return input.name == 'ProjectInfo.PercentageTotalProjectBudget';
     }
+
+    $('#startDate').on('apply.daterangepicker', function(event, picker) {
+        console.log(event, picker);
+      });
 });
 
 
