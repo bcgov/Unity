@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Workflow;
+using Volo.Abp;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Applications;
 public class ApplicationManager : DomainService, IApplicationManager
@@ -105,6 +107,11 @@ public class ApplicationManager : DomainService, IApplicationManager
     {
         var application = await _applicationRepository.GetAsync(applicationId);
         var statusChange = application.ApplicationStatus.StatusCode;
+
+        if ((triggerAction == GrantApplicationAction.Approve || triggerAction == GrantApplicationAction.Deny) && application.FinalDecisionDate == null)
+        {
+            throw new UserFriendlyException("The Decision Date is Required.");
+        }
 
         // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
         // WARNING: DRAFT CODE - MAY NOT BE PERSISTING STATE TRANSITIONS CORRECTLY
