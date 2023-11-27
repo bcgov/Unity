@@ -77,7 +77,8 @@
                     );
                     PubSub.publish("application_status_changed", triggerAction);
                     PubSub.publish("refresh_detail_panel_summary");
-                });
+                })
+                .catch(function () { widgetManager.refresh(); });
         }
         return {
             init: init,
