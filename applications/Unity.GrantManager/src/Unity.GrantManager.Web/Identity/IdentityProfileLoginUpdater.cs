@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Web.Identity
                 await UpdateCurrentUserAsync(user, validatedTokenContext);
             }
 
-            await UpdatePrincipal(validatedTokenContext.Principal!, user!);
+            await UpdatePrincipal(validatedTokenContext.Principal!, user);
             SetTokens(validatedTokenContext);
 
             // Create security log
@@ -122,10 +122,13 @@ namespace Unity.GrantManager.Web.Identity
             }
             else
             {
-                foreach (var role in user.Roles)
+                if (user.Roles != null)
                 {
-                    var dbRole = await _identityRoleManager.GetByIdAsync(role.RoleId);
-                    principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
+                    foreach (var role in user.Roles)
+                    {
+                        var dbRole = await _identityRoleManager.GetByIdAsync(role.RoleId);
+                        principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
+                    }
                 }
 
                 var userPermissions = (await _permissionManager.GetAllForUserAsync(user.Id)).Where(s => s.IsGranted);
