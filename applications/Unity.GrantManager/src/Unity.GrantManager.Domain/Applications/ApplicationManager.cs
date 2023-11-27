@@ -8,7 +8,6 @@ using Unity.GrantManager.Workflow;
 using Volo.Abp;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
-using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Applications;
 public class ApplicationManager : DomainService, IApplicationManager
