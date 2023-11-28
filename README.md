@@ -8,10 +8,10 @@ The project is in the very early stages of development. The codebase will be cha
     applications/              - Application Root
     ├── Unity.GrantManager/    - Grant manager and adjudication solution
     ├── Unity.Orchestrator/    - Workflow orchestrator solution
-    cypress/                   - Cypress functional tests
+    ├── Unity.Metabase/        - Grant reporting solution
     database/                  - Database configuration files
     documentation/             - Solution documentation and assets
-    openshift/                 - OpenShift-deployment files
+    openshift/                 - OpenShift deployment files
     COMPLIANCE.yaml            - BCGov PIA/STRA compliance status
     CONTRIBUTING.md            - How to contribute
     LICENSE                    - License
