@@ -58,7 +58,14 @@
                 case 'Deny':
 
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to decline the application?', confirmButtonText: 'Confirm' };
-
+                case 'Withdraw':
+                    return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to Withdraw the application?', confirmButtonText: 'Confirm' };
+                case 'Close':
+                    return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to Close the application?', confirmButtonText: 'Confirm' };
+                case 'CompleteReview':
+                    return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to complete the review of the application?', confirmButtonText: 'Confirm' };
+                case 'CompleteAssessment':
+                    return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to complete the assessment of the application?', confirmButtonText: 'Confirm' };
                 default:
                     return { isConfirmationRequired: false };
             }
@@ -77,7 +84,8 @@
                     );
                     PubSub.publish("application_status_changed", triggerAction);
                     PubSub.publish("refresh_detail_panel_summary");
-                });
+                })
+                .catch(function () { widgetManager.refresh(); });
         }
         return {
             init: init,

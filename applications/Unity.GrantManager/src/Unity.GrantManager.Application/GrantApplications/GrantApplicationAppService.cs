@@ -209,6 +209,7 @@ public class GrantApplicationAppService :
                         application.AssessmentResultDate = DateTime.UtcNow;
                     }
                     application.AssessmentResultStatus = input.AssessmentResultStatus;
+                    application.FinalDecisionDate = input.FinalDecisionDate;
                 }
 
                 await _applicationRepository.UpdateAsync(application, autoSave: true);
