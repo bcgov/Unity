@@ -77,6 +77,10 @@ td.dt-editable:hover {
         color: var(--bc-colors-blue-background, #38598A);
     }
 
+    td.dt-editable:not(:has(span)):before {
+        content: '\E70F';
+    }
+
 .clear-icon:before {
     content: '\E8BB';
     color: var(--bc-colors-white-primary-500, #FFF);
