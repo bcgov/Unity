@@ -185,8 +185,8 @@
     "Enum:GrantApplicationAction.Message.CompleteReview": "Initial Review Completed",
     "Enum:GrantApplicationAction.Message.StartAssessment": "Under Assessment",
     "Enum:GrantApplicationAction.Message.CompleteAssessment": "Assessment Completed",
-    "Enum:GrantApplicationAction.Message.Close": "Closed",
-    "Enum:GrantApplicationAction.Message.Withdraw": "Withdrawn",
+    "Enum:GrantApplicationAction.Message.Close": "The Application is closed!",
+    "Enum:GrantApplicationAction.Message.Withdraw": "The Application is withdrawn!",
     "Enum:GrantApplicationAction.Message.Approve": "Grant Approved",
     "Enum:GrantApplicationAction.Message.Deny": "Grant Not Approved",
 
