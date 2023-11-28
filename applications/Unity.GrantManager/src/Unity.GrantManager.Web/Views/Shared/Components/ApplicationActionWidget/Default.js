@@ -64,6 +64,8 @@
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to Close the application?', confirmButtonText: 'Confirm' };
                 case 'CompleteReview':
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to complete the review of the application?', confirmButtonText: 'Confirm' };
+                case 'CompleteAssessment':
+                    return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to complete the assessment of the application?', confirmButtonText: 'Confirm' };
                 default:
                     return { isConfirmationRequired: false };
             }
