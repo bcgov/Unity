@@ -14,6 +14,11 @@
     dataTable = initializeDataTable();
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
+   
+   
+    //$('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
+    //$('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
+    
     const UIElements = {
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
@@ -26,8 +31,9 @@
     init();
     function init() {
         $('#users').select2();
-        $('.csv-download').removeClass('dt-button buttons-csv buttons-html5');
+        $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
         $('.csv-download').prepend('<i class="fl fl-export"></i>');
+        $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
         bindUIEvents();
         UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html());
     }
@@ -252,16 +258,28 @@
                     style: 'multiple',
                     selector: 'td:not(:nth-child(8))',
                 },
+                colReorder: true,
+                orderCellsTop: true,
+                fixedHeader: true,
+                stateSave: true,
                 dom: 'Bfrtip',
                 buttons: [
                     {
                         extend: 'csv',
                         text: 'Export',
-                        className: 'btn btn-light csv-download',
+                        className: 'btn btn-light custom-table-btn csv-download',
                         exportOptions: {
                             columns: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11],
                             orthogonal: 'fullName',
                         }
+                    },
+                     {
+                        extend: 'colvis',
+                        text: 'Visibility',
+                        columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+                        exclude: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+                        className: 'btn btn-light custom-table-btn cln-visible',
+                       
                     }
                 ],
                 drawCallback: function () {
@@ -286,9 +304,7 @@
                     setTableHeighDynamic();
                 },
                 initComplete: function () {
-                    let api = this.api();
-                    addFilterRow(api);
-                    api.columns.adjust();
+                    updateFilter();
                 },
                 columnDefs: [
                     { //0
@@ -439,6 +455,179 @@
                             return data ?? '{City}';
                         },
                     },
+                              
+                    { //15
+                        title: 'Organization Number',
+                        name: 'organizationNumber',
+                        data: 'organizationNumber',
+                        className: 'data-table-header',
+                        visible: false,
+                        render: function (data) {
+                            return data ?? '{Organization Number}';
+                        },
+                    },
+                    { //16
+                        title: 'Org Book Status',
+                        name: 'orgBookStatus',
+                        data: 'orgBookStatus',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Org Book Status}';
+                        },
+                    },
+                    { //17
+                        title: 'Project Start Date',
+                        name: 'projectStartDate',
+                        data: 'projectStartDate',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Project Start Date}';
+                        },
+                    },
+                    { //18
+                        title: 'Project End Date',
+                        name: 'projectEndDate',
+                        data: 'projectEndDate',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Project End Date}';
+                        },
+                    },
+                    { //19
+                        title: 'Projected Funding Total',
+                        name: 'projectedFundingTotal',
+                        data: 'projectedFundingTotal',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Projected Funding Total}';
+                        },
+                    },
+                    { //20
+                        title: '% of Total Project Budget',
+                        name: 'percentageOfTotalProjectBudget',
+                        data: 'percentageOfTotalProjectBudget',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{% of Total Project Budget}';
+                        },
+                    },
+                    { //21
+                        title: 'Total Paid Amount $',
+                        name: 'totalPaidAmount',
+                        data: 'totalPaidAmount',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Total Paid Amount $}';
+                        },
+                    },
+                    { //22
+                        title: 'Electoral District',
+                        name: 'electoralDistrict',
+                        data: 'electoralDistrict',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Electoral District}';
+                        },
+                    },
+                    { //23
+                        title: 'Forestry or Non-Forestry',
+                        name: 'forestryOrNonForestry',
+                        data: 'forestryOrNonForestry',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Forestry or Non-Forestry}';
+                        },
+                    },
+                    { //24
+                        title: 'Forestry Focus',
+                        name: 'forestryFocus',
+                        data: 'forestryFocus',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Forestry Focus}';
+                        },
+                    },
+                    { //25
+                        title: 'Acquisition',
+                        name: 'acquisition',
+                        data: 'acquisition',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Acquisition}';
+                        },
+                    },
+                    { //26
+                        title: 'Community',
+                        name: 'community',
+                        data: 'community',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{community}';
+                        },
+                    },
+                    { //27
+                        title: 'Community Population',
+                        name: 'communityPopulation',
+                        data: 'communityPopulation',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Community Population}';
+                        },
+                    },
+                    { //28
+                        title: 'Likelihood of Funding',
+                        name: 'likelihoodOfFunding',
+                        data: 'likelihoodOfFunding',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Likelihood of Funding}';
+                        },
+                    },
+                    { //29
+                        title: 'Recommendation',
+                        name: 'recommendation',
+                        data: 'recommendation',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Recommendation}';
+                        },
+                    },
+                    { //30
+                        title: 'Batch#',
+                        name: 'batchNumber',
+                        data: 'batchNumber',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Batch#}';
+                        },
+                    },
+                    { //31
+                        title: 'Total Score',
+                        name: 'totalScore',
+                        data: 'totalScore',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Total Score}';
+                        },
+                        },
+                    { //32
+                        title: 'Assessment Result',
+                        name: 'assessmentResult',
+                        data: 'assessmentResult',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Assessment Result}';
+                        },
+                     },
+                    { //33
+                        title: 'Recommended Amount',
+                        name: 'recommendedAmount',
+                        data: 'recommendedAmount',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Recommended Amount}';
+                        },
+                     }
 
                 ],
             })
@@ -456,56 +645,54 @@
             $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: tableHeight + 10 });
         }
     }
+    dataTable.on('column-reorder.dt', function (e, settings) {
+        updateFilter();
+    });
+    dataTable.on('column-visibility.dt', function (e, settings, deselectedcolumn, state) {
+        updateFilter();
+    });
 
-    function addFilterRow(api) {
-        let trNode = document.createElement('tr');
-        trNode.classList.add('filter');
-        trNode.classList.add('hidden');
-        trNode.id = 'dtFilterRow';
+    function updateFilter() {
+        let optionsOpen = false;
+        $("#tr-filter").each(function () {
+            if ($(this).is(":visible"))
+                optionsOpen = true;
+        })
+        $('.tr-toggle-filter').remove();
+        let newRow = $("<tr class='tr-toggle-filter' id='tr-filter'>");
 
-        api.columns().every(function () {
-            let column = this;
-            let title = $(column.header()).text();
-            let index = column.selector.cols;
-            mapTitles.set(title, index);
-        });
+        dataTable
+            .columns()
+            .every(function () {
+                let column = this;
+                if (column.visible()) {
+                    let title = column.header().textContent;
+                    if (title) {
+                        let newCell = $("<td>").append("<input type='text' class='form-control input-sm custom-filter-input' placeholder='" + title + "'>");
+                        newCell.find("input").on("keyup", function () {
+                            if (column.search() !== this.value) {
+                                column.search(this.value).draw();
+                            }
+                        });
 
-        let children = [
-            ...document.getElementById('GrantApplicationsTable').children[0]
-                .children[0].children,
-        ];
+                        newRow.append(newCell);
+                       
+                    }
+                    else {
+                        let newCell = $("<td>");
+                        newRow.append(newCell);
+                    }
+                }
 
-        children.forEach(function (child) {
-            let label = child.attributes['aria-label'].value;
-            child.classList.remove('sorting');
-            child.classList.remove('sorting_asc');
-            child.classList.add('grey-background');
 
-            const firstElement = label.split(':').shift();
-
-            if (firstElement != '') {
-                let inputFilter = document.createElement('input');
-                inputFilter.type = 'text';
-                inputFilter.classList.add('filter-input');
-                inputFilter.placeholder = firstElement;
-                inputFilter.addEventListener('keyup', function () {
-                    $('#btn-clear-filter')[0].disabled = false;
-                    dataTable
-                        .columns(mapTitles.get(this.placeholder))
-                        .search(this.value)
-                        .draw();
-                });
-                child.appendChild(inputFilter);
-            } else {
-                child.addEventListener('click', clearFilter);
-            }
-            trNode.appendChild(child);
-        });
-
-        document
-            .getElementsByClassName('table')[0]
-            .children[0].appendChild(trNode);
+            });
+        $("#GrantApplicationsTable thead").after(newRow);
+        if (optionsOpen) {
+            $(".tr-toggle-filter").show();
+        }
     }
+
+  
 
     function modifyAssignmentsOnServer() {
         let id,

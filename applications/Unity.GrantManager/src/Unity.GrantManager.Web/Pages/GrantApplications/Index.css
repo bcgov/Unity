@@ -229,3 +229,11 @@ th #btn-toggle-filter {
 .dt-select-assignees {
     min-width: 145px;
 }
+
+.custom-filter-input{
+    font-size :0.8rem!important;
+}
+.tr-toggle-filter {
+    display: none;
+    background: white;
+}
