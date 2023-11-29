@@ -8,10 +8,10 @@
      */
     let dataTable = $('#IntakesTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            serverSide: true,
+            serverSide: false,
             paging: true,
             order: [[1, "asc"]],
-            searching: false,
+            searching: true,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(unity.grantManager.intakes.intake.getList),
             columnDefs: [
@@ -69,4 +69,6 @@
         e.preventDefault();
         createModal.open();
     });
+
 });
+

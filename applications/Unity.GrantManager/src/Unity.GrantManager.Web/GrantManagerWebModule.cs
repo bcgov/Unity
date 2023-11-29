@@ -14,7 +14,6 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -35,12 +34,15 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
+using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BlobStoring;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
+using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.Web;
@@ -125,6 +127,34 @@ public class GrantManagerWebModule : AbpModule
         {
             options.Kind = DateTimeKind.Utc;
         });
+
+        Configure<AbpAuditingOptions>(options =>
+        {
+            options.EntityHistorySelectors.Add(
+                new NamedTypeSelector(
+                 "ExplictEntityAudit",
+                 type =>
+                 {
+
+                     if (type.Name.Contains("Role", StringComparison.OrdinalIgnoreCase)
+                        || type.Name.Contains("User", StringComparison.OrdinalIgnoreCase)
+                        || type.Name.Contains("Permission", StringComparison.OrdinalIgnoreCase))
+                     {
+                         return true;
+                     }
+                     else
+                     {
+                         return false;
+                     }
+                 }
+                )
+            );
+        });
+
+        Configure<AbpSecurityLogOptions>(x =>
+        {
+            x.ApplicationName = "GrantManager";
+        });
     }
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
@@ -174,7 +204,7 @@ public class GrantManagerWebModule : AbpModule
             options.Events.OnTokenValidated = async (tokenValidatedContext) =>
             {
                 var updater = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
-                await updater!.UpdateAsync(tokenValidatedContext);
+                await updater!.CreateOrUpdateAsync(tokenValidatedContext);
             };
 
             if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
@@ -379,7 +409,7 @@ public class GrantManagerWebModule : AbpModule
         {
             options.DefaultRequestCulture = new RequestCulture("en-CA");
             options.SupportedCultures = supportedCultures;
-            options.SupportedUICultures = supportedCultures;            
+            options.SupportedUICultures = supportedCultures;
         });
     }
 }

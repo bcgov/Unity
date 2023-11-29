@@ -8,10 +8,10 @@
      */
     let dataTable = $('#ApplicationFormsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            serverSide: true,
+            serverSide: false,
             paging: true,
             order: [[1, "asc"]],
-            searching: false,
+            searching: true,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(unity.grantManager.applicationForms.applicationForm.getList),
             columnDefs: [
@@ -72,4 +72,7 @@
         e.preventDefault();
         createModal.open();
     });
+
 });
+
+

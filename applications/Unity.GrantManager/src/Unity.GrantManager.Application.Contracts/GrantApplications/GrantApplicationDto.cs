@@ -38,6 +38,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string AssessmentResultStatus { get; set; } = string.Empty;
     public DateTime AssessmentResultDate { get; set; }
     public GrantApplicationState StatusCode { get; set; }
+    public DateTime? FinalDecisionDate { get; set; }
     public DateTime? ProjectStartDate { get; set; }
     public DateTime? ProjectEndDate { get; set; }
     public double? PercentageTotalProjectBudget { get; set; }

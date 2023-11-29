@@ -41,11 +41,10 @@ $(function () {
         components = components.replace(/simpleurladvanced/g, 'url');
 
         // Regular components
-
         components = components.replace(/bcaddress/g, 'address');
         components = components.replace(/simplebtnreset/g, 'button');
         components = components.replace(/simplebtnsubmit/g, 'button');
-        components = components.replace(/simplecheckboxes/g, 'checkbox');
+        components = components.replace(/simplecheckboxes/g, 'selectboxes');
         components = components.replace(/simplecheckbox/g, 'checkbox');
         components = components.replace(/simplecols2/g, 'columns');
         components = components.replace(/simplecols3/g, 'columns');
@@ -70,17 +69,16 @@ $(function () {
 
         return components;
     }
+
     async function getSubmission() {
-        try {            
+        try {
             let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
             unity.grantManager.intakes.submission
                 .getSubmission(submissionId)
                 .done(function (result) {
-                    console.log(result);
                     $('.spinner-grow').hide();
                     Formio.icons = 'fontawesome';
                     let data = JSON.parse(formatChefComponents(result));
-                    console.log(data);
                     Formio.createForm(
                         document.getElementById('formio'),
                         data.version.schema,
@@ -100,7 +98,6 @@ $(function () {
         }
     }
 
-    getSubmission();
     // Wait for the DOM to be fully loaded
     function addEventListeners() {
         // Get all the card headers
@@ -148,7 +145,6 @@ $(function () {
     $('#application_attachment_upload_btn').click(function () { $('#application_attachment_upload').trigger('click'); });
 
     $('#recommendation_select').change(function () {
-
         let value = $(this).val();
         updateRecommendation(value, selectedReviewDetails.id);
     });
@@ -170,7 +166,6 @@ $(function () {
         }
     }
 
-
     let assessmentUserDetailsWidgetManager = new abp.WidgetManager({
         wrapper: '#assessmentUserDetailsWidget',
         filterCallback: function () {
@@ -190,12 +185,14 @@ $(function () {
             }
         }
     });
+
     PubSub.subscribe(
         'refresh_assessment_scores',
         (msg, data) => {
             assessmentScoresWidgetManager.refresh();
         }
     );
+
     PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
@@ -214,6 +211,7 @@ $(function () {
             }
         }
     );
+
     PubSub.subscribe(
         'deselect_application_review',
         (msg, data) => {
@@ -225,8 +223,6 @@ $(function () {
         $($.fn.dataTable.tables(true)).DataTable()
             .columns.adjust();
     });
-
-    initCommentsWidget();
 
     $('#printPdf').click(function () {
 
@@ -335,6 +331,13 @@ $(function () {
         }
     );
 
+    function initializeDetailsPage() {
+        getSubmission();
+        initCommentsWidget();
+    }
+
+    initializeDetailsPage();
+
 });
 
 function uploadApplicationFiles(inputId) {    
@@ -419,7 +422,6 @@ function uploadFiles(inputId, urlStr, channel) {
         }
     );
 }
-
 
 const update_application_attachment_count_subscription = PubSub.subscribe(
     'update_application_attachment_count',

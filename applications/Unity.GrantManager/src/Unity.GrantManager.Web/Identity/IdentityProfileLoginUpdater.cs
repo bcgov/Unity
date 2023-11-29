@@ -12,6 +12,8 @@ using System.Security.Claims;
 using IdentityUser = Volo.Abp.Identity.IdentityUser;
 using Volo.Abp.PermissionManagement;
 using Unity.GrantManager.Permissions;
+using Volo.Abp.SecurityLog;
+using Volo.Abp.Data;
 
 namespace Unity.GrantManager.Web.Identity
 {
@@ -20,43 +22,85 @@ namespace Unity.GrantManager.Web.Identity
         private readonly IdentityUserManager _userManager;
         private readonly IdentityRoleManager _identityRoleManager;
         private readonly PermissionManager _permissionManager;
+        private readonly ISecurityLogManager _securityLogManager;
+        private readonly IIdentityUserRepository _identityUserRepository;
 
         public IdentityProfileLoginUpdater(IdentityUserManager userManager,
              IdentityRoleManager identityRoleManager,
-             PermissionManager permissionManager)
+             PermissionManager permissionManager,
+             ISecurityLogManager securityLogManager,
+             IIdentityUserRepository identityUserRepository)
         {
             _userManager = userManager;
             _identityRoleManager = identityRoleManager;
             _permissionManager = permissionManager;
+            _securityLogManager = securityLogManager;
+            _identityUserRepository = identityUserRepository;
         }
 
-        internal async Task UpdateAsync(TokenValidatedContext context)
+        internal async Task CreateOrUpdateAsync(TokenValidatedContext validatedTokenContext)
         {
-            await CreateOrUpdateAsync(context);
-        }
-
-        protected async Task CreateOrUpdateAsync(TokenValidatedContext validatedTokenContext)
-        {
-            var subject = validatedTokenContext.SecurityToken.Subject.Replace("@idir", "");
-            var user = await _userManager.FindByIdAsync(subject);
+            var user = await ResolveUserAsync(validatedTokenContext);
 
             if (user == null)
             {
-                await CreateCurrentUserAsync(validatedTokenContext);
-                user = await _userManager.FindByIdAsync(subject);
+                user = await CreateCurrentUserAsync(validatedTokenContext);
             }
             else
             {
                 await UpdateCurrentUserAsync(user, validatedTokenContext);
             }
 
-            await UpdatePrincipal(validatedTokenContext.Principal!, user!);
+            await UpdatePrincipal(validatedTokenContext.Principal!, user);
             SetTokens(validatedTokenContext);
+
+            // Create security log
+            await _securityLogManager.SaveAsync(securityLog =>
+            {
+                securityLog.Identity = validatedTokenContext.SecurityToken.Subject;
+                securityLog.Action = "Login";
+                securityLog.UserId = user.Id;
+                securityLog.UserName = validatedTokenContext.Principal!.GetClaim(UnityClaimsTypes.IDirUsername);
+            });
+        }
+
+        private async Task<IdentityUser?> ResolveUserAsync(TokenValidatedContext validatedTokenContext)
+        {
+            // support legacy user created, identity needs unique email address and could have been created by email first
+            var email = GetClaimValue(validatedTokenContext.SecurityToken, AbpClaimTypes.Email);
+            IdentityUser? user = null;
+
+            if (email != null)
+            {
+                user = await _userManager.FindByEmailAsync(email);
+            }
+
+            if (user != null)
+            {
+                return user;
+            }
+
+            var userName = ResolveUsername(validatedTokenContext);
+            user = await _userManager.FindByNameAsync(userName);
+
+            return user;
+        }
+
+        private static string ResolveUsername(TokenValidatedContext validatedTokenContext)
+        {
+            var isDir = validatedTokenContext.SecurityToken.Subject.Contains("@idir");
+            if (!isDir)
+            {
+                throw new NotImplementedException();
+            }
+
+            var usernameClaim = validatedTokenContext.SecurityToken.Claims.FirstOrDefault(s => s.Type == UnityClaimsTypes.IDirUsername);
+            return usernameClaim == null ? throw new NotImplementedException() : usernameClaim.Value;
         }
 
         private static void SetTokens(TokenValidatedContext validatedTokenContext)
         {
-            // Minimal required for now to enable access to COMS
+            // Store access token in cookie, the refresh token still needs to be stored in db and refresh step created
             if (validatedTokenContext != null
                 && validatedTokenContext.TokenEndpointResponse != null)
             {
@@ -78,43 +122,47 @@ namespace Unity.GrantManager.Web.Identity
             }
             else
             {
-                foreach (var role in user.Roles)
+                if (user.Roles != null)
                 {
-                    var dbRole = await _identityRoleManager.GetByIdAsync(role.RoleId);
-                    principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
+                    foreach (var role in user.Roles)
+                    {
+                        var dbRole = await _identityRoleManager.GetByIdAsync(role.RoleId);
+                        principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
+                    }
                 }
 
                 var userPermissions = (await _permissionManager.GetAllForUserAsync(user.Id)).Where(s => s.IsGranted);
 
-                foreach (var permission in userPermissions)
+                foreach (var permissionName in userPermissions.Select(s => s.Name))
                 {
-                    if (!principal.HasClaim("Permission", permission.Name))
+                    if (!principal.HasClaim("Permission", permissionName))
                     {
-                        principal.AddClaim("Permission", permission.Name);
+                        principal.AddClaim("Permission", permissionName);
                     }
                 }
             }
 
+            principal.AddClaim("UserId", user.Id.ToString());
             principal.AddClaim("Permission", GrantManagerPermissions.Default);
             principal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
         }
 
-        protected virtual async Task CreateCurrentUserAsync(TokenValidatedContext validatedTokenContext)
+        protected virtual async Task<IdentityUser> CreateCurrentUserAsync(TokenValidatedContext validatedTokenContext)
         {
             var token = validatedTokenContext.SecurityToken;
-            var claims = token.Claims;
 
-            var userNameClaim = claims.FirstOrDefault(x => x.Type == UnityClaimsTypes.Username);
-            var user = new IdentityUser(
-                    Guid.Parse(validatedTokenContext.SecurityToken.Subject.Replace("@idir", "")),
-                    userNameClaim!.Value,
-                    GetClaimValue(token, AbpClaimTypes.Email) ?? "blank@example.com")
+            var userName = GetClaimValue(token, UnityClaimsTypes.IDirUsername);
+            var displayName = GetClaimValue(token, UnityClaimsTypes.DisplayName) ?? "DisplayName";
+            var email = GetClaimValue(token, AbpClaimTypes.Email);
+            var newUserId = Guid.NewGuid();
+
+            var user = new IdentityUser(newUserId, userName, email ?? "blank@example.com")
             {
-                Name = claims.FirstOrDefault(x => x.Type == UnityClaimsTypes.GivenName)?.Value,
-                Surname = claims.FirstOrDefault(x => x.Type == UnityClaimsTypes.FamilyName)?.Value
+                Name = GetClaimValue(token, UnityClaimsTypes.GivenName),
+                Surname = GetClaimValue(token, UnityClaimsTypes.FamilyName)
             };
 
-            var isEmailVerified = claims.FirstOrDefault(x => x.Type == "email_verified")?.Value == "true";
+            var isEmailVerified = GetClaimValue(token, UnityClaimsTypes.EmailVerified) == "true";
             user.SetEmailConfirmed(isEmailVerified);
 
             if (!GetClaimValue(token, AbpClaimTypes.PhoneNumber).IsNullOrEmpty())
@@ -122,12 +170,29 @@ namespace Unity.GrantManager.Web.Identity
                 user.SetPhoneNumber(GetClaimValue(token, AbpClaimTypes.PhoneNumber), false);
             }
 
-            var result = await _userManager.CreateAsync(user);
-
+            // Use identiy user manager to create the user
+            var result = await _userManager.CreateAsync(user) ?? throw new AbpException("Error creating Identity User");
             if (!result.Succeeded)
             {
                 throw new AbpException(string.Join('\n', result.Errors));
             }
+
+            var newUser = await _userManager.GetByIdAsync(user.Id);
+            return await UpdateAdditionalUserPropertiesAsync(newUser, validatedTokenContext.SecurityToken.Subject, displayName);
+        }
+
+        private async Task<IdentityUser> UpdateAdditionalUserPropertiesAsync(IdentityUser user,
+            string oidcSub,
+            string displayName)
+        {
+            if (user != null)
+            {
+                user.SetProperty("OidcSub", oidcSub);
+                user.SetProperty("DisplayName", displayName);
+                await _identityUserRepository.UpdateAsync(user, true);
+            }
+
+            return user!;
         }
 
         protected virtual async Task UpdateCurrentUserAsync(IdentityUser user, TokenValidatedContext validatedTokenContext)
@@ -143,6 +208,8 @@ namespace Unity.GrantManager.Web.Identity
             {
                 await _userManager.SetPhoneNumberAsync(user, GetClaimValue(token, AbpClaimTypes.PhoneNumber));
             }
+
+            await UpdateAdditionalUserPropertiesAsync(user, validatedTokenContext.SecurityToken.Subject, GetClaimValue(token, UnityClaimsTypes.DisplayName) ?? "DisplayName");
         }
 
         private static string? GetClaimValue(JwtSecurityToken token, string type)

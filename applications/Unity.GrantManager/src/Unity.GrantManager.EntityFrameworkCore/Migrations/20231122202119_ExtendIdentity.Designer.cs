@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231122202119_ExtendIdentity")]
+    partial class ExtendIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -426,9 +429,6 @@ namespace Unity.GrantManager.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Acquisition")
-                        .HasColumnType("text");
-
                     b.Property<Guid>("ApplicantId")
                         .HasColumnType("uuid");
 
@@ -452,12 +452,6 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("City")
                         .HasColumnType("text");
-
-                    b.Property<string>("Community")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("CommunityPopulation")
-                        .HasColumnType("integer");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -491,12 +485,6 @@ namespace Unity.GrantManager.Migrations
                     b.Property<DateTime?>("FinalDecisionDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Forestry")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ForestryFocus")
-                        .HasColumnType("text");
-
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -514,22 +502,10 @@ namespace Unity.GrantManager.Migrations
                     b.Property<string>("Payload")
                         .HasColumnType("jsonb");
 
-                    b.Property<float?>("PercentageTotalProjectBudget")
-                        .HasColumnType("real");
-
-                    b.Property<DateTime?>("ProjectEndDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<decimal?>("ProjectFundingTotal")
-                        .HasColumnType("numeric");
-
                     b.Property<string>("ProjectName")
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
-
-                    b.Property<DateTime?>("ProjectStartDate")
-                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ProjectSummary")
                         .HasColumnType("text");
@@ -771,10 +747,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("OidcSub")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Submission")
                         .IsRequired()
                         .HasColumnType("text");
 

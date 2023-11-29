@@ -31,11 +31,13 @@
                     $('#saveAssessmentResultBtn').prop('disabled', true);
                     PubSub.publish('application_assessment_results_saved');
                     PubSub.publish('refresh_detail_panel_summary');
+                    initDatePicker();
                 });
         }
         catch (error) {
             console.log(error);
             $('#saveAssessmentResultBtn').prop('disabled', false);
+            initDatePicker();
         }
     });
 
@@ -63,6 +65,22 @@
     function isScoreField(input) {
         return input.name == 'AssessmentResults.TotalScore';
     }
+
+    function initDatePicker() {
+        setTimeout(function () {
+            let dtToday = new Date();
+            let month = dtToday.getMonth() + 1;
+            let day = dtToday.getDate();
+            let year = dtToday.getFullYear();
+            if (month < 10)
+                month = '0' + month.toString();
+            if (day < 10)
+                day = '0' + day.toString();
+            let maxDate = year + '-' + month + '-' + day;
+            $('#AssessmentResults_FinalDecisionDate').attr({ 'max': maxDate }); 
+        }, 500)
+    }
+    initDatePicker();
 });
 
 
