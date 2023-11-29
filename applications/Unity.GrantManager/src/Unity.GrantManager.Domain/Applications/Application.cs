@@ -57,4 +57,22 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public DateTime? AssessmentResultDate { get; set; }
 
+    public DateTime? ProjectStartDate { get; set; }
+
+    public DateTime? ProjectEndDate { get; set; }
+
+    public double? PercentageTotalProjectBudget { get; set; }
+
+    public decimal? ProjectFundingTotal { get; set; }
+
+    public string? Community { get; set; }
+
+    public int? CommunityPopulation { get; set; }
+
+    public string? Acquisition { get; set; }
+
+    public string? Forestry { get; set; }
+
+    public string? ForestryFocus { get; set; }
+
 }

@@ -295,6 +295,24 @@ public class GrantManagerDbContext :
             b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
         });
 
+        modelBuilder.Entity<ApplicationSector>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationSector",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasMany(e => e.SubSectors).WithOne(e => e.Sector).HasForeignKey(x => x.SectorId);
+        });
+        
+        modelBuilder.Entity<ApplicationSubSector>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationSubSector",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne<ApplicationSector>(e => e.Sector).WithMany(e => e.SubSectors).HasForeignKey(x => x.SectorId);
+        });
+
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
         foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
         {
