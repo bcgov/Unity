@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231128194819_Sector_SubSector")]
+    partial class SectorSubSector
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -771,10 +774,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("OidcSub")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Submission")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -2107,9 +2106,6 @@ namespace Unity.GrantManager.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("DeletionTime");
 
-                    b.Property<string>("DisplayName")
-                        .HasColumnType("text");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -2182,9 +2178,6 @@ namespace Unity.GrantManager.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("NormalizedUserName");
-
-                    b.Property<string>("OidcSub")
-                        .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(256)
