@@ -79,7 +79,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
         }
 
-        public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)
+        public static List<SelectListItem> FormatOptionsList(Dictionary<string, string> optionsList)
         {
             List<SelectListItem> optionsFormattedList = new();
             foreach (KeyValuePair<string, string> entry in optionsList)
