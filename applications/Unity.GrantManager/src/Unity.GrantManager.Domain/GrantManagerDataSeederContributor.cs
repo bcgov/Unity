@@ -254,8 +254,8 @@ public class GrantManagerDataSeederContributor
             new ApplicationStatus
             {
                 StatusCode = GrantApplicationState.GRANT_NOT_APPROVED,
-                ExternalStatus = "Grant Not Approved",
-                InternalStatus = "Grant Not Approved"
+                ExternalStatus = "Declined",
+                InternalStatus = "Declined"
             }
         );
 

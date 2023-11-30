@@ -177,7 +177,7 @@
     "Enum:GrantApplicationAction.Close": "Close",
     "Enum:GrantApplicationAction.Withdraw": "Withdraw",
     "Enum:GrantApplicationAction.Approve": "Approve",
-    "Enum:GrantApplicationAction.Deny": "Deny",
+    "Enum:GrantApplicationAction.Deny": "Decline",
     "Enum:GrantApplicationAction.Message.Open": "Open",
     "Enum:GrantApplicationAction.Message.Submit": "Submitted",
     "Enum:GrantApplicationAction.Message.Internal_Assign": "Assigned",
@@ -188,7 +188,7 @@
     "Enum:GrantApplicationAction.Message.Close": "The Application is closed!",
     "Enum:GrantApplicationAction.Message.Withdraw": "The Application is withdrawn!",
     "Enum:GrantApplicationAction.Message.Approve": "Grant Approved",
-    "Enum:GrantApplicationAction.Message.Deny": "Grant Not Approved",
+    "Enum:GrantApplicationAction.Message.Deny": "Declined",
 
     "Summary:ApplicationSummaryTitle": "Application Summary",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
