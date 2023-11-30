@@ -7,7 +7,7 @@ public static class AssessmentResultsOptionsList
 {
     public static Dictionary<string, string> FundingList => new Dictionary<string, string> { { "HIGH", "High" }, { "LOW", "Low" }, { "MEDIUM", "Medium" } };
 
-    public static Dictionary<string, string> DueDilligenceList => new Dictionary<string, string> { { "COMPLETE", "Complete" }, { "FAILED", "Failed" }, { "INELIGIBLE", "Ineligible" }, { "PAUSED", "Paused" }, { "UNDERWAY", "Underway" }, { "WITHDRAWN", "Withdrawn" } };
+    public static Dictionary<string, string> DueDiligenceList => new Dictionary<string, string> { { "COMPLETE", "Complete" }, { "FAILED", "Failed" }, { "INELIGIBLE", "Ineligible" }, { "PAUSED", "Paused" }, { "UNDERWAY", "Underway" }, { "WITHDRAWN", "Withdrawn" } };
 
     public static Dictionary<string, string> AssessmentResultStatusList => new Dictionary<string, string> { { "FAIL", "Fail" }, { "INELIGIBLE", "Ineligible" }, { "PASS", "Pass" } };
 
