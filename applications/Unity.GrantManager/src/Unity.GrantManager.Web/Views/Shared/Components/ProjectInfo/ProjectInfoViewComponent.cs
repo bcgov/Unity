@@ -19,50 +19,57 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
     public class ProjectInfoViewComponent : AbpViewComponent
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
+        private readonly ApplicationSectorAppService _applicationSectorAppService;
 
-        public ProjectInfoViewComponent(GrantApplicationAppService grantApplicationAppService)
+        public ProjectInfoViewComponent(GrantApplicationAppService grantApplicationAppService, ApplicationSectorAppService applicationSectorAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
+            _applicationSectorAppService = applicationSectorAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
             const decimal ProjectFundingMax = 10000000;
             const decimal ProjectFundingMultiply = 0.2M;
-            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
+            GrantApplicationDto Application = await _grantApplicationAppService.GetAsync(applicationId);
+
+            // TODO: Map the sector and subsector list to the dropdowns
+            // TODO: Map using sector code from inliatziing value
+
+            List<ApplicationSectorDto> ApplicationSectors = (await _applicationSectorAppService.GetListAsync()).ToList();
 
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId
             };
 
-            decimal ProjectFundingTotal = application.ProjectFundingTotal ?? 0;
-            double PercentageTotalProjectBudget = application.PercentageTotalProjectBudget ?? 0;
+            decimal ProjectFundingTotal = Application.ProjectFundingTotal ?? 0;
+            double PercentageTotalProjectBudget = Application.PercentageTotalProjectBudget ?? 0;
             if(ProjectFundingTotal == 0) {
-                ProjectFundingTotal = decimal.Multiply(application.TotalProjectBudget, ProjectFundingMultiply);
+                ProjectFundingTotal = decimal.Multiply(Application.TotalProjectBudget, ProjectFundingMultiply);
                 ProjectFundingTotal = (ProjectFundingTotal > ProjectFundingMax) ? ProjectFundingMax : ProjectFundingTotal;
             }
             if(PercentageTotalProjectBudget == 0) {
-                PercentageTotalProjectBudget = decimal.Divide(application.RequestedAmount, application.TotalProjectBudget).To<double>();
+                PercentageTotalProjectBudget = decimal.Divide(Application.RequestedAmount, Application.TotalProjectBudget).To<double>();
             }
 
-            model.IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
+            model.IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(Application.StatusCode);
 
             model.ProjectInfo = new()
             {
-                ProjectName = application.ProjectName,
-                ProjectSummary = application.ProjectSummary,
-                ProjectStartDate = application.ProjectStartDate,
-                ProjectEndDate = application.ProjectEndDate,
-                RequestedAmount = application.RequestedAmount,
-                TotalProjectBudget = application.TotalProjectBudget,
+                ProjectName = Application.ProjectName,
+                ProjectSummary = Application.ProjectSummary,
+                ProjectStartDate = Application.ProjectStartDate,
+                ProjectEndDate = Application.ProjectEndDate,
+                RequestedAmount = Application.RequestedAmount,
+                TotalProjectBudget = Application.TotalProjectBudget,
                 ProjectFundingTotal = ProjectFundingTotal,
                 PercentageTotalProjectBudget = Math.Round(PercentageTotalProjectBudget, 2),
-                Community = application.Community,
-                CommunityPopulation = application.CommunityPopulation,
-                Forestry = application.Forestry,
-                ForestryFocus = application.ForestryFocus,
-                Acquisition = application.Acquisition,
+                Community = Application.Community,
+                CommunityPopulation = Application.CommunityPopulation,
+                Forestry = Application.Forestry,
+                ForestryFocus = Application.ForestryFocus,
+                Acquisition = Application.Acquisition,
             };
 
             return View(model);
