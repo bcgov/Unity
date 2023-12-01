@@ -5,14 +5,13 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System;
 using Unity.GrantManager.GrantApplications;
-using System.Collections.Immutable;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
     public class AssessmentResultsPageModel : PageModel
     {
         public List<SelectListItem> FundingRiskList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.FundingList);
-        public List<SelectListItem> DueDilligenceList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DueDilligenceList);
+        public List<SelectListItem> DueDiligenceList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DueDiligenceList);
         public List<SelectListItem> AssessmentResultStatusList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.AssessmentResultStatusList);
         public List<SelectListItem> DeclineRationalActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList);
         public List<SelectListItem> RecommendationActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.RecommendationActionList);
@@ -54,9 +53,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             [SelectItems(nameof(FundingRiskList))]
             public string? LikelihoodOfFunding { get; set; }
 
-            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.DueDilligenceStatus")]
-            [SelectItems(nameof(DueDilligenceList))]
-            public string? DueDilligenceStatus { get; set; }
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.DueDiligenceStatus")]
+            [SelectItems(nameof(DueDiligenceList))]
+            public string? DueDiligenceStatus { get; set; }
 
             [Display(Name = "AssessmentResultsView:AssessmentResultsForm.Recommendation")]
             [SelectItems(nameof(RecommendationActionList))]
@@ -79,7 +78,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
         }
 
-        public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)
+        public static List<SelectListItem> FormatOptionsList(Dictionary<string, string> optionsList)
         {
             List<SelectListItem> optionsFormattedList = new();
             foreach (KeyValuePair<string, string> entry in optionsList)
