@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System;
 using Unity.GrantManager.GrantApplications;
-using System.Collections.Immutable;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 {
