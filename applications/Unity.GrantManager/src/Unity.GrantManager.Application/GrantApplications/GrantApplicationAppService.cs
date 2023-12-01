@@ -199,7 +199,7 @@ public class GrantApplicationAppService :
                     application.RecommendedAmount = input.RecommendedAmount ?? 0;
                     application.ApprovedAmount = input.ApprovedAmount ?? 0;
                     application.LikelihoodOfFunding = input.LikelihoodOfFunding;
-                    application.DueDilligenceStatus = input.DueDilligenceStatus;
+                    application.DueDilligenceStatus = input.DueDiligenceStatus;
                     application.Recommendation = input.Recommendation;
                     application.DeclineRational = input.DeclineRational;
                     application.TotalScore = input.TotalScore;
