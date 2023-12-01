@@ -8,8 +8,14 @@ table.dataTable>tbody>tr.even.selected>* {
     color: #003366;
 }
 
+
+
 thead input {
     width: 100%;
+}
+
+.dataTables_filter {
+    display: none;
 }
 
 .hidden {
@@ -65,26 +71,23 @@ td.dt-editable:hover {
     color: white;
 }
 
-    td.dt-editable:before {
-        font-family: 'Segoe-Fluent-Icons', sans-serif;
-        src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
-        font-weight: 100;
-        font-style: normal;
-        font-size: 11px;
-        right: 2px;
-        margin-right: 4px;
-        margin-left: -8px;
-        color: var(--bc-colors-blue-background, #38598A);
-    }
-
-    td.dt-editable:not(:has(span)):before {
-        content: '\E70F';
-    }
+td.dt-editable:before {
+    content: '\E70F';
+    font-family: 'Segoe-Fluent-Icons';
+    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
+    font-weight: 100;
+    font-style: normal;
+    font-size: 11px;
+    right: 2px;
+    margin-right: 4px;
+    margin-left: -8px;
+    color: var(--bc-colors-blue-background, #38598A);
+}
 
 .clear-icon:before {
     content: '\E8BB';
     color: var(--bc-colors-white-primary-500, #FFF);
-    font-family: 'Segoe-Fluent-Icons', sans-serif;
+    font-family: 'Segoe-Fluent-Icons';
     src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
     font-size: 9px;
     padding: 0px;
@@ -103,7 +106,7 @@ td.dt-editable:hover {
 
 .select-checkbox {
     border-radius: 8px;
-    color: var(--bc-colors-blue-background, #38598A);
+    color: 1px solid var(--bc-colors-blue-background, #38598A);
     border: 1px solid var(--bc-colors-blue-background, #38598A);
     width: 8px;
     height: 8px;
@@ -203,7 +206,6 @@ tr.filter th.sorting_asc:after {
     top: 4px;
 }
 
-
 th #btn-toggle-filter {
  display: none;
 }
@@ -212,20 +214,6 @@ th #btn-toggle-filter {
     margin-right: 8px;
 }
 
-#GrantApplicationsTable_filter label {
-    font-size: var(--bc-font-size-sm);
-    color: var(--bc-colors-grey-text-300);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 0;
-    margin-right: 5px;
-}
-
-#GrantApplicationsTable_filter input {
-    margin: 0.25rem;
-}
-
-.dt-select-assignees {
-    min-width: 145px;
+.dataTables_scrollBody {
+    min-height: 400px;
 }

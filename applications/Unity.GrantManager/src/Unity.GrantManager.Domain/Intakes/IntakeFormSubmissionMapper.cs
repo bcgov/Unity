@@ -65,7 +65,7 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        public string InitializeAvailableFormFields(ApplicationForm applicationForm, dynamic formVersion)
+        public string InitializeAvailableFormFields(dynamic formVersion)
         {
             // Check The Version of the form to make sure it is current
             JToken? tokenComponents = ((JObject)formVersion).SelectToken("schema.components");

@@ -61,7 +61,7 @@ namespace Unity.GrantManager.Intakes
         {
             Guid formVersionId = Guid.Parse(token.ToString());
             var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, formVersionId) ?? throw new InvalidFormDataSubmissionException();
-            applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
+            applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formData);
             await _applicationFormRepository.UpdateAsync(applicationForm);
         }
     }

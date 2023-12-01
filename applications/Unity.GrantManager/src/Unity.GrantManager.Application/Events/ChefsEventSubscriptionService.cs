@@ -42,7 +42,7 @@ namespace Unity.GrantManager.Events
 
             var submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
             var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, submissionData.submission.formVersionId) ?? throw new InvalidFormDataSubmissionException();
-            var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formVersion);
+            var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
             return !result.IsNullOrEmpty();
         }
 
@@ -62,7 +62,8 @@ namespace Unity.GrantManager.Events
                 var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.FormVersion);
                 dynamic form = await _formIntService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid));
                 applicationForm = _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
-                applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formVersion);
+
+                applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
             }
             else

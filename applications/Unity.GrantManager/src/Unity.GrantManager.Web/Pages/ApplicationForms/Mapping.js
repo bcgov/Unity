@@ -3,10 +3,12 @@
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
-    let applicationFormId = document.getElementById('applicationFormId').value;
     let chefsFormId = document.getElementById('chefsFormId').value;
-    let chefsFormVersionId = document.getElementById('chefsFormVersionId').value;
+    let formVersionId = document.getElementById('formVersionId').value;
     let intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
+    let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId'];
+    let dataTable;
+    toastr.options.positionClass = 'toast-top-center';
 
     let allowableTypes = ['textarea', 
                           'orgbook',
@@ -36,14 +38,18 @@
                           'simpletextarea',
                           'simpletextareaadvanced'];
 
-    let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId'];
-    let dataTable;
-
     const UIElements = {
         btnBack: $('#btn-back'),
         btnSave: $('#btn-save'),
+        btnEdit: $('#btn-edit'),
         btnSync: $('#btn-sync'),
         btnReset: $('#btn-reset'),
+        btnClose: $('.btn-close'),
+        btnSaveMapping: $('#btn-save-mapping'),
+        btnCancel: $('#btn-cancel-mapping'),
+        inputSearchBar: $('#search-bar'),
+        selectVersionList: $('#applicationFormVersion'),
+        editMappingModal: $('#editMappingModal'),
     };
 
     init();
@@ -59,8 +65,64 @@
     function bindUIEvents() {
         UIElements.btnBack.on('click', handleBack);
         UIElements.btnSave.on('click', handleSave);
+        UIElements.btnSaveMapping.on('click', handleSaveEditMapping);
         UIElements.btnSync.on('click', handleSync);
+        UIElements.btnEdit.on('click', handleEdit);
         UIElements.btnReset.on('click', handleReset);
+        UIElements.btnCancel.on('click', handleCancelMapping);
+        UIElements.btnClose.on('click', handleCancelMapping);
+        UIElements.inputSearchBar.on('keyup', handleSeearchBar);
+        UIElements.selectVersionList.on('change', handleSelectVersion);
+    }
+
+    function handleEdit() {
+        $('#jsonText').val(prettyJson(existingMappingString));
+        UIElements.editMappingModal.addClass('display-modal');
+    }
+
+    function handleSaveEditMapping() {
+
+        try {
+            let jsonText = $('#jsonText').val();
+            $.parseJSON(jsonText);
+            let mappingJsonStr = jsonText.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, "");
+            handleSaveMapping($.parseJSON(mappingJsonStr));
+            handleCancelMapping();
+            location.href = location.href;
+          }
+          catch (err) {
+            abp.notify.error(
+                '',
+                'The JSON is not valid'
+            );
+          }
+    }
+
+    function handleCancelMapping() {
+        UIElements.editMappingModal.removeClass('display-modal');
+    }
+
+    function handleSeearchBar(e) {
+        let filterValue = e.currentTarget.value;
+        let oTable = $('#ApplicationFormsTable').dataTable();
+        oTable.fnFilter(filterValue);
+    }
+
+    function handleSelectVersion(e) {
+        let chefsFormVersionGuid = e.currentTarget.value;
+        navigateToVersion(chefsFormVersionGuid);
+    }
+   
+    function navigateToVersion(chefsFormVersionGuid) {
+        let searchStr = "&ChefsFormVersionGuid=";
+        let indexOfVersion = location.href.indexOf(searchStr);
+
+        if(indexOfVersion > 0) {
+            location.href = location.href.substring(0, indexOfVersion + searchStr.length) + chefsFormVersionGuid;
+        } else {
+            location.href = location.href+"&ChefsFormVersionGuid="+chefsFormVersionGuid;
+        }
+
     }
 
     function bindExistingMaps() {
@@ -85,6 +147,7 @@
         return new DataTable('#ApplicationFormsTable', {
             info: false,
             ordering: false,
+            fixedHeader: true,
             paging: false,
             columnDefs: [
                 { 
@@ -98,28 +161,45 @@
     }
     
     function handleSync() {
-        $.ajax(
-            {
-                url: `/api/app/form/${chefsFormId}/version/${chefsFormVersionId}`,
-                type: "POST",
-                success: function (data) {
+        let chefsFormVersionId = document.getElementById('chefsFormVersionId').value;
+        if(!validateGuid(chefsFormVersionId)) {
+            abp.notify.error(
+                '',
+                'The Form Version ID is not in a GUID format'
+            );
+            return;
+        }
 
-                    let availableChefsFields = JSON.parse(data.availableChefsFields)
-                    initializeIntakeMap(availableChefsFields);
-
-                    abp.notify.success(
-                        data.responseText,
-                        'Mapping Synchronized Successfully'
-                    ); 
-                },
-                error: function (data) {
-                    abp.notify.error(
-                        data.responseText,
-                        'Mapping Not Synchronized Successful'
-                    );
+        if(chefsFormVersionId == "") {
+            abp.notify.error(
+                '',
+                'ChefsFormVersionGuid is neeeded - Mapping Not Synchronized Successful'
+            );
+            
+        } else {
+            $.ajax(
+                {
+                    url: `/api/app/form/${chefsFormId}/version/${chefsFormVersionId}`,
+                    type: "POST",
+                    success: function (data) {
+                        let availableChefsFields = JSON.parse(data.availableChefsFields)
+                        document.getElementById('availableChefsFields').value = JSON.stringify(availableChefsFields);
+                        initializeIntakeMap(availableChefsFields);
+                        navigateToVersion(data.chefsFormVersionGuid);
+                    },
+                    error: function () {
+                        abp.notify.error(
+                            '',
+                            'Mapping Not Synchronized Successful'
+                        );
+                    }
                 }
-            }
-        );
+            );
+        }
+    }
+
+    function validateGuid(textString) {
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(textString);
     }
 
     function handleSave() {
@@ -138,21 +218,28 @@
                 }
             }
         }
+        handleSaveMapping(mappingJson);
+    }
 
-        let formData = JSON.parse(document.getElementById('applicationFormDtoString').value);
+    function handleSaveMapping(mappingJson) {
+        let formData = JSON.parse(document.getElementById('applicationFormVersionDtoString').value);
         formData["submissionHeaderMapping"] = JSON.stringify(mappingJson);
+        formData["availableChefsFields"] = document.getElementById('availableChefsFields').value;
+        formData["ChefsApplicationFormGuid"] = document.getElementById('applicationFormId').value;
 
         $.ajax(
             {
-                url: "/api/app/application-form/" + applicationFormId,
+                url: "/api/app/application-form-version/" + formVersionId,
                 data: JSON.stringify(formData),
                 contentType: "application/json",
                 type: "PUT",
                 success: function (data) {
+                    $('#existingMapping').val(data.submissionHeaderMapping);
+                    existingMappingString = data.submissionHeaderMapping;
                     abp.notify.success(
                         data.responseText,
                         'Mapping Saved Successfully'
-                    ); 
+                    );
                 },
                 error: function (data) {
                     abp.notify.error(
@@ -302,6 +389,66 @@
         let i = 0;
         while ((el = el.previousSibling) != null) ++i;
         return i;
+    }
+
+    const TAB = '    ';
+
+    function prettyJson(jsonText) {
+        if(!jsonText) {
+            return jsonText;
+        }
+        
+        var prettyJson = new Array();
+        var depth = 0;
+        var currChar;
+        var prevChar;
+        var doubleQuoteIn = false;
+        
+        for(var i = 0; i < jsonText.length; i++) {
+            currChar = jsonText.charAt(i);
+            
+            if(currChar == '\"') {
+                if(prevChar != '\\') {
+                    doubleQuoteIn = !doubleQuoteIn;
+                }
+            }
+
+            switch(currChar) {
+            case '{':
+                prettyJson.push(currChar);
+                if(!doubleQuoteIn) {
+                    prettyJson.push('\n');
+                    insertTab(prettyJson, ++depth);
+                }
+                break;
+            case '}':
+                if(!doubleQuoteIn) {
+                    prettyJson.push('\n');
+                    insertTab(prettyJson, --depth);
+                }
+                prettyJson.push(currChar);
+                break;
+            case ',':
+                prettyJson.push(currChar);
+                if(!doubleQuoteIn) {
+                    prettyJson.push('\n');
+                    insertTab(prettyJson, depth);
+                }
+                break;
+            default:
+                prettyJson.push(currChar);
+                break;
+            }
+            
+            prevChar = currChar;
+        }
+        return prettyJson.join('');
+    }
+
+    function insertTab(prettyJson, depth) {
+        for(var i = 0; i < depth; i++) {
+            prettyJson.push(TAB);
+        }
     }
 
 });

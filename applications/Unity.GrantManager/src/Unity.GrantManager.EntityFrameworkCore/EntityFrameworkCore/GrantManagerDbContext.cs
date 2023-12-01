@@ -68,6 +68,7 @@ public class GrantManagerDbContext :
     public DbSet<GrantApplication> GrantApplications { get; set; }
     public DbSet<Intake> Intakes { get; set; }
     public DbSet<ApplicationForm> ApplicationForms { get; set; }
+    public DbSet<ApplicationFormVersion> ApplicationFormVersions { get; set; }
     public DbSet<Applicant> Applicants { get; set; }
     public DbSet<Application> Applications { get; set; }
     public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
@@ -230,6 +231,15 @@ public class GrantManagerDbContext :
             b.ConfigureByConvention(); //auto configure for the base class props                             
             b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+        });
+
+        modelBuilder.Entity<ApplicationFormVersion>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationFormVersion",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention(); //auto configure for the base class props
+            //b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
         });
 
         modelBuilder.Entity<ApplicationComment>(b =>
