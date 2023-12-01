@@ -205,7 +205,7 @@
     "Summary:Assessment.Status": "Status",
     "Summary:Assessment.LikelihoodOfFunding": "Likelihood Of Funding",
     "Summary:Assessment.AssessmentStartDate": "Assessment Start Date",
-    "Summary:Assessment.FinalDecisionDate": "Final Decision Date",
+    "Summary:Assessment.FinalDecisionDate": "Decision Date",
     "Summary:Assessment.TotalScore": "Total Score",
     "Summary:Assessment.AssessmentResult": "Assessment Result",
     "Summary:Assessment.RecommendedAmount": "Recommended Amount",
