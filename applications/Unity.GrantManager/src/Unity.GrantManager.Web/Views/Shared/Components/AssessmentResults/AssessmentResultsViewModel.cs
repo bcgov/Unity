@@ -67,7 +67,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
             [Display(Name = "AssessmentResultsView:AssessmentResultsForm.Notes")]
             [TextArea(Rows = 2)]
-            [StringLength(200)]
+            [StringLength(2000)]
             public string? Notes { get; set; }
 
             [Display(Name = "AssessmentResultsView:AssessmentResultsForm.AssessmentResult")]
