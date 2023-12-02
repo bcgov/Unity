@@ -14,6 +14,9 @@ namespace Unity.GrantManager.ApplicationForms
             CreateUpdateApplicationFormVersionDto>
     {
         Task<IList<ApplicationFormVersionDto>> GetListAsync(Guid applicationFormId);
+        Task<bool> FormVersionExists(string chefsFormVersionId);
+        Task<string?> GetFormVersionSubmissionMapping(string chefsFormVersionId);
+        Task<ApplicationFormVersionDto> UpdateOrCreateApplicationFormVersion(string formId, string formVersionId, Guid applicationFormId, dynamic chefsFormVersion);
     }
 
 }

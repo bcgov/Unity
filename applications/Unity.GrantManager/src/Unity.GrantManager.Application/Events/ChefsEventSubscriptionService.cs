@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Intakes;
@@ -18,18 +19,21 @@ namespace Unity.GrantManager.Events
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly ISubmissionsIntService _submissionsIntService;
         private readonly IFormIntService _formIntService;
+        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
 
         public ChefsEventSubscriptionService(IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IApplicationFormManager applicationFormManager,
             ISubmissionsIntService submissionsIntService,
             IApplicationFormRepository applicationFormRepository,
-            IFormIntService formIntService)
+            IFormIntService formIntService,
+            IApplicationFormVersionAppService applicationFormVersionAppService)
         {
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _submissionsIntService = submissionsIntService;
             _applicationFormRepository = applicationFormRepository;
             _formIntService = formIntService;
             _applicationFormManager = applicationFormManager;
+            _applicationFormVersionAppService = applicationFormVersionAppService;
         }
 
         public async Task<bool> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto)
@@ -48,9 +52,12 @@ namespace Unity.GrantManager.Events
 
         public async Task<bool> PublishedFormAsync(EventSubscriptionDto eventSubscriptionDto)
         {
+            string formId = eventSubscriptionDto.FormId.ToString();
+            string formVersionId = eventSubscriptionDto.FormVersion.ToString();
+
             var applicationForm = (await _applicationFormRepository
                 .GetQueryableAsync())
-                .Where(s => s.ChefsApplicationFormGuid == eventSubscriptionDto.FormId.ToString())
+                .Where(s => s.ChefsApplicationFormGuid == formId)
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault();
 
@@ -62,8 +69,7 @@ namespace Unity.GrantManager.Events
                 var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.FormVersion);
                 dynamic form = await _formIntService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid));
                 applicationForm = _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
-
-                applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
+                await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
             }
             else

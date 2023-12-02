@@ -11,12 +11,15 @@ namespace Unity.GrantManager.Applications
     {
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IIntakeRepository _intakeRepository;
+        private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
 
         public ApplicationFormManager(IIntakeRepository intakeRepository, 
+            IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IApplicationFormRepository applicationFormRepository)
         {
             _intakeRepository = intakeRepository;
             _applicationFormRepository = applicationFormRepository;
+            _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
         }
 
         public async Task<ApplicationForm> InitializeApplicationForm(EventSubscription eventSubscription)

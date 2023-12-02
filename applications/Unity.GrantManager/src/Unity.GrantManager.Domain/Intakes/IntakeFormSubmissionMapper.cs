@@ -73,9 +73,8 @@ namespace Unity.GrantManager.Intakes
             return JsonSerializer.Serialize(components);
         }
 
-        public IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission)
+        public IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission, string? submissionHeaderMapping)
         {
-            string? submissionHeaderMapping = applicationForm.SubmissionHeaderMapping;
             var submission = formSubmission.submission;
             var data = submission.submission.data;
             var form = formSubmission.form;
