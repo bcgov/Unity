@@ -15,7 +15,7 @@ public class BasicThemeGlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-buttons/js/dataTables.buttons.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons/js/buttons.colVis.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons/js/buttons.html5.min.js");
-
+        context.Files.AddIfNotContains("/libs/datatables.net-select/js/dataTables.select.js");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.js");
         context.Files.AddIfNotContains("/libs/datatables.net-select-bs5/js/select.bootstrap5.js");
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader/js/dataTables.fixedHeader.js");

@@ -276,8 +276,8 @@
                      {
                         extend: 'colvis',
                         text: 'Visibility',
-                        columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
-                        exclude: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+                        //columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+                        //aiExclude: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
                         className: 'btn btn-light custom-table-btn cln-visible',
                        
                     }
@@ -475,7 +475,7 @@
                             return data ?? '{Org Book Status}';
                         },
                     },
-                    { //17
+                    { //17 -- mapped
                         title: 'Project Start Date',
                         name: 'projectStartDate',
                         data: 'projectStartDate',
@@ -484,7 +484,7 @@
                             return data ?? '{Project Start Date}';
                         },
                     },
-                    { //18
+                    { //18 -- mapped
                         title: 'Project End Date',
                         name: 'projectEndDate',
                         data: 'projectEndDate',
@@ -493,19 +493,19 @@
                             return data ?? '{Project End Date}';
                         },
                     },
-                    { //19
+                    { //19  -- mapped
                         title: 'Projected Funding Total',
-                        name: 'projectedFundingTotal',
-                        data: 'projectedFundingTotal',
+                        name: 'projectFundingTotal',
+                        data: 'projectFundingTotal',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '{Projected Funding Total}';
                         },
                     },
-                    { //20
+                    { //20  -- mapped
                         title: '% of Total Project Budget',
-                        name: 'percentageOfTotalProjectBudget',
-                        data: 'percentageOfTotalProjectBudget',
+                        name: 'percentageTotalProjectBudget',
+                        data: 'percentageTotalProjectBudget',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '{% of Total Project Budget}';
@@ -513,8 +513,8 @@
                     },
                     { //21
                         title: 'Total Paid Amount $',
-                        name: 'totalPaidAmount',
-                        data: 'totalPaidAmount',
+                        name: 'projectFundingTotal',
+                        data: 'projectFundingTotal',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '{Total Paid Amount $}';
@@ -529,16 +529,16 @@
                             return data ?? '{Electoral District}';
                         },
                     },
-                    { //23
+                    { //23 -- mapped
                         title: 'Forestry or Non-Forestry',
                         name: 'forestryOrNonForestry',
-                        data: 'forestryOrNonForestry',
+                        data: 'forestry',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '{Forestry or Non-Forestry}';
                         },
                     },
-                    { //24
+                    { //24 -- mapped
                         title: 'Forestry Focus',
                         name: 'forestryFocus',
                         data: 'forestryFocus',
@@ -547,7 +547,7 @@
                             return data ?? '{Forestry Focus}';
                         },
                     },
-                    { //25
+                    { //25 -- mapped
                         title: 'Acquisition',
                         name: 'acquisition',
                         data: 'acquisition',
@@ -556,7 +556,7 @@
                             return data ?? '{Acquisition}';
                         },
                     },
-                    { //26
+                    { //26 -- mapped
                         title: 'Community',
                         name: 'community',
                         data: 'community',
@@ -565,7 +565,7 @@
                             return data ?? '{community}';
                         },
                     },
-                    { //27
+                    { //27 -- mapped
                         title: 'Community Population',
                         name: 'communityPopulation',
                         data: 'communityPopulation',
@@ -574,7 +574,7 @@
                             return data ?? '{Community Population}';
                         },
                     },
-                    { //28
+                    { //28 -- mapped
                         title: 'Likelihood of Funding',
                         name: 'likelihoodOfFunding',
                         data: 'likelihoodOfFunding',
@@ -583,7 +583,7 @@
                             return data ?? '{Likelihood of Funding}';
                         },
                     },
-                    { //29
+                    { //29 -- mapped
                         title: 'Recommendation',
                         name: 'recommendation',
                         data: 'recommendation',
@@ -601,7 +601,7 @@
                             return data ?? '{Batch#}';
                         },
                     },
-                    { //31
+                    { //31 -- mapped
                         title: 'Total Score',
                         name: 'totalScore',
                         data: 'totalScore',
@@ -610,16 +610,16 @@
                             return data ?? '{Total Score}';
                         },
                         },
-                    { //32
+                    { //32 -- mapped
                         title: 'Assessment Result',
                         name: 'assessmentResult',
-                        data: 'assessmentResult',
+                        data: 'assessmentResultStatus',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '{Assessment Result}';
                         },
                      },
-                    { //33
+                    { //33 -- mapped
                         title: 'Recommended Amount',
                         name: 'recommendedAmount',
                         data: 'recommendedAmount',
@@ -627,7 +627,8 @@
                         render: function (data) {
                             return data ?? '{Recommended Amount}';
                         },
-                     }
+                    },
+
 
                 ],
             })
