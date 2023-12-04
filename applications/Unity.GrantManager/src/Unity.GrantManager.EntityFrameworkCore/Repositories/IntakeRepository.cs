@@ -11,10 +11,10 @@ namespace Unity.GrantManager.Repositories
     [ExposeServices(typeof(IIntakeRepository))]
 #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     // This pattern is an implementation ontop of ABP framework, will not change this
-    public class IntakeRepository : EfCoreRepository<GrantManagerDbContext, Intake, Guid>, IIntakeRepository
+    public class IntakeRepository : EfCoreRepository<GrantTenantDbContext, Intake, Guid>, IIntakeRepository
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
-        public IntakeRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
+        public IntakeRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
         {
         }
     }

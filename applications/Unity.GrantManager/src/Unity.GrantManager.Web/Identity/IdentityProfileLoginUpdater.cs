@@ -14,6 +14,9 @@ using Volo.Abp.PermissionManagement;
 using Unity.GrantManager.Permissions;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.Data;
+using Volo.Abp.TenantManagement;
+using Unity.GrantManager.Identity;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Web.Identity
 {
@@ -24,44 +27,84 @@ namespace Unity.GrantManager.Web.Identity
         private readonly PermissionManager _permissionManager;
         private readonly ISecurityLogManager _securityLogManager;
         private readonly IIdentityUserRepository _identityUserRepository;
+        private readonly ITenantRepository _tenantRepository;
+        private readonly ITenantUserRepository _tenantUserRepository;
+        private readonly ICurrentTenant _currentTenant;
 
         public IdentityProfileLoginUpdater(IdentityUserManager userManager,
              IdentityRoleManager identityRoleManager,
              PermissionManager permissionManager,
              ISecurityLogManager securityLogManager,
-             IIdentityUserRepository identityUserRepository)
+             IIdentityUserRepository identityUserRepository,
+             ITenantRepository tenantRepository,
+             ITenantUserRepository tenantUserRepository,
+             ICurrentTenant currentTenant)
         {
             _userManager = userManager;
             _identityRoleManager = identityRoleManager;
             _permissionManager = permissionManager;
             _securityLogManager = securityLogManager;
             _identityUserRepository = identityUserRepository;
+            _tenantRepository = tenantRepository;
+            _tenantUserRepository = tenantUserRepository;
+            _currentTenant = currentTenant;
         }
 
         internal async Task CreateOrUpdateAsync(TokenValidatedContext validatedTokenContext)
         {
-            var user = await ResolveUserAsync(validatedTokenContext);
+            // Default to the one default tenant for now - this will change once the multi part
+            // of the tenancy is finished and users are created through user management
+            var tenant = await _tenantRepository.FindByNameAsync("Default");
 
-            if (user == null)
+            using (_currentTenant.Change(tenant.Id))
             {
-                user = await CreateCurrentUserAsync(validatedTokenContext);
+                var user = await ResolveUserAsync(validatedTokenContext);
+
+                if (user == null)
+                {
+                    user = await CreateCurrentUserAsync(validatedTokenContext);
+                }
+                else
+                {
+                    await UpdateCurrentUserAsync(user, validatedTokenContext);
+                }
+
+                await SyncUserToTenantDatabase(user);
+                await UpdatePrincipal(validatedTokenContext.Principal!, user);
+
+                SetTokens(validatedTokenContext);
+
+                // Create security log
+                await _securityLogManager.SaveAsync(securityLog =>
+                {
+                    securityLog.Identity = validatedTokenContext.SecurityToken.Subject;
+                    securityLog.Action = "Login";
+                    securityLog.UserId = user.Id;
+                    securityLog.UserName = validatedTokenContext.Principal!.GetClaim(UnityClaimsTypes.IDirUsername);
+                });
             }
-            else
+        }
+
+        private async Task SyncUserToTenantDatabase(IdentityUser user)
+        {
+            var oidcSub = user.GetProperty("OidcSub")?.ToString();
+            var displayName = user.GetProperty("DisplayName")?.ToString();
+
+            // Create tenant level user
+            if (oidcSub != null)
             {
-                await UpdateCurrentUserAsync(user, validatedTokenContext);
+                var existingUser = await _tenantUserRepository.FindByOidcSub(oidcSub);
+                if (existingUser == null)
+                {
+                    var tenantUser = await _tenantUserRepository.InsertAsync(new User()
+                    {
+                        CorrelationId = user.Id,
+                        OidcSub = oidcSub,
+                        OidcDisplayName = displayName ?? string.Empty,
+                    });
+                    await _tenantUserRepository.UpdateAsync(tenantUser, true);
+                }
             }
-
-            await UpdatePrincipal(validatedTokenContext.Principal!, user);
-            SetTokens(validatedTokenContext);
-
-            // Create security log
-            await _securityLogManager.SaveAsync(securityLog =>
-            {
-                securityLog.Identity = validatedTokenContext.SecurityToken.Subject;
-                securityLog.Action = "Login";
-                securityLog.UserId = user.Id;
-                securityLog.UserName = validatedTokenContext.Principal!.GetClaim(UnityClaimsTypes.IDirUsername);
-            });
         }
 
         private async Task<IdentityUser?> ResolveUserAsync(TokenValidatedContext validatedTokenContext)
@@ -142,6 +185,7 @@ namespace Unity.GrantManager.Web.Identity
                 }
             }
 
+            principal.AddClaim(AbpClaimTypes.TenantId, _currentTenant?.Id?.ToString() ?? string.Empty);
             principal.AddClaim("UserId", user.Id.ToString());
             principal.AddClaim("Permission", GrantManagerPermissions.Default);
             principal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
@@ -156,7 +200,7 @@ namespace Unity.GrantManager.Web.Identity
             var email = GetClaimValue(token, AbpClaimTypes.Email);
             var newUserId = Guid.NewGuid();
 
-            var user = new IdentityUser(newUserId, userName, email ?? "blank@example.com")
+            var user = new IdentityUser(newUserId, userName, email ?? "blank@example.com", _currentTenant.Id)
             {
                 Name = GetClaimValue(token, UnityClaimsTypes.GivenName),
                 Surname = GetClaimValue(token, UnityClaimsTypes.FamilyName)
@@ -178,6 +222,7 @@ namespace Unity.GrantManager.Web.Identity
             }
 
             var newUser = await _userManager.GetByIdAsync(user.Id);
+
             return await UpdateAdditionalUserPropertiesAsync(newUser, validatedTokenContext.SecurityToken.Subject, displayName);
         }
 

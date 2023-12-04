@@ -16,12 +16,11 @@ namespace Unity.GrantManager.Repositories;
 [ExposeServices(typeof(IAssessmentRepository))]
 #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
 // Will not fix this, as is a ABP implementation issue
-public class AssessmentRepository : EfCoreRepository<GrantManagerDbContext, Assessment, Guid>, IAssessmentRepository
+public class AssessmentRepository : EfCoreRepository<GrantTenantDbContext, Assessment, Guid>, IAssessmentRepository
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
 {
-    public AssessmentRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
+    public AssessmentRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
     {
-
     }
 
     public async Task<bool> ExistsAsync(Guid applicationId, Guid userId)

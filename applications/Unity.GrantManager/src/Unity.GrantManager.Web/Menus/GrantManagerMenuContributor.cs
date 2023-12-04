@@ -35,21 +35,11 @@ public class GrantManagerMenuContributor : IMenuContributor
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
-                GrantManagerMenus.GrantPrograms,
-                l["Menu:GrantPrograms"],
-                url: "/GrantPrograms",
-                icon: "fl fl-bank",
-                order: 1
-            )
-        );
-
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
                 GrantManagerMenus.Applications,
                 l["Menu:Applications"],
                 "~/GrantApplications",
                 icon: "fl fl-other-user",
-                order: 2
+                order: 1
             )
         );
 
@@ -60,7 +50,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                    l["Menu:Roles"],
                    "~/Identity/Roles",
                    icon: "fl fl-settings",
-                   order: 3,
+                   order: 2,
                    requiredPermissionName: IdentityPermissions.Roles.Default
                )
            );
@@ -71,7 +61,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Users"],
                 "~/Identity/Users",
                 icon: "fl fl-other-user",
-                order: 4,
+                order: 3,
                 requiredPermissionName: IdentityPermissions.Users.Default
             )
         );
@@ -82,7 +72,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Intakes"],
                 "~/Intakes",
                 icon: "fl fl-settings",
-                order: 5,
+                order: 4,
                 requiredPermissionName: GrantManagerPermissions.Intakes.Default
             )
         );
@@ -93,7 +83,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:ApplicationForms"],
                 "~/ApplicationForms",
                 icon: "fl fl-settings",
-                order: 6,
+                order: 5,
                 requiredPermissionName: GrantManagerPermissions.ApplicationForms.Default
             )
         );
