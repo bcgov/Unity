@@ -15,7 +15,6 @@ on:
       - 'README.md'
       - 'SECURITY..md'
 
-# Repository secrets TEAMSWEBHOOK https://bcgov.webhook.office.com/webhookb2/... OPENSHIFT_TOKEN_{DEV|TEST|PROD|TOOLS}
 # Repository variables VERSION_MAJOR_MINOR 0.1 VERSION_MESSAGE Dev to Test - VERSION_PREFIX v
 
 env:
@@ -24,7 +23,6 @@ env:
   RELEASE_PREFIX: ${{vars.VERSION_PREFIX}}
   RELEASE_VERSION: ${{vars.VERSION_MAJOR_MINOR}}
   RELEASE_MESSAGE: ${{vars.VERSION_MESSAGE}} 
-  TEAMS_WEBHOOK: ${{secrets.TEAMSWEBHOOK}}
 
 jobs:
   # This workflow contains a jobs called "GenerateTag" "PushTag" "Build" "PushAlert"
@@ -94,15 +92,3 @@ jobs:
         echo project = ${{steps.project.outputs.PROJECT}}
         docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
         docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
-#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
-#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
-  PushAlert:
-    needs: [GenerateTag, PushTag, Build]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Push Alert to Microsoft Teams Channel Webhook
-      env:
-        TAGNAME: ${{needs.GenerateTag.outputs.TAGNAME}}
-        TAGMESSAGE: ${{needs.GenerateTag.outputs.TAGMESSAGE}}
-      run: |
-        curl -H "Content-Type: application/json" --data-raw "{\"text\":\"${{env.TAGNAME}} ${{env.TAGMESSAGE}}\"}" -X POST -k ${{env.TEAMS_WEBHOOK}}
