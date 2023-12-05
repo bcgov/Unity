@@ -7,6 +7,7 @@ using Unity.GrantManager.GrantApplications;
 using System.Linq;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 {
@@ -33,15 +34,31 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             const decimal ProjectFundingMultiply = 0.2M;
             GrantApplicationDto Application = await _grantApplicationAppService.GetAsync(applicationId);
 
-            // TODO: Map the sector and subsector list to the dropdowns
-            // TODO: Map using sector code from inliatziing value
-
             List<ApplicationSectorDto> ApplicationSectors = (await _applicationSectorAppService.GetListAsync()).ToList();
 
             ProjectInfoViewModel model = new()
             {
-                ApplicationId = applicationId
+                ApplicationId = applicationId,
+                ApplicationSectors = ApplicationSectors
             };
+
+            foreach (ApplicationSectorDto sector in ApplicationSectors)
+            {
+                model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorCode, Text = sector.SectorName });
+            }
+
+            if (ApplicationSectors.Count > 0 ) {
+                List<ApplicationSubSectorDto>? SubSectors = new List<ApplicationSubSectorDto>();
+                if(Application.SubSector.IsNullOrEmpty()) {
+                    SubSectors = ApplicationSectors[0].SubSectors ?? SubSectors;
+                } else {
+                    ApplicationSectorDto applicationSector = ApplicationSectors.Find(x => x.SectorCode == Application.Sector) ?? throw new ArgumentException("Sector not found");
+                    SubSectors = applicationSector.SubSectors;
+                }
+                foreach (ApplicationSubSectorDto subSector in SubSectors) {
+                    model.ApplicationSubSectorsList.Add(new SelectListItem { Value = subSector.SubSectorCode, Text = subSector.SubSectorName });
+                }
+            }
 
             decimal ProjectFundingTotal = Application.ProjectFundingTotal ?? 0;
             double PercentageTotalProjectBudget = Application.PercentageTotalProjectBudget ?? 0;
@@ -66,10 +83,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 ProjectFundingTotal = ProjectFundingTotal,
                 PercentageTotalProjectBudget = Math.Round(PercentageTotalProjectBudget, 2),
                 Community = Application.Community,
-                CommunityPopulation = Application.CommunityPopulation,
+                CommunityPopulation = Application.CommunityPopulation ?? 0,
                 Forestry = Application.Forestry,
                 ForestryFocus = Application.ForestryFocus,
                 Acquisition = Application.Acquisition,
+                Sector = Application.Sector,
+                SubSector = Application.SubSector,
+                EconomicRegion = Application.EconomicRegion,
+                ElectoralDistrict = Application.ElectoralDistrict
             };
 
             return View(model);

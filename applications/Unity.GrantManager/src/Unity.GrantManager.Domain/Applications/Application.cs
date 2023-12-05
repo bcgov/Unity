@@ -25,6 +25,7 @@ public class Application : AuditedAggregateRoot<Guid>
     public decimal RequestedAmount { get; set; }
     public decimal TotalProjectBudget { get; set; }
     public string? Sector { get; set; } = null;
+    public string? SubSector { get; set; } = null;
     public string? EconomicRegion { get; set;} = null;
     public string? City { get; set; } = null;
     public DateTime? ProposalDate { get; set; }
@@ -74,5 +75,7 @@ public class Application : AuditedAggregateRoot<Guid>
     public string? Forestry { get; set; }
 
     public string? ForestryFocus { get; set; }
+
+    public string? ElectoralDistrict { get; set; }
 
 }

@@ -17,5 +17,9 @@ namespace Unity.GrantManager.GrantApplications
         public string? Acquisition { get; set; }
         public string? Forestry { get; set; }
         public string? ForestryFocus { get; set; }
+        public string? Sector { get; set; }
+        public string? SubSector { get; set; }
+        public string? ElectoralDistrict { get; set; }
+        public string? EconomicRegion { get; set; }
     }
 }

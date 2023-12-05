@@ -13,6 +13,8 @@
 
 <input type="hidden" id="ProjectInfoViewApplicationId" value="@Model.ApplicationId" />
 
+<div id="applicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
+
 <abp-row class="px-1 pb-2 mb-4 project-info-container">
     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
         <div id="ProjectInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
@@ -62,13 +64,13 @@
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_3" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.Sector" asp-items="@Model.FundingRiskList"
+                    <abp-select asp-for="@Model.ProjectInfo.Sector" asp-items="@Model.ApplicationSectorsList" id="sectorDropdown"
                                 onchange="enableSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
                 <abp-column size="_3" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.SubSector" asp-items="@Model.DueDilligenceList"
+                    <abp-select asp-for="@Model.ProjectInfo.SubSector" asp-items="@Model.ApplicationSubSectorsList" id="subSectorDropdown"
                                 onchange="enableSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
