@@ -98,7 +98,7 @@
                     </abp-select>
                 </abp-column>
                 <abp-column size="_12" class="px-1">
-                    <abp-input type="date" asp-for="@Model.AssessmentResults.FinalDecisionDate" onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)" abp-data-datepicker="false">
+                    <abp-input type="date" asp-for="@Model.AssessmentResults.FinalDecisionDate" onchange="enableResultSaveBtn({'value':'date'})" disabled="@(!Model.IsEditGranted)" abp-data-datepicker="false">
                     </abp-input>
                 </abp-column>
                 <abp-column size="_12" class="px-1 d-flex justify-content-end">
