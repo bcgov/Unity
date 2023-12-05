@@ -23,7 +23,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
         public List<SelectListItem> AcquisitionList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.AcquisitionList);
 
+        public List<SelectListItem> ApplicationSectorsList { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> ApplicationSubSectorsList { get; set; } = new List<SelectListItem>();
+        
         public Guid ApplicationId { get; set; }
+        public List<ApplicationSectorDto> ApplicationSectors { get; set; } = new List<ApplicationSectorDto>();
         public bool IsFinalDecisionMade { get; set; }
         public ProjectInfoViewModelModel ProjectInfo { get; set; } = new();
 
@@ -59,11 +63,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public decimal? ProjectFundingTotal { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.Sector")]
-            [SelectItems(nameof(FundingRiskList))]
+            [SelectItems(nameof(ApplicationSectorsList))]
             public string? Sector { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.SubSector")]
-            [SelectItems(nameof(DueDilligenceList))]
+            [SelectItems(nameof(ApplicationSubSectorsList))]
             public string? SubSector { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.Community")]
@@ -78,7 +82,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? ElectoralDistrict { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.CommunityPopulation")]
-            public int? CommunityPopulation { get; set; }
+            public int? CommunityPopulation { get; set; } = 0;
 
             [Display(Name = "ProjectInfoView:ProjectInfo.Acquisition")]
             [SelectItems(nameof(AcquisitionList))]

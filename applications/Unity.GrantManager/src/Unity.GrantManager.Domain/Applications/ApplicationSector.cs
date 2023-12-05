@@ -10,5 +10,5 @@ public class ApplicationSector : AuditedAggregateRoot<Guid>
 
     public string SectorCode { get; set; } = string.Empty;
 
-    public ICollection<ApplicationSubSector> SubSectors { get; } = new List<ApplicationSubSector>();
+    public ICollection<ApplicationSubSector> SubSectors { get; set; } = new List<ApplicationSubSector>();
 }

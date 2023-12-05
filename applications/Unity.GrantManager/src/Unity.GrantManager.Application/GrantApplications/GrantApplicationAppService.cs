@@ -241,6 +241,10 @@ public class GrantApplicationAppService :
             application.Acquisition = input.Acquisition;
             application.Forestry = input.Forestry;
             application.ForestryFocus = input.ForestryFocus;
+            application.Sector = input.Sector;
+            application.SubSector = input.SubSector;
+            application.EconomicRegion = input.EconomicRegion;
+            application.ElectoralDistrict = input.ElectoralDistrict;
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
 

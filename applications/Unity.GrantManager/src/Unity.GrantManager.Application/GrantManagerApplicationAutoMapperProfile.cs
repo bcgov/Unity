@@ -39,6 +39,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationActionResultItem, ApplicationActionDto>();
         CreateMap<EventSubscription, EventSubscriptionDto>();
         CreateMap<EventSubscriptionDto, EventSubscription>();
+        CreateMap<ApplicationSector, ApplicationSectorDto>();
+        CreateMap<ApplicationSubSector, ApplicationSubSectorDto>();
     }
 }
 

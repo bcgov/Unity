@@ -65,6 +65,24 @@
     $('#startDate').on('apply.daterangepicker', function(event, picker) {
         console.log(event, picker);
       });
+
+      $('#sectorDropdown').change(function () {
+        var selectedValue = $(this).val();
+
+        let sectorList = JSON.parse($('#applicationSectorList').text());
+
+        var childDropdown = $('#subSectorDropdown');
+        childDropdown.empty();
+
+        let subSectors = sectorList.find(sector => (sector.sectorCode === selectedValue))?.subSectors;
+
+        $.each(subSectors, function (index, item) {
+            childDropdown.append($('<option>', {
+                value: item.subSectorCode,
+                text: item.subSectorName
+            }));
+        });
+    });
 });
 
 
