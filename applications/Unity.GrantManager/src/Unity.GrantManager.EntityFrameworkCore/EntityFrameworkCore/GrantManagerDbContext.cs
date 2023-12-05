@@ -111,7 +111,7 @@ public class GrantManagerDbContext :
 
             b.Property(x => x.ProgramName)
                 .IsRequired()
-                .HasMaxLength(250);
+                .HasMaxLength(255);
 
             b.HasIndex(x => x.ProgramName);
         });
@@ -148,7 +148,7 @@ public class GrantManagerDbContext :
             b.ConfigureByConvention();
             b.Property(x => x.ApplicantName)
                 .IsRequired()
-                .HasMaxLength(250);
+                .HasMaxLength(600);
 
             b.HasIndex(x => x.ApplicantName);
         });
@@ -168,7 +168,7 @@ public class GrantManagerDbContext :
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(250);
+            b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
 
             b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
         });
@@ -195,7 +195,7 @@ public class GrantManagerDbContext :
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.ProjectName).IsRequired().HasMaxLength(250);
+            b.Property(x => x.ProjectName).IsRequired().HasMaxLength(255);
             b.Property(x => x.Payload).HasColumnType("jsonb");
             b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
             b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();

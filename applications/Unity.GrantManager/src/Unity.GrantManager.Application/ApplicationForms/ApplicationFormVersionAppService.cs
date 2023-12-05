@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
-using Volo.Abp;
+using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
@@ -15,7 +16,7 @@ using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicationForms
 {    
-    [RemoteService(false)]
+    [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public class ApplicationFormVersionAppService :
     CrudAppService<
         ApplicationFormVersion,
