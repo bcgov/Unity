@@ -9,6 +9,7 @@ using Volo.Abp.Uow;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
 using Xunit.Abstractions;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Comments
 {
@@ -73,7 +74,8 @@ namespace Unity.GrantManager.Comments
         [Trait("Category", "Integration")]
         public async Task CreateAsync_Should_Create_ApplicationComment()
         {
-            // Arrange
+            // Arrange            
+            Login(GrantManagerTestData.User1_UserId);
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
             var comment = "Test Add ApplicationComment Through Comment Api";
@@ -83,7 +85,7 @@ namespace Unity.GrantManager.Comments
             {
                 Comment = comment,
                 CommentType = CommentType.ApplicationComment,
-                OwnerId = application.Id
+                OwnerId = application.Id  
             });
 
             // Assert
@@ -97,6 +99,7 @@ namespace Unity.GrantManager.Comments
         public async Task CreateAsync_Should_Create_AssessmentComment()
         {
             // Arrange
+            Login(GrantManagerTestData.User1_UserId);
             using var uow = _unitOfWorkManager.Begin();
             var assessment = (await _assessmentsRepository.GetListAsync())[0];
             var comment = "Test Add AssessmentComment Through Comment Api";

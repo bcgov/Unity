@@ -25,6 +25,10 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.AssessmentId));
         CreateMap<ApplicationComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicationId));
+        CreateMap<CommentListItem, CommentDto>()
+            .ForMember(dest => dest.Badge, opt => opt.MapFrom(src => src.CommenterBadge))
+            .ForMember(dest => dest.Commenter, opt => opt.MapFrom(src => src.CommenterDisplayName))
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
         CreateMap<Assessment, AssessmentDto>()
             .ForMember(
                 dest => dest.StartDate,
@@ -38,7 +42,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<AssessmentAttachment, AssessmentAttachmentDto>();
         CreateMap<ApplicationActionResultItem, ApplicationActionDto>();
         CreateMap<EventSubscription, EventSubscriptionDto>();
-        CreateMap<EventSubscriptionDto, EventSubscription>();
+        CreateMap<EventSubscriptionDto, EventSubscription>();        
     }
 }
 

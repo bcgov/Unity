@@ -145,6 +145,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+
+                b.HasOne<User>()
+                   .WithMany()
+                   .HasPrincipalKey(x => x.Id)
+                   .HasForeignKey(x => x.CommenterId);
             });
 
             modelBuilder.Entity<ApplicationAttachment>(b =>
@@ -168,6 +173,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.HasOne<User>()
                     .WithMany()
+                    .HasPrincipalKey(x => x.Id)
                     .HasForeignKey(x => x.AssessorId)
                     .IsRequired()
                     .OnDelete(DeleteBehavior.NoAction);
@@ -190,6 +196,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "AssessmentComment", GrantManagerConsts.DbSchema);
                 b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AssessmentId).IsRequired();
+
+                b.HasOne<User>()
+                    .WithMany()
+                    .HasPrincipalKey(x => x.Id)
+                    .HasForeignKey(x => x.CommenterId);
             });
 
             modelBuilder.Entity<ApplicationUserAssignment>(b =>
@@ -198,8 +209,14 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
-                b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId);
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+
+                b.HasOne<User>()
+                    .WithMany()
+                    .HasPrincipalKey(x => x.Id)
+                    .HasForeignKey(x => x.AssigneeId)
+                    .IsRequired()
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();

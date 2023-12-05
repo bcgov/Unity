@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Identity;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Users;
@@ -13,33 +14,33 @@ namespace Unity.GrantManager.Comments
         private readonly ICommentsRepository<ApplicationComment> _applicationCommentsRepository;
         private readonly ICommentsRepository<AssessmentComment> _assessmentCommentsRepository;
         private readonly ICurrentUser _currentUser;
+        private readonly ITenantUserRepository _tenantUserRepository;
 
         public CommentsManager(ICommentsRepository<ApplicationComment> applicationCommentsRepository,
             ICommentsRepository<AssessmentComment> assessmentCommentsRepository,
-            ICurrentUser currentUser)
+            ICurrentUser currentUser,
+            ITenantUserRepository tenantUserRepository)
         {
             _applicationCommentsRepository = applicationCommentsRepository;
             _assessmentCommentsRepository = assessmentCommentsRepository;
             _currentUser = currentUser;
+            _tenantUserRepository = tenantUserRepository;
         }
 
         public async Task<CommentBase> CreateCommentAsync(Guid ownerId, string comment, CommentType assessmentComment)
         {
+            Guid commenterId = _currentUser.GetId();
+
             return assessmentComment switch
             {
                 CommentType.ApplicationComment => await _applicationCommentsRepository
-                    .InsertAsync(new ApplicationComment() 
-                        { Commenter = GetCommenter(), Comment = comment, ApplicationId = ownerId }, autoSave: true),
+                    .InsertAsync(new ApplicationComment()
+                    { Comment = comment, ApplicationId = ownerId, CommenterId = commenterId }, autoSave: true),
                 CommentType.AssessmentComment => await _assessmentCommentsRepository
-                    .InsertAsync(new AssessmentComment() 
-                        { Commenter = GetCommenter(), Comment = comment, AssessmentId = ownerId }, autoSave: true),
+                    .InsertAsync(new AssessmentComment()
+                    { Comment = comment, AssessmentId = ownerId, CommenterId = commenterId }, autoSave: true),
                 _ => throw new NotImplementedException(),
             };
-        }
-
-        private string GetCommenter()
-        {
-            return $"{_currentUser.SurName}, {_currentUser.Name}";
         }
 
         public async Task<IReadOnlyList<CommentBase>> GetCommentsAsync(Guid ownerId, CommentType type)
@@ -47,7 +48,7 @@ namespace Unity.GrantManager.Comments
             switch (type)
             {
                 case CommentType.ApplicationComment:
-                    var applicationCommentsQry = await _applicationCommentsRepository.GetQueryableAsync();                    
+                    var applicationCommentsQry = await _applicationCommentsRepository.GetQueryableAsync();
                     return applicationCommentsQry.Where(c => c.ApplicationId.Equals(ownerId)).OrderByDescending(s => s.CreationTime).ToList();
                 case CommentType.AssessmentComment:
                     var assessmentCommentsQry = await _assessmentCommentsRepository.GetQueryableAsync();
@@ -84,6 +85,47 @@ namespace Unity.GrantManager.Comments
                 case CommentType.AssessmentComment:
                     var assessmentCommentsQry = await _assessmentCommentsRepository.GetQueryableAsync();
                     return assessmentCommentsQry.FirstOrDefault(s => s.AssessmentId == ownerId && s.Id == commentId);
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public async Task<IReadOnlyList<CommentListItem>> GetCommentsDisplayListAsync(Guid ownerId, CommentType type)
+        {
+            switch (type)
+            {
+                case CommentType.ApplicationComment:
+                    var applicationCommentsQry = from applicationComment in await _applicationCommentsRepository.GetQueryableAsync()
+                                                 join user in await _tenantUserRepository.GetQueryableAsync() on applicationComment.CommenterId equals user.Id
+                                                 where applicationComment.ApplicationId == ownerId
+                                                 orderby applicationComment.CreationTime descending
+                                                 select new CommentListItem
+                                                 {
+                                                     Comment = applicationComment.Comment,
+                                                     CommenterId = applicationComment.CommenterId,
+                                                     CommenterDisplayName = user.OidcDisplayName,
+                                                     CommenterBadge = user.Badge,
+                                                     CreationTime = user.CreationTime,
+                                                     OwnerId = ownerId,
+                                                     Id = applicationComment.Id
+                                                 };
+                    return applicationCommentsQry.ToList();
+                case CommentType.AssessmentComment:
+                    var assessmentCommentsQry = from assessmentComment in await _assessmentCommentsRepository.GetQueryableAsync()
+                                                join user in await _tenantUserRepository.GetQueryableAsync() on assessmentComment.CommenterId equals user.Id
+                                                where assessmentComment.AssessmentId == ownerId
+                                                orderby assessmentComment.CreationTime descending
+                                                select new CommentListItem
+                                                {
+                                                    Comment = assessmentComment.Comment,
+                                                    CommenterId = assessmentComment.CommenterId,
+                                                    CommenterDisplayName = user.OidcDisplayName,
+                                                    CommenterBadge = user.Badge,
+                                                    CreationTime = user.CreationTime,
+                                                    OwnerId = ownerId,
+                                                    Id = assessmentComment.Id
+                                                };
+                    return assessmentCommentsQry.ToList();
                 default:
                     throw new NotImplementedException();
             }

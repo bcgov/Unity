@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
@@ -42,9 +41,13 @@ namespace Unity.GrantManager
 
                 if (tenant == null)
                 {
-                    var newTenant = await _tenantManager.CreateAsync("Default");
-                    newTenant.ConnectionStrings.Add(new TenantConnectionString(newTenant.Id, "default", _configuration.GetConnectionString("Tenant")));
-                    await _tenantRepository.InsertAsync(newTenant, true);
+                    var tenantConnectionString = _configuration.GetConnectionString("Tenant");
+                    if (tenantConnectionString != null)
+                    {
+                        var newTenant = await _tenantManager.CreateAsync("Default");
+                        newTenant.ConnectionStrings.Add(new TenantConnectionString(newTenant.Id, "default", tenantConnectionString));
+                        await _tenantRepository.InsertAsync(newTenant, true);
+                    }
                 }
             }
             else
@@ -78,9 +81,11 @@ namespace Unity.GrantManager
                     {
                         await _tenantUserRepository.InsertAsync(new User()
                         {
-                            CorrelationId = identityUser.Id,
+                            Id = identityUser.Id,
                             OidcDisplayName = displayName ?? identityUser.Name,
-                            OidcSub = oidcProp ?? propFallback
+                            OidcSub = oidcProp ?? propFallback,
+                            FullName = $"{identityUser.Name} {identityUser.Surname}",
+                            Badge = Utils.CreateUserBadge(identityUser)
                         });
                     }
                 }                

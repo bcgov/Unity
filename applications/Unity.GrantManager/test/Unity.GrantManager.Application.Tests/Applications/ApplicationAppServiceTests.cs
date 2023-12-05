@@ -49,11 +49,9 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         if (users != null && users.Items.Count > 0)
         {
             UserData uData = users.Items[0];
-            string oidcSub = uData.Id.ToString();
-            string assigneeDisplayName = uData.Name;
 
             // Act
-            await _grantApplicationAppServiceTest.InsertAssigneeAsync(applicationIds, oidcSub, assigneeDisplayName);
+            await _grantApplicationAppServiceTest.InsertAssigneeAsync(applicationIds, uData.Id);
             await uow.SaveChangesAsync();
 
 
@@ -63,7 +61,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
             assignments.Count.ShouldBe(1);
 
             // Act
-            await _grantApplicationAppServiceTest.DeleteAssigneeAsync(applicationIds, oidcSub);
+            await _grantApplicationAppServiceTest.DeleteAssigneeAsync(applicationIds, uData.Id);
             await uow.SaveChangesAsync();
 
             IQueryable<ApplicationUserAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
@@ -89,6 +87,8 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
     public async Task CreateCommentAsync_Should_Create_Comment()
     {
         // Arrange
+        Login(GrantManagerTestData.User1_UserId);
+
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];
         var applicationComments = (await _applicationCommentsRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList();

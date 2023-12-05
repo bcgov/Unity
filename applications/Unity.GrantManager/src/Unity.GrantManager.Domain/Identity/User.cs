@@ -5,7 +5,9 @@ namespace Unity.GrantManager.Identity;
 
 public class User : AuditedAggregateRoot<Guid>
 {
+    public new Guid Id { get => base.Id; set => base.Id = value; }
     public string OidcSub { get; set; } = string.Empty;
     public string OidcDisplayName { get; set; } = string.Empty;
-    public Guid CorrelationId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Badge { get; set; } = string.Empty;
 }

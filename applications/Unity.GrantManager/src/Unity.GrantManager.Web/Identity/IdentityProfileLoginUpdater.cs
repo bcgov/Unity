@@ -17,6 +17,7 @@ using Volo.Abp.Data;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Identity;
 using Volo.Abp.MultiTenancy;
+using Microsoft.AspNetCore.Identity;
 
 namespace Unity.GrantManager.Web.Identity
 {
@@ -98,9 +99,11 @@ namespace Unity.GrantManager.Web.Identity
                 {
                     var tenantUser = await _tenantUserRepository.InsertAsync(new User()
                     {
-                        CorrelationId = user.Id,
+                        Id = user.Id,
                         OidcSub = oidcSub,
                         OidcDisplayName = displayName ?? string.Empty,
+                        FullName = $"{user.Name} {user.Surname}",
+                        Badge = Utils.CreateUserBadge(user)
                     });
                     await _tenantUserRepository.UpdateAsync(tenantUser, true);
                 }

@@ -6,6 +6,6 @@ namespace Unity.GrantManager.Identity
 {
     public interface ITenantUserRepository : IRepository<User, Guid>
     {
-        Task<User?> FindByOidcSub(string sub);
+        Task<User?> FindByOidcSub(string sub);        
     }
 }

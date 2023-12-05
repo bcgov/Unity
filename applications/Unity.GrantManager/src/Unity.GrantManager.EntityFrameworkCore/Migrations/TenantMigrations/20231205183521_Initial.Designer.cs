@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    [Migration("20231201195205_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20231205183521_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -660,18 +660,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ApplicationFormId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AssigneeDisplayName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("AssignmentTime")
-                        .HasColumnType("timestamp without time zone");
+                    b.Property<Guid>("AssigneeId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -701,18 +694,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("OidcSub")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("TeamId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("ApplicationFormId");
-
                     b.HasIndex("ApplicationId");
+
+                    b.HasIndex("AssigneeId");
 
                     b.ToTable("ApplicationUserAssignment", (string)null);
                 });
@@ -864,9 +850,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Commenter")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("CommenterId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -900,6 +885,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationId");
 
+                    b.HasIndex("CommenterId");
+
                     b.ToTable("ApplicationComment", (string)null);
                 });
 
@@ -915,9 +902,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Commenter")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("CommenterId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -950,6 +936,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("AssessmentId");
+
+                    b.HasIndex("CommenterId");
 
                     b.ToTable("AssessmentComment", (string)null);
                 });
@@ -1001,15 +989,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Badge")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<Guid>("CorrelationId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")
@@ -1023,6 +1012,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
@@ -1194,14 +1187,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationUserAssignment", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicationFormId");
-
                     b.HasOne("Unity.GrantManager.Applications.Application", null)
                         .WithMany()
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -1236,6 +1231,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CommenterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Comments.AssessmentComment", b =>
@@ -1243,6 +1244,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Assessments.Assessment", null)
                         .WithMany()
                         .HasForeignKey("AssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CommenterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

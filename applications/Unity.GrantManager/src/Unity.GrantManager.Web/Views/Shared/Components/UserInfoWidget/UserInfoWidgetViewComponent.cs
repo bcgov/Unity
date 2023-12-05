@@ -3,7 +3,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using System;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
 {
@@ -19,13 +18,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
         {
         }
 
-        public IViewComponentResult Invoke(string displayName, string title)
+        public IViewComponentResult Invoke(string displayName, string badge, string title)
         {
             UserInfoWidgetViewModel model = new()
             {
                 DisplayName = displayName,
                 Title = title,
-                Badge = displayName.GetUserBadge()
+                Badge = badge
             };
 
             return View(model);

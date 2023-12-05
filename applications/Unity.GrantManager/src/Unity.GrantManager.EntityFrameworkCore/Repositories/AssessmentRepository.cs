@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.EntityFrameworkCore;
+using Unity.GrantManager.Identity;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
@@ -33,7 +34,7 @@ public class AssessmentRepository : EfCoreRepository<GrantTenantDbContext, Asses
     public async Task<List<AssessmentWithAssessorQueryResultItem>> GetListWithAssessorsAsync(Guid applicationId)
     {
         var assessmentQueryable = await GetQueryableAsync();
-        var userQueryable = (await GetDbContextAsync()).Set<IdentityUser>().AsQueryable();
+        var userQueryable = (await GetDbContextAsync()).Set<User>().AsQueryable();
 
         var query = assessmentQueryable
             .Where(x => x.ApplicationId == applicationId)
@@ -47,9 +48,9 @@ public class AssessmentRepository : EfCoreRepository<GrantTenantDbContext, Asses
                     ApplicationId = assessment.ApplicationId,
 
                     AssessorId = assessment.AssessorId,
-                    AssessorFirstName = user.Name,
-                    AssessorLastName = user.Surname,
-                    AssessorEmail = user.Email,
+                    AssessorDisplayName = user.OidcDisplayName,
+                    AssessorFullName = user.FullName,
+                    AssessorBadge = user.Badge,
 
                     StartDate = assessment.CreationTime,
                     EndDate = assessment.EndDate,

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
 using Unity.GrantManager.Workflow;
 using Volo.Abp;
 using Volo.Abp.Domain.Services;
@@ -16,17 +17,20 @@ public class ApplicationManager : DomainService, IApplicationManager
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationUserAssignmentRepository _applicationUserAssignmentRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
+    private readonly ITenantUserRepository _tenantUserRepository;
 
     public ApplicationManager(
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatus,
         IApplicationUserAssignmentRepository applicationUserAssignmentRepository,
-        IUnitOfWorkManager unitOfWorkManager)
+        IUnitOfWorkManager unitOfWorkManager,
+        ITenantUserRepository tenantUserRepository)
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatus;
         _applicationUserAssignmentRepository = applicationUserAssignmentRepository;
         _unitOfWorkManager = unitOfWorkManager;
+        _tenantUserRepository = tenantUserRepository;
     }
 
     public static void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine)
@@ -135,16 +139,15 @@ public class ApplicationManager : DomainService, IApplicationManager
         return await _applicationRepository.UpdateAsync(application);
     }
 
-    public async Task AssignUserAsync(Guid applicationId, string oidcSub, string assigneeDisplayName)
-    {
+    public async Task AssignUserAsync(Guid applicationId, Guid assigneeId)
+    {        
         using var uow = _unitOfWorkManager.Begin();
+        var tenantUser = await _tenantUserRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
         var userAssignment = await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
-                OidcSub = oidcSub,
-                ApplicationId = applicationId,
-                AssigneeDisplayName = assigneeDisplayName,
-                AssignmentTime = DateTime.UtcNow
+                AssigneeId = tenantUser.Id,
+                ApplicationId = applicationId                
             });
 
         var application = await _applicationRepository.GetAsync(userAssignment.ApplicationId, true);
@@ -160,12 +163,16 @@ public class ApplicationManager : DomainService, IApplicationManager
         await uow.SaveChangesAsync();
     }
 
-    public async Task RemoveAssigneeAsync(Guid applicationId, string oidcSub)
+    public async Task RemoveAssigneeAsync(Guid applicationId, Guid assigneeId)
     {
         using var uow = _unitOfWorkManager.Begin();
+        var tenantUser = await _tenantUserRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
         var application = await _applicationRepository.GetAsync(applicationId, true);
         IQueryable<ApplicationUserAssignment> queryableAssignment = _applicationUserAssignmentRepository.GetQueryableAsync().Result;
-        List<ApplicationUserAssignment> assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).Where(b => b.OidcSub.Equals(oidcSub)).ToList();
+        List<ApplicationUserAssignment> assignments = queryableAssignment
+            .Where(a => a.ApplicationId.Equals(applicationId))
+            .Where(b => b.AssigneeId.Equals(tenantUser.Id)).ToList();
+        
         var assignmentRemoved = false;
 
         // Only remove the assignee if they were already assigned
@@ -191,7 +198,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         await uow.SaveChangesAsync();
     }
 
-    public async Task SetAssigneesAsync(Guid applicationId, List<(string oidcSub, string displayName)> oidcSubs)
+    public async Task SetAssigneesAsync(Guid applicationId, List<(Guid? assigneeId, string? fullName)> assigneeSubs)
     {
         using var uow = _unitOfWorkManager.Begin();
         var application = await _applicationRepository.GetAsync(applicationId, true);
@@ -201,33 +208,31 @@ public class ApplicationManager : DomainService, IApplicationManager
             .ToList();
 
         var hadAssignments = currentUserAssignments.Count > 0;
-        var hasAssignees = oidcSubs.Count > 0;
+        var hasAssignees = assigneeSubs.Count > 0;
 
         var assignmentsToDelete = new List<Guid>();
 
         // Remove all that shouldnt be there
         foreach (var assignment in currentUserAssignments)
-        {
-            var (oidcSub, displayName) = oidcSubs.Find(s => s.oidcSub == assignment.OidcSub);
+        {            
+            var (assigneeId, fullName) = assigneeSubs.Find(s => s.assigneeId == assignment.AssigneeId);
 
-            if (oidcSub == null && displayName == null)
+            if (assigneeId == null && fullName == null)
             {
                 assignmentsToDelete.Add(assignment.Id);
             }
         }
 
         // Add who should and are missing
-        foreach (var (oidcSub, displayName) in oidcSubs)
+        foreach (var (assigneeId, fullName) in assigneeSubs)
         {
-            var currentAssignment = currentUserAssignments.Find(s => s.OidcSub == oidcSub);
-            if (currentAssignment == null)
+            var currentAssignment = currentUserAssignments.Find(s => s.AssigneeId == assigneeId);
+            if (currentAssignment == null && assigneeId != null)
             {
                 await _applicationUserAssignmentRepository.InsertAsync(new ApplicationUserAssignment()
                 {
-                    ApplicationId = applicationId,
-                    AssigneeDisplayName = displayName,
-                    AssignmentTime = DateTime.UtcNow,
-                    OidcSub = oidcSub
+                    ApplicationId = applicationId,                    
+                    AssigneeId = assigneeId.Value
                 }, false);
             }
         }

@@ -8,17 +8,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
     {
         public CommentsWidgetViewModel()
         {
-            Comments = new List<CommentViewModel>();
+            Comments = new List<CommentDto>();
         }
 
-        public IReadOnlyList<CommentViewModel> Comments { get; set; }
+        public IReadOnlyList<CommentDto> Comments { get; set; }
         public Guid OwnerId { get; set; }
         public CommentType CommentType { get; set; }
         public Guid CurrentUserId { get; set; }
-    }
-
-    public class CommentViewModel : CommentDto
-    {        
-        public string Badge { get; set; } = string.Empty;
     }
 }
