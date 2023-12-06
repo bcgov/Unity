@@ -24,7 +24,7 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormVersionAppService
     {
 
-        private IApplicationFormVersionRepository _applicationFormVersionRepository;
+        private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
 

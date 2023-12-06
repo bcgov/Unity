@@ -239,7 +239,7 @@ public class GrantManagerDbContext :
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention(); //auto configure for the base class props
-            //b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
+            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
         });
 
         modelBuilder.Entity<ApplicationComment>(b =>

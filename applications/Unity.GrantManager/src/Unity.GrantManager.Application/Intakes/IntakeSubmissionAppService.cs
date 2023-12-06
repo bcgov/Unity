@@ -49,7 +49,7 @@ namespace Unity.GrantManager.Intakes
 
             // If there are no mappings initialize the available
             bool formVersionExists = await _applicationFormVersionAppService.FormVersionExists(eventSubscriptionDto.FormVersion.ToString());          
-            if (formVersionExists == false)
+            if (formVersionExists)
             {
                 JToken? token = submissionData.SelectToken("submission.formVersionId");
                 if (token != null)

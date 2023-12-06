@@ -14,7 +14,7 @@ namespace Unity.GrantManager.Controllers
     public class FormController : AbpController
     {
 
-        private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
+
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
@@ -23,12 +23,10 @@ namespace Unity.GrantManager.Controllers
         public FormController(IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IApplicationFormRepository applicationFormRepository,
             IApplicationFormVersionAppService applicationFormVersionAppService,
-            IApplicationFormVersionRepository applicationFormVersionRepository,
             IFormIntService formIntService)
         {
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _applicationFormRepository = applicationFormRepository;
-            _applicationFormVersionRepository = applicationFormVersionRepository;
             _applicationFormVersionAppService = applicationFormVersionAppService;
             _formIntService = formIntService;
         }

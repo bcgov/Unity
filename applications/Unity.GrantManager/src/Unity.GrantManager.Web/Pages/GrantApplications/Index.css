@@ -73,7 +73,7 @@ td.dt-editable:hover {
 
 td.dt-editable:before {
     content: '\E70F';
-    font-family: 'Segoe-Fluent-Icons';
+    font-family: 'Segoe-Fluent-Icons', sans-serif;
     src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
     font-weight: 100;
     font-style: normal;
@@ -87,7 +87,7 @@ td.dt-editable:before {
 .clear-icon:before {
     content: '\E8BB';
     color: var(--bc-colors-white-primary-500, #FFF);
-    font-family: 'Segoe-Fluent-Icons';
+    font-family: 'Segoe-Fluent-Icons', sans-serif;
     src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
     font-size: 9px;
     padding: 0px;

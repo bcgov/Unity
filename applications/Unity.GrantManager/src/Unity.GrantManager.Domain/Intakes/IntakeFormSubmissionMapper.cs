@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Scriban.Parsing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -73,12 +72,9 @@ namespace Unity.GrantManager.Intakes
         public string GetSubLookupType(dynamic? tokenType)
         {
             string subTokenString = "components";
-            if(tokenType != null)
+            if(tokenType != null && ColumnTypes.Contains(tokenType.ToString()))
             {
-                if (ColumnTypes.Contains(tokenType.ToString()))
-                {
-                    subTokenString = "columns";
-                }
+                subTokenString = "columns";
             }
 
             return subTokenString;
@@ -153,17 +149,17 @@ namespace Unity.GrantManager.Intakes
             return JsonSerializer.Serialize(components);
         }
 
-        public IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission, string? submissionHeaderMapping)
+        public IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission, string? mapFormSubmissionFields)
         {
             var submission = formSubmission.submission;
             var data = submission.submission.data;
             var form = formSubmission.form;
 
-            if (submissionHeaderMapping != null)
+            if (mapFormSubmissionFields != null)
             {
                 try
                 {
-                    return ApplyConfigurationMapping(submissionHeaderMapping!, data, form);
+                    return ApplyConfigurationMapping(mapFormSubmissionFields!, data, form);
                 }
                 catch (Exception ex)
                 {

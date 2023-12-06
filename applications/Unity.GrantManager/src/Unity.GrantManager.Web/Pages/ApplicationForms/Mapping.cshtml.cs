@@ -53,32 +53,35 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
             ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?) await _applicationFormVersionAppService.GetListAsync(ApplicationFormDto.Id);
 
-            foreach (ApplicationFormVersionDto applicationFormVersionDto in ApplicationFormVersionDtoList) {
-                if (ChefsFormVersionGuid != null && applicationFormVersionDto.ChefsFormVersionGuid != null && Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid) == ChefsFormVersionGuid)
-                {
-                    ApplicationFormVersionDto = applicationFormVersionDto;
-                    break;
+            if(ApplicationFormVersionDtoList != null) {
+                foreach (ApplicationFormVersionDto applicationFormVersionDto in ApplicationFormVersionDtoList) {
+                    if (applicationFormVersionDto.ChefsFormVersionGuid != null && Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid) == ChefsFormVersionGuid)
+                    {
+                        ApplicationFormVersionDto = applicationFormVersionDto;
+                        break;
+                    }
+                    else if (applicationFormVersionDto.Published) // If published set as default edit
+                    {
+                        ApplicationFormVersionDto = applicationFormVersionDto;
+                        break;
+                    }
                 }
-                else if (ChefsFormVersionGuid == null && applicationFormVersionDto.Published) // If published set as default edit
+
+                if (ApplicationFormVersionDtoList.Count == 0 && ApplicationFormVersionDto == null)
                 {
-                    ApplicationFormVersionDto = applicationFormVersionDto;
-                    break;
+                    CreateUpdateApplicationFormVersionDto appFormVersion = new CreateUpdateApplicationFormVersionDto();
+                    appFormVersion.ApplicationFormId = ApplicationFormDto.Id;
+                    appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;
+                    ApplicationFormVersionDto = await _applicationFormVersionAppService.CreateAsync(appFormVersion);
                 }
+                else if(ApplicationFormVersionDto == null)
+                {
+                    ApplicationFormVersionDto = ApplicationFormVersionDtoList.First();
+                }
+                ApplicationFormVersionDtoString = JsonSerializer.Serialize(ApplicationFormVersionDto);
             }
 
-            if (ApplicationFormVersionDtoList.Count == 0 && ApplicationFormVersionDto == null)
-            {
-                CreateUpdateApplicationFormVersionDto appFormVersion = new CreateUpdateApplicationFormVersionDto();
-                appFormVersion.ApplicationFormId = ApplicationFormDto.Id;
-                appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;
-                ApplicationFormVersionDto = await _applicationFormVersionAppService.CreateAsync(appFormVersion);
-            }
-            else if(ApplicationFormVersionDto == null)
-            {
-                ApplicationFormVersionDto = ApplicationFormVersionDtoList.First();
-            }
 
-            ApplicationFormVersionDtoString = JsonSerializer.Serialize(ApplicationFormVersionDto);
 
             IntakeMapping intakeMapping = new IntakeMapping();
             List<string> properties = new List<string>();

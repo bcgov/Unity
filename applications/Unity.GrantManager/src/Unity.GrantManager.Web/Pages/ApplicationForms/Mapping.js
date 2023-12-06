@@ -99,7 +99,7 @@
             );
     
             setTimeout(function(){
-                location.href = location.href; 
+                window.location.reload();
             }, 2000);
 
           }
