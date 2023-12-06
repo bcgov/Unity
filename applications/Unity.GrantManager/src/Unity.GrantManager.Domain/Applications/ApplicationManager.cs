@@ -111,6 +111,11 @@ public class ApplicationManager : DomainService, IApplicationManager
         var application = await _applicationRepository.GetAsync(applicationId);
         var statusChange = application.ApplicationStatus.StatusCode;
 
+        if (triggerAction == GrantApplicationAction.Deny && application.DeclineRational.IsNullOrEmpty())
+        {
+            throw new UserFriendlyException("The \"Decline Rationale\" is Required for application denial");
+        }
+
         if ((triggerAction == GrantApplicationAction.Approve || triggerAction == GrantApplicationAction.Deny) && application.FinalDecisionDate == null)
         {
             throw new UserFriendlyException("The Decision Date is Required.");
