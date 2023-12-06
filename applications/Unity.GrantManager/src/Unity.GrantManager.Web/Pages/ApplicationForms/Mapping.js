@@ -16,6 +16,8 @@
                           'currency', 
                           'datetime', 
                           'checkbox',
+                          'select',
+                          'radio',
                           'simpletextfield', 
                           'simpletextfieldadvanced',
                           'simpletime',
@@ -24,6 +26,7 @@
                           'simplenumberadvance',
                           'simplephonenumber',
                           'simplephonenumberadvanced',
+                          'simpleselectadvanced',
                           'simpleday',
                           'simpledayadvanced',
                           'simpleemail',
@@ -32,6 +35,7 @@
                           'simpledatetimeadvanced',
                           'simpleurladvanced',
                           'simplecheckbox',
+                          'simpleradios',
                           'simplecheckboxes',
                           'simplecheckboxadvanced',
                           'simplecurrencyadvanced', 
@@ -88,7 +92,16 @@
             let mappingJsonStr = jsonText.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, "");
             handleSaveMapping($.parseJSON(mappingJsonStr));
             handleCancelMapping();
-            location.href = location.href;
+
+            abp.notify.success(
+                '',
+                'Edit mapping save successful. Reloading page to new version'
+            );
+    
+            setTimeout(function(){
+                location.href = location.href; 
+            }, 2000);
+
           }
           catch (err) {
             abp.notify.error(
@@ -116,12 +129,19 @@
     function navigateToVersion(chefsFormVersionGuid) {
         let searchStr = "&ChefsFormVersionGuid=";
         let indexOfVersion = location.href.indexOf(searchStr);
+    
+        abp.notify.success(
+            '',
+            'Reloading page to new version'
+        );
 
-        if(indexOfVersion > 0) {
-            location.href = location.href.substring(0, indexOfVersion + searchStr.length) + chefsFormVersionGuid;
-        } else {
-            location.href = location.href+"&ChefsFormVersionGuid="+chefsFormVersionGuid;
-        }
+        setTimeout(function(){
+            if(indexOfVersion > 0) {
+                location.href = location.href.substring(0, indexOfVersion + searchStr.length) + chefsFormVersionGuid;
+            } else {
+                location.href = location.href+"&ChefsFormVersionGuid="+chefsFormVersionGuid;
+            }
+        }, 2000);
 
     }
 
@@ -185,6 +205,11 @@
                         let availableChefsFields = JSON.parse(data.availableChefsFields)
                         document.getElementById('availableChefsFields').value = JSON.stringify(availableChefsFields);
                         initializeIntakeMap(availableChefsFields);
+
+                        abp.notify.success(
+                            '',
+                            'Synchronized Successful'
+                        );
                         navigateToVersion(data.chefsFormVersionGuid);
                     },
                     error: function () {
@@ -282,14 +307,22 @@
             dataTable.clear();
             for (let key of keys) {
                 let jsonObj = JSON.parse(availableChefsFields[key]);
+
                 if(allowableTypes.includes(jsonObj.type.trim())) {
-                    dataTable.row.add([jsonObj.label, key, jsonObj.type, key]).draw();
+                    dataTable.row.add([stripHtml(jsonObj.label), key, jsonObj.type, key]).draw();
                 }
             }		
         }
         catch (err) {
             console.log('Mapping error');
         }
+    }
+
+    function stripHtml(html)
+    {
+       let tmp = document.createElement("DIV");
+       tmp.innerHTML = html;
+       return tmp.textContent || tmp.innerText || "";
     }
 
     document.addEventListener('dragstart', function (ev) {

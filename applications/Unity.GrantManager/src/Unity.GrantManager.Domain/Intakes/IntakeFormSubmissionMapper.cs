@@ -1,13 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Scriban.Parsing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Services;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Unity.GrantManager.Intakes
@@ -17,6 +20,89 @@ namespace Unity.GrantManager.Intakes
         private readonly Dictionary<string, string> components = new Dictionary<string, string>();
 
         public IntakeFormSubmissionMapper() { }
+
+        private readonly List<string> AllowableContainerTypes = new List<string> (new string[] 
+            {
+                "tabs",            
+                "simplecols2",
+                "simplecols3",
+                "simplecols4",
+                "simplecontent",
+                "simplepanel",
+                "simpleparagraph",
+                "simpletabs",
+                "container",
+                "columns" }
+        );
+
+        private readonly List<string> ColumnTypes = new List<string>(new string[]
+        {
+                "simplecols2",
+                "simplecols3",
+                "simplecols4",
+                "columns" }
+        );
+
+        public void addComponent(JToken childToken)
+        {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            try
+            {
+                dynamic? tokenInput = childToken["input"];
+                dynamic? tokenType = childToken["type"];
+
+                if (tokenInput != null && tokenInput.ToString() == "True")
+                {
+                    dynamic? key = childToken["key"];
+                    dynamic? label = childToken["label"];
+
+                    if (key != null && label != null && tokenType != null && tokenType.ToString() != "button" && !AllowableContainerTypes.Contains(tokenType.ToString()))
+                    {
+                        var jsonValue = "{ \"type\": \"" + tokenType.ToString() + " \", \"label\":  \"" + label.ToString() + "\" }";
+                        components.Add(key.ToString(), jsonValue);
+                    }
+
+                }
+            } catch(Exception ex) 
+            {
+                Debug.WriteLine(ex.ToString());
+            }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+
+        public string GetSubLookupType(dynamic? tokenType)
+        {
+            string subTokenString = "components";
+            if(tokenType != null)
+            {
+                if (ColumnTypes.Contains(tokenType.ToString()))
+                {
+                    subTokenString = "columns";
+                }
+            }
+
+            return subTokenString;
+        }
+
+        public void ConsumeToken(JToken? token)
+        {
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+            if (token != null)
+            {
+                dynamic? subTokenType = token["type"];
+                string subSubTokenString = GetSubLookupType(subTokenType);
+                dynamic nestedComponentsComponents = ((JObject)token).SelectToken(subSubTokenString);
+                if (nestedComponentsComponents != null)
+                {
+                    GetAllInputComponents(nestedComponentsComponents);
+                }
+                else
+                {
+                    addComponent(token);
+                }
+            }
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+        }
 
         public void GetAllInputComponents(JToken? tokenComponents)
         {             
@@ -30,34 +116,28 @@ namespace Unity.GrantManager.Intakes
                 {
                     if(childToken != null && childToken.Type == JTokenType.Object)
                     {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                         dynamic? tokenInput = childToken["input"];
                         dynamic? tokenType = childToken["type"];
+                        addComponent(childToken);
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                        if (tokenInput != null && tokenInput.ToString() == "True")
+                        if (tokenType != null && AllowableContainerTypes.Contains(tokenType.ToString()))
                         {
-                            dynamic? key = childToken["key"];
-                            dynamic? label = childToken["label"];
+                            string subTokenString = GetSubLookupType(tokenType);
 
-                            if (key != null && label != null && tokenType != null && tokenType.ToString() != "button")
-                            {
-                                var jsonValue = "{ \"type\": \""+ tokenType.ToString() + " \", \"label\":  \"" + label.ToString() + "\" }";
-                                components.Add(key.ToString(), jsonValue);
-                            }
-
-                        }
-                        else if (tokenType != null && tokenType.ToString() == "tabs")
-                        {
                             // For each nested component container
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-                            dynamic nestedTokenComponents = childToken.SelectToken("components");
+                            dynamic nestedTokenComponents = childToken.SelectToken(subTokenString);
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-                            foreach (JToken nestedTokenComponent in nestedTokenComponents.Children())
-                            {
-                                GetAllInputComponents(((JObject)nestedTokenComponent).SelectToken("components"));
+                            if (nestedTokenComponents != null) { 
+                                foreach (JToken nestedTokenComponent in nestedTokenComponents.Children())
+                                {
+                                    ConsumeToken(nestedTokenComponent);
+                                }
                             }
-                        } else if (tokenType != null && tokenType.ToString() == "columns") {
-                            GetAllInputComponents(childToken);
+                        } else
+                        {
+                            ConsumeToken(childToken);
                         }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     }

@@ -112,6 +112,8 @@ caption {
 table.dataTable thead th {
     background-color: #859ab9;
     color: white;
+    font-weight: 500;
+    font-size: 21px;
 }
 
 table.dataTable td {

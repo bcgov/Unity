@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +6,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
@@ -15,8 +13,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicationForms
-{    
-    [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
+{
     public class ApplicationFormVersionAppService :
     CrudAppService<
         ApplicationFormVersion,
@@ -80,19 +77,21 @@ namespace Unity.GrantManager.ApplicationForms
             return applicationFormVersion != null;
         }
 
-        private async void UnPublishFormVersions(string applicationFormId, string chefsFormVersionId) {
+        private async Task<bool> UnPublishFormVersions(string applicationFormId, string chefsFormVersionId) {
+            bool unpublished = false;
             using var uow = _unitOfWorkManager.Begin();
             var applicationFormVersion = (await _applicationFormVersionRepository
                     .GetQueryableAsync())
-                    .Where(s => s.ChefsFormVersionGuid != chefsFormVersionId && s.ChefsApplicationFormGuid == applicationFormId && s.Published != false)
+                    .Where(s => s.ChefsFormVersionGuid != chefsFormVersionId && s.ChefsApplicationFormGuid == applicationFormId)
                     .FirstOrDefault();
             if(applicationFormVersion != null)
             {
                 applicationFormVersion.Published = false;
                 await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
+                unpublished = true;
             }
-            
             await uow.SaveChangesAsync();
+            return unpublished;
         }
 
         public async Task<ApplicationFormVersionDto> UpdateOrCreateApplicationFormVersion(
@@ -139,9 +138,9 @@ namespace Unity.GrantManager.ApplicationForms
                 if (published != null)
                 {
                     bool publishedBool = bool.Parse(published.ToString());
-                    if(publishedBool && !applicationFormVersion.Published) {
+                    if(publishedBool) {
                         // set others to false if the current is being updated to true
-                        UnPublishFormVersions(applicationFormId.ToString(), chefsFormVersionId);
+                        await UnPublishFormVersions(applicationFormId.ToString(), chefsFormVersionId);
                     }
                     applicationFormVersion.Published = publishedBool;
                 }
