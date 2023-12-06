@@ -17,20 +17,20 @@ public class ApplicationManager : DomainService, IApplicationManager
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationUserAssignmentRepository _applicationUserAssignmentRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
-    private readonly ITenantUserRepository _tenantUserRepository;
+    private readonly IPersonRepository _personRepository;
 
     public ApplicationManager(
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatus,
         IApplicationUserAssignmentRepository applicationUserAssignmentRepository,
         IUnitOfWorkManager unitOfWorkManager,
-        ITenantUserRepository tenantUserRepository)
+        IPersonRepository personRepository)
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatus;
         _applicationUserAssignmentRepository = applicationUserAssignmentRepository;
         _unitOfWorkManager = unitOfWorkManager;
-        _tenantUserRepository = tenantUserRepository;
+        _personRepository = personRepository;
     }
 
     public static void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine)
@@ -142,11 +142,11 @@ public class ApplicationManager : DomainService, IApplicationManager
     public async Task AssignUserAsync(Guid applicationId, Guid assigneeId)
     {        
         using var uow = _unitOfWorkManager.Begin();
-        var tenantUser = await _tenantUserRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
+        var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
         var userAssignment = await _applicationUserAssignmentRepository.InsertAsync(
             new ApplicationUserAssignment
             {
-                AssigneeId = tenantUser.Id,
+                AssigneeId = person.Id,
                 ApplicationId = applicationId                
             });
 
@@ -166,12 +166,12 @@ public class ApplicationManager : DomainService, IApplicationManager
     public async Task RemoveAssigneeAsync(Guid applicationId, Guid assigneeId)
     {
         using var uow = _unitOfWorkManager.Begin();
-        var tenantUser = await _tenantUserRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
+        var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
         var application = await _applicationRepository.GetAsync(applicationId, true);
         IQueryable<ApplicationUserAssignment> queryableAssignment = _applicationUserAssignmentRepository.GetQueryableAsync().Result;
         List<ApplicationUserAssignment> assignments = queryableAssignment
             .Where(a => a.ApplicationId.Equals(applicationId))
-            .Where(b => b.AssigneeId.Equals(tenantUser.Id)).ToList();
+            .Where(b => b.AssigneeId.Equals(person.Id)).ToList();
         
         var assignmentRemoved = false;
 

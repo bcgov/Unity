@@ -14,17 +14,17 @@ namespace Unity.GrantManager.Comments
         private readonly ICommentsRepository<ApplicationComment> _applicationCommentsRepository;
         private readonly ICommentsRepository<AssessmentComment> _assessmentCommentsRepository;
         private readonly ICurrentUser _currentUser;
-        private readonly ITenantUserRepository _tenantUserRepository;
+        private readonly IPersonRepository _personRepository;
 
         public CommentsManager(ICommentsRepository<ApplicationComment> applicationCommentsRepository,
             ICommentsRepository<AssessmentComment> assessmentCommentsRepository,
             ICurrentUser currentUser,
-            ITenantUserRepository tenantUserRepository)
+            IPersonRepository personRepository)
         {
             _applicationCommentsRepository = applicationCommentsRepository;
             _assessmentCommentsRepository = assessmentCommentsRepository;
             _currentUser = currentUser;
-            _tenantUserRepository = tenantUserRepository;
+            _personRepository = personRepository;
         }
 
         public async Task<CommentBase> CreateCommentAsync(Guid ownerId, string comment, CommentType assessmentComment)
@@ -96,7 +96,7 @@ namespace Unity.GrantManager.Comments
             {
                 case CommentType.ApplicationComment:
                     var applicationCommentsQry = from applicationComment in await _applicationCommentsRepository.GetQueryableAsync()
-                                                 join user in await _tenantUserRepository.GetQueryableAsync() on applicationComment.CommenterId equals user.Id
+                                                 join user in await _personRepository.GetQueryableAsync() on applicationComment.CommenterId equals user.Id
                                                  where applicationComment.ApplicationId == ownerId
                                                  orderby applicationComment.CreationTime descending
                                                  select new CommentListItem
@@ -112,7 +112,7 @@ namespace Unity.GrantManager.Comments
                     return applicationCommentsQry.ToList();
                 case CommentType.AssessmentComment:
                     var assessmentCommentsQry = from assessmentComment in await _assessmentCommentsRepository.GetQueryableAsync()
-                                                join user in await _tenantUserRepository.GetQueryableAsync() on assessmentComment.CommenterId equals user.Id
+                                                join user in await _personRepository.GetQueryableAsync() on assessmentComment.CommenterId equals user.Id
                                                 where assessmentComment.AssessmentId == ownerId
                                                 orderby assessmentComment.CreationTime descending
                                                 select new CommentListItem

@@ -3,7 +3,7 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Unity.GrantManager.Identity;
 
-public class User : AuditedAggregateRoot<Guid>
+public class Person : AuditedAggregateRoot<Guid>
 {
     public new Guid Id { get => base.Id; set => base.Id = value; }
     public string OidcSub { get; set; } = string.Empty;

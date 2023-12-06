@@ -4,8 +4,8 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Identity
 {
-    public interface ITenantUserRepository : IRepository<User, Guid>
+    public interface IPersonRepository : IRepository<Person, Guid>
     {
-        Task<User?> FindByOidcSub(string sub);        
+        Task<Person?> FindByOidcSub(string sub);        
     }
 }

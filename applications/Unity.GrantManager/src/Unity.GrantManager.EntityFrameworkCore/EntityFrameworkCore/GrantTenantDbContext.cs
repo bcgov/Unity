@@ -17,7 +17,6 @@ namespace Unity.GrantManager.EntityFrameworkCore
     public class GrantTenantDbContext : AbpDbContext<GrantTenantDbContext>
     {
         #region Domain Entities
-        public DbSet<GrantApplication> GrantApplications { get; set; }
         public DbSet<Intake> Intakes { get; set; }
         public DbSet<ApplicationForm> ApplicationForms { get; set; }
         public DbSet<Applicant> Applicants { get; set; }
@@ -27,7 +26,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicationComment> ApplicationComments { get; set; }
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<AssessmentComment> AssessmentComments { get; set; }
-        public DbSet<User> Users { get; set; }
+        public DbSet<Person> Users { get; set; }
 
         #endregion
 
@@ -39,9 +38,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<User>(b =>
+            modelBuilder.Entity<Person>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "User",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Persons",
                     GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
                 b.HasIndex(x => x.OidcSub);
@@ -49,7 +48,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<Applicant>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Applicant",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Applicants",
                     GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
                 b.Property(x => x.ApplicantName)
@@ -61,7 +60,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<Intake>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Intake",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Intakes",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
@@ -70,7 +69,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<ApplicationForm>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationForm",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationForms",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
@@ -81,7 +80,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<ApplicationStatus>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationStatus",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationStatuses",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
@@ -97,7 +96,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<Application>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Application",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Applications",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
@@ -114,24 +113,24 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<Address>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Address", GrantManagerConsts.DbSchema);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Addresses", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId);
             });
 
             modelBuilder.Entity<ApplicantAgent>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAgent",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAgents",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props                             
-                b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired();
+                b.HasOne<Person>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired();
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
             modelBuilder.Entity<ApplicationFormSubmission>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationFormSubmission",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationFormSubmissions",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props                             
@@ -141,12 +140,12 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<ApplicationComment>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationComment", GrantManagerConsts.DbSchema);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationComments", GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
 
-                b.HasOne<User>()
+                b.HasOne<Person>()
                    .WithMany()
                    .HasPrincipalKey(x => x.Id)
                    .HasForeignKey(x => x.CommenterId);
@@ -154,7 +153,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<ApplicationAttachment>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationAttachment", GrantManagerConsts.DbSchema);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationAttachments", GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
@@ -162,7 +161,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<Assessment>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Assessment", GrantManagerConsts.DbSchema);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Assessments", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
 
                 b.HasOne<Application>()
@@ -171,7 +170,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .IsRequired()
                     .OnDelete(DeleteBehavior.NoAction);
 
-                b.HasOne<User>()
+                b.HasOne<Person>()
                     .WithMany()
                     .HasPrincipalKey(x => x.Id)
                     .HasForeignKey(x => x.AssessorId)
@@ -186,7 +185,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<AssessmentAttachment>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "AssessmentAttachment", GrantManagerConsts.DbSchema);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "AssessmentAttachments", GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention();
                 b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AssessmentId).IsRequired();
@@ -194,10 +193,10 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<AssessmentComment>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "AssessmentComment", GrantManagerConsts.DbSchema);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "AssessmentComments", GrantManagerConsts.DbSchema);
                 b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AssessmentId).IsRequired();
 
-                b.HasOne<User>()
+                b.HasOne<Person>()
                     .WithMany()
                     .HasPrincipalKey(x => x.Id)
                     .HasForeignKey(x => x.CommenterId);
@@ -205,13 +204,13 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
             modelBuilder.Entity<ApplicationUserAssignment>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationUserAssignment",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationUserAssignments",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
 
-                b.HasOne<User>()
+                b.HasOne<Person>()
                     .WithMany()
                     .HasPrincipalKey(x => x.Id)
                     .HasForeignKey(x => x.AssigneeId)

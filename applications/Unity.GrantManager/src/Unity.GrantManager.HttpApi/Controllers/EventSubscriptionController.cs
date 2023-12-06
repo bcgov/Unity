@@ -28,7 +28,7 @@ namespace Unity.GrantManager.Controllers
         [HttpPost]
         public async Task<dynamic> PostEventSubscriptionAsync([FromBody] EventSubscription eventSubscription)
         {
-            var defaultTenant = await _tenantRepository.FindByNameAsync("Default");
+            var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
 
             using (CurrentTenant.Change(defaultTenant.Id, defaultTenant.Name))
             {                

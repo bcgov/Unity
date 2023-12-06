@@ -17,7 +17,6 @@ using Volo.Abp.Data;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Identity;
 using Volo.Abp.MultiTenancy;
-using Microsoft.AspNetCore.Identity;
 
 namespace Unity.GrantManager.Web.Identity
 {
@@ -29,7 +28,7 @@ namespace Unity.GrantManager.Web.Identity
         private readonly ISecurityLogManager _securityLogManager;
         private readonly IIdentityUserRepository _identityUserRepository;
         private readonly ITenantRepository _tenantRepository;
-        private readonly ITenantUserRepository _tenantUserRepository;
+        private readonly IPersonRepository _personRepository;
         private readonly ICurrentTenant _currentTenant;
 
         public IdentityProfileLoginUpdater(IdentityUserManager userManager,
@@ -38,7 +37,7 @@ namespace Unity.GrantManager.Web.Identity
              ISecurityLogManager securityLogManager,
              IIdentityUserRepository identityUserRepository,
              ITenantRepository tenantRepository,
-             ITenantUserRepository tenantUserRepository,
+             IPersonRepository personRepository,
              ICurrentTenant currentTenant)
         {
             _userManager = userManager;
@@ -47,7 +46,7 @@ namespace Unity.GrantManager.Web.Identity
             _securityLogManager = securityLogManager;
             _identityUserRepository = identityUserRepository;
             _tenantRepository = tenantRepository;
-            _tenantUserRepository = tenantUserRepository;
+            _personRepository = personRepository;
             _currentTenant = currentTenant;
         }
 
@@ -55,7 +54,7 @@ namespace Unity.GrantManager.Web.Identity
         {
             // Default to the one default tenant for now - this will change once the multi part
             // of the tenancy is finished and users are created through user management
-            var tenant = await _tenantRepository.FindByNameAsync("Default");
+            var tenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
 
             using (_currentTenant.Change(tenant.Id))
             {
@@ -71,7 +70,7 @@ namespace Unity.GrantManager.Web.Identity
                 }
 
                 await SyncUserToTenantDatabase(user);
-                await UpdatePrincipal(validatedTokenContext.Principal!, user);
+                await UpdatePrincipal(validatedTokenContext.Principal!, user, validatedTokenContext.SecurityToken);
 
                 SetTokens(validatedTokenContext);
 
@@ -94,10 +93,10 @@ namespace Unity.GrantManager.Web.Identity
             // Create tenant level user
             if (oidcSub != null)
             {
-                var existingUser = await _tenantUserRepository.FindByOidcSub(oidcSub);
+                var existingUser = await _personRepository.FindByOidcSub(oidcSub);
                 if (existingUser == null)
                 {
-                    var tenantUser = await _tenantUserRepository.InsertAsync(new User()
+                    var person = await _personRepository.InsertAsync(new Person()
                     {
                         Id = user.Id,
                         OidcSub = oidcSub,
@@ -105,7 +104,7 @@ namespace Unity.GrantManager.Web.Identity
                         FullName = $"{user.Name} {user.Surname}",
                         Badge = Utils.CreateUserBadge(user)
                     });
-                    await _tenantUserRepository.UpdateAsync(tenantUser, true);
+                    await _personRepository.UpdateAsync(person, true);
                 }
             }
         }
@@ -154,7 +153,7 @@ namespace Unity.GrantManager.Web.Identity
             }
         }
 
-        private async Task UpdatePrincipal(ClaimsPrincipal principal, IdentityUser user)
+        private async Task UpdatePrincipal(ClaimsPrincipal principal, IdentityUser user, JwtSecurityToken securityToken)
         {
             var adminRole = "admin";
             if (principal.IsInRole(adminRole))
@@ -189,6 +188,7 @@ namespace Unity.GrantManager.Web.Identity
             }
 
             principal.AddClaim(AbpClaimTypes.TenantId, _currentTenant?.Id?.ToString() ?? string.Empty);
+            principal.AddClaim("DisplayName", GetClaimValue(securityToken, UnityClaimsTypes.DisplayName) ?? user.UserName);
             principal.AddClaim("UserId", user.Id.ToString());
             principal.AddClaim("Permission", GrantManagerPermissions.Default);
             principal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);

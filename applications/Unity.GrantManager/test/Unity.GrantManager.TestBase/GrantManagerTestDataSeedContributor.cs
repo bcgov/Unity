@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Transactions;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
@@ -11,7 +10,6 @@ using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager;
 
@@ -28,7 +26,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
     private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
     private readonly IIdentityUserRepository _userRepository;
-    private readonly ITenantUserRepository _tenantUserRepository;
+    private readonly IPersonRepository _personRepository;
 
 #pragma warning disable S107 // Methods should not have too many parameters
     public GrantManagerTestDataSeedContributor(
@@ -43,7 +41,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         IApplicationAttachmentRepository applicationAttachmentRepository,
         IAssessmentAttachmentRepository assessmentAttachmentRepository,
         IIdentityUserRepository userRepository,
-        ITenantUserRepository tenantUserRepository)
+        IPersonRepository personRepository)
 #pragma warning restore S107 // Methods should not have too many parameters
     {
         _applicationRepository = applicationRepository;
@@ -57,7 +55,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         _applicationAttachmentRepository = applicationAttachmentRepository;
         _userRepository = userRepository;
         _assessmentAttachmentRepository = assessmentAttachmentRepository;
-        _tenantUserRepository = tenantUserRepository;
+        _personRepository = personRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
@@ -149,9 +147,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             {
                 ApplicationId = GrantManagerTestData.Application1_Id,
                 S3ObjectKey = "Unity/Development/Application/report.pdf",
-                UserId = "00000000-0000-0000-0000-000000000000",
-                FileName = "report.pdf",
-                AttachedBy = "John Doe",
+                UserId = GrantManagerTestData.User2_UserId,
+                FileName = "report.pdf",                
                 Time = DateTime.UtcNow,
             },
             autoSave: true
@@ -174,8 +171,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 AssessmentId = GrantManagerTestData.Assessment1_Id,
                 S3ObjectKey = "Unity/Development/Assessment/result.pdf",
                 UserId = GrantManagerTestData.User1_UserId,
-                FileName = "result.pdf",
-                AttachedBy = "John Doe",
+                FileName = "result.pdf",                
                 Time = DateTime.UtcNow
             },
             autoSave: true
@@ -204,7 +200,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 GrantManagerTestData.User1_UserName,
                 GrantManagerTestData.User1_EmailAddress), autoSave: true);
 
-            await _tenantUserRepository.InsertAsync(new User()
+            await _personRepository.InsertAsync(new Person()
             {
                 Id = GrantManagerTestData.User1_UserId,
                 Badge = "UT",
@@ -224,7 +220,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 GrantManagerTestData.User2_EmailAddress), autoSave: true);
 
 
-            await _tenantUserRepository.InsertAsync(new User()
+            await _personRepository.InsertAsync(new Person()
             {
                 Id = GrantManagerTestData.User2_UserId,
                 Badge = "UT",

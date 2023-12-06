@@ -28,7 +28,7 @@ namespace Unity.GrantManager.GrantApplications;
 [ExposeServices(typeof(GrantApplicationAppService), typeof(IGrantApplicationAppService))]
 public class GrantApplicationAppService :
     CrudAppService<
-    GrantApplication,
+    Application,
     GrantApplicationDto,
     Guid,
     PagedAndSortedResultRequestDto,
@@ -45,10 +45,9 @@ public class GrantApplicationAppService :
     private readonly ICommentsManager _commentsManager;
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IAssessmentRepository _assessmentRepository;
-    private readonly ITenantUserRepository _tenantUserRepository;
+    private readonly IPersonRepository _personRepository;
 
-    public GrantApplicationAppService(
-        IRepository<GrantApplication, Guid> repository,
+    public GrantApplicationAppService(IRepository<Application, Guid> repository,
         IApplicationManager applicationManager,
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
@@ -58,7 +57,7 @@ public class GrantApplicationAppService :
         ICommentsManager commentsManager,
         IApplicationFormRepository applicationFormRepository,
         IAssessmentRepository assessmentRepository,
-        ITenantUserRepository tenantUserRepository
+        IPersonRepository personRepository
         )
          : base(repository)
     {
@@ -71,7 +70,7 @@ public class GrantApplicationAppService :
         _commentsManager = commentsManager;
         _applicationFormRepository = applicationFormRepository;
         _assessmentRepository = assessmentRepository;
-        _tenantUserRepository = tenantUserRepository;
+        _personRepository = personRepository;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -230,7 +229,7 @@ public class GrantApplicationAppService :
     public async Task<List<GrantApplicationAssigneeDto>> GetAssigneesAsync(Guid applicationId)
     {
         var query = from userAssignment in await _userAssignmentRepository.GetQueryableAsync()
-                    join user in await _tenantUserRepository.GetQueryableAsync() on userAssignment.AssigneeId equals user.Id
+                    join user in await _personRepository.GetQueryableAsync() on userAssignment.AssigneeId equals user.Id
                     where userAssignment.ApplicationId == applicationId
                     select new GrantApplicationAssigneeDto
                     {

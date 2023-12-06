@@ -34,7 +34,7 @@ public class AssessmentRepository : EfCoreRepository<GrantTenantDbContext, Asses
     public async Task<List<AssessmentWithAssessorQueryResultItem>> GetListWithAssessorsAsync(Guid applicationId)
     {
         var assessmentQueryable = await GetQueryableAsync();
-        var userQueryable = (await GetDbContextAsync()).Set<User>().AsQueryable();
+        var userQueryable = (await GetDbContextAsync()).Set<Person>().AsQueryable();
 
         var query = assessmentQueryable
             .Where(x => x.ApplicationId == applicationId)

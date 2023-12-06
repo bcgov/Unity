@@ -15,19 +15,19 @@ namespace Unity.GrantManager
         private readonly ITenantRepository _tenantRepository;
         private readonly IdentityUserManager _identityUserManager;
         private readonly IConfiguration _configuration;
-        private readonly ITenantUserRepository _tenantUserRepository;
+        private readonly IPersonRepository _personRepository;
 
         public GrantManagerDefaultTenantSeederContributor(ITenantManager tenantManager,
             ITenantRepository tenantRepository,
             IConfiguration configuration,
-            ITenantUserRepository tenantUserRepository,
+            IPersonRepository personRepository,
             IdentityUserManager identityUserManager)
         {
             _tenantManager = tenantManager;
             _tenantRepository = tenantRepository;
             _identityUserManager = identityUserManager;
             _configuration = configuration;
-            _tenantUserRepository = tenantUserRepository;
+            _personRepository = personRepository;
         }
 
         public async Task SeedAsync(DataSeedContext context)
@@ -37,14 +37,14 @@ namespace Unity.GrantManager
             if (context.TenantId == null)
             {
                 // Read the configuration and populate any default tenants
-                var tenant = await _tenantRepository.FindByNameAsync("Default");
+                var tenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
 
                 if (tenant == null)
                 {
                     var tenantConnectionString = _configuration.GetConnectionString("Tenant");
                     if (tenantConnectionString != null)
                     {
-                        var newTenant = await _tenantManager.CreateAsync("Default");
+                        var newTenant = await _tenantManager.CreateAsync(GrantManagerConsts.DefaultTenantName);
                         newTenant.ConnectionStrings.Add(new TenantConnectionString(newTenant.Id, "default", tenantConnectionString));
                         await _tenantRepository.InsertAsync(newTenant, true);
                     }
@@ -76,10 +76,10 @@ namespace Unity.GrantManager
                     var displayName = identityUser.GetProperty("DisplayName")?.ToString();
                     var propFallback = Guid.NewGuid().ToString();
 
-                    var tenantUser = await _tenantUserRepository.FindByOidcSub(oidcProp ?? propFallback);
-                    if (tenantUser == null)
+                    var person = await _personRepository.FindByOidcSub(oidcProp ?? propFallback);
+                    if (person == null)
                     {
-                        await _tenantUserRepository.InsertAsync(new User()
+                        await _personRepository.InsertAsync(new Person()
                         {
                             Id = identityUser.Id,
                             OidcDisplayName = displayName ?? identityUser.Name,

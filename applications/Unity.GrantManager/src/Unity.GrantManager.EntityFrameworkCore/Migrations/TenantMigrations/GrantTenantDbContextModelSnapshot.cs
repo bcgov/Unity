@@ -86,7 +86,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantId");
 
-                    b.ToTable("Address", (string)null);
+                    b.ToTable("Addresses", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Applicant", b =>
@@ -170,7 +170,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantName");
 
-                    b.ToTable("Applicant", (string)null);
+                    b.ToTable("Applicants", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantAgent", b =>
@@ -256,7 +256,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("OidcSubUser");
 
-                    b.ToTable("ApplicantAgent", (string)null);
+                    b.ToTable("ApplicantAgents", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
@@ -381,7 +381,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationStatusId");
 
-                    b.ToTable("Application", (string)null);
+                    b.ToTable("Applications", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
@@ -392,9 +392,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AttachedBy")
-                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -434,15 +431,14 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
 
-                    b.ToTable("ApplicationAttachment", (string)null);
+                    b.ToTable("ApplicationAttachments", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationForm", b =>
@@ -531,7 +527,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("IntakeId");
 
-                    b.ToTable("ApplicationForm", (string)null);
+                    b.ToTable("ApplicationForms", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormSubmission", b =>
@@ -595,7 +591,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationFormId");
 
-                    b.ToTable("ApplicationFormSubmission", (string)null);
+                    b.ToTable("ApplicationFormSubmissions", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>
@@ -649,7 +645,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("StatusCode")
                         .IsUnique();
 
-                    b.ToTable("ApplicationStatus", (string)null);
+                    b.ToTable("ApplicationStatuses", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationUserAssignment", b =>
@@ -697,7 +693,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("AssigneeId");
 
-                    b.ToTable("ApplicationUserAssignment", (string)null);
+                    b.ToTable("ApplicationUserAssignments", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentAttachment", b =>
@@ -708,9 +704,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<Guid>("AssessmentId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AttachedBy")
-                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -733,7 +726,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnName("ExtraProperties");
 
                     b.Property<string>("FileName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("LastModificationTime")
@@ -758,7 +750,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("AssessmentId");
 
-                    b.ToTable("AssessmentAttachment", (string)null);
+                    b.ToTable("AssessmentAttachments", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Assessments.Assessment", b =>
@@ -832,7 +824,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("AssessorId");
 
-                    b.ToTable("Assessment", (string)null);
+                    b.ToTable("Assessments", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Comments.ApplicationComment", b =>
@@ -884,7 +876,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("CommenterId");
 
-                    b.ToTable("ApplicationComment", (string)null);
+                    b.ToTable("ApplicationComments", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Comments.AssessmentComment", b =>
@@ -936,52 +928,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("CommenterId");
 
-                    b.ToTable("AssessmentComment", (string)null);
+                    b.ToTable("AssessmentComments", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.GrantApplications.GrantApplication", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("GrantApplications");
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Identity.User", b =>
+            modelBuilder.Entity("Unity.GrantManager.Identity.Person", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -1034,7 +984,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("OidcSub");
 
-                    b.ToTable("User", (string)null);
+                    b.ToTable("Persons", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Intakes.Intake", b =>
@@ -1100,7 +1050,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Intake", (string)null);
+                    b.ToTable("Intakes", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Address", b =>
@@ -1118,7 +1068,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Identity.User", null)
+                    b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("OidcSubUser")
                         .HasPrincipalKey("OidcSub")
@@ -1190,7 +1140,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Identity.User", null)
+                    b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("AssigneeId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -1214,7 +1164,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Identity.User", null)
+                    b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("AssessorId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -1229,7 +1179,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Identity.User", null)
+                    b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("CommenterId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1244,7 +1194,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Identity.User", null)
+                    b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("CommenterId")
                         .OnDelete(DeleteBehavior.Cascade)

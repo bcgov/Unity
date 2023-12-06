@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Applicant",
+                name: "Applicants",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -39,11 +39,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Applicant", x => x.Id);
+                    table.PrimaryKey("PK_Applicants", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicationStatus",
+                name: "ApplicationStatuses",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -59,29 +59,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ApplicationStatus", x => x.Id);
+                    table.PrimaryKey("PK_ApplicationStatuses", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "GrantApplications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
-                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
-                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GrantApplications", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Intake",
+                name: "Intakes",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -101,11 +83,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Intake", x => x.Id);
+                    table.PrimaryKey("PK_Intakes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "User",
+                name: "Persons",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -122,12 +104,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_User", x => x.Id);
-                    table.UniqueConstraint("AK_User_OidcSub", x => x.OidcSub);
+                    table.PrimaryKey("PK_Persons", x => x.Id);
+                    table.UniqueConstraint("AK_Persons_OidcSub", x => x.OidcSub);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Address",
+                name: "Addresses",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -148,16 +130,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Address", x => x.Id);
+                    table.PrimaryKey("PK_Addresses", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Address_Applicant_ApplicantId",
+                        name: "FK_Addresses_Applicants_ApplicantId",
                         column: x => x.ApplicantId,
-                        principalTable: "Applicant",
+                        principalTable: "Applicants",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicationForm",
+                name: "ApplicationForms",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -184,17 +166,17 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ApplicationForm", x => x.Id);
+                    table.PrimaryKey("PK_ApplicationForms", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ApplicationForm_Intake_IntakeId",
+                        name: "FK_ApplicationForms_Intakes_IntakeId",
                         column: x => x.IntakeId,
-                        principalTable: "Intake",
+                        principalTable: "Intakes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicantAgent",
+                name: "ApplicantAgents",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -219,23 +201,58 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ApplicantAgent", x => x.Id);
+                    table.PrimaryKey("PK_ApplicantAgents", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ApplicantAgent_Applicant_ApplicantId",
+                        name: "FK_ApplicantAgents_Applicants_ApplicantId",
                         column: x => x.ApplicantId,
-                        principalTable: "Applicant",
+                        principalTable: "Applicants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ApplicantAgent_User_OidcSubUser",
+                        name: "FK_ApplicantAgents_Persons_OidcSubUser",
                         column: x => x.OidcSubUser,
-                        principalTable: "User",
+                        principalTable: "Persons",
                         principalColumn: "OidcSub",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Application",
+                name: "ApplicationFormSubmissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OidcSub = table.Column<string>(type: "text", nullable: false),
+                    ApplicantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApplicationFormId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChefsSubmissionGuid = table.Column<string>(type: "text", nullable: false),
+                    Submission = table.Column<string>(type: "jsonb", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ApplicationFormSubmissions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ApplicationFormSubmissions_Applicants_ApplicantId",
+                        column: x => x.ApplicantId,
+                        principalTable: "Applicants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ApplicationFormSubmissions_ApplicationForms_ApplicationForm~",
+                        column: x => x.ApplicationFormId,
+                        principalTable: "ApplicationForms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Applications",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -274,72 +291,36 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Application", x => x.Id);
+                    table.PrimaryKey("PK_Applications", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Application_Applicant_ApplicantId",
+                        name: "FK_Applications_Applicants_ApplicantId",
                         column: x => x.ApplicantId,
-                        principalTable: "Applicant",
+                        principalTable: "Applicants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Application_ApplicationForm_ApplicationFormId",
+                        name: "FK_Applications_ApplicationForms_ApplicationFormId",
                         column: x => x.ApplicationFormId,
-                        principalTable: "ApplicationForm",
+                        principalTable: "ApplicationForms",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Application_ApplicationStatus_ApplicationStatusId",
+                        name: "FK_Applications_ApplicationStatuses_ApplicationStatusId",
                         column: x => x.ApplicationStatusId,
-                        principalTable: "ApplicationStatus",
+                        principalTable: "ApplicationStatuses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicationFormSubmission",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    OidcSub = table.Column<string>(type: "text", nullable: false),
-                    ApplicantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ApplicationFormId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ChefsSubmissionGuid = table.Column<string>(type: "text", nullable: false),
-                    Submission = table.Column<string>(type: "jsonb", nullable: false),
-                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
-                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
-                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ApplicationFormSubmission", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ApplicationFormSubmission_Applicant_ApplicantId",
-                        column: x => x.ApplicantId,
-                        principalTable: "Applicant",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ApplicationFormSubmission_ApplicationForm_ApplicationFormId",
-                        column: x => x.ApplicationFormId,
-                        principalTable: "ApplicationForm",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ApplicationAttachment",
+                name: "ApplicationAttachments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ApplicationId = table.Column<Guid>(type: "uuid", nullable: false),
                     S3ObjectKey = table.Column<string>(type: "text", nullable: false),
-                    UserId = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     FileName = table.Column<string>(type: "text", nullable: true),
-                    AttachedBy = table.Column<string>(type: "text", nullable: true),
                     Time = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     ExtraProperties = table.Column<string>(type: "text", nullable: false),
                     ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
@@ -350,17 +331,17 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ApplicationAttachment", x => x.Id);
+                    table.PrimaryKey("PK_ApplicationAttachments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ApplicationAttachment_Application_ApplicationId",
+                        name: "FK_ApplicationAttachments_Applications_ApplicationId",
                         column: x => x.ApplicationId,
-                        principalTable: "Application",
+                        principalTable: "Applications",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicationComment",
+                name: "ApplicationComments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -376,23 +357,23 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ApplicationComment", x => x.Id);
+                    table.PrimaryKey("PK_ApplicationComments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ApplicationComment_Application_ApplicationId",
+                        name: "FK_ApplicationComments_Applications_ApplicationId",
                         column: x => x.ApplicationId,
-                        principalTable: "Application",
+                        principalTable: "Applications",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ApplicationComment_User_CommenterId",
+                        name: "FK_ApplicationComments_Persons_CommenterId",
                         column: x => x.CommenterId,
-                        principalTable: "User",
+                        principalTable: "Persons",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicationUserAssignment",
+                name: "ApplicationUserAssignments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -407,22 +388,22 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ApplicationUserAssignment", x => x.Id);
+                    table.PrimaryKey("PK_ApplicationUserAssignments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ApplicationUserAssignment_Application_ApplicationId",
+                        name: "FK_ApplicationUserAssignments_Applications_ApplicationId",
                         column: x => x.ApplicationId,
-                        principalTable: "Application",
+                        principalTable: "Applications",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ApplicationUserAssignment_User_AssigneeId",
+                        name: "FK_ApplicationUserAssignments_Persons_AssigneeId",
                         column: x => x.AssigneeId,
-                        principalTable: "User",
+                        principalTable: "Persons",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "Assessment",
+                name: "Assessments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -445,29 +426,28 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Assessment", x => x.Id);
+                    table.PrimaryKey("PK_Assessments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Assessment_Application_ApplicationId",
+                        name: "FK_Assessments_Applications_ApplicationId",
                         column: x => x.ApplicationId,
-                        principalTable: "Application",
+                        principalTable: "Applications",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Assessment_User_AssessorId",
+                        name: "FK_Assessments_Persons_AssessorId",
                         column: x => x.AssessorId,
-                        principalTable: "User",
+                        principalTable: "Persons",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "AssessmentAttachment",
+                name: "AssessmentAttachments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     AssessmentId = table.Column<Guid>(type: "uuid", nullable: false),
                     S3ObjectKey = table.Column<string>(type: "text", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    FileName = table.Column<string>(type: "text", nullable: false),
-                    AttachedBy = table.Column<string>(type: "text", nullable: true),
+                    FileName = table.Column<string>(type: "text", nullable: true),
                     Time = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     ExtraProperties = table.Column<string>(type: "text", nullable: false),
                     ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
@@ -478,17 +458,17 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AssessmentAttachment", x => x.Id);
+                    table.PrimaryKey("PK_AssessmentAttachments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AssessmentAttachment_Assessment_AssessmentId",
+                        name: "FK_AssessmentAttachments_Assessments_AssessmentId",
                         column: x => x.AssessmentId,
-                        principalTable: "Assessment",
+                        principalTable: "Assessments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "AssessmentComment",
+                name: "AssessmentComments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -504,130 +484,130 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AssessmentComment", x => x.Id);
+                    table.PrimaryKey("PK_AssessmentComments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AssessmentComment_Assessment_AssessmentId",
+                        name: "FK_AssessmentComments_Assessments_AssessmentId",
                         column: x => x.AssessmentId,
-                        principalTable: "Assessment",
+                        principalTable: "Assessments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_AssessmentComment_User_CommenterId",
+                        name: "FK_AssessmentComments_Persons_CommenterId",
                         column: x => x.CommenterId,
-                        principalTable: "User",
+                        principalTable: "Persons",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Address_ApplicantId",
-                table: "Address",
+                name: "IX_Addresses_ApplicantId",
+                table: "Addresses",
                 column: "ApplicantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Applicant_ApplicantName",
-                table: "Applicant",
-                column: "ApplicantName");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ApplicantAgent_ApplicantId",
-                table: "ApplicantAgent",
+                name: "IX_ApplicantAgents_ApplicantId",
+                table: "ApplicantAgents",
                 column: "ApplicantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicantAgent_OidcSubUser",
-                table: "ApplicantAgent",
+                name: "IX_ApplicantAgents_OidcSubUser",
+                table: "ApplicantAgents",
                 column: "OidcSubUser");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Application_ApplicantId",
-                table: "Application",
-                column: "ApplicantId");
+                name: "IX_Applicants_ApplicantName",
+                table: "Applicants",
+                column: "ApplicantName");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Application_ApplicationFormId",
-                table: "Application",
-                column: "ApplicationFormId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Application_ApplicationStatusId",
-                table: "Application",
-                column: "ApplicationStatusId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ApplicationAttachment_ApplicationId",
-                table: "ApplicationAttachment",
+                name: "IX_ApplicationAttachments_ApplicationId",
+                table: "ApplicationAttachments",
                 column: "ApplicationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationComment_ApplicationId",
-                table: "ApplicationComment",
+                name: "IX_ApplicationComments_ApplicationId",
+                table: "ApplicationComments",
                 column: "ApplicationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationComment_CommenterId",
-                table: "ApplicationComment",
+                name: "IX_ApplicationComments_CommenterId",
+                table: "ApplicationComments",
                 column: "CommenterId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationForm_IntakeId",
-                table: "ApplicationForm",
+                name: "IX_ApplicationForms_IntakeId",
+                table: "ApplicationForms",
                 column: "IntakeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationFormSubmission_ApplicantId",
-                table: "ApplicationFormSubmission",
+                name: "IX_ApplicationFormSubmissions_ApplicantId",
+                table: "ApplicationFormSubmissions",
                 column: "ApplicantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationFormSubmission_ApplicationFormId",
-                table: "ApplicationFormSubmission",
+                name: "IX_ApplicationFormSubmissions_ApplicationFormId",
+                table: "ApplicationFormSubmissions",
                 column: "ApplicationFormId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationStatus_StatusCode",
-                table: "ApplicationStatus",
+                name: "IX_Applications_ApplicantId",
+                table: "Applications",
+                column: "ApplicantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Applications_ApplicationFormId",
+                table: "Applications",
+                column: "ApplicationFormId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Applications_ApplicationStatusId",
+                table: "Applications",
+                column: "ApplicationStatusId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ApplicationStatuses_StatusCode",
+                table: "ApplicationStatuses",
                 column: "StatusCode",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationUserAssignment_ApplicationId",
-                table: "ApplicationUserAssignment",
+                name: "IX_ApplicationUserAssignments_ApplicationId",
+                table: "ApplicationUserAssignments",
                 column: "ApplicationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationUserAssignment_AssigneeId",
-                table: "ApplicationUserAssignment",
+                name: "IX_ApplicationUserAssignments_AssigneeId",
+                table: "ApplicationUserAssignments",
                 column: "AssigneeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Assessment_ApplicationId",
-                table: "Assessment",
-                column: "ApplicationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Assessment_AssessorId",
-                table: "Assessment",
-                column: "AssessorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AssessmentAttachment_AssessmentId",
-                table: "AssessmentAttachment",
+                name: "IX_AssessmentAttachments_AssessmentId",
+                table: "AssessmentAttachments",
                 column: "AssessmentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AssessmentComment_AssessmentId",
-                table: "AssessmentComment",
+                name: "IX_AssessmentComments_AssessmentId",
+                table: "AssessmentComments",
                 column: "AssessmentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AssessmentComment_CommenterId",
-                table: "AssessmentComment",
+                name: "IX_AssessmentComments_CommenterId",
+                table: "AssessmentComments",
                 column: "CommenterId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_User_OidcSub",
-                table: "User",
+                name: "IX_Assessments_ApplicationId",
+                table: "Assessments",
+                column: "ApplicationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assessments_AssessorId",
+                table: "Assessments",
+                column: "AssessorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Persons_OidcSub",
+                table: "Persons",
                 column: "OidcSub");
         }
 
@@ -635,52 +615,49 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Address");
+                name: "Addresses");
 
             migrationBuilder.DropTable(
-                name: "ApplicantAgent");
+                name: "ApplicantAgents");
 
             migrationBuilder.DropTable(
-                name: "ApplicationAttachment");
+                name: "ApplicationAttachments");
 
             migrationBuilder.DropTable(
-                name: "ApplicationComment");
+                name: "ApplicationComments");
 
             migrationBuilder.DropTable(
-                name: "ApplicationFormSubmission");
+                name: "ApplicationFormSubmissions");
 
             migrationBuilder.DropTable(
-                name: "ApplicationUserAssignment");
+                name: "ApplicationUserAssignments");
 
             migrationBuilder.DropTable(
-                name: "AssessmentAttachment");
+                name: "AssessmentAttachments");
 
             migrationBuilder.DropTable(
-                name: "AssessmentComment");
+                name: "AssessmentComments");
 
             migrationBuilder.DropTable(
-                name: "GrantApplications");
+                name: "Assessments");
 
             migrationBuilder.DropTable(
-                name: "Assessment");
+                name: "Applications");
 
             migrationBuilder.DropTable(
-                name: "Application");
+                name: "Persons");
 
             migrationBuilder.DropTable(
-                name: "User");
+                name: "Applicants");
 
             migrationBuilder.DropTable(
-                name: "Applicant");
+                name: "ApplicationForms");
 
             migrationBuilder.DropTable(
-                name: "ApplicationForm");
+                name: "ApplicationStatuses");
 
             migrationBuilder.DropTable(
-                name: "ApplicationStatus");
-
-            migrationBuilder.DropTable(
-                name: "Intake");
+                name: "Intakes");
         }
     }
 }
