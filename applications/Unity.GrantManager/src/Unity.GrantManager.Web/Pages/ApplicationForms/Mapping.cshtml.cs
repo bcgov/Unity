@@ -15,7 +15,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 {
     [Authorize]
     public class MappingModel : AbpPageModel
-    {            
+    {
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
         private readonly IApplicationFormAppService _applicationFormAppService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
-        
+
         [BindProperty]
         public ApplicationFormDto? ApplicationFormDto { get; set; }
 
@@ -51,16 +51,14 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         public async Task OnGetAsync()
         {
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
-            ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?) await _applicationFormVersionAppService.GetListAsync(ApplicationFormDto.Id);
+            ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormVersionAppService.GetListAsync(ApplicationFormDto.Id);
 
-            if(ApplicationFormVersionDtoList != null) {
-                foreach (ApplicationFormVersionDto applicationFormVersionDto in ApplicationFormVersionDtoList) {
-                    if (applicationFormVersionDto.ChefsFormVersionGuid != null && Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid) == ChefsFormVersionGuid)
-                    {
-                        ApplicationFormVersionDto = applicationFormVersionDto;
-                        break;
-                    }
-                    else if (applicationFormVersionDto.Published) // If published set as default edit
+            if (ApplicationFormVersionDtoList != null)
+            {
+                foreach (ApplicationFormVersionDto applicationFormVersionDto in ApplicationFormVersionDtoList)
+                {
+                    if ((applicationFormVersionDto.ChefsFormVersionGuid != null && Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid) == ChefsFormVersionGuid)
+                    || applicationFormVersionDto.Published)
                     {
                         ApplicationFormVersionDto = applicationFormVersionDto;
                         break;
@@ -74,7 +72,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                     appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;
                     ApplicationFormVersionDto = await _applicationFormVersionAppService.CreateAsync(appFormVersion);
                 }
-                else if(ApplicationFormVersionDto == null)
+                else if (ApplicationFormVersionDto == null)
                 {
                     ApplicationFormVersionDto = ApplicationFormVersionDtoList.First();
                 }

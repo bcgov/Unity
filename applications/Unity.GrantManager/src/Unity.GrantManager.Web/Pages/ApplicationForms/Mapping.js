@@ -431,13 +431,13 @@
             return jsonText;
         }
         
-        var prettyJson = new Array();
-        var depth = 0;
-        var currChar;
-        var prevChar;
-        var doubleQuoteIn = false;
+        let prettyJson = new Array();
+        let depth = 0;
+        let currChar;
+        let prevChar;
+        let doubleQuoteIn = false;
         
-        for(var i = 0; i < jsonText.length; i++) {
+        for(let i = 0; i < jsonText.length; i++) {
             currChar = jsonText.charAt(i);
             
             if(currChar == '\"') {
@@ -479,7 +479,7 @@
     }
 
     function insertTab(prettyJson, depth) {
-        for(var i = 0; i < depth; i++) {
+        for(let i = 0; i < depth; i++) {
             prettyJson.push(TAB);
         }
     }

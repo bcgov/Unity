@@ -72,11 +72,12 @@ namespace Unity.GrantManager.Intakes
         public string GetSubLookupType(dynamic? tokenType)
         {
             string subTokenString = "components";
+#pragma warning disable CS8602 
             if(tokenType != null && ColumnTypes.Contains(tokenType.ToString()))
             {
                 subTokenString = "columns";
             }
-
+#pragma warning restore CS8602
             return subTokenString;
         }
 
