@@ -11,11 +11,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 {
     public class ProjectInfoViewModel : PageModel
     {
-        public List<SelectListItem> FundingRiskList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.FundingList);
-        public List<SelectListItem> DueDilligenceList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DueDilligenceList);
-        public List<SelectListItem> AssessmentResultStatusList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.AssessmentResultStatusList);
-        public List<SelectListItem> DeclineRationalActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList);
-        public List<SelectListItem> RecommendationActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.RecommendationActionList);
+        public static ImmutableDictionary<string, string> DropdownList => 
+            ImmutableDictionary.CreateRange(new[]
+            {
+                new KeyValuePair<string, string>("VALUE1", "Value 1"),
+                new KeyValuePair<string, string>("VALUE2", "Value 2"),
+            });
+        public List<SelectListItem> EconomicRegionActionList { get; set; } = FormatOptionsList(DropdownList);
+        public List<SelectListItem> ElectoralDistrictActionList { get; set; } = FormatOptionsList(DropdownList);
 
         public List<SelectListItem> ForestryList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.ForestryList);
 
@@ -74,11 +77,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? Community { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.EconomicRegion")]
-            [SelectItems(nameof(RecommendationActionList))]
+            [SelectItems(nameof(EconomicRegionActionList))]
             public string? EconomicRegion { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ElectoralDistrict")]
-            [SelectItems(nameof(DeclineRationalActionList))]
+            [SelectItems(nameof(ElectoralDistrictActionList))]
             public string? ElectoralDistrict { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.CommunityPopulation")]
