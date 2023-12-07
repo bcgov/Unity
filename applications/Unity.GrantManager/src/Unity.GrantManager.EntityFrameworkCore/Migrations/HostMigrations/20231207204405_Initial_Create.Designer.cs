@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.HostMigrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    [Migration("20231207193348_Initial_Create")]
+    [Migration("20231207204405_Initial_Create")]
     partial class InitialCreate
     {
         /// <inheritdoc />
