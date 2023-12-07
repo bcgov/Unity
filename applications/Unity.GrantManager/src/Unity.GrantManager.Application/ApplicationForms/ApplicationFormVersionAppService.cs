@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Intakes.Integration;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
@@ -27,16 +28,19 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
+        private readonly IFormIntService _formIntService;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IUnitOfWorkManager unitOfWorkManager,
+            IFormIntService formIntService,
             IApplicationFormVersionRepository applicationFormVersionRepository)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _unitOfWorkManager = unitOfWorkManager;
+            _formIntService = formIntService;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -46,45 +50,106 @@ namespace Unity.GrantManager.ApplicationForms
 
         public override async Task<ApplicationFormVersionDto> UpdateAsync(Guid id, CreateUpdateApplicationFormVersionDto input)
         {
-            return await  base.UpdateAsync(id, input);
+            return await base.UpdateAsync(id, input);
         }
 
         public override async Task<ApplicationFormVersionDto> GetAsync(Guid id)
-        {            
+        {
             var dto = await base.GetAsync(id);
             return dto;
         }
 
-        public async Task<string?> GetFormVersionSubmissionMapping(string chefsFormVersionId) {
+        public async Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId)
+        {
+            bool initializePublishedFormVersion = false;
+            if (chefsForm != null)
+            {
+                JObject formObject = JObject.Parse(chefsForm.ToString());
+                if (formObject != null)
+                {
+                    dynamic? versions = ((JObject)formObject!).SelectToken("versions");
+                    if (versions != null)
+                    {
+                        foreach (JToken? childToken in versions.Children())
+                        {
+                            if (childToken != null && childToken.Type == JTokenType.Object)
+                            {
+                                dynamic? published = childToken["published"];
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                                if (published != null && bool.Parse(published.ToString()))
+                                {
+                                    dynamic? formVersionId = childToken["id"];
+                                    if (formVersionId != null)
+                                    {
+                                        var applicationFormVersion = await GetApplicationFormVersion(formVersionId.ToString());
+                                        if (applicationFormVersion == null)
+                                        {
+                                            string formId = childToken["formId"].ToString();
+                                            dynamic? version = childToken["version"];
+                                            applicationFormVersion = new ApplicationFormVersion();
+                                            applicationFormVersion.ApplicationFormId = applicationFormId;
+                                            applicationFormVersion.ChefsApplicationFormGuid = formId;
+                                            applicationFormVersion.Version = int.Parse(version.ToString());
+                                            applicationFormVersion.Published = bool.Parse(published.ToString());
+                                            applicationFormVersion.ChefsFormVersionGuid = formVersionId.ToString();
+                                            var formVersion = await _formIntService.GetFormDataAsync(formId, formVersionId.ToString());
+                                            applicationFormVersion.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
+                                            await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
+                                            initializePublishedFormVersion = true;
+                                        }
+                                    }
+                                }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            return initializePublishedFormVersion;
+        }
+
+        public async Task<string?> GetFormVersionSubmissionMapping(string chefsFormVersionId)
+        {
             var applicationFormVersion = (await _applicationFormVersionRepository
                     .GetQueryableAsync())
                     .Where(s => s.ChefsFormVersionGuid == chefsFormVersionId)
                     .First();
             string? formVersionSubmissionHeaderMapping = null;
-            
-            if(applicationFormVersion != null) {
+
+            if (applicationFormVersion != null)
+            {
                 formVersionSubmissionHeaderMapping = applicationFormVersion.SubmissionHeaderMapping;
             }
             return formVersionSubmissionHeaderMapping;
         }
 
-        public async Task<bool> FormVersionExists(string chefsFormVersionId) {
+        private async Task<ApplicationFormVersion?> GetApplicationFormVersion(string chefsFormVersionId)
+        {
             var applicationFormVersion = (await _applicationFormVersionRepository
-                    .GetQueryableAsync())
-                    .Where(s => s.ChefsFormVersionGuid == chefsFormVersionId)
-                    .First();
+            .GetQueryableAsync())
+            .Where(s => s.ChefsFormVersionGuid == chefsFormVersionId)
+            .FirstOrDefault();
 
+            return applicationFormVersion;
+        }
+
+        public async Task<bool> FormVersionExists(string chefsFormVersionId)
+        {
+            var applicationFormVersion = await GetApplicationFormVersion(chefsFormVersionId);
             return applicationFormVersion != null;
         }
 
-        private async Task<bool> UnPublishFormVersions(string applicationFormId, string chefsFormVersionId) {
+        private async Task<bool> UnPublishFormVersions(Guid applicationFormId, string chefsFormVersionId)
+        {
             bool unpublished = false;
             using var uow = _unitOfWorkManager.Begin();
             var applicationFormVersion = (await _applicationFormVersionRepository
                     .GetQueryableAsync())
-                    .Where(s => s.ChefsFormVersionGuid != chefsFormVersionId && s.ChefsApplicationFormGuid == applicationFormId)
+                    .Where(s => s.ChefsFormVersionGuid != chefsFormVersionId && s.ApplicationFormId == applicationFormId)
                     .FirstOrDefault();
-            if(applicationFormVersion != null)
+            if (applicationFormVersion != null)
             {
                 applicationFormVersion.Published = false;
                 await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
@@ -95,25 +160,22 @@ namespace Unity.GrantManager.ApplicationForms
         }
 
         public async Task<ApplicationFormVersionDto> UpdateOrCreateApplicationFormVersion(
-            string chefsFormId, 
+            string chefsFormId,
             string chefsFormVersionId,
             Guid applicationFormId,
-            dynamic chefsFormVersion) {
+            dynamic chefsFormVersion)
+        {
 
-            var applicationFormVersion = (await _applicationFormVersionRepository
-                    .GetQueryableAsync())
-                    .Where(s => s.ChefsFormVersionGuid == chefsFormVersionId)
-                    .FirstOrDefault();
-            
+            var applicationFormVersion = await GetApplicationFormVersion(chefsFormVersionId);
             bool formVersionEsists = true;
-
-            if(applicationFormVersion == null) {
+            if (applicationFormVersion == null)
+            {
                 applicationFormVersion = (await _applicationFormVersionRepository
                     .GetQueryableAsync())
                     .Where(s => s.ChefsApplicationFormGuid == chefsFormId && s.ChefsFormVersionGuid == null)
                     .FirstOrDefault();
 
-                if(applicationFormVersion == null)
+                if (applicationFormVersion == null)
                 {
                     applicationFormVersion = new ApplicationFormVersion();
                     applicationFormVersion.ApplicationFormId = applicationFormId;
@@ -124,7 +186,7 @@ namespace Unity.GrantManager.ApplicationForms
                 applicationFormVersion.ChefsFormVersionGuid = chefsFormVersionId;
             }
 
-            if(chefsFormVersion != null)
+            if (chefsFormVersion != null)
             {
                 JToken? version = ((JObject)chefsFormVersion).SelectToken("version");
                 JToken? published = ((JObject)chefsFormVersion).SelectToken("published");
@@ -138,20 +200,25 @@ namespace Unity.GrantManager.ApplicationForms
                 if (published != null)
                 {
                     bool publishedBool = bool.Parse(published.ToString());
-                    if(publishedBool) {
-                        // set others to false if the current is being updated to true
-                        await UnPublishFormVersions(applicationFormId.ToString(), chefsFormVersionId);
+                    if (publishedBool)
+                    {
+                        // set all to false if the current is being updated to true
+                        await UnPublishFormVersions(applicationFormId, chefsFormVersionId);
                     }
                     applicationFormVersion.Published = publishedBool;
                 }
-            } else {
+            }
+            else
+            {
                 throw new EntityNotFoundException("Application Form Not Registered");
             }
 
             if (formVersionEsists)
             {
                 applicationFormVersion = await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
-            } else {
+            }
+            else
+            {
                 applicationFormVersion = await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
             }
 

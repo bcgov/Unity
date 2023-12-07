@@ -65,7 +65,7 @@ namespace Unity.GrantManager.Intakes
         private async Task StoreChefsFieldMappingAsync(EventSubscriptionDto eventSubscriptionDto, ApplicationForm applicationForm, JToken token)
         {
             Guid formVersionId = Guid.Parse(token.ToString());
-            var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, formVersionId) ?? throw new InvalidFormDataSubmissionException();
+            var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
             string chefsFormId = eventSubscriptionDto.FormId.ToString();
             string chefsFormVersionId = eventSubscriptionDto.FormVersion.ToString();
             await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(chefsFormId, chefsFormVersionId, applicationForm.Id, formData);

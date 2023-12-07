@@ -45,7 +45,7 @@ namespace Unity.GrantManager.Events
                 .FirstOrDefault() ?? throw new EntityNotFoundException("Application Form Not Registered");
 
             var submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
-            var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, submissionData.submission.formVersionId) ?? throw new InvalidFormDataSubmissionException();
+            var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), submissionData.submission.formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
             var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
             return !result.IsNullOrEmpty();
         }
@@ -66,8 +66,8 @@ namespace Unity.GrantManager.Events
                 && applicationForm.ChefsApplicationFormGuid != null)
             {
                 // Go grab the new name/description/version and map the new available fields
-                var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.FormVersion);
-                dynamic form = await _formIntService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid));
+                var formVersion = await _formIntService.GetFormDataAsync(formId, formVersionId);
+                dynamic form = await _formIntService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid), applicationForm.ChefsApplicationFormGuid.ToString(), applicationForm.ApiKey);
                 applicationForm = _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
                 await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);

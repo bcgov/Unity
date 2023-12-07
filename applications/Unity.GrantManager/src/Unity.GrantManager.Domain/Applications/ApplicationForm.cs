@@ -11,10 +11,8 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>
     public string? ApplicationFormName { get; set; }
     public string? ApplicationFormDescription { get; set;}
     public string? ChefsApplicationFormGuid { get; set; }
-    public string? ChefsFormVersionGuid { get; set; }
     public string? ChefsCriteriaFormGuid { get; set; }
     public string? ApiKey { get; set; }
-    public string? SubmissionHeaderMapping { get; set; }
     public string? AvailableChefsFields { get; set; }
     public int? Version { get; set; }
     public string? Category { get; set; }

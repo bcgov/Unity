@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Controllers
                 throw new Exception("Application Form API Key is Required");
             }
 
-            var chefsFormVersion = await _formIntService.GetFormDataAsync(Guid.Parse(formId), Guid.Parse(formVersionId));
+            var chefsFormVersion = await _formIntService.GetFormDataAsync(formId, formVersionId);
             return await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);
         }
     }

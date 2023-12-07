@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Forms;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -15,6 +16,7 @@ namespace Unity.GrantManager.ApplicationForms
     {
         Task<IList<ApplicationFormVersionDto>> GetListAsync(Guid applicationFormId);
         Task<bool> FormVersionExists(string chefsFormVersionId);
+        Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId);                
         Task<string?> GetFormVersionSubmissionMapping(string chefsFormVersionId);
         Task<ApplicationFormVersionDto> UpdateOrCreateApplicationFormVersion(string chefsFormId, string chefsFormVersionId, Guid applicationFormId, dynamic chefsFormVersion);
     }
