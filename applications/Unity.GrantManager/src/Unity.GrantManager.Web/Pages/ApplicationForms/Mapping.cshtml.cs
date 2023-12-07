@@ -58,13 +58,16 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 foreach (ApplicationFormVersionDto applicationFormVersionDto in ApplicationFormVersionDtoList)
                 {
                     if ((applicationFormVersionDto.ChefsFormVersionGuid != null && Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid) == ChefsFormVersionGuid)
-                    || applicationFormVersionDto.Published)
+                    || (ChefsFormVersionGuid.ToString() == "00000000-0000-0000-0000-000000000000" && applicationFormVersionDto.Published))
                     {
                         ApplicationFormVersionDto = applicationFormVersionDto;
+                        if (ChefsFormVersionGuid.ToString() == "00000000-0000-0000-0000-000000000000" && applicationFormVersionDto.ChefsFormVersionGuid != null)  {
+                            ChefsFormVersionGuid = Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid);                            
+                        }
                         break;
                     }
                 }
-
+                
                 if (ApplicationFormVersionDtoList.Count == 0 && ApplicationFormVersionDto == null)
                 {
                     CreateUpdateApplicationFormVersionDto appFormVersion = new CreateUpdateApplicationFormVersionDto();
@@ -76,6 +79,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 {
                     ApplicationFormVersionDto = ApplicationFormVersionDtoList.First();
                 }
+
                 ApplicationFormVersionDtoString = JsonSerializer.Serialize(ApplicationFormVersionDto);
             }
 

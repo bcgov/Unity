@@ -264,3 +264,11 @@ textarea {
     opacity: 1 !important;
     display: block !important;
 }
+
+.non-drag {
+    -webkit-user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}

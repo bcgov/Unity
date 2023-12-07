@@ -99,7 +99,7 @@
             );
     
             setTimeout(function(){
-                window.location.reload();
+                window.location.href = location.href;
             }, 2000);
 
           }
@@ -172,7 +172,7 @@
             columnDefs: [
                 { 
                     render: function (data) {
-                        return '<div id="'+data+'" class="col map-div" draggable="true"></div>';
+                        return '<div id="'+data+'" class="col map-div non-drag" draggable="false"></div>';
                     },
                     targets: 3
                 }
@@ -326,10 +326,18 @@
     }
 
     document.addEventListener('dragstart', function (ev) {
+        if(ev.target.classList.contains('non-drag')) {
+            ev.preventDefault();
+            return;
+        }
         beingDragged(ev);
     });
 
     document.addEventListener('dragend', function (ev) {
+        if(ev.target.classList.contains('non-drag')) {
+            ev.preventDefault();
+            return;
+        }        
         dragEnd(ev);
     });
 
