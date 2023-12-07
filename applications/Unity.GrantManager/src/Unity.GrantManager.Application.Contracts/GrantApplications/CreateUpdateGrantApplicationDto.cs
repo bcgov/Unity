@@ -11,7 +11,7 @@ namespace Unity.GrantManager.GrantApplications
         public decimal? RecommendedAmount { get; set; }
         public decimal? ApprovedAmount { get; set; }
         public string? LikelihoodOfFunding { get; set; }
-        public string? DueDilligenceStatus { get; set; }
+        public string? DueDiligenceStatus { get; set; }
         public string? Recommendation { get; set; }
         public string? DeclineRational { get; set; }
         public string? Notes { get; set; }

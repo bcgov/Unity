@@ -120,7 +120,7 @@ public class GrantManagerWebModule : AbpModule
         {
             options.TokenCookie.Expiration = TimeSpan.FromDays(365);
             options.TokenCookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.TokenCookie.SameSite = SameSiteMode.None;
+            options.TokenCookie.SameSite = SameSiteMode.Lax;
             options.TokenCookie.HttpOnly = false;
         });
         Configure<AbpClockOptions>(options =>
@@ -375,7 +375,10 @@ public class GrantManagerWebModule : AbpModule
                 OnAppendCookie = cookieContext =>
                 {
                     if (cookieContext.CookieName.Equals("XSRF-TOKEN"))
+                    {
                         cookieContext.CookieOptions.HttpOnly = false;
+                        cookieContext.CookieOptions.SameSite = SameSiteMode.Lax;
+                    }
                 }
             });
         }
