@@ -47,18 +47,21 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorCode, Text = sector.SectorName });
             }
 
-            if (ApplicationSectors.Count > 0 ) {
-                List<ApplicationSubSectorDto>? SubSectors = new List<ApplicationSubSectorDto>();
-                if(Application.SubSector.IsNullOrEmpty()) {
+            if (ApplicationSectors.Count > 0) {
+                List<ApplicationSubSectorDto> SubSectors = new List<ApplicationSubSectorDto>();
+                if (string.IsNullOrEmpty(Application.SubSector)) {
                     SubSectors = ApplicationSectors[0].SubSectors ?? SubSectors;
                 } else {
-                    ApplicationSectorDto applicationSector = ApplicationSectors.Find(x => x.SectorCode == Application.Sector) ?? throw new ArgumentException("Sector not found");
-                    SubSectors = applicationSector.SubSectors;
+                    ApplicationSectorDto applicationSector = ApplicationSectors.FirstOrDefault(x => x.SectorCode == Application.Sector) 
+                                                                ?? throw new ArgumentException("Sector not found");
+                    SubSectors = applicationSector.SubSectors ?? SubSectors;
                 }
+
                 foreach (ApplicationSubSectorDto subSector in SubSectors) {
                     model.ApplicationSubSectorsList.Add(new SelectListItem { Value = subSector.SubSectorCode, Text = subSector.SubSectorName });
                 }
             }
+
 
             decimal ProjectFundingTotal = Application.ProjectFundingTotal ?? 0;
             double PercentageTotalProjectBudget = Application.PercentageTotalProjectBudget ?? 0;

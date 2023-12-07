@@ -313,6 +313,22 @@ public class GrantManagerDbContext :
             b.HasOne<ApplicationSector>(e => e.Sector).WithMany(e => e.SubSectors).HasForeignKey(x => x.SectorId);
         });
 
+        modelBuilder.Entity<ApplicationEconomicRegion>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationEconomicRegion",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<ApplicationElectoralDistrict>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationElectoralDistrict",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
         foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
         {
