@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RestSharp;
 using System.Threading.Tasks;
@@ -12,9 +11,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Integrations.Geocoder
 {
-    [RemoteService(false)]
-    [Authorize]
-    [Dependency(ReplaceServices = true)]
+    [IntegrationService]    
     [ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderService))]
     public class GeocoderApiService : ApplicationService, IGeocoderService
     {
