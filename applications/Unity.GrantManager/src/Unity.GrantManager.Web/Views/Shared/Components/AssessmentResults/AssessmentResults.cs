@@ -49,7 +49,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                     RecommendedAmount = application.RecommendedAmount,
                     ApprovedAmount = application.ApprovedAmount,
                     LikelihoodOfFunding = application.LikelihoodOfFunding,
-                    DueDilligenceStatus = application.DueDilligenceStatus,
+                    DueDiligenceStatus = application.DueDiligenceStatus,
                     Recommendation = application.Recommendation,
                     DeclineRational = application.DeclineRational,
                     TotalScore = application.TotalScore,

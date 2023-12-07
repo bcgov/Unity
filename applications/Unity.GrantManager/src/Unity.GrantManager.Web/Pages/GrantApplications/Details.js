@@ -2,72 +2,72 @@ $(function () {
     let selectedReviewDetails = null;
     abp.localization.getResource('GrantManager');
 
+    function replaceKey(obj, keyToReplace, matchValue, newValue ) {
+        for (let key in obj) {
+            if (key === keyToReplace && obj[key] === matchValue) {
+                obj[key] = newValue;
+            } else if (typeof obj[key] === 'object') {
+                replaceKey(obj[key], keyToReplace, matchValue, newValue ); 
+            }
+        }
+    }
+
     function formatChefComponents(data) {
         // Advanced Components
-        let components = JSON.stringify(data).replace(
-            /simpleaddressadvanced/g,
-            'address'
-        );
-        components = components.replace(/simplebuttonadvanced/g, 'button');
-        components = components.replace(/simplecheckboxadvanced/g, 'checkbox');
-        components = components.replace(/simplecurrencyadvanced/g, 'currency');
-        components = components.replace(/simpledatetimeadvanced/g, 'datetime');
-        components = components.replace(/simpledayadvanced/g, 'day');
-        components = components.replace(/simpleemailadvanced/g, 'email');
-        components = components.replace(/simplenumberadvanced/g, 'number');
-        components = components.replace(/simplepasswordadvanced/g, 'password');
-        components = components.replace(
-            /simplephonenumberadvanced/g,
-            'phoneNumber'
-        );
-        components = components.replace(/simpleradioadvanced/g, 'radio');
-        components = components.replace(/simpleselectadvanced/g, 'select');
-        components = components.replace(
-            /simpleselectboxesadvanced/g,
-            'selectboxes'
-        );
-        components = components.replace(
-            /simplesignatureadvanced/g,
-            'signature'
-        );
-        components = components.replace(/simplesurveyadvanced/g, 'survey');
-        components = components.replace(/simpletagsadvanced/g, 'tags');
-        components = components.replace(/simpletextareaadvanced/g, 'textarea');
-        components = components.replace(
-            /simpletextfieldadvanced/g,
-            'textfield'
-        );
-        components = components.replace(/simpletimeadvanced/g, 'time');
-        components = components.replace(/simpleurladvanced/g, 'url');
+        replaceKey(data, "type", "orgbook", "select");
+        replaceKey(data, "type", "simpleaddressadvanced", "address");
+        replaceKey(data, "type", "simplebuttonadvanced", "button");
+        replaceKey(data, "type", "simplecheckboxadvanced", "checkbox");
+        replaceKey(data, "type", "simplecurrencyadvanced", "currency");
+        replaceKey(data, "type", "simpledatetimeadvanced", "datetime");
+        replaceKey(data, "type", "simpledayadvanced", "day");
+        replaceKey(data, "type", "simpleemailadvanced", "email");
+        replaceKey(data, "type", "simplenumberadvanced", "number");
+        replaceKey(data, "type", "simplepasswordadvanced", "password");
+        replaceKey(data, "type", "simplephonenumberadvanced", "phoneNumber");
+        replaceKey(data, "type", "simpleradioadvanced", "radio");
+        replaceKey(data, "type", "simpleselectadvanced", "select");
+        replaceKey(data, "type", "simpleselectboxesadvanced", "selectboxes");
+        replaceKey(data, "type", "simplesignatureadvanced", "signature");
+        replaceKey(data, "type", "simplesurveyadvanced", "survey");
+        replaceKey(data, "type", "simpletagsadvanced", "tags");
+        replaceKey(data, "type", "simpletextareaadvanced", "textarea");
+        replaceKey(data, "type", "simpletextfieldadvanced", "textfield");
+        replaceKey(data, "type", "simpletimeadvanced", "time");
+        replaceKey(data, "type", "simpleurladvanced", "url");
+       
+      
 
         // Regular components
-        components = components.replace(/bcaddress/g, 'address');
-        components = components.replace(/simplebtnreset/g, 'button');
-        components = components.replace(/simplebtnsubmit/g, 'button');
-        components = components.replace(/simplecheckboxes/g, 'selectboxes');
-        components = components.replace(/simplecheckbox/g, 'checkbox');
-        components = components.replace(/simplecols2/g, 'columns');
-        components = components.replace(/simplecols3/g, 'columns');
-        components = components.replace(/simplecols4/g, 'columns');
-        components = components.replace(/simplecontent/g, 'content');
-        components = components.replace(/simpledatetime/g, 'datetime');
-        components = components.replace(/simpleday/g, 'day');
-        components = components.replace(/simpleemail/g, 'email');
-        components = components.replace(/simplefile/g, 'file');
-        components = components.replace(/simpleheading/g, 'header');
-        components = components.replace(/simplefieldset/g, 'fieldset');
-        components = components.replace(/simplenumber/g, 'number');
-        components = components.replace(/simplepanel/g, 'panel');
-        components = components.replace(/simpleparagraph/g, 'textarea');
-        components = components.replace(/simplephonenumber/g, 'phoneNumber');
-        components = components.replace(/simpleradios/g, 'radio');
-        components = components.replace(/simpleselect/g, 'select');
-        components = components.replace(/simpletabs/g, 'tabs');
-        components = components.replace(/simpletextarea/g, 'textarea');
-        components = components.replace(/simpletextfield/g, 'textfield');
-        components = components.replace(/simpletime/g, 'time');
+        replaceKey(data, "type", "simplebcaddress", "address");
+        replaceKey(data, "type", "bcaddress", "address");
+        replaceKey(data, "type", "simplebtnreset", "button");
+        replaceKey(data, "type", "simplebtnsubmit", "button");
+        replaceKey(data, "type", "simplecheckboxes", "selectboxes");
+        replaceKey(data, "type", "simplecheckbox", "checkbox");
+        replaceKey(data, "type", "simplecols2", "columns");
+        replaceKey(data, "type", "simplecols3", "columns");
+        replaceKey(data, "type", "simplecols4", "columns");
+        replaceKey(data, "type", "simplecontent", "content");
+        replaceKey(data, "type", "simpledatetime", "datetime");
+        replaceKey(data, "type", "simpleday", "day");
+        replaceKey(data, "type", "simpleemail", "email");
+        replaceKey(data, "type", "simplefile", "file");
+        replaceKey(data, "type", "simpleheading", "header");
+        replaceKey(data, "type", "simplefieldset", "fieldset");
+        replaceKey(data, "type", "simplenumber", "number");
+        replaceKey(data, "type", "simplepanel", "panel");
+        replaceKey(data, "type", "simpleparagraph", "textarea");
+        replaceKey(data, "type", "simplephonenumber", "phoneNumber");
+        replaceKey(data, "type", "simpleradios", "radio");
+        replaceKey(data, "type", "simpleselect", "select");
+        replaceKey(data, "type", "simpletabs", "tabs");
+        replaceKey(data, "type", "simpletextarea", "textarea");
+        replaceKey(data, "type", "simpletextfield", "textfield");
+        replaceKey(data, "type", "simpletime", "time");
 
-        return components;
+
+        return data;
     }
 
     async function getSubmission() {
@@ -78,7 +78,7 @@ $(function () {
                 .done(function (result) {
                     $('.spinner-grow').hide();
                     Formio.icons = 'fontawesome';
-                    let data = JSON.parse(formatChefComponents(result));
+                    let data = formatChefComponents(result);
                     Formio.createForm(
                         document.getElementById('formio'),
                         data.version.schema,
@@ -231,7 +231,7 @@ $(function () {
             .getSubmission(submissionId)
             .done(function (result) {
                 
-                let data = JSON.parse(formatChefComponents(result));
+                let data = formatChefComponents(result);
                 const formElement = document.createElement('div');
                 Formio.createForm(
                     formElement,

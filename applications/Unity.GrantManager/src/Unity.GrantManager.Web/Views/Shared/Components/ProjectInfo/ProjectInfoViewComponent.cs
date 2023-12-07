@@ -21,11 +21,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
         private readonly ApplicationSectorAppService _applicationSectorAppService;
+        private readonly ApplicationEconomicRegionAppService _applicationEconomicRegionAppService;
+        private readonly ApplicationElectoralDistrictAppService _applicationElectoralDistrictAppService;
 
-        public ProjectInfoViewComponent(GrantApplicationAppService grantApplicationAppService, ApplicationSectorAppService applicationSectorAppService)
+        public ProjectInfoViewComponent(
+            GrantApplicationAppService grantApplicationAppService, 
+            ApplicationSectorAppService applicationSectorAppService,
+            ApplicationEconomicRegionAppService applicationEconomicRegionAppService,
+            ApplicationElectoralDistrictAppService applicationElectoralDistrictAppService
+            )
         {
             _grantApplicationAppService = grantApplicationAppService;
             _applicationSectorAppService = applicationSectorAppService;
+            _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
+            _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -35,6 +44,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             GrantApplicationDto Application = await _grantApplicationAppService.GetAsync(applicationId);
 
             List<ApplicationSectorDto> ApplicationSectors = (await _applicationSectorAppService.GetListAsync()).ToList();
+
+            List<ApplicationEconomicRegionDto> ApplicationEconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
+
+            List<ApplicationElectoralDistrictDto> ApplicationElectoralDistricts = (await _applicationElectoralDistrictAppService.GetListAsync()).ToList();
 
             ProjectInfoViewModel model = new()
             {
@@ -47,18 +60,31 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorCode, Text = sector.SectorName });
             }
 
-            if (ApplicationSectors.Count > 0 ) {
-                List<ApplicationSubSectorDto>? SubSectors = new List<ApplicationSubSectorDto>();
-                if(Application.SubSector.IsNullOrEmpty()) {
+            foreach (ApplicationEconomicRegionDto economicRegion in ApplicationEconomicRegions)
+            {
+                model.EconomicRegionList.Add(new SelectListItem { Value = economicRegion.EconomicRegionCode, Text = economicRegion.EconomicRegionName });
+            }
+
+            foreach (ApplicationElectoralDistrictDto electoralDistrict in ApplicationElectoralDistricts)
+            {
+                model.ElectoralDistrictList.Add(new SelectListItem { Value = electoralDistrict.ElectoralDistrictCode, Text = electoralDistrict.ElectoralDistrictName });
+            }
+
+            if (ApplicationSectors.Count > 0) {
+                List<ApplicationSubSectorDto> SubSectors = new List<ApplicationSubSectorDto>();
+                if (string.IsNullOrEmpty(Application.SubSector)) {
                     SubSectors = ApplicationSectors[0].SubSectors ?? SubSectors;
                 } else {
-                    ApplicationSectorDto applicationSector = ApplicationSectors.Find(x => x.SectorCode == Application.Sector) ?? throw new ArgumentException("Sector not found");
-                    SubSectors = applicationSector.SubSectors;
+                    ApplicationSectorDto applicationSector = ApplicationSectors.FirstOrDefault(x => x.SectorCode == Application.Sector) 
+                                                                ?? throw new ArgumentException("Sector not found");
+                    SubSectors = applicationSector.SubSectors ?? SubSectors;
                 }
+
                 foreach (ApplicationSubSectorDto subSector in SubSectors) {
                     model.ApplicationSubSectorsList.Add(new SelectListItem { Value = subSector.SubSectorCode, Text = subSector.SubSectorName });
                 }
             }
+
 
             decimal ProjectFundingTotal = Application.ProjectFundingTotal ?? 0;
             double PercentageTotalProjectBudget = Application.PercentageTotalProjectBudget ?? 0;
