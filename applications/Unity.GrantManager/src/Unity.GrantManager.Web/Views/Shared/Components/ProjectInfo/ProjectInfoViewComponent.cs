@@ -21,11 +21,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
         private readonly ApplicationSectorAppService _applicationSectorAppService;
+        private readonly ApplicationEconomicRegionAppService _applicationEconomicRegionAppService;
+        private readonly ApplicationElectoralDistrictAppService _applicationElectoralDistrictAppService;
 
-        public ProjectInfoViewComponent(GrantApplicationAppService grantApplicationAppService, ApplicationSectorAppService applicationSectorAppService)
+        public ProjectInfoViewComponent(
+            GrantApplicationAppService grantApplicationAppService, 
+            ApplicationSectorAppService applicationSectorAppService,
+            ApplicationEconomicRegionAppService applicationEconomicRegionAppService,
+            ApplicationElectoralDistrictAppService applicationElectoralDistrictAppService
+            )
         {
             _grantApplicationAppService = grantApplicationAppService;
             _applicationSectorAppService = applicationSectorAppService;
+            _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
+            _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -36,6 +45,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             List<ApplicationSectorDto> ApplicationSectors = (await _applicationSectorAppService.GetListAsync()).ToList();
 
+            List<ApplicationEconomicRegionDto> ApplicationEconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
+
+            List<ApplicationElectoralDistrictDto> ApplicationElectoralDistricts = (await _applicationElectoralDistrictAppService.GetListAsync()).ToList();
+
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
@@ -45,6 +58,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             foreach (ApplicationSectorDto sector in ApplicationSectors)
             {
                 model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorCode, Text = sector.SectorName });
+            }
+
+            foreach (ApplicationEconomicRegionDto economicRegion in ApplicationEconomicRegions)
+            {
+                model.EconomicRegionList.Add(new SelectListItem { Value = economicRegion.EconomicRegionCode, Text = economicRegion.EconomicRegionName });
+            }
+
+            foreach (ApplicationElectoralDistrictDto electoralDistrict in ApplicationElectoralDistricts)
+            {
+                model.ElectoralDistrictList.Add(new SelectListItem { Value = electoralDistrict.ElectoralDistrictCode, Text = electoralDistrict.ElectoralDistrictName });
             }
 
             if (ApplicationSectors.Count > 0) {

@@ -17,8 +17,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 new KeyValuePair<string, string>("VALUE1", "Value 1"),
                 new KeyValuePair<string, string>("VALUE2", "Value 2"),
             });
-        public List<SelectListItem> EconomicRegionActionList { get; set; } = FormatOptionsList(DropdownList);
-        public List<SelectListItem> ElectoralDistrictActionList { get; set; } = FormatOptionsList(DropdownList);
 
         public List<SelectListItem> ForestryList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.ForestryList);
 
@@ -28,6 +26,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
         public List<SelectListItem> ApplicationSectorsList { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ApplicationSubSectorsList { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> EconomicRegionList { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> ElectoralDistrictList { get; set; } = new List<SelectListItem>();
         
         public Guid ApplicationId { get; set; }
         public List<ApplicationSectorDto> ApplicationSectors { get; set; } = new List<ApplicationSectorDto>();
@@ -77,11 +77,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? Community { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.EconomicRegion")]
-            [SelectItems(nameof(EconomicRegionActionList))]
+            [SelectItems(nameof(EconomicRegionList))]
             public string? EconomicRegion { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ElectoralDistrict")]
-            [SelectItems(nameof(ElectoralDistrictActionList))]
+            [SelectItems(nameof(ElectoralDistrictList))]
             public string? ElectoralDistrict { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.CommunityPopulation")]
