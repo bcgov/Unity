@@ -25,6 +25,7 @@ public class Application : AuditedAggregateRoot<Guid>
     public decimal RequestedAmount { get; set; }
     public decimal TotalProjectBudget { get; set; }
     public string? Sector { get; set; } = null;
+    public string? SubSector { get; set; } = null;
     public string? EconomicRegion { get; set;} = null;
     public string? City { get; set; } = null;
     public DateTime? ProposalDate { get; set; }
@@ -56,5 +57,25 @@ public class Application : AuditedAggregateRoot<Guid>
     public string? AssessmentResultStatus { get; set; }
 
     public DateTime? AssessmentResultDate { get; set; }
+
+    public DateTime? ProjectStartDate { get; set; }
+
+    public DateTime? ProjectEndDate { get; set; }
+
+    public double? PercentageTotalProjectBudget { get; set; }
+
+    public decimal? ProjectFundingTotal { get; set; }
+
+    public string? Community { get; set; }
+
+    public int? CommunityPopulation { get; set; }
+
+    public string? Acquisition { get; set; }
+
+    public string? Forestry { get; set; }
+
+    public string? ForestryFocus { get; set; }
+
+    public string? ElectoralDistrict { get; set; }
 
 }
