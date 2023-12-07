@@ -20,7 +20,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
     private readonly IGrantApplicationAppService _grantApplicationAppService;
     private readonly IRepository<Application, Guid> _applicationsRepository;
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentsRepository;
-    private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
+    private readonly IApplicationAssignmentRepository _userAssignmentRepository;
     private readonly IIdentityUserLookupAppService _identityUserLookupAppService;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
@@ -33,7 +33,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         _applicationCommentsRepository = GetRequiredService<IRepository<ApplicationComment, Guid>>();
         _identityUserLookupAppService = GetRequiredService<IIdentityUserLookupAppService>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
-        _userAssignmentRepository = GetRequiredService<IApplicationUserAssignmentRepository>();
+        _userAssignmentRepository = GetRequiredService<IApplicationAssignmentRepository>();
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
 
 
             // Assert
-            IQueryable<ApplicationUserAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationAssignment> queryableAssignment = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments = queryableAssignment.ToList();
             assignments.Count.ShouldBe(1);
 
@@ -64,7 +64,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
             await _grantApplicationAppServiceTest.DeleteAssigneeAsync(applicationIds, uData.Id);
             await uow.SaveChangesAsync();
 
-            IQueryable<ApplicationUserAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
             var assignments2 = queryableAssignment2.ToList();
             assignments2.Count.ShouldBe(0);
         }

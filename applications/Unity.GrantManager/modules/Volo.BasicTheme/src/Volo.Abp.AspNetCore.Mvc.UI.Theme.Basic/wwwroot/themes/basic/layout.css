@@ -296,8 +296,7 @@ input.form-control, textarea.form-control, .form-select {
     font-size: var(--bc-font-size);
     color: var(--bc-colors-grey-text-500);
     border-radius: 0.1875rem !important;
-    border: var(--bs-border-width) solid var(--bs-border-color);
-    width: 100% !important;
+    border: var(--bs-border-width) solid var(--bs-border-color);    
 }
 
     input.form-control:hover, textarea.form-control:hover, .form-select:hover {

@@ -10,6 +10,7 @@ using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Locale;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -22,11 +23,15 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<Applicant> Applicants { get; set; }
         public DbSet<Application> Applications { get; set; }
         public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
-        public DbSet<ApplicationUserAssignment> ApplicationUserAssignments { get; set; }
+        public DbSet<ApplicationAssignment> ApplicationUserAssignments { get; set; }
         public DbSet<ApplicationComment> ApplicationComments { get; set; }
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<AssessmentComment> AssessmentComments { get; set; }
-        public DbSet<Person> Users { get; set; }
+        public DbSet<Person> Persons { get; set; }
+        public DbSet<Sector> Sectors { get; set; }
+        public DbSet<SubSector> SubSectors { get; set; }
+        public DbSet<EconomicRegion> EconomicRegion { get; set; }
+        public DbSet<ElectoralDistrict> ElectoralDistricts { get; set; }
 
         #endregion
 
@@ -202,9 +207,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .HasForeignKey(x => x.CommenterId);
             });
 
-            modelBuilder.Entity<ApplicationUserAssignment>(b =>
+            modelBuilder.Entity<ApplicationAssignment>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationUserAssignments",
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationAssignments",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
@@ -216,6 +221,40 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .HasForeignKey(x => x.AssigneeId)
                     .IsRequired()
                     .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            modelBuilder.Entity<Sector>(b =>
+            {
+                b.ToTable(GrantManagerConsts.DbTablePrefix + "Sectors",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasMany(e => e.SubSectors).WithOne(e => e.Sector).HasForeignKey(x => x.SectorId);
+            });
+
+            modelBuilder.Entity<SubSector>(b =>
+            {
+                b.ToTable(GrantManagerConsts.DbTablePrefix + "SubSectors",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne(e => e.Sector).WithMany(e => e.SubSectors).HasForeignKey(x => x.SectorId);
+            });
+
+            modelBuilder.Entity<EconomicRegion>(b =>
+            {
+                b.ToTable(GrantManagerConsts.DbTablePrefix + "EconomicRegions",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+            });
+
+            modelBuilder.Entity<ElectoralDistrict>(b =>
+            {
+                b.ToTable(GrantManagerConsts.DbTablePrefix + "ElectoralDistricts",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();

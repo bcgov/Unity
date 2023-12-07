@@ -7,6 +7,7 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Locale;
 
 namespace Unity.GrantManager;
 
@@ -19,7 +20,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
          * into multiple profile classes for a better organization. */
 
         CreateMap<Application, GrantApplicationDto>();
-        CreateMap<ApplicationUserAssignment, GrantApplicationAssigneeDto>();
+        CreateMap<ApplicationAssignment, GrantApplicationAssigneeDto>();
         CreateMap<ApplicationStatus, ApplicationStatusDto>();
         CreateMap<AssessmentComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.AssessmentId));
@@ -43,10 +44,10 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationActionResultItem, ApplicationActionDto>();
         CreateMap<EventSubscription, EventSubscriptionDto>();
         CreateMap<EventSubscriptionDto, EventSubscription>();        
-        CreateMap<ApplicationSector, ApplicationSectorDto>();
-        CreateMap<ApplicationSubSector, ApplicationSubSectorDto>();
-        CreateMap<ApplicationEconomicRegion, ApplicationEconomicRegionDto>();
-        CreateMap<ApplicationElectoralDistrict, ApplicationElectoralDistrictDto>();
+        CreateMap<Sector, SectorDto>();
+        CreateMap<SubSector, SubSectorDto>();
+        CreateMap<EconomicRegion, EconomicRegionDto>();
+        CreateMap<ElectoralDistrict, ElectoralDistrictDto>();
     }
 }
 

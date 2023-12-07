@@ -9,7 +9,6 @@ using Volo.Abp.EntityFrameworkCore.Modeling;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.EntityFrameworkCore;
-using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
@@ -69,46 +68,11 @@ public class GrantManagerDbContext :
         modelBuilder.ConfigureSettingManagement();
         modelBuilder.ConfigureBackgroundJobs();
         modelBuilder.ConfigureAuditLogging();
-        modelBuilder.ConfigureIdentity();
-        modelBuilder.ConfigureOpenIddict();
+        modelBuilder.ConfigureIdentity();        
         modelBuilder.ConfigureFeatureManagement();
         modelBuilder.ConfigureTenantManagement();
 
-        /* Configure your own tables/entities inside here */
-      
-        modelBuilder.Entity<ApplicationSector>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationSector",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-            b.HasMany(e => e.SubSectors).WithOne(e => e.Sector).HasForeignKey(x => x.SectorId);
-        });
-        
-        modelBuilder.Entity<ApplicationSubSector>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationSubSector",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-            b.HasOne<ApplicationSector>(e => e.Sector).WithMany(e => e.SubSectors).HasForeignKey(x => x.SectorId);
-        });
-
-        modelBuilder.Entity<ApplicationEconomicRegion>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationEconomicRegion",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-        });
-
-        modelBuilder.Entity<ApplicationElectoralDistrict>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationElectoralDistrict",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-        });
+        /* Configure your own tables/entities inside here */     
 
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
         foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))

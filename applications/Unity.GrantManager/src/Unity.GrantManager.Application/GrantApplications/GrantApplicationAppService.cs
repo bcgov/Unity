@@ -40,7 +40,7 @@ public class GrantApplicationAppService :
     private readonly IApplicationManager _applicationManager;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
-    private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
+    private readonly IApplicationAssignmentRepository _applicationAssignmentRepository;
     private readonly IApplicantRepository _applicantRepository;
     private readonly ICommentsManager _commentsManager;
     private readonly IApplicationFormRepository _applicationFormRepository;
@@ -51,7 +51,7 @@ public class GrantApplicationAppService :
         IApplicationManager applicationManager,
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
-        IApplicationUserAssignmentRepository userAssignmentRepository,
+        IApplicationAssignmentRepository applicationAssignmentRepository,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IApplicantRepository applicantRepository,
         ICommentsManager commentsManager,
@@ -64,7 +64,7 @@ public class GrantApplicationAppService :
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
         _applicationStatusRepository = applicationStatusRepository;
-        _userAssignmentRepository = userAssignmentRepository;
+        _applicationAssignmentRepository = applicationAssignmentRepository;
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _applicantRepository = applicantRepository;
         _commentsManager = commentsManager;
@@ -261,7 +261,7 @@ public class GrantApplicationAppService :
 
     public async Task<List<GrantApplicationAssigneeDto>> GetAssigneesAsync(Guid applicationId)
     {
-        var query = from userAssignment in await _userAssignmentRepository.GetQueryableAsync()
+        var query = from userAssignment in await _applicationAssignmentRepository.GetQueryableAsync()
                     join user in await _personRepository.GetQueryableAsync() on userAssignment.AssigneeId equals user.Id
                     where userAssignment.ApplicationId == applicationId
                     select new GrantApplicationAssigneeDto
