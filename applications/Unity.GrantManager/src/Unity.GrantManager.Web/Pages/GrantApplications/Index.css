@@ -237,3 +237,16 @@ th #btn-toggle-filter {
     display: none;
     background: white;
 }
+
+
+div.dt-buttons div.dropdown-menu {
+    max-height: 35rem !important;
+    overflow-y: auto !important;
+}
+.cln-visible{
+    margin-left:0.7rem;
+}
+
+.dt-buttons {
+    width: max-content;
+}

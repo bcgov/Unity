@@ -269,16 +269,16 @@
                         text: 'Export',
                         className: 'btn btn-light custom-table-btn csv-download',
                         exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11],
+                            columns: ':visible:not(.notexport)',
                             orthogonal: 'fullName',
                         }
                     },
                      {
                         extend: 'colvis',
-                        text: 'Visibility',
-                        //columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
-                        //aiExclude: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
-                        className: 'btn btn-light custom-table-btn cln-visible',
+                        text: 'Manage Columns',
+                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+                         className: 'btn btn-light custom-table-btn cln-visible',
+
                        
                     }
                 ],
@@ -306,10 +306,11 @@
                 initComplete: function () {
                     updateFilter();
                 },
-                columnDefs: [
+                columns: [
                     { //0
                         title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
                         orderable: false,
+                        className: 'notexport',
                         render: function (data) {
                             return '<div class="select-checkbox" title="Select Application" ></div>';
                         },
@@ -481,7 +482,9 @@
                         data: 'projectStartDate',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Project Start Date}';
+                            return data != null ? luxon.DateTime.fromISO(data, {
+                                locale: abp.localization.currentCulture.name,
+                            }).toLocaleString() : '{Project Start Date}' ;
                         },
                     },
                     { //18 -- mapped
@@ -490,7 +493,9 @@
                         data: 'projectEndDate',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Project End Date}';
+                            return data != null ? luxon.DateTime.fromISO(data, {
+                                locale: abp.localization.currentCulture.name,
+                            }).toLocaleString() : '{Project End Date}';
                         },
                     },
                     { //19  -- mapped
@@ -499,7 +504,7 @@
                         data: 'projectFundingTotal',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Projected Funding Total}';
+                            return formatter.format(data) ?? '{Projected Funding Total}';
                         },
                     },
                     { //20  -- mapped
@@ -517,7 +522,7 @@
                         data: 'projectFundingTotal',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Total Paid Amount $}';
+                            return  formatter.format(data) ?? '{Total Paid Amount $}';
                         },
                     },
                     { //22
@@ -625,11 +630,22 @@
                         data: 'recommendedAmount',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Recommended Amount}';
+                            return formatter.format(data) ?? '{Recommended Amount}';
                         },
                     },
+                  
 
+                ],
 
+                columnDefs: [
+                    {
+                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], // Index of columns to be visible by default
+                        visible: true
+                    },
+                    {
+                        targets: '_all',
+                        visible: false // Hide all other columns initially
+                    }
                 ],
             })
         );
