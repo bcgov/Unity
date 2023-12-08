@@ -61,53 +61,91 @@ namespace Unity.GrantManager.ApplicationForms
 
         public async Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId)
         {
-            bool initializePublishedFormVersion = false;
-            if (chefsForm != null)
+            if (chefsForm == null) return false;
+
+            try
             {
                 JObject formObject = JObject.Parse(chefsForm.ToString());
-                if (formObject != null)
+                if (formObject == null) return false;
+#pragma warning disable CS8600 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+                JToken versionsToken = formObject["versions"];
+#pragma warning restore CS8600 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+                if (versionsToken == null) return false;
+
+                foreach (JToken childToken in versionsToken.Children().Where(t => t.Type == JTokenType.Object))
                 {
-                    dynamic? versions = ((JObject)formObject!).SelectToken("versions");
-                    if (versions != null)
+                    if (TryParsePublished(childToken, out var formVersionId, out var published) && published)
                     {
-                        foreach (JToken? childToken in versions.Children())
+                        if (formVersionId != null && await FormVersionDoesNotExist(formVersionId))
                         {
-                            if (childToken != null && childToken.Type == JTokenType.Object)
+                            ApplicationFormVersion applicationFormVersion = await TryInitializeApplicationFormVersion(childToken, applicationFormId, formVersionId);
+                            if (applicationFormVersion != null)
                             {
-                                dynamic? published = childToken["published"];
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                                if (published != null && bool.Parse(published.ToString()))
-                                {
-                                    dynamic? formVersionId = childToken["id"];
-                                    if (formVersionId != null)
-                                    {
-                                        var applicationFormVersion = await GetApplicationFormVersion(formVersionId.ToString());
-                                        if (applicationFormVersion == null)
-                                        {
-                                            string formId = childToken["formId"].ToString();
-                                            dynamic? version = childToken["version"];
-                                            applicationFormVersion = new ApplicationFormVersion();
-                                            applicationFormVersion.ApplicationFormId = applicationFormId;
-                                            applicationFormVersion.ChefsApplicationFormGuid = formId;
-                                            applicationFormVersion.Version = int.Parse(version.ToString());
-                                            applicationFormVersion.Published = bool.Parse(published.ToString());
-                                            applicationFormVersion.ChefsFormVersionGuid = formVersionId.ToString();
-                                            var formVersion = await _formIntService.GetFormDataAsync(formId, formVersionId.ToString());
-                                            applicationFormVersion.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
-                                            await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
-                                            initializePublishedFormVersion = true;
-                                        }
-                                    }
-                                }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                                await InsertApplicationFormVersion(applicationFormVersion);
+                                return true;
                             }
                         }
                     }
                 }
-
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions appropriately
+                Console.WriteLine($"Exception: {ex.Message}");
             }
 
-            return initializePublishedFormVersion;
+            return false;
+        }
+
+        private bool TryParsePublished(JToken token, out string? formVersionId, out bool published)
+        {
+            formVersionId = token.Value<string>("id");
+            return bool.TryParse(token.Value<string>("published"), out published);
+        }
+
+        private async Task<bool> FormVersionDoesNotExist(string formVersionId)
+        {
+            var applicationFormVersion = await GetApplicationFormVersion(formVersionId);
+            return applicationFormVersion == null;
+        }
+
+        private async Task<ApplicationFormVersion> TryInitializeApplicationFormVersion(JToken token, Guid applicationFormId, string formVersionId)
+        {
+            ApplicationFormVersion applicationFormVersion = new ApplicationFormVersion();
+
+            try
+            {
+#pragma warning disable CS8600
+                string formId = token.Value<string>("formId");
+#pragma warning restore CS8600
+                if (formId != null)
+                {                    
+                    int version = token.Value<int>("version");
+
+                    applicationFormVersion = new ApplicationFormVersion
+                    {
+                        ApplicationFormId = applicationFormId,
+                        ChefsApplicationFormGuid = formId,
+                        Version = version,
+                        Published = true,
+                        ChefsFormVersionGuid = formVersionId
+                    };
+
+                    var formVersion = await _formIntService.GetFormDataAsync(formId, formVersionId);
+                    applicationFormVersion.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle initialization errors appropriately
+                Console.WriteLine($"Initialization Exception: {ex.Message}");               
+            }
+            return applicationFormVersion;
+        }
+
+        private async Task InsertApplicationFormVersion(ApplicationFormVersion applicationFormVersion)
+        {
+            await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
         }
 
         public async Task<string?> GetFormVersionSubmissionMapping(string chefsFormVersionId)

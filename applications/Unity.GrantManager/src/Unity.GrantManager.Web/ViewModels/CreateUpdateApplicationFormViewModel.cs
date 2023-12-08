@@ -15,23 +15,20 @@ namespace Unity.GrantManager.Web.ViewModels
         [Required]
         public List<SelectListItem> IntakesList { get; set; } = new List<SelectListItem>();       
         
-        [Required]
+        [DisabledInput]
         [DisplayName("Common:Name")]
         public string ApplicationFormName { get; set; } = string.Empty;
-
-        [DisplayName("Common:Description")]
-        public string? ApplicationFormDescription { get; set; }
 
         [Required]
         [DisplayName("ApplicationForms:ChefsFormId")]
         public string? ChefsApplicationFormGuid { get; set; }
 
-        [DisplayName("ApplicationForms:ChefsCriteriaFormId")]
-        public string? ChefsCriteriaFormGuid { get; set; }
-
         [Required]
         [DisplayName("ApplicationForms:ChefsFormApiKey")]
         public string? ApiKey { get; set; }
+
+        [DisplayName("Common:Description")]
+        public string? ApplicationFormDescription { get; set; }        
 
         [DisplayName("ApplicationForms:Category")]
         public string? Category { get; set; }
