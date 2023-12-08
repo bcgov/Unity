@@ -1,54 +1,17 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 
 namespace Unity.GrantManager.GrantApplications;
 
 public static class AssessmentResultsOptionsList
 {
-    public static ImmutableDictionary<string, string> FundingList =>
-     ImmutableDictionary.CreateRange(new[]
-        {
-            new KeyValuePair<string, string>("LOW", "Low"),
-            new KeyValuePair<string, string>("MEDIUM", "Medium"),
-            new KeyValuePair<string, string>("HIGH", "High"),
-        });
+    public static Dictionary<string, string> FundingList => new Dictionary<string, string> { { "HIGH", "High" }, { "LOW", "Low" }, { "MEDIUM", "Medium" } };
 
-    public static ImmutableDictionary<string, string> DueDilligenceList =>
-    ImmutableDictionary.CreateRange(new[]
-       {
-            new KeyValuePair<string, string>("COMPLETE", "Complete"),
-            new KeyValuePair<string, string>("UNDERWAY", "Underway"),
-            new KeyValuePair<string, string>("PAUSED", "Paused"),
-            new KeyValuePair<string, string>("WITHDRAWN", "Withdrawn"),
-            new KeyValuePair<string, string>("INELIGIBLE", "Ineligible"),
-            new KeyValuePair<string, string>("FAILED", "Failed"),
-       });
+    public static Dictionary<string, string> DueDiligenceList => new Dictionary<string, string> { { "COMPLETE", "Complete" }, { "FAILED", "Failed" }, { "INELIGIBLE", "Ineligible" }, { "PAUSED", "Paused" }, { "UNDERWAY", "Underway" }, { "WITHDRAWN", "Withdrawn" } };
 
-    public static ImmutableDictionary<string, string> AssessmentResultStatusList =>
-    ImmutableDictionary.CreateRange(new[]
-      {
-            new KeyValuePair<string, string>("PASS", "Pass"),
-            new KeyValuePair<string, string>("FAIL", "Fail"),
-            new KeyValuePair<string, string>("INELIGIBLE", "Ineligible")
-      });
+    public static Dictionary<string, string> AssessmentResultStatusList => new Dictionary<string, string> { { "FAIL", "Fail" }, { "INELIGIBLE", "Ineligible" }, { "PASS", "Pass" } };
 
-    public static ImmutableDictionary<string, string> DeclineRationalActionList =>
-    ImmutableDictionary.CreateRange(new[]
-      {
-            new KeyValuePair<string, string>("NO_READINESS", "Lack of readiness"),
-            new KeyValuePair<string, string>("LOW_PRIORITY", "Lower priority relative to other requests"),
-            new KeyValuePair<string, string>("NOT_ENOUGH_INFO", "Insufficient information provided"),
-            new KeyValuePair<string, string>("INELIGIBLE_PROJECT", "Ineligible Project"),
-            new KeyValuePair<string, string>("INELIGIBLE_APPLICANT", "Ineligible Applicant"),
-            new KeyValuePair<string, string>("INSUFFICIENT_READINESS", "Insufficient Readiness"),
-            new KeyValuePair<string, string>("SMALL_PROJECT", "Project too small"),
-            new KeyValuePair<string, string>("OTHER", "Other"),
-      });
+    public static Dictionary<string, string> DeclineRationalActionList => new Dictionary<string, string> { { "INELIGIBLE_APPLICANT", "Ineligible Applicant" }, { "INELIGIBLE_PROJECT", "Ineligible Project" }, { "NOT_ENOUGH_INFO", "Insufficient information provided" }, { "INSUFFICIENT_READINESS", "Insufficient Readiness" }, { "NO_READINESS", "Lack of readiness" }, { "LOW_PRIORITY", "Lower priority relative to other requests" }, { "SMALL_PROJECT", "Project too small" }, { "OTHER", "Other" } };
 
-    public static ImmutableDictionary<string, string> RecommendationActionList => 
-    ImmutableDictionary.CreateRange(new[]
-    {
-        new KeyValuePair<string, string>("APPROVE", "Recommended for Approval"),
-        new KeyValuePair<string, string>("DENY", "Recommended for Denial"),
-    });
+    public static Dictionary<string, string> RecommendationActionList => new Dictionary<string, string> { { "APPROVE", "Recommended for Approval" }, { "DENY", "Recommended for Denial" } };
+
 }

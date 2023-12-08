@@ -448,7 +448,7 @@
     function setTableHeighDynamic() {
         let tableHeight = $("#GrantApplicationsTable")[0].clientHeight;
         let docHeight = document.body.clientHeight;
-        let tableOffset = 345;
+        let tableOffset = 425;
 
         if ((tableHeight + tableOffset) > docHeight) {
             $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: docHeight - tableOffset });

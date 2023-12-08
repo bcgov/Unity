@@ -199,7 +199,7 @@ public class GrantApplicationAppService :
                     application.RecommendedAmount = input.RecommendedAmount ?? 0;
                     application.ApprovedAmount = input.ApprovedAmount ?? 0;
                     application.LikelihoodOfFunding = input.LikelihoodOfFunding;
-                    application.DueDilligenceStatus = input.DueDilligenceStatus;
+                    application.DueDilligenceStatus = input.DueDiligenceStatus;
                     application.Recommendation = input.Recommendation;
                     application.DeclineRational = input.DeclineRational;
                     application.TotalScore = input.TotalScore;
@@ -216,6 +216,39 @@ public class GrantApplicationAppService :
 
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
             }
+        }
+        else
+        {
+            throw new EntityNotFoundException();
+        }
+    }
+
+    public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+        if (application != null)
+        {
+            application.ProjectSummary = input.ProjectSummary;
+            application.ProjectName = input.ProjectName ?? String.Empty;
+            application.RequestedAmount = input.RequestedAmount ?? 0;
+            application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
+            application.ProjectStartDate = input.ProjectStartDate;
+            application.ProjectEndDate = input.ProjectEndDate;
+            application.PercentageTotalProjectBudget = input.PercentageTotalProjectBudget;
+            application.ProjectFundingTotal = input.ProjectFundingTotal;
+            application.Community = input.Community;
+            application.CommunityPopulation = input.CommunityPopulation;
+            application.Acquisition = input.Acquisition;
+            application.Forestry = input.Forestry;
+            application.ForestryFocus = input.ForestryFocus;
+            application.Sector = input.Sector;
+            application.SubSector = input.SubSector;
+            application.EconomicRegion = input.EconomicRegion;
+            application.ElectoralDistrict = input.ElectoralDistrict;
+
+            await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
         }
         else
         {

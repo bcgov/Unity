@@ -22,6 +22,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string City { get; set; } = string.Empty;
     public decimal TotalProjectBudget { get; set; }
     public string Sector { get; set; } = string.Empty;
+    public string SubSector { get; set; } = string.Empty;
 
     public int AssessmentCount { get; set; } = 0;
     public int AssessmentReviewCount { get; set; } = 0;
@@ -31,7 +32,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public decimal RecommendedAmount { get; set; } = 0;
     public decimal ApprovedAmount { get; set; } = 0;
     public string LikelihoodOfFunding { get; set; } = string.Empty;
-    public string DueDilligenceStatus { get; set; } = string.Empty;
+    public string DueDiligenceStatus { get; set; } = string.Empty;
     public string Recommendation { get; set; } = string.Empty;
     public string DeclineRational { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
@@ -39,4 +40,14 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public DateTime AssessmentResultDate { get; set; }
     public GrantApplicationState StatusCode { get; set; }
     public DateTime? FinalDecisionDate { get; set; }
+    public DateTime? ProjectStartDate { get; set; }
+    public DateTime? ProjectEndDate { get; set; }
+    public double? PercentageTotalProjectBudget { get; set; }
+    public decimal? ProjectFundingTotal { get; set; }
+    public string? Community { get; set; }
+    public int? CommunityPopulation { get; set; }
+    public string? Acquisition { get; set; }
+    public string? Forestry { get; set; }
+    public string? ForestryFocus { get; set; }
+    public string? ElectoralDistrict { get; set; }
 }
