@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,7 +59,6 @@ namespace Unity.GrantManager.ApplicationForms
             var dto = await base.GetAsync(id);
             return dto;
         }
-
         public async Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId)
         {
             if (chefsForm == null) return false;
@@ -67,9 +67,9 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 JObject formObject = JObject.Parse(chefsForm.ToString());
                 if (formObject == null) return false;
-#pragma warning disable CS8600 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+#pragma warning disable CS8600
                 JToken versionsToken = formObject["versions"];
-#pragma warning restore CS8600 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+#pragma warning restore CS8600
                 if (versionsToken == null) return false;
 
                 foreach (JToken childToken in versionsToken.Children().Where(t => t.Type == JTokenType.Object))
@@ -78,7 +78,7 @@ namespace Unity.GrantManager.ApplicationForms
                     {
                         if (formVersionId != null && await FormVersionDoesNotExist(formVersionId))
                         {
-                            ApplicationFormVersion applicationFormVersion = await TryInitializeApplicationFormVersion(childToken, applicationFormId, formVersionId);
+                            ApplicationFormVersion? applicationFormVersion = await TryInitializeApplicationFormVersion(childToken, applicationFormId, formVersionId);
                             if (applicationFormVersion != null)
                             {
                                 await InsertApplicationFormVersion(applicationFormVersion);
@@ -90,8 +90,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
             catch (Exception ex)
             {
-                // Handle exceptions appropriately
-                Console.WriteLine($"Exception: {ex.Message}");
+                Logger.LogError($"Exception: {ex.Message}");
             }
 
             return false;
@@ -109,20 +108,16 @@ namespace Unity.GrantManager.ApplicationForms
             return applicationFormVersion == null;
         }
 
-        private async Task<ApplicationFormVersion> TryInitializeApplicationFormVersion(JToken token, Guid applicationFormId, string formVersionId)
+        private async Task<ApplicationFormVersion?> TryInitializeApplicationFormVersion(JToken token, Guid applicationFormId, string formVersionId)
         {
-            ApplicationFormVersion applicationFormVersion = new ApplicationFormVersion();
-
             try
             {
-#pragma warning disable CS8600
-                string formId = token.Value<string>("formId");
-#pragma warning restore CS8600
+                string? formId = token.Value<string>("formId");
                 if (formId != null)
-                {                    
+                {
                     int version = token.Value<int>("version");
 
-                    applicationFormVersion = new ApplicationFormVersion
+                    var applicationFormVersion = new ApplicationFormVersion
                     {
                         ApplicationFormId = applicationFormId,
                         ChefsApplicationFormGuid = formId,
@@ -133,14 +128,16 @@ namespace Unity.GrantManager.ApplicationForms
 
                     var formVersion = await _formIntService.GetFormDataAsync(formId, formVersionId);
                     applicationFormVersion.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
+
+                    return applicationFormVersion;
                 }
             }
             catch (Exception ex)
             {
-                // Handle initialization errors appropriately
-                Console.WriteLine($"Initialization Exception: {ex.Message}");               
+                Logger.LogError($"Initialization Exception: {ex.Message}");
             }
-            return applicationFormVersion;
+
+            return null;
         }
 
         private async Task InsertApplicationFormVersion(ApplicationFormVersion applicationFormVersion)
