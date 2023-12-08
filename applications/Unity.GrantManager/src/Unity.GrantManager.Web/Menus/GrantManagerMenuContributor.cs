@@ -98,6 +98,16 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                GrantManagerMenus.Dashboard,
+                l["Menu:Dashboard"],
+                "~/Dashboard",
+                icon: "fl fl-view-dashboard",
+                order: 7
+            )
+        );
+
 
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue
