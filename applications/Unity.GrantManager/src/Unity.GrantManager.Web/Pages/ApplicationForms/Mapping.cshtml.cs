@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
@@ -13,31 +15,76 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 {
     [Authorize]
     public class MappingModel : AbpPageModel
-    {            
+    {
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public Guid ChefsFormVersionGuid { get; set; }
+
         private readonly IApplicationFormAppService _applicationFormAppService;
-        
+        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
+
         [BindProperty]
         public ApplicationFormDto? ApplicationFormDto { get; set; }
 
         [BindProperty]
-        public string? ApplicationFormDtoString { get; set; }
+        public ApplicationFormVersionDto? ApplicationFormVersionDto { get; set; }
 
+        [BindProperty]
+        public List<ApplicationFormVersionDto>? ApplicationFormVersionDtoList { get; set; }
+
+        [BindProperty]
+        public string? ApplicationFormVersionDtoString { get; set; }
 
         [BindProperty]
         public string? IntakeProperties { get; set; }
 
-        public MappingModel(IApplicationFormAppService applicationFormAppService)
+        public MappingModel(IApplicationFormAppService applicationFormAppService,
+                            IApplicationFormVersionAppService applicationFormVersionAppService)
         {
             _applicationFormAppService = applicationFormAppService;
+            _applicationFormVersionAppService = applicationFormVersionAppService;
         }
 
         public async Task OnGetAsync()
         {
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
-            ApplicationFormDtoString = JsonSerializer.Serialize(ApplicationFormDto);
+            ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormVersionAppService.GetListAsync(ApplicationFormDto.Id);
+
+            if (ApplicationFormVersionDtoList != null)
+            {
+                foreach (ApplicationFormVersionDto applicationFormVersionDto in ApplicationFormVersionDtoList)
+                {
+                    if ((applicationFormVersionDto.ChefsFormVersionGuid != null && Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid) == ChefsFormVersionGuid)
+                    || (ChefsFormVersionGuid.ToString() == "00000000-0000-0000-0000-000000000000" && applicationFormVersionDto.Published))
+                    {
+                        ApplicationFormVersionDto = applicationFormVersionDto;
+                        if (ChefsFormVersionGuid.ToString() == "00000000-0000-0000-0000-000000000000" && applicationFormVersionDto.ChefsFormVersionGuid != null)  {
+                            ChefsFormVersionGuid = Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid);                            
+                        }
+                        break;
+                    }
+                }
+                
+                if (ApplicationFormVersionDtoList.Count == 0 && ApplicationFormVersionDto == null)
+                {
+                    CreateUpdateApplicationFormVersionDto appFormVersion = new CreateUpdateApplicationFormVersionDto();
+                    appFormVersion.ApplicationFormId = ApplicationFormDto.Id;
+                    appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;
+                    ApplicationFormVersionDto = await _applicationFormVersionAppService.CreateAsync(appFormVersion);
+                }
+                else if (ApplicationFormVersionDto == null)
+                {
+                    ApplicationFormVersionDto = ApplicationFormVersionDtoList.First();
+                }
+
+                ApplicationFormVersionDtoString = JsonSerializer.Serialize(ApplicationFormVersionDto);
+            }
+
+
+
             IntakeMapping intakeMapping = new IntakeMapping();
             List<string> properties = new List<string>();
             foreach (var property in intakeMapping.GetType().GetProperties())

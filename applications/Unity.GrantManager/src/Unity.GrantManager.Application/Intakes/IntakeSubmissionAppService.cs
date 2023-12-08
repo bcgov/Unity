@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
@@ -19,18 +20,21 @@ namespace Unity.GrantManager.Intakes
         private readonly IFormIntService _formIntService;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly ISubmissionsIntService _submissionsIntService;
+        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
 
         public IntakeSubmissionAppService(IIntakeFormSubmissionManager intakeFormSubmissionManager,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IFormIntService formIntService,
             ISubmissionsIntService submissionsIntService,
-            IApplicationFormRepository applicationFormRepository)
+            IApplicationFormRepository applicationFormRepository,
+            IApplicationFormVersionAppService applicationFormVersionAppService)
         {
             _intakeFormSubmissionManager = intakeFormSubmissionManager;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _submissionsIntService = submissionsIntService;
             _applicationFormRepository = applicationFormRepository;
             _formIntService = formIntService;
+            _applicationFormVersionAppService = applicationFormVersionAppService;
         }
 
         public async Task<EventSubscriptionConfirmationDto> CreateIntakeSubmissionAsync(EventSubscriptionDto eventSubscriptionDto)
@@ -43,8 +47,9 @@ namespace Unity.GrantManager.Intakes
 
             JObject submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
 
-            // If there are no mappings on the headers then initialize the mappings
-            if (applicationForm.AvailableChefsFields == null)
+            // If there are no mappings initialize the available
+            bool formVersionExists = await _applicationFormVersionAppService.FormVersionExists(eventSubscriptionDto.FormVersion.ToString());          
+            if (formVersionExists)
             {
                 JToken? token = submissionData.SelectToken("submission.formVersionId");
                 if (token != null)
@@ -60,9 +65,10 @@ namespace Unity.GrantManager.Intakes
         private async Task StoreChefsFieldMappingAsync(EventSubscriptionDto eventSubscriptionDto, ApplicationForm applicationForm, JToken token)
         {
             Guid formVersionId = Guid.Parse(token.ToString());
-            var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, formVersionId) ?? throw new InvalidFormDataSubmissionException();
-            applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formData);
-            await _applicationFormRepository.UpdateAsync(applicationForm);
+            var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
+            string chefsFormId = eventSubscriptionDto.FormId.ToString();
+            string chefsFormVersionId = eventSubscriptionDto.FormVersion.ToString();
+            await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(chefsFormId, chefsFormVersionId, applicationForm.Id, formData);
         }
     }
 }
