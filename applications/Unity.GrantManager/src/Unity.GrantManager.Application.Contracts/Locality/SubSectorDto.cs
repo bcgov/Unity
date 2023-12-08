@@ -1,7 +1,7 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
 
-namespace Unity.GrantManager.Locale;
+namespace Unity.GrantManager.Locality;
 
 [Serializable]
 public class SubSectorDto : EntityDto<Guid>

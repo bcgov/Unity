@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System;
 using Unity.GrantManager.GrantApplications;
 using System.Collections.Immutable;
-using Unity.GrantManager.Locale;
+using Unity.GrantManager.Locality;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 {

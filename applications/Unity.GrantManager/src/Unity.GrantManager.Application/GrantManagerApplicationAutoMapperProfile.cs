@@ -7,7 +7,7 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Locale;
+using Unity.GrantManager.Locality;
 
 namespace Unity.GrantManager;
 

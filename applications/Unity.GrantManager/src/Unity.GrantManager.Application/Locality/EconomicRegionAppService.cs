@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.GrantManager.Locale
+namespace Unity.GrantManager.Locality
 {
     [Authorize]
     [Dependency(ReplaceServices = true)]

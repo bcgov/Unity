@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Volo.Abp.Application.Dtos;
 
-namespace Unity.GrantManager.Locale;
+namespace Unity.GrantManager.Locality;
 
 [Serializable]
 public class SectorDto : EntityDto<Guid>

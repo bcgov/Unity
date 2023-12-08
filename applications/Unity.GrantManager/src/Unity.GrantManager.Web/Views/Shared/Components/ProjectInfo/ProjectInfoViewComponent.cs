@@ -8,7 +8,7 @@ using System.Linq;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Unity.GrantManager.Locale;
+using Unity.GrantManager.Locality;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 {

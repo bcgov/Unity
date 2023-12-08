@@ -1086,7 +1086,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("Intakes", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Locale.EconomicRegion", b =>
+            modelBuilder.Entity("Unity.GrantManager.Locality.EconomicRegion", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -1132,7 +1132,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("EconomicRegions", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Locale.ElectoralDistrict", b =>
+            modelBuilder.Entity("Unity.GrantManager.Locality.ElectoralDistrict", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -1178,7 +1178,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("ElectoralDistricts", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Locale.Sector", b =>
+            modelBuilder.Entity("Unity.GrantManager.Locality.Sector", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -1224,7 +1224,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("Sectors", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Locale.SubSector", b =>
+            modelBuilder.Entity("Unity.GrantManager.Locality.SubSector", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -1423,9 +1423,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Locale.SubSector", b =>
+            modelBuilder.Entity("Unity.GrantManager.Locality.SubSector", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Locale.Sector", "Sector")
+                    b.HasOne("Unity.GrantManager.Locality.Sector", "Sector")
                         .WithMany("SubSectors")
                         .HasForeignKey("SectorId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1439,7 +1439,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("Applications");
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Locale.Sector", b =>
+            modelBuilder.Entity("Unity.GrantManager.Locality.Sector", b =>
                 {
                     b.Navigation("SubSectors");
                 });

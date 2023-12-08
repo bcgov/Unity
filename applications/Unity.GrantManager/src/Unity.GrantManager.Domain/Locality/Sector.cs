@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Volo.Abp.Domain.Entities.Auditing;
 
-namespace Unity.GrantManager.Locale;
+namespace Unity.GrantManager.Locality;
 
 public class Sector : AuditedAggregateRoot<Guid>
 {

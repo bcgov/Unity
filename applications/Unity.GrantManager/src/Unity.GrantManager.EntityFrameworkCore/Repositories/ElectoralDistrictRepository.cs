@@ -1,6 +1,6 @@
 ﻿using System;
 using Unity.GrantManager.EntityFrameworkCore;
-using Unity.GrantManager.Locale;
+using Unity.GrantManager.Locality;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;

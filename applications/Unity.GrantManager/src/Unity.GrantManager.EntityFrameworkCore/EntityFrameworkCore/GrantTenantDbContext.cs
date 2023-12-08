@@ -10,7 +10,7 @@ using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
-using Unity.GrantManager.Locale;
+using Unity.GrantManager.Locality;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {

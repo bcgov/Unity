@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace Unity.GrantManager.Locale;
+namespace Unity.GrantManager.Locality;
 
 public interface IEconomicRegionService : IApplicationService
 {

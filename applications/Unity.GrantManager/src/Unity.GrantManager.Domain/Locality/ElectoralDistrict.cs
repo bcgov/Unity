@@ -1,7 +1,7 @@
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
 
-namespace Unity.GrantManager.Locale;
+namespace Unity.GrantManager.Locality;
 
 public class ElectoralDistrict : AuditedAggregateRoot<Guid>
 {
