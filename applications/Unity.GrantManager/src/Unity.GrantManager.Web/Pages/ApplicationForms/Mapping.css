@@ -164,7 +164,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 }
 
 .form-select {
-    width: 400px;
+    width: 400px !important;
 }
 
 .toast-top-center { 
