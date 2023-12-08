@@ -67,11 +67,11 @@
       });
 
       $('#sectorDropdown').change(function () {
-        var selectedValue = $(this).val();
+        const selectedValue = $(this).val();
 
         let sectorList = JSON.parse($('#applicationSectorList').text());
 
-        var childDropdown = $('#subSectorDropdown');
+        let childDropdown = $('#subSectorDropdown');
         childDropdown.empty();
 
         let subSectors = sectorList.find(sector => (sector.sectorCode === selectedValue))?.subSectors;
