@@ -258,8 +258,8 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ApplicantName")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)");
 
                     b.Property<string>("ApproxNumberOfEmployees")
                         .HasColumnType("text");
@@ -501,8 +501,8 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("ProjectSummary")
                         .HasColumnType("text");
@@ -620,8 +620,8 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ApplicationFormName")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("AvailableChefsFields")
                         .HasColumnType("text");
@@ -1190,8 +1190,8 @@ namespace Unity.GrantManager.Migrations
 
                     b.Property<string>("ProgramName")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTime>("PublishDate")
                         .HasColumnType("timestamp without time zone");
