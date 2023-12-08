@@ -1,5 +1,5 @@
-name: Test - Build & Push docker images
-
+# This is a workflow that is PR merge to "main" triggered
+name: Test - Tag and Build
 on:
   push:
     branches: [ "main" ]
@@ -13,35 +13,32 @@ on:
       - 'CONTRIBUTING.md'
       - 'LICENSE'
       - 'README.md'
-      - 'SECURITY..md'
+      - 'SECURITY.md'
 
-# Repository variables VERSION_MAJOR_MINOR 0.1 VERSION_MESSAGE Dev to Test - VERSION_PREFIX v
-
+# Repository secrets GH_API_TOKEN {GitHub PAT} OPENSHIFT_TOKEN_{DEV|TEST|PROD|TOOLS}
+# Repository variables VERSION_PREFIX {text} VERSION_MAJOR 0 VERSION_MINOR 1 VERSION_PATCH 1 VERSION_MESSAGE {Dev to Test} 
 env:
+  GITHUB_TOKEN: ${{secrets.GH_API_TOKEN}}
   OPENSHIFT_CLUSTER: https://api.silver.devops.gov.bc.ca:6443
   OPENSHIFT_AUTH_TOKEN: ${{secrets.OPENSHIFT_TOKEN_TEST}}
   RELEASE_PREFIX: ${{vars.VERSION_PREFIX}}
-  RELEASE_VERSION: ${{vars.VERSION_MAJOR_MINOR}}
+  RELEASE_VERSION: ${{vars.VERSION_MAJOR}}.${{vars.VERSION_MINOR}}
   RELEASE_MESSAGE: ${{vars.VERSION_MESSAGE}} 
-
+  RELEASE_PATCH: ${{vars.VERSION_PATCH}} 
 jobs:
-  # This workflow contains a jobs called "GenerateTag" "PushTag" "Build" "PushAlert"
+  # This workflow contains jobs called "GenerateTag" "PushTag" "Build"
   GenerateTag:
     runs-on: ubuntu-latest
-    outputs: 
-      TAGNAME: ${{steps.nexttag.outputs.gittag}}
-      IMAGETAG: ${{steps.nexttag.outputs.imagetag}}
-      TAGMESSAGE: ${{steps.nexttag.outputs.tagmsg}}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
           fetch-depth: '0'
     - name: Get current date
-      id: date
+      id: date-selector
       run: echo "date=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
     - name: Generate Next Git Tag
-      id: nexttag
+      id: tag-selector
       run: |
         VERSION_PATCH=$(git tag --list "${{env.RELEASE_PREFIX}}${{env.RELEASE_VERSION}}.*" --sort=-version:refname | head -n 1 | grep -oE '[0-9]+$')
         if [ -z "$VERSION_PATCH" ]; then
@@ -50,8 +47,12 @@ jobs:
           VERSION_PATCH=$((VERSION_PATCH + 1))
         fi
         echo "gittag=${{env.RELEASE_PREFIX}}${{env.RELEASE_VERSION}}.${VERSION_PATCH}" >> $GITHUB_OUTPUT
-        echo "imagetag=v${{env.RELEASE_VERSION}}.${VERSION_PATCH}" >> $GITHUB_OUTPUT
-        echo "tagmsg=${{env.RELEASE_MESSAGE}} ${{steps.date.outputs.date}}" >> $GITHUB_OUTPUT
+        echo "tagmsg=${{env.RELEASE_MESSAGE}} ${{steps.date-selector.outputs.date}}" >> $GITHUB_OUTPUT
+        echo "tagpatch=${VERSION_PATCH}" >> $GITHUB_OUTPUT
+    outputs: 
+      TAGNAME: ${{steps.tag-selector.outputs.gittag}}
+      TAGMESSAGE: ${{steps.tag-selector.outputs.tagmsg}}
+      TAGPATCH: ${{steps.tag-selector.outputs.tagpatch}}
   PushTag:
     needs: [GenerateTag]
     runs-on: ubuntu-latest
@@ -59,8 +60,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-          fetch-depth: '0'   
+          fetch-depth: '1'   
     - name: Push Git Tag
+      id: settag
       env:
         TAGNAME: ${{needs.GenerateTag.outputs.TAGNAME}}
         TAGMESSAGE: ${{needs.GenerateTag.outputs.TAGMESSAGE}}
@@ -69,6 +71,14 @@ jobs:
         git config user.email "github-actions@users.noreply.github.com"
         git tag ${{env.TAGNAME}} -m "${{env.TAGMESSAGE}}"
         git push origin ${{env.TAGNAME}}
+    - name: Set repository patch variable
+      id: setpatch
+      env:
+        TAGPATCH: ${{needs.GenerateTag.outputs.TAGPATCH}}
+        # Depends on GITHUB_TOKEN enviroment variable PAT access
+      run: | 
+        gh variable set VERSION_PATCH --body "${{env.TAGPATCH}}"
+        gh variable list   
   Build:
     needs: [GenerateTag, PushTag]
     runs-on: ubuntu-latest
@@ -76,10 +86,16 @@ jobs:
       PROJECT: ${{steps.project.outputs.TARGET_PROJECT}}
     steps:
     - uses: actions/checkout@v3
-    - name: Build application Docker images
+    - name: Get BuildId
+      id: commit
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: Set buildArgs
+      run:  |
+        echo "buildArgs UNITY_BUILD_VERSION: ${{env.RELEASE_VERSION}}, UNITY_BUILD_REVISION: ${{steps.commit.outputs.sha_short}}"
+    - name: Build Docker images
       run: |
         rm -f ./docker-compose.override.yml
-        docker compose build
+        docker compose build --build-arg UNITY_BUILD_VERSION=${{env.RELEASE_VERSION}} --build-arg UNITY_BUILD_REVISION=${{steps.commit.outputs.sha_short}}
       working-directory: ./applications/Unity.GrantManager
     - name: Connect to OpenShift API
       id: project
@@ -87,8 +103,10 @@ jobs:
         oc login --token=${{env.OPENSHIFT_AUTH_TOKEN}} --server=${{env.OPENSHIFT_CLUSTER}}
         echo "PROJECT=$(oc project | grep -oE '[0-9a-z]*-[dev\|test\|prod\|tools]*')" >> $GITHUB_OUTPUT
         oc registry login
-    - name: Push build images to OpenShift container registry
+    - name: Push images to container registry
       run: | 
         echo project = ${{steps.project.outputs.PROJECT}}
-        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:${{needs.GenerateTag.outputs.IMAGETAG}}
-        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:${{needs.GenerateTag.outputs.IMAGETAG}}
+        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:github-latest
+        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:github-latest
+#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:github-latest
+#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:github-latest
