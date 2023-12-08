@@ -74,29 +74,28 @@ namespace Unity.GrantManager.ApplicationForms
 
                 foreach (JToken childToken in versionsToken.Children().Where(t => t.Type == JTokenType.Object))
                 {
-                    if (TryParsePublished(childToken, out var formVersionId, out var published) && published)
+                    if (TryParsePublished(childToken, out var formVersionId, out var published) && 
+                        published && (formVersionId != null && await FormVersionDoesNotExist(formVersionId)))
                     {
-                        if (formVersionId != null && await FormVersionDoesNotExist(formVersionId))
+                        ApplicationFormVersion? applicationFormVersion = await TryInitializeApplicationFormVersion(childToken, applicationFormId, formVersionId);
+                        if (applicationFormVersion != null)
                         {
-                            ApplicationFormVersion? applicationFormVersion = await TryInitializeApplicationFormVersion(childToken, applicationFormId, formVersionId);
-                            if (applicationFormVersion != null)
-                            {
-                                await InsertApplicationFormVersion(applicationFormVersion);
-                                return true;
-                            }
+                            await InsertApplicationFormVersion(applicationFormVersion);
+                            return true;
                         }
+    
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Exception: {ex.Message}");
+                Logger.LogError("Exception: {ex.Message}", ex.Message);
             }
 
             return false;
         }
 
-        private bool TryParsePublished(JToken token, out string? formVersionId, out bool published)
+        private static bool TryParsePublished(JToken token, out string? formVersionId, out bool published)
         {
             formVersionId = token.Value<string>("id");
             return bool.TryParse(token.Value<string>("published"), out published);
@@ -134,7 +133,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Initialization Exception: {ex.Message}");
+                Logger.LogError("Initialization Exception: {ex.Message}", ex.Message);
             }
 
             return null;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
-using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Intakes.Integration
 {
