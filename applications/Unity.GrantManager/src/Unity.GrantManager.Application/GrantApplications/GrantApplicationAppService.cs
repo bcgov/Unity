@@ -394,6 +394,7 @@ public class GrantApplicationAppService :
         var query = await _applicationRepository.GetQueryableAsync();
 
         var result = query?.GroupBy(app => app.EconomicRegion).Select(group => new GetEconomicRegionDto { EconomicRegion = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.EconomicRegion);
+        if (result == null) return new List<GetEconomicRegionDto>();
         var queryResult = await AsyncExecuter.ToListAsync(result);
         return queryResult;
     }
