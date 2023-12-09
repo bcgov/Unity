@@ -26,11 +26,11 @@ namespace Unity.GrantManager.Intakes.Integration
             _stringEncryptionService = stringEncryptionService;
         }
 
-        public async Task<dynamic?> GetFormDataAsync(Guid chefsFormId, Guid chefsFormVersionId)
+        public async Task<dynamic?> GetFormDataAsync(string chefsFormId, string chefsFormVersionId)
         {
             var applicationForm = (await _applicationFormRepository
                 .GetQueryableAsync())
-                .Where(s => s.ChefsApplicationFormGuid == chefsFormId.ToString())
+                .Where(s => s.ChefsApplicationFormGuid == chefsFormId)
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault();
 
@@ -54,9 +54,13 @@ namespace Unity.GrantManager.Intakes.Integration
             return null;
         }
 
-        public async Task<object> GetForm(Guid? formId)
+        public async Task<object> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey)
         {
-            var request = new RestRequest($"/forms/{formId}");
+            var request = new RestRequest($"/forms/{formId}")
+            {
+                Authenticator = new HttpBasicAuthenticator(chefsApplicationFormGuid!, _stringEncryptionService.Decrypt(encryptedApiKey!) ?? string.Empty)
+            };
+
             var response = await _intakeClient.GetAsync(request);
 
             return response.Content ?? "Error";

@@ -6,7 +6,7 @@ namespace Unity.GrantManager.Intakes.Integration
 {
     public interface IFormIntService : IApplicationService
     {
-        Task<dynamic?> GetFormDataAsync(Guid chefsFormId, Guid chefsFormVersionId);
-        Task<object> GetForm(Guid? formId);
+        Task<dynamic?> GetFormDataAsync(string chefsFormId, string chefsFormVersionId);
+        Task<object> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey);
     }
 }
