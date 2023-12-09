@@ -20,6 +20,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         #region Domain Entities
         public DbSet<Intake> Intakes { get; set; }
         public DbSet<ApplicationForm> ApplicationForms { get; set; }
+        public DbSet<ApplicationFormVersion> ApplicationFormVersions { get; set; }
         public DbSet<Applicant> Applicants { get; set; }
         public DbSet<Application> Applications { get; set; }
         public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
@@ -58,7 +59,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ConfigureByConvention();
                 b.Property(x => x.ApplicantName)
                     .IsRequired()
-                    .HasMaxLength(250);
+                    .HasMaxLength(600);
 
                 b.HasIndex(x => x.ApplicantName);
             });
@@ -69,7 +70,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
-                b.Property(x => x.IntakeName).IsRequired().HasMaxLength(250);
+                b.Property(x => x.IntakeName).IsRequired().HasMaxLength(255);
             });
 
             modelBuilder.Entity<ApplicationForm>(b =>
@@ -78,9 +79,18 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
-                b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(250);
+                b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
 
                 b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
+            });
+
+            modelBuilder.Entity<ApplicationFormVersion>(b =>
+            {
+                b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationFormVersion",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention(); //auto configure for the base class props
+                b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
             });
 
             modelBuilder.Entity<ApplicationStatus>(b =>
@@ -88,10 +98,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationStatuses",
                     GrantManagerConsts.DbSchema);
 
-                b.ConfigureByConvention(); //auto configure for the base class props
-                                           // TODO: Enum mapping could be better implemented with
-                                           // using an int for the ID of ApplicationStatus table
-                                           // which maps to the GrantApplicationState enum value
+                b.ConfigureByConvention();
                 b.Property(x => x.StatusCode)
                     .IsRequired()
                     .HasMaxLength(250)
@@ -105,7 +112,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props
-                b.Property(x => x.ProjectName).IsRequired().HasMaxLength(250);
+                b.Property(x => x.ProjectName).IsRequired().HasMaxLength(255);
                 b.Property(x => x.Payload).HasColumnType("jsonb");
                 b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
