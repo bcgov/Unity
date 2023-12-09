@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Unity.GrantManager.Locality;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -25,6 +26,11 @@ public class GrantManagerDbContext :
     ITenantManagementDbContext
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
+
+    public DbSet<Sector> Sectors { get; set; }
+    public DbSet<SubSector> SubSectors { get; set; }
+    public DbSet<EconomicRegion> EconomicRegion { get; set; }
+    public DbSet<ElectoralDistrict> ElectoralDistricts { get; set; }
 
     #region Entities from the modules
 
@@ -72,7 +78,41 @@ public class GrantManagerDbContext :
         modelBuilder.ConfigureFeatureManagement();
         modelBuilder.ConfigureTenantManagement();
 
-        /* Configure your own tables/entities inside here */     
+        /* Configure your own tables/entities inside here */
+
+        modelBuilder.Entity<Sector>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Sectors",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasMany(e => e.SubSectors).WithOne(e => e.Sector).HasForeignKey(x => x.SectorId);
+        });
+
+        modelBuilder.Entity<SubSector>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "SubSectors",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+            b.HasOne(e => e.Sector).WithMany(e => e.SubSectors).HasForeignKey(x => x.SectorId);
+        });
+
+        modelBuilder.Entity<EconomicRegion>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "EconomicRegions",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<ElectoralDistrict>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ElectoralDistricts",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
 
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
         foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))

@@ -6,7 +6,7 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
-using Unity.GrantManager.Intakes.Integration;
+using Unity.GrantManager.Integration.Chefs;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
@@ -17,23 +17,20 @@ namespace Unity.GrantManager.Intakes
     {
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
-        private readonly IFormIntService _formIntService;
-        private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
-        private readonly ISubmissionsIntService _submissionsIntService;
+        private readonly IFormsApiService _formsApiService;
+        private readonly ISubmissionsApiService _submissionsIntService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
 
         public IntakeSubmissionAppService(IIntakeFormSubmissionManager intakeFormSubmissionManager,
-            IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
-            IFormIntService formIntService,
-            ISubmissionsIntService submissionsIntService,
+            IFormsApiService formsApiService,
+            ISubmissionsApiService submissionsIntService,
             IApplicationFormRepository applicationFormRepository,
             IApplicationFormVersionAppService applicationFormVersionAppService)
         {
             _intakeFormSubmissionManager = intakeFormSubmissionManager;
-            _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _submissionsIntService = submissionsIntService;
             _applicationFormRepository = applicationFormRepository;
-            _formIntService = formIntService;
+            _formsApiService = formsApiService;
             _applicationFormVersionAppService = applicationFormVersionAppService;
         }
 
@@ -65,7 +62,7 @@ namespace Unity.GrantManager.Intakes
         private async Task StoreChefsFieldMappingAsync(EventSubscriptionDto eventSubscriptionDto, ApplicationForm applicationForm, JToken token)
         {
             Guid formVersionId = Guid.Parse(token.ToString());
-            var formData = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
+            var formData = await _formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
             string chefsFormId = eventSubscriptionDto.FormId.ToString();
             string chefsFormVersionId = eventSubscriptionDto.FormVersion.ToString();
             await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(chefsFormId, chefsFormVersionId, applicationForm.Id, formData);

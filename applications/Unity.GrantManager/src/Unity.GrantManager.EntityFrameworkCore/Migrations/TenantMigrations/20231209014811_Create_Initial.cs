@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class CreateInitial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ApplicantName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
+                    ApplicantName = table.Column<string>(type: "character varying(600)", maxLength: 600, nullable: false),
                     NonRegisteredBusinessName = table.Column<string>(type: "text", nullable: true),
                     OrgName = table.Column<string>(type: "text", nullable: true),
                     OrgNumber = table.Column<string>(type: "text", nullable: true),
@@ -63,44 +63,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "EconomicRegions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    EconomicRegionName = table.Column<string>(type: "text", nullable: false),
-                    EconomicRegionCode = table.Column<string>(type: "text", nullable: false),
-                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
-                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
-                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EconomicRegions", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ElectoralDistricts",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ElectoralDistrictName = table.Column<string>(type: "text", nullable: false),
-                    ElectoralDistrictCode = table.Column<string>(type: "text", nullable: false),
-                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
-                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
-                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ElectoralDistricts", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Intakes",
                 columns: table => new
                 {
@@ -108,7 +70,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     Budget = table.Column<double>(type: "double precision", nullable: false),
                     StartDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     EndDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    IntakeName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
+                    IntakeName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     ExtraProperties = table.Column<string>(type: "text", nullable: false),
                     ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
@@ -147,25 +109,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Sectors",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SectorName = table.Column<string>(type: "text", nullable: false),
-                    SectorCode = table.Column<string>(type: "text", nullable: false),
-                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
-                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
-                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Sectors", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Addresses",
                 columns: table => new
                 {
@@ -201,13 +144,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     IntakeId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ApplicationFormName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
+                    ApplicationFormName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     ApplicationFormDescription = table.Column<string>(type: "text", nullable: true),
                     ChefsApplicationFormGuid = table.Column<string>(type: "text", nullable: true),
-                    ChefsFormVersionGuid = table.Column<string>(type: "text", nullable: true),
                     ChefsCriteriaFormGuid = table.Column<string>(type: "text", nullable: true),
                     ApiKey = table.Column<string>(type: "text", nullable: true),
-                    SubmissionHeaderMapping = table.Column<string>(type: "text", nullable: true),
                     AvailableChefsFields = table.Column<string>(type: "text", nullable: true),
                     Version = table.Column<int>(type: "integer", nullable: true),
                     Category = table.Column<string>(type: "text", nullable: true),
@@ -274,32 +215,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SubSectors",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SubSectorName = table.Column<string>(type: "text", nullable: false),
-                    SubSectorCode = table.Column<string>(type: "text", nullable: false),
-                    SectorId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
-                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
-                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SubSectors", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SubSectors_Sectors_SectorId",
-                        column: x => x.SectorId,
-                        principalTable: "Sectors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ApplicationFormSubmissions",
                 columns: table => new
                 {
@@ -335,6 +250,39 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ApplicationFormVersion",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApplicationFormId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChefsApplicationFormGuid = table.Column<string>(type: "text", nullable: true),
+                    ChefsFormVersionGuid = table.Column<string>(type: "text", nullable: true),
+                    SubmissionHeaderMapping = table.Column<string>(type: "text", nullable: true),
+                    AvailableChefsFields = table.Column<string>(type: "text", nullable: true),
+                    Version = table.Column<int>(type: "integer", nullable: true),
+                    Published = table.Column<bool>(type: "boolean", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uuid", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ApplicationFormVersion", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ApplicationFormVersion_ApplicationForms_ApplicationFormId",
+                        column: x => x.ApplicationFormId,
+                        principalTable: "ApplicationForms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Applications",
                 columns: table => new
                 {
@@ -342,7 +290,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     ApplicationFormId = table.Column<Guid>(type: "uuid", nullable: false),
                     ApplicantId = table.Column<Guid>(type: "uuid", nullable: false),
                     ApplicationStatusId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProjectName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
+                    ProjectName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     ReferenceNo = table.Column<string>(type: "text", nullable: false),
                     RequestedAmount = table.Column<decimal>(type: "numeric", nullable: false),
                     TotalProjectBudget = table.Column<decimal>(type: "numeric", nullable: false),
@@ -654,6 +602,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 column: "ApplicationFormId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ApplicationFormVersion_ApplicationFormId",
+                table: "ApplicationFormVersion",
+                column: "ApplicationFormId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Applications_ApplicantId",
                 table: "Applications",
                 column: "ApplicantId");
@@ -703,11 +656,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 name: "IX_Persons_OidcSub",
                 table: "Persons",
                 column: "OidcSub");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SubSectors_SectorId",
-                table: "SubSectors",
-                column: "SectorId");
         }
 
         /// <inheritdoc />
@@ -732,25 +680,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 name: "ApplicationFormSubmissions");
 
             migrationBuilder.DropTable(
+                name: "ApplicationFormVersion");
+
+            migrationBuilder.DropTable(
                 name: "AssessmentAttachments");
 
             migrationBuilder.DropTable(
                 name: "AssessmentComments");
 
             migrationBuilder.DropTable(
-                name: "EconomicRegions");
-
-            migrationBuilder.DropTable(
-                name: "ElectoralDistricts");
-
-            migrationBuilder.DropTable(
-                name: "SubSectors");
-
-            migrationBuilder.DropTable(
                 name: "Assessments");
-
-            migrationBuilder.DropTable(
-                name: "Sectors");
 
             migrationBuilder.DropTable(
                 name: "Applications");

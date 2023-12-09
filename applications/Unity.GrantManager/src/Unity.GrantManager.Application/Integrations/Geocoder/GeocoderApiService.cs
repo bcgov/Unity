@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using RestSharp;
 using System.Threading.Tasks;
-using Unity.GrantManager.Geocoder;
+using Unity.GrantManager.Integration.Geocoder;
 using Unity.GrantManager.Integrations.Exceptions;
 using Unity.GrantManager.Integrations.Http;
 using Volo.Abp;
@@ -12,8 +12,8 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.GrantManager.Integrations.Geocoder
 {
     [IntegrationService]    
-    [ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderService))]
-    public class GeocoderApiService : ApplicationService, IGeocoderService
+    [ExposeServices(typeof(GeocoderApiService), typeof(IGeocoderApiService))]
+    public class GeocoderApiService : ApplicationService, IGeocoderApiService
     {
         private readonly IResilientHttpRequest _resilientRestClient;
         private readonly IConfiguration _configuration;

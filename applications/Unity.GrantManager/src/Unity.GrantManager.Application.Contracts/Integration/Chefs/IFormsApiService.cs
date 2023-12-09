@@ -2,9 +2,9 @@
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace Unity.GrantManager.Intakes.Integration
+namespace Unity.GrantManager.Integration.Chefs
 {
-    public interface IFormIntService : IApplicationService
+    public interface IFormsApiService : IApplicationService
     {
         Task<dynamic?> GetFormDataAsync(string chefsFormId, string chefsFormVersionId);
         Task<object> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey);

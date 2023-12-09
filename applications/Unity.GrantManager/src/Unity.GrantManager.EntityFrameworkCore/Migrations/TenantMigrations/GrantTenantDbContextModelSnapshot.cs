@@ -96,8 +96,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("ApplicantName")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)");
 
                     b.Property<string>("ApproxNumberOfEmployees")
                         .HasColumnType("text");
@@ -366,8 +366,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTime?>("ProjectStartDate")
                         .HasColumnType("timestamp without time zone");
@@ -535,8 +535,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("ApplicationFormName")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("AvailableChefsFields")
                         .HasColumnType("text");
@@ -548,9 +548,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("ChefsCriteriaFormGuid")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ChefsFormVersionGuid")
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -597,9 +594,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
-
-                    b.Property<string>("SubmissionHeaderMapping")
-                        .HasColumnType("text");
 
                     b.Property<int?>("Version")
                         .HasColumnType("integer");
@@ -673,6 +667,81 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicationFormId");
 
                     b.ToTable("ApplicationFormSubmissions", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicationFormId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AvailableChefsFields")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ChefsApplicationFormGuid")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ChefsFormVersionGuid")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<bool>("Published")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SubmissionHeaderMapping")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationFormId");
+
+                    b.ToTable("ApplicationFormVersion", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>
@@ -1061,8 +1130,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("IntakeName")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -1084,195 +1153,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.ToTable("Intakes", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Locality.EconomicRegion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("EconomicRegionCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EconomicRegionName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("EconomicRegions", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Locality.ElectoralDistrict", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ElectoralDistrictCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ElectoralDistrictName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ElectoralDistricts", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Locality.Sector", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("SectorCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("SectorName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Sectors", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Locality.SubSector", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid>("SectorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("SubSectorCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("SubSectorName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SectorId");
-
-                    b.ToTable("SubSectors", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Address", b =>
@@ -1369,6 +1249,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormVersion", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationFormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentAttachment", b =>
                 {
                     b.HasOne("Unity.GrantManager.Assessments.Assessment", null)
@@ -1423,25 +1312,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Locality.SubSector", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Locality.Sector", "Sector")
-                        .WithMany("SubSectors")
-                        .HasForeignKey("SectorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Sector");
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>
                 {
                     b.Navigation("Applications");
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Locality.Sector", b =>
-                {
-                    b.Navigation("SubSectors");
                 });
 #pragma warning restore 612, 618
         }

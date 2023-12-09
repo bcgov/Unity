@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Unity.GrantManager.Migrations.HostMigrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class CreateInitial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -84,6 +84,44 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ClaimTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EconomicRegions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    EconomicRegionName = table.Column<string>(type: "text", nullable: false),
+                    EconomicRegionCode = table.Column<string>(type: "text", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EconomicRegions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ElectoralDistricts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ElectoralDistrictName = table.Column<string>(type: "text", nullable: false),
+                    ElectoralDistrictCode = table.Column<string>(type: "text", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ElectoralDistricts", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -249,6 +287,25 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Roles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Sectors",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SectorName = table.Column<string>(type: "text", nullable: false),
+                    SectorCode = table.Column<string>(type: "text", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Sectors", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -486,6 +543,32 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         name: "FK_RoleClaims_Roles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SubSectors",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SubSectorName = table.Column<string>(type: "text", nullable: false),
+                    SubSectorCode = table.Column<string>(type: "text", nullable: false),
+                    SectorId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SubSectors", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SubSectors_Sectors_SectorId",
+                        column: x => x.SectorId,
+                        principalTable: "Sectors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -797,6 +880,11 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_SubSectors_SectorId",
+                table: "SubSectors",
+                column: "SectorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Tenants_Name",
                 table: "Tenants",
                 column: "Name");
@@ -855,6 +943,12 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                 name: "ClaimTypes");
 
             migrationBuilder.DropTable(
+                name: "EconomicRegions");
+
+            migrationBuilder.DropTable(
+                name: "ElectoralDistricts");
+
+            migrationBuilder.DropTable(
                 name: "EntityPropertyChanges");
 
             migrationBuilder.DropTable(
@@ -894,6 +988,9 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                 name: "Settings");
 
             migrationBuilder.DropTable(
+                name: "SubSectors");
+
+            migrationBuilder.DropTable(
                 name: "TenantConnectionStrings");
 
             migrationBuilder.DropTable(
@@ -916,6 +1013,9 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
             migrationBuilder.DropTable(
                 name: "EntityChanges");
+
+            migrationBuilder.DropTable(
+                name: "Sectors");
 
             migrationBuilder.DropTable(
                 name: "Tenants");

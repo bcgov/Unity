@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace Unity.GrantManager.Geocoder
+namespace Unity.GrantManager.Integration.Geocoder
 {
-    public interface IGeocoderService : IApplicationService
+    public interface IGeocoderApiService : IApplicationService
     {
         Task<AddressDetailsDto> GetAddressDetailsAsync(string address);
         Task<ElectoralDistrictDto> GetElectoralDistrictAsync(LocationCoordinates locationCoordinates);

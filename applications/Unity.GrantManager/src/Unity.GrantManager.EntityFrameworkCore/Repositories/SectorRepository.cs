@@ -11,10 +11,10 @@ namespace Unity.GrantManager.Repositories
     [ExposeServices(typeof(ISectorRepository))]
 #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     // This pattern is an implementation ontop of ABP framework, will not change this
-    public class SectorRepository : EfCoreRepository<GrantTenantDbContext, Sector, Guid>, ISectorRepository
+    public class SectorRepository : EfCoreRepository<GrantManagerDbContext, Sector, Guid>, ISectorRepository
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
-        public SectorRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
+        public SectorRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
         {
         }
     }

@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         public async Task OnGetAsync()
         {
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
-            ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormVersionAppService.GetListAsync(ApplicationFormDto.Id);
+            ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
 
             if (ApplicationFormVersionDtoList != null)
             {
@@ -61,13 +61,14 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                     || (ChefsFormVersionGuid.ToString() == "00000000-0000-0000-0000-000000000000" && applicationFormVersionDto.Published))
                     {
                         ApplicationFormVersionDto = applicationFormVersionDto;
-                        if (ChefsFormVersionGuid.ToString() == "00000000-0000-0000-0000-000000000000" && applicationFormVersionDto.ChefsFormVersionGuid != null)  {
-                            ChefsFormVersionGuid = Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid);                            
+                        if (ChefsFormVersionGuid.ToString() == "00000000-0000-0000-0000-000000000000" && applicationFormVersionDto.ChefsFormVersionGuid != null)
+                        {
+                            ChefsFormVersionGuid = Guid.Parse(applicationFormVersionDto.ChefsFormVersionGuid);
                         }
                         break;
                     }
                 }
-                
+
                 if (ApplicationFormVersionDtoList.Count == 0 && ApplicationFormVersionDto == null)
                 {
                     CreateUpdateApplicationFormVersionDto appFormVersion = new CreateUpdateApplicationFormVersionDto();

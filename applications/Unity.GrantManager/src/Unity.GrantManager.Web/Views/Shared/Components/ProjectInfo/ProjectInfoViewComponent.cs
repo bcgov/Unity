@@ -73,16 +73,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             if (sectors.Count > 0)
             {
-                List<SubSectorDto> SubSectors = new List<SubSectorDto>();
+                List<SubSectorDto> SubSectors = new();
                 if (string.IsNullOrEmpty(application.SubSector))
                 {
                     SubSectors = sectors[0].SubSectors ?? SubSectors;
                 }
                 else
                 {
-                    SectorDto applicationSector = sectors.Find(x => x.SectorCode == application.Sector)
-                                                                ?? throw new ArgumentException("Sector not found");
-                    SubSectors = applicationSector.SubSectors ?? SubSectors;
+                    SectorDto? applicationSector = sectors.Find(x => x.SectorCode == application.Sector);                                                                
+                    SubSectors = applicationSector?.SubSectors ?? SubSectors;
                 }
 
                 foreach (SubSectorDto subSector in SubSectors)

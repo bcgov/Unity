@@ -1,7 +1,7 @@
-﻿namespace Unity.GrantManager.Geocoder
+﻿namespace Unity.GrantManager.Integration.Geocoder
 {
     public class AddressDetailsDto
-    {        
+    {
         public LocationCoordinates? Coordinates { get; set; }
 
         public int? Score { get; set; }

@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Intakes.Integration;
+using Unity.GrantManager.Integration.Chefs;
+using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Domain.Entities;
 
@@ -17,18 +18,15 @@ namespace Unity.GrantManager.Controllers
 
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
-        private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
-        private readonly IFormIntService _formIntService;
+        private readonly IFormsApiService _formsApiService;
 
-        public FormController(IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
-            IApplicationFormRepository applicationFormRepository,
+        public FormController(IApplicationFormRepository applicationFormRepository,
             IApplicationFormVersionAppService applicationFormVersionAppService,
-            IFormIntService formIntService)
+            IFormsApiService formsApiService)
         {
-            _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _applicationFormRepository = applicationFormRepository;
             _applicationFormVersionAppService = applicationFormVersionAppService;
-            _formIntService = formIntService;
+            _formsApiService = formsApiService;
         }
 
         [HttpPost]
@@ -41,10 +39,10 @@ namespace Unity.GrantManager.Controllers
                     .FirstOrDefault() ?? throw new EntityNotFoundException("Application Form Not Registered");
 
             if (string.IsNullOrEmpty(applicationForm.ApiKey)) {
-                throw new Exception("Application Form API Key is Required");
+                throw new BusinessException("Application Form API Key is Required");
             }
 
-            var chefsFormVersion = await _formIntService.GetFormDataAsync(formId, formVersionId);
+            var chefsFormVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
             return await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);
         }
     }

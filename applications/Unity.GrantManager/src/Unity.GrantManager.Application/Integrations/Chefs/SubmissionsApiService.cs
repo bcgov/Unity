@@ -5,23 +5,26 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Integrations.Exceptions;
+using Unity.GrantManager.Integrations.Http;
 using Volo.Abp;
 using Volo.Abp.Security.Encryption;
 
-namespace Unity.GrantManager.Intakes.Integration
+namespace Unity.GrantManager.Integrations.Chefs
 {
-    [RemoteService(false)]
-    public class SubmissionsIntService : GrantManagerAppService, ISubmissionsIntService
+    [IntegrationService]
+    public class SubmissionsApiService : GrantManagerAppService, ISubmissionsApiService
     {
-        private readonly RestClient _intakeClient;
+        private readonly IResilientHttpRequest _resilientRestClient;
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IStringEncryptionService _stringEncryptionService;
 
-        public SubmissionsIntService(RestClient intakeClient,
+        public SubmissionsApiService(IResilientHttpRequest resilientRestClient,
             IApplicationFormRepository applicationFormRepository,
             IStringEncryptionService stringEncryptionService)
         {
-            _intakeClient = intakeClient;
+            _resilientRestClient = resilientRestClient;
             _applicationFormRepository = applicationFormRepository;
             _stringEncryptionService = stringEncryptionService;
         }
@@ -36,22 +39,23 @@ namespace Unity.GrantManager.Intakes.Integration
 
             if (applicationForm == null) return null;
 
-            var request = new RestRequest($"/submissions/{submissionId}")
-            {
-                Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
-            };
+            var response = await _resilientRestClient
+               .HttpAsync(Method.Get, $"/submissions/{submissionId}",
+                   null,
+                   null,
+                   new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty));
 
-            var response = await _intakeClient.GetAsync(request);
-
-            if (response != null 
-                && response.Content != null
-                && response.IsSuccessStatusCode)
+            if (response != null
+               && response.Content != null
+               && response.IsSuccessStatusCode)
             {
                 string content = response.Content;
                 return JsonConvert.DeserializeObject<dynamic>(content)!;
             }
-
-            return null;
+            else
+            {
+                throw new IntegrationServiceException($"Error with integrating with request resource");
+            }
         }
     }
 }
