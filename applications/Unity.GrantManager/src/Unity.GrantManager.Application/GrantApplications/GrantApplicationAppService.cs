@@ -389,6 +389,15 @@ public class GrantApplicationAppService :
             await _commentsManager.GetCommentsAsync(id, CommentType.ApplicationComment));
     }
 
+    public async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync()
+    {
+        var query = await _applicationRepository.GetQueryableAsync();
+
+        var result = query?.GroupBy(app => app.EconomicRegion).Select(group => new GetEconomicRegionDto { EconomicRegion = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.EconomicRegion);
+        var queryResult = await AsyncExecuter.ToListAsync(result);
+        return queryResult;
+    }
+
     public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
     {
         try
