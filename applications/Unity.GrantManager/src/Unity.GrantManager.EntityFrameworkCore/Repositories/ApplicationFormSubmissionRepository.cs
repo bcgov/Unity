@@ -11,10 +11,10 @@ namespace Unity.GrantManager.Repositories
     [ExposeServices(typeof(IApplicationFormSubmissionRepository))]
 #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     // This pattern is an implementation ontop of ABP framework, will not change this
-    public class ApplicationFormSubmissionRepository : EfCoreRepository<GrantManagerDbContext, ApplicationFormSubmission, Guid>, IApplicationFormSubmissionRepository
+    public class ApplicationFormSubmissionRepository : EfCoreRepository<GrantTenantDbContext, ApplicationFormSubmission, Guid>, IApplicationFormSubmissionRepository
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
-        public ApplicationFormSubmissionRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
+        public ApplicationFormSubmissionRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
         {
         }
     }

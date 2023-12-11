@@ -13,11 +13,9 @@ namespace Unity.GrantManager.ApplicationForms
             PagedAndSortedResultRequestDto,
             CreateUpdateApplicationFormVersionDto>
     {
-        Task<IList<ApplicationFormVersionDto>> GetListAsync(Guid applicationFormId);
         Task<bool> FormVersionExists(string chefsFormVersionId);
         Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId);                
         Task<string?> GetFormVersionSubmissionMapping(string chefsFormVersionId);
         Task<ApplicationFormVersionDto> UpdateOrCreateApplicationFormVersion(string chefsFormId, string chefsFormVersionId, Guid applicationFormId, dynamic chefsFormVersion);
     }
-
 }

@@ -4,6 +4,6 @@ namespace Unity.GrantManager.Comments
 {
     public class ApplicationComment : CommentBase
     {
-        public Guid ApplicationId { get; set; }
+        public Guid ApplicationId { get; set; }        
     }
 }

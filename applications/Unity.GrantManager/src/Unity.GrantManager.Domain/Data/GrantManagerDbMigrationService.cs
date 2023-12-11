@@ -91,7 +91,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
 
         foreach (var migrator in _dbSchemaMigrators)
         {
-            await migrator.MigrateAsync();
+            await migrator.MigrateAsync(tenant);
         }
     }
 

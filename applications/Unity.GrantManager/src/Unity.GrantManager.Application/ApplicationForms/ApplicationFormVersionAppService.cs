@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Intakes.Integration;
+using Unity.GrantManager.Integration.Chefs;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
@@ -29,19 +28,19 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
-        private readonly IFormIntService _formIntService;
+        private readonly IFormsApiService _formApiService;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IUnitOfWorkManager unitOfWorkManager,
-            IFormIntService formIntService,
+            IFormsApiService formsApiService,
             IApplicationFormVersionRepository applicationFormVersionRepository)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _unitOfWorkManager = unitOfWorkManager;
-            _formIntService = formIntService;
+            _formApiService = formsApiService;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -59,6 +58,7 @@ namespace Unity.GrantManager.ApplicationForms
             var dto = await base.GetAsync(id);
             return dto;
         }
+
         public async Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId)
         {
             if (chefsForm == null) return false;
@@ -125,7 +125,7 @@ namespace Unity.GrantManager.ApplicationForms
                         ChefsFormVersionGuid = formVersionId
                     };
 
-                    var formVersion = await _formIntService.GetFormDataAsync(formId, formVersionId);
+                    var formVersion = await _formApiService.GetFormDataAsync(formId, formVersionId);
                     applicationFormVersion.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
 
                     return applicationFormVersion;
@@ -257,20 +257,6 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>((applicationFormVersion));
-        }
-
-        public async Task<IList<ApplicationFormVersionDto>> GetPublishedListAsync(Guid applicationFormId)
-        {
-            IQueryable<ApplicationFormVersion> queryableFormVersions = _applicationFormVersionRepository.GetQueryableAsync().Result;
-            var formVersions = queryableFormVersions.Where(c => c.ApplicationFormId.Equals(applicationFormId) && c.Published.Equals(true)).ToList();
-            return await Task.FromResult<IList<ApplicationFormVersionDto>>(ObjectMapper.Map<List<ApplicationFormVersion>, List<ApplicationFormVersionDto>>(formVersions.OrderByDescending(s => s.Version).ToList()));
-        }
-
-        public async Task<IList<ApplicationFormVersionDto>> GetListAsync(Guid applicationFormId)
-        {
-            IQueryable<ApplicationFormVersion> queryableFormVersions = _applicationFormVersionRepository.GetQueryableAsync().Result;
-            var formVersions = queryableFormVersions.Where(c => c.ApplicationFormId.Equals(applicationFormId)).ToList();
-            return await Task.FromResult<IList<ApplicationFormVersionDto>>(ObjectMapper.Map<List<ApplicationFormVersion>, List<ApplicationFormVersionDto>>(formVersions.OrderByDescending(s => s.Version).ToList()));
         }
     }
 }

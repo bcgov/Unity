@@ -1,13 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
-using Unity.GrantManager.Applications;
-using Unity.GrantManager.Intakes;
-using Unity.GrantManager.ApplicationUserRoles;
-using Unity.GrantManager.Assessments;
-using Unity.GrantManager.Comments;
-using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.GrantPrograms;
+using Unity.GrantManager.Locality;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -17,7 +10,6 @@ using Volo.Abp.EntityFrameworkCore.Modeling;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.EntityFrameworkCore;
-using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
@@ -34,6 +26,11 @@ public class GrantManagerDbContext :
     ITenantManagementDbContext
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
+
+    public DbSet<Sector> Sectors { get; set; }
+    public DbSet<SubSector> SubSectors { get; set; }
+    public DbSet<EconomicRegion> EconomicRegion { get; set; }
+    public DbSet<ElectoralDistrict> ElectoralDistricts { get; set; }
 
     #region Entities from the modules
 
@@ -63,22 +60,6 @@ public class GrantManagerDbContext :
 
     #endregion
 
-    #region Domain Entities
-    public DbSet<GrantProgram> GrantPrograms { get; set; }
-    public DbSet<GrantApplication> GrantApplications { get; set; }
-    public DbSet<Intake> Intakes { get; set; }
-    public DbSet<ApplicationForm> ApplicationForms { get; set; }
-    public DbSet<ApplicationFormVersion> ApplicationFormVersions { get; set; }
-    public DbSet<Applicant> Applicants { get; set; }
-    public DbSet<Application> Applications { get; set; }
-    public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
-    public DbSet<ApplicationUserAssignment> ApplicationUserAssignments { get; set; }
-    public DbSet<ApplicationComment> ApplicationComments { get; set; }
-    public DbSet<Assessment> Assessments { get; set; }
-    public DbSet<AssessmentComment> AssessmentComments { get; set; }
-
-    #endregion
-
     public GrantManagerDbContext(DbContextOptions<GrantManagerDbContext> options)
         : base(options)
     {
@@ -89,251 +70,45 @@ public class GrantManagerDbContext :
     {
         base.OnModelCreating(modelBuilder);
 
-        /* Include modules to your migration db context */
-
         modelBuilder.ConfigurePermissionManagement();
         modelBuilder.ConfigureSettingManagement();
         modelBuilder.ConfigureBackgroundJobs();
         modelBuilder.ConfigureAuditLogging();
-        modelBuilder.ConfigureIdentity();
-        modelBuilder.ConfigureOpenIddict();
+        modelBuilder.ConfigureIdentity();        
         modelBuilder.ConfigureFeatureManagement();
         modelBuilder.ConfigureTenantManagement();
 
         /* Configure your own tables/entities inside here */
 
-        modelBuilder.Entity<GrantProgram>(b =>
+        modelBuilder.Entity<Sector>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "GrantProgram",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-
-            b.Property(x => x.ProgramName)
-                .IsRequired()
-                .HasMaxLength(255);
-
-            b.HasIndex(x => x.ProgramName);
-        });
-
-        modelBuilder.Entity<User>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "User",
-                GrantManagerConsts.DbSchema);
-            b.ConfigureByConvention();
-            b.HasIndex(x => x.OidcSub);
-        });
-
-        modelBuilder.Entity<Team>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Team",
-                GrantManagerConsts.DbSchema);
-            b.ConfigureByConvention();
-        });
-
-        modelBuilder.Entity<UserTeam>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "UserTeam",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props            
-            b.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).IsRequired();
-            b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSub).IsRequired();
-        });
-
-        modelBuilder.Entity<Applicant>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Applicant",
-                GrantManagerConsts.DbSchema);
-            b.ConfigureByConvention();
-            b.Property(x => x.ApplicantName)
-                .IsRequired()
-                .HasMaxLength(600);
-
-            b.HasIndex(x => x.ApplicantName);
-        });
-
-        modelBuilder.Entity<Intake>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Intake",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.IntakeName).IsRequired().HasMaxLength(250);
-        });
-
-        modelBuilder.Entity<ApplicationForm>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationForm",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
-
-            b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
-        });
-
-        modelBuilder.Entity<ApplicationStatus>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationStatus",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props
-            // TODO: Enum mapping could be better implemented with
-            // using an int for the ID of ApplicationStatus table
-            // which maps to the GrantApplicationState enum value
-            b.Property(x => x.StatusCode)
-                .IsRequired()
-                .HasMaxLength(250)
-                .HasConversion(new EnumToStringConverter<GrantApplicationState>());
-            b.HasIndex(x => x.StatusCode).IsUnique();
-        });
-
-        modelBuilder.Entity<Application>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Application",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.Property(x => x.ProjectName).IsRequired().HasMaxLength(255);
-            b.Property(x => x.Payload).HasColumnType("jsonb");
-            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
-            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
-
-            b.HasOne(a => a.ApplicationStatus)
-                .WithMany(s => s.Applications)
-                .HasForeignKey(x => x.ApplicationStatusId)
-                .IsRequired();
-        });
-
-        modelBuilder.Entity<Address>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Address", GrantManagerConsts.DbSchema);
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId);
-        });        
-
-        modelBuilder.Entity<ApplicantAgent>(b =>
-            {
-                b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicantAgent",
-                    GrantManagerConsts.DbSchema);
-
-                b.ConfigureByConvention(); //auto configure for the base class props                             
-                b.HasOne<User>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired();
-                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
-            });
-
-        modelBuilder.Entity<ApplicationFormSubmission>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationFormSubmission",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props                             
-            b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
-            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
-        });
-
-        modelBuilder.Entity<ApplicationFormVersion>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationFormVersion",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
-        });
-
-        modelBuilder.Entity<ApplicationComment>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationComment", GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
-        });
-
-        modelBuilder.Entity<ApplicationAttachment>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationAttachment", GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
-        });
-
-        modelBuilder.Entity<Assessment>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "Assessment", GrantManagerConsts.DbSchema);
-            b.ConfigureByConvention();
-
-            b.HasOne<Application>()
-                .WithMany()
-                .HasForeignKey(x => x.ApplicationId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.NoAction);
-
-            b.HasOne<IdentityUser>()
-                .WithMany()
-                .HasForeignKey(x => x.AssessorId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.NoAction);
-
-            b.Property(x => x.Status)
-                .IsRequired()
-                .HasMaxLength(50)
-                .HasConversion(new EnumToStringConverter<AssessmentState>());
-        });
-
-        modelBuilder.Entity<AssessmentAttachment>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentAttachment", GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention();
-            b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AssessmentId).IsRequired();
-        });
-
-        modelBuilder.Entity<AssessmentComment>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "AssessmentComment", GrantManagerConsts.DbSchema);
-            b.HasOne<Assessment>().WithMany().HasForeignKey(x => x.AssessmentId).IsRequired();
-        });
-
-        modelBuilder.Entity<ApplicationUserAssignment>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationUserAssignment",
-                GrantManagerConsts.DbSchema);
-
-            b.ConfigureByConvention(); //auto configure for the base class props
-            b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId);
-            b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
-        });
-
-        modelBuilder.Entity<ApplicationSector>(b =>
-        {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationSector",
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Sectors",
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();
             b.HasMany(e => e.SubSectors).WithOne(e => e.Sector).HasForeignKey(x => x.SectorId);
         });
-        
-        modelBuilder.Entity<ApplicationSubSector>(b =>
+
+        modelBuilder.Entity<SubSector>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationSubSector",
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "SubSectors",
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();
-            b.HasOne<ApplicationSector>(e => e.Sector).WithMany(e => e.SubSectors).HasForeignKey(x => x.SectorId);
+            b.HasOne(e => e.Sector).WithMany(e => e.SubSectors).HasForeignKey(x => x.SectorId);
         });
 
-        modelBuilder.Entity<ApplicationEconomicRegion>(b =>
+        modelBuilder.Entity<EconomicRegion>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationEconomicRegion",
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "EconomicRegions",
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();
         });
 
-        modelBuilder.Entity<ApplicationElectoralDistrict>(b =>
+        modelBuilder.Entity<ElectoralDistrict>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "ApplicationElectoralDistrict",
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ElectoralDistricts",
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();

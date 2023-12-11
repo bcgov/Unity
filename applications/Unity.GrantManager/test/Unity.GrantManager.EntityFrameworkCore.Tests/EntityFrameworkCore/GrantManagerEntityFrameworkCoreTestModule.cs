@@ -62,11 +62,20 @@ public class GrantManagerEntityFrameworkCoreTestModule : AbpModule
         var connection = new SqliteConnection("Data Source=:memory:");
         connection.Open();
 
-        var options = new DbContextOptionsBuilder<GrantManagerDbContext>()
+        var hostOptions = new DbContextOptionsBuilder<GrantManagerDbContext>()
             .UseSqlite(connection)
             .Options;
 
-        using (var context = new GrantManagerDbContext(options))
+        var tenantOptions = new DbContextOptionsBuilder<GrantTenantDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using (var context = new GrantManagerDbContext(hostOptions))
+        {
+            context.GetService<IRelationalDatabaseCreator>().CreateTables();
+        }
+
+        using (var context = new GrantTenantDbContext(tenantOptions))
         {
             context.GetService<IRelationalDatabaseCreator>().CreateTables();
         }

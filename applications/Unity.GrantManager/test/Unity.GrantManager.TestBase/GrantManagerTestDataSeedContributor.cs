@@ -4,6 +4,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -25,6 +26,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
     private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
     private readonly IIdentityUserRepository _userRepository;
+    private readonly IPersonRepository _personRepository;
 
 #pragma warning disable S107 // Methods should not have too many parameters
     public GrantManagerTestDataSeedContributor(
@@ -38,7 +40,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         IRepository<ApplicationComment, Guid> applicationCommentRepository,
         IApplicationAttachmentRepository applicationAttachmentRepository,
         IAssessmentAttachmentRepository assessmentAttachmentRepository,
-        IIdentityUserRepository userRepository)
+        IIdentityUserRepository userRepository,
+        IPersonRepository personRepository)
 #pragma warning restore S107 // Methods should not have too many parameters
     {
         _applicationRepository = applicationRepository;
@@ -52,6 +55,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
         _applicationAttachmentRepository = applicationAttachmentRepository;
         _userRepository = userRepository;
         _assessmentAttachmentRepository = assessmentAttachmentRepository;
+        _personRepository = personRepository;
     }
 
     public async Task SeedAsync(DataSeedContext context)
@@ -96,6 +100,18 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             autoSave: true
         );
 
+        // We add this here explicilty to add it to the sql lite db
+        ApplicationStatus? status1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.SUBMITTED);
+        status1 ??= await _applicationStatusRepository.InsertAsync(
+            new ApplicationStatus
+            {
+                StatusCode = GrantApplicationState.SUBMITTED,
+                ExternalStatus = "Submitted",
+                InternalStatus = "Submitted"
+            },
+            autoSave: true
+        );
+
         Application? application1 = await _applicationRepository.FindAsync(GrantManagerTestData.Application1_Id);
         application1 ??= await _applicationRepository.InsertAsync(
             new ApplicationSeed(GrantManagerTestData.Application1_Id)
@@ -119,7 +135,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             new ApplicationCommentSeed(GrantManagerTestData.ApplicationComment1_Id)
             {
                 ApplicationId = application1.Id,
-                Comment = "Test Comment"
+                Comment = "Test Comment",
+                CommenterId = GrantManagerTestData.User2_UserId
             },
             autoSave: true
         );
@@ -130,9 +147,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             {
                 ApplicationId = GrantManagerTestData.Application1_Id,
                 S3ObjectKey = "Unity/Development/Application/report.pdf",
-                UserId = "00000000-0000-0000-0000-000000000000",
-                FileName = "report.pdf",
-                AttachedBy = "John Doe",
+                UserId = GrantManagerTestData.User2_UserId,
+                FileName = "report.pdf",                
                 Time = DateTime.UtcNow,
             },
             autoSave: true
@@ -144,9 +160,9 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             (
                 id: GrantManagerTestData.Assessment1_Id,
                 applicationId: GrantManagerTestData.Application1_Id,
-                assessorId: GrantManagerTestData.User_Assessor1_UserId,
+                assessorId: GrantManagerTestData.User1_UserId,
                 AssessmentState.IN_PROGRESS
-            ));
+            ), autoSave: true);
 
         AssessmentAttachment? assessmentAttachment1 = await _assessmentAttachmentRepository.FindAsync(GrantManagerTestData.AssessmentAttachment1_Id);
         assessmentAttachment1 ??= await _assessmentAttachmentRepository.InsertAsync(
@@ -154,9 +170,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             {
                 AssessmentId = GrantManagerTestData.Assessment1_Id,
                 S3ObjectKey = "Unity/Development/Assessment/result.pdf",
-                UserId = GrantManagerTestData.User_Assessor1_UserId,
-                FileName = "result.pdf",
-                AttachedBy = "John Doe",
+                UserId = GrantManagerTestData.User1_UserId,
+                FileName = "result.pdf",                
                 Time = DateTime.UtcNow
             },
             autoSave: true
@@ -167,7 +182,8 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
             new AssessmentCommentSeed(GrantManagerTestData.AssessmentComment1_Id)
             {
                 AssessmentId = GrantManagerTestData.Assessment1_Id,
-                Comment = "Test Comment"
+                Comment = "Test Comment",
+                CommenterId = GrantManagerTestData.User1_UserId
             },
             autoSave: true
         );
@@ -175,24 +191,43 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
 
     private async Task CreateUsersAsync()
     {
-        var user1 = await _userRepository.FindAsync(GrantManagerTestData.User_Assessor1_UserId);
+        var user1 = await _userRepository.FindAsync(GrantManagerTestData.User1_UserId);
         if (user1 == null)
         {
             await _userRepository.InsertAsync(
             new IdentityUser(
-                GrantManagerTestData.User_Assessor1_UserId,
-                GrantManagerTestData.User_Assessor1_UserName,
-                GrantManagerTestData.User_Assessor1_EmailAddress));
+                GrantManagerTestData.User1_UserId,
+                GrantManagerTestData.User1_UserName,
+                GrantManagerTestData.User1_EmailAddress), autoSave: true);
+
+            await _personRepository.InsertAsync(new Person()
+            {
+                Id = GrantManagerTestData.User1_UserId,
+                Badge = "UT",
+                FullName = "Test User 1",
+                OidcDisplayName = "Test User 1 : Test",
+                OidcSub = "TestUser1"
+            }, autoSave: true);
         }
 
-        var user2 = await _userRepository.FindAsync(GrantManagerTestData.User_Assessor2_UserId);
+        var user2 = await _userRepository.FindAsync(GrantManagerTestData.User2_UserId);
         if (user2 == null)
         {
             await _userRepository.InsertAsync(
             new IdentityUser(
-                GrantManagerTestData.User_Assessor2_UserId,
-                GrantManagerTestData.User_Assessor2_UserName,
-                GrantManagerTestData.User_Assessor2_EmailAddress));
+                GrantManagerTestData.User2_UserId,
+                GrantManagerTestData.User2_UserName,
+                GrantManagerTestData.User2_EmailAddress), autoSave: true);
+
+
+            await _personRepository.InsertAsync(new Person()
+            {
+                Id = GrantManagerTestData.User2_UserId,
+                Badge = "UT",
+                FullName = "Test User 2",
+                OidcDisplayName = "Test User 2 : Test",
+                OidcSub = "TestUser2"
+            }, autoSave: true);
         }
     }
 }

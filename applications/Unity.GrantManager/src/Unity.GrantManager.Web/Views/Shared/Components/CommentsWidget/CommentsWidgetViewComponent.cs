@@ -37,7 +37,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
             return View(model);
         }
 
-        private IEnumerable<CommentViewModel> MapToCommentDisplay(IReadOnlyList<CommentDto> commentDtos)
+        private IEnumerable<CommentDto> MapToCommentDisplay(IReadOnlyList<CommentDto> commentDtos)
         {
             // Hook in to the timezoneoffset cookie explicitly added, there surely must be a better way to do this 
             var offsetValue = "0";
@@ -50,13 +50,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 
             foreach (var item in commentDtos)
             {
-                yield return new CommentViewModel()
+                yield return new CommentDto()
                 {
-                    Badge = item.Commenter.GetUserBadge(),
+                    Badge = item.Badge,
                     Comment = item.Comment,
                     Commenter = item.Commenter,
                     CreationTime = item.CreationTime.AddMinutes(-offset),
-                    CreatorId = item.CreatorId,
+                    CommenterId = item.CommenterId,
                     Id = item.Id,
                     OwnerId = item.OwnerId
                 };

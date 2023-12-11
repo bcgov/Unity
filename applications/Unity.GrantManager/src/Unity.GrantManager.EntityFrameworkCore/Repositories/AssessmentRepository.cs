@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.EntityFrameworkCore;
+using Unity.GrantManager.Identity;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
@@ -16,12 +17,11 @@ namespace Unity.GrantManager.Repositories;
 [ExposeServices(typeof(IAssessmentRepository))]
 #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
 // Will not fix this, as is a ABP implementation issue
-public class AssessmentRepository : EfCoreRepository<GrantManagerDbContext, Assessment, Guid>, IAssessmentRepository
+public class AssessmentRepository : EfCoreRepository<GrantTenantDbContext, Assessment, Guid>, IAssessmentRepository
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
 {
-    public AssessmentRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
+    public AssessmentRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
     {
-
     }
 
     public async Task<bool> ExistsAsync(Guid applicationId, Guid userId)
@@ -34,7 +34,7 @@ public class AssessmentRepository : EfCoreRepository<GrantManagerDbContext, Asse
     public async Task<List<AssessmentWithAssessorQueryResultItem>> GetListWithAssessorsAsync(Guid applicationId)
     {
         var assessmentQueryable = await GetQueryableAsync();
-        var userQueryable = (await GetDbContextAsync()).Set<IdentityUser>().AsQueryable();
+        var userQueryable = (await GetDbContextAsync()).Set<Person>().AsQueryable();
 
         var query = assessmentQueryable
             .Where(x => x.ApplicationId == applicationId)
@@ -48,9 +48,9 @@ public class AssessmentRepository : EfCoreRepository<GrantManagerDbContext, Asse
                     ApplicationId = assessment.ApplicationId,
 
                     AssessorId = assessment.AssessorId,
-                    AssessorFirstName = user.Name,
-                    AssessorLastName = user.Surname,
-                    AssessorEmail = user.Email,
+                    AssessorDisplayName = user.OidcDisplayName,
+                    AssessorFullName = user.FullName,
+                    AssessorBadge = user.Badge,
 
                     StartDate = assessment.CreationTime,
                     EndDate = assessment.EndDate,

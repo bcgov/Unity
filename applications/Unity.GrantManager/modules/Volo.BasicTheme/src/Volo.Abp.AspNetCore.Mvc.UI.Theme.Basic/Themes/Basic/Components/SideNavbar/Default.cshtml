@@ -14,7 +14,7 @@
             @if (CurrentUser.IsAuthenticated)
             {                
                 <a href="#" class="fw-bold d-sm-inline text-decoration-none">
-                    <span><span>@CurrentUser.Name </span><span> @CurrentUser.SurName</span></span>
+                    <span>@CurrentUser.FindClaimValue("DisplayName")</span>
                 </a>
             }
         </div>

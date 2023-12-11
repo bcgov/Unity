@@ -169,8 +169,9 @@ $(function () {
     let assessmentUserDetailsWidgetManager = new abp.WidgetManager({
         wrapper: '#assessmentUserDetailsWidget',
         filterCallback: function () {
-            return {
+            return {                
                 'displayName': selectedReviewDetails.assessorDisplayName,
+                'badge': selectedReviewDetails.assessorBadge,
                 'title': 'Title, Role'
             };
         }
@@ -196,7 +197,7 @@ $(function () {
     PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
-            if (data) {
+            if (data) {                
                 selectedReviewDetails = data; 
                 setDetailsContext('assessment');
                 let selectElement = document.getElementById("recommendation_select");

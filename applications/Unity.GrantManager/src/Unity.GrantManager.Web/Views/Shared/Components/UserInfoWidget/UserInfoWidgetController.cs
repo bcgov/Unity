@@ -9,9 +9,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget
     {
         [HttpGet]
         [Route("RefreshUserInfo")]
-        public IActionResult UserInfo(string displayName, string title)
+        public IActionResult UserInfo(string displayName, string badge, string title)
         {
-            return ViewComponent("UserInfoWidget", new { displayName, title });
+            return ViewComponent("UserInfoWidget", new { displayName, badge, title });
         }
     }
 }
