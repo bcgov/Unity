@@ -12,15 +12,15 @@ namespace Unity.GrantManager.Locality
     [ExposeServices(typeof(ElectoralDistrictAppService), typeof(IElectoralDistrictService))]
     public class ElectoralDistrictAppService : ApplicationService, IElectoralDistrictService
     {
-        private readonly IElectoralDistrictRepository _applicationElectoralDistrictRepository;
-        public ElectoralDistrictAppService(IElectoralDistrictRepository applicationElectoralDistrictRepository)
+        private readonly IElectoralDistrictRepository _electoralDistrictRepository;
+        public ElectoralDistrictAppService(IElectoralDistrictRepository electoralDistrictRepository)
         {
-            _applicationElectoralDistrictRepository = applicationElectoralDistrictRepository;
+            _electoralDistrictRepository = electoralDistrictRepository;
         }
 
         public async Task<IList<ElectoralDistrictDto>> GetListAsync()
         {
-            var electoralDistricts = await _applicationElectoralDistrictRepository.GetListAsync();
+            var electoralDistricts = await _electoralDistrictRepository.GetListAsync();
 
             return ObjectMapper.Map<List<ElectoralDistrict>, List<ElectoralDistrictDto>>(electoralDistricts.OrderBy(s => s.ElectoralDistrictCode).ToList());
         }

@@ -12,15 +12,15 @@ namespace Unity.GrantManager.Locality
     [ExposeServices(typeof(EconomicRegionAppService), typeof(IEconomicRegionService))]
     public class EconomicRegionAppService : ApplicationService, IEconomicRegionService
     {
-        private readonly IEconomicRegionRepository _applicationEconomicRegionRepository;
-        public EconomicRegionAppService(IEconomicRegionRepository applicationEconomicRegionRepository)
+        private readonly IEconomicRegionRepository _economicRegionRepository;
+        public EconomicRegionAppService(IEconomicRegionRepository economicRegionRepository)
         {
-            _applicationEconomicRegionRepository = applicationEconomicRegionRepository;
+            _economicRegionRepository = economicRegionRepository;
         }
 
         public async Task<IList<EconomicRegionDto>> GetListAsync()
         {
-            var economicRegions = await _applicationEconomicRegionRepository.GetListAsync();
+            var economicRegions = await _economicRegionRepository.GetListAsync();
 
             return ObjectMapper.Map<List<EconomicRegion>, List<EconomicRegionDto>>(economicRegions.OrderBy(s => s.EconomicRegionCode).ToList());
         }

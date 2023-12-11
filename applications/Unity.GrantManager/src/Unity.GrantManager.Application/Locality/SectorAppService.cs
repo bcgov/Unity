@@ -12,23 +12,23 @@ namespace Unity.GrantManager.Locality
     [ExposeServices(typeof(SectorAppService), typeof(ISectorService))]
     public class SectorAppService : ApplicationService, ISectorService
     {
-        private readonly ISectorRepository _applicationSectorRepository;
+        private readonly ISectorRepository _sectorRepository;
 
-        private readonly IApplicationSubSectorRepository _applicationSubSectorRepository;
+        private readonly ISubSectorRepository _subSectorRepository;
 
-        public SectorAppService(ISectorRepository applicationSectorRepository,
-            IApplicationSubSectorRepository applicationSubSectorRepository)
+        public SectorAppService(ISectorRepository sectorRepository,
+            ISubSectorRepository subSectorRepository)
         {
-            _applicationSectorRepository = applicationSectorRepository;
-            _applicationSubSectorRepository = applicationSubSectorRepository;
+            _sectorRepository = sectorRepository;
+            _subSectorRepository = subSectorRepository;
         }
 
         public async Task<IList<SectorDto>> GetListAsync()
         {
-            var sectorsQueryable = await _applicationSectorRepository.GetQueryableAsync();
+            var sectorsQueryable = await _sectorRepository.GetQueryableAsync();
 
             var query = from sector in sectorsQueryable
-                        join subsector in await _applicationSubSectorRepository.GetQueryableAsync()
+                        join subsector in await _subSectorRepository.GetQueryableAsync()
                             on sector.Id equals subsector.SectorId into subSectors
                         select new { sector, subSectors, sector.SectorCode };
 

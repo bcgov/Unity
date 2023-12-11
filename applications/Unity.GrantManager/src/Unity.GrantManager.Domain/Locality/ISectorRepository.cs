@@ -6,7 +6,3 @@ namespace Unity.GrantManager.Locality;
 public interface ISectorRepository : IRepository<Sector, Guid>
 {
 }
-
-public interface IApplicationSubSectorRepository : IRepository<SubSector, Guid>
-{
-}
