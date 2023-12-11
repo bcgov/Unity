@@ -14,10 +14,11 @@
     dataTable = initializeDataTable();
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
+
     const UIElements = {
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
-        filterIcon: $(".fl-filter"),
+        filterIcon: $("i.fl.fl-filter"),
         btnSave: $('#btn-save'),
         userDiv: $('#users-div'),
         users: $('#users'),
@@ -34,7 +35,7 @@
 
     function bindUIEvents() {
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
-        UIElements.filterIcon.on('click', toggleFilterRow);
+        UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden'));
         UIElements.clearFilter.on('click', clearFilter);
         UIElements.btnSave.on('click', handleSave);
         UIElements.userDiv.on('change', markUserDivAsChanged);
