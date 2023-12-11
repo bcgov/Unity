@@ -1,10 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Intakes.Integration;
+using Unity.GrantManager.Integration.Chefs;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
@@ -16,20 +17,23 @@ namespace Unity.GrantManager.Events
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormManager _applicationFormManager;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
-        private readonly ISubmissionsIntService _submissionsIntService;
-        private readonly IFormIntService _formIntService;
+        private readonly ISubmissionsApiService _submissionsIntService;
+        private readonly IFormsApiService _formsApiService;
+        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
 
         public ChefsEventSubscriptionService(IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IApplicationFormManager applicationFormManager,
-            ISubmissionsIntService submissionsIntService,
+            ISubmissionsApiService submissionsIntService,
             IApplicationFormRepository applicationFormRepository,
-            IFormIntService formIntService)
+            IFormsApiService formsApiService,
+            IApplicationFormVersionAppService applicationFormVersionAppService)
         {
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _submissionsIntService = submissionsIntService;
             _applicationFormRepository = applicationFormRepository;
-            _formIntService = formIntService;
+            _formsApiService = formsApiService;
             _applicationFormManager = applicationFormManager;
+            _applicationFormVersionAppService = applicationFormVersionAppService;
         }
 
         public async Task<bool> CreateIntakeMappingAsync(EventSubscriptionDto eventSubscriptionDto)
@@ -41,16 +45,19 @@ namespace Unity.GrantManager.Events
                 .FirstOrDefault() ?? throw new EntityNotFoundException("Application Form Not Registered");
 
             var submissionData = await _submissionsIntService.GetSubmissionDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.SubmissionId) ?? throw new InvalidFormDataSubmissionException();
-            var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, submissionData.submission.formVersionId) ?? throw new InvalidFormDataSubmissionException();
-            var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formVersion);
+            var formVersion = await _formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(), submissionData.submission.formVersionId.ToString()) ?? throw new InvalidFormDataSubmissionException();
+            var result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formVersion);
             return !result.IsNullOrEmpty();
         }
 
         public async Task<bool> PublishedFormAsync(EventSubscriptionDto eventSubscriptionDto)
         {
+            string formId = eventSubscriptionDto.FormId.ToString();
+            string formVersionId = eventSubscriptionDto.FormVersion.ToString();
+
             var applicationForm = (await _applicationFormRepository
                 .GetQueryableAsync())
-                .Where(s => s.ChefsApplicationFormGuid == eventSubscriptionDto.FormId.ToString())
+                .Where(s => s.ChefsApplicationFormGuid == formId)
                 .OrderBy(s => s.CreationTime)
                 .FirstOrDefault();
 
@@ -59,10 +66,10 @@ namespace Unity.GrantManager.Events
                 && applicationForm.ChefsApplicationFormGuid != null)
             {
                 // Go grab the new name/description/version and map the new available fields
-                var formVersion = await _formIntService.GetFormDataAsync(eventSubscriptionDto.FormId, eventSubscriptionDto.FormVersion);
-                dynamic form = await _formIntService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid));
+                var formVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
+                dynamic form = await _formsApiService.GetForm(Guid.Parse(applicationForm.ChefsApplicationFormGuid), applicationForm.ChefsApplicationFormGuid.ToString(), applicationForm.ApiKey);
                 applicationForm = _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
-                applicationForm.AvailableChefsFields = _intakeFormSubmissionMapper.InitializeAvailableFormFields(applicationForm, formVersion);
+                await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
             }
             else

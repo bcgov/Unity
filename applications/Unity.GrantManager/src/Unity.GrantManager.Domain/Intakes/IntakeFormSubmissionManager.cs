@@ -20,6 +20,8 @@ namespace Unity.GrantManager.Intakes
         private readonly IApplicationStatusRepository _applicationStatusRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
+        private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
+
 
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
             IApplicantRepository applicantRepository,
@@ -28,7 +30,8 @@ namespace Unity.GrantManager.Intakes
             IApplicationRepository applicationRepository,
             IApplicationStatusRepository applicationStatusRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-            IIntakeFormSubmissionMapper intakeFormSubmissionMapper)
+            IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
+            IApplicationFormVersionRepository applicationFormVersionRepository)
         {
             _unitOfWorkManager = unitOfWorkManager;
             _applicantRepository = applicantRepository;
@@ -38,11 +41,30 @@ namespace Unity.GrantManager.Intakes
             _applicationStatusRepository = applicationStatusRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
+            _applicationFormVersionRepository = applicationFormVersionRepository;
+        }
+
+        public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId) {
+
+            var applicationFormVersion = (await _applicationFormVersionRepository
+                    .GetQueryableAsync())
+                    .Where(s => s.ChefsFormVersionGuid == chefsFormVersionId)
+                    .First();
+
+            string? formVersionSubmissionHeaderMapping = null;
+
+            if (applicationFormVersion != null)
+            {
+                formVersionSubmissionHeaderMapping = applicationFormVersion.SubmissionHeaderMapping;
+            }
+            return formVersionSubmissionHeaderMapping;
         }
 
         public async Task<Guid> ProcessFormSubmissionAsync(ApplicationForm applicationForm, dynamic formSubmission)
         {
-            IntakeMapping intakeMap = _intakeFormSubmissionMapper.MapFormSubmissionFields(applicationForm, formSubmission);
+            string? formVersionId = formSubmission.submission.formVersionId;
+            string? formVersionSubmissionHeaderMapping = await GetApplicationFormVersionMapping(formVersionId);
+            IntakeMapping intakeMap = _intakeFormSubmissionMapper.MapFormSubmissionFields(applicationForm, formSubmission, formVersionSubmissionHeaderMapping);
             intakeMap.SubmissionId = formSubmission.submission.id;
             intakeMap.SubmissionDate = formSubmission.submission.createdAt;
             intakeMap.ConfirmationId = formSubmission.submission.confirmationId;

@@ -102,7 +102,7 @@ $(function () {
                 },
                 {
                     title: l('ReviewerList:AssessorName'),
-                    data: 'assessorDisplayName',
+                    data: 'assessorFullName',
                     className: 'data-table-header',
                     render: function (data) {
                         return data ?? nullPlaceholder;

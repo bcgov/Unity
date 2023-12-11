@@ -165,8 +165,7 @@
                     <div id="reviewDetails" style="display:none">
                         <input type="hidden" id="AssessmentId" value="@Model.AssessmentId" />
                         <div id="assessmentUserDetailsWidget">
-                            @await Component.InvokeAsync("UserInfoWidget", new { displayName = "", title = "" })
-
+                            @await Component.InvokeAsync("UserInfoWidget", new { displayName = "", badge = "", title = "" })
                         </div>
 
                         <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Scores</h6>

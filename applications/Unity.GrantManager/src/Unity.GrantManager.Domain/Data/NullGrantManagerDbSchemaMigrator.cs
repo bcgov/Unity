@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.Data;
 
@@ -8,7 +9,7 @@ namespace Unity.GrantManager.Data;
  */
 public class NullGrantManagerDbSchemaMigrator : IGrantManagerDbSchemaMigrator, ITransientDependency
 {
-    public Task MigrateAsync()
+    public Task MigrateAsync(Tenant? tenant)
     {
         return Task.CompletedTask;
     }

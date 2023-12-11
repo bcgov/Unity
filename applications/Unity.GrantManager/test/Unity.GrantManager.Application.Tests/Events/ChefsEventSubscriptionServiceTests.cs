@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Events
         public async Task CreateAsync_Should_Create_IntakeMapping()
         {
             // Arrange
-            Login(GrantManagerTestData.User_Assessor2_UserId);
+            Login(GrantManagerTestData.User2_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
             EventSubscriptionDto eventSubscriptionDto = new();

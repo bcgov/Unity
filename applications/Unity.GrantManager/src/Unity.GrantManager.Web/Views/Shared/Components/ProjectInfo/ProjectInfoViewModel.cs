@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System;
 using Unity.GrantManager.GrantApplications;
 using System.Collections.Immutable;
+using Unity.GrantManager.Locality;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 {
@@ -30,7 +31,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public List<SelectListItem> ElectoralDistrictList { get; set; } = new List<SelectListItem>();
         
         public Guid ApplicationId { get; set; }
-        public List<ApplicationSectorDto> ApplicationSectors { get; set; } = new List<ApplicationSectorDto>();
+        public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
         public bool IsFinalDecisionMade { get; set; }
         public ProjectInfoViewModelModel ProjectInfo { get; set; } = new();
 

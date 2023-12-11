@@ -14,7 +14,7 @@ public class DbMigratorHostedService : IHostedService
 {
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly IConfiguration _configuration;
-
+    
     public DbMigratorHostedService(IHostApplicationLifetime hostApplicationLifetime, IConfiguration configuration)
     {
         _hostApplicationLifetime = hostApplicationLifetime;
@@ -36,7 +36,7 @@ public class DbMigratorHostedService : IHostedService
             await application
                 .ServiceProvider
                 .GetRequiredService<GrantManagerDbMigrationService>()
-                .MigrateAsync();
+                .MigrateAsync();            
 
             await application.ShutdownAsync();
 

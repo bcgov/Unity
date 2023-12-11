@@ -7,8 +7,9 @@ namespace Unity.GrantManager.Comments
     {
         public string Comment { get; set; } = string.Empty;
         public string Commenter { get; set; } = string.Empty;
+        public string Badge { get; set; } = string.Empty;
         public DateTime CreationTime { get; set; }
         public Guid OwnerId { get; set; }
-        public Guid CreatorId { get; set; }
+        public Guid CommenterId { get; set; }           
     }
 }

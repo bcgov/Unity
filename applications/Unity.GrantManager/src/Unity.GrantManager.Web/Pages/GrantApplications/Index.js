@@ -22,7 +22,7 @@
     const UIElements = {
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
-        filterIcon: $(".fl-filter"),
+        filterIcon: $("i.fl.fl-filter"),
         btnSave: $('#btn-save'),
         userDiv: $('#users-div'),
         users: $('#users'),
@@ -40,7 +40,7 @@
 
     function bindUIEvents() {
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
-        UIElements.filterIcon.on('click', toggleFilterRow);
+        UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden'));
         UIElements.clearFilter.on('click', clearFilter);
         UIElements.btnSave.on('click', handleSave);
         UIElements.userDiv.on('change', markUserDivAsChanged);
@@ -136,8 +136,8 @@
                 count++;
                 content = userOption.text;
                 aData.assignees.push({
-                    assigneeDisplayName: userOption.text,
-                    oidcSub: userOption.value,
+                    fullName: userOption.text,
+                    assigneeId: userOption.value,
                 });
             }
         }
@@ -179,7 +179,7 @@
                     let assigneeIds = [];
 
                     $(assigness).each(function (key, assignee) {
-                        assigneeIds.push(assignee.oidcSub);
+                        assigneeIds.push(assignee.assigneeId);
                     });
 
                     previousUserOptionsSelected = getUserOptionSelectedCount();
@@ -378,7 +378,7 @@
                             let displayText = ' ';
 
                             if (data != null && data.length == 1) {
-                                displayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
+                                displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
                             } else if (data.length > 1) {
                                 displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
                             }
@@ -739,7 +739,7 @@
     function getNames(data) {
         let name = '';
         data.forEach((d, index) => {
-            name = name + ' ' + d.assigneeDisplayName;
+            name = name + ' ' + d.fullName;
 
             if (index != (data.length - 1)) {
                 name = name + ',';

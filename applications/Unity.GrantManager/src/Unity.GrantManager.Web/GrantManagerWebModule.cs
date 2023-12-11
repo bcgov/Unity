@@ -39,7 +39,6 @@ using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BlobStoring;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
 using Volo.Abp.SecurityLog;

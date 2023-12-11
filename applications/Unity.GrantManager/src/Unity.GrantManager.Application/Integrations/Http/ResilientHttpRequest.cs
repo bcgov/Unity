@@ -3,6 +3,7 @@ using Polly;
 using Polly.CircuitBreaker;
 using Polly.Retry;
 using RestSharp;
+using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -13,7 +14,7 @@ using Volo.Abp;
 
 namespace Unity.GrantManager.Integrations.Http
 {
-    [RemoteService(false)]
+    [IntegrationService]
     public class ResilientHttpRequest : GrantManagerAppService, IResilientHttpRequest
     {
         private readonly RestClient _restClient;
@@ -31,28 +32,32 @@ namespace Unity.GrantManager.Integrations.Http
             _pauseBetweenFailures = pauseBetweenFailures;
         }
 
-        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, Dictionary<string, string>? headers = null, object? requestObject = null)
+        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, Dictionary<string, string>? headers = null, object? requestObject = null, IAuthenticator? authenticator = null)
         {
-            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject);
+            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, null, null, authenticator);
         }
 
-        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, AsyncRetryPolicy<RestResponse> retryPolicy, Dictionary<string, string>? headers = null, object? requestObject = null)
+        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, AsyncRetryPolicy<RestResponse> retryPolicy, Dictionary<string, string>? headers = null, object? requestObject = null, IAuthenticator? authenticator = null)
         {
-            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, retryPolicy);
+            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, retryPolicy, null, authenticator);
         }
 
-        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, AsyncRetryPolicy<RestResponse> retryPolicy, AsyncCircuitBreakerPolicy<RestResponse> circuitBreakerPolicy, Dictionary<string, string>? headers = null, object? requestObject = null)
+        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, AsyncRetryPolicy<RestResponse> retryPolicy, AsyncCircuitBreakerPolicy<RestResponse> circuitBreakerPolicy, Dictionary<string, string>? headers = null, object? requestObject = null, IAuthenticator? authenticator = null)
         {
-            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, retryPolicy, circuitBreakerPolicy);
+            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, retryPolicy, circuitBreakerPolicy, authenticator);
         }
 
-        private async Task<RestResponse> ExecuteRequestAsync(Method httpVerb, string resource, Dictionary<string, string>? headers, object? requestObject, AsyncRetryPolicy<RestResponse>? retryPolicy = null, AsyncCircuitBreakerPolicy<RestResponse>? circuitBreakerPolicy = null)
+        private async Task<RestResponse> ExecuteRequestAsync(Method httpVerb, string resource, Dictionary<string, string>? headers, object? requestObject, AsyncRetryPolicy<RestResponse>? retryPolicy = null, AsyncCircuitBreakerPolicy<RestResponse>? circuitBreakerPolicy = null, IAuthenticator? authenticator = null)
         {
             RestResponse? restResponse;
 
             try
             {
                 var restRequest = new RestRequest(resource, httpVerb);
+                if (authenticator != null)
+                {
+                    restRequest.Authenticator = authenticator;
+                }
                 restRequest.AddHeader("cache-control", "no-cache");
                 if (headers != null && headers.Count > 0)
                     foreach (var header in headers)
@@ -94,7 +99,7 @@ namespace Unity.GrantManager.Integrations.Http
                     });
 
             circuitBreakerPolicy ??= Policy
-                .HandleResult<RestResponse>(x => x.StatusCode == HttpStatusCode.ServiceUnavailable)
+                .HandleResult<RestResponse>(x => x.StatusCode == HttpStatusCode.ServiceUnavailable || x.StatusCode == HttpStatusCode.TooManyRequests)
                 .CircuitBreakerAsync(1, TimeSpan.FromSeconds(30), onBreak: async (iRestResponse, timespan, context) =>
                 {
                     await Task.Run(() => Logger.LogError("Circuit went into a fault state. Reason: {resultContent}", iRestResponse.Result.Content));

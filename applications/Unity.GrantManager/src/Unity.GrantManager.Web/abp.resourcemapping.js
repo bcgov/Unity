@@ -22,5 +22,6 @@ module.exports = {
         '@node_modules/sweetalert2/src/': '@libs/sweetalert2/src',
         '@node_modules/jquery-maskmoney/': '@libs/jquery-maskmoney',
         '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',
+        '@node_modules/chart.js/dist':'@libs/chart.js/dist/'
     },
 };
