@@ -228,3 +228,24 @@ th #btn-toggle-filter {
 .dt-select-assignees {
     min-width: 145px;
 }
+
+.custom-filter-input{
+    font-size :0.8rem!important;
+}
+.tr-toggle-filter {
+    display: none;
+    background: white;
+}
+
+
+div.dt-buttons div.dropdown-menu {
+    max-height: 35rem !important;
+    overflow-y: auto !important;
+}
+.cln-visible{
+    margin-left:0.7rem;
+}
+
+.dt-buttons {
+    width: max-content;
+}
