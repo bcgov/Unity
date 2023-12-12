@@ -260,7 +260,7 @@
                 },
                 colReorder: true,
                 orderCellsTop: true,
-                fixedHeader: true,
+                //fixedHeader: true,
                 stateSave: true,
                 dom: 'Bfrtip',
                 buttons: [
@@ -276,7 +276,7 @@
                      {
                         extend: 'colvis',
                         text: 'Manage Columns',
-                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
                          className: 'btn btn-light custom-table-btn cln-visible',
 
                        
@@ -540,7 +540,10 @@
                         data: 'forestry',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Forestry or Non-Forestry}';
+                            if (data != null)
+                                return data == 'FORESTRY' ? 'Forestry' : 'Non Forestry';
+                            else
+                                return '{Forestry or Non-Forestry}';
                         },
                     },
                     { //24 -- mapped
@@ -549,7 +552,21 @@
                         data: 'forestryFocus',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Forestry Focus}';
+
+                            if (data) {
+                                if (data == 'PRIMARY') {
+                                    return 'Primary processing'
+                                }
+                                else if (data == 'SECONDARY') {
+                                    return 'Secondary/Value-Added/Not Mass Timber'
+                                } else if (data == 'MASS_TIMBER') {
+                                    return 'Mass Timber';
+                                }
+                            }
+                            else {
+                                return '{Forestry Focus}';
+                            }
+                         
                         },
                     },
                     { //25 -- mapped
@@ -558,7 +575,14 @@
                         data: 'acquisition',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Acquisition}';
+
+                            if (data) {
+                                return titleCase(data);
+                            }
+                            else {
+                                return  '{Acquisition}';
+                            }
+                          
                         },
                     },
                     { //26 -- mapped
@@ -585,7 +609,12 @@
                         data: 'likelihoodOfFunding',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Likelihood of Funding}';
+                            if (data != null) {
+                                return titleCase(data);
+                            }
+                            else {
+                                return '{Likelihood of Funding}';
+                            }
                         },
                     },
                     { //29 -- mapped
@@ -594,16 +623,26 @@
                         data: 'recommendation',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Recommendation}';
+                            if (data) {
+                                if (data == 'APPROVE') {
+                                    return 'Recommended for Approval'
+                                }
+                                else if (data == 'DENY') {
+                                    return 'Recommended for Denial'
+                                }
+                            }
+                            else {
+                                return '{Recommendation}';
+                            }
                         },
                     },
                     { //30
-                        title: 'Batch#',
+                        title: 'Tags',
                         name: 'batchNumber',
                         data: 'batchNumber',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Batch#}';
+                            return data ?? '{Tags}';
                         },
                     },
                     { //31 -- mapped
@@ -621,7 +660,12 @@
                         data: 'assessmentResultStatus',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{Assessment Result}';
+                            if (data != null) {
+                                return titleCase(data);
+                            }
+                            else {
+                                return '{Assessment Result}';
+                            }
                         },
                      },
                     { //33 -- mapped
@@ -747,5 +791,12 @@
         });
 
         return name;
+    }
+    function titleCase(str) {
+        str = str.toLowerCase().split(' ');
+        for (let i = 0; i < str.length; i++) {
+            str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
+        }
+        return str.join(' ');
     }
 });

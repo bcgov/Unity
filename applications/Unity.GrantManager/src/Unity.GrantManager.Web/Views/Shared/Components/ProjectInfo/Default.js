@@ -74,11 +74,11 @@
         let childDropdown = $('#subSectorDropdown');
         childDropdown.empty();
 
-        let subSectors = sectorList.find(sector => (sector.sectorCode === selectedValue))?.subSectors;
+        let subSectors = sectorList.find(sector => (sector.sectorName === selectedValue))?.subSectors;
 
         $.each(subSectors, function (index, item) {
             childDropdown.append($('<option>', {
-                value: item.subSectorCode,
+                value: item.subSectorName,
                 text: item.subSectorName
             }));
         });

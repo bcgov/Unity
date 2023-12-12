@@ -58,17 +58,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             foreach (SectorDto sector in sectors)
             {
-                model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorCode, Text = sector.SectorName });
+                model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorName, Text = sector.SectorName });
             }
 
             foreach (EconomicRegionDto economicRegion in economicRegions)
             {
-                model.EconomicRegionList.Add(new SelectListItem { Value = economicRegion.EconomicRegionCode, Text = economicRegion.EconomicRegionName });
+                model.EconomicRegionList.Add(new SelectListItem { Value = economicRegion.EconomicRegionName, Text = economicRegion.EconomicRegionName });
             }
 
             foreach (ElectoralDistrictDto electoralDistrict in electoralDistricts)
             {
-                model.ElectoralDistrictList.Add(new SelectListItem { Value = electoralDistrict.ElectoralDistrictCode, Text = electoralDistrict.ElectoralDistrictName });
+                model.ElectoralDistrictList.Add(new SelectListItem { Value = electoralDistrict.ElectoralDistrictName, Text = electoralDistrict.ElectoralDistrictName });
             }
 
             if (sectors.Count > 0)
@@ -80,13 +80,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 }
                 else
                 {
-                    SectorDto? applicationSector = sectors.Find(x => x.SectorCode == application.Sector);                                                                
+                    SectorDto? applicationSector = sectors.Find(x => x.SectorName == application.Sector);                                                                
                     SubSectors = applicationSector?.SubSectors ?? SubSectors;
                 }
 
                 foreach (SubSectorDto subSector in SubSectors)
                 {
-                    model.ApplicationSubSectorsList.Add(new SelectListItem { Value = subSector.SubSectorCode, Text = subSector.SubSectorName });
+                    model.ApplicationSubSectorsList.Add(new SelectListItem { Value = subSector.SubSectorName, Text = subSector.SubSectorName });
                 }
             }
 
