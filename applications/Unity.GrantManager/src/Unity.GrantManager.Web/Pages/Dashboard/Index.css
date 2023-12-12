@@ -1,7 +1,14 @@
 ﻿.application-dashboard {
+    overflow-y: scroll;
     height: calc(100vh - 190px);
+    display:flex;
 }
 
-.chartBox {
-    width: 80%;
+.economicRegionChartBox {
+    width: 50%;
+}
+
+.sectorChartBox {
+    padding-left: 50px;
+    flex-grow:1;
 }

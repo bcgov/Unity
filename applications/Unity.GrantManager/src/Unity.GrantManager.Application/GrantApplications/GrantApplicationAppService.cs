@@ -410,6 +410,16 @@ public class GrantApplicationAppService :
         return queryResult;
     }
 
+    public async Task<List<GetSectorDto>> GetSectorCountAsync()
+    {
+        var query = await _applicationRepository.GetQueryableAsync();
+
+        var result = query?.GroupBy(app => app.Sector).Select(group => new GetSectorDto { Sector = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.Sector);
+        if (result == null) return new List<GetSectorDto>();
+        var queryResult = await AsyncExecuter.ToListAsync(result);
+        return queryResult;
+    }
+
     public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
     {
         try
