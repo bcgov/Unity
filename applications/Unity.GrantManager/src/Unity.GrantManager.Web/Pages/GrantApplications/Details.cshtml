@@ -229,7 +229,18 @@
 
                 @*-------- Links Tab Section ---------*@
                 <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab" style="text-align:center">
-                    <img src="/images/under-construction.png" alt="under-construction">
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Chefs File Attachments</h6>
+                    @foreach (var applicationChefsFileAttachmentList in Model.ApplicationChefsFileAttachmentList)
+                    {
+                        <div class="px-3 pb-2">
+                            <abp-button text="@applicationChefsFileAttachmentList.Name"
+                                        icon-type="Other"
+                                        onclick="getFileAttachment(this)"
+                                        file-id="@applicationChefsFileAttachmentList.ChefsFileId"
+                                        icon="fl fl-download"
+                                        button-type="Light" />
+                        </div>
+                    }
                 </div>
                 @*------- Links Tab Section END ---------*@
 

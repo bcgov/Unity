@@ -24,6 +24,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<Application> Applications { get; set; }
         public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
         public DbSet<ApplicationAssignment> ApplicationUserAssignments { get; set; }
+        public DbSet<ApplicationChefsFileAttachment> ApplicationChefsFileAttachments { get; set; }
         public DbSet<ApplicationComment> ApplicationComments { get; set; }
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<AssessmentComment> AssessmentComments { get; set; }
@@ -161,6 +162,14 @@ namespace Unity.GrantManager.EntityFrameworkCore
             modelBuilder.Entity<ApplicationAttachment>(b =>
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationAttachments", GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+            });
+
+            modelBuilder.Entity<ApplicationChefsFileAttachment>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationChefsFileAttachments", GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();

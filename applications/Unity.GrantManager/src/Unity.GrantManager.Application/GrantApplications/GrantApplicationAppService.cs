@@ -39,6 +39,7 @@ public class GrantApplicationAppService :
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationManager _applicationManager;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
+    private readonly IApplicationChefsFileAttachmentRepository _applicationChefsFileAttachmentRepository;
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
     private readonly IApplicationAssignmentRepository _applicationAssignmentRepository;
     private readonly IApplicantRepository _applicantRepository;
@@ -62,6 +63,7 @@ public class GrantApplicationAppService :
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
         IApplicationTagsRepository  applicationTagsRepository
+        IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository
         )
          : base(repository)
     {
@@ -77,6 +79,7 @@ public class GrantApplicationAppService :
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
+        _applicationChefsFileAttachmentRepository = applicationChefsFileAttachmentRepository;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -190,6 +193,11 @@ public class GrantApplicationAppService :
             return await Task.FromResult<GetSummaryDto>(new GetSummaryDto());
         }
 
+    }
+
+    public async Task <List<ApplicationChefsFileAttachment>> GetApplicationChefsFileAttachments(Guid applicationId)
+    {
+        return await _applicationChefsFileAttachmentRepository.GetListAsync(applicationId);
     }
 
     public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)

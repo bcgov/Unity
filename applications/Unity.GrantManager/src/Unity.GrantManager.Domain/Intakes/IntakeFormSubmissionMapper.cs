@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Text.Json;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Services;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Unity.GrantManager.Intakes
@@ -17,8 +16,11 @@ namespace Unity.GrantManager.Intakes
     public class IntakeFormSubmissionMapper : DomainService, IIntakeFormSubmissionMapper
     {
         private readonly Dictionary<string, string> components = new Dictionary<string, string>();
+        private IApplicationChefsFileAttachmentRepository _iApplicationChefsFileAttachmentRepository;
 
-        public IntakeFormSubmissionMapper() { }
+        public IntakeFormSubmissionMapper(IApplicationChefsFileAttachmentRepository iApplicationChefsFileAttachmentRepository) {
+            _iApplicationChefsFileAttachmentRepository = iApplicationChefsFileAttachmentRepository;
+        }
 
         private readonly List<string> AllowableContainerTypes = new List<string> (new string[] 
             {
@@ -172,6 +174,34 @@ namespace Unity.GrantManager.Intakes
             {
                 return ApplyDefaultConfigurationMapping(data, form);
             }
+        }
+
+        public async void SaveChefsFiles(dynamic formSubmission, Guid applicationId)
+        {
+            try
+            {
+                var submission = formSubmission.submission;
+                var data = submission.submission.data;
+
+                dynamic? files = data.simplefile;
+                foreach (dynamic? file in files.Children())
+                {
+                    ApplicationChefsFileAttachment applicationChefsFileAttachment = new()
+                    {
+                        ApplicationId = applicationId,
+                        ChefsFileId = file.data.id,
+                        ChefsSumbissionId = submission.id,
+                        Name = file.originalName,
+                    };
+
+                    await _iApplicationChefsFileAttachmentRepository.InsertAsync(applicationChefsFileAttachment);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex);
+            }
+
         }
 
         private static IntakeMapping ApplyDefaultConfigurationMapping(dynamic data, dynamic form)
