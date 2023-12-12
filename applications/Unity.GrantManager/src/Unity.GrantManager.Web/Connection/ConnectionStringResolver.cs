@@ -32,7 +32,7 @@ namespace Unity.GrantManager.Web.Connection
 
         public override async Task<string> ResolveAsync(string? connectionStringName = null)
         {
-            if (connectionStringName == "Tenant"
+            if (connectionStringName == GrantManagerConsts.TenantConnectionStringName
                 && _currentUser.TenantId != null)
             {
                 _currentTenant.Change(_currentUser.TenantId);
