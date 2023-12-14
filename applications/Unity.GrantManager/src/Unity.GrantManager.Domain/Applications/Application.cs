@@ -78,4 +78,6 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string? ElectoralDistrict { get; set; }
 
+    public string? CensusSubdivision { get; set; }
+    public string? RegionalDistrict { get; set; }
 }

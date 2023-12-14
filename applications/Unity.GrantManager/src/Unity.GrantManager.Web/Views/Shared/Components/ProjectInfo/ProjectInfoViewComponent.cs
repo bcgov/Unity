@@ -24,18 +24,24 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         private readonly SectorAppService _applicationSectorAppService;
         private readonly EconomicRegionAppService _applicationEconomicRegionAppService;
         private readonly ElectoralDistrictAppService _applicationElectoralDistrictAppService;
+        private readonly RegionalDistrictAppService _applicationRegionalDistrictAppService;
+        private readonly CensusSubdivisionAppService _applicationCensusSubdivisionAppService;
 
         public ProjectInfoViewComponent(
             GrantApplicationAppService grantApplicationAppService,
             SectorAppService applicationSectorAppService,
             EconomicRegionAppService applicationEconomicRegionAppService,
-            ElectoralDistrictAppService applicationElectoralDistrictAppService
+            ElectoralDistrictAppService applicationElectoralDistrictAppService,
+            RegionalDistrictAppService applicationRegionalDistrictAppService,
+            CensusSubdivisionAppService applicationCensusSubdivisionAppService
             )
         {
             _grantApplicationAppService = grantApplicationAppService;
             _applicationSectorAppService = applicationSectorAppService;
             _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
             _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
+            _applicationRegionalDistrictAppService = applicationRegionalDistrictAppService;
+            _applicationCensusSubdivisionAppService = applicationCensusSubdivisionAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -50,10 +56,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             List<ElectoralDistrictDto> electoralDistricts = (await _applicationElectoralDistrictAppService.GetListAsync()).ToList();
 
+            List<RegionalDistrictDto> regionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
+
+            List<CensusSubdivisionDto> censusSubdivisions = (await _applicationCensusSubdivisionAppService.GetListAsync()).ToList();
+
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
-                ApplicationSectors = sectors
+                ApplicationSectors = sectors,
+                RegionalDistricts = regionalDistricts,
+                CensusSubdivisions = censusSubdivisions,
             };
 
             foreach (SectorDto sector in sectors)
@@ -69,6 +81,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             foreach (ElectoralDistrictDto electoralDistrict in electoralDistricts)
             {
                 model.ElectoralDistrictList.Add(new SelectListItem { Value = electoralDistrict.ElectoralDistrictName, Text = $"{electoralDistrict.ElectoralDistrictCode} - {electoralDistrict.ElectoralDistrictName}"   });
+            }
+            foreach (RegionalDistrictDto regionalDistrict  in regionalDistricts)
+            {
+                model.RegionalDistrictList.Add(new SelectListItem { Value = regionalDistrict.RegionalDistrictName, Text = $"{regionalDistrict.RegionalDistrictCode} - {regionalDistrict.RegionalDistrictName}" });
+            }
+            foreach (CensusSubdivisionDto censusSubdivision  in censusSubdivisions)
+            {
+                model.CensusSubdivisionList.Add(new SelectListItem { Value = censusSubdivision.CensusSubdivisionName, Text = $"{censusSubdivision.CensusSubdivisionName} - {censusSubdivision.Type}" });
             }
 
             if (sectors.Count > 0)
@@ -125,7 +145,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 Sector = application.Sector,
                 SubSector = application.SubSector,
                 EconomicRegion = application.EconomicRegion,
-                ElectoralDistrict = application.ElectoralDistrict
+                ElectoralDistrict = application.ElectoralDistrict,
+                CensusSubdivision = application.CensusSubdivision,
+                RegionalDistrict = application.RegionalDistrict,
             };
 
             return View(model);
