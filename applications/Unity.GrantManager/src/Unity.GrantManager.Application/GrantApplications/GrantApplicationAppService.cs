@@ -420,6 +420,17 @@ public class GrantApplicationAppService :
         return queryResult;
     }
 
+    public async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync()
+    {
+        var query = from application in await _applicationRepository.GetQueryableAsync()
+                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                    select new {application,appStatus};
+        var result = query?.GroupBy(app => app.appStatus.InternalStatus).Select(group => new GetApplicationStatusDto { ApplicationStatus = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.ApplicationStatus);
+        if (result == null) return new List<GetApplicationStatusDto>();
+        var queryResult = await AsyncExecuter.ToListAsync(result);
+        return queryResult;
+    }
+
     public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
     {
         try
