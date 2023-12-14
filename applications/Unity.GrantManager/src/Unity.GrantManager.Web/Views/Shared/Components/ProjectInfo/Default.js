@@ -82,6 +82,25 @@
                 text: ` ${item.subSectorCode} - ${item.subSectorName}`
             }));
         });
+      });
+    $('#regionalDistricts').change(function () {
+        let childDropdown = $('#censusSubdivisions');
+        childDropdown.empty();
+        const selectedValue = $(this).val();
+        console.log(selectedValue)
+        let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
+        let allCensusSubdivisions = JSON.parse($('#allCensusSubdivisionList').text());
+
+       let  selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);
+        let censusSubdivisions = allCensusSubdivisions.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode)
+        $.each(censusSubdivisions, function (index, item) {
+            childDropdown.append($('<option>', {
+                value: item.censusSubdivisionName,
+                text: `${item.censusSubdivisionName} - ${item.type}`
+            }));
+        });
+
+
     });
 });
 

@@ -128,8 +128,10 @@ namespace Unity.GrantManager.Intakes
                     Community = intakeMap.Community ?? "{Community}",
                     IndigenousOrgInd =  intakeMap.IndigenousOrgInd ?? "N",
                     ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
-                });
+                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
+                    CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
+                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
+    });
 
                 await CreateApplicantAddressAsync(intakeMap, applicant);
             }

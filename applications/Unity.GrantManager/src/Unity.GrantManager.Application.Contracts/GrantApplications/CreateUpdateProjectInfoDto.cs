@@ -21,5 +21,7 @@ namespace Unity.GrantManager.GrantApplications
         public string? SubSector { get; set; }
         public string? ElectoralDistrict { get; set; }
         public string? EconomicRegion { get; set; }
+        public string? CensusSubdivision { get; set; }
+        public string? RegionalDistrict { get; set; }
     }
 }

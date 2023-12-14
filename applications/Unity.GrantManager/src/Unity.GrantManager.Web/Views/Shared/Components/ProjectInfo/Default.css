@@ -1,7 +1,7 @@
 ﻿
-.project-info-container {
+/*.project-info-container {
     border-bottom: 0.25rem solid var(--bc-colors-white-background);
-}
+}*/
 
     .project-infos-container .save-project-btn {
         display: flex;
@@ -23,3 +23,11 @@
         background-color: transparent;
         border: var(--bs-border-width) solid var(--bs-border-color);
     }
+.project-location{
+    padding-left : 0px;
+    margin-top : 1rem;
+}
+
+.project-info-form {
+    border-bottom: 0.25rem solid var(--bc-colors-white-background);
+}
