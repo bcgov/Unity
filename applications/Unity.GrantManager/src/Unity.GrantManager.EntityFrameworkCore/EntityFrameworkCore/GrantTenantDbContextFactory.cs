@@ -20,7 +20,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
             var configuration = BuildConfiguration();
 
             var builder = new DbContextOptionsBuilder<GrantTenantDbContext>()
-                .UseNpgsql(configuration.GetConnectionString("Tenant"));
+                .UseNpgsql(configuration.GetConnectionString(GrantManagerConsts.TenantConnectionStringName));
 
             return new GrantTenantDbContext(builder.Options);
         }
