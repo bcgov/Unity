@@ -40,5 +40,8 @@
         public string? SubmissionId { get; set; }
         public string? SubSector { get; set; }
         public string? TotalProjectBudget { get; set; }
+        public string? CensusSubdivision { get; set; }
+        public string? RegionalDistrict { get; set; }
+
     }
 }

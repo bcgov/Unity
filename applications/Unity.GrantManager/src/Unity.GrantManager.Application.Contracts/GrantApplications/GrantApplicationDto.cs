@@ -50,4 +50,6 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? Forestry { get; set; }
     public string? ForestryFocus { get; set; }
     public string? ElectoralDistrict { get; set; }
+    public string? CensusSubdivision { get; set; }
+    public string? RegionalDistrict { get; set; }
 }

@@ -157,8 +157,10 @@ public class GrantApplicationAppService :
                         AssessmentResult = application.AssessmentResultStatus != null && application.AssessmentResultStatus != "" ? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus] : "",
                         RecommendedAmount = application.RecommendedAmount,
                         ApprovedAmount = application.ApprovedAmount,
-                        Batch = "" // to-do: ask BA for the implementation of Batch field
-                    };
+                        Batch = "", // to-do: ask BA for the implementation of Batch field,
+                        CensusSubdivision = application.CensusSubdivision,
+                        RegionalDistrict = application.RegionalDistrict,
+    };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
         if (queryResult != null)
@@ -249,8 +251,10 @@ public class GrantApplicationAppService :
             application.SubSector = input.SubSector;
             application.EconomicRegion = input.EconomicRegion;
             application.ElectoralDistrict = input.ElectoralDistrict;
+            application.CensusSubdivision = input.CensusSubdivision;
+            application.RegionalDistrict = input.RegionalDistrict;
 
-            await _applicationRepository.UpdateAsync(application, autoSave: true);
+    await _applicationRepository.UpdateAsync(application, autoSave: true);
 
             return ObjectMapper.Map<Application, GrantApplicationDto>(application);
         }
