@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - '.github/**'
       - '.gitignore'
+      - 'applications/Unity.Metabase/**'
       - 'database/**'
       - 'documentation/**'
       - 'openshift/**'

@@ -102,6 +102,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("ApproxNumberOfEmployees")
                         .HasColumnType("text");
 
+                    b.Property<string>("CensusSubdivision")
+                        .HasColumnType("text");
+
                     b.Property<string>("Community")
                         .HasColumnType("text");
 
@@ -155,6 +158,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("OrganizationType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RegionalDistrict")
                         .HasColumnType("text");
 
                     b.Property<string>("Sector")
@@ -288,6 +294,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("AssessmentStartDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("CensusSubdivision")
+                        .HasColumnType("text");
+
                     b.Property<string>("City")
                         .HasColumnType("text");
 
@@ -386,6 +395,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("ReferenceNo")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RegionalDistrict")
                         .HasColumnType("text");
 
                     b.Property<decimal>("RequestedAmount")

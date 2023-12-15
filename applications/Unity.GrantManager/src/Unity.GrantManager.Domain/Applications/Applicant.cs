@@ -19,4 +19,6 @@ public class Applicant : AuditedAggregateRoot<Guid>
     public string? Community { get; set; }
     public string? IndigenousOrgInd { get; set; }
     public string? ElectoralDistrict { get; set; }
+    public string? CensusSubdivision { get; set; }
+    public string? RegionalDistrict { get; set; }
 }
