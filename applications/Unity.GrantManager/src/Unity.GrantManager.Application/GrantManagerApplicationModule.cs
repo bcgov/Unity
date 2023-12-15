@@ -9,7 +9,6 @@ using System.Text.Json.Serialization;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
-using Volo.Abp.Account;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.FeatureManagement;
@@ -23,7 +22,6 @@ namespace Unity.GrantManager;
 
 [DependsOn(
     typeof(GrantManagerDomainModule),
-    typeof(AbpAccountApplicationModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
     typeof(AbpPermissionManagementApplicationModule),

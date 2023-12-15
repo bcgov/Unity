@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
+using Unity.Identity.Web.Navigation;
 using Volo.Abp.Identity;
-using Volo.Abp.Identity.Web.Navigation;
 using Volo.Abp.UI.Navigation;
 
 namespace Unity.GrantManager.Web.Menus;
@@ -42,7 +42,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 order: 1
             )
         );
-
 
         context.Menu.AddItem(
                new ApplicationMenuItem(

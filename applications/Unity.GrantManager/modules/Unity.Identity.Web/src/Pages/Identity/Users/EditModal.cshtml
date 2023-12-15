@@ -1,0 +1,138 @@
+﻿@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Volo.Abp.Identity.Localization
+@using Unity.Identity.Web.Pages.Identity.Users
+@using Volo.Abp.Localization
+@using Volo.Abp.ObjectExtending
+@using Volo.Abp.Data
+@using Volo.Abp.Identity
+@model EditModalModel
+@inject IHtmlLocalizer<IdentityResource> L
+@inject IStringLocalizerFactory StringLocalizerFactory
+@{
+    Layout = null;
+}
+<form method="post" asp-page="/Identity/Users/EditModal">
+    <abp-modal>
+        <abp-modal-header title="@L["Edit"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-tabs name="create-user-modal-tabs">
+                <abp-tab title="@L["UserInformations"].Value">
+                    <div class="mt-3" >
+                        <input asp-for="UserInfo.Id" />
+                        <input asp-for="UserInfo.ConcurrencyStamp" />
+                        <abp-input asp-for="UserInfo.UserName" />
+                        <abp-input asp-for="UserInfo.Name" />
+                        <abp-input asp-for="UserInfo.Surname" />
+                        <div class="mb-3">
+                            <label asp-for="UserInfo.Password" class="form-label">@L["Password"]</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" autocomplete="new-password" maxlength="@IdentityUserConsts.MaxPasswordLength" asp-for="UserInfo.Password"/>
+                                <button class="btn btn-secondary" type="button" id="PasswordVisibilityButton">
+                                    <i class="fa fa-eye-slash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="UserInfo.Password"></span>
+                        </div>
+                        <abp-input asp-for="UserInfo.Email" />
+                        <abp-input asp-for="UserInfo.PhoneNumber" />
+                        <abp-input asp-for="UserInfo.IsActive" />
+                        @if (!Model.IsEditCurrentUser)
+                        {
+                            <abp-input asp-for="UserInfo.LockoutEnabled" />
+                        }
+                        @foreach (var propertyInfo in ObjectExtensionManager.Instance.GetProperties<EditModalModel.UserInfoViewModel>())
+                        {
+                            if (!propertyInfo.Name.EndsWith("_Text"))
+                            {
+                                if (propertyInfo.Type.IsEnum || !propertyInfo.Lookup.Url.IsNullOrEmpty())
+                                {
+                                    if (propertyInfo.Type.IsEnum)
+                                    {
+                                        Model.UserInfo.ExtraProperties.ToEnum(propertyInfo.Name, propertyInfo.Type);
+                                    }
+                                    <abp-select asp-for="UserInfo.ExtraProperties[propertyInfo.Name]"
+                                                label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
+                                                autocomplete-api-url="@propertyInfo.Lookup.Url"
+                                                autocomplete-selected-item-name="@Model.UserInfo.GetProperty(propertyInfo.Name+"_Text")"
+                                                autocomplete-selected-item-value="@Model.UserInfo.GetProperty(propertyInfo.Name)"
+                                                autocomplete-filter-param-name="@propertyInfo.Lookup.FilterParamName"
+                                                autocomplete-items-property-name="@propertyInfo.Lookup.ResultListPropertyName"
+                                                autocomplete-display-property-name="@propertyInfo.Lookup.DisplayPropertyName"
+                                                autocomplete-value-property-name="@propertyInfo.Lookup.ValuePropertyName"></abp-select>
+                                }
+                                else
+                                {
+                                    <abp-input type="@propertyInfo.GetInputType()"
+                                            asp-for="UserInfo.ExtraProperties[propertyInfo.Name]"
+                                            label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
+                                            asp-format="@propertyInfo.GetInputFormatOrNull()"
+                                            value="@propertyInfo.GetInputValueOrNull(Model.UserInfo.GetProperty(propertyInfo.Name))" />
+                                }
+                            }
+                        }
+                    </div>
+                </abp-tab>
+                <abp-tab title="@L["Roles"].Value">
+                    <div class="mt-3" >
+                        @for (var i = 0; i < Model.Roles.Length; i++)
+                        {
+                            var role = Model.Roles[i];
+                            <abp-input abp-id-name="@Model.Roles[i].IsAssigned" asp-for="@role.IsAssigned" label="@role.Name" />
+                            <input abp-id-name="@Model.Roles[i].Name" asp-for="@role.Name" />
+                        }
+                    </div>
+                </abp-tab>
+                <abp-tab title="@L["Details"].Value">
+                    <div class="mt-3">
+                        <div class="mb-3">
+                            <span class="fw-bold">@L["CreatedBy"] :</span> @ConvertUserFriendlyFormat(Model.Detail.CreatedBy)
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">@L["CreationTime"] :</span> @ConvertUserFriendlyFormat(Model.Detail.CreationTime)
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">@L["ModifiedBy"] :</span> @ConvertUserFriendlyFormat(Model.Detail.ModifiedBy)
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">@L["ModificationTime"] :</span> @ConvertUserFriendlyFormat(Model.Detail.LastModificationTime)
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">@L["PasswordUpdateTime"] :</span> @ConvertUserFriendlyFormat(Model.Detail.LastPasswordChangeTime)
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">@L["LockoutEndTime"] :</span> @ConvertUserFriendlyFormat(Model.Detail.LockoutEnd)
+                        </div>
+                        <div class="mb-3">
+                            <span class="fw-bold">@L["FailedAccessCount"] :</span> @Model.Detail.AccessFailedCount
+                        </div>
+                    </div>
+                </abp-tab>
+            </abp-tabs>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+
+@functions
+{
+    const string DateTimeFormat = "MMMM dd, yyyy — HH:mm";
+    const string DefaultEmptyValue = "-";
+    
+    static string ConvertUserFriendlyFormat(DateTime? dateTime)
+    {
+        return dateTime == null ? DefaultEmptyValue : dateTime.Value.ToUniversalTime().ToString(DateTimeFormat);
+    }
+    
+    static string ConvertUserFriendlyFormat(DateTimeOffset? dateTime)
+    {
+        return dateTime == null ? DefaultEmptyValue : dateTime.Value.UtcDateTime.ToString(DateTimeFormat);
+    }
+    
+    static string ConvertUserFriendlyFormat(string value)
+    {
+        return value.IsNullOrWhiteSpace() ? DefaultEmptyValue : value;
+    }
+}

@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  
+  
+
+  <PropertyGroup><LangVersion>latest</LangVersion>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>Unity.Identity.Web</AssemblyName>
+    <PackageId>Unity.Identity.Web</PackageId>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+    <OutputType>Library</OutputType>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Pages\**\*.js" />
+    <EmbeddedResource Include="Pages\**\*.css" />
+    <EmbeddedResource Include="Components\**\*.js" />
+    <EmbeddedResource Include="Components\**\*.css" />
+    <EmbeddedResource Include="wwwroot\**\*.js" />
+    <EmbeddedResource Include="wwwroot\**\*.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Pages\**\*.js" />
+    <Content Remove="Pages\**\*.css" />
+    <Content Remove="Components\**\*.js" />
+    <Content Remove="Components\**\*.css" />
+    <Content Remove="wwwroot\**\*.js" />
+    <Content Remove="wwwroot\**\*.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.4\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.analyze.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.4\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.permissionmanagement.web\7.4.4\contentFiles\any\net7.0\Volo.Abp.PermissionManagement.Web.abppkg.analyze.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.permissionmanagement.web\7.4.4\contentFiles\any\net7.0\Volo.Abp.PermissionManagement.Web.abppkg.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.PermissionManagement.Web" Version="7.4.4" />
+    <PackageReference Include="Volo.Abp.AutoMapper" Version="7.4.4" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared" Version="7.4.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="$(MicrosoftPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -18,13 +18,14 @@ using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Unity.GrantManager.EntityFrameworkCore;
+using Unity.GrantManager.Integrations.Sso;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
+using Unity.Identity.Web;
 using Volo.Abp;
-using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
@@ -39,7 +40,6 @@ using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BlobStoring;
-using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
@@ -56,15 +56,14 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerHttpApiModule),
     typeof(GrantManagerApplicationModule),
     typeof(GrantManagerEntityFrameworkCoreModule),
-    typeof(AbpAutofacModule),
-    typeof(AbpIdentityWebModule),
+    typeof(AbpAutofacModule),    
     typeof(AbpSettingManagementWebModule),
     typeof(AbpAspNetCoreMvcUiBasicThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
-    typeof(AbpAccountWebOpenIddictModule),
-    typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule)
+    typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
+    typeof(UnitydentityWebModule)
 )]
 [DependsOn(typeof(AbpBlobStoringModule))]
 public class GrantManagerWebModule : AbpModule
@@ -81,16 +80,6 @@ public class GrantManagerWebModule : AbpModule
                 typeof(GrantManagerApplicationContractsModule).Assembly,
                 typeof(GrantManagerWebModule).Assembly
             );
-        });
-
-        PreConfigure<OpenIddictBuilder>(builder =>
-        {
-            builder.AddValidation(options =>
-            {
-                options.AddAudiences("GrantManager");
-                options.UseLocalServer();
-                options.UseAspNetCore();
-            });
         });
     }
 
@@ -154,6 +143,10 @@ public class GrantManagerWebModule : AbpModule
         {
             x.ApplicationName = "GrantManager";
         });
+
+        context.Services.Configure<SsoApiOptions>(
+            configuration.GetSection(
+                key: "SsoApi"));
     }
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
