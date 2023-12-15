@@ -246,11 +246,13 @@
                     headerOffset: 0
                 },
                 serverSide: false,
-                paging: true,
+                paging: false,
                 order: [[4, 'desc']],
                 searching: true,
                 pageLength: maxRowsPerPage,
                 scrollX: true,
+                scrollY: '31.25rem',
+                info: false,
                 ajax: abp.libs.datatables.createAjax(
                     unity.grantManager.grantApplications.grantApplication.getList
                 ),
@@ -282,27 +284,6 @@
                        
                     }
                 ],
-                drawCallback: function () {
-                    let $api = this.api();
-                    let pages = $api.page.info().pages;
-                    let rows = $api.data().length;
-
-                    // Tailor the settings based on the row count
-                    if (rows <= maxRowsPerPage) {
-                        $('.dataTables_info').css('display', 'none');
-                        $('.dataTables_paginate').css('display', 'none');
-                        $('.dataTables_length').css('display', 'none');
-                    } else if (pages === 1) {
-                        // With this current length setting, not more than 1 page, hide pagination
-                        $('.dataTables_info').css('display', 'none');
-                        $('.dataTables_paginate').css('display', 'none');
-                    } else {
-                        // SHow everything
-                        $('.dataTables_info').css('display', 'block');
-                        $('.dataTables_paginate').css('display', 'block');
-                    }
-                    setTableHeighDynamic();
-                },
                 initComplete: function () {
                     updateFilter();
                 },
