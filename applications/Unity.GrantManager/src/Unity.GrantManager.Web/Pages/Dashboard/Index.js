@@ -1,154 +1,40 @@
 ﻿$(function () {
+
     unity.grantManager.grantApplications.grantApplication.getEconomicRegionCount().then(economicRegion => {
-
-        // setup 
-        const data = {
-            labels: economicRegion.map(obj => obj.economicRegion),
-            datasets: [{
-                label: 'Submission Breakdown By Economic Region',
-                data: economicRegion.map(obj => obj.count),
-                hoverOffset: 4
-            }]
-        };
-
-        const sum = economicRegion.map(obj => obj.count).reduce((partialSum, a) => partialSum + a, 0);
-
-        const centerText = {
-            id: 'centerText',
-            beforeDatasetsDraw(chart, args, pluginOptions) {
-                const { ctx, data } = chart;
-                const text = 'Total Submissions: ';
-                ctx.save();
-                const x = chart.getDatasetMeta(0).data[0].x;
-                const y = chart.getDatasetMeta(0).data[0].y;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '20px sans-serif';
-                ctx.fillText(text, x, y - 10);
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '20px sans-serif';
-                ctx.fillText(sum, x, y + 15);
-            }
-        }
-
-        // config 
-        const config = {
-            type: 'doughnut',
-            data: data,
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'SUBMISSION BREAKDOWN BY ECONOMIC REGION'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                let currentValue = context.raw;
-                                let total = context.chart._metasets[context.datasetIndex].total;
-                                let percentage = parseFloat((currentValue / total * 100).toFixed(1));
-                                return "Number of Submissions : " + currentValue + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                }
-            },
-            plugins: [centerText]
-        };
-
-        // render init block
-        const myChart = new Chart(
-            document.getElementById('economicRegionChart'),
-            config
-        );
+        initializeChart(economicRegion.map(obj => obj.economicRegion), economicRegion.map(obj => obj.count),
+            'Submission Breakdown By Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
+            'Number of Submissions', 'economicRegionChart');
     });
 
     unity.grantManager.grantApplications.grantApplication.getSectorCount().then(sector => {
-
-        // setup 
-        const data = {
-            labels: sector.map(obj => obj.sector),
-            datasets: [{
-                label: 'Submission Breakdown By Sector',
-                data: sector.map(obj => obj.count),
-                hoverOffset: 4
-            }]
-        };
-
-        const sum = sector.map(obj => obj.count).reduce((partialSum, a) => partialSum + a, 0);
-
-        const centerText = {
-            id: 'centerText',
-            beforeDatasetsDraw(chart, args, pluginOptions) {
-                const { ctx, data } = chart;
-                const text = 'Total Submissions: ';
-                ctx.save();
-                const x = chart.getDatasetMeta(0).data[0].x;
-                const y = chart.getDatasetMeta(0).data[0].y;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '20px sans-serif';
-                ctx.fillText(text, x, y - 10);
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '20px sans-serif';
-                ctx.fillText(sum, x, y+15);
-            }
-        }
-
-        // config 
-        const config = {
-            type: 'doughnut',
-            data: data,
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'SUBMISSION BREAKDOWN BY SECTOR'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                let currentValue = context.raw;
-                                let total = context.chart._metasets[context.datasetIndex].total;
-                                let percentage = parseFloat((currentValue / total * 100).toFixed(1));
-                                return "Number of Submissions : " + currentValue + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                }
-            },
-            plugins: [centerText]
-        };
-
-        // render init block
-        const myChart = new Chart(
-            document.getElementById('sectorChart'),
-            config
-        );
+        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submission Breakdown By Sector',
+            'Total Submissions', 'SUBMISSION BREAKDOWN BY SECTOR', "Number of Submissions", 'sectorChart');
     });
 
 
     unity.grantManager.grantApplications.grantApplication.getApplicationStatusCount().then(applicationStatus => {
+        initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
+            'Application Status Overview', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
+    });
 
+    function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
         // setup 
         const data = {
-            labels: applicationStatus.map(obj => obj.applicationStatus),
+            labels: labelsArray,
             datasets: [{
-                label: 'Application Status Overview',
-                data: applicationStatus.map(obj => obj.count),
+                label: labelDesc,
+                data: dataArray,
                 hoverOffset: 4
             }]
         };
 
-        const sum = applicationStatus.map(obj => obj.count).reduce((partialSum, a) => partialSum + a, 0);
+        const sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
 
         const centerText = {
             id: 'centerText',
             beforeDatasetsDraw(chart, args, pluginOptions) {
-                const { ctx, data } = chart;
-                const text = 'Total Submissions: ';
+                const { ctx } = chart;
+                const text = centerTextLabel + ': ';
                 ctx.save();
                 const x = chart.getDatasetMeta(0).data[0].x;
                 const y = chart.getDatasetMeta(0).data[0].y;
@@ -171,7 +57,7 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: 'APPLICATION STATUS OVERVIEW'
+                        text: titleText
                     },
                     tooltip: {
                         callbacks: {
@@ -179,7 +65,7 @@
                                 let currentValue = context.raw;
                                 let total = context.chart._metasets[context.datasetIndex].total;
                                 let percentage = parseFloat((currentValue / total * 100).toFixed(1));
-                                return "Count : " + currentValue + ' (' + percentage + '%)';
+                                return mouseOverText + " : " + currentValue + ' (' + percentage + '%)';
                             }
                         }
                     }
@@ -189,9 +75,6 @@
         };
 
         // render init block
-        const myChart = new Chart(
-            document.getElementById('applicationStatusChart'),
-            config
-        );
-    });
+        new Chart(document.getElementById(chartId), config); //NOSONAR
+    }
 });
