@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Dashboard;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
@@ -398,37 +399,6 @@ public class GrantApplicationAppService :
     {
         return ObjectMapper.Map<IReadOnlyList<ApplicationComment>, IReadOnlyList<CommentDto>>((IReadOnlyList<ApplicationComment>)
             await _commentsManager.GetCommentsAsync(id, CommentType.ApplicationComment));
-    }
-
-    public async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync()
-    {
-        var query = await _applicationRepository.GetQueryableAsync();
-
-        var result = query?.GroupBy(app => app.EconomicRegion).Select(group => new GetEconomicRegionDto { EconomicRegion = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.EconomicRegion);
-        if (result == null) return new List<GetEconomicRegionDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
-        return queryResult;
-    }
-
-    public async Task<List<GetSectorDto>> GetSectorCountAsync()
-    {
-        var query = await _applicationRepository.GetQueryableAsync();
-
-        var result = query?.GroupBy(app => app.Sector).Select(group => new GetSectorDto { Sector = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.Sector);
-        if (result == null) return new List<GetSectorDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
-        return queryResult;
-    }
-
-    public async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync()
-    {
-        var query = from application in await _applicationRepository.GetQueryableAsync()
-                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    select new {application,appStatus};
-        var result = query?.GroupBy(app => app.appStatus.InternalStatus).Select(group => new GetApplicationStatusDto { ApplicationStatus = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.ApplicationStatus);
-        if (result == null) return new List<GetApplicationStatusDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
-        return queryResult;
     }
 
     public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)
