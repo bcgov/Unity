@@ -169,6 +169,8 @@
 
 <script defer>
     (function () {
-        $('.unity-currency-input').maskMoney();
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney();
+        }
     })();
 </script>
