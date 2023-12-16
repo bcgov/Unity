@@ -46,7 +46,7 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string? LikelihoodOfFunding { get; set; }
 
-    public string? DueDilligenceStatus { get; set; }
+    public string? DueDiligenceStatus { get; set; }
 
     public string? Recommendation { get; set; }
 
