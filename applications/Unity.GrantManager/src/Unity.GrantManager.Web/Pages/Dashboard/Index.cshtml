@@ -13,8 +13,24 @@
 
 
 <div class="application-dashboard">
-    <div class="chartBox">
-        <canvas id="economicRegionChart"></canvas>
-    </div>
-    
+    <table class="chartBox" aria-describedby="chartBox">
+        <tr>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td style="width:40vw">
+                <canvas id="economicRegionChart"></canvas>
+            </td>
+            <td style="width:40vw">
+                <canvas id="sectorChart"></canvas>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <canvas id="applicationStatusChart"></canvas>
+            </td>
+            <td></td>
+        </tr>
+    </table>
 </div>
