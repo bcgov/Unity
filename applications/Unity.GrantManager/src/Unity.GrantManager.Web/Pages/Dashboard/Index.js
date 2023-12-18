@@ -1,66 +1,80 @@
 ﻿$(function () {
-    unity.grantManager.grantApplications.grantApplication.getEconomicRegionCount().then(economicRegion => {
 
+    unity.grantManager.dashboard.dashboard.getEconomicRegionCount().then(economicRegion => {
+        initializeChart(economicRegion.map(obj => obj.economicRegion), economicRegion.map(obj => obj.count),
+            'Submission Breakdown By Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
+            'Number of Submissions', 'economicRegionChart');
+    });
+
+    unity.grantManager.dashboard.dashboard.getSectorCount().then(sector => {
+        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submission Breakdown By Sector',
+            'Total Submissions', 'SUBMISSION BREAKDOWN BY SECTOR', "Number of Submissions", 'sectorChart');
+    });
+
+
+    unity.grantManager.dashboard.dashboard.getApplicationStatusCount().then(applicationStatus => {
+        initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
+            'Application Status Overview', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
+    });
+
+    function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
         // setup 
         const data = {
-            labels: economicRegion.map(obj => obj.economicRegion),
+            labels: labelsArray,
             datasets: [{
-                label: 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
-                data: economicRegion.map(obj => obj.count),
-                borderWidth: 1
+                label: labelDesc,
+                data: dataArray,
+                hoverOffset: 4
             }]
         };
 
-        const sum = economicRegion.map(obj => obj.count).reduce((partialSum, a) => partialSum + a, 0);
+        const sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
 
-        // innerBarText plugin block
-        const innerBarText = {
-            id: 'innerBarText',
-            afterDatasetDraw(chart, args, pluginOption) {
-                const { ctx, data, chartArea: { left }, scales: { x, y } } = chart;
+        const centerText = {
+            id: 'centerText',
+            beforeDatasetsDraw(chart, args, pluginOptions) {
+                const { ctx } = chart;
+                const text = centerTextLabel + ': ';
                 ctx.save();
-                data.datasets[0].data.forEach((dataPoint, index) => {
-                    const percent = (dataPoint / sum) * 100;
-                    ctx.fillText(`${percent.toFixed(2)}%`, left + 10, y.getPixelForValue(index));
-                });
+                const x = chart.getDatasetMeta(0).data[0].x;
+                const y = chart.getDatasetMeta(0).data[0].y;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '20px sans-serif';
+                ctx.fillText(text, x, y - 10);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '20px sans-serif';
+                ctx.fillText(sum, x, y + 15);
             }
         }
 
         // config 
         const config = {
-            type: 'bar',
-            data,
+            type: 'doughnut',
+            data: data,
             options: {
-                indexAxis: 'y',
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        suggestedMin: 0,
-                        ticks: {
-                            precision:0
-                        },
-                        title: {
-                            display: true,
-                            text:'Number of Submissions'
-                        }
+                plugins: {
+                    title: {
+                        display: true,
+                        text: titleText
                     },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Economic  Regions'
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let currentValue = context.raw;
+                                let total = context.chart._metasets[context.datasetIndex].total;
+                                let percentage = parseFloat((currentValue / total * 100).toFixed(1));
+                                return mouseOverText + " : " + currentValue + ' (' + percentage + '%)';
+                            }
                         }
                     }
                 }
             },
-            plugins: [innerBarText]
+            plugins: [centerText]
         };
 
         // render init block
-        const myChart = new Chart(
-            document.getElementById('economicRegionChart'),
-            config
-        );
-    });
-   
-
+        new Chart(document.getElementById(chartId), config); //NOSONAR
+    }
 });

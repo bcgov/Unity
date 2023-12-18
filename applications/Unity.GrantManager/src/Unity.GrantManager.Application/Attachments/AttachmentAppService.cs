@@ -39,7 +39,8 @@ namespace Unity.GrantManager.GrantApplications
                             Id = applicationAttachment.Id,
                             FileName = applicationAttachment.FileName,
                             S3ObjectKey = applicationAttachment.S3ObjectKey,
-                            Time = applicationAttachment.Time
+                            Time = applicationAttachment.Time,
+                            CreatorId = person.Id
                         };
 
             return query.ToList();
@@ -56,7 +57,8 @@ namespace Unity.GrantManager.GrantApplications
                             Id = applicationAttachment.Id,
                             FileName = applicationAttachment.FileName,
                             S3ObjectKey = applicationAttachment.S3ObjectKey,
-                            Time = applicationAttachment.Time
+                            Time = applicationAttachment.Time,
+                            CreatorId = person.Id
                         };
 
             return query.ToList();

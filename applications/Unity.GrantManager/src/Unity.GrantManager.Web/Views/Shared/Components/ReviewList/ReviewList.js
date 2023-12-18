@@ -272,9 +272,12 @@ function refreshActionButtons(dataTableContext, assessmentId) {
                 dataTableContext.buttons(enabledButtons).enable();
             });
     }
-    let isPermitted = CheckAssessmentCreateButton();
-    if (!isPermitted) {
-        dataTableContext.buttons('Create:name').disable();
+
+    if (typeof CheckAssessmentCreateButton === 'function') {
+        let isPermitted = CheckAssessmentCreateButton();
+        if (!isPermitted) {
+            dataTableContext.buttons('Create:name').disable();
+        }
     }
 }
 

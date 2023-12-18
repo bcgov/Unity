@@ -204,7 +204,7 @@ public class GrantApplicationAppService :
                     application.RecommendedAmount = input.RecommendedAmount ?? 0;
                     application.ApprovedAmount = input.ApprovedAmount ?? 0;
                     application.LikelihoodOfFunding = input.LikelihoodOfFunding;
-                    application.DueDilligenceStatus = input.DueDiligenceStatus;
+                    application.DueDiligenceStatus = input.DueDiligenceStatus;
                     application.Recommendation = input.Recommendation;
                     application.DeclineRational = input.DeclineRational;
                     application.TotalScore = input.TotalScore;
@@ -402,16 +402,6 @@ public class GrantApplicationAppService :
     {
         return ObjectMapper.Map<IReadOnlyList<ApplicationComment>, IReadOnlyList<CommentDto>>((IReadOnlyList<ApplicationComment>)
             await _commentsManager.GetCommentsAsync(id, CommentType.ApplicationComment));
-    }
-
-    public async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync()
-    {
-        var query = await _applicationRepository.GetQueryableAsync();
-
-        var result = query?.GroupBy(app => app.EconomicRegion).Select(group => new GetEconomicRegionDto { EconomicRegion = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.EconomicRegion);
-        if (result == null) return new List<GetEconomicRegionDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
-        return queryResult;
     }
 
     public async Task<CommentDto> UpdateCommentAsync(Guid id, UpdateCommentDto dto)

@@ -77,7 +77,7 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
     {
         Check.NotNull(principal, nameof(principal));
 
-        var userIdOrNull = principal.Claims?.FirstOrDefault(c => c.Type == "idir_user_guid");
+        var userIdOrNull = principal.Claims?.FirstOrDefault(c => c.Type == "UserId");
         if (userIdOrNull == null || userIdOrNull.Value.IsNullOrWhiteSpace())
         {
             return null;

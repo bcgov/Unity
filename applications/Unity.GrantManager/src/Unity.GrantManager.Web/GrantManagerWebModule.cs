@@ -238,19 +238,8 @@ public class GrantManagerWebModule : AbpModule
     {
         context.Services.AddAccessTokenManagement(options =>
         {
-            // client config is inferred from OpenID Connect settings
-            // if you want to specify scopes explicitly, do it here, otherwise the scope parameter will not be sent
-            //options.Client.Scope = "api";
         })
-        .ConfigureBackchannelHttpClient();
-
-        // Configure transient retry policy for access token
-        //.AddTransientHttpErrorPolicy(policy => policy.WaitAndRetryAsync(new[]
-        //{
-        //    TimeSpan.FromSeconds(1),
-        //    TimeSpan.FromSeconds(2),
-        //    TimeSpan.FromSeconds(3)
-        //}));
+        .ConfigureBackchannelHttpClient();        
 
         // registers HTTP client that uses the managed user access token
         context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
