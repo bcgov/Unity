@@ -17,6 +17,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Web;
 using Unity.Identity.Web.Navigation;
+using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Identity.Web;
 
@@ -57,7 +58,7 @@ public class UnitydentityWebModule : AbpModule
 
         Configure<AbpAutoMapperOptions>(options =>
         {
-            options.AddProfile<AbpIdentityWebAutoMapperProfile>(validate: true);
+            options.AddProfile<UnityIdentityWebAutoMapperProfile>(validate: true);
         });
 
         Configure<RazorPagesOptions>(options =>

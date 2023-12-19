@@ -12,17 +12,22 @@ using Volo.Abp.Caching;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using Volo.Abp;
+using Unity.GrantManager.Integrations.Geocoder;
+using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Integrations.Sso
 {
-    public class SsoApiService : ApplicationService, ISsoUsersApiService
+    [IntegrationService]
+    [ExposeServices(typeof(SsoUserApiService), typeof(ISsoUsersApiService))]
+    public class SsoUserApiService : ApplicationService, ISsoUsersApiService
     {
         private readonly IResilientHttpRequest _resilientRestClient;
         private readonly IDistributedCache<TokenValidationResponse, Guid> _accessTokenCache;
         private readonly IOptions<SsoApiOptions> _ssoApiOptions;
         private readonly RestClient _restClient;
 
-        public SsoApiService(IResilientHttpRequest resilientHttpRequest,
+        public SsoUserApiService(IResilientHttpRequest resilientHttpRequest,
             IDistributedCache<TokenValidationResponse, Guid> accessTokenCache,
             IOptions<SsoApiOptions> ssoApiOptions,
             RestClient restClient)

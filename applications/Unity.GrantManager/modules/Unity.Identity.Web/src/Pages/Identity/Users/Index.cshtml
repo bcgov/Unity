@@ -29,11 +29,19 @@
         <abp-script src="/Pages/identity/users/index.js" />
     </abp-script-bundle>
 }
-@section content_toolbar {
-    @await Component.InvokeAsync(typeof(AbpPageToolbarViewComponent), new { pageName = typeof(IndexModel).FullName })
-}
-<abp-card id="IdentityUsersWrapper">
-    <abp-card-body>
-        <abp-table striped-rows="true" class="nowrap"></abp-table>
-    </abp-card-body>
-</abp-card>
+
+<div class="container-fluid px-2">
+    <div class="d-flex my-1 p-2">
+        <abp-column size="_6">
+            <abp-card-title>@L["Users"]</abp-card-title>
+        </abp-column>
+        <abp-column size="_6" class="d-flex justify-content-end">
+            <abp-button id="ImportUserButton"
+                        text="@L["Common:Command:Import"].Value"
+                        icon-type="Other"
+                        icon="fl fl-add-to"
+                        button-type="Light" />
+        </abp-column>
+    </div>
+    <abp-table id="UsersTable"></abp-table>
+</div>

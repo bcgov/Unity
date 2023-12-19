@@ -1,7 +1,17 @@
-/* 
-    By default Microsoft Edge, adds password reveal button inside the password input.
-    https://docs.microsoft.com/en-us/microsoft-edge/web-platform/password-reveal
- */
 ::-ms-reveal {
     display: none;
+}
+
+#UsersTable_filter label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+    margin-right: 5px;
+}
+
+#UsersTable_filter input {
+    margin: 0.25rem;
 }

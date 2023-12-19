@@ -3,12 +3,13 @@ using Volo.Abp.AutoMapper;
 using Unity.Identity.Web.Pages.Identity.Roles;
 using CreateUserModalModel = Unity.Identity.Web.Pages.Identity.Users.CreateModalModel;
 using EditUserModalModel = Unity.Identity.Web.Pages.Identity.Users.EditModalModel;
+using Unity.Identity.Web.Pages.Identity.Users;
 
 namespace Volo.Abp.Identity.Web;
 
-public class AbpIdentityWebAutoMapperProfile : Profile
+public class UnityIdentityWebAutoMapperProfile : Profile
 {
-    public AbpIdentityWebAutoMapperProfile()
+    public UnityIdentityWebAutoMapperProfile()
     {
         CreateUserMappings();
         CreateRoleMappings();
@@ -28,6 +29,10 @@ public class AbpIdentityWebAutoMapperProfile : Profile
         CreateMap<IdentityRoleDto, CreateUserModalModel.AssignedRoleViewModel>()
             .ForMember(dest => dest.IsAssigned, opt => opt.Ignore());
 
+        //ImportModal
+        CreateMap<IdentityRoleDto, ImportModalModel.AssignedRoleViewModel>()
+            .ForMember(dest => dest.IsAssigned, opt => opt.Ignore());
+
         //EditModal
         CreateMap<EditUserModalModel.UserInfoViewModel, IdentityUserUpdateDto>()
             .MapExtraProperties()
@@ -44,14 +49,14 @@ public class AbpIdentityWebAutoMapperProfile : Profile
     protected void CreateRoleMappings()
     {
         //List
-        CreateMap<IdentityRoleDto, EditModalModel.RoleInfoModel>();
+        CreateMap<IdentityRoleDto, Unity.Identity.Web.Pages.Identity.Roles.EditModalModel.RoleInfoModel>();
 
         //CreateModal
-        CreateMap<CreateModalModel.RoleInfoModel, IdentityRoleCreateDto>()
+        CreateMap<Unity.Identity.Web.Pages.Identity.Roles.CreateModalModel.RoleInfoModel, IdentityRoleCreateDto>()
             .MapExtraProperties();
 
         //EditModal
-        CreateMap<EditModalModel.RoleInfoModel, IdentityRoleUpdateDto>()
+        CreateMap<Unity.Identity.Web.Pages.Identity.Roles.EditModalModel.RoleInfoModel, IdentityRoleUpdateDto>()
             .MapExtraProperties();
     }
 }

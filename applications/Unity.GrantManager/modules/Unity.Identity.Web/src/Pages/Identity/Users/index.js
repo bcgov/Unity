@@ -2,16 +2,17 @@
     let l = abp.localization.getResource('AbpIdentity');
 
     let _identityUserAppService = volo.abp.identity.identityUser;
+    let _userImportService = unity.grantManager.userImport.userImport;
 
     let togglePasswordVisibility = function () {
         $("#PasswordVisibilityButton").click(function (e) {
             let button = $(this);
             let passwordInput = button.parent().find("input");
-            if(!passwordInput) {
+            if (!passwordInput) {
                 return;
             }
 
-            if(passwordInput.attr("type") === "password") {
+            if (passwordInput.attr("type") === "password") {
                 passwordInput.attr("type", "text");
             }
             else {
@@ -19,26 +20,96 @@
             }
 
             let icon = button.find("i");
-            if(icon) {
+            if (icon) {
                 icon.toggleClass("fa-eye-slash").toggleClass("fa-eye");
             }
         });
     }
-    
+
+
+    let inputAction = function (requestData, dataTableSettings) {
+        return {
+            directory: 'IDIR',
+            firstName: $('#import-user-firstName').val(),
+            lastName: $('#import-user-lastName').val()
+        };
+    };
+
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.length,
+            recordsFiltered: result.length,
+            data: result
+        };
+    };
+
+    let _filterDataTable = null;
+
+    let setupImportModal = function () {
+        let _$filterTable = $('#UserSearchTable');
+        _filterDataTable = _$filterTable.DataTable(
+            abp.libs.datatables.normalizeConfiguration(
+                {
+                    order: [[0, 'asc']],
+                    processing: true,
+                    serverSide: false,
+                    scrollX: true,
+                    paging: true,
+                    ajax: abp.libs.datatables.createAjax(
+                        _userImportService.search,
+                        inputAction,
+                        responseCallback
+                    ),
+                    columnDefs: [{
+                        title: 'First Name',
+                        name: 'firstName',
+                        data: 'firstName',
+                        className: 'data-table-header',
+                    },
+                    {
+                        title: 'Last Name',
+                        name: 'lastName',
+                        data: 'lastName',
+                        className: 'data-table-header'
+                    }],
+                })
+        )
+
+        $('#ImportUserSearchButton').click(function (e) {
+            e.preventDefault();            
+            _filterDataTable.ajax.reloadEx();
+        });
+
+        _filterDataTable.on('select', function (e, dt, type, indexes) {
+            
+        });
+
+        _filterDataTable.on('deselect', function (e, dt, type, indexes) {
+            
+        });
+    }
+
+    abp.modals.importUser = function () {
+        let initModal = function (publicApi, args) {
+            setupImportModal();
+        };
+        return { initModal: initModal };
+    }
+
     abp.modals.createUser = function () {
         let initModal = function (publicApi, args) {
             togglePasswordVisibility();
         };
         return { initModal: initModal };
     }
-    
+
     abp.modals.editUser = function () {
         let initModal = function (publicApi, args) {
             togglePasswordVisibility();
         };
         return { initModal: initModal };
     }
-    
+
     let _editModal = new abp.ModalManager({
         viewUrl: abp.appPath + 'Identity/Users/EditModal',
         modalClass: "editUser"
@@ -50,11 +121,15 @@
     let _permissionsModal = new abp.ModalManager(
         abp.appPath + 'AbpPermissionManagement/PermissionManagementModal'
     );
+    let importModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'Identity/Users/ImportModal',
+        modalClass: "importUser"
+    });
 
     let _dataTable = null;
 
     abp.ui.extensions.entityActions.get('identity.user').addContributor(
-        function(actionList) {
+        function (actionList) {
             return actionList.addManyTail(
                 [
                     {
@@ -83,7 +158,7 @@
                     },
                     {
                         text: l('Delete'),
-                        visible: function(data) {
+                        visible: function (data) {
                             return abp.auth.isGranted('AbpIdentity.Users.Delete') && abp.currentUser.id !== data.id;
                         },
                         confirmMessage: function (data) {
@@ -122,7 +197,7 @@
                         render: function (data, type, row) {
                             row.userName = $.fn.dataTable.render.text().display(row.userName);
                             if (!row.isActive) {
-                                return  '<i data-toggle="tooltip" data-placement="top" title="' +
+                                return '<i data-toggle="tooltip" data-placement="top" title="' +
                                     l('ThisUserIsNotActiveMessage') +
                                     '" class="fa fa-ban text-danger"></i> ' +
                                     '<span class="opc-65">' + row.userName + '</span>';
@@ -145,9 +220,13 @@
         0 //adds as the first contributor
     );
 
+    $('#ImportUserButton').click(function (e) {
+        e.preventDefault();
+        importModal.open();
+    });
+
     $(function () {
-        let _$wrapper = $('#IdentityUsersWrapper');
-        let _$table = _$wrapper.find('table');
+        let _$table = $('#UsersTable');
         _dataTable = _$table.DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 order: [[1, 'asc']],
