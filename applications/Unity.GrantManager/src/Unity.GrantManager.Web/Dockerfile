@@ -38,7 +38,7 @@ RUN dotnet restore "src/Unity.GrantManager.Web/Unity.GrantManager.Web.csproj"
 COPY . .
 WORKDIR "/src/src/Unity.GrantManager.Web"
 
-RUN dotnet tool install -g Volo.Abp.Cli
+RUN dotnet tool install -g Volo.Abp.Cli --version 7.4.4
 ENV PATH="${PATH}:/root/.dotnet/tools"
 RUN dotnet dev-certs https --trust
 RUN abp install-libs
