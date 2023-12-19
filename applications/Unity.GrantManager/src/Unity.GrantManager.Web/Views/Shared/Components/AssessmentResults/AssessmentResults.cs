@@ -55,7 +55,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                     TotalScore = application.TotalScore,
                     Notes = application.Notes,
                     AssessmentResultStatus = application.AssessmentResultStatus,
-                    FinalDecisionDate = application.FinalDecisionDate
+                    FinalDecisionDate = application.FinalDecisionDate,
+                    DueDate = application.DueDate
                 }
             };
 
