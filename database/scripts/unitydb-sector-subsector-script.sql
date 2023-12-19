@@ -1,10 +1,255 @@
 DO $$ 
 DECLARE
-    json_data jsonb := '[{"SectorCode":"11","SectorName":"Accommodation and Food Services","SubSectors":[{"SubSectorCode":"111","SubSectorName":"Crop production"},{"SubSectorCode":"112","SubSectorName":"Animal production and aquaculture"},{"SubSectorCode":"113","SubSectorName":"Forestry and logging"},{"SubSectorCode":"114","SubSectorName":"Fishing, hunting and trapping"},{"SubSectorCode":"115","SubSectorName":"Support activities for agriculture and forestry"}]},{"SectorCode":"21","SectorName":"Mining, quarrying, and oil and gas extraction","SubSectors":[{"SubSectorCode":"211","SubSectorName":"Oil and gas extraction"},{"SubSectorCode":"212","SubSectorName":"Mining and quarrying (except oil and gas)"},{"SubSectorCode":"213","SubSectorName":"Support activities for mining, and oil and gas extraction"}]},{"SectorCode":"22","SectorName":"Utilities","SubSectors":[{"SubSectorCode":"221","SubSectorName":"Utilities US"}]},{"SectorCode":"23","SectorName":"Construction","SubSectors":[{"SubSectorCode":"236","SubSectorName":"Construction of buildings"},{"SubSectorCode":"237","SubSectorName":"Heavy and civil engineering construction"},{"SubSectorCode":"238","SubSectorName":"Specialty trade contractors"}]},{"SectorCode":"31-33","SectorName":"Manufacturing","SubSectors":[{"SubSectorCode":"311","SubSectorName":"Food manufacturing"},{"SubSectorCode":"312","SubSectorName":"Beverage and tobacco product manufacturing"},{"SubSectorCode":"313","SubSectorName":"Textile mills"},{"SubSectorCode":"314","SubSectorName":"Textile product mills"},{"SubSectorCode":"315","SubSectorName":"Apparel manufacturing"},{"SubSectorCode":"316","SubSectorName":"Leather and allied product manufacturing"},{"SubSectorCode":"321","SubSectorName":"Wood product manufacturing"},{"SubSectorCode":"322","SubSectorName":"Paper manufacturing"},{"SubSectorCode":"323","SubSectorName":"Printing and related support activities"},{"SubSectorCode":"324","SubSectorName":"Petroleum and coal product manufacturing"},{"SubSectorCode":"325","SubSectorName":"Chemical manufacturing"},{"SubSectorCode":"326","SubSectorName":"Plastics and rubber products manufacturing"},{"SubSectorCode":"327","SubSectorName":"Non-metallic mineral product manufacturing"},{"SubSectorCode":"331","SubSectorName":"Primary metal manufacturing"},{"SubSectorCode":"332","SubSectorName":"Fabricated metal product manufacturing"},{"SubSectorCode":"333","SubSectorName":"Machinery manufacturing"},{"SubSectorCode":"334","SubSectorName":"Computer and electronic product manufacturing"},{"SubSectorCode":"335","SubSectorName":"Electrical equipment, appliance, and component manufacturing"},{"SubSectorCode":"336","SubSectorName":"Transportation equipment manufacturing"},{"SubSectorCode":"337","SubSectorName":"Furniture and related product manufacturing"},{"SubSectorCode":"339","SubSectorName":"Miscellaneous manufacturing"}]},{"SectorCode":"41","SectorName":"Wholesale trade","SubSectors":[{"SubSectorCode":"411","SubSectorName":"Farm product merchant wholesalers CAN"},{"SubSectorCode":"412","SubSectorName":"Petroleum, petroleum products, and other hydrocarbons merchant wholesalers CAN"},{"SubSectorCode":"413","SubSectorName":"Food, beverage, and tobacco merchant wholesalers CAN"},{"SubSectorCode":"414","SubSectorName":"Personal and household goods merchant wholesalers CAN"},{"SubSectorCode":"415","SubSectorName":"Motor vehicle and motor vehicle parts and accessories merchant wholesalers CAN"},{"SubSectorCode":"416","SubSectorName":"Building material and supplies merchant wholesalers CAN"},{"SubSectorCode":"417","SubSectorName":"Machinery, equipment, and supplies merchant wholesalers CAN"},{"SubSectorCode":"418","SubSectorName":"Miscellaneous merchant wholesalers CAN"},{"SubSectorCode":"419","SubSectorName":"Business-to-business electronic markets, and agents and brokers US"}]},{"SectorCode":"44-45","SectorName":"Retail trade","SubSectors":[{"SubSectorCode":"441","SubSectorName":"Motor vehicle and parts dealers US"},{"SubSectorCode":"444","SubSectorName":"Building material and garden equipment and supplies dealers US"},{"SubSectorCode":"445","SubSectorName":"Food and beverage retailers US"},{"SubSectorCode":"449","SubSectorName":"Furniture, home furnishings, electronics, and appliances retailers US"},{"SubSectorCode":"455","SubSectorName":"General merchandise retailers US"},{"SubSectorCode":"456","SubSectorName":"Health and personal care retailers US"},{"SubSectorCode":"457","SubSectorName":"Gasoline stations and fuel vendors US"},{"SubSectorCode":"458","SubSectorName":"Clothing, clothing accessories, shoes, jewelry, luggage, and leather goods retailers US"},{"SubSectorCode":"459","SubSectorName":"Sporting goods, hobby, musical instrument, book, and miscellaneous retailers US"}]},{"SectorCode":"48-49","SectorName":"Transportation and warehousing","SubSectors":[{"SubSectorCode":"481","SubSectorName":"Air transportation"},{"SubSectorCode":"482","SubSectorName":"Rail transportation"},{"SubSectorCode":"483","SubSectorName":"Water transportation"},{"SubSectorCode":"484","SubSectorName":"Truck transportation"},{"SubSectorCode":"485","SubSectorName":"Transit and ground passenger transportation"},{"SubSectorCode":"486","SubSectorName":"Pipeline transportation"},{"SubSectorCode":"487","SubSectorName":"Scenic and sightseeing transportation"},{"SubSectorCode":"488","SubSectorName":"Support activities for transportation"},{"SubSectorCode":"491","SubSectorName":"Postal service"},{"SubSectorCode":"492","SubSectorName":"Couriers and messengers"},{"SubSectorCode":"493","SubSectorName":"Warehousing and storage"}]},{"SectorCode":"51","SectorName":"Information and cultural industries","SubSectors":[{"SubSectorCode":"512","SubSectorName":"Motion picture and sound recording industries"},{"SubSectorCode":"513","SubSectorName":"Publishing industries"},{"SubSectorCode":"516","SubSectorName":"Broadcasting and content providers"},{"SubSectorCode":"517","SubSectorName":"Telecommunications"},{"SubSectorCode":"518","SubSectorName":"Computing infrastructure providers, data processing, web hosting, and related services"},{"SubSectorCode":"519","SubSectorName":"Web search portals, libraries, archives, and all other information services"}]},{"SectorCode":"52","SectorName":"Finance and insurance","SubSectors":[{"SubSectorCode":"521","SubSectorName":"Monetary authorities - central bank"},{"SubSectorCode":"522","SubSectorName":"Credit intermediation and related activities"},{"SubSectorCode":"523","SubSectorName":"Securities, commodity contracts, and other financial investment and related activities"},{"SubSectorCode":"524","SubSectorName":"Insurance carriers and related activities"},{"SubSectorCode":"526","SubSectorName":"Funds and other financial vehicles CAN"}]},{"SectorCode":"53","SectorName":"Real estate and rental and leasing","SubSectors":[{"SubSectorCode":"531","SubSectorName":"Real estate"},{"SubSectorCode":"532","SubSectorName":"Rental and leasing services"},{"SubSectorCode":"533","SubSectorName":"Lessors of non-financial intangible assets (except copyrighted works)"}]},{"SectorCode":"54","SectorName":"Professional, scientific and technical services","SubSectors":[{"SubSectorCode":"541","SubSectorName":"Professional, scientific and technical services"}]},{"SectorCode":"55","SectorName":"Management of companies and enterprises","SubSectors":[{"SubSectorCode":"551","SubSectorName":"Management of companies and enterprises"}]},{"SectorCode":"56","SectorName":"Administrative and support, waste management and remediation services","SubSectors":[{"SubSectorCode":"561","SubSectorName":"Administrative and support services"},{"SubSectorCode":"562","SubSectorName":"Waste management and remediation services"}]},{"SectorCode":"61","SectorName":"Educational services","SubSectors":[{"SubSectorCode":"611","SubSectorName":"Educational services"}]},{"SectorCode":"62","SectorName":"Health care and social assistance","SubSectors":[{"SubSectorCode":"621","SubSectorName":"Ambulatory health care services"},{"SubSectorCode":"622","SubSectorName":"Hospitals"},{"SubSectorCode":"623","SubSectorName":"Nursing and residential care facilities"},{"SubSectorCode":"624","SubSectorName":"Social assistance"}]},{"SectorCode":"71","SectorName":"Arts, entertainment and recreation","SubSectors":[{"SubSectorCode":"711","SubSectorName":"Performing arts, spectator sports, and related industries"},{"SubSectorCode":"712","SubSectorName":"Heritage institutions"},{"SubSectorCode":"713","SubSectorName":"Amusement, gambling and recreation industries"}]},{"SectorCode":"72","SectorName":"Accommodation and food services","SubSectors":[{"SubSectorCode":"721","SubSectorName":"Accommodation services"},{"SubSectorCode":"722","SubSectorName":"Food services and drinking places"}]},{"SectorCode":"81","SectorName":"Other services (except public administration)","SubSectors":[{"SubSectorCode":"811","SubSectorName":"Repair and maintenance"},{"SubSectorCode":"812","SubSectorName":"Personal and laundry services"},{"SubSectorCode":"813","SubSectorName":"Religious, grant-making, civic, and professional and similar organizations"},{"SubSectorCode":"814","SubSectorName":"Private households"}]},{"SectorCode":"91","SectorName":"Public administration","SubSectors":[{"SubSectorCode":"911","SubSectorName":"Federal government public administration CAN"},{"SubSectorCode":"912","SubSectorName":"Provincial and territorial public administration CAN"},{"SubSectorCode":"913","SubSectorName":"Local, municipal and regional public administration CAN"},{"SubSectorCode":"914","SubSectorName":"Indigenous public administration CAN"},{"SubSectorCode":"919","SubSectorName":"International and other extra-territorial public administration CAN"}]}]';
+    json_data jsonb := '[
+  {
+    "SectorCode": "1",
+    "SectorName": "Arts & Culture",
+    "SubSectors": [
+      {
+        "SubSectorCode": "101",
+        "SubSectorName": "Dance – Performance/ Education"
+      },
+      {
+        "SubSectorCode": "102",
+        "SubSectorName": "Fair – Agriculture"
+      },
+      {
+        "SubSectorCode": "103",
+        "SubSectorName": "Fair – Community"
+      },
+      {
+        "SubSectorCode": "104",
+        "SubSectorName": "Festival"
+      },
+      {
+        "SubSectorCode": "105",
+        "SubSectorName": "Museum/Heritage/Archives"
+      },
+      {
+        "SubSectorCode": "106",
+        "SubSectorName": "Music – Performance/ Education"
+      },
+      {
+        "SubSectorCode": "107",
+        "SubSectorName": "Theatre – Performance/ Education"
+      },
+      {
+        "SubSectorCode": "108",
+        "SubSectorName": "Visual Arts – Exhibition/ Education"
+      },
+      {
+        "SubSectorCode": "109",
+        "SubSectorName": "Media Arts – Exhibition/ Performance/Education"
+      },
+      {
+        "SubSectorCode": "110",
+        "SubSectorName": "Literature – Exhibition/ Performance/Education"
+      },
+      {
+        "SubSectorCode": "111",
+        "SubSectorName": "Culture/Multicultural"
+      },
+      {
+        "SubSectorCode": "112",
+        "SubSectorName": "Performance/Education"
+      },
+      {
+        "SubSectorCode": "113",
+        "SubSectorName": "Other – Arts and CultureOther"
+      }
+    ]
+  },
+  {
+    "SectorCode": "2",
+    "SectorName": "Sport",
+    "SubSectors": [
+      {
+        "SubSectorCode": "201",
+        "SubSectorName": "Aquatics/Swimming"
+      },
+      {
+        "SubSectorCode": "202",
+        "SubSectorName": "Baseball/Softball"
+      },
+      {
+        "SubSectorCode": "203",
+        "SubSectorName": "Basketball"
+      },
+      {
+        "SubSectorCode": "204",
+        "SubSectorName": "Biking/Cycling"
+      },
+      {
+        "SubSectorCode": "205",
+        "SubSectorName": "Bowling/Lawn Bowling"
+      },
+      {
+        "SubSectorCode": "206",
+        "SubSectorName": "Curling"
+      },
+      {
+        "SubSectorCode": "207",
+        "SubSectorName": "Equestrian"
+      },
+      {
+        "SubSectorCode": "208",
+        "SubSectorName": "Football/Rugby"
+      },
+      {
+        "SubSectorCode": "209",
+        "SubSectorName": "Golf Gymnastics"
+      },
+      {
+        "SubSectorCode": "210",
+        "SubSectorName": "Hockey"
+      },
+      {
+        "SubSectorCode": "211",
+        "SubSectorName": "Lacrosse"
+      },
+      {
+        "SubSectorCode": "212",
+        "SubSectorName": "Martial Arts/Combat Sports"
+      },
+      {
+        "SubSectorCode": "213",
+        "SubSectorName": "Racquet Sports Ringette/Rowing/Sailing/Boating/ Waterski & Wakeboard"
+      },
+      {
+        "SubSectorCode": "214",
+        "SubSectorName": "Seniors Games"
+      },
+      {
+        "SubSectorCode": "215",
+        "SubSectorName": "Skating"
+      },
+      {
+        "SubSectorCode": "216",
+        "SubSectorName": "Skiing/Snow Sports"
+      },
+      {
+        "SubSectorCode": "217",
+        "SubSectorName": "Soccer"
+      },
+      {
+        "SubSectorCode": "218",
+        "SubSectorName": "Special Olympics"
+      },
+      {
+        "SubSectorCode": "219",
+        "SubSectorName": "Track & Field"
+      },
+      {
+        "SubSectorCode": "220",
+        "SubSectorName": "Volleyball"
+      },
+      {
+        "SubSectorCode": "221",
+        "SubSectorName": "Other – Sport"
+      }
+    ]
+  },
+  {
+    "SectorCode": "3",
+    "SectorName": "Human & Social Services",
+    "SubSectors": [
+      {
+        "SubSectorCode": "301",
+        "SubSectorName": "Disability Supports "
+      },
+      {
+        "SubSectorCode": "302",
+        "SubSectorName": "Mental Health"
+      },
+      {
+        "SubSectorCode": "303",
+        "SubSectorName": "Substance Use"
+      },
+      {
+        "SubSectorCode": "304",
+        "SubSectorName": "Health/Health Condition Programs"
+      },
+      {
+        "SubSectorCode": "305",
+        "SubSectorName": "Food and Nutrition"
+      },
+      {
+        "SubSectorCode": "306",
+        "SubSectorName": "Hospice"
+      },
+      {
+        "SubSectorCode": "307",
+        "SubSectorName": "Bereavement"
+      },
+      {
+        "SubSectorCode": "308",
+        "SubSectorName": "Immigrant/Refugee Supports"
+      },
+      {
+        "SubSectorCode": "309",
+        "SubSectorName": "Scouts/Cadets"
+      },
+      {
+        "SubSectorCode": "310",
+        "SubSectorName": "Seniors Service/Activities"
+      },
+      {
+        "SubSectorCode": "311",
+        "SubSectorName": "Service Clubs/Community Donations"
+      },
+      {
+        "SubSectorCode": "312",
+        "SubSectorName": "Emergency Social Services, Outreach"
+      },
+      {
+        "SubSectorCode": "313",
+        "SubSectorName": "Education/Tutoring Services"
+      },
+      {
+        "SubSectorCode": "314",
+        "SubSectorName": "Children, Youth and Family Services"
+      },
+      {
+        "SubSectorCode": "315",
+        "SubSectorName": "Other – Human and Social Services"
+      }
+    ]
+  },
+  {
+    "SectorCode": "4",
+    "SectorName": "Environment",
+    "SubSectors": [
+      {
+        "SubSectorCode": "401",
+        "SubSectorName": "Agriculture"
+      },
+      {
+        "SubSectorCode": "402",
+        "SubSectorName": "Animal Welfare"
+      },
+      {
+        "SubSectorCode": "403",
+        "SubSectorName": "Climate Change Adaptation"
+      },
+      {
+        "SubSectorCode": "404",
+        "SubSectorName": "Ecosystem Conservation"
+      },
+      {
+        "SubSectorCode": "405",
+        "SubSectorName": " Education/Outreach "
+      },
+      {
+        "SubSectorCode": "406",
+        "SubSectorName": "Other – Environment"
+      }
+    ]
+  }
+]';
 BEGIN
-    -- Insert into "Sectors" table
+        -- Insert into "Sectors" table
     INSERT INTO public."Sectors"
-    ("Id", "SectorName", "SectorCode", "ExtraProperties", "ConcurrencyStamp", "CreationTime")
+    ("Id", "SectorName", "SectorCode", "ExtraProperties", "ConcurrencyStamp", "CreationTime") 
     SELECT
         gen_random_uuid(),
         data->>'SectorName',
