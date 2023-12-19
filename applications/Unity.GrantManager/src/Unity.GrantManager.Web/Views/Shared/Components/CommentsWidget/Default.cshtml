@@ -35,7 +35,7 @@
                         <div class="fw-bold commenter-name">
                             @comment.Commenter
                         </div>
-                        @if (Model.CurrentUserId == comment.CreatorId)
+                        @if (Model.CurrentUserId == comment.CommenterId)
                         {
 
                             <div class="comment-edit-btn-wrapper">

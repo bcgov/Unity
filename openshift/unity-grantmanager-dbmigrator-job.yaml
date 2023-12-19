@@ -45,6 +45,10 @@ parameters:
   name: SOURCE_REPOSITORY_URL
   required: true
   value: 'https://github.com/bcgov/Unity'
+- description: Name of the tenant database accessed.
+  displayName: PostgreSQL Tenant Database Name
+  name: UNITY_TENANT_DB
+  value: UnityGrantTenant 
 # Template objects to instantiate the project.
 objects:
 # RunOnce Job for Database Migrator
@@ -101,7 +105,12 @@ objects:
                   secretKeyRef:
                     name: ${DATABASE_SERVICE_NAME}
                     key: database-password
+              - name: UNITY_TENANT_DB
+                value: ${UNITY_TENANT_DB}
               - name: ConnectionStrings__Default
                 value: >-
                   Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+              - name: ConnectionStrings__Tenant
+                value: >-
+                  Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_TENANT_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
         restartPolicy: Never

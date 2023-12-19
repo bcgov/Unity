@@ -14,10 +14,15 @@
     dataTable = initializeDataTable();
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
+   
+   
+    //$('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
+    //$('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
+    
     const UIElements = {
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
-        filterIcon: $(".fl-filter"),
+        filterIcon: $("i.fl.fl-filter"),
         btnSave: $('#btn-save'),
         userDiv: $('#users-div'),
         users: $('#users'),
@@ -26,15 +31,16 @@
     init();
     function init() {
         $('#users').select2();
-        $('.csv-download').removeClass('dt-button buttons-csv buttons-html5');
+        $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
         $('.csv-download').prepend('<i class="fl fl-export"></i>');
+        $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
         bindUIEvents();
         UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html());
     }
 
     function bindUIEvents() {
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
-        UIElements.filterIcon.on('click', toggleFilterRow);
+        UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden'));
         UIElements.clearFilter.on('click', clearFilter);
         UIElements.btnSave.on('click', handleSave);
         UIElements.userDiv.on('change', markUserDivAsChanged);
@@ -130,8 +136,8 @@
                 count++;
                 content = userOption.text;
                 aData.assignees.push({
-                    assigneeDisplayName: userOption.text,
-                    oidcSub: userOption.value,
+                    fullName: userOption.text,
+                    assigneeId: userOption.value,
                 });
             }
         }
@@ -173,7 +179,7 @@
                     let assigneeIds = [];
 
                     $(assigness).each(function (key, assignee) {
-                        assigneeIds.push(assignee.oidcSub);
+                        assigneeIds.push(assignee.assigneeId);
                     });
 
                     previousUserOptionsSelected = getUserOptionSelectedCount();
@@ -252,16 +258,28 @@
                     style: 'multiple',
                     selector: 'td:not(:nth-child(8))',
                 },
+                colReorder: true,
+                orderCellsTop: true,
+                //fixedHeader: true,
+                stateSave: true,
                 dom: 'Bfrtip',
                 buttons: [
                     {
                         extend: 'csv',
                         text: 'Export',
-                        className: 'btn btn-light csv-download',
+                        className: 'btn btn-light custom-table-btn csv-download',
                         exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11],
+                            columns: ':visible:not(.notexport)',
                             orthogonal: 'fullName',
                         }
+                    },
+                     {
+                        extend: 'colvis',
+                        text: 'Manage Columns',
+                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
+                         className: 'btn btn-light custom-table-btn cln-visible',
+
+                       
                     }
                 ],
                 drawCallback: function () {
@@ -286,14 +304,13 @@
                     setTableHeighDynamic();
                 },
                 initComplete: function () {
-                    let api = this.api();
-                    addFilterRow(api);
-                    api.columns.adjust();
+                    updateFilter();
                 },
-                columnDefs: [
+                columns: [
                     { //0
                         title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
                         orderable: false,
+                        className: 'notexport',
                         render: function (data) {
                             return '<div class="select-checkbox" title="Select Application" ></div>';
                         },
@@ -361,7 +378,7 @@
                             let displayText = ' ';
 
                             if (data != null && data.length == 1) {
-                                displayText = type === 'fullName' ? getNames(data) : data[0].assigneeDisplayName;
+                                displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
                             } else if (data.length > 1) {
                                 displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
                             }
@@ -439,7 +456,240 @@
                             return data ?? '{City}';
                         },
                     },
+                              
+                    { //15
+                        title: 'Organization Number',
+                        name: 'organizationNumber',
+                        data: 'organizationNumber',
+                        className: 'data-table-header',
+                        visible: false,
+                        render: function (data) {
+                            return data ?? '{Organization Number}';
+                        },
+                    },
+                    { //16
+                        title: 'Org Book Status',
+                        name: 'orgBookStatus',
+                        data: 'orgBookStatus',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Org Book Status}';
+                        },
+                    },
+                    { //17 -- mapped
+                        title: 'Project Start Date',
+                        name: 'projectStartDate',
+                        data: 'projectStartDate',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data != null ? luxon.DateTime.fromISO(data, {
+                                locale: abp.localization.currentCulture.name,
+                            }).toLocaleString() : '{Project Start Date}' ;
+                        },
+                    },
+                    { //18 -- mapped
+                        title: 'Project End Date',
+                        name: 'projectEndDate',
+                        data: 'projectEndDate',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data != null ? luxon.DateTime.fromISO(data, {
+                                locale: abp.localization.currentCulture.name,
+                            }).toLocaleString() : '{Project End Date}';
+                        },
+                    },
+                    { //19  -- mapped
+                        title: 'Projected Funding Total',
+                        name: 'projectFundingTotal',
+                        data: 'projectFundingTotal',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return formatter.format(data) ?? '{Projected Funding Total}';
+                        },
+                    },
+                    { //20  -- mapped
+                        title: '% of Total Project Budget',
+                        name: 'percentageTotalProjectBudget',
+                        data: 'percentageTotalProjectBudget',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{% of Total Project Budget}';
+                        },
+                    },
+                    { //21
+                        title: 'Total Paid Amount $',
+                        name: 'projectFundingTotal',
+                        data: 'projectFundingTotal',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return  formatter.format(data) ?? '{Total Paid Amount $}';
+                        },
+                    },
+                    { //22
+                        title: 'Electoral District',
+                        name: 'electoralDistrict',
+                        data: 'electoralDistrict',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Electoral District}';
+                        },
+                    },
+                    { //23 -- mapped
+                        title: 'Forestry or Non-Forestry',
+                        name: 'forestryOrNonForestry',
+                        data: 'forestry',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            if (data != null)
+                                return data == 'FORESTRY' ? 'Forestry' : 'Non Forestry';
+                            else
+                                return '{Forestry or Non-Forestry}';
+                        },
+                    },
+                    { //24 -- mapped
+                        title: 'Forestry Focus',
+                        name: 'forestryFocus',
+                        data: 'forestryFocus',
+                        className: 'data-table-header',
+                        render: function (data) {
 
+                            if (data) {
+                                if (data == 'PRIMARY') {
+                                    return 'Primary processing'
+                                }
+                                else if (data == 'SECONDARY') {
+                                    return 'Secondary/Value-Added/Not Mass Timber'
+                                } else if (data == 'MASS_TIMBER') {
+                                    return 'Mass Timber';
+                                }
+                            }
+                            else {
+                                return '{Forestry Focus}';
+                            }
+                         
+                        },
+                    },
+                    { //25 -- mapped
+                        title: 'Acquisition',
+                        name: 'acquisition',
+                        data: 'acquisition',
+                        className: 'data-table-header',
+                        render: function (data) {
+
+                            if (data) {
+                                return titleCase(data);
+                            }
+                            else {
+                                return  '{Acquisition}';
+                            }
+                          
+                        },
+                    },
+                    { //26 -- mapped
+                        title: 'Community',
+                        name: 'community',
+                        data: 'community',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{community}';
+                        },
+                    },
+                    { //27 -- mapped
+                        title: 'Community Population',
+                        name: 'communityPopulation',
+                        data: 'communityPopulation',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Community Population}';
+                        },
+                    },
+                    { //28 -- mapped
+                        title: 'Likelihood of Funding',
+                        name: 'likelihoodOfFunding',
+                        data: 'likelihoodOfFunding',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            if (data != null) {
+                                return titleCase(data);
+                            }
+                            else {
+                                return '{Likelihood of Funding}';
+                            }
+                        },
+                    },
+                    { //29 -- mapped
+                        title: 'Recommendation',
+                        name: 'recommendation',
+                        data: 'recommendation',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            if (data) {
+                                if (data == 'APPROVE') {
+                                    return 'Recommended for Approval'
+                                }
+                                else if (data == 'DENY') {
+                                    return 'Recommended for Denial'
+                                }
+                            }
+                            else {
+                                return '{Recommendation}';
+                            }
+                        },
+                    },
+                    { //30
+                        title: 'Tags',
+                        name: 'batchNumber',
+                        data: 'batchNumber',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Tags}';
+                        },
+                    },
+                    { //31 -- mapped
+                        title: 'Total Score',
+                        name: 'totalScore',
+                        data: 'totalScore',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Total Score}';
+                        },
+                        },
+                    { //32 -- mapped
+                        title: 'Assessment Result',
+                        name: 'assessmentResult',
+                        data: 'assessmentResultStatus',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            if (data != null) {
+                                return titleCase(data);
+                            }
+                            else {
+                                return '{Assessment Result}';
+                            }
+                        },
+                     },
+                    { //33 -- mapped
+                        title: 'Recommended Amount',
+                        name: 'recommendedAmount',
+                        data: 'recommendedAmount',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return formatter.format(data) ?? '{Recommended Amount}';
+                        },
+                    },
+                  
+
+                ],
+
+                columnDefs: [
+                    {
+                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], // Index of columns to be visible by default
+                        visible: true
+                    },
+                    {
+                        targets: '_all',
+                        visible: false // Hide all other columns initially
+                    }
                 ],
             })
         );
@@ -456,56 +706,54 @@
             $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: tableHeight + 10 });
         }
     }
+    dataTable.on('column-reorder.dt', function (e, settings) {
+        updateFilter();
+    });
+    dataTable.on('column-visibility.dt', function (e, settings, deselectedcolumn, state) {
+        updateFilter();
+    });
 
-    function addFilterRow(api) {
-        let trNode = document.createElement('tr');
-        trNode.classList.add('filter');
-        trNode.classList.add('hidden');
-        trNode.id = 'dtFilterRow';
+    function updateFilter() {
+        let optionsOpen = false;
+        $("#tr-filter").each(function () {
+            if ($(this).is(":visible"))
+                optionsOpen = true;
+        })
+        $('.tr-toggle-filter').remove();
+        let newRow = $("<tr class='tr-toggle-filter' id='tr-filter'>");
 
-        api.columns().every(function () {
-            let column = this;
-            let title = $(column.header()).text();
-            let index = column.selector.cols;
-            mapTitles.set(title, index);
-        });
+        dataTable
+            .columns()
+            .every(function () {
+                let column = this;
+                if (column.visible()) {
+                    let title = column.header().textContent;
+                    if (title) {
+                        let newCell = $("<td>").append("<input type='text' class='form-control input-sm custom-filter-input' placeholder='" + title + "'>");
+                        newCell.find("input").on("keyup", function () {
+                            if (column.search() !== this.value) {
+                                column.search(this.value).draw();
+                            }
+                        });
 
-        let children = [
-            ...document.getElementById('GrantApplicationsTable').children[0]
-                .children[0].children,
-        ];
+                        newRow.append(newCell);
+                       
+                    }
+                    else {
+                        let newCell = $("<td>");
+                        newRow.append(newCell);
+                    }
+                }
 
-        children.forEach(function (child) {
-            let label = child.attributes['aria-label'].value;
-            child.classList.remove('sorting');
-            child.classList.remove('sorting_asc');
-            child.classList.add('grey-background');
 
-            const firstElement = label.split(':').shift();
-
-            if (firstElement != '') {
-                let inputFilter = document.createElement('input');
-                inputFilter.type = 'text';
-                inputFilter.classList.add('filter-input');
-                inputFilter.placeholder = firstElement;
-                inputFilter.addEventListener('keyup', function () {
-                    $('#btn-clear-filter')[0].disabled = false;
-                    dataTable
-                        .columns(mapTitles.get(this.placeholder))
-                        .search(this.value)
-                        .draw();
-                });
-                child.appendChild(inputFilter);
-            } else {
-                child.addEventListener('click', clearFilter);
-            }
-            trNode.appendChild(child);
-        });
-
-        document
-            .getElementsByClassName('table')[0]
-            .children[0].appendChild(trNode);
+            });
+        $("#GrantApplicationsTable thead").after(newRow);
+        if (optionsOpen) {
+            $(".tr-toggle-filter").show();
+        }
     }
+
+  
 
     function modifyAssignmentsOnServer() {
         let id,
@@ -535,7 +783,7 @@
     function getNames(data) {
         let name = '';
         data.forEach((d, index) => {
-            name = name + ' ' + d.assigneeDisplayName;
+            name = name + ' ' + d.fullName;
 
             if (index != (data.length - 1)) {
                 name = name + ',';
@@ -543,5 +791,12 @@
         });
 
         return name;
+    }
+    function titleCase(str) {
+        str = str.toLowerCase().split(' ');
+        for (let i = 0; i < str.length; i++) {
+            str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
+        }
+        return str.join(' ');
     }
 });

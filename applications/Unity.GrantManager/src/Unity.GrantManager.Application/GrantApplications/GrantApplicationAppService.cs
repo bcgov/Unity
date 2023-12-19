@@ -13,6 +13,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
+using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -27,7 +28,7 @@ namespace Unity.GrantManager.GrantApplications;
 [ExposeServices(typeof(GrantApplicationAppService), typeof(IGrantApplicationAppService))]
 public class GrantApplicationAppService :
     CrudAppService<
-    GrantApplication,
+    Application,
     GrantApplicationDto,
     Guid,
     PagedAndSortedResultRequestDto,
@@ -39,35 +40,37 @@ public class GrantApplicationAppService :
     private readonly IApplicationManager _applicationManager;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
-    private readonly IApplicationUserAssignmentRepository _userAssignmentRepository;
+    private readonly IApplicationAssignmentRepository _applicationAssignmentRepository;
     private readonly IApplicantRepository _applicantRepository;
     private readonly ICommentsManager _commentsManager;
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IAssessmentRepository _assessmentRepository;
+    private readonly IPersonRepository _personRepository;
 
-    public GrantApplicationAppService(
-        IRepository<GrantApplication, Guid> repository,
+    public GrantApplicationAppService(IRepository<Application, Guid> repository,
         IApplicationManager applicationManager,
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
-        IApplicationUserAssignmentRepository userAssignmentRepository,
+        IApplicationAssignmentRepository applicationAssignmentRepository,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IApplicantRepository applicantRepository,
         ICommentsManager commentsManager,
         IApplicationFormRepository applicationFormRepository,
-        IAssessmentRepository assessmentRepository
+        IAssessmentRepository assessmentRepository,
+        IPersonRepository personRepository
         )
          : base(repository)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
         _applicationStatusRepository = applicationStatusRepository;
-        _userAssignmentRepository = userAssignmentRepository;
+        _applicationAssignmentRepository = applicationAssignmentRepository;
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _applicantRepository = applicantRepository;
         _commentsManager = commentsManager;
         _applicationFormRepository = applicationFormRepository;
         _assessmentRepository = assessmentRepository;
+        _personRepository = personRepository;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -146,18 +149,20 @@ public class GrantApplicationAppService :
                         Sector = application.Sector,
                         Community = applicant.Community,
                         Status = application.ApplicationStatus.InternalStatus,
-                        LikelihoodOfFunding = application.LikelihoodOfFunding!=null&&application.LikelihoodOfFunding!=""? AssessmentResultsOptionsList.FundingList[application.LikelihoodOfFunding]:"",
-                        AssessmentStartDate = string.Format("{0:MM/dd/yyyy}",application.AssessmentStartDate),
-                        FinalDecisionDate = string.Format("{0:MM/dd/yyyy}",application.FinalDecisionDate),
+                        LikelihoodOfFunding = application.LikelihoodOfFunding != null && application.LikelihoodOfFunding != "" ? AssessmentResultsOptionsList.FundingList[application.LikelihoodOfFunding] : "",
+                        AssessmentStartDate = string.Format("{0:yyyy/MM/dd}", application.AssessmentStartDate),
+                        FinalDecisionDate = string.Format("{0:yyyy/MM/dd}", application.FinalDecisionDate),
                         TotalScore = application.TotalScore.ToString(),
-                        AssessmentResult = application.AssessmentResultStatus!=null&&application.AssessmentResultStatus!=""? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus]:"",
+                        AssessmentResult = application.AssessmentResultStatus != null && application.AssessmentResultStatus != "" ? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus] : "",
                         RecommendedAmount = application.RecommendedAmount,
                         ApprovedAmount = application.ApprovedAmount,
-                        Batch = "" // to-do: ask BA for the implementation of Batch field
-                    };
+                        Batch = "", // to-do: ask BA for the implementation of Batch field,
+                        CensusSubdivision = application.CensusSubdivision,
+                        RegionalDistrict = application.RegionalDistrict,
+    };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
-        if(queryResult != null)
+        if (queryResult != null)
         {
             return queryResult;
         }
@@ -166,7 +171,7 @@ public class GrantApplicationAppService :
             return await Task.FromResult<GetSummaryDto>(new GetSummaryDto());
         }
 
-     }
+    }
 
     public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
     {
@@ -199,7 +204,7 @@ public class GrantApplicationAppService :
                     application.RecommendedAmount = input.RecommendedAmount ?? 0;
                     application.ApprovedAmount = input.ApprovedAmount ?? 0;
                     application.LikelihoodOfFunding = input.LikelihoodOfFunding;
-                    application.DueDilligenceStatus = input.DueDiligenceStatus;
+                    application.DueDiligenceStatus = input.DueDiligenceStatus;
                     application.Recommendation = input.Recommendation;
                     application.DeclineRational = input.DeclineRational;
                     application.TotalScore = input.TotalScore;
@@ -223,11 +228,54 @@ public class GrantApplicationAppService :
         }
     }
 
+    public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+        if (application != null)
+        {
+            application.ProjectSummary = input.ProjectSummary;
+            application.ProjectName = input.ProjectName ?? String.Empty;
+            application.RequestedAmount = input.RequestedAmount ?? 0;
+            application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
+            application.ProjectStartDate = input.ProjectStartDate;
+            application.ProjectEndDate = input.ProjectEndDate;
+            application.PercentageTotalProjectBudget = input.PercentageTotalProjectBudget;
+            application.ProjectFundingTotal = input.ProjectFundingTotal;
+            application.Community = input.Community;
+            application.CommunityPopulation = input.CommunityPopulation;
+            application.Acquisition = input.Acquisition;
+            application.Forestry = input.Forestry;
+            application.ForestryFocus = input.ForestryFocus;
+            application.Sector = input.Sector;
+            application.SubSector = input.SubSector;
+            application.EconomicRegion = input.EconomicRegion;
+            application.ElectoralDistrict = input.ElectoralDistrict;
+            application.CensusSubdivision = input.CensusSubdivision;
+            application.RegionalDistrict = input.RegionalDistrict;
+
+    await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+        }
+        else
+        {
+            throw new EntityNotFoundException();
+        }
+    }
+
     public async Task<List<GrantApplicationAssigneeDto>> GetAssigneesAsync(Guid applicationId)
     {
-        IQueryable<ApplicationUserAssignment> queryableAssignment = (await _userAssignmentRepository.GetQueryableAsync());
-        var assignments = queryableAssignment.Where(a => a.ApplicationId.Equals(applicationId)).ToList();
-        return ObjectMapper.Map<List<ApplicationUserAssignment>, List<GrantApplicationAssigneeDto>>(assignments);
+        var query = from userAssignment in await _applicationAssignmentRepository.GetQueryableAsync()
+                    join user in await _personRepository.GetQueryableAsync() on userAssignment.AssigneeId equals user.Id
+                    where userAssignment.ApplicationId == applicationId
+                    select new GrantApplicationAssigneeDto
+                    {
+                        Id = userAssignment.Id,
+                        AssigneeId = userAssignment.AssigneeId,
+                        FullName = user.FullName
+                    };
+
+        return query.ToList();
     }
 
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
@@ -281,16 +329,16 @@ public class GrantApplicationAppService :
         }
     }
 
-    public async Task InsertAssigneeAsync(Guid[] applicationIds, string oidcSub, string assigneeDisplayName)
+    public async Task InsertAssigneeAsync(Guid[] applicationIds, Guid assigneeId)
     {
         foreach (Guid applicationId in applicationIds)
         {
             try
             {
                 var assignees = await GetAssigneesAsync(applicationId);
-                if (assignees == null || assignees.FindIndex(a => a.OidcSub == oidcSub) == -1)
+                if (assignees == null || assignees.FindIndex(a => a.AssigneeId == assigneeId) == -1)
                 {
-                    await _applicationManager.AssignUserAsync(applicationId, oidcSub, assigneeDisplayName);
+                    await _applicationManager.AssignUserAsync(applicationId, assigneeId);
                 }
             }
             catch (Exception ex)
@@ -300,13 +348,13 @@ public class GrantApplicationAppService :
         }
     }
 
-    public async Task DeleteAssigneeAsync(Guid[] applicationIds, string oidcSub)
+    public async Task DeleteAssigneeAsync(Guid[] applicationIds, Guid assigneeId)
     {
         foreach (Guid applicationId in applicationIds)
         {
             try
             {
-                await _applicationManager.RemoveAssigneeAsync(applicationId, oidcSub);
+                await _applicationManager.RemoveAssigneeAsync(applicationId, assigneeId);
             }
             catch (Exception ex)
             {
@@ -327,13 +375,13 @@ public class GrantApplicationAppService :
                 Guid currentApplicationId = Guid.Parse(item.Name);
                 if (currentApplicationId != previousApplicationId)
                 {
-                    var oidcSubs = new List<(string oidcSub, string displayName)>();
+                    var oidcSubs = new List<(Guid? assigneeId, string? fullName)>();
 
                     foreach (JToken assigneeToken in item.Value.Children())
                     {
-                        string oidcSub = assigneeToken.Value<string?>("oidcSub") ?? "";
-                        string assigneeDisplayName = assigneeToken.Value<string?>("assigneeDisplayName") ?? "";
-                        oidcSubs.Add(new(oidcSub, assigneeDisplayName));
+                        string? assigneeId = assigneeToken.Value<string?>("assigneeId") ?? null;
+                        string? fullName = assigneeToken.Value<string?>("fullName") ?? null;
+                        oidcSubs.Add(new(assigneeId != null ? Guid.Parse(assigneeId) : null, fullName));
                     }
 
                     await _applicationManager.SetAssigneesAsync(currentApplicationId, oidcSubs);

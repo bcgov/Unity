@@ -102,7 +102,7 @@ $(function () {
                 },
                 {
                     title: l('ReviewerList:AssessorName'),
-                    data: 'assessorDisplayName',
+                    data: 'assessorFullName',
                     className: 'data-table-header',
                     render: function (data) {
                         return data ?? nullPlaceholder;
@@ -272,9 +272,12 @@ function refreshActionButtons(dataTableContext, assessmentId) {
                 dataTableContext.buttons(enabledButtons).enable();
             });
     }
-    let isPermitted = CheckAssessmentCreateButton();
-    if (!isPermitted) {
-        dataTableContext.buttons('Create:name').disable();
+
+    if (typeof CheckAssessmentCreateButton === 'function') {
+        let isPermitted = CheckAssessmentCreateButton();
+        if (!isPermitted) {
+            dataTableContext.buttons('Create:name').disable();
+        }
     }
 }
 

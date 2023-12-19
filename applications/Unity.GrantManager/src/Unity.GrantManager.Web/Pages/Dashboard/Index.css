@@ -1,0 +1,9 @@
+﻿.application-dashboard {
+    overflow-y: scroll;
+    height: calc(100vh - 150px);
+}
+
+.chartBox {
+    height: 100%;
+    width: 80vw;
+}

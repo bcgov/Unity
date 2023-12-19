@@ -81,17 +81,14 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                     var selectedUser = await _identityUserLookupAppService.FindByIdAsync(AssigneeId);
                     var userName = $"{selectedUser.Name} {selectedUser.Surname}";
                    
-
                     if (ActionType == AssigneeConsts.ACTION_TYPE_ADD)
                     {
-                        await _applicationService.InsertAssigneeAsync(applicationIds.ToArray(), AssigneeId.ToString(), userName);
+                        await _applicationService.InsertAssigneeAsync(applicationIds.ToArray(), AssigneeId);
                     }
                     else if (ActionType == AssigneeConsts.ACTION_TYPE_REMOVE)
                     {
-                        await _applicationService.DeleteAssigneeAsync(applicationIds.ToArray(), AssigneeId.ToString());
+                        await _applicationService.DeleteAssigneeAsync(applicationIds.ToArray(), AssigneeId);
                     }
-
-                  
                 }
             }
             catch (Exception ex)

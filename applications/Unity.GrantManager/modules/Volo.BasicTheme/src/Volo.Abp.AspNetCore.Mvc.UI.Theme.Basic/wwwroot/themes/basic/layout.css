@@ -13,34 +13,6 @@ body {
     overflow: hidden;
 }
 
-.input-group .input-group-prepend {
-    border: none;
-}
-
-    .input-group .input-group-prepend .input-group-text, .input-group .input-group-append .input-group-text {
-        height: var(--bc-input-field-height);
-        border-radius: 0.25rem;
-        background-color: var(--bc-colors-white-primary-500);
-        border: none;
-    }
-
-.input-group .form-control {
-    font-size: var(--bc-font-size);
-    line-height: 1;
-    height: var(--bc-input-field-height);
-    border: none;
-    color: var(--bc-colors-grey-text-500);
-    border-radius: .25rem;
-}
-
-.input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
-    margin-left: calc(var(--bs-border-width) * -4);
-}
-
-.form-control:focus {
-    box-shadow: none;
-}
-
 
 .btn {
     --bs-btn-border-radius: 0.1875rem;
@@ -323,8 +295,8 @@ div.dataTables_wrapper div.dataTables_length label {
 input.form-control, textarea.form-control, .form-select {
     font-size: var(--bc-font-size);
     color: var(--bc-colors-grey-text-500);
-    border-radius: 0.1875rem;
-    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: 0.1875rem !important;
+    border: var(--bs-border-width) solid var(--bs-border-color);    
 }
 
     input.form-control:hover, textarea.form-control:hover, .form-select:hover {
@@ -356,6 +328,12 @@ input.form-control, textarea.form-control, .form-select {
         background-color: var(--bc-colors-grey-pressed);
     }
 
+abp-date-picker .btn {
+    position: absolute !important;
+    right: 1px;
+    padding: 0;
+    top: 2px;
+}
 
 .card {
     --bs-card-border-color: transparent;

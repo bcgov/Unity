@@ -32,7 +32,6 @@ namespace Unity.GrantManager.Applications
                                     IntakeId = intake.Id,
                                     ApplicationFormName = "New Form - Setup API KEY",
                                     ChefsApplicationFormGuid = eventSubscription.FormId.ToString(),
-                                    ChefsFormVersionGuid = eventSubscription.FormVersion.ToString(),
                                     ChefsCriteriaFormGuid = ""
                                 },
                                 autoSave: true

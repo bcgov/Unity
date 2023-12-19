@@ -1,18 +1,21 @@
 ﻿@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.Brand
+@using Volo.Abp.MultiTenancy;
+
+@inject ICurrentTenant CurrentTenant
 
 @{
     string userName = (@ViewBag.UserName == null) ? "Test" : @ViewBag.UserName;
     string[] userNameInitialsArr = userName.Split(" ");
     string userNameInitials = userNameInitialsArr[0].Truncate(1) + ((userNameInitialsArr.Length > 1) ? userNameInitialsArr[1].Truncate(1) : "");
 
-    string pageTitle = (@ViewBag.PageTitle == null) ? "" : @ViewBag.PageTitle;
+    string pageTitle = CurrentTenant.Name + " - " + ViewBag.PageTitle;
 }
 
 <nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-sub-navbar" id="sub-navbar">
     <div class="container-fluid">
         <h6>@pageTitle</h6>
         <div class="search-input" style="display:none">
-            <div class="input-group">
+            <div class="input-group input-group-with-icons">
                 <div class="input-group-prepend">
                     <span class="input-group-text">
                         <i class="fs-5 fl fl-search"></i>

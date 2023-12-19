@@ -210,7 +210,29 @@
     "Summary:Assessment.AssessmentResult": "Assessment Result",
     "Summary:Assessment.RecommendedAmount": "Recommended Amount",
     "Summary:Assessment.ApprovedAmount": "Approved Amount",
-    "Summary:Assessment.Batch": "Batch #"
+    "Summary:Assessment.Batch": "Batch #",
+
+    "ProjectInfoView:ProjectInfoTitle": "Project Summary",
+    "ProjectInfoView:ProjectInfo.ProjectName": "Project Name",
+    "ProjectInfoView:ProjectInfo.ProjectSummary": "Project Summary",
+    "ProjectInfoView:ProjectInfo.ProjectStartDate": "Project Start Date",
+    "ProjectInfoView:ProjectInfo.ProjectEndDate": "Project End Date",
+    "ProjectInfoView:ProjectInfo.RequestedAmount": "Requested Amount",
+    "ProjectInfoView:ProjectInfo.TotalProjectBudget": "Project Budget",
+    "ProjectInfoView:ProjectInfo.PercentageTotalProjectBudget": "% of Total Project Budget",
+    "ProjectInfoView:ProjectInfo.ProjectFundingTotal": "Projected Funding Total",
+    "ProjectInfoView:ProjectInfo.Sector": "Sector",
+    "ProjectInfoView:ProjectInfo.SubSector": "Sub Sector",
+    "ProjectInfoView:ProjectInfo.Community": "Community",
+    "ProjectInfoView:ProjectInfo.EconomicRegion": "Economic Region",
+    "ProjectInfoView:ProjectInfo.ElectoralDistrict": "Electoral District",
+    "ProjectInfoView:ProjectInfo.CommunityPopulation": "Community Census Population",
+    "ProjectInfoView:ProjectInfo.Acquisition": "Acquisition",
+    "ProjectInfoView:ProjectInfo.Forestry": "Forestry/Non-Forestry",
+    "ProjectInfoView:ProjectInfo.ForestryFocus": "Forestry Focus",
+    "ProjectInfoView:ProjectInfo.CensusSubdivision": "Census Subdivision",
+    "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District (Census Division)",
+    "ProjectInfoView:ProjectInfoLocation": "Project Location"
   }
 }
 

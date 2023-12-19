@@ -90,7 +90,7 @@
 
 
 .unity-side-nav {
-    min-width: 50px;
+    min-width: 200px;
     width: 210px;
     height: calc(100vh - 128px);
     overflow-y: scroll;
@@ -159,3 +159,28 @@
 .unity-currency-input {
     text-align: right;
 }
+
+.input-group-with-icons .input-group-prepend {
+    border: none;
+}
+
+    .input-group-with-icons .input-group-prepend .input-group-text, .input-group-with-icons .input-group-append .input-group-text {
+        height: var(--bc-input-field-height);
+        border-radius: 0.25rem;
+        background-color: var(--bc-colors-white-primary-500);
+        border: none;
+    }
+
+    .input-group-with-icons .form-control {
+        font-size: var(--bc-font-size);
+        line-height: 1;
+        height: var(--bc-input-field-height);
+        border: none;
+        color: var(--bc-colors-grey-text-500);
+        border-radius: .25rem;
+        width: 1% !important;
+    }
+
+    .input-group-with-icons > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+        margin-left: calc(var(--bs-border-width) * -4);
+    }

@@ -1,0 +1,36 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.Dashboard.IndexModel
+@using Unity.GrantManager.Web.Pages.Dashboard
+@{
+}
+@section styles {
+    <abp-style src="/Pages/Dashboard/Index.css" />
+}
+@section scripts
+{
+    <abp-script src="/Pages/Dashboard/Index.js" />
+}
+
+
+<div class="application-dashboard">
+    <table class="chartBox" aria-describedby="chartBox">
+        <tr>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td style="width:40vw">
+                <canvas id="economicRegionChart"></canvas>
+            </td>
+            <td style="width:40vw">
+                <canvas id="sectorChart"></canvas>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <canvas id="applicationStatusChart"></canvas>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+</div>

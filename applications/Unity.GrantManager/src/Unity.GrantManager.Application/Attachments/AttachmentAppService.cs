@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Identity;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 
@@ -16,25 +17,51 @@ namespace Unity.GrantManager.GrantApplications
     {
         private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
         private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
+        private readonly IPersonRepository _personRepository;
 
-        public AttachmentService(IApplicationAttachmentRepository applicationAttachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository)
+        public AttachmentService(IApplicationAttachmentRepository applicationAttachmentRepository, 
+            IAssessmentAttachmentRepository assessmentAttachmentRepository,
+            IPersonRepository personUserRepository)
         {
             _applicationAttachmentRepository = applicationAttachmentRepository;
             _assessmentAttachmentRepository = assessmentAttachmentRepository;
+            _personRepository = personUserRepository;
         }
 
         public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
         {
-            IQueryable<ApplicationAttachment> queryableAttachment = _applicationAttachmentRepository.GetQueryableAsync().Result;
-            var attachments  = queryableAttachment.Where(c => c.ApplicationId.Equals(applicationId)).ToList();
-            return await Task.FromResult<IList<ApplicationAttachmentDto>>(ObjectMapper.Map<List<ApplicationAttachment>, List<ApplicationAttachmentDto>>(attachments.OrderByDescending(s => s.Time).ToList()));
+            var query = from applicationAttachment in await _applicationAttachmentRepository.GetQueryableAsync()
+                        join person in await _personRepository.GetQueryableAsync() on applicationAttachment.UserId equals person.Id
+                        where applicationAttachment.ApplicationId == applicationId
+                        select new ApplicationAttachmentDto()
+                        {
+                            AttachedBy = person.FullName,
+                            Id = applicationAttachment.Id,
+                            FileName = applicationAttachment.FileName,
+                            S3ObjectKey = applicationAttachment.S3ObjectKey,
+                            Time = applicationAttachment.Time,
+                            CreatorId = person.Id
+                        };
+
+            return query.ToList();
         }
 
         public async Task<IList<AssessmentAttachmentDto>> GetAssessmentAsync(Guid assessmentId)
         {
-            IQueryable<AssessmentAttachment> queryableAttachment = _assessmentAttachmentRepository.GetQueryableAsync().Result;
-            var attachments = queryableAttachment.Where(c => c.AssessmentId.Equals(assessmentId)).ToList();
-            return await Task.FromResult<IList<AssessmentAttachmentDto>>(ObjectMapper.Map<List<AssessmentAttachment>, List<AssessmentAttachmentDto>>(attachments.OrderByDescending(s => s.Time).ToList()));
+            var query = from applicationAttachment in await _assessmentAttachmentRepository.GetQueryableAsync()
+                        join person in await _personRepository.GetQueryableAsync() on applicationAttachment.UserId equals person.Id
+                        where applicationAttachment.AssessmentId == assessmentId
+                        select new AssessmentAttachmentDto()
+                        {
+                            AttachedBy = person.FullName,
+                            Id = applicationAttachment.Id,
+                            FileName = applicationAttachment.FileName,
+                            S3ObjectKey = applicationAttachment.S3ObjectKey,
+                            Time = applicationAttachment.Time,
+                            CreatorId = person.Id
+                        };
+
+            return query.ToList();
         }
     }
 }

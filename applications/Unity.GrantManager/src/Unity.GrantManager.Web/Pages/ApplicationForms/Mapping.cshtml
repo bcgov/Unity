@@ -1,15 +1,19 @@
 ﻿@page
-@using Unity.GrantManager.Localization
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout
-@using Unity.GrantManager.Web.Pages.ApplicationForms
-@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Unity.GrantManager.Web.Pages.ApplicationForms;
+@using Microsoft.Extensions.Localization;
+@using Microsoft.AspNetCore.Authorization;
+@using Unity.GrantManager.Permissions;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
 @model MappingModel
+@inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @{
     PageLayout.Content.MenuItemName = "GrantManager.ApplicationForms";
     PageLayout.Content.Title = "Application Mapping";
-    ViewBag.PageTitle = "ApplicationFormsMapping";
+    ViewBag.PageTitle = "Application Forms Mapping";
 }
 @section scripts
 {
@@ -21,69 +25,180 @@
 }
 
 <input type="hidden" id="intakeProperties" value="@Model.IntakeProperties">
-<input type="hidden" id="applicationFormDtoString" value="@Model.ApplicationFormDtoString">
-<input type="hidden" id="availableChefsFields" value="@Model.ApplicationFormDto.AvailableChefsFields">
-<input type="hidden" id="existingMapping" value="@Model.ApplicationFormDto.SubmissionHeaderMapping">
+<input type="hidden" id="applicationFormVersionDtoString" value="@Model.ApplicationFormVersionDtoString">
+<input type="hidden" id="availableChefsFields" value="@Model.ApplicationFormVersionDto.AvailableChefsFields">
+<input type="hidden" id="existingMapping" value="@Model.ApplicationFormVersionDto.SubmissionHeaderMapping">
+<input type="hidden" id="formVersionId" value="@Model.ApplicationFormVersionDto.Id">
 <input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto.Id">
 <input type="hidden" id="chefsFormId" value="@Model.ApplicationFormDto.ChefsApplicationFormGuid">
-<input type="hidden" id="chefsFormVersionId" value="@Model.ApplicationFormDto.ChefsFormVersionGuid">
 
 <div class="container-fluid px-2">
     <div class="d-flex my-1 p-2">
-        <abp-card-title>Form Mapping - @Model.ApplicationFormDto.ApplicationFormName </abp-card-title>
+        <abp-row class="m-0 assessment-result-form" >
+            <abp-column size="_12" class="px-1">
+             <abp-card-title class="label">@Model.ApplicationFormDto.ApplicationFormName </abp-card-title>
+             </abp-column>
+        </abp-row>
     </div>
-    <div class="d-flex my-1 p-2">
-        <abp-card-title>Version - @Model.ApplicationFormDto.Version </abp-card-title>
-    </div>    
-    <div class="main-content">
+
+    <div class="row">
+        <div class="column">
+            <div class="d-flex my-1 p-2">
+                <abp-row class="m-0 assessment-result-form" style="width: 500px;">
+                    <abp-column size="_4" class="px-1">
+                        <abp-card-title class="label">Version</abp-card-title>
+                    </abp-column>
+                    <abp-column size="_2" class="px-1">
+                        <select class="form-select form-control" id="applicationFormVersion" name="Version">
+                            @foreach (var applicationFormVersionDto in Model.ApplicationFormVersionDtoList)
+                            {
+                                @if (@applicationFormVersionDto.ChefsFormVersionGuid+"" != "")
+                                {
+                                    var selected = false;
+                                    @if (Model.ChefsFormVersionGuid+"" == applicationFormVersionDto.ChefsFormVersionGuid)
+                                    {
+                                        selected = true;
+                                    }
+                                
+                                    <option value="@applicationFormVersionDto.ChefsFormVersionGuid" selected="@(selected)"> @applicationFormVersionDto.Version - @applicationFormVersionDto.ChefsFormVersionGuid</option>
+                                }
+                            }
+                        </select>
+                    </abp-column>
+                </abp-row>
+            </div>
+            <div class="d-flex my-1 p-2">
+                <abp-row class="m-0 assessment-result-form" style="width: 500px;">
+                    <abp-column size="_4" class="px-1">
+                        <abp-card-title class="label">Published</abp-card-title>
+                    </abp-column>
+                    <abp-column size="_2" class="px-1">
+                    <abp-card-title class="label">@Model.ApplicationFormVersionDto.Published</abp-card-title>
+                    </abp-column>
+                </abp-row>
+            </div>
+        </div>
+        <div class="column">
+            <form id="mappingForm" class="mappingForm">
+                <abp-row class="m-0 assessment-result-form">
+                    <abp-column size="_3" class="px-1">
+                        <div class="row">
+                            <div class="column">
+                                <abp-card-title class="label form-version-label">Form Version ID</abp-card-title>
+                            </div>
+                            <div class="column">
+                                <div class="unity-input-group">
+                                    <input id="chefsFormVersionId" class="form-control" type="text"  value="@Model.ChefsFormVersionGuid">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="column"></div>
+                            <div class="column">
+                        <div class="unity-input-group">
+                            <abp-button 
+                                id="btn-sync" 
+                                text="Sync Available" 
+                                disabled="false" 
+                                icon-type="Other"
+                                icon="fl fl-synch"
+                                abp-tooltip="Call out to CHEFS and bring back all the Available CHEFS form Fields. This action requires a Form Version ID to be entered"
+                                button-type="Success" />
+                        </div>
+                            </div>
+                        </div>
+                    </abp-column>
+                </abp-row>
+
+            </form>
+        </div>
+    </div>
+
+    <div class="main-content mapping-div">
         <div class="table-div left">
-            <abp-table id="ApplicationFormsTable" class="chef-field-table">
-                <caption>
+            <div class="row label table-title">
                     Chefs Available Fields
-                </caption>
+            </div>
+            <abp-table id="ApplicationFormsTable" class="chef-field-table">
                 <thead>
                     <tr>
-                        <th scope="Column">Label</th>
-                        <th scope="Column">Property Name</th>
-                        <th scope="Column">Type</th>
-                        <th scope="Column">Map To</th>
+                        <th scope="Column">CHEFS Label</th>
+                        <th scope="Column">CHEFS Property Name</th>
+                        <th scope="Column">CHEFS Type</th>
+                        <th scope="Column">Map To Unity</th>
                     </tr>
                 </thead>
             </abp-table>
         </div>
         <div class="right intake-map-col">
-            <div class="title">Available Intake Mapping Fields</div>
+            <div class="title intake-mapping-title row label table-title">Available Intake Mapping Fields</div>
             <div id="intake-map-available-fields-column" class="col" style="overflow-y:scroll">
             </div>
         </div>
     </div>
+
+
+    <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">
+        <abp-modal-header title="Edit Mapping JSON"></abp-modal-header>
+        <abp-modal-body>
+            <textarea id="jsonText" rows="15" cols="80">@Model.ApplicationFormVersionDto.SubmissionHeaderMapping</textarea>
+        </abp-modal-body>
+        <abp-modal-footer>
+           
+                <abp-button id="btn-cancel-mapping"
+                        text="Cancel"
+                        icon-type="Other"
+                        class="btn btn-secondary"
+                        abp-tooltip="Cancel the Edit"
+                        button-type="Secondary" />
+
+                <abp-button id="btn-save-mapping"
+                        text="Save Mapping JSON"
+                        icon-type="Other"
+                        icon="fl fl-save"
+                        abp-tooltip="Save the Mapping JSON"
+                        button-type="Primary" />
+        </abp-modal-footer>
+    </abp-modal>
+
+
     <div class="content-div">
         <div class="buttons">
             <div class="buttons-div">
-            <abp-button id="btn-sync"
-                        text="Sync Available"
-                        disabled="false"
-                        icon-type="Other"
-                        icon="fl fl-synch"
-                        button-type="Success" />
                 &nbsp;&nbsp;
             <abp-button id="btn-save"
                         text="Save Mapping"
                         disabled="true"
                         icon-type="Other"
                         icon="fl fl-save"
+                        style="pointer-events: all;"
+                        abp-tooltip="Save the Mapping of CHEFS fields to Unity Fields"
                         button-type="Primary" />
             &nbsp;&nbsp;
+            <abp-button id="btn-edit"
+                        text="Edit Mapping"
+                        icon-type="Other"
+                        data-target="#editMappingModal"
+                        icon="fl fl-edit"
+                        data-toggle="modal"
+                        style="pointer-events: all;"
+                        abp-tooltip="Edit the Mapping JSON Manually"
+                        button-type="Primary" />
+            
+            &nbsp;&nbsp;
+
             <abp-button id="btn-reset"
                         text="Reset Mapping"
                         icon-type="Other"
                         icon="fl fl-undo"
+                        abp-tooltip="This button resets the mapping to the last saved state"
                         button-type="Light" />
                 &nbsp;&nbsp;
             <abp-button id="btn-back"
                         text="Back"
                         icon-type="Other"
                         icon="fl fl-open-pane"
+                        abp-tooltip="Navigate back to the Forms"
                         button-type="Light" />
             </div>
         </div>

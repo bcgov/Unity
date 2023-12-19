@@ -1,11 +1,12 @@
-name: Dev - Build & Push docker images
-
+# This is a workflow that is either manually or PR merge to "dev" triggered 
+name: Dev - Build
 on:
   push:
     branches: [ "dev" ]
     paths-ignore:
       - '.github/**'
       - '.gitignore'
+      - 'applications/Unity.Metabase/**'
       - 'database/**'
       - 'documentation/**'
       - 'openshift/**'
@@ -13,36 +14,43 @@ on:
       - 'CONTRIBUTING.md'
       - 'LICENSE'
       - 'README.md'
-      - 'SECURITY..md'
-  # Allows manual triggering
+      - 'SECURITY.md'
+  # Allow manual workflow triggering
   workflow_dispatch:
-
-# Repository secrets OPENSHIFT_TOKEN_{DEV|TEST|PROD|TOOLS}
+# Workflow dependencies are repository service connector and product version + commit buildId
 env:
-  CLUSTER: https://api.silver.devops.gov.bc.ca:6443
-  AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN_DEV }}
-  TARGET_PROJECT: d18498
-  TARGET_ENV: dev
-  
+  OPENSHIFT_CLUSTER: https://api.silver.devops.gov.bc.ca:6443
+  OPENSHIFT_AUTH_TOKEN: ${{secrets.OPENSHIFT_TOKEN_DEV}}
+  RELEASE_VERSION: ${{vars.VERSION_MAJOR}}.${{vars.VERSION_MINOR}}.${{vars.VERSION_PATCH}}
 jobs:
-
-  build:
+  # This workflow contains a job called "Build" with steps to set buildArgs, build and push images to container registry
+  Build:
     runs-on: ubuntu-latest
+    outputs: 
+      PROJECT: ${{steps.project.outputs.TARGET_PROJECT}}
     steps:
     - uses: actions/checkout@v3
-    - name: Build application Docker images
+    - name: Get BuildId
+      id: commit
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: Set buildArgs
+      run:  |
+        echo "buildArgs UNITY_BUILD_VERSION: ${{env.RELEASE_VERSION}}, UNITY_BUILD_REVISION: ${{steps.commit.outputs.sha_short}}"
+    - name: Build Docker images
       run: |
         rm -f ./docker-compose.override.yml
-        docker compose build
+        docker compose build --build-arg UNITY_BUILD_VERSION=${{env.RELEASE_VERSION}} --build-arg UNITY_BUILD_REVISION=${{steps.commit.outputs.sha_short}}
       working-directory: ./applications/Unity.GrantManager
     - name: Connect to OpenShift API
+      id: project
       run: |
-        oc login --token=$AUTH_TOKEN --server=$CLUSTER
-        oc project $TARGET_PROJECT-$TARGET_ENV
+        oc login --token=${{env.OPENSHIFT_AUTH_TOKEN}} --server=${{env.OPENSHIFT_CLUSTER}}
+        echo "PROJECT=$(oc project | grep -oE '[0-9a-z]*-[dev\|test\|prod\|tools]*')" >> $GITHUB_OUTPUT
         oc registry login
-    - name: Push application images to OpenShift container registry
+    - name: Push build images to container registry
       run: | 
-         docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest
-         docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
-#         docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-web:github-latest
-#         docker push image-registry.apps.silver.devops.gov.bc.ca/$TARGET_PROJECT-$TARGET_ENV/unity-grantmanager-dbmigrator:github-latest
+        echo project = ${{steps.project.outputs.PROJECT}}
+        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:github-latest
+        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:github-latest
+#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:github-latest
+#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:github-latest

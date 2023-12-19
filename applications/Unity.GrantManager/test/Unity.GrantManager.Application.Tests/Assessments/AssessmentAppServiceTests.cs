@@ -24,7 +24,6 @@ namespace Unity.GrantManager.Assessments
         private readonly IRepository<Assessment, Guid> _assessmentRepository;
         private readonly IRepository<AssessmentComment, Guid> _assessmentCommentRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
-        private ICurrentUser? _currentUser;
 
         public AssessmentAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
@@ -35,24 +34,12 @@ namespace Unity.GrantManager.Assessments
             _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
         }
 
-        protected override void AfterAddApplication(IServiceCollection services)
-        {
-            _currentUser = Substitute.For<ICurrentUser>();
-            services.AddSingleton(_currentUser);
-        }
-
-        private void Login(Guid userId)
-        {
-            _currentUser?.Id.Returns(userId);
-            _currentUser?.IsAuthenticated.Returns(true);
-        }
-
         [Fact]
         [Trait("Category", "Integration")]
         public async Task CreateAsync_Should_Create_Assessment()
         {
             // Arrange
-            Login(GrantManagerTestData.User_Assessor2_UserId);
+            Login(GrantManagerTestData.User2_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
@@ -75,7 +62,7 @@ namespace Unity.GrantManager.Assessments
         public async Task CreateAsync_Should_Throw_On_Duplicate_Assessment()
         {
             // Arrange
-            Login(GrantManagerTestData.User_Assessor1_UserId);
+            Login(GrantManagerTestData.User1_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
@@ -114,6 +101,7 @@ namespace Unity.GrantManager.Assessments
         public async Task CreateCommentAsync_Should_Create_Comment()
         {
             // Arrange
+            Login(GrantManagerTestData.User1_UserId);
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
             var assessment = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList()[0];
@@ -184,12 +172,12 @@ namespace Unity.GrantManager.Assessments
         public async Task GetCurrentUserAssessmentId_Should_Return_Guid_On_Existing_User_Assessment()
         {
             // Arrange
-            Login(GrantManagerTestData.User_Assessor1_UserId);
+            Login(GrantManagerTestData.User1_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
             var assessment = (await _assessmentRepository.GetQueryableAsync())
-                .Where(s => s.ApplicationId == application.Id && s.AssessorId == GrantManagerTestData.User_Assessor1_UserId).First();
+                .Where(s => s.ApplicationId == application.Id && s.AssessorId == GrantManagerTestData.User1_UserId).First();
 
             // Act
             var assessmentId = await _assessmentAppService.GetCurrentUserAssessmentId(application.Id);
@@ -203,7 +191,7 @@ namespace Unity.GrantManager.Assessments
         public async Task GetCurrentUserAssessmentId_Should_Return_Null_On_Nonexisting_User_Assessment()
         {
             // Arrange
-            Login(GrantManagerTestData.User_Assessor2_UserId);
+            Login(GrantManagerTestData.User2_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
@@ -228,11 +216,11 @@ namespace Unity.GrantManager.Assessments
         public async Task GetAllPermittedActions_Returns_Assessment_Workflow_Actions_List()
         {
             // Arrange
-            Login(GrantManagerTestData.User_Assessor1_UserId);
+            Login(GrantManagerTestData.User1_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
             var assessment = (await _assessmentRepository.GetQueryableAsync())
-                .Where(s => s.AssessorId == GrantManagerTestData.User_Assessor1_UserId).First();
+                .Where(s => s.AssessorId == GrantManagerTestData.User1_UserId).First();
 
             // Act
             var assessmentActions = await _assessmentAppService.GetPermittedActions(assessment.Id);
@@ -246,11 +234,11 @@ namespace Unity.GrantManager.Assessments
         public async Task ExecuteAssessmentActions_Should_Execute_Valid_State_Transition()
         {
             // Arrange
-            Login(GrantManagerTestData.User_Assessor1_UserId);
+            Login(GrantManagerTestData.User1_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
             var assessment = (await _assessmentRepository.GetQueryableAsync())
-                .Where(s => s.AssessorId == GrantManagerTestData.User_Assessor1_UserId).First();
+                .Where(s => s.AssessorId == GrantManagerTestData.User1_UserId).First();
             assessment.ApprovalRecommended = true;
 
             // Act
@@ -266,11 +254,11 @@ namespace Unity.GrantManager.Assessments
         public async Task ExecuteAssessmentActions_Should_Fail_On_Invalid_State_Transition()
         {
             // Arrange
-            Login(GrantManagerTestData.User_Assessor1_UserId);
+            Login(GrantManagerTestData.User1_UserId);
 
             using var uow = _unitOfWorkManager.Begin();
             var assessment = (await _assessmentRepository.GetQueryableAsync())
-                .Where(s => s.AssessorId == GrantManagerTestData.User_Assessor1_UserId).First();
+                .Where(s => s.AssessorId == GrantManagerTestData.User1_UserId).First();
 
             // Assert            
             await Assert.ThrowsAsync<BusinessException>(async () =>

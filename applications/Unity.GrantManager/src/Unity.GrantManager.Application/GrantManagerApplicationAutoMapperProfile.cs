@@ -7,6 +7,7 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Locality;
 
 namespace Unity.GrantManager;
 
@@ -19,12 +20,16 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
          * into multiple profile classes for a better organization. */
 
         CreateMap<Application, GrantApplicationDto>();
-        CreateMap<ApplicationUserAssignment, GrantApplicationAssigneeDto>();
+        CreateMap<ApplicationAssignment, GrantApplicationAssigneeDto>();
         CreateMap<ApplicationStatus, ApplicationStatusDto>();
         CreateMap<AssessmentComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.AssessmentId));
         CreateMap<ApplicationComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicationId));
+        CreateMap<CommentListItem, CommentDto>()
+            .ForMember(dest => dest.Badge, opt => opt.MapFrom(src => src.CommenterBadge))
+            .ForMember(dest => dest.Commenter, opt => opt.MapFrom(src => src.CommenterDisplayName))
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
         CreateMap<Assessment, AssessmentDto>()
             .ForMember(
                 dest => dest.StartDate,
@@ -33,12 +38,21 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();
+        CreateMap<ApplicationFormVersion, ApplicationFormVersionDto>();
+        CreateMap<ApplicationFormVersionDto, ApplicationFormVersion>();
+        CreateMap<CreateUpdateApplicationFormVersionDto, ApplicationFormVersion>();
         CreateMap<CreateUpdateIntakeDto, Intakes.Intake>();
         CreateMap<CreateUpdateApplicationFormDto, ApplicationForm>();
         CreateMap<AssessmentAttachment, AssessmentAttachmentDto>();
         CreateMap<ApplicationActionResultItem, ApplicationActionDto>();
         CreateMap<EventSubscription, EventSubscriptionDto>();
-        CreateMap<EventSubscriptionDto, EventSubscription>();
+        CreateMap<EventSubscriptionDto, EventSubscription>();        
+        CreateMap<Sector, SectorDto>();
+        CreateMap<SubSector, SubSectorDto>();
+        CreateMap<EconomicRegion, EconomicRegionDto>();
+        CreateMap<ElectoralDistrict, ElectoralDistrictDto>();
+        CreateMap<CensusSubdivision, CensusSubdivisionDto>();
+        CreateMap<RegionalDistrict, RegionalDistrictDto>();
     }
 }
 
