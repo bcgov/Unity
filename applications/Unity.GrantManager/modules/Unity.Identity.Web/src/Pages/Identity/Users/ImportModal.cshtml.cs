@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.ObjectExtending;
 using Volo.Abp.Identity;
+using Unity.GrantManager.UserImport;
 
 namespace Unity.Identity.Web.Pages.Identity.Users;
 
@@ -18,9 +18,13 @@ public class ImportModalModel : IdentityPageModel
 
     protected IIdentityUserAppService IdentityUserAppService { get; }
 
-    public ImportModalModel(IIdentityUserAppService identityUserAppService)
+    private readonly IUserImportAppService _userImportAppService;
+
+    public ImportModalModel(IIdentityUserAppService identityUserAppService,
+        IUserImportAppService userImportAppService)
     {
         IdentityUserAppService = identityUserAppService;
+        _userImportAppService = userImportAppService;
     }
 
     public virtual async Task<IActionResult> OnGetAsync()
@@ -43,10 +47,12 @@ public class ImportModalModel : IdentityPageModel
     {
         ValidateModel();
 
-        var input = ObjectMapper.Map<UserImportViewModel, IdentityUserCreateDto>(UserInfo);
-        input.RoleNames = Roles.Where(r => r.IsAssigned).Select(r => r.Name).ToArray();
+        await _userImportAppService.ImportUserAsync(new ImportUserDto() { Directory = UserInfo.Directory, Guid = UserInfo.UserIdentifier });
 
-        await IdentityUserAppService.CreateAsync(input);
+        //var input = ObjectMapper.Map<UserImportViewModel, IdentityUserCreateDto>(UserInfo);
+        //input.RoleNames = Roles.Where(r => r.IsAssigned).Select(r => r.Name).ToArray();
+
+        //await IdentityUserAppService.CreateAsync(input);
 
         return NoContent();
     }
@@ -61,6 +67,9 @@ public class ImportModalModel : IdentityPageModel
 
         [Required]
         public string Directory { get; set; } = "IDIR";
+
+        [Required]
+        public string UserIdentifier { get; set; } = string.Empty;
     }
 
     public class AssignedRoleViewModel
