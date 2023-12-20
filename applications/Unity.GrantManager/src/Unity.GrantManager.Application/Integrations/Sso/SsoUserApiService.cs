@@ -13,7 +13,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using Volo.Abp;
-using Unity.GrantManager.Integrations.Geocoder;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Integrations.Sso
@@ -38,12 +37,22 @@ namespace Unity.GrantManager.Integrations.Sso
             _restClient = restClient;
         }
 
-        public async Task<UserSearchResult> SearchUsersAsync(string directory, string? firstName = null, string? lastName = null)
+        public async Task<UserSearchResult> FindUserAsync(string directory, string guid)
         {
-            var tokenResponse = await GetAccessTokenAsync();  
-            
             var paramDictionary = new Dictionary<string, string>();
-            
+
+            if (guid != null)
+            {
+                paramDictionary.Add(nameof(guid), guid);
+            }
+
+            return await SearchSsoAsync(directory, paramDictionary);
+        }
+
+        public async Task<UserSearchResult> SearchUsersAsync(string directory, string? firstName = null, string? lastName = null)
+        {            
+            var paramDictionary = new Dictionary<string, string>();
+
             if (firstName != null && firstName.Length >= 2)
             {
                 paramDictionary.Add(nameof(firstName), firstName);
@@ -53,6 +62,13 @@ namespace Unity.GrantManager.Integrations.Sso
             {
                 paramDictionary.Add(nameof(lastName), lastName);
             }
+
+            return await SearchSsoAsync(directory, paramDictionary);
+        }
+
+        private async Task<UserSearchResult> SearchSsoAsync(string directory, Dictionary<string, string> paramDictionary)
+        {
+            var tokenResponse = await GetAccessTokenAsync();
 
             var resource = BuildUrlWithQueryStringUsingUriBuilder($"{_ssoApiOptions.Value.ApiUrl}/{_ssoApiOptions.Value.ApiEnv}/{directory}/users?", paramDictionary);
 
@@ -68,7 +84,7 @@ namespace Unity.GrantManager.Integrations.Sso
                 && response.IsSuccessStatusCode)
             {
                 string content = response.Content;
-                var result = JsonSerializer.Deserialize<UserSearchResult>(content) ?? throw new Exception();                
+                var result = JsonSerializer.Deserialize<UserSearchResult>(content) ?? throw new Exception();
 
                 result.Success = true;
                 return result;
@@ -122,7 +138,7 @@ namespace Unity.GrantManager.Integrations.Sso
                 {
                     // handle
                     throw new Exception();
-                }                
+                }
             }
 
             var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content);

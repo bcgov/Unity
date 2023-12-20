@@ -32,6 +32,8 @@
     "Common:EndDate": "End Date",
     "Common:Name": "Name",
     "Common:Description": "Description",
+    "Common:Command:Search": "Search",
+    "Common:Command:Import": "Import",
 
     "GrantPrograms": "Grant Programs",
     "GrantProgram": "Grant Program",

@@ -2,7 +2,7 @@
 
 namespace Unity.GrantManager.UserImport
 {
-    public class ImportUserSearchDto
+    public class UserSearchDto
     {
         [Required]
         public string Directory { get; set; } = "IDIR";

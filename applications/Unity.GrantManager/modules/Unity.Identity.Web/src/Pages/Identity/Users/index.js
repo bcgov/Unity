@@ -60,6 +60,9 @@
                         inputAction,
                         responseCallback
                     ),
+                    select: {
+                        style: 'single',
+                    },
                     columnDefs: [{
                         title: 'First Name',
                         name: 'firstName',
@@ -80,12 +83,15 @@
             _filterDataTable.ajax.reloadEx();
         });
 
-        _filterDataTable.on('select', function (e, dt, type, indexes) {
-            
+        _filterDataTable.on('select', function (e, dt, type, indexes) {            
+            if (type === 'row') {
+                let selectedData = _filterDataTable.row(indexes).data();                
+                $('#import-user-id').val(selectedData.userGuid);
+            }            
         });
 
         _filterDataTable.on('deselect', function (e, dt, type, indexes) {
-            
+            $('#import-user-id').val();
         });
     }
 

@@ -12,6 +12,5 @@ namespace Unity.GrantManager.Integration.Sso
 
         [JsonPropertyName("data")]
         public SsoUser[]? Data { get; set; }
-
     }
 }
