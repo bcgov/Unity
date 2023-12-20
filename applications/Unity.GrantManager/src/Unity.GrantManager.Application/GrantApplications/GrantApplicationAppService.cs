@@ -139,7 +139,7 @@ public class GrantApplicationAppService :
                     select new GetSummaryDto
                     {
                         Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = application.CreationTime.ToShortDateString(),
+                        SubmissionDate = application.SubmissionDate.ToShortDateString(),
                         OrganizationName = applicant.OrgName,
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
