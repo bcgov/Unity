@@ -4,11 +4,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.ObjectExtending;
-using Volo.Abp.Validation;
 using Volo.Abp.Identity;
+using System.ComponentModel;
+using Volo.Abp.Validation;
 
 namespace Unity.Identity.Web.Pages.Identity.Users;
 
@@ -19,7 +19,7 @@ public class EditModalModel : IdentityPageModel
 
     [BindProperty]
     public AssignedRoleViewModel[] Roles { get; set; }
-    
+
     public DetailViewModel Detail { get; set; }
 
     protected IIdentityUserAppService IdentityUserAppService { get; }
@@ -46,15 +46,15 @@ public class EditModalModel : IdentityPageModel
                 role.IsAssigned = true;
             }
         }
-        
+
         Detail = ObjectMapper.Map<IdentityUserDto, DetailViewModel>(user);
-        
+
         Detail.CreatedBy = await GetUserNameOrNullAsync(user.CreatorId);
         Detail.ModifiedBy = await GetUserNameOrNullAsync(user.LastModifierId);
 
         return Page();
     }
-    
+
     private async Task<string> GetUserNameOrNullAsync(Guid? userId)
     {
         if (!userId.HasValue)
@@ -72,7 +72,7 @@ public class EditModalModel : IdentityPageModel
 
         var input = ObjectMapper.Map<UserInfoViewModel, IdentityUserUpdateDto>(UserInfo);
         input.RoleNames = Roles.Where(r => r.IsAssigned).Select(r => r.Name).ToArray();
-        await IdentityUserAppService.UpdateAsync(UserInfo.Id, input);
+        await IdentityUserAppService.UpdateRolesAsync(UserInfo.Id, new IdentityUserUpdateRolesDto() { RoleNames = input.RoleNames });
 
         return NoContent();
     }
@@ -85,32 +85,19 @@ public class EditModalModel : IdentityPageModel
         [HiddenInput]
         public string ConcurrencyStamp { get; set; }
 
-        [Required]
-        [DynamicStringLength(typeof(IdentityUserConsts), nameof(IdentityUserConsts.MaxUserNameLength))]
+        [ReadOnly(true)]
+        [DisableValidation]
         public string UserName { get; set; }
 
-        [DynamicStringLength(typeof(IdentityUserConsts), nameof(IdentityUserConsts.MaxNameLength))]
+        [ReadOnly(true)]
         public string Name { get; set; }
 
-        [DynamicStringLength(typeof(IdentityUserConsts), nameof(IdentityUserConsts.MaxSurnameLength))]
+        [ReadOnly(true)]
         public string Surname { get; set; }
 
-        [DynamicStringLength(typeof(IdentityUserConsts), nameof(IdentityUserConsts.MaxPasswordLength))]
-        [DataType(DataType.Password)]
-        [DisableAuditing]
-        public string Password { get; set; }
-
-        [Required]
-        [EmailAddress]
-        [DynamicStringLength(typeof(IdentityUserConsts), nameof(IdentityUserConsts.MaxEmailLength))]
+        [ReadOnly(true)]
+        [DisableValidation]
         public string Email { get; set; }
-
-        [DynamicStringLength(typeof(IdentityUserConsts), nameof(IdentityUserConsts.MaxPhoneNumberLength))]
-        public string PhoneNumber { get; set; }
-
-        public bool IsActive { get; set; }
-
-        public bool LockoutEnabled { get; set; }
     }
 
     public class AssignedRoleViewModel
@@ -118,7 +105,6 @@ public class EditModalModel : IdentityPageModel
         [Required]
         [HiddenInput]
         public string Name { get; set; }
-
         public bool IsAssigned { get; set; }
     }
 
@@ -126,14 +112,7 @@ public class EditModalModel : IdentityPageModel
     {
         public string CreatedBy { get; set; }
         public DateTime? CreationTime { get; set; }
-        
         public string ModifiedBy { get; set; }
         public DateTime? LastModificationTime { get; set; }
-        
-        public DateTimeOffset? LastPasswordChangeTime { get; set; }
-
-        public DateTimeOffset? LockoutEnd { get; set; }
-        
-        public int AccessFailedCount { get; set; }
     }
 }

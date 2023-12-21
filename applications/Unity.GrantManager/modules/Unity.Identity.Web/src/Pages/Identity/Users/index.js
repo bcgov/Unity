@@ -4,29 +4,6 @@
     let _identityUserAppService = volo.abp.identity.identityUser;
     let _userImportService = unity.grantManager.userImport.userImport;
 
-    let togglePasswordVisibility = function () {
-        $("#PasswordVisibilityButton").click(function (e) {
-            let button = $(this);
-            let passwordInput = button.parent().find("input");
-            if (!passwordInput) {
-                return;
-            }
-
-            if (passwordInput.attr("type") === "password") {
-                passwordInput.attr("type", "text");
-            }
-            else {
-                passwordInput.attr("type", "password");
-            }
-
-            let icon = button.find("i");
-            if (icon) {
-                icon.toggleClass("fa-eye-slash").toggleClass("fa-eye");
-            }
-        });
-    }
-
-
     let inputAction = function (requestData, dataTableSettings) {
         return {
             directory: 'IDIR',
@@ -55,6 +32,7 @@
                     serverSide: false,
                     scrollX: true,
                     paging: true,
+                    searching: false,
                     ajax: abp.libs.datatables.createAjax(
                         _userImportService.search,
                         inputAction,
@@ -74,6 +52,12 @@
                         name: 'lastName',
                         data: 'lastName',
                         className: 'data-table-header'
+                        },
+                    {
+                        title: 'Display Name',
+                        name: 'displayName',
+                        data: 'displayName',
+                        className: 'data-table-header'
                     }],
                 })
         )
@@ -81,6 +65,10 @@
         $('#ImportUserSearchButton').click(function (e) {
             e.preventDefault();            
             _filterDataTable.ajax.reloadEx();
+        });        
+
+        $('#cancel-import').click(function (e) {
+            _importModal.close();
         });
 
         _filterDataTable.on('select', function (e, dt, type, indexes) {            
@@ -92,6 +80,10 @@
 
         _filterDataTable.on('deselect', function (e, dt, type, indexes) {
             $('#import-user-id').val();
+        });     
+
+        _importModal.onResult(function () {
+            _dataTable.ajax.reloadEx();
         });
     }
 
@@ -102,17 +94,8 @@
         return { initModal: initModal };
     }
 
-    abp.modals.createUser = function () {
-        let initModal = function (publicApi, args) {
-            togglePasswordVisibility();
-        };
-        return { initModal: initModal };
-    }
-
     abp.modals.editUser = function () {
-        let initModal = function (publicApi, args) {
-            togglePasswordVisibility();
-        };
+        let initModal = function (publicApi, args) {};
         return { initModal: initModal };
     }
 
@@ -120,14 +103,10 @@
         viewUrl: abp.appPath + 'Identity/Users/EditModal',
         modalClass: "editUser"
     });
-    let _createModal = new abp.ModalManager({
-        viewUrl: abp.appPath + 'Identity/Users/CreateModal',
-        modalClass: "createUser"
-    });
     let _permissionsModal = new abp.ModalManager(
         abp.appPath + 'AbpPermissionManagement/PermissionManagementModal'
     );
-    let importModal = new abp.ModalManager({
+    let _importModal = new abp.ModalManager({
         viewUrl: abp.appPath + 'Identity/Users/ImportModal',
         modalClass: "importUser"
     });
@@ -215,10 +194,6 @@
                     {
                         title: l('EmailAddress'),
                         data: 'email',
-                    },
-                    {
-                        title: l('PhoneNumber'),
-                        data: 'phoneNumber',
                     }
                 ]
             );
@@ -228,7 +203,13 @@
 
     $('#ImportUserButton').click(function (e) {
         e.preventDefault();
-        importModal.open();
+        _importModal.open();
+    });
+
+    _importModal.onOpen(function () {
+        setTimeout(() => {
+            _filterDataTable.columns.adjust().draw();
+        });   
     });
 
     $(function () {
@@ -247,17 +228,8 @@
             })
         );
 
-        _createModal.onResult(function () {
-            _dataTable.ajax.reloadEx();
-        });
-
         _editModal.onResult(function () {
             _dataTable.ajax.reloadEx();
-        });
-
-        $('#AbpContentToolbar button[name=CreateUser]').click(function (e) {
-            e.preventDefault();
-            _createModal.open();
         });
     });
 })(jQuery);

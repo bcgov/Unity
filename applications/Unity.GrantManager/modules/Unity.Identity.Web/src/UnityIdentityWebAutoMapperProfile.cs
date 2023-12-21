@@ -1,9 +1,6 @@
 ﻿using AutoMapper;
-using Volo.Abp.AutoMapper;
-using Unity.Identity.Web.Pages.Identity.Roles;
-using CreateUserModalModel = Unity.Identity.Web.Pages.Identity.Users.CreateModalModel;
+using static Unity.Identity.Web.Pages.Identity.Users.EditModalModel;
 using EditUserModalModel = Unity.Identity.Web.Pages.Identity.Users.EditModalModel;
-using Unity.Identity.Web.Pages.Identity.Users;
 
 namespace Volo.Abp.Identity.Web;
 
@@ -17,33 +14,23 @@ public class UnityIdentityWebAutoMapperProfile : Profile
 
     protected void CreateUserMappings()
     {
-        //List
-        CreateMap<IdentityUserDto, EditUserModalModel.UserInfoViewModel>()
-            .Ignore(x => x.Password);
-
-        //CreateModal
-        CreateMap<CreateUserModalModel.UserInfoViewModel, IdentityUserCreateDto>()
-            .MapExtraProperties()
-            .ForMember(dest => dest.RoleNames, opt => opt.Ignore());
-
-        CreateMap<IdentityRoleDto, CreateUserModalModel.AssignedRoleViewModel>()
-            .ForMember(dest => dest.IsAssigned, opt => opt.Ignore());
-
-        //ImportModal
-        CreateMap<IdentityRoleDto, ImportModalModel.AssignedRoleViewModel>()
-            .ForMember(dest => dest.IsAssigned, opt => opt.Ignore());
-
         //EditModal
-        CreateMap<EditUserModalModel.UserInfoViewModel, IdentityUserUpdateDto>()
+        CreateMap<UserInfoViewModel, IdentityUserUpdateDto>()
             .MapExtraProperties()
-            .ForMember(dest => dest.RoleNames, opt => opt.Ignore());
+            .ForMember(dest => dest.RoleNames, opt => opt.Ignore())
+            .ForMember(dest => dest.PhoneNumber, opt => opt.Ignore())
+            .ForMember(dest => dest.Password, opt => opt.Ignore())
+            .ForMember(dest => dest.LockoutEnabled, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore());
 
-        CreateMap<IdentityRoleDto, EditUserModalModel.AssignedRoleViewModel>()
+        CreateMap<IdentityRoleDto, AssignedRoleViewModel>()
             .ForMember(dest => dest.IsAssigned, opt => opt.Ignore());
 
-        CreateMap<IdentityUserDto, EditUserModalModel.DetailViewModel>()
+        CreateMap<IdentityUserDto, DetailViewModel>()
             .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
             .ForMember(dest => dest.ModifiedBy, opt => opt.Ignore());
+
+        CreateMap<IdentityUserDto, UserInfoViewModel>();
     }
 
     protected void CreateRoleMappings()

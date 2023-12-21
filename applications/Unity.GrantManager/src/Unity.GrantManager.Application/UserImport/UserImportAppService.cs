@@ -55,11 +55,16 @@ namespace Unity.GrantManager.UserImport
             user.SetEmailConfirmed(true);
 
             // Use identiy user manager to create the user
-            var createUserResult = await _userManager.CreateAsync(user) ?? throw new AbpException("Error creating Identity User");
+            var createUserResult = await _userManager.CreateAsync(user) ?? throw new AbpException("Unxpected error importing user");
 
             if (!createUserResult.Succeeded)
             {
-                throw new AbpException(string.Join('\n', createUserResult.Errors));
+                var validationErrors = new List<ValidationResult>();
+                foreach (var error in createUserResult.Errors)
+                {
+                    validationErrors.Add(new ValidationResult($"{error.Code} {error.Description}"));
+                }
+                throw new AbpValidationException("Error importing user", validationErrors);
             }
 
             var oicdSub = ssoUser.Username ?? newUserId.ToString();
@@ -126,7 +131,7 @@ namespace Unity.GrantManager.UserImport
 
         private async Task SyncUserToCurrentTenantAsync(Guid userId, IdentityUser user, string oidcSub, string displayName)
         {
-            var existingUser = await _personRepository.FindAsync(userId);
+            var existingUser = await _personRepository.FindByOidcSub(oidcSub);
             if (existingUser == null)
             {
                 await _personRepository.InsertAsync(new Person()

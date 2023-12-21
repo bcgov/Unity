@@ -23,26 +23,11 @@
                     <div class="mt-3" >
                         <input asp-for="UserInfo.Id" />
                         <input asp-for="UserInfo.ConcurrencyStamp" />
-                        <abp-input asp-for="UserInfo.UserName" />
-                        <abp-input asp-for="UserInfo.Name" />
-                        <abp-input asp-for="UserInfo.Surname" />
-                        <div class="mb-3">
-                            <label asp-for="UserInfo.Password" class="form-label">@L["Password"]</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" autocomplete="new-password" maxlength="@IdentityUserConsts.MaxPasswordLength" asp-for="UserInfo.Password"/>
-                                <button class="btn btn-secondary" type="button" id="PasswordVisibilityButton">
-                                    <i class="fa fa-eye-slash" aria-hidden="true"></i>
-                                </button>
-                            </div>
-                            <span asp-validation-for="UserInfo.Password"></span>
-                        </div>
-                        <abp-input asp-for="UserInfo.Email" />
-                        <abp-input asp-for="UserInfo.PhoneNumber" />
-                        <abp-input asp-for="UserInfo.IsActive" />
-                        @if (!Model.IsEditCurrentUser)
-                        {
-                            <abp-input asp-for="UserInfo.LockoutEnabled" />
-                        }
+                        <abp-input disabled readonly="true" asp-for="UserInfo.UserName" />
+                        <abp-input disabled readonly="true" asp-for="UserInfo.Name" />
+                        <abp-input disabled readonly="true" asp-for="UserInfo.Surname" />
+                        <abp-input disabled readonly="true" asp-for="UserInfo.Email" />
+
                         @foreach (var propertyInfo in ObjectExtensionManager.Instance.GetProperties<EditModalModel.UserInfoViewModel>())
                         {
                             if (!propertyInfo.Name.EndsWith("_Text"))
@@ -65,7 +50,7 @@
                                 }
                                 else
                                 {
-                                    <abp-input type="@propertyInfo.GetInputType()"
+                                    <abp-input disabled readonly="true" type="@propertyInfo.GetInputType()"
                                             asp-for="UserInfo.ExtraProperties[propertyInfo.Name]"
                                             label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
                                             asp-format="@propertyInfo.GetInputFormatOrNull()"
@@ -98,15 +83,6 @@
                         </div>
                         <div class="mb-3">
                             <span class="fw-bold">@L["ModificationTime"] :</span> @ConvertUserFriendlyFormat(Model.Detail.LastModificationTime)
-                        </div>
-                        <div class="mb-3">
-                            <span class="fw-bold">@L["PasswordUpdateTime"] :</span> @ConvertUserFriendlyFormat(Model.Detail.LastPasswordChangeTime)
-                        </div>
-                        <div class="mb-3">
-                            <span class="fw-bold">@L["LockoutEndTime"] :</span> @ConvertUserFriendlyFormat(Model.Detail.LockoutEnd)
-                        </div>
-                        <div class="mb-3">
-                            <span class="fw-bold">@L["FailedAccessCount"] :</span> @Model.Detail.AccessFailedCount
                         </div>
                     </div>
                 </abp-tab>

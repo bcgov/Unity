@@ -15,3 +15,11 @@
 #UsersTable_filter input {
     margin: 0.25rem;
 }
+
+#AbpContentToolbar {
+    display: none;
+}
+
+#UserSearchTable tbody tr {
+    cursor: pointer;
+}

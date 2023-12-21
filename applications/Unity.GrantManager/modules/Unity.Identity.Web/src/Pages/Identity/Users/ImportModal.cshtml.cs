@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -12,9 +11,6 @@ public class ImportModalModel : IdentityPageModel
 {
     [BindProperty]
     public UserImportViewModel UserInfo { get; set; }
-
-    [BindProperty]
-    public AssignedRoleViewModel[] Roles { get; set; }
 
     protected IIdentityUserAppService IdentityUserAppService { get; }
 
@@ -30,16 +26,7 @@ public class ImportModalModel : IdentityPageModel
     public virtual async Task<IActionResult> OnGetAsync()
     {
         UserInfo = new UserImportViewModel();
-
-        var roleDtoList = (await IdentityUserAppService.GetAssignableRolesAsync()).Items;
-
-        Roles = ObjectMapper.Map<IReadOnlyList<IdentityRoleDto>, AssignedRoleViewModel[]>(roleDtoList);
-
-        foreach (var role in Roles)
-        {
-            role.IsAssigned = role.IsDefault;
-        }
-
+        await Task.CompletedTask;
         return Page();
     }
 
@@ -48,11 +35,6 @@ public class ImportModalModel : IdentityPageModel
         ValidateModel();
 
         await _userImportAppService.ImportUserAsync(new ImportUserDto() { Directory = UserInfo.Directory, Guid = UserInfo.UserIdentifier });
-
-        //var input = ObjectMapper.Map<UserImportViewModel, IdentityUserCreateDto>(UserInfo);
-        //input.RoleNames = Roles.Where(r => r.IsAssigned).Select(r => r.Name).ToArray();
-
-        //await IdentityUserAppService.CreateAsync(input);
 
         return NoContent();
     }
@@ -70,16 +52,5 @@ public class ImportModalModel : IdentityPageModel
 
         [Required]
         public string UserIdentifier { get; set; } = string.Empty;
-    }
-
-    public class AssignedRoleViewModel
-    {
-        [Required]
-        [HiddenInput]
-        public string Name { get; set; }
-
-        public bool IsAssigned { get; set; }
-
-        public bool IsDefault { get; set; }
     }
 }

@@ -234,7 +234,9 @@
     "ProjectInfoView:ProjectInfo.ForestryFocus": "Forestry Focus",
     "ProjectInfoView:ProjectInfo.CensusSubdivision": "Census Subdivision",
     "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District (Census Division)",
-    "ProjectInfoView:ProjectInfoLocation": "Project Location"
+    "ProjectInfoView:ProjectInfoLocation": "Project Location",
+
+    "UnityIdentity:ImportUser": "Import User"
   }
 }
 

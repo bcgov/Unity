@@ -17,7 +17,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Web;
 using Unity.Identity.Web.Navigation;
-using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Identity.Web;
 
@@ -64,7 +63,7 @@ public class UnitydentityWebModule : AbpModule
         Configure<RazorPagesOptions>(options =>
         {
             options.Conventions.AuthorizePage("/Identity/Users/Index", IdentityPermissions.Users.Default);
-            options.Conventions.AuthorizePage("/Identity/Users/CreateModal", IdentityPermissions.Users.Create);
+            options.Conventions.AuthorizePage("/Identity/Users/ImportModal", IdentityPermissions.Users.Create);
             options.Conventions.AuthorizePage("/Identity/Users/EditModal", IdentityPermissions.Users.Update);
             options.Conventions.AuthorizePage("/Identity/Roles/Index", IdentityPermissions.Roles.Default);
             options.Conventions.AuthorizePage("/Identity/Roles/CreateModal", IdentityPermissions.Roles.Create);
@@ -74,18 +73,6 @@ public class UnitydentityWebModule : AbpModule
 
         Configure<AbpPageToolbarOptions>(options =>
         {
-            options.Configure<Pages.Identity.Users.IndexModel>(
-                toolbar =>
-                {
-                    toolbar.AddButton(
-                        LocalizableString.Create<IdentityResource>("NewUser"),
-                        icon: "plus",
-                        name: "CreateUser",
-                        requiredPolicyName: IdentityPermissions.Users.Create
-                    );
-                }
-            );
-
             options.Configure<Pages.Identity.Roles.IndexModel>(
                 toolbar =>
                 {
@@ -121,7 +108,7 @@ public class UnitydentityWebModule : AbpModule
                 .ApplyEntityConfigurationToUi(
                     IdentityModuleExtensionConsts.ModuleName,
                     IdentityModuleExtensionConsts.EntityNames.User,
-                    createFormTypes: new[] { typeof(Pages.Identity.Users.CreateModalModel.UserInfoViewModel) },
+                    createFormTypes: new[] { typeof(Pages.Identity.Users.ImportModalModel.UserImportViewModel) },
                     editFormTypes: new[] { typeof(Pages.Identity.Users.EditModalModel.UserInfoViewModel) }
                 );
         });
