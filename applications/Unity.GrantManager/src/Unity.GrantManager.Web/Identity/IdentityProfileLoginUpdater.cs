@@ -167,11 +167,13 @@ namespace Unity.GrantManager.Web.Identity
             }
             else
             {
-                if (user.Roles != null)
+                var userRoles = await _identityUserRepository.GetRolesAsync(user.Id);
+
+                if (userRoles != null)
                 {
-                    foreach (var role in user.Roles)
+                    foreach (var role in userRoles)
                     {
-                        var dbRole = await _identityRoleManager.GetByIdAsync(role.RoleId);
+                        var dbRole = await _identityRoleManager.GetByIdAsync(role.Id);
                         principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
                     }
                 }

@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Permissions
             // Default permission grants based on role
 
             // - Program Manager
-            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager,
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager,                
                 new List<string>
                 {
                     GrantManagerPermissions.Default,
@@ -33,7 +33,7 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles
-                });
+                }, context.TenantId);
 
             // - Reviewer
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Reviewer,
@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assessments.SendToTeamLead,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
-                });            
+                }, context.TenantId);            
 
             // - Assessor
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Assessor,
@@ -70,7 +70,7 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
-               });
+               }, context.TenantId);
 
             // - TeamLead
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.TeamLead,
@@ -94,7 +94,7 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
-               });            
+               }, context.TenantId);            
 
             // - Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Approver,
@@ -108,7 +108,7 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
                     GrantApplicationPermissions.AssessmentResults.EditApprovedAmount,
-              });
+              }, context.TenantId);
 
             // - BusinessAreaAdmin
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.BusinessAreaAdmin,
@@ -124,7 +124,7 @@ namespace Unity.GrantManager.Permissions
                     IdentitySeedPermissions.Users.Update,
                     IdentitySeedPermissions.Users.Delete,
                     IdentitySeedPermissions.Users.ManagePermissions
-             });
+             }, context.TenantId);
 
             // - SystemAdmin
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.SystemAdmin,
@@ -144,7 +144,7 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assessments.SendToTeamLead,
                     GrantApplicationPermissions.Assessments.SendBack,
                     GrantApplicationPermissions.Assessments.Confirm
-             });
+             }, context.TenantId);
         }
     }
 }
