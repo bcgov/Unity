@@ -215,6 +215,7 @@ public class GrantApplicationAppService :
                     }
                     application.AssessmentResultStatus = input.AssessmentResultStatus;
                     application.FinalDecisionDate = input.FinalDecisionDate;
+                    application.DueDate = input.DueDate;
                 }
 
                 await _applicationRepository.UpdateAsync(application, autoSave: true);
