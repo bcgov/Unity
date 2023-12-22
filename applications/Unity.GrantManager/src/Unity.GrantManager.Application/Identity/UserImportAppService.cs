@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -13,7 +12,7 @@ using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Validation;
 
-namespace Unity.GrantManager.UserImport
+namespace Unity.GrantManager.Identity
 {
     [Authorize(IdentityPermissions.Users.Default)]
     public class UserImportAppService : GrantManagerAppService, IUserImportAppService

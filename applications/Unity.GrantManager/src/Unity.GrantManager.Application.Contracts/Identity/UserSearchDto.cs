@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Unity.GrantManager.UserImport
+namespace Unity.GrantManager.Identity
 {
     public class UserSearchDto
     {

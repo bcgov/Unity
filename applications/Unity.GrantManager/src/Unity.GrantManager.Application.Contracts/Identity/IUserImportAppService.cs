@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Unity.GrantManager.UserImport
+namespace Unity.GrantManager.Identity
 {
     public interface IUserImportAppService
     {

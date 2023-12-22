@@ -2,7 +2,7 @@
     let l = abp.localization.getResource('AbpIdentity');
 
     let _identityUserAppService = volo.abp.identity.identityUser;
-    let _userImportService = unity.grantManager.userImport.userImport;
+    let _userImportService = unity.grantManager.identity.userImport;
 
     let inputAction = function (requestData, dataTableSettings) {
         return {

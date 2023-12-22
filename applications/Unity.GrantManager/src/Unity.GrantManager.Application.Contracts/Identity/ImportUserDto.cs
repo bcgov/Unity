@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.UserImport
+﻿namespace Unity.GrantManager.Identity
 {
     public class ImportUserDto
     {
