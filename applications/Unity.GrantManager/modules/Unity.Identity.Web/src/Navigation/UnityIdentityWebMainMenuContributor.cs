@@ -17,9 +17,9 @@ public class UnityIdentityWebMainMenuContributor : IMenuContributor
 
         var l = context.GetLocalizer<IdentityResource>();
 
-        var identityMenuItem = new ApplicationMenuItem(IdentityMenuNames.GroupName, l["Menu:IdentityManagement"], icon: "fa fa-id-card-o");
-        identityMenuItem.AddItem(new ApplicationMenuItem(IdentityMenuNames.Roles, l["Roles"], url: "~/Identity/Roles").RequirePermissions(IdentityPermissions.Roles.Default));
-        identityMenuItem.AddItem(new ApplicationMenuItem(IdentityMenuNames.Users, l["Users"], url: "~/Identity/Users").RequirePermissions(IdentityPermissions.Users.Default));
+        var identityMenuItem = new ApplicationMenuItem(UnityIdentityMenuNames.GroupName, l["Menu:IdentityManagement"], icon: "fa fa-id-card-o");
+        identityMenuItem.AddItem(new ApplicationMenuItem(UnityIdentityMenuNames.Roles, l["Roles"], url: "~/Identity/Roles").RequirePermissions(IdentityPermissions.Roles.Default));
+        identityMenuItem.AddItem(new ApplicationMenuItem(UnityIdentityMenuNames.Users, l["Users"], url: "~/Identity/Users").RequirePermissions(IdentityPermissions.Users.Default));
 
         context.Menu.GetAdministration().AddItem(identityMenuItem);
 

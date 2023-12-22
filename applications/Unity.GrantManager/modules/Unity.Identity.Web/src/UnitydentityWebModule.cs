@@ -17,6 +17,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Web;
 using Unity.Identity.Web.Navigation;
+using Unity.GrantManager.Localization;
 
 namespace Unity.Identity.Web;
 
@@ -68,22 +69,6 @@ public class UnitydentityWebModule : AbpModule
             options.Conventions.AuthorizePage("/Identity/Roles/Index", IdentityPermissions.Roles.Default);
             options.Conventions.AuthorizePage("/Identity/Roles/CreateModal", IdentityPermissions.Roles.Create);
             options.Conventions.AuthorizePage("/Identity/Roles/EditModal", IdentityPermissions.Roles.Update);
-        });
-
-
-        Configure<AbpPageToolbarOptions>(options =>
-        {
-            options.Configure<Pages.Identity.Roles.IndexModel>(
-                toolbar =>
-                {
-                    toolbar.AddButton(
-                        LocalizableString.Create<IdentityResource>("NewRole"),
-                        icon: "plus",
-                        name: "CreateRole",
-                        requiredPolicyName: IdentityPermissions.Roles.Create
-                    );
-                }
-            );
         });
 
         Configure<DynamicJavaScriptProxyOptions>(options =>

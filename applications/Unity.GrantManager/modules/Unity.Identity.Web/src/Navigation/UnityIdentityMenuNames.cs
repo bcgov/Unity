@@ -1,6 +1,6 @@
 ﻿namespace Unity.Identity.Web.Navigation;
 
-public static class IdentityMenuNames
+public static class UnityIdentityMenuNames
 {
     public const string GroupName = "UnityIdentity";
 

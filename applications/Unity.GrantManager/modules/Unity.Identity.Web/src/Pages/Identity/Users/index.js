@@ -65,9 +65,10 @@
         $('#ImportUserSearchButton').click(function (e) {
             e.preventDefault();            
             _filterDataTable.ajax.reloadEx();
+            $('#import-user-btn').attr('disabled', true);
         });        
 
-        $('#cancel-import').click(function (e) {
+        $('#cancel-import-btn').click(function (e) {
             _importModal.close();
         });
 
@@ -75,11 +76,13 @@
             if (type === 'row') {
                 let selectedData = _filterDataTable.row(indexes).data();                
                 $('#import-user-id').val(selectedData.userGuid);
+                $('#import-user-btn').removeAttr('disabled');
             }            
         });
 
         _filterDataTable.on('deselect', function (e, dt, type, indexes) {
             $('#import-user-id').val();
+            $('#import-user-btn').attr('disabled', true);
         });     
 
         _importModal.onResult(function () {
@@ -95,7 +98,7 @@
     }
 
     abp.modals.editUser = function () {
-        let initModal = function (publicApi, args) {};
+        let initModal = function (publicApi, args) { /* Intentionally left empty */ };
         return { initModal: initModal };
     }
 

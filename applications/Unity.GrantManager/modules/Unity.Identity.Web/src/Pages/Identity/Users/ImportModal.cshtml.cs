@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.ObjectExtending;
 using Volo.Abp.Identity;
 using Unity.GrantManager.UserImport;
+using System.ComponentModel;
+using Microsoft.Extensions.Localization;
+using Unity.GrantManager.Localization;
 
 namespace Unity.Identity.Web.Pages.Identity.Users;
 
@@ -40,11 +43,13 @@ public class ImportModalModel : IdentityPageModel
     }
 
     public class UserImportViewModel : ExtensibleObject
-    {
-        [MinLength(2)]
+    {        
+        [DisplayName("First Name")]
+        [MinLength(2, ErrorMessage = "At least 2 characters are required")]
         public string FirstName { get; set; }
 
-        [MinLength(2)]
+        [DisplayName("Last Name")]
+        [MinLength(2, ErrorMessage = "At least 2 characters are required")]
         public string LastName { get; set; }
 
         [Required]

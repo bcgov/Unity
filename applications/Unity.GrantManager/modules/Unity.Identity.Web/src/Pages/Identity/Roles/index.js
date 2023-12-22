@@ -50,7 +50,7 @@
                                 abp.auth.isGranted(
                                     'AbpIdentity.Roles.Delete'
                                 )
-                            ); //TODO: Check permission
+                            );
                         },
                         confirmMessage: function (data) {
                             return l(
@@ -86,7 +86,7 @@
                         title: l('RoleName'),
                         data: 'name',
                         render: function (data, type, row) {
-                            var name = '<span>' + $.fn.dataTable.render.text().display(data) + '</span>'; //prevent against possible XSS
+                            let name = '<span>' + $.fn.dataTable.render.text().display(data) + '</span>'; //prevent against possible XSS
                             if (row.isDefault) {
                                 name +=
                                     '<span class="badge rounded-pill bg-success ms-1">' +
@@ -99,6 +99,12 @@
                                     l('DisplayName:IsPublic') +
                                     '</span>';
                             }
+                            if (row.isStatic) {
+                                name +=
+                                    '<span class="badge rounded-pill bg-warning ms-1">' +
+                                    l('DisplayName:IsStatic') +
+                                    '</span>';
+                            }
                             return name;
                         },
                     }
@@ -109,13 +115,12 @@
     );
     
     $(function () {
-        let _$wrapper = $('#IdentityRolesWrapper');
-        let _$table = _$wrapper.find('table');
+        let _$table = $('#IdentityRolesTable');        
 
         _dataTable = _$table.DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 order: [[1, 'asc']],
-                searching: false,
+                searching: true,
                 processing: true,
                 serverSide: true,
                 scrollX: true,
@@ -135,7 +140,7 @@
             _dataTable.ajax.reloadEx();
         });
 
-        $('#AbpContentToolbar button[name=CreateRole]').click(function (e) {
+        $('#CreateRoleBtn').click(function (e) {
             e.preventDefault();
             _createModal.open();
         });

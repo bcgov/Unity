@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -66,6 +67,8 @@ namespace Unity.GrantManager.UserImport
                 }
                 throw new AbpValidationException("Error importing user", validationErrors);
             }
+
+            await _userManager.AddDefaultRolesAsync(user);
 
             var oicdSub = ssoUser.Username ?? newUserId.ToString();
             var displayName = ssoUser.Attributes?.DisplayName?[0] ?? user.ToString();

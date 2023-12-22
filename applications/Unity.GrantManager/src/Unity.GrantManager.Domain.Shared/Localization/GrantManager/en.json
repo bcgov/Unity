@@ -236,7 +236,10 @@
     "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District (Census Division)",
     "ProjectInfoView:ProjectInfoLocation": "Project Location",
 
-    "UnityIdentity:ImportUser": "Import User"
+    "UnityIdentity:ImportUser": "Import User",
+    "UnityIdentity:FirstName": "First Name",
+    "UnityIdentity:LastName": "Last Name",
+    "UnityIdentity:Import": "Import"
   }
 }
 

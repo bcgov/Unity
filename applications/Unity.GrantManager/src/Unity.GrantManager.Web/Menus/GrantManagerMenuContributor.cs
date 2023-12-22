@@ -11,7 +11,7 @@ public class GrantManagerMenuContributor : IMenuContributor
 {
     public async Task ConfigureMenuAsync(MenuConfigurationContext context)
     {
-        context.Menu.TryRemoveMenuGroup(IdentityMenuNames.GroupName);
+        context.Menu.TryRemoveMenuGroup(UnityIdentityMenuNames.GroupName);
         context.Menu.TryRemoveMenuItem(DefaultMenuNames.Application.Main.Administration);
 
         if (context.Menu.Name == StandardMenus.Main)
@@ -45,7 +45,7 @@ public class GrantManagerMenuContributor : IMenuContributor
 
         context.Menu.AddItem(
                new ApplicationMenuItem(
-                   IdentityMenuNames.Roles,
+                   UnityIdentityMenuNames.Roles,
                    l["Menu:Roles"],
                    "~/Identity/Roles",
                    icon: "fl fl-settings",
@@ -56,7 +56,7 @@ public class GrantManagerMenuContributor : IMenuContributor
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
-                IdentityMenuNames.Users,
+                UnityIdentityMenuNames.Users,
                 l["Menu:Users"],
                 "~/Identity/Users",
                 icon: "fl fl-other-user",

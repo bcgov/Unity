@@ -126,8 +126,7 @@ namespace Unity.GrantManager.Integrations.Sso
 
             if (response.Content == null)
             {
-                // handle
-                throw new Exception();
+                throw new UserFriendlyException($"Error fetching Css API token - content empty {response.StatusCode} {response.ErrorMessage}");
             }
 
             if (response.StatusCode != HttpStatusCode.OK)
@@ -135,19 +134,12 @@ namespace Unity.GrantManager.Integrations.Sso
                 Logger.LogError("Error fetching Css API token {statusCode} {errorMessage} {errorException}", response.StatusCode, response.ErrorMessage, response.ErrorException);
 
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    // handle
-                    throw new Exception();
+                {                    
+                    throw new UnauthorizedAccessException(response.ErrorMessage);
                 }
             }
 
-            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content);
-            if (tokenResponse == null)
-            {
-                // handle
-                throw new Exception();
-            }
-
+            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
             await _accessTokenCache.SetAsync(CurrentUser?.TenantId ?? Guid.Empty, tokenResponse, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions()
             {
                 AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
