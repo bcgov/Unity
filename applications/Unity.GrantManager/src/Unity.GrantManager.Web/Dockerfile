@@ -59,4 +59,8 @@ RUN mkdir -p /.aspnet \
     && chmod 777 /.aspnet \
     && chmod 777 /.dotnet
 
+## Logfile volume mount point
+RUN mkdir -p /app/logs \
+    && chmod 777 /app/logs
+
 ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]

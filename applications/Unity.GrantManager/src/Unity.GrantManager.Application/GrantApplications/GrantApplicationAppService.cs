@@ -139,7 +139,7 @@ public class GrantApplicationAppService :
                     select new GetSummaryDto
                     {
                         Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = application.CreationTime.ToShortDateString(),
+                        SubmissionDate = application.SubmissionDate.ToShortDateString(),
                         OrganizationName = applicant.OrgName,
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
@@ -215,6 +215,7 @@ public class GrantApplicationAppService :
                     }
                     application.AssessmentResultStatus = input.AssessmentResultStatus;
                     application.FinalDecisionDate = input.FinalDecisionDate;
+                    application.DueDate = input.DueDate;
                 }
 
                 await _applicationRepository.UpdateAsync(application, autoSave: true);

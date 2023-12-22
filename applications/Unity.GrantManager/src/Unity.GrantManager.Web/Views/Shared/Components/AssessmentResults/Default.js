@@ -76,8 +76,9 @@
                 month = '0' + month.toString();
             if (day < 10)
                 day = '0' + day.toString();
-            let maxDate = year + '-' + month + '-' + day;
-            $('#AssessmentResults_FinalDecisionDate').attr({ 'max': maxDate }); 
+            let todayDate = year + '-' + month + '-' + day;
+            $('#AssessmentResults_FinalDecisionDate').attr({ 'max': todayDate });
+            $('#AssessmentResults_DueDate').attr({ 'min': todayDate }); 
         }, 500)
     }
     initDatePicker();

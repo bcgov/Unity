@@ -17,5 +17,6 @@ namespace Unity.GrantManager.GrantApplications
         public string? Notes { get; set; }
         public string? AssessmentResultStatus { get; set; }
         public DateTime? FinalDecisionDate { get; set; }
+        public DateTime? DueDate { get; set; }
     }
 }
