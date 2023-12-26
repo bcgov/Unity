@@ -256,7 +256,7 @@ namespace Unity.GrantManager.ApplicationForms
                 applicationFormVersion = await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
             }
 
-            return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>((applicationFormVersion));
+            return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
         }
     }
 }

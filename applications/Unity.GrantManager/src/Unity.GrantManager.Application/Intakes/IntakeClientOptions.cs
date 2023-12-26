@@ -11,4 +11,6 @@ public class IntakeClientOptions
     public string BearerTokenPlaceholder { get; set; } = string.Empty;
 
     public bool UseBearerToken { get; set; }
+
+    public bool AllowUnregisteredVersions { get; set; }
 }
