@@ -10,7 +10,6 @@ using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Intake;
 using Unity.GrantManager.Integration.Chefs;
 using Volo.Abp;
-using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Intakes
 {
