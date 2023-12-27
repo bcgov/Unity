@@ -143,10 +143,6 @@ public class GrantManagerWebModule : AbpModule
         {
             x.ApplicationName = "GrantManager";
         });
-
-        context.Services.Configure<SsoApiOptions>(
-            configuration.GetSection(
-                key: "SsoApi"));
     }
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)

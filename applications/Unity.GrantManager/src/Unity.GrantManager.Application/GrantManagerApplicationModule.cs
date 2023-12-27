@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
+using Unity.GrantManager.Integrations.Sso;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.FeatureManagement;
@@ -64,6 +65,11 @@ public class GrantManagerApplicationModule : AbpModule
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
         });
+
+
+        context.Services.Configure<SsoApiOptions>(
+            configuration.GetSection(
+                key: "SsoApi"));
 
         context.Services.AddSingleton<RestClient>(provider =>
         {
