@@ -5,7 +5,7 @@ namespace Unity.GrantManager.Applications;
 
 public class ApplicantAgent : AuditedAggregateRoot<Guid>
 {
-    public string OidcSubUser { get; set; } = string.Empty;
+    public string? OidcSubUser { get; set; }
     public Guid ApplicantId { get; set; }
     public Guid ApplicationId { get; set; }
     public bool IsConfirmed { get; set; } = false;
