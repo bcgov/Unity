@@ -49,7 +49,7 @@ namespace Unity.GrantManager.Intakes
             var applicationFormVersion = (await _applicationFormVersionRepository
                     .GetQueryableAsync())
                     .Where(s => s.ChefsFormVersionGuid == chefsFormVersionId)
-                    .First();
+                    .FirstOrDefault();
 
             string? formVersionSubmissionHeaderMapping = null;
 
@@ -57,6 +57,7 @@ namespace Unity.GrantManager.Intakes
             {
                 formVersionSubmissionHeaderMapping = applicationFormVersion.SubmissionHeaderMapping;
             }
+
             return formVersionSubmissionHeaderMapping;
         }
 

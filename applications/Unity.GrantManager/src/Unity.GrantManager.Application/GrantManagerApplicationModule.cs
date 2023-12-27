@@ -64,6 +64,7 @@ public class GrantManagerApplicationModule : AbpModule
             options.BaseUri = configuration["Intake:BaseUri"] ?? "";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
+            options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
 
 
