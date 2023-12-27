@@ -131,7 +131,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention(); //auto configure for the base class props                             
-                b.HasOne<Person>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired();
+                b.HasOne<Person>().WithMany().HasPrincipalKey(x => x.OidcSub).HasForeignKey(x => x.OidcSubUser).IsRequired(false);
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
