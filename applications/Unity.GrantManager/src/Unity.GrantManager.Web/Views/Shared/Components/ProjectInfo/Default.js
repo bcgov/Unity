@@ -106,13 +106,12 @@
 
 
 function enableSaveBtn(inputText) {
-    setTimeout(function () {
-        if (!document.getElementById("ProjectInfo_ContactEmail").validity.valid ||
-            (document.getElementById("ProjectInfo_ContactBusinessPhone").getAttribute('aria-invalid') == 'true') ||
-            (document.getElementById("ProjectInfo_ContactCellPhone").getAttribute('aria-invalid') == 'true')) {
-            $('#saveProjectInfoBtn').prop('disabled', true);
-        }
-    }, 300);
+    if (!document.getElementById("ProjectInfo_ContactEmail").validity.valid ||
+        !document.getElementById("ProjectInfo_ContactBusinessPhone").checkValidity() ||
+        !document.getElementById("ProjectInfo_ContactCellPhone").checkValidity()) {
+        $('#saveProjectInfoBtn').prop('disabled', true);
+        return;
+    }    
 
     if (inputText?.value?.trim() != "") {
         $('#saveProjectInfoBtn').prop('disabled', false);

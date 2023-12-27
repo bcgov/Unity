@@ -175,12 +175,12 @@
                     <abp-input asp-for="@Model.ProjectInfo.ContactEmail" onchange="enableSaveBtn(this)" />
                 </abp-column>
                 <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ContactBusinessPhone" onchange="enableSaveBtn(this)" />
+                    <abp-input asp-for="@Model.ProjectInfo.ContactBusinessPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ContactCellPhone" onchange="enableSaveBtn(this)" />
+                    <abp-input asp-for="@Model.ProjectInfo.ContactCellPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
                 </abp-column>
                 <abp-column size="_6" class="px-1">
                 </abp-column>
