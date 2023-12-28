@@ -48,19 +48,31 @@ namespace Unity.GrantManager.Identity
 
             var ssoUser = result.Data[0];
 
-            var reactivated = await ReactivateDeletedUserAsync(ssoUser);
-            if (reactivated) return;
+            IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(ssoUser);
+            identityUser ??= await CreateNewIdentityUserAsync(newUserId, ssoUser);
 
-            var user = new IdentityUser(newUserId, ssoUser.Attributes?.IdirUsername?[0], ssoUser.Email ?? $"{ssoUser.Attributes?.IdirUsername}@{ssoUser.Attributes?.IdirUsername}.com", _currentTenant.Id)
+            if (identityUser == null) throw new UserFriendlyException("Error creating user account");
+
+            await _userManager.AddDefaultRolesAsync(identityUser);
+
+            var oicdSub = ssoUser.Username ?? newUserId.ToString();
+            var displayName = ssoUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();
+
+            await UpdateAdditionalUserPropertiesAsync(identityUser, oicdSub, displayName);
+            await SyncUserToCurrentTenantAsync(newUserId, identityUser, oicdSub, displayName);
+        }
+
+        private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, SsoUser ssoUser)
+        {
+            IdentityUser? identityUser = new(newUserId, ssoUser.Attributes?.IdirUsername?[0], ssoUser.Email ?? $"{ssoUser.Attributes?.IdirUsername}@{ssoUser.Attributes?.IdirUsername}.com", _currentTenant.Id)
             {
                 Name = ssoUser.FirstName,
                 Surname = ssoUser.LastName
             };
-
-            user.SetEmailConfirmed(true);
+            identityUser.SetEmailConfirmed(true);
 
             // Use identity user manager to create the user
-            var createUserResult = await _userManager.CreateAsync(user) ?? throw new AbpException("Unxpected error importing user");
+            var createUserResult = await _userManager.CreateAsync(identityUser) ?? throw new AbpException("Unxpected error importing user");
 
             if (!createUserResult.Succeeded)
             {
@@ -72,16 +84,10 @@ namespace Unity.GrantManager.Identity
                 throw new AbpValidationException("Error importing user", validationErrors);
             }
 
-            await _userManager.AddDefaultRolesAsync(user);            
-
-            var oicdSub = ssoUser.Username ?? newUserId.ToString();
-            var displayName = ssoUser.Attributes?.DisplayName?[0] ?? user.ToString();
-
-            await UpdateAdditionalUserPropertiesAsync(user, oicdSub, displayName);
-            await SyncUserToCurrentTenantAsync(newUserId, user, oicdSub, displayName);
+            return identityUser;
         }
 
-        private async Task<bool> ReactivateDeletedUserAsync(SsoUser ssoUser)
+        private async Task<IdentityUser?> ReactivateAndGetDeletedUserAsync(SsoUser ssoUser)
         {
             //Temporary disable the ISoftDelete filter - find delete user account and reactivate for import
             using (_dataFilter.Disable<ISoftDelete>())
@@ -95,11 +101,11 @@ namespace Unity.GrantManager.Identity
                     identityUser.DeleterId = null;
                     identityUser.DeletionTime = null;
                     await _identityUserRepository.UpdateAsync(identityUser);
-                    return true;
+                    return identityUser;
                 }
             }
 
-            return false;
+            return null;
         }
 
         public async Task<IList<UserDto>> SearchAsync(UserSearchDto importUserSearchDto)
@@ -136,7 +142,7 @@ namespace Unity.GrantManager.Identity
 
             var result = await _ssoUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName);
 
-            if (result.Success == false) throw new UserFriendlyException("Error searching directory users");
+            if (!result.Success) throw new UserFriendlyException("Error searching directory users");
 
             if (result.Success && result.Data != null)
             {
