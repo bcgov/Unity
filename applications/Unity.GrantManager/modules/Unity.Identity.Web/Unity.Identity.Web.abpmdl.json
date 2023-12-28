@@ -7,7 +7,7 @@
   },
   "packages": {   
     "Unity.Identity.Web": {
-      "path": "srcUnity.Identity.Web/Unity.Identity.Web.abppkg.json",
+      "path": "src/Unity.Identity.Web/Unity.Identity.Web.abppkg.json",
       "folder": "src"
     }
   }
