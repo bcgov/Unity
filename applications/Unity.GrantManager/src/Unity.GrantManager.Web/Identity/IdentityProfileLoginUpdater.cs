@@ -202,7 +202,7 @@ namespace Unity.GrantManager.Web.Identity
 
             var userName = GetClaimValue(token, UnityClaimsTypes.IDirUsername);
             var displayName = GetClaimValue(token, UnityClaimsTypes.DisplayName) ?? "DisplayName";
-            var email = GetClaimValue(token, AbpClaimTypes.Email);
+            var email = GetClaimValue(token, UnityClaimsTypes.Email);
             var newUserId = Guid.NewGuid();
 
             var user = new IdentityUser(newUserId, userName, email ?? "blank@example.com", _currentTenant.Id)
@@ -249,7 +249,7 @@ namespace Unity.GrantManager.Web.Identity
         {
             var token = validatedTokenContext.SecurityToken;
 
-            if (user.Email != GetClaimValue(token, AbpClaimTypes.Email))
+            if (user.Email != GetClaimValue(token, UnityClaimsTypes.Email))
             {
                 await _userManager.SetEmailAsync(user, GetClaimValue(token, AbpClaimTypes.Email) ?? "blank@example.com");
             }
