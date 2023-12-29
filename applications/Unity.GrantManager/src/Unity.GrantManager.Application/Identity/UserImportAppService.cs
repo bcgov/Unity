@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Integration.Sso;
+using Unity.GrantManager.Integration.Css;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Identity;
@@ -16,21 +16,21 @@ namespace Unity.GrantManager.Identity
     [Authorize(IdentityPermissions.Users.Default)]
     public class UserImportAppService : GrantManagerAppService, IUserImportAppService
     {
-        private readonly ISsoUsersApiService _ssoUsersApiService;
+        private readonly ICssUsersApiService _cssUsersApiService;
         private readonly ICurrentTenant _currentTenant;
         private readonly IdentityUserManager _userManager;
         private readonly IPersonRepository _personRepository;
         private readonly IIdentityUserRepository _identityUserRepository;
         private readonly IDataFilter _dataFilter;
 
-        public UserImportAppService(ISsoUsersApiService ssoUsersApiService,
+        public UserImportAppService(ICssUsersApiService cssUsersApiService,
             ICurrentTenant currentTenant,
             IdentityUserManager userManager,
             IPersonRepository personRepository,
             IIdentityUserRepository identityUserRepository,
             IDataFilter dataFilter)
         {
-            _ssoUsersApiService = ssoUsersApiService;
+            _cssUsersApiService = cssUsersApiService;
             _currentTenant = currentTenant;
             _userManager = userManager;
             _personRepository = personRepository;
@@ -42,27 +42,27 @@ namespace Unity.GrantManager.Identity
         {
             var newUserId = Guid.NewGuid();
 
-            var result = await _ssoUsersApiService.FindUserAsync(importUserDto.Directory, importUserDto.Guid);
+            var result = await _cssUsersApiService.FindUserAsync(importUserDto.Directory, importUserDto.Guid);
 
             if (result.Data == null || result.Data.Length == 0) throw new AbpValidationException();
 
-            var ssoUser = result.Data[0];
+            var cssUser = result.Data[0];
 
-            IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(ssoUser);
-            identityUser ??= await CreateNewIdentityUserAsync(newUserId, ssoUser);
+            IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(cssUser);
+            identityUser ??= await CreateNewIdentityUserAsync(newUserId, cssUser);
 
             if (identityUser == null) throw new UserFriendlyException("Error creating user account");
 
             await _userManager.AddDefaultRolesAsync(identityUser);
 
-            var oicdSub = ssoUser.Username ?? newUserId.ToString();
-            var displayName = ssoUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();
+            var oicdSub = cssUser.Username ?? newUserId.ToString();
+            var displayName = cssUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();
 
             await UpdateAdditionalUserPropertiesAsync(identityUser, oicdSub, displayName);
             await SyncUserToCurrentTenantAsync(newUserId, identityUser, oicdSub, displayName);
         }
 
-        private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, SsoUser ssoUser)
+        private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, CssUser ssoUser)
         {
             IdentityUser? identityUser = new(newUserId, ssoUser.Attributes?.IdirUsername?[0], ssoUser.Email ?? $"{ssoUser.Attributes?.IdirUsername}@{ssoUser.Attributes?.IdirUsername}.com", _currentTenant.Id)
             {
@@ -87,7 +87,7 @@ namespace Unity.GrantManager.Identity
             return identityUser;
         }
 
-        private async Task<IdentityUser?> ReactivateAndGetDeletedUserAsync(SsoUser ssoUser)
+        private async Task<IdentityUser?> ReactivateAndGetDeletedUserAsync(CssUser ssoUser)
         {
             //Temporary disable the ISoftDelete filter - find delete user account and reactivate for import
             using (_dataFilter.Disable<ISoftDelete>())
@@ -140,7 +140,7 @@ namespace Unity.GrantManager.Identity
                     });
             }
 
-            var result = await _ssoUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName);
+            var result = await _cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName);
 
             if (!result.Success) throw new UserFriendlyException("Error searching directory users");
 

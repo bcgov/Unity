@@ -68,9 +68,9 @@ public class GrantManagerApplicationModule : AbpModule
         });
 
 
-        context.Services.Configure<SsoApiOptions>(
+        context.Services.Configure<CssApiOptions>(
             configuration.GetSection(
-                key: "SsoApi"));
+                key: "CssApi"));
 
         context.Services.AddSingleton<RestClient>(provider =>
         {

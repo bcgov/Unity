@@ -3,7 +3,6 @@ using RestSharp.Authenticators;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
-using Unity.GrantManager.Integration.Sso;
 using Unity.GrantManager.Integrations.Http;
 using Volo.Abp.Application.Services;
 using System.Text.Json;
@@ -14,26 +13,27 @@ using Microsoft.Extensions.Logging;
 using System.Linq;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Unity.GrantManager.Integration.Css;
 
 namespace Unity.GrantManager.Integrations.Sso
 {
     [IntegrationService]
-    [ExposeServices(typeof(SsoUserApiService), typeof(ISsoUsersApiService))]
-    public class SsoUserApiService : ApplicationService, ISsoUsersApiService
+    [ExposeServices(typeof(CssApiService), typeof(ICssUsersApiService))]
+    public class CssApiService : ApplicationService, ICssUsersApiService
     {
         private readonly IResilientHttpRequest _resilientRestClient;
         private readonly IDistributedCache<TokenValidationResponse, Guid> _accessTokenCache;
-        private readonly IOptions<SsoApiOptions> _ssoApiOptions;
+        private readonly IOptions<CssApiOptions> _cssApiOptions;
         private readonly RestClient _restClient;
 
-        public SsoUserApiService(IResilientHttpRequest resilientHttpRequest,
+        public CssApiService(IResilientHttpRequest resilientHttpRequest,
             IDistributedCache<TokenValidationResponse, Guid> accessTokenCache,
-            IOptions<SsoApiOptions> ssoApiOptions,
+            IOptions<CssApiOptions> cssApiOptions,
             RestClient restClient)
         {
             _resilientRestClient = resilientHttpRequest;
             _accessTokenCache = accessTokenCache;
-            _ssoApiOptions = ssoApiOptions;
+            _cssApiOptions = cssApiOptions;
             _restClient = restClient;
         }
 
@@ -70,7 +70,7 @@ namespace Unity.GrantManager.Integrations.Sso
         {
             var tokenResponse = await GetAccessTokenAsync();
 
-            var resource = BuildUrlWithQueryStringUsingUriBuilder($"{_ssoApiOptions.Value.ApiUrl}/{_ssoApiOptions.Value.ApiEnv}/{directory}/users?", paramDictionary);
+            var resource = BuildUrlWithQueryStringUsingUriBuilder($"{_cssApiOptions.Value.Url}/{_cssApiOptions.Value.Env}/{directory}/users?", paramDictionary);
 
             var authHeaders = new Dictionary<string, string>
             {
@@ -91,7 +91,7 @@ namespace Unity.GrantManager.Integrations.Sso
             }
             else
             {
-                return new UserSearchResult() { Error = "", Success = false, Data = Array.Empty<SsoUser>() };
+                return new UserSearchResult() { Error = "", Success = false, Data = Array.Empty<CssUser>() };
             }
         }
 
@@ -115,9 +115,9 @@ namespace Unity.GrantManager.Integrations.Sso
 
             var grantType = "client_credentials";
 
-            var request = new RestRequest($"{_ssoApiOptions.Value.TokenEndpoint}")
+            var request = new RestRequest($"{_cssApiOptions.Value.TokenUrl}")
             {
-                Authenticator = new HttpBasicAuthenticator(_ssoApiOptions.Value.Username, _ssoApiOptions.Value.Password)
+                Authenticator = new HttpBasicAuthenticator(_cssApiOptions.Value.ClientId, _cssApiOptions.Value.ClientSecret)
             };
             request.AddHeader("content-type", "application/x-www-form-urlencoded");
             request.AddParameter("application/x-www-form-urlencoded", $"grant_type={grantType}", ParameterType.RequestBody);
