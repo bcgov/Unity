@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33829.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{ED6D078F-B0A2-48E8-A09D-3B7CDF6CE3D1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0BC55E3B-4964-48E3-A390-2ADD37980149}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Identity.Web", "src\Unity.Identity.Web.csproj", "{B36FE936-93F0-46B8-959D-D92EE746011E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Identity.Web.Tests", "test\Unity.Identity.Web.Tests\Unity.Identity.Web.Tests.csproj", "{7321802F-AB84-4837-B87B-64AB79725082}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B36FE936-93F0-46B8-959D-D92EE746011E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B36FE936-93F0-46B8-959D-D92EE746011E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B36FE936-93F0-46B8-959D-D92EE746011E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B36FE936-93F0-46B8-959D-D92EE746011E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7321802F-AB84-4837-B87B-64AB79725082}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7321802F-AB84-4837-B87B-64AB79725082}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7321802F-AB84-4837-B87B-64AB79725082}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7321802F-AB84-4837-B87B-64AB79725082}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B36FE936-93F0-46B8-959D-D92EE746011E} = {ED6D078F-B0A2-48E8-A09D-3B7CDF6CE3D1}
+		{7321802F-AB84-4837-B87B-64AB79725082} = {0BC55E3B-4964-48E3-A390-2ADD37980149}
+	EndGlobalSection
+EndGlobal

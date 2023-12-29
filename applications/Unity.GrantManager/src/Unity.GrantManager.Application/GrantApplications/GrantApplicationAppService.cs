@@ -376,16 +376,16 @@ public class GrantApplicationAppService :
                 Guid currentApplicationId = Guid.Parse(item.Name);
                 if (currentApplicationId != previousApplicationId)
                 {
-                    var oidcSubs = new List<(Guid? assigneeId, string? fullName)>();
+                    var assignees = new List<(Guid? assigneeId, string? fullName)>();
 
                     foreach (JToken assigneeToken in item.Value.Children())
                     {
                         string? assigneeId = assigneeToken.Value<string?>("assigneeId") ?? null;
                         string? fullName = assigneeToken.Value<string?>("fullName") ?? null;
-                        oidcSubs.Add(new(assigneeId != null ? Guid.Parse(assigneeId) : null, fullName));
+                        assignees.Add(new(assigneeId != null ? Guid.Parse(assigneeId) : null, fullName));
                     }
 
-                    await _applicationManager.SetAssigneesAsync(currentApplicationId, oidcSubs);
+                    await _applicationManager.SetAssigneesAsync(currentApplicationId, assignees);
                 }
 
                 previousApplicationId = currentApplicationId;

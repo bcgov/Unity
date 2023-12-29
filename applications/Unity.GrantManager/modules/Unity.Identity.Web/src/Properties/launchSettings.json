@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Unity.Identity.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:52448;http://localhost:52449"
+    }
+  }
+}

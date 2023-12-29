@@ -32,6 +32,8 @@
     "Common:EndDate": "End Date",
     "Common:Name": "Name",
     "Common:Description": "Description",
+    "Common:Command:Search": "Search",
+    "Common:Command:Import": "Import",
 
     "GrantPrograms": "Grant Programs",
     "GrantProgram": "Grant Program",
@@ -233,7 +235,12 @@
     "ProjectInfoView:ProjectInfo.ForestryFocus": "Forestry Focus",
     "ProjectInfoView:ProjectInfo.CensusSubdivision": "Census Subdivision",
     "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District (Census Division)",
-    "ProjectInfoView:ProjectInfoLocation": "Project Location"
+    "ProjectInfoView:ProjectInfoLocation": "Project Location",
+
+    "UnityIdentity:ImportUser": "Import User",
+    "UnityIdentity:FirstName": "First Name",
+    "UnityIdentity:LastName": "Last Name",
+    "UnityIdentity:Import": "Import"
   }
 }
 
