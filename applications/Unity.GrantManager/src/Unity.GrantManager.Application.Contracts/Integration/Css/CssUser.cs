@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.Integration.Sso
+namespace Unity.GrantManager.Integration.Css
 {
-    public class SsoUser
+    public class CssUser
     {
         [JsonPropertyName("username")]
         public string? Username { get; set; }
@@ -17,6 +17,6 @@ namespace Unity.GrantManager.Integration.Sso
         public string? Email { get; set; }
 
         [JsonPropertyName("attributes")]
-        public SsoUserAttributes? Attributes { get; set; }
+        public CssUserAttributes? Attributes { get; set; }
     }
 }

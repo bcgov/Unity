@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.Integration.Sso
+namespace Unity.GrantManager.Integration.Css
 {
     public class UserSearchResult
     {
@@ -11,6 +11,6 @@ namespace Unity.GrantManager.Integration.Sso
         public string? Error { get; set; }
 
         [JsonPropertyName("data")]
-        public SsoUser[]? Data { get; set; }
+        public CssUser[]? Data { get; set; }
     }
 }

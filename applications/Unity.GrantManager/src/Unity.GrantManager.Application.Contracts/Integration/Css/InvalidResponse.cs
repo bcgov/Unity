@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.Integration.Sso
+namespace Unity.GrantManager.Integration.Css
 {
     public class InvalidResponse
     {
