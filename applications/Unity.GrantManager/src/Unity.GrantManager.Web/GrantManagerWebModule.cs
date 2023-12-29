@@ -41,6 +41,7 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Modularity;
+using Volo.Abp.OpenIddict.Tokens;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
@@ -80,6 +81,11 @@ public class GrantManagerWebModule : AbpModule
                 typeof(GrantManagerApplicationContractsModule).Assembly,
                 typeof(GrantManagerWebModule).Assembly
             );
+        });
+
+        Configure<TokenCleanupOptions>(options =>
+        {
+            options.IsCleanupEnabled = false; // not used
         });
     }
 
