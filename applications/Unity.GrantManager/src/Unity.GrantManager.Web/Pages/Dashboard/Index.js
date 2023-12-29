@@ -40,11 +40,11 @@
                 const y = chart.getDatasetMeta(0).data[0].y;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.font = '20px sans-serif';
+                ctx.font = '16px sans-serif';
                 ctx.fillText(text, x, y - 10);
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.font = '20px sans-serif';
+                ctx.font = '16px sans-serif';
                 ctx.fillText(sum, x, y + 15);
             }
         }
@@ -54,6 +54,8 @@
             type: 'doughnut',
             data: data,
             options: {
+                maintainAspectRatio: false,
+                responsive: true,
                 plugins: {
                     title: {
                         display: true,
