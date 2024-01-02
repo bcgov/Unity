@@ -148,6 +148,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 ElectoralDistrict = application.ElectoralDistrict,
                 CensusSubdivision = application.CensusSubdivision,
                 RegionalDistrict = application.RegionalDistrict,
+                ContactFullName = application.ContactFullName,
+                ContactTitle = application.ContactTitle,
+                ContactEmail = application.ContactEmail,
+                ContactBusinessPhone = application.ContactBusinessPhone,
+                ContactCellPhone = application.ContactCellPhone
             };
 
             return View(model);

@@ -253,6 +253,11 @@ public class GrantApplicationAppService :
             application.ElectoralDistrict = input.ElectoralDistrict;
             application.CensusSubdivision = input.CensusSubdivision;
             application.RegionalDistrict = input.RegionalDistrict;
+            application.ContactFullName = input.ContactFullName;
+            application.ContactTitle = input.ContactTitle;
+            application.ContactEmail = input.ContactEmail;
+            application.ContactBusinessPhone = input.ContactBusinessPhone;
+            application.ContactCellPhone = input.ContactCellPhone;
 
     await _applicationRepository.UpdateAsync(application, autoSave: true);
 

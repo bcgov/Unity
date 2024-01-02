@@ -53,4 +53,9 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? ElectoralDistrict { get; set; }
     public string? CensusSubdivision { get; set; }
     public string? RegionalDistrict { get; set; }
+    public string? ContactFullName { get; set; }
+    public string? ContactTitle { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? ContactBusinessPhone { get; set; }
+    public string? ContactCellPhone { get; set; }
 }

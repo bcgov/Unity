@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240102212909_Add_ProjectInfo_Columns")]
+    partial class AddProjectInfoColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -237,6 +240,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("OidcSubUser")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Phone")
@@ -1202,7 +1206,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("OidcSubUser")
-                        .HasPrincipalKey("OidcSub");
+                        .HasPrincipalKey("OidcSub")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
