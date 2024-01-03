@@ -20,20 +20,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         AutoInitialize = true)]
     public class ProjectInfoViewComponent : AbpViewComponent
     {
-        private readonly GrantApplicationAppService _grantApplicationAppService;
-        private readonly SectorAppService _applicationSectorAppService;
-        private readonly EconomicRegionAppService _applicationEconomicRegionAppService;
-        private readonly ElectoralDistrictAppService _applicationElectoralDistrictAppService;
-        private readonly RegionalDistrictAppService _applicationRegionalDistrictAppService;
-        private readonly CensusSubdivisionAppService _applicationCensusSubdivisionAppService;
+        private readonly IGrantApplicationAppService _grantApplicationAppService;
+        private readonly ISectorService _applicationSectorAppService;
+        private readonly IEconomicRegionService _applicationEconomicRegionAppService;
+        private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
+        private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
+        private readonly ICensusSubdivisionService _applicationCensusSubdivisionAppService;
 
         public ProjectInfoViewComponent(
-            GrantApplicationAppService grantApplicationAppService,
-            SectorAppService applicationSectorAppService,
-            EconomicRegionAppService applicationEconomicRegionAppService,
-            ElectoralDistrictAppService applicationElectoralDistrictAppService,
-            RegionalDistrictAppService applicationRegionalDistrictAppService,
-            CensusSubdivisionAppService applicationCensusSubdivisionAppService
+            IGrantApplicationAppService grantApplicationAppService,
+            ISectorService applicationSectorAppService,
+            IEconomicRegionService applicationEconomicRegionAppService,
+            IElectoralDistrictService applicationElectoralDistrictAppService,
+            IRegionalDistrictService applicationRegionalDistrictAppService,
+            ICensusSubdivisionService applicationCensusSubdivisionAppService
             )
         {
             _grantApplicationAppService = grantApplicationAppService;
