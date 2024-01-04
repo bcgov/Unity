@@ -16,6 +16,17 @@ $(function () {
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
 
+    let tagApplicationModal = new abp.ModalManager({
+        viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
+        scriptUrl: '/Pages/ApplicationTags/ApplicationTags.js'
+    });
+    tagApplicationModal.onResult(function () {
+        abp.notify.success(
+            'The application tags has been successfully updated.',
+            'Application Tags'
+        );
+        PubSub.publish("refresh_application_list");
+    });
     assignApplicationModal.onResult(function () {
         abp.notify.success(
             'The application assignees has been successfully updated.',
@@ -161,5 +172,12 @@ $(function () {
     $("#btn-toggle-filter").on("click", function () {
         // Toggle the visibility of the div
         $(".tr-toggle-filter").toggle();
+    });
+
+    $('#tagApplication').click(function () {
+        tagApplicationModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+            actionType: 'Add'
+        });
     });
 });
