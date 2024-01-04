@@ -237,7 +237,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("OidcSubUser")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Phone")
@@ -313,6 +312,21 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
 
+                    b.Property<string>("ContactBusinessPhone")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContactCellPhone")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContactEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContactFullName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContactTitle")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("CreationTime");
@@ -323,6 +337,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("DeclineRational")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("DueDiligenceStatus")
                         .HasColumnType("text");
@@ -1185,9 +1202,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("OidcSubUser")
-                        .HasPrincipalKey("OidcSub")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasPrincipalKey("OidcSub");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>

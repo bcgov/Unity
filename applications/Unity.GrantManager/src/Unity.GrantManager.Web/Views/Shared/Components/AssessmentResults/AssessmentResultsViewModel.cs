@@ -75,6 +75,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             public string? AssessmentResultStatus { get; set; }
             [Display(Name = "AssessmentResultsView:AssessmentResultsForm.FinalDecisionDate")]
             public DateTime? FinalDecisionDate { get; set; }
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.DueDate")]
+            public DateTime? DueDate { get; set; }
 
         }
 

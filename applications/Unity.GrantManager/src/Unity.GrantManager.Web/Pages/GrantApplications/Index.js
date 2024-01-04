@@ -276,7 +276,7 @@
                      {
                         extend: 'colvis',
                         text: 'Manage Columns',
-                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
+                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
                          className: 'btn btn-light custom-table-btn cln-visible',
 
                        
@@ -341,7 +341,7 @@
                         render: function (data) {
                             return luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString();
+                            }).toUTC().toLocaleString();
                         },
                     },
                     { //5
@@ -484,7 +484,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Project Start Date}' ;
+                            }).toUTC().toLocaleString() : '{Project Start Date}' ;
                         },
                     },
                     { //18 -- mapped
@@ -495,7 +495,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Project End Date}';
+                            }).toUTC().toLocaleString() : '{Project End Date}';
                         },
                     },
                     { //19  -- mapped
@@ -677,8 +677,17 @@
                             return formatter.format(data) ?? '{Recommended Amount}';
                         },
                     },
-                  
-
+                    { //34 -- mapped
+                        title: 'Due Date',
+                        name: 'dueDate',
+                        data: 'dueDate',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data != null ? luxon.DateTime.fromISO(data, {
+                                locale: abp.localization.currentCulture.name,
+                            }).toUTC().toLocaleString() : '{Due Date}';
+                        },
+                    },
                 ],
 
                 columnDefs: [

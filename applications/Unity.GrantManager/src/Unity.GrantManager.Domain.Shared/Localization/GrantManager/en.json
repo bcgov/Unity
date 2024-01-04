@@ -32,6 +32,8 @@
     "Common:EndDate": "End Date",
     "Common:Name": "Name",
     "Common:Description": "Description",
+    "Common:Command:Search": "Search",
+    "Common:Command:Import": "Import",
 
     "GrantPrograms": "Grant Programs",
     "GrantProgram": "Grant Program",
@@ -165,6 +167,7 @@
     "AssessmentResultsView:AssessmentResultsForm.TotalScore": "Total Score",
     "AssessmentResultsView:AssessmentResultsForm.AssessmentResult": "Assessment Result",
     "AssessmentResultsView:AssessmentResultsForm.FinalDecisionDate": "Decision Date",
+    "AssessmentResultsView:AssessmentResultsForm.DueDate": "Due Date",
 
     "GrantApplication:ActionButtonName": "Status Actions",
     "Enum:GrantApplicationAction.Open": "Open",
@@ -232,7 +235,18 @@
     "ProjectInfoView:ProjectInfo.ForestryFocus": "Forestry Focus",
     "ProjectInfoView:ProjectInfo.CensusSubdivision": "Census Subdivision",
     "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District (Census Division)",
-    "ProjectInfoView:ProjectInfoLocation": "Project Location"
+    "ProjectInfoView:ProjectInfoLocation": "Project Location",
+    "ProjectInfoView:ProjectInfoContactInfo": "Contact Info",
+    "ProjectInfoView:ProjectInfo.ContactFullName": "Contact Full Name",
+    "ProjectInfoView:ProjectInfo.ContactTitle": "Contact Title",
+    "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
+    "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
+    "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
+
+    "UnityIdentity:ImportUser": "Import User",
+    "UnityIdentity:FirstName": "First Name",
+    "UnityIdentity:LastName": "Last Name",
+    "UnityIdentity:Import": "Import"
   }
 }
 

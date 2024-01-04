@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
-using Volo.Abp.Account;
+using Unity.GrantManager.Integrations.Sso;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.FeatureManagement;
@@ -23,7 +23,6 @@ namespace Unity.GrantManager;
 
 [DependsOn(
     typeof(GrantManagerDomainModule),
-    typeof(AbpAccountApplicationModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
     typeof(AbpPermissionManagementApplicationModule),
@@ -65,7 +64,13 @@ public class GrantManagerApplicationModule : AbpModule
             options.BaseUri = configuration["Intake:BaseUri"] ?? "";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
+            options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
+
+
+        context.Services.Configure<CssApiOptions>(
+            configuration.GetSection(
+                key: "CssApi"));
 
         context.Services.AddSingleton<RestClient>(provider =>
         {

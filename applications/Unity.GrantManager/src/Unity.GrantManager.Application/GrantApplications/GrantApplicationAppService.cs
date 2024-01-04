@@ -139,7 +139,7 @@ public class GrantApplicationAppService :
                     select new GetSummaryDto
                     {
                         Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = application.CreationTime.ToShortDateString(),
+                        SubmissionDate = application.SubmissionDate.ToShortDateString(),
                         OrganizationName = applicant.OrgName,
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
@@ -215,6 +215,7 @@ public class GrantApplicationAppService :
                     }
                     application.AssessmentResultStatus = input.AssessmentResultStatus;
                     application.FinalDecisionDate = input.FinalDecisionDate;
+                    application.DueDate = input.DueDate;
                 }
 
                 await _applicationRepository.UpdateAsync(application, autoSave: true);
@@ -252,6 +253,11 @@ public class GrantApplicationAppService :
             application.ElectoralDistrict = input.ElectoralDistrict;
             application.CensusSubdivision = input.CensusSubdivision;
             application.RegionalDistrict = input.RegionalDistrict;
+            application.ContactFullName = input.ContactFullName;
+            application.ContactTitle = input.ContactTitle;
+            application.ContactEmail = input.ContactEmail;
+            application.ContactBusinessPhone = input.ContactBusinessPhone;
+            application.ContactCellPhone = input.ContactCellPhone;
 
     await _applicationRepository.UpdateAsync(application, autoSave: true);
 
@@ -375,16 +381,16 @@ public class GrantApplicationAppService :
                 Guid currentApplicationId = Guid.Parse(item.Name);
                 if (currentApplicationId != previousApplicationId)
                 {
-                    var oidcSubs = new List<(Guid? assigneeId, string? fullName)>();
+                    var assignees = new List<(Guid? assigneeId, string? fullName)>();
 
                     foreach (JToken assigneeToken in item.Value.Children())
                     {
                         string? assigneeId = assigneeToken.Value<string?>("assigneeId") ?? null;
                         string? fullName = assigneeToken.Value<string?>("fullName") ?? null;
-                        oidcSubs.Add(new(assigneeId != null ? Guid.Parse(assigneeId) : null, fullName));
+                        assignees.Add(new(assigneeId != null ? Guid.Parse(assigneeId) : null, fullName));
                     }
 
-                    await _applicationManager.SetAssigneesAsync(currentApplicationId, oidcSubs);
+                    await _applicationManager.SetAssigneesAsync(currentApplicationId, assignees);
                 }
 
                 previousApplicationId = currentApplicationId;

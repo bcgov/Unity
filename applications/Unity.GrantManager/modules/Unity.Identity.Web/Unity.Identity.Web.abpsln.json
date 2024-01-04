@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "Unity.Identity.Web": {
+      "path": "Unity.Identity.Web.abpmdl.json"
+    }
+  }
+}

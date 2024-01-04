@@ -1,0 +1,42 @@
+﻿@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Volo.Abp.Identity.Localization
+@using Unity.Identity.Web.Pages.Identity.Users
+@using Volo.Abp.Localization
+@using Volo.Abp.ObjectExtending
+@using Volo.Abp.Data
+@using Volo.Abp.Identity
+@model ImportModalModel
+@inject IHtmlLocalizer<GrantManagerResource> L
+@inject IStringLocalizerFactory StringLocalizerFactory
+
+@{
+    Layout = null;
+}
+<form asp-page="/Identity/Users/ImportModal" data-check-form-on-close="false">
+    <abp-modal>
+        <abp-modal-header title="@L["UnityIdentity:ImportUser"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <div class="mt-3" >
+                <abp-input id="import-user-directory" asp-for="UserInfo.Directory" disabled readonly="true" />
+                <abp-input id="import-user-firstName" asp-for="UserInfo.FirstName" />
+                <abp-input id="import-user-lastName" asp-for="UserInfo.LastName" />
+                <abp-input type="hidden" id="import-user-id" asp-for="UserInfo.UserIdentifier" />
+            </div>                    
+            <abp-button id="ImportUserSearchButton"
+                        text="@L["Common:Command:Search"].Value"
+                        icon-type="Other"
+                        icon="fl fl-search"
+                        button-type="Light" />
+            <abp-table id="UserSearchTable"></abp-table>                
+        </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button id="cancel-import-btn" class="close" data-dismiss="modal" aria-label="Close" text="@L["Cancel"].Value" button-type="Secondary"></abp-button>
+            <abp-button id="import-user-btn" text="@L["UnityIdentity:Import"].Value" type="submit" button-type="Primary" disabled="true"></abp-button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+                      

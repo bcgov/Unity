@@ -106,6 +106,13 @@
 
 
 function enableSaveBtn(inputText) {
+    if (!document.getElementById("ProjectInfo_ContactEmail").validity.valid ||
+        !document.getElementById("ProjectInfo_ContactBusinessPhone").checkValidity() ||
+        !document.getElementById("ProjectInfo_ContactCellPhone").checkValidity()) {
+        $('#saveProjectInfoBtn').prop('disabled', true);
+        return;
+    }    
+
     if (inputText?.value?.trim() != "") {
         $('#saveProjectInfoBtn').prop('disabled', false);
     } else {

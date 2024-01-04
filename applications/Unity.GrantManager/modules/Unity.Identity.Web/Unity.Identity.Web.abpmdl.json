@@ -1,0 +1,14 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {   
+    "Unity.Identity.Web": {
+      "path": "src/Unity.Identity.Web/Unity.Identity.Web.abppkg.json",
+      "folder": "src"
+    }
+  }
+}

@@ -32,6 +32,7 @@ public class Application : AuditedAggregateRoot<Guid>
     public DateTime SubmissionDate { get; set; }
     public DateTime? AssessmentStartDate { get; set; }
     public DateTime? FinalDecisionDate { get; set; }
+    public DateTime? DueDate { get; set; }
 
     [Column(TypeName = "jsonb")]
     public string? Payload { get; set; }
@@ -80,4 +81,9 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string? CensusSubdivision { get; set; }
     public string? RegionalDistrict { get; set; }
+    public string? ContactFullName { get; set; }
+    public string? ContactTitle { get; set;}
+    public string? ContactEmail { get; set;}
+    public string? ContactBusinessPhone { get; set;}
+    public string? ContactCellPhone { get; set;}
 }
