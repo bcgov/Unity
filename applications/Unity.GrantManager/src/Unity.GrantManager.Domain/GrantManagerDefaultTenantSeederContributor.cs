@@ -13,21 +13,15 @@ namespace Unity.GrantManager
     {
         private readonly ITenantManager _tenantManager;
         private readonly ITenantRepository _tenantRepository;
-        private readonly IdentityUserManager _identityUserManager;
         private readonly IConfiguration _configuration;
-        private readonly IPersonRepository _personRepository;
 
         public GrantManagerDefaultTenantSeederContributor(ITenantManager tenantManager,
             ITenantRepository tenantRepository,
-            IConfiguration configuration,
-            IPersonRepository personRepository,
-            IdentityUserManager identityUserManager)
+            IConfiguration configuration)
         {
             _tenantManager = tenantManager;
             _tenantRepository = tenantRepository;
-            _identityUserManager = identityUserManager;
             _configuration = configuration;
-            _personRepository = personRepository;
         }
 
         public async Task SeedAsync(DataSeedContext context)

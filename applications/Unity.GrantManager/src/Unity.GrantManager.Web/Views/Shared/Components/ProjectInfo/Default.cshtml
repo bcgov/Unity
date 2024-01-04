@@ -156,6 +156,36 @@
            
             </abp-row>
             <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                    <div id="ContactInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                        <h6 class="ps-1 fw-bold">@L["ProjectInfoView:ProjectInfoContactInfo"].Value</h6>
+                    </div>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ContactFullName" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ContactTitle" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ContactEmail" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ContactBusinessPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ContactCellPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
                 
                 <abp-column size="_12" class="px-1 d-flex justify-content-end mt-2">
                     <abp-button text="Save" id="saveProjectInfoBtn" class="save-project-btn" icon-type="Other"

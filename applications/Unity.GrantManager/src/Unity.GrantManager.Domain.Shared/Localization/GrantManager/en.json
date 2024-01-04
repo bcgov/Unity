@@ -236,6 +236,12 @@
     "ProjectInfoView:ProjectInfo.CensusSubdivision": "Census Subdivision",
     "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District (Census Division)",
     "ProjectInfoView:ProjectInfoLocation": "Project Location",
+    "ProjectInfoView:ProjectInfoContactInfo": "Contact Info",
+    "ProjectInfoView:ProjectInfo.ContactFullName": "Contact Full Name",
+    "ProjectInfoView:ProjectInfo.ContactTitle": "Contact Title",
+    "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
+    "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
+    "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
 
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",
