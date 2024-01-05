@@ -46,6 +46,7 @@ public class GrantApplicationAppService :
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IAssessmentRepository _assessmentRepository;
     private readonly IPersonRepository _personRepository;
+    private readonly IApplicantAgentRepository _applicantAgentRepository;
 
     public GrantApplicationAppService(IRepository<Application, Guid> repository,
         IApplicationManager applicationManager,
@@ -57,7 +58,8 @@ public class GrantApplicationAppService :
         ICommentsManager commentsManager,
         IApplicationFormRepository applicationFormRepository,
         IAssessmentRepository assessmentRepository,
-        IPersonRepository personRepository
+        IPersonRepository personRepository,
+        IApplicantAgentRepository applicantAgentRepository
         )
          : base(repository)
     {
@@ -71,6 +73,7 @@ public class GrantApplicationAppService :
         _applicationFormRepository = applicationFormRepository;
         _assessmentRepository = assessmentRepository;
         _personRepository = personRepository;
+        _applicantAgentRepository = applicantAgentRepository;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -127,6 +130,15 @@ public class GrantApplicationAppService :
         var dto = await _applicationRepository.GetAsync(id);
         var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
         appDto.StatusCode = dto.ApplicationStatus.StatusCode;
+        var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId==dto.ApplicantId && s.ApplicationId==dto.Id);
+        if(contactInfo != null) 
+        {
+            appDto.ContactFullName = contactInfo.Name;
+            appDto.ContactEmail = contactInfo.Email;
+            appDto.ContactTitle = contactInfo.Title;
+            appDto.ContactBusinessPhone = contactInfo.Phone;
+            appDto.ContactCellPhone = contactInfo.Phone2;
+        }
         return appDto;
     }
 
@@ -253,15 +265,52 @@ public class GrantApplicationAppService :
             application.ElectoralDistrict = input.ElectoralDistrict;
             application.CensusSubdivision = input.CensusSubdivision;
             application.RegionalDistrict = input.RegionalDistrict;
-            application.ContactFullName = input.ContactFullName;
-            application.ContactTitle = input.ContactTitle;
-            application.ContactEmail = input.ContactEmail;
-            application.ContactBusinessPhone = input.ContactBusinessPhone;
-            application.ContactCellPhone = input.ContactCellPhone;
 
-    await _applicationRepository.UpdateAsync(application, autoSave: true);
+            await _applicationRepository.UpdateAsync(application, autoSave: true);
 
-            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+            if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
+                || !string.IsNullOrEmpty(input.ContactBusinessPhone) || !string.IsNullOrEmpty(input.ContactCellPhone))
+            {
+                var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
+                if (applicantAgent == null)
+                {
+                    applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
+                    {
+                        ApplicantId = application.ApplicantId,
+                        ApplicationId = application.Id,
+                        Name = input.ContactFullName ?? "",
+                        Phone = input.ContactBusinessPhone ?? "",
+                        Phone2 = input.ContactCellPhone ?? "",
+                        Email = input.ContactEmail ?? "",
+                        Title = input.ContactTitle ?? ""
+                    });
+                }
+                else
+                {
+                    applicantAgent.Name = input.ContactFullName ?? "";
+                    applicantAgent.Phone = input.ContactBusinessPhone ?? "";
+                    applicantAgent.Phone2 = input.ContactCellPhone ?? "";
+                    applicantAgent.Email = input.ContactEmail ?? "";
+                    applicantAgent.Title = input.ContactTitle ?? "";
+
+                    applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
+                }
+
+                var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+                appDto.ContactFullName = applicantAgent.Name;
+                appDto.ContactEmail = applicantAgent.Email;
+                appDto.ContactTitle = applicantAgent.Title;
+                appDto.ContactBusinessPhone = applicantAgent.Phone;
+                appDto.ContactCellPhone = applicantAgent.Phone2;
+
+                return appDto;
+
+            } else
+            {
+                return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+            }
+     
         }
         else
         {
