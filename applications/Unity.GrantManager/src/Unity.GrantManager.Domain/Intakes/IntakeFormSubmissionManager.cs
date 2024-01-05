@@ -113,37 +113,34 @@ namespace Unity.GrantManager.Intakes
 
         private async Task<Applicant> CreateApplicantAsync(IntakeMapping intakeMap)
         {
-            var applicant = (await _applicantRepository.GetQueryableAsync()).FirstOrDefault(s => s.ApplicantName == intakeMap.ApplicantName);
-            if (applicant == null) {
+            var applicant = await _applicantRepository.InsertAsync(new Applicant
+            {
+                ApplicantName = intakeMap.ApplicantName ?? "{ApplicantName}",
+                NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
+                OrgName = intakeMap.OrgName ?? "{OrgName}",
+                OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
+                OrganizationType = intakeMap.OrganizationType ?? "{OrganizationType}",
+                Sector = intakeMap.Sector ?? "{Sector}",
+                SubSector = intakeMap.SubSector ?? "{SubSector}",
+                ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
+                Community = intakeMap.Community ?? "{Community}",
+                IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
+                ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
+                EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
+                CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
+                RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
+            });
 
-                applicant = await _applicantRepository.InsertAsync(new Applicant
-                {
-                    ApplicantName = intakeMap.ApplicantName ?? "{ApplicantName}",
-                    NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
-                    OrgName = intakeMap.OrgName ?? "{OrgName}",
-                    OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
-                    OrganizationType = intakeMap.OrganizationType ?? "{OrganizationType}",
-                    Sector = intakeMap.Sector ?? "{Sector}",
-                    SubSector = intakeMap.SubSector ?? "{SubSector}",
-                    ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
-                    Community = intakeMap.Community ?? "{Community}",
-                    IndigenousOrgInd =  intakeMap.IndigenousOrgInd ?? "N",
-                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
-                    CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
-                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
-    });
+            await CreateApplicantAddressAsync(intakeMap, applicant);
 
-                await CreateApplicantAddressAsync(intakeMap, applicant);
-            }
-
-           return applicant;
+            return applicant;
         }
 
         private async Task<ApplicantAgent> CreateApplicantAgentAsync(IntakeMapping intakeMap, Applicant applicant, Application application)
         {
             var applicantAgent = new ApplicantAgent();
-            if (!string.IsNullOrEmpty(intakeMap.ContactName)) {
+            if (!string.IsNullOrEmpty(intakeMap.ContactName) || !string.IsNullOrEmpty(intakeMap.ContactPhone) || !string.IsNullOrEmpty(intakeMap.ContactPhone2)
+                || !string.IsNullOrEmpty(intakeMap.ContactEmail) || !string.IsNullOrEmpty(intakeMap.ContactTitle)) {
 
                 applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
                 {
