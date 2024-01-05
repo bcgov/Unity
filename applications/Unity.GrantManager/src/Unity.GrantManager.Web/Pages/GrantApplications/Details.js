@@ -102,7 +102,6 @@ $(function () {
     function addEventListeners() {
         // Get all the card headers
         const cardHeaders = document.querySelectorAll('.card-header:not(.card-body .card-header)');
-       
 
         // Add click event listeners to each card header
         cardHeaders.forEach((header) => {
@@ -135,7 +134,6 @@ $(function () {
         });
 
         // Collapse all card bodies initially
-     
         const cardBodies = document.querySelectorAll('.card-body:not(.card-body .card-body)');
         cardBodies.forEach((body) => {
             body.style.display = 'none';
