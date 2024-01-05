@@ -16,7 +16,7 @@
     font-weight: 600 !important;
 }
 
-.card-header:not(.card-body .card-header)::before {
+.card-header::before {
     content: ' ';
     display: inline-block;
     border-bottom: 1px solid #313132;
@@ -28,7 +28,7 @@
     transition: all 0.5s !important;
 }
 
-.card-header:not(.card-body .card-header).custom-active::before {
+.card-header.custom-active::before {
     content: ' ';
     display: inline-block;
     border-bottom: 1px solid #313132;
