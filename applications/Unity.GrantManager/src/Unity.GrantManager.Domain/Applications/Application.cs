@@ -49,7 +49,7 @@ public class Application : AuditedAggregateRoot<Guid>
 
     public string? DueDiligenceStatus { get; set; }
 
-    public string? Recommendation { get; set; }
+    public string? SubStatus { get; set; }
 
     public string? DeclineRational { get; set; }
 
