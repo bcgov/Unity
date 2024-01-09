@@ -161,7 +161,7 @@
     "AssessmentResultsView:AssessmentResultsForm.ApprovedAmount": "Approved Amount",
     "AssessmentResultsView:AssessmentResultsForm.LikelihoodOfFunding": "Likelihood of Funding",
     "AssessmentResultsView:AssessmentResultsForm.DueDiligenceStatus": "Due Diligence Status",
-    "AssessmentResultsView:AssessmentResultsForm.Recommendation": "Recommendation",
+    "AssessmentResultsView:AssessmentResultsForm.SubStatus": "Sub-Status",
     "AssessmentResultsView:AssessmentResultsForm.DeclineRational": "Decline Rationale",
     "AssessmentResultsView:AssessmentResultsForm.Notes": "Notes",
     "AssessmentResultsView:AssessmentResultsForm.TotalScore": "Total Score",
