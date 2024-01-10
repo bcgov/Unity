@@ -51,7 +51,7 @@
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
                             <abp-input asp-for="@Model.AssessmentResults.ApprovedAmount"
-                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" id="approvedAmountInput" disabled="@(!Model.IsEditGranted && !Model.IsEditApprovedAmount)" />
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" id="approvedAmountInput" disabled="@(!Model.IsEditApprovedAmount)" />
                         </div>
                     </abp-column>
                 </abp-row>
