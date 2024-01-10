@@ -151,7 +151,7 @@ public class GrantApplicationAppService :
                     select new GetSummaryDto
                     {
                         Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = application.SubmissionDate.ToShortDateString(),
+                        SubmissionDate = TimeZoneInfo.ConvertTimeFromUtc(application.SubmissionDate,TimeZoneInfo.Local).ToShortDateString(),
                         OrganizationName = applicant.OrgName,
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
@@ -217,7 +217,7 @@ public class GrantApplicationAppService :
                     application.ApprovedAmount = input.ApprovedAmount ?? 0;
                     application.LikelihoodOfFunding = input.LikelihoodOfFunding;
                     application.DueDiligenceStatus = input.DueDiligenceStatus;
-                    application.Recommendation = input.Recommendation;
+                    application.SubStatus = input.SubStatus;
                     application.DeclineRational = input.DeclineRational;
                     application.TotalScore = input.TotalScore;
                     application.Notes = input.Notes;

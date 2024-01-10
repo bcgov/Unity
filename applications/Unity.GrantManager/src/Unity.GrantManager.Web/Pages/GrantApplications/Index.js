@@ -341,7 +341,7 @@
                         render: function (data) {
                             return luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toUTC().toLocaleString();
+                            }).toLocaleString();
                         },
                     },
                     { //5
@@ -484,7 +484,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toUTC().toLocaleString() : '{Project Start Date}' ;
+                            }).toLocaleString() : '{Project Start Date}' ;
                         },
                     },
                     { //18 -- mapped
@@ -495,7 +495,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toUTC().toLocaleString() : '{Project End Date}';
+                            }).toLocaleString() : '{Project End Date}';
                         },
                     },
                     { //19  -- mapped
@@ -685,7 +685,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toUTC().toLocaleString() : '{Due Date}';
+                            }).toLocaleString() : '{Due Date}';
                         },
                     },
                 ],

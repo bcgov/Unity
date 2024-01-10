@@ -69,7 +69,7 @@
                         </abp-select>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
-                        <abp-select asp-for="@Model.AssessmentResults.Recommendation" asp-items="@Model.RecommendationActionList"
+                        <abp-select asp-for="@Model.AssessmentResults.SubStatus" asp-items="@Model.SubStatusActionList"
                                     onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
                             <option value="">Please choose...</option>
                         </abp-select>
