@@ -2,6 +2,8 @@
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
 using Unity.Identity.Web.Navigation;
+using Unity.TenantManagement;
+using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
 
@@ -97,23 +99,36 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
+        context.Menu.AddItem(
+          new ApplicationMenuItem(
+              TenantManagementMenuNames.Tenants,
+              l["Menu:TenantManagement"],
+              "~/TenantManagement/Tenants",
+              icon: "fl fl-view-dashboard",
+              order: 8,
+              requiredPermissionName: TenantManagementPermissions.Tenants.Default
+          )
+        );
 
 #pragma warning disable S125 // Sections of code should not be commented out
-        /* - will complete later after fixing ui sub menu issue
-                var administration = context.Menu.GetAdministration();
+        /* - will complete later after fixing ui sub menu issue */
+        //var administration = context.Menu.GetAdministration();
 
-                //if (MultiTenancyConsts.IsEnabled)
-                //{
-                //    administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
-                //}
-                //else
-                //{
-                //    administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
-                //}
+        //if (administration != null)
+        //{
+        //    if (MultiTenancyConsts.IsEnabled)
+        //    {
+        //        administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
+        //    }
+        //    else
+        //    {
+        //        _ = administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
+        //    }
 
-                //administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
-                //administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
-                */
+        //    administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
+        //    administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
+        //}
+        //*/
 
         return Task.CompletedTask;
 #pragma warning restore S125 // Sections of code should not be commented out

@@ -49,6 +49,28 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Identity.Web.Tests", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Identity.Web", "modules\Unity.Identity.Web\src\Unity.Identity.Web.csproj", "{DFA7DD09-BBF2-45A0-96B2-E73400D6E5AD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity.TenantManagement", "Unity.TenantManagement", "{4D277ADA-5CCF-4ED6-9841-EF1B46C53560}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0CD59C19-8A24-41C6-B2BE-6C24C6CBF22E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{7C455D56-4BE2-40D2-972B-8B1343F64971}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.Application", "modules\Unity.TenantManagement\src\Unity.TenantManagement.Application\Unity.TenantManagement.Application.csproj", "{968004D8-3F03-4319-9923-2B2743E8953F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.Application.Contracts", "modules\Unity.TenantManagement\src\Unity.TenantManagement.Application.Contracts\Unity.TenantManagement.Application.Contracts.csproj", "{73A2E7ED-B537-44F8-9FF2-D0D6AE32D52E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.Web", "modules\Unity.TenantManagement\src\Unity.TenantManagement.Web\Unity.TenantManagement.Web.csproj", "{83E01FA2-38B7-41D3-88B9-A5D9DAD777CC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.Application.Tests", "modules\Unity.TenantManagement\test\Unity.TenantManagement.Application.Tests\Unity.TenantManagement.Application.Tests.csproj", "{25F9B05F-3CF7-491C-BECC-36DAA0BB948A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.EntityFrameworkCore.Tests", "modules\Unity.TenantManagement\test\Unity.TenantManagement.EntityFrameworkCore.Tests\Unity.TenantManagement.EntityFrameworkCore.Tests.csproj", "{30F22E60-5ACD-46D5-A6F9-A8CD3882A0D4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.TestBase", "modules\Unity.TenantManagement\test\Unity.TenantManagement.TestBase\Unity.TenantManagement.TestBase.csproj", "{280DDACE-FBFF-4B52-8C8F-FDDBE12C05A5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.HttpApi", "modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi\Unity.TenantManagement.HttpApi.csproj", "{D36D1B15-2769-48EE-837C-D38287E2C1AA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.HttpApi.Client", "modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi.Client\Unity.TenantManagement.HttpApi.Client.csproj", "{63692EBE-6C14-4E7A-86F8-48D58DA861A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +149,38 @@ Global
 		{DFA7DD09-BBF2-45A0-96B2-E73400D6E5AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFA7DD09-BBF2-45A0-96B2-E73400D6E5AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFA7DD09-BBF2-45A0-96B2-E73400D6E5AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{968004D8-3F03-4319-9923-2B2743E8953F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{968004D8-3F03-4319-9923-2B2743E8953F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{968004D8-3F03-4319-9923-2B2743E8953F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{968004D8-3F03-4319-9923-2B2743E8953F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73A2E7ED-B537-44F8-9FF2-D0D6AE32D52E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73A2E7ED-B537-44F8-9FF2-D0D6AE32D52E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73A2E7ED-B537-44F8-9FF2-D0D6AE32D52E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73A2E7ED-B537-44F8-9FF2-D0D6AE32D52E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83E01FA2-38B7-41D3-88B9-A5D9DAD777CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83E01FA2-38B7-41D3-88B9-A5D9DAD777CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83E01FA2-38B7-41D3-88B9-A5D9DAD777CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83E01FA2-38B7-41D3-88B9-A5D9DAD777CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25F9B05F-3CF7-491C-BECC-36DAA0BB948A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25F9B05F-3CF7-491C-BECC-36DAA0BB948A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25F9B05F-3CF7-491C-BECC-36DAA0BB948A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25F9B05F-3CF7-491C-BECC-36DAA0BB948A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30F22E60-5ACD-46D5-A6F9-A8CD3882A0D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30F22E60-5ACD-46D5-A6F9-A8CD3882A0D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30F22E60-5ACD-46D5-A6F9-A8CD3882A0D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30F22E60-5ACD-46D5-A6F9-A8CD3882A0D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{280DDACE-FBFF-4B52-8C8F-FDDBE12C05A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{280DDACE-FBFF-4B52-8C8F-FDDBE12C05A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{280DDACE-FBFF-4B52-8C8F-FDDBE12C05A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{280DDACE-FBFF-4B52-8C8F-FDDBE12C05A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D36D1B15-2769-48EE-837C-D38287E2C1AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D36D1B15-2769-48EE-837C-D38287E2C1AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D36D1B15-2769-48EE-837C-D38287E2C1AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D36D1B15-2769-48EE-837C-D38287E2C1AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63692EBE-6C14-4E7A-86F8-48D58DA861A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63692EBE-6C14-4E7A-86F8-48D58DA861A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63692EBE-6C14-4E7A-86F8-48D58DA861A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63692EBE-6C14-4E7A-86F8-48D58DA861A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -152,6 +206,17 @@ Global
 		{F0333A40-3831-4AD2-A09A-42D35AC4F461} = {00099710-CF66-4BD2-932C-5B7534B78185}
 		{AED84E39-61B5-44CE-BBE9-D9E33A1A6585} = {F0333A40-3831-4AD2-A09A-42D35AC4F461}
 		{DFA7DD09-BBF2-45A0-96B2-E73400D6E5AD} = {F0333A40-3831-4AD2-A09A-42D35AC4F461}
+		{4D277ADA-5CCF-4ED6-9841-EF1B46C53560} = {00099710-CF66-4BD2-932C-5B7534B78185}
+		{0CD59C19-8A24-41C6-B2BE-6C24C6CBF22E} = {4D277ADA-5CCF-4ED6-9841-EF1B46C53560}
+		{7C455D56-4BE2-40D2-972B-8B1343F64971} = {4D277ADA-5CCF-4ED6-9841-EF1B46C53560}
+		{968004D8-3F03-4319-9923-2B2743E8953F} = {0CD59C19-8A24-41C6-B2BE-6C24C6CBF22E}
+		{73A2E7ED-B537-44F8-9FF2-D0D6AE32D52E} = {0CD59C19-8A24-41C6-B2BE-6C24C6CBF22E}
+		{83E01FA2-38B7-41D3-88B9-A5D9DAD777CC} = {0CD59C19-8A24-41C6-B2BE-6C24C6CBF22E}
+		{25F9B05F-3CF7-491C-BECC-36DAA0BB948A} = {7C455D56-4BE2-40D2-972B-8B1343F64971}
+		{30F22E60-5ACD-46D5-A6F9-A8CD3882A0D4} = {7C455D56-4BE2-40D2-972B-8B1343F64971}
+		{280DDACE-FBFF-4B52-8C8F-FDDBE12C05A5} = {7C455D56-4BE2-40D2-972B-8B1343F64971}
+		{D36D1B15-2769-48EE-837C-D38287E2C1AA} = {0CD59C19-8A24-41C6-B2BE-6C24C6CBF22E}
+		{63692EBE-6C14-4E7A-86F8-48D58DA861A6} = {0CD59C19-8A24-41C6-B2BE-6C24C6CBF22E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}

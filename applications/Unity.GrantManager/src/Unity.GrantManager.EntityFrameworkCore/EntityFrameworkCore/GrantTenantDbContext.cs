@@ -13,7 +13,7 @@ using Unity.GrantManager.Identity;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
-    [ConnectionStringName(GrantManagerConsts.TenantConnectionStringName)]
+    [ConnectionStringName(GrantManagerConsts.DefaultTenantConnectionStringName)]
     public class GrantTenantDbContext : AbpDbContext<GrantTenantDbContext>
     {
         #region Domain Entities

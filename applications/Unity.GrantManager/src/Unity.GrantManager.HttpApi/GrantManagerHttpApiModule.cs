@@ -1,12 +1,12 @@
 ﻿using Localization.Resources.AbpUi;
 using Unity.GrantManager.Localization;
+using Unity.TenantManagement;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
 using Volo.Abp.SettingManagement;
-using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager;
 
@@ -14,7 +14,7 @@ namespace Unity.GrantManager;
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityHttpApiModule),
     typeof(AbpPermissionManagementHttpApiModule),
-    typeof(AbpTenantManagementHttpApiModule),
+    typeof(UnityTenantManagementHttpApiModule),
     typeof(AbpFeatureManagementHttpApiModule),
     typeof(AbpSettingManagementHttpApiModule)
     )]

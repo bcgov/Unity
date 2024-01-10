@@ -24,6 +24,7 @@ using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.Identity.Web;
+using Unity.TenantManagement.Web;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
@@ -44,7 +45,6 @@ using Volo.Abp.OpenIddict.Tokens;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
-using Volo.Abp.TenantManagement.Web;
 using Volo.Abp.Timing;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
@@ -59,7 +59,7 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAutofacModule),    
     typeof(AbpSettingManagementWebModule),
     typeof(AbpAspNetCoreMvcUiBasicThemeModule),
-    typeof(AbpTenantManagementWebModule),
+    typeof(UnityTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),

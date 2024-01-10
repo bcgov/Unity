@@ -32,11 +32,11 @@ namespace Unity.GrantManager
 
                 if (tenant == null)
                 {
-                    var tenantConnectionString = _configuration.GetConnectionString(GrantManagerConsts.TenantConnectionStringName);
+                    var tenantConnectionString = _configuration.GetConnectionString(GrantManagerConsts.DefaultTenantConnectionStringName);
                     if (tenantConnectionString != null)
                     {
                         var newTenant = await _tenantManager.CreateAsync(GrantManagerConsts.DefaultTenantName);
-                        newTenant.ConnectionStrings.Add(new TenantConnectionString(newTenant.Id, GrantManagerConsts.TenantConnectionStringName, tenantConnectionString));
+                        newTenant.ConnectionStrings.Add(new TenantConnectionString(newTenant.Id, GrantManagerConsts.DefaultTenantConnectionStringName, tenantConnectionString));
                         await _tenantRepository.InsertAsync(newTenant, true);
                     }
                 }

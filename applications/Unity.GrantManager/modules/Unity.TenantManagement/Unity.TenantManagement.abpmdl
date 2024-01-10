@@ -1,0 +1,30 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "Unity.TenantManagement.Web": {
+      "path": "src/Unity.TenantManagement.Web/Unity.TenantManagement.Web.abppkg",
+      "folder": "src"
+    },
+    "Unity.TenantManagement.Application": {
+      "path": "src/Unity.TenantManagement.Application/Unity.TenantManagement.Application.abppkg",
+      "folder": "src"
+    },
+    "Unity.TenantManagement.Application.Contracts": {
+      "path": "src/Unity.TenantManagement.Application.Contracts/Unity.TenantManagement.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "Unity.TenantManagement.Application.Tests": {
+      "path": "test/Unity.TenantManagement.Application.Tests/Unity.TenantManagement.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.TenantManagement.TestBase": {
+      "path": "test/Unity.TenantManagement.TestBase/Unity.TenantManagement.TestBase.abppkg",
+      "folder": "test"
+    }
+  }
+}
