@@ -50,7 +50,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                     ApprovedAmount = application.ApprovedAmount,
                     LikelihoodOfFunding = application.LikelihoodOfFunding,
                     DueDiligenceStatus = application.DueDiligenceStatus,
-                    Recommendation = application.Recommendation,
+                    SubStatus = application.SubStatus,
                     DeclineRational = application.DeclineRational,
                     TotalScore = application.TotalScore,
                     Notes = application.Notes,
