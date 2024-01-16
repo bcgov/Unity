@@ -275,3 +275,7 @@ select.selected{
     overflow-x: hidden;
     height: calc(100vh - 256px);
 }
+
+.formio-component-submit{
+    display: none;
+}
