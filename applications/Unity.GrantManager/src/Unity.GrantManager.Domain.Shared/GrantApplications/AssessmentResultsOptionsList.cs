@@ -10,7 +10,7 @@ public static class AssessmentResultsOptionsList
 
     public static Dictionary<string, string> AssessmentResultStatusList => new Dictionary<string, string> { { "FAIL", "Fail" }, { "INELIGIBLE", "Ineligible" }, { "PASS", "Pass" } };
 
-    public static Dictionary<string, string> DeclineRationalActionList => new Dictionary<string, string> { { "INELIGIBLE_APPLICANT", "Ineligible Applicant" }, { "INELIGIBLE_PROJECT", "Ineligible Project" }, { "NOT_ENOUGH_INFO", "Insufficient information provided" }, { "INSUFFICIENT_READINESS", "Insufficient Readiness" }, { "NO_READINESS", "Lack of readiness" }, { "LOW_PRIORITY", "Lower priority relative to other requests" }, { "SMALL_PROJECT", "Project too small" }, { "OTHER", "Other" } };
+    public static Dictionary<string, string> DeclineRationalActionList => new Dictionary<string, string> { { "INELIGIBLE_PROJECT", "Ineligible Project" }, { "INELIGIBLE_APPLICANT", "Ineligible Applicant" }, { "INSUFFICIENT_READINESS", "Insufficient Readiness" }, { "LOW_PRIORITY", "Lower Priority Relative To Other Requests" }, { "NOT_ENOUGH_INFO", "Insufficient Information Provided" }, { "NOT_ALIGNED", "Not Aligned" }, {"OVERSUBSCRIBED", "Oversubscribed" }, { "OTHER", "Other" } };
 
     public static Dictionary<string, string> SubStatusActionList => new Dictionary<string, string> { { "REQUIRES_SECONDARY_REVIEW", "Requires Secondary Review" }, { "REQUIRES_TEAM_LEAD_REVIEW", "Requires Team Lead Review" }, {"MISSING_INFORMATION","Missing Information" },{"BATCH_FOR_DECISION","Batch For Decision" },{ "NOTIFIED","Notified"} };
 

@@ -5,6 +5,12 @@
     padding: 4px
 }
 
+.mapping-container {
+    height: calc(100vh - 300px);
+    width: calc(100vw - 250px);
+    overflow: scroll;
+}
+
 .table-div {
     height: 600px;
     overflow: auto;
