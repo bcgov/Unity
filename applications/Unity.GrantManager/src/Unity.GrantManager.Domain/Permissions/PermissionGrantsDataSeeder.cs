@@ -18,11 +18,11 @@ namespace Unity.GrantManager.Permissions
         }
 
         public async Task SeedAsync(DataSeedContext context)
-        {            
+        {
             // Default permission grants based on role
 
             // - Program Manager
-            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager,                
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager,
                 new List<string>
                 {
                     GrantManagerPermissions.Default,
@@ -32,7 +32,17 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
-                    GrantManagerPermissions.Organizations.ManageProfiles
+                    GrantManagerPermissions.Organizations.ManageProfiles,
+                    IdentitySeedPermissions.Users.Default,
+                    IdentitySeedPermissions.Users.Create,
+                    IdentitySeedPermissions.Users.Update,
+                    IdentitySeedPermissions.Users.Delete,
+                    IdentitySeedPermissions.Users.ManagePermissions,
+                    IdentitySeedPermissions.Roles.Default,
+                    IdentitySeedPermissions.Roles.Create,
+                    IdentitySeedPermissions.Roles.Update,
+                    IdentitySeedPermissions.Roles.Delete,
+                    IdentitySeedPermissions.Roles.ManagePermissions
                 }, context.TenantId);
 
             // - Reviewer
@@ -51,7 +61,7 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assessments.SendToTeamLead,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
-                }, context.TenantId);            
+                }, context.TenantId);
 
             // - Assessor
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Assessor,
@@ -94,7 +104,7 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
-               }, context.TenantId);            
+               }, context.TenantId);
 
             // - Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Approver,
@@ -123,7 +133,12 @@ namespace Unity.GrantManager.Permissions
                     IdentitySeedPermissions.Users.Create,
                     IdentitySeedPermissions.Users.Update,
                     IdentitySeedPermissions.Users.Delete,
-                    IdentitySeedPermissions.Users.ManagePermissions
+                    IdentitySeedPermissions.Users.ManagePermissions,
+                    IdentitySeedPermissions.Roles.Default,
+                    IdentitySeedPermissions.Roles.Create,
+                    IdentitySeedPermissions.Roles.Update,
+                    IdentitySeedPermissions.Roles.Delete,
+                    IdentitySeedPermissions.Roles.ManagePermissions
              }, context.TenantId);
 
             // - SystemAdmin

@@ -62,6 +62,7 @@ public class UnityTenantManagementWebModule : AbpModule
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/Index", TenantManagementPermissions.Tenants.Default);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/CreateModal", TenantManagementPermissions.Tenants.Create);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/EditModal", TenantManagementPermissions.Tenants.Update);
+            options.Conventions.AuthorizePage("/TenantManagement/Tenants/AssignManagerModal", TenantManagementPermissions.Tenants.Create);
         });
 
         Configure<AbpPageToolbarOptions>(options =>
@@ -95,7 +96,11 @@ public class UnityTenantManagementWebModule : AbpModule
                     TenantManagementModuleExtensionConsts.ModuleName,
                     TenantManagementModuleExtensionConsts.EntityNames.Tenant,
                     createFormTypes: new[] { typeof(Pages.TenantManagement.Tenants.CreateModalModel.TenantInfoModel) },
-                    editFormTypes: new[] { typeof(Pages.TenantManagement.Tenants.EditModalModel.TenantInfoModel) }
+                    editFormTypes: new[]
+                    {
+                        typeof(Pages.TenantManagement.Tenants.EditModalModel.TenantInfoModel),
+                        typeof(Pages.TenantManagement.Tenants.AssignManagerModalModel.AssignManagerInfoModel)
+                    }
                 );
         });
     }

@@ -28,6 +28,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<AssessmentComment> AssessmentComments { get; set; }
         public DbSet<Person> Persons { get; set; }
+        public DbSet<Address> Addresses { get; set; }
+        public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
+        public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
+        public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
+        public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
 
         #endregion
 

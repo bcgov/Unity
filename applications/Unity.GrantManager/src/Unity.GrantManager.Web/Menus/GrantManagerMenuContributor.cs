@@ -41,7 +41,8 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Applications"],
                 "~/GrantApplications",
                 icon: "fl fl-other-user",
-                order: 1
+                order: 1,
+                requiredPermissionName: GrantManagerPermissions.Default
             )
         );
 
@@ -95,7 +96,8 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Dashboard"],
                 "~/Dashboard",
                 icon: "fl fl-view-dashboard",
-                order: 7
+                order: 7,
+                requiredPermissionName: GrantManagerPermissions.Default
             )
         );
 

@@ -11,4 +11,6 @@ public interface ITenantAppService : ICrudAppService<TenantDto, Guid, GetTenants
     Task UpdateDefaultConnectionStringAsync(Guid id, string defaultConnectionString);
 
     Task DeleteDefaultConnectionStringAsync(Guid id);
+
+    Task AssignManagerAsync(TenantAssignManagerDto managerAssignment);
 }

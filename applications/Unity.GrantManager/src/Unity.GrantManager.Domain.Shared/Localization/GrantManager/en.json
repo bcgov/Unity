@@ -14,7 +14,7 @@
     "Menu:Users": "Users",
     "Menu:Intakes": "Intakes",
     "Menu:ApplicationForms": "Forms",
-    "Menu:TenantManagement": "Tenants", 
+    "Menu:TenantManagement": "Tenants",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
@@ -35,6 +35,7 @@
     "Common:Description": "Description",
     "Common:Command:Search": "Search",
     "Common:Command:Import": "Import",
+    "Common:Command:Select": "Select",
 
     "GrantPrograms": "Grant Programs",
     "GrantProgram": "Grant Program",

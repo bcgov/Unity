@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
+using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
@@ -148,6 +149,11 @@ public class GrantManagerWebModule : AbpModule
         {
             x.ApplicationName = "GrantManager";
         });
+
+        context.Services.AddScoped<SelectedTenantFilter>();
+        context.Services.AddMvc().AddMvcOptions(options => {
+            options.Filters.AddService(typeof(SelectedTenantFilter));
+        });
     }
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
@@ -196,8 +202,8 @@ public class GrantManagerWebModule : AbpModule
 
             options.Events.OnTokenValidated = async (tokenValidatedContext) =>
             {
-                var updater = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
-                await updater!.CreateOrUpdateAsync(tokenValidatedContext);
+                var loginHandler = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginHandler>();
+                await loginHandler!.HandleAsync(tokenValidatedContext);
             };
 
             if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))

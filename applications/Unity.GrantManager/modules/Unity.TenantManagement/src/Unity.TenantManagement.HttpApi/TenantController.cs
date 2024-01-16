@@ -74,4 +74,11 @@ public class TenantController : AbpControllerBase, ITenantAppService
     {
         return TenantAppService.DeleteDefaultConnectionStringAsync(id);
     }
+
+    [HttpPut]
+    [Route("{id}/assign-manager")]
+    public virtual Task AssignManagerAsync(TenantAssignManagerDto managerAssignment)
+    {
+        return TenantAppService.AssignManagerAsync(managerAssignment);
+    }
 }

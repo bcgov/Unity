@@ -24,3 +24,7 @@
 #TenantsWrapper {
     background-color: transparent;
 }
+
+#UserSearchTable tbody tr {
+    cursor: pointer;
+}

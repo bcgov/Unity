@@ -14,6 +14,11 @@
     let _featuresModal = new abp.ModalManager(
         abp.appPath + 'FeatureManagement/FeatureManagementModal'
     );
+    let _assignManagerModal = new abp.ModalManager({
+            viewUrl: abp.appPath + 'TenantManagement/Tenants/AssignManagerModal',
+            modalClass: 'assignManager'
+        }
+    );
 
     let _dataTable = null;
 
@@ -33,9 +38,20 @@
                         },
                     },
                     {
+                        text: l('Assign Manager'),
+                        visible: abp.auth.isGranted(
+                            'UnityTenantManagement.Tenants.Create'
+                        ),
+                        action: function (data) {
+                            _assignManagerModal.open({                                
+                                id: data.record.id,
+                            });
+                        },
+                    },
+                    {
                         text: l('Features'),
                         visible: abp.auth.isGranted(
-                            'UnityTenantManagement.Tenants.ManageFeatures'
+                            'AbpTenantManagement.Tenants.ManageFeatures'
                         ),
                         action: function (data) {
                             _featuresModal.open({
@@ -155,6 +171,7 @@
 
         $('#cancel-tenant-btn').click(function (e) {
             _createModal.close();
+            _assignManagerModal.close();
         });
 
         _filterDataTable.on('select', function (e, dt, type, indexes) {
@@ -173,6 +190,10 @@
         _createModal.onResult(function () {
             _dataTable.ajax.reloadEx();
         });
+
+        _assignManagerModal.onResult(function () {
+            _dataTable.ajax.reloadEx();
+        });
     }
 
     _createModal.onOpen(function () {
@@ -181,7 +202,20 @@
         });
     });
 
+    _assignManagerModal.onOpen(function () {
+        setTimeout(() => {
+            _filterDataTable.columns.adjust().draw();
+        });
+    });
+
     abp.modals.createTenant = function () {
+        let initModal = function (publicApi, args) {
+            setupCreateTenantModal();
+        };
+        return { initModal: initModal };
+    }
+
+    abp.modals.assignManager = function () {
         let initModal = function (publicApi, args) {
             setupCreateTenantModal();
         };

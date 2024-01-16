@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Unity.TenantManagement;
 using Volo.Abp.ObjectExtending;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Validation;
@@ -56,6 +55,6 @@ public class CreateModalModel : TenantManagementPageModel
         public string Directory { get; set; } = "IDIR";
 
         [Required]
-        public string AdminIdentifier { get; set; } = string.Empty;
+        public string UserIdentifier { get; set; } = string.Empty;
     }
 }

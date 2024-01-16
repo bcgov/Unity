@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
@@ -19,7 +21,7 @@ public class GrantManagerDataSeederContributor : IDataSeedContributor, ITransien
     public async Task SeedAsync(DataSeedContext context)
     {
         if (context.TenantId != null) // only try seed into a tenant database
-        {         
+        {
             ApplicationStatus? status1 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.SUBMITTED);
             status1 ??= await _applicationStatusRepository.InsertAsync(
                 new ApplicationStatus
@@ -119,6 +121,6 @@ public class GrantManagerDataSeederContributor : IDataSeedContributor, ITransien
                     InternalStatus = "Declined"
                 }
             );
-        }       
+        }
     }
 }

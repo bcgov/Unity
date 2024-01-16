@@ -2,5 +2,5 @@
 
 public class TenantCreateDto : TenantCreateOrUpdateDtoBase
 {
-    public string AdminIdentifier { get; set; }
+    public string UserIdentifier { get; set; }
 }

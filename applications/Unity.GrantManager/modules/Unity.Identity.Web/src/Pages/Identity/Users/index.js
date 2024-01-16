@@ -204,7 +204,7 @@
         0 //adds as the first contributor
     );
 
-    $('#ImportUserButton').click(function (e) {
+    $('#AbpContentToolbar button[name=ImportUser]').click(function (e) {
         e.preventDefault();
         _importModal.open();
     });

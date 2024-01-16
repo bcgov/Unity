@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
+using Unity.TenantManagement.Abstractions;
 using Unity.TenantManagement.Application;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -78,7 +79,7 @@ public class TenantAppService : TenantManagementAppServiceBase, ITenantAppServic
         Tenant tenant = null;
 
         using (var uow = _unitOfWorkManager.Begin(true, false))
-        {
+        {            
             tenant = await TenantManager.CreateAsync(input.Name);
 
             tenant.ConnectionStrings
@@ -86,6 +87,7 @@ public class TenantAppService : TenantManagementAppServiceBase, ITenantAppServic
                     UnityTenantManagementConsts.TenantConnectionStringName,
                     BuildTenantConnectionString(tenant.Name)));
 
+            // This does not seem to work as intended?
             input.MapExtraPropertiesTo(tenant);
 
             await TenantRepository.InsertAsync(tenant);
@@ -101,7 +103,7 @@ public class TenantAppService : TenantManagementAppServiceBase, ITenantAppServic
                     Name = tenant.Name,
                     Properties =
                     {
-                        { "AdminIdentifier",  input.AdminIdentifier }
+                        { "UserIdentifier",  input.UserIdentifier }
                     }
                 }
             );
@@ -171,5 +173,16 @@ public class TenantAppService : TenantManagementAppServiceBase, ITenantAppServic
         var tenant = await TenantRepository.GetAsync(id);
         tenant.RemoveDefaultConnectionString();
         await TenantRepository.UpdateAsync(tenant);
+    }
+
+    public async Task AssignManagerAsync(TenantAssignManagerDto managerAssignment)
+    {
+        await _localEventBus.PublishAsync(
+             new TenantAssignManagerEto
+             {
+                 TenantId = managerAssignment.TenantId,
+                 UserIdentifier = managerAssignment.UserIdentifier
+             }
+         );
     }
 }

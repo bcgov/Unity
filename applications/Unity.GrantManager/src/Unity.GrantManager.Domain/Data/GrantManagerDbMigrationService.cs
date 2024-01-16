@@ -9,7 +9,6 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 
@@ -107,10 +106,14 @@ public class GrantManagerDbMigrationService : ITransientDependency
     {
         Logger.LogInformation("Executing {database} database seed...", tenant == null ? "host" : tenant.Name + " tenant");
 
-        await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id)
-            .WithProperty(IdentityDataSeedContributor.AdminEmailPropertyName, IdentityDataSeedContributor.AdminEmailDefaultValue)
-            .WithProperty(IdentityDataSeedContributor.AdminPasswordPropertyName, IdentityDataSeedContributor.AdminPasswordDefaultValue)
-        );
+        try
+        {
+            await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
     }
 
     private bool AddInitialMigrationIfNotExist()

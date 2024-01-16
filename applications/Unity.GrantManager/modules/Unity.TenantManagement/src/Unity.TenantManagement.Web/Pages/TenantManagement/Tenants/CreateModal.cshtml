@@ -55,7 +55,7 @@
                 <abp-input id="create-tenant-directory" asp-for="Tenant.Directory" disabled readonly="true" />
                 <abp-input id="create-tenant-firstName" asp-for="Tenant.FirstName" />
                 <abp-input id="create-tenant-lastName" asp-for="Tenant.LastName" />
-                <abp-input type="hidden" id="create-tenant-admin-id" asp-for="Tenant.AdminIdentifier" />
+                <abp-input type="hidden" id="create-tenant-admin-id" asp-for="Tenant.UserIdentifier" />
             </div>
             <abp-button id="TenantAdminSearchButton"
                         text="@L["Search"].Value"
