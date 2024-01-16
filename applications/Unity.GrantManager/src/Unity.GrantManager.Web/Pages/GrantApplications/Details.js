@@ -84,7 +84,7 @@ $(function () {
                         data.version.schema,
                         {
                             readOnly: true,
-                            renderMode: 'html',
+                            renderMode: 'form',
                             flatten: true,
                         }
                     ).then(function (form) {
@@ -239,7 +239,7 @@ $(function () {
                     data.version.schema,
                     {
                         readOnly: true,
-                        renderMode: 'html',
+                        renderMode: 'form',
                         flatten: true,
                     }
                 ).then(function (form) {
