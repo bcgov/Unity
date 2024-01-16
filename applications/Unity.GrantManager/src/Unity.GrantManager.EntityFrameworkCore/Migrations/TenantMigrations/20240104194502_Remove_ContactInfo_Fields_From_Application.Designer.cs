@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240104194502_Remove_ContactInfo_Fields_From_Application")]
+    partial class RemoveContactInfoFieldsFromApplication
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -389,6 +392,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("ProposalDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("text");
+
                     b.Property<decimal>("RecommendedAmount")
                         .HasColumnType("numeric");
 
@@ -406,9 +412,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("SubSector")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SubStatus")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("SubmissionDate")
@@ -810,52 +813,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsUnique();
 
                     b.ToTable("ApplicationStatuses", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationTags", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ApplicationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ApplicationTags", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentAttachment", b =>

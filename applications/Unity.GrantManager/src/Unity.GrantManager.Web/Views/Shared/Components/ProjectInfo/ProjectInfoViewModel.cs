@@ -114,7 +114,21 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             [Display(Name = "ProjectInfoView:ProjectInfo.CensusSubdivision")]
             [SelectItems(nameof(CensusSubdivisionList))]
             public string? CensusSubdivision { get; set; }
-
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContactFullName")]
+            public string? ContactFullName { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContactTitle")]
+            public string? ContactTitle { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContactEmail")]
+            [DataType(DataType.EmailAddress, ErrorMessage = "Provided email is not valid")]
+            public string? ContactEmail { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContactBusinessPhone")]
+            [DataType(DataType.PhoneNumber, ErrorMessage = "Invalid Phone Number")]
+            [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
+            public string? ContactBusinessPhone { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContactCellPhone")]
+            [DataType(DataType.PhoneNumber, ErrorMessage = "Invalid Phone Number")]
+            [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
+            public string? ContactCellPhone { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

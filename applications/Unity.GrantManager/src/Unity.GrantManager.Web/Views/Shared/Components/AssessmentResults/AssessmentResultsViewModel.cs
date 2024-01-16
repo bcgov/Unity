@@ -14,7 +14,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public List<SelectListItem> DueDiligenceList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DueDiligenceList);
         public List<SelectListItem> AssessmentResultStatusList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.AssessmentResultStatusList);
         public List<SelectListItem> DeclineRationalActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList);
-        public List<SelectListItem> RecommendationActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.RecommendationActionList);
+        public List<SelectListItem> SubStatusActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.SubStatusActionList);
 
         public Guid ApplicationId { get; set; }
 
@@ -57,9 +57,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             [SelectItems(nameof(DueDiligenceList))]
             public string? DueDiligenceStatus { get; set; }
 
-            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.Recommendation")]
-            [SelectItems(nameof(RecommendationActionList))]
-            public string? Recommendation { get; set; }
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.SubStatus")]
+            [SelectItems(nameof(SubStatusActionList))]
+            public string? SubStatus { get; set; }
 
             [Display(Name = "AssessmentResultsView:AssessmentResultsForm.DeclineRational")]
             [SelectItems(nameof(DeclineRationalActionList))]

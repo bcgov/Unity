@@ -18,7 +18,6 @@ using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Unity.GrantManager.EntityFrameworkCore;
-using Unity.GrantManager.Integrations.Sso;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Web.Identity;

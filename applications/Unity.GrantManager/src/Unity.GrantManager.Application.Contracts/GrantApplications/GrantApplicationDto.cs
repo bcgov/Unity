@@ -33,7 +33,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public decimal ApprovedAmount { get; set; } = 0;
     public string LikelihoodOfFunding { get; set; } = string.Empty;
     public string DueDiligenceStatus { get; set; } = string.Empty;
-    public string Recommendation { get; set; } = string.Empty;
+    public string SubStatus { get; set; } = string.Empty;
     public string DeclineRational { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
     public string AssessmentResultStatus { get; set; } = string.Empty;
@@ -53,6 +53,11 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? ElectoralDistrict { get; set; }
     public string? CensusSubdivision { get; set; }
     public string? RegionalDistrict { get; set; }
+    public string? ContactFullName { get; set; }
+    public string? ContactTitle { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? ContactBusinessPhone { get; set; }
+    public string? ContactCellPhone { get; set; }
 
     public string? ApplicationTag  { get; set; }
 }
