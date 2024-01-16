@@ -1,99 +1,122 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NUglify.Helpers;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Volo.Abp.Identity;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationTags
 {
+    class NewTagItem
+    {
+        public string? ApplicationId { get; set; }
+        public string? CommonText { get; set; }
+        public string? UncommonText { get; set; }
+    }
     public class ApplicationTagsModalModel : AbpPageModel
     {
         [BindProperty]
-        public String SelectedTags  { get; set; } = string.Empty;
+        [DisplayName("")]
+        public string? SelectedTags { get; set; } = string.Empty;
 
         [BindProperty]
-        public List<String> AllTags { get; set; } = new();
+        public string? AllTags { get; set; } = string.Empty;
 
         [BindProperty]
-        public string SelectedApplicationIds { get; set; } = string.Empty;
+        public string? SelectedApplicationIds { get; set; } = string.Empty;
 
         [BindProperty]
-        public string ActionType { get; set; } = string.Empty;
+        public string? ActionType { get; set; } = string.Empty;
 
         private readonly IApplicationTagsService _applicatioTagsService;
 
 
         [BindProperty]
-        public string CommonTags { get; set; } = string.Empty;
+        public string? CommonTags { get; set; } = string.Empty;
 
         [BindProperty]
-        public string UncommonTags { get; set; } = string.Empty;
+        public string? UncommonTags { get; set; } = string.Empty;
+
+        [BindProperty]
+        public string? Tags { get; set; } = string.Empty;
 
 
         public ApplicationTagsModalModel(IApplicationTagsService applicatioTagsService)
         {
             _applicatioTagsService = applicatioTagsService ?? throw new ArgumentNullException(nameof(applicatioTagsService));
-       
+
         }
 
-     
+
 
         public async Task OnGetAsync(string applicationIds, string actionType)
         {
+
             SelectedApplicationIds = applicationIds;
             ActionType = actionType;
-            AllTags ??= new List<String>();
+
 
             try
             {
-                 var tags = await _applicatioTagsService.GetListAsync();
-                 var groupedTexts = tags
-                .Select(item => new { item.ApplicationId , GroupedText = item.Text.Split(',') })
-                .SelectMany(item => item.GroupedText.Select(text => new { item.ApplicationId, text }))
-                .GroupBy(item => item.text);
+                var allTags = await _applicatioTagsService.GetListAsync();
+                var applications = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
+                var tags = await _applicatioTagsService.GetListWithApplicationIdsAsync(applications);
 
-                // Separate common and uncommon texts
-                var commonTexts = groupedTexts.Where(group => group.Count() > 1)
-                    .ToDictionary(group => group.Key, group => group.Select(item => item.ApplicationId).ToArray());
-
-                var uncommonTexts = groupedTexts.Where(group => group.Count() == 1)
-                    .ToDictionary(group => group.Key, group => group.Single().ApplicationId);
-
-                // Display the results
-               
-                UncommonTags = uncommonTexts.ToString();
-                //Console.WriteLine("Common Texts:");
-          
-                List<string> commonTagList   = new List<string>();
-                foreach (var kvp in commonTexts)
+                var newArray = tags.Select(item =>
                 {
 
-                    commonTagList.Add(kvp.Key);
-                    Console.WriteLine($"Text: {kvp.Key}, ApplicationIds: {string.Join(", ", kvp.Value)}");
-                }
-                CommonTags = string.Join(",", commonTagList.ToArray());
+                    var textValues = item.Text.Split(',');
+                    var commonText = tags.Count == 1
+                        ? textValues
+                        : tags
+                            .Where(x => x.ApplicationId != item.ApplicationId)
+                            .SelectMany(x => x.Text.Split(','))
+                            .Intersect(textValues)
+                            .Distinct();
+                    var uncommonText = textValues.Except(commonText);
 
-                Console.WriteLine("\nUncommon Texts:");
-                List<string> unCommonTagList = new List<string>();
-                foreach (var kvp in uncommonTexts)
-                {
-                    unCommonTagList.Add(kvp.Key);
-                    Console.WriteLine($"Text: {kvp.Key}, ApplicationId: {kvp.Value}");
-                }
-                UncommonTags = string.Join(",", unCommonTagList.ToArray());
+                    return new NewTagItem
+                    {
+                        ApplicationId = item.ApplicationId.ToString(),
+                        CommonText = string.Join(",", commonText),
+                        UncommonText = string.Join(",", uncommonText)
+                    };
+                }).ToArray();
+
+                var allUniqueCommonTexts = newArray
+                    .SelectMany(item => item.CommonText.Split(','))
+                    .Distinct()
+                    .OrderBy(text => text);
+                var allUniqueUncommonTexts = newArray
+                    .SelectMany(item => item.UncommonText.Split(','))
+                    .Distinct()
+                .OrderBy(text => text);
+
+                var allUniqueTexts = allTags
+                                    .SelectMany(obj => obj.Text.ToString().Split(',').Select(t => t.Trim()))
+                                    .Distinct();
+                var uniqueCommonTextsString = string.Join(",", allUniqueCommonTexts);
+                var uniqueUncommonTextsString = string.Join(",", allUniqueUncommonTexts);
+                var allUniqueTextsString = string.Join(",", allUniqueTexts);
 
 
+
+                AllTags = allUniqueTextsString;
+                CommonTags = uniqueCommonTextsString;
+                UncommonTags = uniqueUncommonTextsString;
+                Tags = JsonConvert.SerializeObject(newArray);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, message: "Error loading users select list");
+                Logger.LogError(ex, message: "Error loading tag select list");
             }
         }
 
@@ -103,45 +126,38 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
             {
                 var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
                 string[] stringArray = JsonConvert.DeserializeObject<string[]>(SelectedTags);
-                //List<string> stringList = stringArray.ToList();
                 if (null != applicationIds)
-                  
+
                 {
-                    var tags = "";
-                    Console.WriteLine(SelectedTags);
-                    if (stringArray.Contains("CommonTags")) {
 
-                        tags += CommonTags;
-                        stringArray = stringArray.Where(item => item != "CommonTags").ToArray();
-                    }
-                   if(stringArray.Length > 0)
-                    {
-                        tags += string.Join(", ", stringArray);
-                    }
                     var selectedApplicationIds = applicationIds.ToArray();
-
+                    NewTagItem[] tags = JsonConvert.DeserializeObject<NewTagItem[]>(Tags);
                     foreach (var item in selectedApplicationIds)
                     {
-                        await _applicatioTagsService.CreateorUpdateTagsAsync(item,new ApplicationTagsDto { ApplicationId = item , Text = tags });
+                        var applicationTagString = "";
+
+                        Console.WriteLine(SelectedTags);
+                        if (stringArray.Contains("Uncommon Tags"))
+                        {
+                            var applicationTag = tags.FirstOrDefault(tagItem => tagItem.ApplicationId == item.ToString());
+
+                            applicationTagString += applicationTag.UncommonText;
+
+                        }
+                        if (stringArray.Length > 0)
+                        {
+                            var applicationCommonTagArray = stringArray.Where(item => item != "Uncommon Tags").ToArray();
+                            applicationTagString += (applicationTagString == "" ? string.Join(",", applicationCommonTagArray) : (',' + string.Join(", ", applicationCommonTagArray)));
+                        }
+
+
+                        await _applicatioTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = applicationTagString });
                     }
-                   
-
-                    //var selectedUser = await _identityUserLookupAppService.FindByIdAsync(AssigneeId);
-                    //var userName = $"{selectedUser.Name} {selectedUser.Surname}";
-
-                    //if (ActionType == AssigneeConsts.ACTION_TYPE_ADD)
-                    //{
-                    //    await _applicationService.InsertAssigneeAsync(applicationIds.ToArray(), AssigneeId);
-                    //}
-                    //else if (ActionType == AssigneeConsts.ACTION_TYPE_REMOVE)
-                    //{
-                    //    await _applicationService.DeleteAssigneeAsync(applicationIds.ToArray(), AssigneeId);
-                    //}
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, message: "Error updating application status");
+                Logger.LogError(ex, message: "Error updating application tags");
             }
 
             return NoContent();

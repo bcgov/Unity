@@ -158,6 +158,9 @@
                         <div id="applicationStatusWidget">
                             @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
                         </div>
+                        <div id="applicationTagsWidget">
+                            @await Component.InvokeAsync("ApplicationTagsWidget", new { applicationId = Model.ApplicationId })
+                        </div>
                         <div id="summaryWidgetArea" class="px-3 pt-4 pb-2">
                             @await Component.InvokeAsync("SummaryWidget", new { applicationId = Model.ApplicationId })
                         </div>

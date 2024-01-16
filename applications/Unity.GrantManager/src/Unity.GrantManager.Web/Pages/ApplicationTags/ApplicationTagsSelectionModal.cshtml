@@ -1,18 +1,11 @@
 ﻿@page
 @model Unity.GrantManager.Web.Pages.ApplicationTags.ApplicationTagsModalModel
-@using Unity.GrantManager.Web.Pages.ApplicationTags
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @{
     Layout = null;
 }
-@section styles {
-    <abp-style src="/Pages/ApplicationTags/ApplicationTags.css" />
-}
-@section scripts
-    {
-    <abp-script src="/Pages/ApplicationTags/ApplicationTags.js" />
-}
-<form method="post" asp-page-handler="OnPostAsync">
+
+<form method="post" asp-page-handler="OnPostAsync" data-check-form-on-close="false" id="applicationTagForm">
     <abp-modal id="tagApplicationsModal">
     <abp-modal-header title="Tags"></abp-modal-header>
     <abp-modal-body>
@@ -22,6 +15,8 @@
                 <abp-input type="hidden" id="ActionType" asp-for="@Model.ActionType" />
                 <abp-input type="hidden" id="CommonTags" asp-for="@Model.CommonTags" />
                 <abp-input type="hidden" id="UncommonTags" asp-for="@Model.UncommonTags" />
+                <abp-input type="hidden" id="AllTags" asp-for="@Model.AllTags" />
+                <abp-input type="hidden" id="Tags" asp-for="@Model.Tags" />
               
         </div>       
     </abp-modal-body>

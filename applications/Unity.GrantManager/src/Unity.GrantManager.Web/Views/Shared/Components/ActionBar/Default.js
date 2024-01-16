@@ -18,7 +18,44 @@ $(function () {
 
     let tagApplicationModal = new abp.ModalManager({
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
-        scriptUrl: '/Pages/ApplicationTags/ApplicationTags.js'
+        scriptUrl: '/Pages/ApplicationTags/ApplicationTags.js', //Lazy Load URL
+    });
+
+    tagApplicationModal.onOpen(function () {
+        let tagInput = new TagsInput({
+            selector: 'SelectedTags',
+            duplicate: false,
+            max: 50
+        });
+        let suggestionsArray = [];
+        let uncommonTags = $('#UncommonTags').val();
+        let commonTags = $('#CommonTags').val();
+        let allTags = $('#AllTags').val();
+        if (allTags) {
+            suggestionsArray = allTags.split(',');
+        }
+        tagInput.setSuggestions(suggestionsArray);
+
+        let tagInputArray = [];
+       
+        if (uncommonTags && uncommonTags != null) {
+            tagInputArray.push({ text: 'Uncommon Tags', class: 'uncommon', id: 0 })
+            
+        }
+        const commonTagsArray = commonTags.split(',');
+        if (commonTags && commonTagsArray.length) {
+
+            if (commonTagsArray.length) {
+
+                commonTagsArray.forEach(function (item, index) {
+
+                    tagInputArray.push({ text: item, class: 'common', id: index + 1 })
+                });
+               
+            }
+        }
+        tagInput.addData(tagInputArray);
+
     });
     tagApplicationModal.onResult(function () {
         abp.notify.success(

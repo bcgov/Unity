@@ -24,34 +24,48 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
     }
 
     public async Task<IList<ApplicationTagsDto>> GetListAsync()
-    {        
-        var tags  = await _applicationTagsRepository.GetListAsync();
+    {
+        var tags = await _applicationTagsRepository.GetListAsync();
 
-        return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Text).ToList());
+        return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Id).ToList());
+    }
+    public async Task<IList<ApplicationTagsDto>> GetListWithApplicationIdsAsync(List<Guid> ids)
+    {
+        var tags = await _applicationTagsRepository.GetListAsync(e => ids.Contains(e.ApplicationId));
+
+        return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Id).ToList());
+    }
+
+    public async Task<ApplicationTagsDto> GetApplicationTagsAsync(Guid id)
+    {
+        var tag  = await _applicationTagsRepository.GetAsync(e => id == e.ApplicationId);
+
+        return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(tag);
     }
 
     public async Task<ApplicationTagsDto> CreateorUpdateTagsAsync(Guid id, ApplicationTagsDto input)
-    {   
-
-        var applicationTag = await _applicationTagsRepository.GetAsync(id);
-        if (applicationTag != null)
+    {
+        try
         {
+            var applicationTag = await _applicationTagsRepository.GetAsync(e => e.ApplicationId == id);
+
             applicationTag.Text = input.Text;
-            
+
             await _applicationTagsRepository.UpdateAsync(applicationTag, autoSave: true);
 
             return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(applicationTag);
         }
-        else
+        catch (EntityNotFoundException ex)
         {
-            var result = await _applicationTagsRepository.InsertAsync( new ApplicationTags
+            var result = await _applicationTagsRepository.InsertAsync(new ApplicationTags
             {
-                ApplicationId =  input.ApplicationId,
+                ApplicationId = input.ApplicationId,
                 Text = input.Text
             }, autoSave: true);
 
             return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(result);
         }
-       
+
+
     }
 }

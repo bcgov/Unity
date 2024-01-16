@@ -638,8 +638,8 @@
                     },
                     { //30
                         title: 'Tags',
-                        name: 'batchNumber',
-                        data: 'batchNumber',
+                        name: 'applicationTag',
+                        data: 'applicationTag',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '{Tags}';
