@@ -1,5 +1,4 @@
-﻿using Amazon.S3.Model;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,6 @@ using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -38,7 +36,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
     public async Task<ApplicationTagsDto> GetApplicationTagsAsync(Guid id)
     {
-        var tag  = await _applicationTagsRepository.GetAsync(e => id == e.ApplicationId);
+        var tag = await _applicationTagsRepository.GetAsync(e => id == e.ApplicationId);
 
         return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(tag);
     }
@@ -57,7 +55,6 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         }
         catch (EntityNotFoundException ex)
         {
-            Console.WriteLine(ex.Message);
             var result = await _applicationTagsRepository.InsertAsync(new ApplicationTags
             {
                 ApplicationId = input.ApplicationId,
@@ -66,6 +63,5 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
             return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(result);
         }
-
     }
 }

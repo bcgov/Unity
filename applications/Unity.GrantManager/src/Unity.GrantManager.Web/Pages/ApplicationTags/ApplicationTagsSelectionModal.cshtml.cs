@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationTags
 {
@@ -58,7 +57,8 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
             SelectedApplicationIds = applicationIds;
             ActionType = actionType;
             var applications = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-            if(applications != null && applications.Count > 0) {
+            if (applications != null && applications.Count > 0)
+            {
                 try
                 {
                     var allTags = await _applicationTagsService.GetListAsync();
@@ -124,60 +124,35 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                     Logger.LogError(ex, message: "Error loading tag select list");
                 }
             }
-          
+
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
+            const string uncommonTags = "Uncommon Tags"; // Move to constants?
+            if (SelectedApplicationIds == null) return NoContent();
+
             try
             {
-                if(SelectedApplicationIds != null) { 
                 var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-                if(SelectedTags != null) { 
-                string[] stringArray = JsonConvert.DeserializeObject<string[]>(SelectedTags);
-         
-                if (null != applicationIds)
-
+                if (SelectedTags != null)
                 {
+                    string[]? stringArray = JsonConvert.DeserializeObject<string[]>(SelectedTags);
 
-                    var selectedApplicationIds = applicationIds.ToArray();
-                    if(Tags != null ) { 
-                    NewTagItem[] tags = JsonConvert.DeserializeObject<NewTagItem[]>(Tags);
-                    foreach (var item in selectedApplicationIds)
+                    if (null != applicationIds)
                     {
-                        var applicationTagString = "";
+                        var selectedApplicationIds = applicationIds.ToArray();
 
-                        Console.WriteLine(SelectedTags);
-                        if (tags != null && tags.Length > 0 && stringArray != null && stringArray.Length > 0 && stringArray.Contains("Uncommon Tags"))
+                        if (Tags != null)
                         {
-                            
-                                var applicationTag = tags.FirstOrDefault(tagItem => tagItem.ApplicationId == item.ToString());
+                            var tags = JsonConvert.DeserializeObject<NewTagItem[]>(Tags)?.ToList();
 
-                                if (applicationTag != null)
-                                {
-                                    applicationTagString += applicationTag.UncommonText;
-
-                                }
-                            
+                            await ProcessTagsAsync(uncommonTags, stringArray, selectedApplicationIds, tags);
                         }
-                        if (stringArray != null && stringArray.Length > 0)
-                        {
-                            var applicationCommonTagArray = stringArray.Where(item => item != "Uncommon Tags").ToArray();
-                            if(applicationCommonTagArray.Length > 0)
-                            {
-                                applicationTagString += (applicationTagString == "" ? string.Join(",", applicationCommonTagArray) : (',' + string.Join(",", applicationCommonTagArray)));
-
-                            }
-                        }
-
-
-                        await _applicationTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = applicationTagString });
                     }
-                }
-                        }
 
-                    }
                 }
+
             }
             catch (Exception ex)
             {
@@ -185,6 +160,39 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
             }
 
             return NoContent();
+        }
+
+        private async Task ProcessTagsAsync(string uncommonTags, string[]? stringArray, Guid[] selectedApplicationIds, List<NewTagItem>? tags)
+        {
+            foreach (var item in selectedApplicationIds)
+            {
+                var applicationTagString = "";
+
+                if (tags != null
+                    && tags.Count > 0
+                    && stringArray != null
+                    && stringArray.Length > 0
+                    && stringArray.Contains(uncommonTags))
+                {
+                    NewTagItem? applicationTag = tags.Find(tagItem => tagItem.ApplicationId == item.ToString());
+
+                    if (applicationTag != null)
+                    {
+                        applicationTagString += applicationTag.UncommonText;
+                    }
+                }
+                if (stringArray != null && stringArray.Length > 0)
+                {
+                    var applicationCommonTagArray = stringArray.Where(item => item != uncommonTags).ToArray();
+                    if (applicationCommonTagArray.Length > 0)
+                    {
+                        applicationTagString += (applicationTagString == "" ? string.Join(",", applicationCommonTagArray) : (',' + string.Join(",", applicationCommonTagArray)));
+
+                    }
+                }
+
+                await _applicationTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = applicationTagString });
+            }
         }
     }
 }
