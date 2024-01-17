@@ -370,20 +370,6 @@
         if(draggedEl.classList+"" != "undefined") {
             draggedEl.classList.remove('dragging');
         }
-        enableSave();
-    }
-
-    function enableSave() {
-        let disableSave = true;
-
-        let mappingDivs = $('.map-div');
-        for (let mappingDiv of mappingDivs) {
-            if(mappingDiv.childElementCount > 0) {
-                disableSave = false;
-                break;
-            }
-        }
-        UIElements.btnSave.prop("disabled", disableSave);
     }
 
     function allowDrop(ev) {

@@ -2,6 +2,7 @@
     $('.unity-currency-input').maskMoney();
 
     $('body').on('click', '#saveAssessmentResultBtn', function () {       
+        $("#approvedAmountInput").attr("disabled", false);
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
