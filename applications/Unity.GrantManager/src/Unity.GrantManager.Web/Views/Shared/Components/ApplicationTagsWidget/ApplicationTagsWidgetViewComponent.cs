@@ -26,7 +26,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationTagsWidget
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
             var applicationTags = await _applicationTagsService.GetApplicationTagsAsync(applicationId);
-            return View(new ApplicationTagsWidgetViewModel() { ApplicationTags = applicationTags.Text });
+            string applicationText = "";
+            if(applicationTags != null)
+            {
+                applicationText = applicationTags.Text;
+            }
+        
+            return View(new ApplicationTagsWidgetViewModel() { ApplicationTags = applicationText.Replace(",", ", ")});
         }
     }
 

@@ -1,10 +1,7 @@
 $(function () {
 
     let suggestionsArray = [];
-    // Function to generate random ID
-    function generateRandomId() {
-        return Math.random().toString(36).substr(2, 10);
-    }
+   
 
     // Plugin Constructor
     let TagsInput = function (opts) {
@@ -38,16 +35,16 @@ $(function () {
     // Add Tags
     TagsInput.prototype.addTag = function (tagData) {
         let defaultClass = 'tags-common';
-        let tagText, tagClass, tagId;
+        let tagText, tagClass;
 
         if (typeof tagData === 'string') {
             tagText = tagData;
             tagClass = defaultClass;
-            tagId = generateRandomId();
+           
         } else {
             tagText = tagData.text || '';
             tagClass = tagData.class || defaultClass;
-            tagId = tagData.id || generateRandomId();
+     
         }
 
         if (this.anyErrors(tagText))

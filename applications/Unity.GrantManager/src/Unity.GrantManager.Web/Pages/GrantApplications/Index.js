@@ -640,9 +640,9 @@
                         title: 'Tags',
                         name: 'applicationTag',
                         data: 'applicationTag',
-                        className: 'data-table-header',
+                        className: '',
                         render: function (data) {
-                            return data ?? '{Tags}';
+                            return data.replace(/,/g, ', ') ?? '{Tags}';
                         },
                     },
                     { //31 -- mapped

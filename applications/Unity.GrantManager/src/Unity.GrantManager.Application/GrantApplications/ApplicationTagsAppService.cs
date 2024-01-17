@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Amazon.S3.Model;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,10 +37,18 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
     public async Task<ApplicationTagsDto> GetApplicationTagsAsync(Guid id)
     {
-        var tag = await _applicationTagsRepository.GetAsync(e => id == e.ApplicationId);
+        try
+        {
+            var tag = await _applicationTagsRepository.GetAsync(e => id == e.ApplicationId);
 
-        return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(tag);
-    }
+            return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(tag);
+        }
+        catch (EntityNotFoundException)
+        {
+
+            return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(null);
+        }
+     }
 
     public async Task<ApplicationTagsDto> CreateorUpdateTagsAsync(Guid id, ApplicationTagsDto input)
     {
@@ -53,7 +62,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
 
             return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(applicationTag);
         }
-        catch (EntityNotFoundException ex)
+        catch (EntityNotFoundException)
         {
             var result = await _applicationTagsRepository.InsertAsync(new ApplicationTags
             {
