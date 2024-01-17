@@ -4,8 +4,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.ObjectExtending;
-using Volo.Abp.TenantManagement;
-using Volo.Abp.Validation;
 
 namespace Unity.TenantManagement.Web.Pages.TenantManagement.Tenants;
 

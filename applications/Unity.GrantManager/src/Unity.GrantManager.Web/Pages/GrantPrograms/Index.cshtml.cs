@@ -32,10 +32,7 @@ namespace Unity.GrantManager.Web.Pages.GrantPrograms
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // Try update claims principal on the fly? - seems to cause some issues, so far only reliable way to do this is signout and go through the auth process again
-
-            var tenantClaims = _currentPrincipalAccessor.Principal.GetClaims("tenant");
-
+            // Try update claims principal on the fly? - seems to cause some issues, so far only reliable way to do this is signout and go through the auth process again            
             if (_httpContextAccessor != null && _httpContextAccessor.HttpContext != null)
             {
                 await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -44,7 +41,8 @@ namespace Unity.GrantManager.Web.Pages.GrantPrograms
 
             if (_currentPrincipalAccessor != null && _currentPrincipalAccessor.Principal != null)
             {
-                Response.Cookies.Append("set_tenant", SwapTenantId?.ToString() ?? Guid.Empty.ToString());                
+                Response.Cookies.Append("set_tenant", SwapTenantId?.ToString() ?? Guid.Empty.ToString(), new CookieOptions()
+                { Secure = true, SameSite = SameSiteMode.None, HttpOnly = true });                
             }            
 
             return Redirect("/GrantApplications");

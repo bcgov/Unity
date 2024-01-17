@@ -100,7 +100,8 @@ namespace Unity.GrantManager.Web.Identity
             if (setTenant != null)
             {
                 userTenantAccount = userTenantAccounts.FirstOrDefault(s => s.TenantId != null && s.TenantId.ToString() == setTenant);
-                validatedTokenContext.Response.Cookies.Append("set_tenant", setTenant, new Microsoft.AspNetCore.Http.CookieOptions() { Expires = DateTime.UtcNow.AddDays(-1) });
+                validatedTokenContext.Response.Cookies.Append("set_tenant", setTenant, new Microsoft.AspNetCore.Http.CookieOptions() 
+                { Expires = DateTime.UtcNow.AddDays(-1), Secure = true, SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None, HttpOnly = true });
             }
 
             if (userTenantAccount == null)
