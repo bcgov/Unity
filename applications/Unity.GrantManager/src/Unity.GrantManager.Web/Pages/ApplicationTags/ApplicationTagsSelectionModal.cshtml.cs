@@ -57,82 +57,91 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
 
             SelectedApplicationIds = applicationIds;
             ActionType = actionType;
-
-            try
-            {
-                var allTags = await _applicationTagsService.GetListAsync();
-                var applications = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-                var tags = await _applicationTagsService.GetListWithApplicationIdsAsync(applications);
-
-                // Add default objects for missing applicationIds
-                var missingApplicationIds = applications.Except(tags.Select(tag => tag.ApplicationId));
-                tags = tags.Concat(missingApplicationIds.Select(appId => new ApplicationTagsDto
+            var applications = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
+            if(applications != null && applications.Count > 0) {
+                try
                 {
-                    ApplicationId = appId,
-                    Text = "", // You can set default values here
-                    Id = Guid.NewGuid() // Assuming Id is a Guid
-                })).ToList();
+                    var allTags = await _applicationTagsService.GetListAsync();
 
-                var newArray = tags.Select(item =>
-                {
-                    var textValues = item.Text.Split(',');
-                    var commonText = tags
-                        .SelectMany(x => x.Text.Split(','))
-                        .GroupBy(text => text)
-                        .Where(group => group.Count() == tags.Count)
-                        .Select(group => group.Key);
+                    var tags = await _applicationTagsService.GetListWithApplicationIdsAsync(applications);
 
-                    var uncommonText = textValues.Except(commonText);
-
-                    return new NewTagItem
+                    // Add default objects for missing applicationIds
+                    var missingApplicationIds = applications.Except(tags.Select(tag => tag.ApplicationId));
+                    tags = tags.Concat(missingApplicationIds.Select(appId => new ApplicationTagsDto
                     {
-                        ApplicationId = item.ApplicationId.ToString(),
-                        CommonText = string.Join(",", commonText),
-                        UncommonText = string.Join(",", uncommonText)
-                    };
-                }).ToArray();
+                        ApplicationId = appId,
+                        Text = "", // You can set default values here
+                        Id = Guid.NewGuid() // Assuming Id is a Guid
+                    })).ToList();
 
-                var allUniqueCommonTexts = newArray
-                    .SelectMany(item => item.CommonText.Split(','))
-                    .Distinct()
-                    .OrderBy(text => text);
+                    var newArray = tags.Select(item =>
+                    {
+                        var textValues = item.Text.Split(',');
+                        var commonText = tags
+                            .SelectMany(x => x.Text.Split(','))
+                            .GroupBy(text => text)
+                            .Where(group => group.Count() == tags.Count)
+                            .Select(group => group.Key);
 
-                var allUniqueUncommonTexts = newArray
-                    .SelectMany(item => item.UncommonText.Split(','))
-                    .Distinct()
-                    .OrderBy(text => text);
+                        var uncommonText = textValues.Except(commonText);
+
+                        return new NewTagItem
+                        {
+                            ApplicationId = item.ApplicationId.ToString(),
+                            CommonText = string.Join(",", commonText),
+                            UncommonText = string.Join(",", uncommonText)
+                        };
+                    }).ToArray();
+
+                    var allUniqueCommonTexts = newArray
+                        .SelectMany(item => (item.CommonText?.Split(',') ?? Array.Empty<string>()))
+                        .Where(text => !string.IsNullOrEmpty(text))
+                        .Distinct()
+                        .OrderBy(text => text);
+
+                    var allUniqueUncommonTexts = newArray
+                        .SelectMany(item => (item.UncommonText?.Split(',') ?? Array.Empty<string>()))
+                        .Where(text => !string.IsNullOrEmpty(text))
+                        .Distinct()
+                        .OrderBy(text => text);
 
 
 
-                var allUniqueTexts = allTags
-                                    .SelectMany(obj => obj.Text.ToString().Split(',').Select(t => t.Trim()))
-                                    .Distinct();
-                var uniqueCommonTextsString = string.Join(",", allUniqueCommonTexts);
-                var uniqueUncommonTextsString = string.Join(",", allUniqueUncommonTexts);
-                var allUniqueTextsString = string.Join(",", allUniqueTexts);
+                    var allUniqueTexts = allTags
+                                        .SelectMany(obj => obj.Text.ToString().Split(',').Select(t => t.Trim()))
+                                        .Distinct();
+                    var uniqueCommonTextsString = string.Join(",", allUniqueCommonTexts);
+                    var uniqueUncommonTextsString = string.Join(",", allUniqueUncommonTexts);
+                    var allUniqueTextsString = string.Join(",", allUniqueTexts);
 
-                AllTags = allUniqueTextsString;
-                CommonTags = uniqueCommonTextsString;
-                UncommonTags = uniqueUncommonTextsString;
-                Tags = JsonConvert.SerializeObject(newArray);
+                    AllTags = allUniqueTextsString;
+                    CommonTags = uniqueCommonTextsString;
+                    UncommonTags = uniqueUncommonTextsString;
+                    Tags = JsonConvert.SerializeObject(newArray);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, message: "Error loading tag select list");
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, message: "Error loading tag select list");
-            }
+          
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             try
             {
+                if(SelectedApplicationIds != null) { 
                 var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
+                if(SelectedTags != null) { 
                 string[] stringArray = JsonConvert.DeserializeObject<string[]>(SelectedTags);
+         
                 if (null != applicationIds)
 
                 {
 
                     var selectedApplicationIds = applicationIds.ToArray();
+                    if(Tags != null ) { 
                     NewTagItem[] tags = JsonConvert.DeserializeObject<NewTagItem[]>(Tags);
                     foreach (var item in selectedApplicationIds)
                     {
@@ -156,13 +165,17 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                             var applicationCommonTagArray = stringArray.Where(item => item != "Uncommon Tags").ToArray();
                             if(applicationCommonTagArray.Length > 0)
                             {
-                                applicationTagString += (applicationTagString == "" ? string.Join(",", applicationCommonTagArray) : (',' + string.Join(", ", applicationCommonTagArray)));
+                                applicationTagString += (applicationTagString == "" ? string.Join(",", applicationCommonTagArray) : (',' + string.Join(",", applicationCommonTagArray)));
 
                             }
                         }
 
 
                         await _applicationTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = applicationTagString });
+                    }
+                }
+                        }
+
                     }
                 }
             }

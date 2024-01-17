@@ -19,7 +19,7 @@ namespace Unity.GrantManager.GrantApplications
     {
         private readonly IApplicationTagsService _applicationTagssAppService;
         private readonly IRepository<Application, Guid> _applicationsRepository;
-        private readonly IRepository<ApplicationTags, Guid> _applicationTagsRepository;
+       
        
         private readonly IUnitOfWorkManager _unitOfWorkManager;
 

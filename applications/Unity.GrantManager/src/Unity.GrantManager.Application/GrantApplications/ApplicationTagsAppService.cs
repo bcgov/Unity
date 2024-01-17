@@ -57,6 +57,7 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         }
         catch (EntityNotFoundException ex)
         {
+            Console.WriteLine(ex.Message);
             var result = await _applicationTagsRepository.InsertAsync(new ApplicationTags
             {
                 ApplicationId = input.ApplicationId,
