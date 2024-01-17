@@ -64,17 +64,24 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                 var applications = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
                 var tags = await _applicationTagsService.GetListWithApplicationIdsAsync(applications);
 
+                // Add default objects for missing applicationIds
+                var missingApplicationIds = applications.Except(tags.Select(tag => tag.ApplicationId));
+                tags = tags.Concat(missingApplicationIds.Select(appId => new ApplicationTagsDto
+                {
+                    ApplicationId = appId,
+                    Text = "", // You can set default values here
+                    Id = Guid.NewGuid() // Assuming Id is a Guid
+                })).ToList();
+
                 var newArray = tags.Select(item =>
                 {
-
                     var textValues = item.Text.Split(',');
-                    var commonText = tags.Count == 1
-                        ? textValues
-                        : tags
-                            .Where(x => x.ApplicationId != item.ApplicationId)
-                            .SelectMany(x => x.Text.Split(','))
-                            .Intersect(textValues)
-                            .Distinct();
+                    var commonText = tags
+                        .SelectMany(x => x.Text.Split(','))
+                        .GroupBy(text => text)
+                        .Where(group => group.Count() == tags.Count)
+                        .Select(group => group.Key);
+
                     var uncommonText = textValues.Except(commonText);
 
                     return new NewTagItem
@@ -89,10 +96,13 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                     .SelectMany(item => item.CommonText.Split(','))
                     .Distinct()
                     .OrderBy(text => text);
+
                 var allUniqueUncommonTexts = newArray
                     .SelectMany(item => item.UncommonText.Split(','))
                     .Distinct()
-                .OrderBy(text => text);
+                    .OrderBy(text => text);
+
+
 
                 var allUniqueTexts = allTags
                                     .SelectMany(obj => obj.Text.ToString().Split(',').Select(t => t.Trim()))
