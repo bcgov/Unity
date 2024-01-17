@@ -66,6 +66,5 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
             return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(result);
         }
 
-
     }
 }

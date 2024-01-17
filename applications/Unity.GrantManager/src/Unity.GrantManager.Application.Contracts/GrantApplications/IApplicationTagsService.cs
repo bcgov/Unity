@@ -14,5 +14,4 @@ public interface IApplicationTagsService : IApplicationService
 
     Task<ApplicationTagsDto> GetApplicationTagsAsync(Guid id);
 
-
 }

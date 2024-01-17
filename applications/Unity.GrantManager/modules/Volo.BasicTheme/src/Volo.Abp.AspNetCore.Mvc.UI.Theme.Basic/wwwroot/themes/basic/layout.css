@@ -400,13 +400,13 @@ abp-date-picker .btn {
     margin-bottom: 5px;
 }
 
-.uncommon {
+.tags-uncommon {
     background-color: #013366;
     color: white;
     font-size: large;
 }
 
-.common {
+.tags-common {
     background-color: white;
     color: black;
     border: 1px solid #013366;
@@ -419,7 +419,7 @@ abp-date-picker .btn {
     cursor: pointer;
 }
 
-.suggestion-container {
+.tags-suggestion-container {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     overflow: scroll;
     max-height: 200px;
@@ -429,24 +429,24 @@ abp-date-picker .btn {
     background: white;
 }
 
-.suggestion-title {
+.tags-suggestion-title {
     padding: 5px;
     color: #a1a1a1;
     font-weight: 600;
 }
 
-.suggestion-element {
+.tags-suggestion-element {
     padding: 5px;
     background-color: #fff;
     z-index: 1;
     cursor: pointer;
 }
 
-.suggestion-element:hover {
+.tags-suggestion-element:hover {
     background-color: #f3f0f0;
     border-left: 3px solid #003366;
 }
 
-.suggestion-container:hover .suggestion-element {
+.tags-suggestion-container:hover .suggestion-element {
     display: block;
 }

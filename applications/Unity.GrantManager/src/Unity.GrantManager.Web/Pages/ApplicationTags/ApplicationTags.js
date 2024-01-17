@@ -1,5 +1,5 @@
 $(function () {
-   
+
     let suggestionsArray = [];
     // Function to generate random ID
     function generateRandomId() {
@@ -24,7 +24,7 @@ $(function () {
         }
 
         this.arr = [];
-       
+
         this.wrapper = document.createElement('div');
         this.input = document.createElement('input');
         init(this);
@@ -37,7 +37,7 @@ $(function () {
 
     // Add Tags
     TagsInput.prototype.addTag = function (tagData) {
-        let defaultClass = 'common';
+        let defaultClass = 'tags-common';
         let tagText, tagClass, tagId;
 
         if (typeof tagData === 'string') {
@@ -94,7 +94,7 @@ $(function () {
                         self.orignal_input.value = JSON.stringify(self.arr);
                         return self;
                     }
-                   
+
                 });
         }
         else {
@@ -103,7 +103,7 @@ $(function () {
             this.orignal_input.value = JSON.stringify(this.arr);
             return this;
         }
-        
+
     }
 
     // Make sure input string have no error with the plugin
@@ -177,7 +177,7 @@ $(function () {
                 } else {
                     removeSuggestions(tags);
                 }
-               
+
             } else {
                 // Remove suggestions if input is empty
                 removeSuggestions(tags);
@@ -192,16 +192,16 @@ $(function () {
 
         // Create suggestion container
         const suggestionContainer = document.createElement('div');
-        suggestionContainer.classList.add('suggestion-container');
+        suggestionContainer.classList.add('tags-suggestion-container');
         const suggestionTitleElement = document.createElement('div');
-        suggestionTitleElement.className = 'suggestion-title';
+        suggestionTitleElement.className = 'tags-suggestion-title';
         suggestionTitleElement.innerText = 'ALL TAGS';
         suggestionContainer.appendChild(suggestionTitleElement);
 
         // Add suggestions to the container
         suggestions.forEach(suggestion => {
             const suggestionElement = document.createElement('div');
-            suggestionElement.className = 'suggestion-element';
+            suggestionElement.className = 'tags-suggestion-element';
             suggestionElement.innerText = suggestion;
 
             // Add click event to add suggestion as a new tag
@@ -220,7 +220,7 @@ $(function () {
 
     // Function to remove auto-completion suggestions
     function removeSuggestions(tags) {
-        const suggestionContainer = tags.wrapper.querySelector('.suggestion-container');
+        const suggestionContainer = tags.wrapper.querySelector('.tags-suggestion-container');
         if (suggestionContainer) {
             suggestionContainer.remove();
         }
@@ -243,7 +243,7 @@ $(function () {
                     tags.addTag(str);
                 }
                 removeSuggestions(tags);
-                    
+
             }
 
         });
@@ -263,11 +263,7 @@ $(function () {
 
     window.TagsInput = TagsInput;
 
-   
-
-   
-
 
 });
 
-// Usage
+

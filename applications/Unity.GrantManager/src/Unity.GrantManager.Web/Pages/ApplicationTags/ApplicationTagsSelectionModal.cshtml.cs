@@ -36,7 +36,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
         [BindProperty]
         public string? ActionType { get; set; } = string.Empty;
 
-        private readonly IApplicationTagsService _applicatioTagsService;
+        private readonly IApplicationTagsService _applicationTagsService;
 
 
         [BindProperty]
@@ -51,11 +51,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
 
         public ApplicationTagsModalModel(IApplicationTagsService applicatioTagsService)
         {
-            _applicatioTagsService = applicatioTagsService ?? throw new ArgumentNullException(nameof(applicatioTagsService));
+            _applicationTagsService = applicatioTagsService ?? throw new ArgumentNullException(nameof(applicatioTagsService));
 
         }
-
-
 
         public async Task OnGetAsync(string applicationIds, string actionType)
         {
@@ -63,12 +61,11 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
             SelectedApplicationIds = applicationIds;
             ActionType = actionType;
 
-
             try
             {
-                var allTags = await _applicatioTagsService.GetListAsync();
+                var allTags = await _applicationTagsService.GetListAsync();
                 var applications = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-                var tags = await _applicatioTagsService.GetListWithApplicationIdsAsync(applications);
+                var tags = await _applicationTagsService.GetListWithApplicationIdsAsync(applications);
 
                 var newArray = tags.Select(item =>
                 {
@@ -106,8 +103,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                 var uniqueCommonTextsString = string.Join(",", allUniqueCommonTexts);
                 var uniqueUncommonTextsString = string.Join(",", allUniqueUncommonTexts);
                 var allUniqueTextsString = string.Join(",", allUniqueTexts);
-
-
 
                 AllTags = allUniqueTextsString;
                 CommonTags = uniqueCommonTextsString;
@@ -147,11 +142,15 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                         if (stringArray.Length > 0)
                         {
                             var applicationCommonTagArray = stringArray.Where(item => item != "Uncommon Tags").ToArray();
-                            applicationTagString += (applicationTagString == "" ? string.Join(",", applicationCommonTagArray) : (',' + string.Join(", ", applicationCommonTagArray)));
+                            if(applicationCommonTagArray.Length > 0)
+                            {
+                                applicationTagString += (applicationTagString == "" ? string.Join(",", applicationCommonTagArray) : (',' + string.Join(", ", applicationCommonTagArray)));
+
+                            }
                         }
 
 
-                        await _applicatioTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = applicationTagString });
+                        await _applicationTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = applicationTagString });
                     }
                 }
             }

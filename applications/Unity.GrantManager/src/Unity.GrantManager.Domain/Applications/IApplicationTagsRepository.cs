@@ -5,5 +5,4 @@ namespace Unity.GrantManager.Applications;
 
 public interface IApplicationTagsRepository : IRepository<ApplicationTags, Guid>
 {
-    
 }

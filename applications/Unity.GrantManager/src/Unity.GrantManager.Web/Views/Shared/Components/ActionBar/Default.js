@@ -39,7 +39,7 @@ $(function () {
         let tagInputArray = [];
        
         if (uncommonTags && uncommonTags != null) {
-            tagInputArray.push({ text: 'Uncommon Tags', class: 'uncommon', id: 0 })
+            tagInputArray.push({ text: 'Uncommon Tags', class: 'tags-uncommon', id: 0 })
             
         }
         const commonTagsArray = commonTags.split(',');
@@ -49,7 +49,7 @@ $(function () {
 
                 commonTagsArray.forEach(function (item, index) {
 
-                    tagInputArray.push({ text: item, class: 'common', id: index + 1 })
+                    tagInputArray.push({ text: item, class: 'tags-common', id: index + 1 })
                 });
                
             }
