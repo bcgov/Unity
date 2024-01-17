@@ -2,8 +2,10 @@
 {
     public class IntakeMapping
     {
+        // These parameters are ordered alphabetically - please ensure order as rendered on screen
         public string? ApplicantName { get; set; } 
         public string? ApproxNumberOfEmployees { get; set; }
+        public string? CensusSubdivision { get; set; }
         public string? Community { get; set; }        
         public string? ConfirmationId { get; set; }
         public string? ContactEmail { get; set; } = string.Empty;
@@ -34,14 +36,13 @@
         public string? PhysicalStreet2 { get; set; }
         public string? PhysicalUnit { get; set; }
         public string? ProjectName { get; set; }
+        public string? RegionalDistrict { get; set; }
         public string? RequestedAmount { get; set; }
         public string? Sector { get; set; }
         public string? SubmissionDate { get; set; }
         public string? SubmissionId { get; set; }
         public string? SubSector { get; set; }
         public string? TotalProjectBudget { get; set; }
-        public string? CensusSubdivision { get; set; }
-        public string? RegionalDistrict { get; set; }
 
     }
 }
