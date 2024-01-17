@@ -1,14 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using NUglify.Helpers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -132,14 +129,19 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                         var applicationTagString = "";
 
                         Console.WriteLine(SelectedTags);
-                        if (stringArray.Contains("Uncommon Tags"))
+                        if (tags != null && tags.Length > 0 && stringArray != null && stringArray.Length > 0 && stringArray.Contains("Uncommon Tags"))
                         {
-                            var applicationTag = tags.FirstOrDefault(tagItem => tagItem.ApplicationId == item.ToString());
+                            
+                                var applicationTag = tags.FirstOrDefault(tagItem => tagItem.ApplicationId == item.ToString());
 
-                            applicationTagString += applicationTag.UncommonText;
+                                if (applicationTag != null)
+                                {
+                                    applicationTagString += applicationTag.UncommonText;
 
+                                }
+                            
                         }
-                        if (stringArray.Length > 0)
+                        if (stringArray != null && stringArray.Length > 0)
                         {
                             var applicationCommonTagArray = stringArray.Where(item => item != "Uncommon Tags").ToArray();
                             if(applicationCommonTagArray.Length > 0)

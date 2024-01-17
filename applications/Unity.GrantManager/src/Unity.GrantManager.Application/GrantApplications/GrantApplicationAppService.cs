@@ -118,7 +118,7 @@ public class GrantApplicationAppService :
             appDto.Category = x.appForm.Category ?? string.Empty;
             appDto.AssessmentCount = x.AssessmentCount;
             appDto.AssessmentReviewCount = x.AssessmentReviewCount;
-            appDto.ApplicationTag = x.tag?.Text ?? string.Empty; ;
+            appDto.ApplicationTag = x.tag?.Text ?? string.Empty;
             return appDto;
         }).ToList();
 
