@@ -3,6 +3,7 @@ using Volo.Abp;
 using Volo.Abp.Autofac;
 using Volo.Abp.Modularity;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Users;
 
 namespace Unity.TenantManagement;
 
@@ -26,3 +27,4 @@ public class UnityTenantManagementTestBaseModule : AbpModule
             .Build();
     }
 }
+

@@ -16,6 +16,7 @@
     PageLayout.Content.Title = L["Tenants"].Value;
     PageLayout.Content.BreadCrumb.Add(L["Menu:TenantManagement"].Value);
     PageLayout.Content.MenuItemName = TenantManagementMenuNames.Tenants;
+    ViewBag.PageTitle = L["Tenants"].Value;
 }
 @section styles {
     <abp-style-bundle name="@typeof(IndexModel).FullName">        

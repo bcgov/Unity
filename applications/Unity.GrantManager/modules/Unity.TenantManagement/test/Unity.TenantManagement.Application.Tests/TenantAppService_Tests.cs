@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using Shouldly;
+using Unity.TenantManagement.Application.Contracts;
 using Volo.Abp;
 using Xunit;
 
@@ -10,6 +13,16 @@ namespace Unity.TenantManagement;
 public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
 {
     private readonly ITenantAppService _tenantAppService;
+
+    protected override void AfterAddApplication(IServiceCollection services)
+    {
+        // Create a Substitute and replace original one in Service Collection
+        var tenantConnectionStringBuilder = Substitute.For<ITenantConnectionStringBuilder>();
+
+        tenantConnectionStringBuilder.Build(Arg.Any<string>()).Returns("acme test connection");
+
+        services.AddSingleton(tenantConnectionStringBuilder);
+    }
 
     public TenantAppService_Tests()
     {

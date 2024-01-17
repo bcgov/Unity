@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Configuration;
 using Unity.TenantManagement.Abstractions;
 using Unity.TenantManagement.Application;
-using Volo.Abp;
+using Unity.TenantManagement.Application.Contracts;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
 using Volo.Abp.EventBus.Local;
@@ -27,7 +26,7 @@ public class TenantAppService : TenantManagementAppServiceBase, ITenantAppServic
 
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
-    private readonly IConfiguration _configuration;
+    private readonly ITenantConnectionStringBuilder _tenantConnectionStringBuilder;
 
     public TenantAppService(
         ITenantRepository tenantRepository,
@@ -35,14 +34,14 @@ public class TenantAppService : TenantManagementAppServiceBase, ITenantAppServic
         IDataSeeder dataSeeder,
         ILocalEventBus localEventBus,
         IUnitOfWorkManager unitOfWorkManager,
-        IConfiguration configuration)
+        ITenantConnectionStringBuilder tenantConnectionStringBuilder)
     {
         DataSeeder = dataSeeder;
         TenantRepository = tenantRepository;
         TenantManager = tenantManager;
         _localEventBus = localEventBus;
         _unitOfWorkManager = unitOfWorkManager;
-        _configuration = configuration;
+        _tenantConnectionStringBuilder = tenantConnectionStringBuilder;
     }
 
     public virtual async Task<TenantDto> GetAsync(Guid id)
@@ -85,7 +84,7 @@ public class TenantAppService : TenantManagementAppServiceBase, ITenantAppServic
             tenant.ConnectionStrings
                 .Add(new TenantConnectionString(tenant.Id,
                     UnityTenantManagementConsts.TenantConnectionStringName,
-                    BuildTenantConnectionString(tenant.Name)));
+                    _tenantConnectionStringBuilder.Build(tenant.Name)));                    
 
             // This does not seem to work as intended?
             input.MapExtraPropertiesTo(tenant);
@@ -109,20 +108,6 @@ public class TenantAppService : TenantManagementAppServiceBase, ITenantAppServic
             );
 
         return ObjectMapper.Map<Tenant, TenantDto>(tenant);
-    }
-
-    private string BuildTenantConnectionString(string tenantName)
-    {
-        var connectionString = _configuration.GetConnectionString(UnityTenantManagementConsts.TenantConnectionStringName);
-
-        return connectionString == null
-            ? throw new UserFriendlyException("Connection string configuration error")
-            : connectionString
-            .Replace(UnityTenantManagementConsts.TenantConnectionStringTenantDb, PrepTenantName(tenantName));
-    }
-    private static string PrepTenantName(string tenantName)
-    {
-        return tenantName.Trim().Replace(" ", "");
     }
 
     [Authorize(TenantManagementPermissions.Tenants.Update)]
