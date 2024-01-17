@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using OpenIddict.Abstractions;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Security.Claims;
