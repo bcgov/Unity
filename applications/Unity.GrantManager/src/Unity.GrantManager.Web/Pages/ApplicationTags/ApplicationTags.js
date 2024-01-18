@@ -14,8 +14,9 @@ $(function () {
 
         if (this.initialized)
             this.destroy();
+        this.orignal_input = document.getElementById(this.options.selector);
 
-        if (!(this.orignal_input = document.getElementById(this.options.selector))) {
+        if (!this.orignal_input) {
             console.error("tags-input couldn't find an element with the specified ID");
             return this;
         }

@@ -12,6 +12,6 @@ public interface IApplicationTagsService : IApplicationService
 
     Task<ApplicationTagsDto> CreateorUpdateTagsAsync(Guid id, ApplicationTagsDto input);
 
-    Task<ApplicationTagsDto> GetApplicationTagsAsync(Guid id);
+    Task<ApplicationTagsDto?> GetApplicationTagsAsync(Guid id);
 
 }

@@ -1,5 +1,4 @@
-﻿using Amazon.S3.Model;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +6,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -35,42 +34,55 @@ public class ApplicationTagsAppService : ApplicationService, IApplicationTagsSer
         return ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(tags.OrderBy(t => t.Id).ToList());
     }
 
-    public async Task<ApplicationTagsDto> GetApplicationTagsAsync(Guid id)
+
+    public async Task<ApplicationTagsDto?> GetApplicationTagsAsync(Guid id)
+
     {
-        try
-        {
-            var tag = await _applicationTagsRepository.GetAsync(e => id == e.ApplicationId);
+        var applicationTags = await _applicationTagsRepository.FirstOrDefaultAsync(s => s.ApplicationId == id);
 
-            return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(tag);
-        }
-        catch (EntityNotFoundException)
-        {
+        if (applicationTags == null) return null;
 
-            return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(null);
-        }
-     }
+        return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(applicationTags);
+
+    }
 
     public async Task<ApplicationTagsDto> CreateorUpdateTagsAsync(Guid id, ApplicationTagsDto input)
+
     {
-        try
+
+        var applicationTag = await _applicationTagsRepository.FirstOrDefaultAsync(e => e.ApplicationId == id);
+
+        if (applicationTag == null)
+
         {
-            var applicationTag = await _applicationTagsRepository.GetAsync(e => e.ApplicationId == id);
+
+            var newTag = await _applicationTagsRepository.InsertAsync(new ApplicationTags
+
+            {
+
+                ApplicationId = input.ApplicationId,
+
+                Text = input.Text
+
+            }, autoSave: true);
+
+            return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(newTag);
+
+        }
+
+        else
+
+        {
 
             applicationTag.Text = input.Text;
 
             await _applicationTagsRepository.UpdateAsync(applicationTag, autoSave: true);
 
             return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(applicationTag);
-        }
-        catch (EntityNotFoundException)
-        {
-            var result = await _applicationTagsRepository.InsertAsync(new ApplicationTags
-            {
-                ApplicationId = input.ApplicationId,
-                Text = input.Text
-            }, autoSave: true);
 
-            return ObjectMapper.Map<ApplicationTags, ApplicationTagsDto>(result);
         }
+
     }
+
+
 }
