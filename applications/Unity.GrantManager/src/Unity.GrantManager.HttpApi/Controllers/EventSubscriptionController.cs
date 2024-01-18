@@ -38,8 +38,8 @@ namespace Unity.GrantManager.Controllers
         }
 
         [HttpPost]
-        [Route("/{tenantId}")]
-        public async Task<dynamic> PostEventSubscriptionTenantAsync([FromBody] EventSubscription eventSubscription, [FromQuery] Guid tenantId)
+        [Route("{tenantId}")]
+        public async Task<dynamic> PostEventSubscriptionTenantAsync([FromBody] EventSubscription eventSubscription, [FromRoute] Guid tenantId)
         {
             using (CurrentTenant.Change(tenantId))
             {

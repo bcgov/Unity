@@ -87,6 +87,8 @@ namespace Unity.GrantManager.Web.Identity
         private async Task<UserTenantAccountDto> HandleUserLoginAsync(TokenValidatedContext validatedTokenContext,
             IList<UserTenantAccountDto>? userTenantAccounts)
         {
+            // filter out host account if coming in as tenant - add support for this later
+            userTenantAccounts = userTenantAccounts?.Where(s => s.TenantId != null).ToList();
             if (userTenantAccounts == null || userTenantAccounts.Count == 0)
             {
                 // Needs to be called to sign out
@@ -97,17 +99,14 @@ namespace Unity.GrantManager.Web.Identity
 
             UserTenantAccountDto? userTenantAccount = null;
             var setTenant = validatedTokenContext.Request.Cookies["set_tenant"];
-            if (setTenant != null)
+            if (setTenant != null && setTenant != Guid.Empty.ToString())
             {
-                userTenantAccount = userTenantAccounts.FirstOrDefault(s => s.TenantId != null && s.TenantId.ToString() == setTenant);
-                validatedTokenContext.Response.Cookies.Append("set_tenant", setTenant, new Microsoft.AspNetCore.Http.CookieOptions() 
+                userTenantAccount = userTenantAccounts.FirstOrDefault(s => s.TenantId.ToString() == setTenant);
+                validatedTokenContext.Response.Cookies.Append("set_tenant", setTenant, new Microsoft.AspNetCore.Http.CookieOptions()
                 { Expires = DateTime.UtcNow.AddDays(-1), Secure = true, SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None, HttpOnly = true });
             }
 
-            if (userTenantAccount == null)
-            {
-                userTenantAccount = userTenantAccounts[0];
-            }
+            userTenantAccount ??= userTenantAccounts[0];
 
             var principal = validatedTokenContext.Principal!;
 

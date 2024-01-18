@@ -42,7 +42,9 @@ namespace Unity.GrantManager.Permissions
                     IdentitySeedPermissions.Roles.Create,
                     IdentitySeedPermissions.Roles.Update,
                     IdentitySeedPermissions.Roles.Delete,
-                    IdentitySeedPermissions.Roles.ManagePermissions
+                    IdentitySeedPermissions.Roles.ManagePermissions,
+                    GrantManagerPermissions.Intakes.Default,
+                    GrantManagerPermissions.ApplicationForms.Default
                 }, context.TenantId);
 
             // - Reviewer

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Data;
@@ -56,12 +57,13 @@ namespace Unity.GrantManager.Identity
                 }
             }
 
-            return userTenantAccounts;
+            return userTenantAccounts
+                .OrderBy(s => s.TenantName).ToList();
         }
 
         [Authorize]
         public async Task<IList<UserTenantAccountDto>> GetListAsync()
-        {            
+        {
             var oidcSub = _currentUser.FindClaim("preferred_username");
             if (oidcSub == null)
             {

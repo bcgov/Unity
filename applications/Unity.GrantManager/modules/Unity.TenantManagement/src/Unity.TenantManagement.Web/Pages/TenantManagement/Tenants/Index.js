@@ -98,6 +98,10 @@
                     {
                         title: l("TenantName"),
                         data: 'name',
+                    },
+                    {
+                        title: l("Id"),
+                        data: 'id',
                     }
                 ]
             );
