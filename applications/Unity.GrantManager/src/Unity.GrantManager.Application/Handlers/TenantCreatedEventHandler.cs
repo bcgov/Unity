@@ -39,7 +39,8 @@ namespace Unity.GrantManager.Handlers
 
             using (_currentTenant.Change(tenant.Id))
             {
-                await _userImportAppService.ImportUserAsync(new ImportUserDto() { Directory = "IDIR", Guid = userIdentifier });
+                await _userImportAppService.ImportUserAsync(new ImportUserDto()
+                { Directory = "IDIR", Guid = userIdentifier, Roles = new string[] { UnityRoles.ProgramManager } });
             }
         }
     }
