@@ -47,6 +47,7 @@ public class GrantApplicationAppService :
     private readonly IAssessmentRepository _assessmentRepository;
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
+    private readonly IApplicationTagsRepository _applicationTagsRepository;
 
     public GrantApplicationAppService(IRepository<Application, Guid> repository,
         IApplicationManager applicationManager,
@@ -59,7 +60,8 @@ public class GrantApplicationAppService :
         IApplicationFormRepository applicationFormRepository,
         IAssessmentRepository assessmentRepository,
         IPersonRepository personRepository,
-        IApplicantAgentRepository applicantAgentRepository
+        IApplicantAgentRepository applicantAgentRepository,
+        IApplicationTagsRepository  applicationTagsRepository
         )
          : base(repository)
     {
@@ -74,6 +76,7 @@ public class GrantApplicationAppService :
         _assessmentRepository = assessmentRepository;
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
+        _applicationTagsRepository = applicationTagsRepository;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -86,6 +89,8 @@ public class GrantApplicationAppService :
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
                     join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
                     join assessment in await _assessmentRepository.GetQueryableAsync() on application.Id equals assessment.ApplicationId into assessments
+                    join applicationTag in await _applicationTagsRepository.GetQueryableAsync() on application.Id equals applicationTag.ApplicationId into tags
+                    from tag in tags.DefaultIfEmpty()
                     select new
                     {
                         application,
@@ -93,7 +98,8 @@ public class GrantApplicationAppService :
                         applicant,
                         appForm,
                         AssessmentCount = assessments.Count(),
-                        AssessmentReviewCount = assessments.Count(a => a.Status == AssessmentState.IN_REVIEW)
+                        AssessmentReviewCount = assessments.Count(a => a.Status == AssessmentState.IN_REVIEW),
+                        tag
                     };
 
         query = query
@@ -112,6 +118,7 @@ public class GrantApplicationAppService :
             appDto.Category = x.appForm.Category ?? string.Empty;
             appDto.AssessmentCount = x.AssessmentCount;
             appDto.AssessmentReviewCount = x.AssessmentReviewCount;
+            appDto.ApplicationTag = x.tag?.Text ?? string.Empty;
             return appDto;
         }).ToList();
 

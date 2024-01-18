@@ -29,11 +29,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<AssessmentComment> AssessmentComments { get; set; }
         public DbSet<Person> Persons { get; set; }
         public DbSet<Address> Addresses { get; set; }
+        public DbSet<ApplicationTags> ApplicationTags  { get; set; }
         public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
-
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -228,6 +228,19 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .HasForeignKey(x => x.AssigneeId)
                     .IsRequired()
                     .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            modelBuilder.Entity<ApplicationTags>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationTags",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.Property(x => x.Text)
+                    .IsRequired()
+                    .HasMaxLength(250);
+
+               
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();

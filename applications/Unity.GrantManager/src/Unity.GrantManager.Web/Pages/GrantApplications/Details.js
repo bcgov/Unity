@@ -502,6 +502,21 @@ function initCommentsWidget() {
     );
 
     updateCommentsCounters();
+    let tagsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationTagsWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val() ?? "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    });
+
+    PubSub.subscribe(
+        'ApplicationTags_refresh',
+        () => {
+            tagsWidgetManager.refresh();
+        }
+    );
 }
 
 function setDetailsContext(context) {

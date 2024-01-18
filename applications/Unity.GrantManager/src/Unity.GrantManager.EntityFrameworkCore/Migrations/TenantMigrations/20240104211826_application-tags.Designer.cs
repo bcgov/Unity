@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240104211826_application-tags")]
+    partial class applicationtags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,6 +30,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.Address", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("ApplicantId")
@@ -77,10 +81,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("Street2")
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.Property<string>("Unit")
                         .HasColumnType("text");
@@ -175,10 +175,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("SubSector")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicantName");
@@ -189,6 +185,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantAgent", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ApplicantId")
@@ -256,10 +253,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("RoleForApplicant")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -399,6 +392,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("ProposalDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("text");
+
                     b.Property<decimal>("RecommendedAmount")
                         .HasColumnType("numeric");
 
@@ -418,15 +414,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("SubSector")
                         .HasColumnType("text");
 
-                    b.Property<string>("SubStatus")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("SubmissionDate")
                         .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.Property<decimal>("TotalProjectBudget")
                         .HasColumnType("numeric");
@@ -484,10 +473,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
@@ -500,6 +485,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ApplicationId")
@@ -539,10 +525,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("S3ObjectKey")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp without time zone");
@@ -630,10 +612,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
                     b.Property<int?>("Version")
                         .HasColumnType("integer");
 
@@ -647,6 +625,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationFormSubmission", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ApplicantId")
@@ -697,10 +676,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Submission")
                         .IsRequired()
                         .HasColumnType("jsonb");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 
@@ -776,10 +751,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("SubmissionHeaderMapping")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
                     b.Property<int?>("Version")
                         .HasColumnType("integer");
 
@@ -835,10 +806,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 
@@ -897,6 +864,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentAttachment", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AssessmentId")
@@ -936,10 +904,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("S3ObjectKey")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp without time zone");
@@ -1019,10 +983,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
@@ -1075,10 +1035,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
@@ -1130,10 +1086,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 
@@ -1192,10 +1144,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("OidcSub")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 
@@ -1264,10 +1212,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 

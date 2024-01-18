@@ -81,6 +81,7 @@
     "ApplicationList:InfoButton": "Info",
     "ApplicationList:StartAssessmentButton": "Start Assessment",
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
+    "ApplicationList:TagButton": "Tags",
 
     "ReviewerList:AssessorName": "Assessor Name",
     "ReviewerList:StartDate": "Start Date",
@@ -216,6 +217,7 @@
     "Summary:Assessment.RecommendedAmount": "Recommended Amount",
     "Summary:Assessment.ApprovedAmount": "Approved Amount",
     "Summary:Assessment.Batch": "Batch #",
+    "Summary:ApplicationTags": "Application Tags",
 
     "ProjectInfoView:ProjectInfoTitle": "Project Summary",
     "ProjectInfoView:ProjectInfo.ProjectName": "Project Name",
