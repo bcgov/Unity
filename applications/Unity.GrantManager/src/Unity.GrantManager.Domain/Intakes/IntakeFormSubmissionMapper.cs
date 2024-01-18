@@ -182,7 +182,7 @@ namespace Unity.GrantManager.Intakes
                 ApplicantName = data.applicantName is string ? data.applicantName : null,
                 Sector = data.sector is string ? data.sector : null,
                 TotalProjectBudget = data.totalProjectBudget is string ? data.totalProjectBudget : null,
-                RequestedAmount = data.requestedAmount is string ? data.economicRegion : null,
+                RequestedAmount = data.requestedAmount is string ? data.requestedAmount : null,
                 PhysicalCity = data.city is string ? data.city : null,
                 EconomicRegion = data.economicRegion is string ? data.economicRegion : null,
             };
