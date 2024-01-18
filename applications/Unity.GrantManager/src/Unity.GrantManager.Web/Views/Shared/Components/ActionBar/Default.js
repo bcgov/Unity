@@ -16,6 +16,54 @@ $(function () {
         viewUrl: 'Approve/ApproveApplicationsModal'
     });
 
+    let tagApplicationModal = new abp.ModalManager({
+        viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
+        scriptUrl: '/Pages/ApplicationTags/ApplicationTags.js', //Lazy Load URL
+    });
+
+    tagApplicationModal.onOpen(function () {
+        let tagInput = new TagsInput({
+            selector: 'SelectedTags',
+            duplicate: false,
+            max: 50
+        });
+        let suggestionsArray = [];
+        let uncommonTags = $('#UncommonTags').val();
+        let commonTags = $('#CommonTags').val();
+        let allTags = $('#AllTags').val();
+        if (allTags) {
+            suggestionsArray = allTags.split(',');
+        }
+        tagInput.setSuggestions(suggestionsArray);
+
+        let tagInputArray = [];
+       
+        if (uncommonTags && uncommonTags != null) {
+            tagInputArray.push({ text: 'Uncommon Tags', class: 'tags-uncommon', id: 0 })
+            
+        }
+        const commonTagsArray = commonTags.split(',');
+        if (commonTags && commonTagsArray.length) {
+
+            if (commonTagsArray.length) {
+
+                commonTagsArray.forEach(function (item, index) {
+
+                    tagInputArray.push({ text: item, class: 'tags-common', id: index + 1 })
+                });
+               
+            }
+        }
+        tagInput.addData(tagInputArray);
+
+    });
+    tagApplicationModal.onResult(function () {
+        abp.notify.success(
+            'The application tags has been successfully updated.',
+            'Application Tags'
+        );
+        PubSub.publish("refresh_application_list");
+    });
     assignApplicationModal.onResult(function () {
         abp.notify.success(
             'The application assignees has been successfully updated.',
@@ -161,5 +209,12 @@ $(function () {
     $("#btn-toggle-filter").on("click", function () {
         // Toggle the visibility of the div
         $(".tr-toggle-filter").toggle();
+    });
+
+    $('#tagApplication').click(function () {
+        tagApplicationModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+            actionType: 'Add'
+        });
     });
 });

@@ -53,6 +53,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ElectoralDistrict, ElectoralDistrictDto>();
         CreateMap<CensusSubdivision, CensusSubdivisionDto>();
         CreateMap<RegionalDistrict, RegionalDistrictDto>();
+        CreateMap<ApplicationTags, ApplicationTagsDto>();
     }
 }
 
