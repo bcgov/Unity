@@ -178,12 +178,12 @@ namespace Unity.GrantManager.Intakes
         {
             return new IntakeMapping()
             {                
-                ProjectName = form.name is string ? data.economicRegion : null,
-                ApplicantName = data.applicantName is string ? data.economicRegion : null,
-                Sector = data.sector is string ? data.economicRegion : null,
-                TotalProjectBudget = data.totalProjectBudget is string ? data.economicRegion : null,
+                ProjectName = form.name is string ? form.name : null,
+                ApplicantName = data.applicantName is string ? data.applicantName : null,
+                Sector = data.sector is string ? data.sector : null,
+                TotalProjectBudget = data.totalProjectBudget is string ? data.totalProjectBudget : null,
                 RequestedAmount = data.requestedAmount is string ? data.economicRegion : null,
-                PhysicalCity = data.city is string ? data.economicRegion : null,
+                PhysicalCity = data.city is string ? data.city : null,
                 EconomicRegion = data.economicRegion is string ? data.economicRegion : null,
             };
         }
