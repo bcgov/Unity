@@ -314,3 +314,8 @@
 .fl-checkbox-checked:before {
     content: '\E73A';
 }
+
+.fl-tag:before {
+    content: '\E8EC';
+}
+

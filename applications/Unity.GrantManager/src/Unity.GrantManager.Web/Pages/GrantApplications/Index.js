@@ -638,11 +638,11 @@
                     },
                     { //30
                         title: 'Tags',
-                        name: 'batchNumber',
-                        data: 'batchNumber',
-                        className: 'data-table-header',
+                        name: 'applicationTag',
+                        data: 'applicationTag',
+                        className: '',
                         render: function (data) {
-                            return data ?? '{Tags}';
+                            return data.replace(/,/g, ', ') ?? '{Tags}';
                         },
                     },
                     { //31 -- mapped
