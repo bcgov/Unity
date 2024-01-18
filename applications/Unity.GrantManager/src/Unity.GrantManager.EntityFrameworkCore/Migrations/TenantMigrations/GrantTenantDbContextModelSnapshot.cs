@@ -102,6 +102,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("ApproxNumberOfEmployees")
                         .HasColumnType("text");
 
+                    b.Property<string>("CensusSubdivision")
+                        .HasColumnType("text");
+
                     b.Property<string>("Community")
                         .HasColumnType("text");
 
@@ -155,6 +158,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("OrganizationType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RegionalDistrict")
                         .HasColumnType("text");
 
                     b.Property<string>("Sector")
@@ -231,7 +237,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("OidcSubUser")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Phone")
@@ -288,6 +293,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("AssessmentStartDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("CensusSubdivision")
+                        .HasColumnType("text");
+
                     b.Property<string>("City")
                         .HasColumnType("text");
 
@@ -315,7 +323,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("DeclineRational")
                         .HasColumnType("text");
 
-                    b.Property<string>("DueDilligenceStatus")
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("DueDiligenceStatus")
                         .HasColumnType("text");
 
                     b.Property<string>("EconomicRegion")
@@ -378,14 +389,14 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("ProposalDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Recommendation")
-                        .HasColumnType("text");
-
                     b.Property<decimal>("RecommendedAmount")
                         .HasColumnType("numeric");
 
                     b.Property<string>("ReferenceNo")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RegionalDistrict")
                         .HasColumnType("text");
 
                     b.Property<decimal>("RequestedAmount")
@@ -395,6 +406,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("SubSector")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SubStatus")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("SubmissionDate")
@@ -798,6 +812,52 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("ApplicationStatuses", (string)null);
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationTags", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ApplicationTags", (string)null);
+                });
+
             modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentAttachment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1173,9 +1233,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("OidcSubUser")
-                        .HasPrincipalKey("OidcSub")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasPrincipalKey("OidcSub");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
