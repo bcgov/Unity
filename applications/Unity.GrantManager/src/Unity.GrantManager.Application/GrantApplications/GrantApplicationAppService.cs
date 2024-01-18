@@ -62,7 +62,7 @@ public class GrantApplicationAppService :
         IAssessmentRepository assessmentRepository,
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
-        IApplicationTagsRepository  applicationTagsRepository
+        IApplicationTagsRepository  applicationTagsRepository,
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository
         )
          : base(repository)
