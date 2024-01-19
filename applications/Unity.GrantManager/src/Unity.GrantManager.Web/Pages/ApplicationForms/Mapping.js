@@ -153,12 +153,19 @@
                 for (let key of keys) {
                     let intakeProperty = key;
                     let chefsMappingProperty = existingMapping[intakeProperty];
-                    let intakeMappingCard = document.getElementById(intakeProperty);
+                    let intakeMappingCard = document.getElementById("unity"+intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
-                    chefsMappingDiv.appendChild(intakeMappingCard);
+                    if (chefsMappingDiv != null) {
+                        chefsMappingDiv.appendChild(intakeMappingCard);
+                    } else {
+                        abp.notify.error(
+                            '',
+                            'Could not map existing: ' + chefsMappingProperty
+                        );
+                    }
                 }
             } catch (err) {
-                console.log('Existing Mapping error');
+                console.log(err);
             }
         }
     }
@@ -295,7 +302,7 @@
                 let intakeFieldJson = JSON.parse(intakeField);
                 if(!excludedIntakeMappings.includes(intakeFieldJson.Name)) {
                     let dragableDiv = document.createElement('div');
-                    dragableDiv.id = intakeFieldJson.Name;
+                    dragableDiv.id = 'unity'+intakeFieldJson.Name;
                     dragableDiv.className = 'card';
                     dragableDiv.setAttribute("draggable", "true");
                     dragableDiv.innerHTML = intakeFieldJson.Name;
