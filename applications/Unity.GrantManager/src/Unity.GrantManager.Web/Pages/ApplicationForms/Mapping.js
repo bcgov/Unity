@@ -23,7 +23,7 @@
                           'simpletime',
                           'simpletimeadvanced',
                           'simplenumber',
-                          'simplenumberadvance',
+                          'simplenumberadvanced',
                           'simplephonenumber',
                           'simplephonenumberadvanced',
                           'simpleselectadvanced',
