@@ -57,7 +57,7 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerHttpApiModule),
     typeof(GrantManagerApplicationModule),
     typeof(GrantManagerEntityFrameworkCoreModule),
-    typeof(AbpAutofacModule),    
+    typeof(AbpAutofacModule),
     typeof(AbpSettingManagementWebModule),
     typeof(AbpAspNetCoreMvcUiBasicThemeModule),
     typeof(UnityTenantManagementWebModule),
@@ -148,11 +148,6 @@ public class GrantManagerWebModule : AbpModule
         Configure<AbpSecurityLogOptions>(x =>
         {
             x.ApplicationName = "GrantManager";
-        });
-
-        context.Services.AddScoped<SelectedTenantFilter>();
-        context.Services.AddMvc().AddMvcOptions(options => {
-            options.Filters.AddService(typeof(SelectedTenantFilter));
         });
     }
 
@@ -246,7 +241,7 @@ public class GrantManagerWebModule : AbpModule
         context.Services.AddAccessTokenManagement(options =>
         {
         })
-        .ConfigureBackchannelHttpClient();        
+        .ConfigureBackchannelHttpClient();
 
         // registers HTTP client that uses the managed user access token
         context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
