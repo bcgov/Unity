@@ -122,7 +122,7 @@ table.dataTable thead th {
     background-color: #859ab9;
     color: white;
     font-weight: 500;
-    font-size: 21px;
+    font-size: 18px;
 }
 
 table.dataTable td {
@@ -206,9 +206,6 @@ table.dataTable {
     margin-top: 29px !important;
 }
 
-table.dataTable thead th {
-    font-size: 18px;
-}
 
 table.dataTable thead td {
     font-size: 14px;
@@ -220,6 +217,7 @@ table.dataTable td {
 
 #intake-map-available-fields-column {
     margin-top: 55px;
+    width: 96%;
 }
 
 .intake-mapping-title {
