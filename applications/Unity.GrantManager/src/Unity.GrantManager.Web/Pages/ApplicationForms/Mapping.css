@@ -1,8 +1,9 @@
 ﻿.main-content {
     background-color: #f9f7f7;
     border: 1px solid black;
-    height: 630px;
-    padding: 4px
+    height: 550px;
+    padding: 4px;
+    padding-top: 2px;
 }
 
 .mapping-container {
@@ -27,6 +28,7 @@
     width: calc(65% - (.5em + 6px));
     float: left;
     min-height: 400px;
+    max-height: 500px;
     padding-top: 6px;
 }
 
@@ -34,6 +36,7 @@
     width: calc(35% - (.5em + 6px));
     float: right;
     min-height: 400px;
+    max-height: 500px;
     margin-top: 5px;
 }
 
@@ -76,7 +79,7 @@
     padding-left: 6px;
     margin: 4px;
     text-align: center;
-    font-size: 18px;
+    font-size: 16px;
     cursor: grab;
     background-image: linear-gradient(135deg, #f9f9fb 10%, #38598A 900%);
 }
@@ -119,7 +122,7 @@ table.dataTable thead th {
     background-color: #859ab9;
     color: white;
     font-weight: 500;
-    font-size: 21px;
+    font-size: 18px;
 }
 
 table.dataTable td {
@@ -203,8 +206,18 @@ table.dataTable {
     margin-top: 29px !important;
 }
 
+
+table.dataTable thead td {
+    font-size: 14px;
+}
+
+table.dataTable td {
+    font-size: 15px;
+}
+
 #intake-map-available-fields-column {
     margin-top: 55px;
+    width: 96%;
 }
 
 .intake-mapping-title {
