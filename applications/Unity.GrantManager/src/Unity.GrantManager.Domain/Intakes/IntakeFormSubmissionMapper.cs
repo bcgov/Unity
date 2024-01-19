@@ -181,17 +181,23 @@ namespace Unity.GrantManager.Intakes
             try
             {
                 var submission = formSubmission.submission;
-                var data = submission.submission.data;
-
-                dynamic? files = data.simplefile;
-                foreach (dynamic? file in files.Children())
+                var data = submission.submission.data;                
+                List<JToken> nodes = new List<JToken>();
+                FindNodes(data, "simplefile", nodes);
+#pragma warning disable S4158
+                foreach (JToken file in nodes)
+#pragma warning restore S4158
                 {
+                    var nodeName = ((JProperty)file).Name;
+                    dynamic? fileObject = new JObject(file);
+                    var id = fileObject[nodeName][0]["data"]["id"].Value;
+                    var originalName = fileObject[nodeName][0]["originalName"].Value;
                     ApplicationChefsFileAttachment applicationChefsFileAttachment = new()
                     {
                         ApplicationId = applicationId,
-                        ChefsFileId = file.data.id,
+                        ChefsFileId = id,
                         ChefsSumbissionId = submission.id,
-                        Name = file.originalName,
+                        Name = originalName,
                     };
 
                     await _iApplicationChefsFileAttachmentRepository.InsertAsync(applicationChefsFileAttachment);
@@ -202,6 +208,28 @@ namespace Unity.GrantManager.Intakes
                 Logger.LogException(ex);
             }
 
+        }
+
+        private void FindNodes(JToken json, string name, List<JToken> nodes)
+        {
+            if (json.Type == JTokenType.Object)
+            {
+                foreach (JProperty child in json.Children<JProperty>())
+                {
+                    if (child.Name.StartsWith(name))
+                    {
+                        nodes.Add(child);
+                    }
+                    FindNodes(child.Value, name, nodes);
+                }
+            }
+            else if (json.Type == JTokenType.Array)
+            {
+                foreach (JToken child in json.Children())
+                {
+                    FindNodes(child, name, nodes);
+                }
+            }
         }
 
         private static IntakeMapping ApplyDefaultConfigurationMapping(dynamic data, dynamic form)
