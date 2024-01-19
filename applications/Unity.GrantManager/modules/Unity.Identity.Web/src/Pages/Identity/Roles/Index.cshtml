@@ -15,6 +15,7 @@
     PageLayout.Content.Title = L["Roles"].Value;
     PageLayout.Content.BreadCrumb.Add(L["Menu:IdentityManagement"].Value);
     PageLayout.Content.MenuItemName = UnityIdentityMenuNames.Roles;
+    ViewBag.PageTitle = L["Roles"].Value;
 }
 @section styles {
     <abp-style-bundle name="@typeof(IndexModel).FullName">
@@ -30,18 +31,12 @@
     </abp-script-bundle>
 }
 
-<div class="container-fluid px-2">
-    <div class="d-flex my-1 p-2">
-        <abp-column size="_6">
-            <abp-card-title>@L["Roles"]</abp-card-title>
-        </abp-column>
-        <abp-column size="_6" class="d-flex justify-content-end">
-            <abp-button id="CreateRoleBtn"
-                        text="@L["NewRole"].Value"
-                        icon-type="Other"
-                        icon="fl fl-add-to"
-                        button-type="Light" />
-        </abp-column>
-    </div>
-    <abp-table id="IdentityRolesTable"></abp-table>
-</div>
+
+@section content_toolbar {
+    @await Component.InvokeAsync(typeof(AbpPageToolbarViewComponent), new { pageName = typeof(IndexModel).FullName })
+}
+<abp-card id="IdentityRolesWrapper">
+    <abp-card-body>
+        <abp-table id="IdentityRolesTable" striped-rows="false" class="nowrap"></abp-table>
+    </abp-card-body>
+</abp-card>

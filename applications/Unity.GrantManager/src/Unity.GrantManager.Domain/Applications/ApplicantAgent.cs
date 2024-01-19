@@ -1,9 +1,10 @@
 ﻿using System;
 using Volo.Abp.Domain.Entities.Auditing;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Applications;
 
-public class ApplicantAgent : AuditedAggregateRoot<Guid>
+public class ApplicantAgent : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public string? OidcSubUser { get; set; }
     public Guid ApplicantId { get; set; }
@@ -17,4 +18,5 @@ public class ApplicantAgent : AuditedAggregateRoot<Guid>
     public string Phone2 { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
+    public Guid? TenantId { get; set; }
 }

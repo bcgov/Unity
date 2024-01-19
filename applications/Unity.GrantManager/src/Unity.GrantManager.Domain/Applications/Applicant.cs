@@ -1,9 +1,10 @@
 ﻿using System;
 using Volo.Abp.Domain.Entities.Auditing;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Applications;
 
-public class Applicant : AuditedAggregateRoot<Guid>
+public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public string ApplicantName { get; set; } = string.Empty;
     public string? NonRegisteredBusinessName { get; set; } = string.Empty;
@@ -21,4 +22,5 @@ public class Applicant : AuditedAggregateRoot<Guid>
     public string? ElectoralDistrict { get; set; }
     public string? CensusSubdivision { get; set; }
     public string? RegionalDistrict { get; set; }
+    public Guid? TenantId { get; set; }
 }

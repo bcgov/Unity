@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net7.0</TargetFrameworks>
+    <AssemblyName>Unity.TenantManagement.HttpApi.Client</AssemblyName>
+    <PackageId>Unity.TenantManagement.HttpApi.Client</PackageId>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <RootNamespace />
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.Http.Client" Version="8.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="**\*generate-proxy.json" />
+    <Content Remove="**\*generate-proxy.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Unity.TenantManagement.Application.Contracts\Unity.TenantManagement.Application.Contracts.csproj" />
+  </ItemGroup>
+</Project>

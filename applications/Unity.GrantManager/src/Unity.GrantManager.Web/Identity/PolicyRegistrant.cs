@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Permissions;
+using Unity.TenantManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
 
@@ -9,7 +10,7 @@ internal static class PolicyRegistrant
 {
     internal static void Register(ServiceConfigurationContext context)
     {
-        // TODO: ABP should do this for us when a permission definition is added, but does not seem to work with our setup
+        // ABP should do this for us when a permission definition is added, but does not seem to work with our setup
 
         context.Services.AddAuthorization(options =>
             options.AddPolicy(IdentityPermissions.Roles.Default,
@@ -116,6 +117,26 @@ internal static class PolicyRegistrant
         context.Services.AddAuthorization(options =>
             options.AddPolicy(GrantApplicationPermissions.Assessments.Confirm,
             policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Confirm)));
+
+        // Tenancy
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(TenantManagementPermissions.Tenants.Default,
+            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.Default)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(TenantManagementPermissions.Tenants.Create,
+            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.Create)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(TenantManagementPermissions.Tenants.Update,
+            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.Update)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(TenantManagementPermissions.Tenants.Delete,
+            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.Delete)));
+        context.Services.AddAuthorization(options =>
+            options.AddPolicy(TenantManagementPermissions.Tenants.ManageFeatures,
+            policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.ManageFeatures)));
+        context.Services.AddAuthorization(options =>
+           options.AddPolicy(TenantManagementPermissions.Tenants.ManageConnectionStrings,
+           policy => policy.RequireClaim("Permission", TenantManagementPermissions.Tenants.ManageConnectionStrings)));
     }
 }
 
