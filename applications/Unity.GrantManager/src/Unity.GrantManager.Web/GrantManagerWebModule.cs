@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
-using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
