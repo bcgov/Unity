@@ -8,7 +8,7 @@
         public string? ApproxNumberOfEmployees { get; set; }
         public string? CensusSubdivision { get; set; }
         public string? Community { get; set; }
-        public int? CommunityPopulation { get; set; }
+        public string? CommunityPopulation { get; set; }
         public string? ConfirmationId { get; set; }
         public string? ContactEmail { get; set; } = string.Empty;
         public string? ContactName { get; set; } = string.Empty;

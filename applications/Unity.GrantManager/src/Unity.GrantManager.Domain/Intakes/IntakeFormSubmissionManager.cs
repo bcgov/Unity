@@ -102,10 +102,10 @@ namespace Unity.GrantManager.Intakes
                     Acquisition = intakeMap.Acquisition ?? null,
                     Forestry = intakeMap.Foresty ?? null,
                     ForestryFocus = intakeMap.ForestyFocus ?? null,
-                    CommunityPopulation = intakeMap.CommunityPopulation ?? null,
                     City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
                     EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
                     Sector = intakeMap.Sector ?? "{Sector}",
+                    CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
                     RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
                     SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
                     ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
@@ -115,6 +115,16 @@ namespace Unity.GrantManager.Intakes
             );   
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
             return application;
+        }
+
+        private int? ConvertToIntFromString(string? intString)
+        {
+            if (int.TryParse(intString, out int intParse))
+            {
+                return intParse;
+            }
+
+            return null;
         }
 
         private decimal ConvertToDecimalFromStringDefaultZero(string? decimalString)
