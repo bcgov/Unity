@@ -99,16 +99,67 @@ namespace Unity.GrantManager.Intakes
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
                     ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
-                    RequestedAmount = Convert.ToDecimal(string.IsNullOrEmpty(intakeMap.RequestedAmount) ? "0" : intakeMap.RequestedAmount),
-                    SubmissionDate = DateTime.Parse(intakeMap.SubmissionDate ?? DateTime.UtcNow.ToString("u"), CultureInfo.InvariantCulture),
+                    Acquisition = intakeMap.Acquisition ?? null,
+                    Forestry = intakeMap.Foresty ?? null,
+                    ForestryFocus = intakeMap.ForestyFocus ?? null,
                     City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
-                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", // TBD how to calculate this - spacial lookup?
-                    TotalProjectBudget = Convert.ToDecimal(string.IsNullOrEmpty(intakeMap.TotalProjectBudget) ? "0" : intakeMap.TotalProjectBudget),
-                    Sector = intakeMap.Sector ?? "{Sector}" // TBD how to calculate this
+                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
+                    Sector = intakeMap.Sector ?? "{Sector}",
+                    CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
+                    RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
+                    SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
+                    ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
+                    ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
+                    TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget)
                 }                
             );   
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
             return application;
+        }
+
+        private int? ConvertToIntFromString(string? intString)
+        {
+            if (int.TryParse(intString, out int intParse))
+            {
+                return intParse;
+            }
+
+            return null;
+        }
+
+        private decimal ConvertToDecimalFromStringDefaultZero(string? decimalString)
+        {
+            decimal decimalValue;
+            if (decimal.TryParse(decimalString, out decimal decimalParse))
+            {
+                decimalValue = decimalParse;
+            } else
+            {
+                decimalValue = Convert.ToDecimal("0");
+            }
+            return decimalValue;
+        }
+
+        private DateTime? ConvertDateTimeNullableFromString(string? dateTime) {
+            DateTime? dateTimeValue = null;
+            if(DateTime.TryParse(dateTime, out DateTime testDateTimeParse)) {
+                dateTimeValue = testDateTimeParse;
+            }
+
+            return dateTimeValue;
+        }
+
+        private DateTime ConvertDateTimeFromStringDefaultNow(string? dateTime)
+        {
+            DateTime dateTimeValue;
+            DateTime.TryParse(dateTime, out dateTimeValue);
+
+            if (string.IsNullOrEmpty(dateTime))
+            {
+                dateTimeValue = DateTime.Parse(DateTime.UtcNow.ToString("u"));
+            }
+
+            return dateTimeValue;
         }
 
         private async Task<Applicant> CreateApplicantAsync(IntakeMapping intakeMap)
