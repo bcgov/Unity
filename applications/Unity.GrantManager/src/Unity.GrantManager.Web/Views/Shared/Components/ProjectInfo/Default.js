@@ -79,7 +79,7 @@
         $.each(subSectors, function (index, item) {
             childDropdown.append($('<option>', {
                 value: item.subSectorName,
-                text: ` ${item.subSectorCode} - ${item.subSectorName}`
+                text: item.subSectorName
             }));
         });
       });
