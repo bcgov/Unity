@@ -17,6 +17,9 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.GrantManager.Controllers.Auth.FormSubmission;
+using Unity.GrantManager.Controllers.Authentication;
+using Unity.GrantManager.Controllers.Authentication.FormSubmission.FormIdResolvers;
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
@@ -93,8 +96,9 @@ public class GrantManagerWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
-        ConfigurePolicies(context);
+        ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);
+        ConfigurePolicies(context);
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureAutoMapper();
@@ -148,6 +152,15 @@ public class GrantManagerWebModule : AbpModule
         {
             x.ApplicationName = "GrantManager";
         });
+    }
+
+    private static void ConfgureFormsApiAuhentication(ServiceConfigurationContext context)
+    {
+        context.Services.AddScoped<FormsApiTokenAuthFilter>();
+        context.Services.AddScoped<IFormIdResolver, FormIdHeadersResolver>();
+        context.Services.AddScoped<IFormIdResolver, FormIdQueryStringResolver>();
+        context.Services.AddScoped<IFormIdResolver, FormIdRequestBodyResolver>();
+        context.Services.AddScoped<IFormIdResolver, FormIdRouteResolver>();
     }
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)

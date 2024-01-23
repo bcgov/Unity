@@ -5,6 +5,7 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.TenantManagement;
+using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using System;
 
 namespace Unity.GrantManager.Controllers
@@ -27,24 +28,34 @@ namespace Unity.GrantManager.Controllers
         }
 
         [HttpPost]
+        [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
         public async Task<dynamic> PostEventSubscriptionAsync([FromBody] EventSubscription eventSubscription)
         {
-            var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
-
-            using (CurrentTenant.Change(defaultTenant.Id, defaultTenant.Name))
+            if (CurrentTenant.Id == null)
             {
-                return await HandleIntakeEventAsync(eventSubscription);
+                var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
+                using (CurrentTenant.Change(defaultTenant.Id, defaultTenant.Name))
+                {
+                    return await HandleIntakeEventAsync(eventSubscription);
+                }
             }
+            else return await HandleIntakeEventAsync(eventSubscription);
         }
 
         [HttpPost]
-        [Route("{tenantId}")]
-        public async Task<dynamic> PostEventSubscriptionTenantAsync([FromBody] EventSubscription eventSubscription, [FromRoute] Guid tenantId)
+        [Route("{__tenant}")]
+        [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
+        public async Task<dynamic> PostEventSubscriptionTenantAsync([FromBody] EventSubscription eventSubscription)
         {
-            using (CurrentTenant.Change(tenantId))
-            {
-                return await HandleIntakeEventAsync(eventSubscription);
-            }
+            return await HandleIntakeEventAsync(eventSubscription);
+        }
+
+        [HttpPost]
+        [Route("{__tenant}/{formId}")]
+        [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
+        public async Task<dynamic> PostEventSubscriptionTenantFormIdAsync([FromBody] EventSubscription eventSubscription, Guid formId)
+        {
+            return await HandleIntakeEventAsync(eventSubscription);
         }
 
         private async Task<dynamic> HandleIntakeEventAsync(EventSubscription eventSubscription)
