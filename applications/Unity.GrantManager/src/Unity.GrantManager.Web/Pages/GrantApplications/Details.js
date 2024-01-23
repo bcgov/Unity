@@ -357,26 +357,6 @@ function uploadAssessmentFiles(inputId) {
     uploadFiles(inputId, url, 'refresh_assessment_attachment_list');        
 }
 
-function getFileAttachment(btn) {
-    abp.localization.getResource('GrantManager');
-    try {
-        let chefsFileId = $(btn).attr('file-id')
-        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-
-        unity.grantManager.intakes.submission
-            .getChefsFileAttachment(submissionId, chefsFileId)
-            .done(function (result) {
-                $('.spinner-grow').hide();
-
-                console.log(result);
-
-            });
-
-    } catch (error) {
-        console.error(error);
-    }
-}
-
 function uploadFiles(inputId, urlStr, channel) {
     let input = document.getElementById(inputId);    
     let files = input.files;

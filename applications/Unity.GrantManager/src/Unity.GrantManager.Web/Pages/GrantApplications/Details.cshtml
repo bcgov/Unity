@@ -232,13 +232,14 @@
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Chefs File Attachments</h6>
                     @foreach (var applicationChefsFileAttachmentList in Model.ApplicationChefsFileAttachmentList)
                     {
-                        <div class="px-3 pb-2">
-                            <abp-button text="@applicationChefsFileAttachmentList.Name"
-                                        icon-type="Other"
-                                        onclick="getFileAttachment(this)"
-                                        file-id="@applicationChefsFileAttachmentList.ChefsFileId"
-                                        icon="fl fl-download"
-                                        button-type="Light" />
+                        <div class="px-3 pb-2 chefs-attachment">
+                            <a href="/api/app/attachment/chefs/@Model.ApplicationFormSubmissionId/download/@applicationChefsFileAttachmentList.ChefsFileId/@Uri.EscapeDataString(@applicationChefsFileAttachmentList.Name??"")" target="_blank" download="@applicationChefsFileAttachmentList.Name" class="fullwidth">
+                                <abp-button text="@applicationChefsFileAttachmentList.Name"
+                                            icon-type="Other"
+                                            file-id="@applicationChefsFileAttachmentList.ChefsFileId"
+                                            icon="fl fl-download"
+                                            button-type="Light" />
+                            </a>
                         </div>
                     }
                 </div>

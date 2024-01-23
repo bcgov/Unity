@@ -279,3 +279,12 @@ select.selected{
 .formio-component-submit{
     display: none;
 }
+
+.chefs-attachment a {
+    text-decoration: none;
+    display: block;
+}
+
+.chefs-attachment a:hover {
+    background-color: #f1f1f1;
+}

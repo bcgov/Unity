@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
+using Unity.GrantManager.Intakes;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Validation;
 
@@ -18,11 +19,13 @@ namespace Unity.GrantManager.Controllers
     {
         private readonly IFileAppService _fileAppService;
         private readonly IConfiguration _configuration;
+        private readonly ISubmissionAppService _submissionAppService;
 
-        public AttachmentController(IFileAppService fileAppService, IConfiguration configuration)
+        public AttachmentController(IFileAppService fileAppService, IConfiguration configuration, ISubmissionAppService submissionAppService)
         {
             _fileAppService = fileAppService;
             _configuration = configuration;
+            _submissionAppService = submissionAppService;
         }
 
         [HttpGet]
@@ -52,6 +55,14 @@ namespace Unity.GrantManager.Controllers
             folder += assessmentId;
             var key = folder + "/" + fileName;
             var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName });
+            return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+        }
+
+        [HttpGet]
+        [Route("/api/app/attachment/chefs/{formSubmissionId}/download/{chefsFileId}/{fileName}")]
+        public async Task<IActionResult> DownloadChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
+        {
+            var fileDto = await _submissionAppService.GetChefsFileAttachment(formSubmissionId, chefsFileId, fileName);
             return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
         }
 

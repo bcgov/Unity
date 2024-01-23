@@ -1,22 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Polly;
 using RestSharp;
 using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Attachments;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
@@ -93,7 +85,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         return applicationFormSubmisssion.Submission;
     }
 
-    public async Task<object?> GetChefsFileAttachment(ControllerBase controller, Guid? formSubmissionId, Guid? chefsFileAttachmentId)
+    public async Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name)
     {
         if (formSubmissionId == null)
         {
@@ -130,16 +122,12 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         var response = await _intakeClient.GetAsync(request);
 
 
-        if (((int)response.StatusCode) >= 400)
+        if (((int)response.StatusCode) != 200)
         {
-            throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
+            throw new ApiException((int)response.StatusCode, "Error calling GetChefsFileAttachment: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
         }
-        else if (((int)response.StatusCode) == 0)
-        {
-            throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.ErrorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
-        }
-        return controller.File(response.RawBytes, response.ContentType);
 
+        return new BlobDto { Name = name, Content = response.RawBytes??new byte[0], ContentType = response.ContentType };
     }
 
 
