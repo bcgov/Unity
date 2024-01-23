@@ -1,11 +1,20 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Polly;
 using RestSharp;
 using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Dtos;
@@ -20,6 +29,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
     private readonly RestClient _intakeClient;
+    private readonly IStringEncryptionService _stringEncryptionService;
     private static List<string> SummaryFieldsFilter
     {
         // NOTE: This will be replaced by a customizable filter.
@@ -46,6 +56,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _applicationFormRepository = applicationFormRepository;
         _intakeClient = restClient;
+        _stringEncryptionService = stringEncryptionService;
     }
 
 
@@ -82,7 +93,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         return applicationFormSubmisssion.Submission;
     }
 
-    public async Task<object?> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId)
+    public async Task<object?> GetChefsFileAttachment(ControllerBase controller, Guid? formSubmissionId, Guid? chefsFileAttachmentId)
     {
         if (formSubmissionId == null)
         {
@@ -111,7 +122,11 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
             throw new ApiException(400, "Missing CHEFS Api Key");
         }
 
-        var request = new RestRequest($"/files/{chefsFileAttachmentId}", Method.Get);
+        var request = new RestRequest($"/files/{chefsFileAttachmentId}", Method.Get)
+        {
+            Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
+        };
+
         var response = await _intakeClient.GetAsync(request);
 
 
@@ -123,8 +138,8 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         {
             throw new ApiException((int)response.StatusCode, "Error calling GetSubmission: " + response.ErrorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
         }
+        return controller.File(response.RawBytes, response.ContentType);
 
-        return response.Content;
     }
 
 
