@@ -288,3 +288,10 @@ select.selected{
 .chefs-attachment a:hover {
     background-color: #f1f1f1;
 }
+
+#formio a {
+    pointer-events: none;
+    cursor: default;
+    text-decoration: none;
+    color: black;
+}
