@@ -35,6 +35,11 @@ parameters:
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
+- description: Password for the PostgreSQL connection user.
+  displayName: PostgreSQL Connection Password
+  name: POSTGRESQL_PASSWORD
+  from: '[a-zA-Z0-9]{26}'
+  generate: expression
 - name: DATABASE_BACKUP_KEEP
   description: 'Number of backups to keep'
   value: '28'
