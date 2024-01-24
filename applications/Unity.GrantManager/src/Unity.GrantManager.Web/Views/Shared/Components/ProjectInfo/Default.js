@@ -112,10 +112,5 @@ function enableSaveBtn(inputText) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
     }    
-
-    if (inputText?.value?.trim() != "") {
-        $('#saveProjectInfoBtn').prop('disabled', false);
-    } else {
-        $('#saveProjectInfoBtn').prop('disabled', true);
-    }
+    $('#saveProjectInfoBtn').prop('disabled', false);
 }
