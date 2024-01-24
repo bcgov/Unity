@@ -140,7 +140,7 @@
             _dataTable.ajax.reloadEx();
         });
 
-        $('#CreateRoleBtn').click(function (e) {
+        $('#AbpContentToolbar button[name=CreateRole]').click(function (e) {
             e.preventDefault();
             _createModal.open();
         });

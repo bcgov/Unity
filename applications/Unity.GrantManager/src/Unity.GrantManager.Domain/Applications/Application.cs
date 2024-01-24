@@ -1,15 +1,16 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities.Auditing;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Applications;
 
-public class Application : AuditedAggregateRoot<Guid>
+public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid ApplicationFormId { get; set; }
     public Guid ApplicantId { get; set; }
     public Guid ApplicationStatusId { get; set; }
-   
+
     // Navigation Property - Application Status
     public virtual ApplicationStatus ApplicationStatus
     {
@@ -26,7 +27,7 @@ public class Application : AuditedAggregateRoot<Guid>
     public decimal TotalProjectBudget { get; set; }
     public string? Sector { get; set; } = null;
     public string? SubSector { get; set; } = null;
-    public string? EconomicRegion { get; set;} = null;
+    public string? EconomicRegion { get; set; } = null;
     public string? City { get; set; } = null;
     public DateTime? ProposalDate { get; set; }
     public DateTime SubmissionDate { get; set; }
@@ -37,9 +38,9 @@ public class Application : AuditedAggregateRoot<Guid>
     [Column(TypeName = "jsonb")]
     public string? Payload { get; set; }
 
-    public string? ProjectSummary { get; set; }  
+    public string? ProjectSummary { get; set; }
 
-    public int? TotalScore { get; set; } = null; 
+    public int? TotalScore { get; set; } = null;
 
     public decimal RecommendedAmount { get; set; } = 0;
 
@@ -80,5 +81,8 @@ public class Application : AuditedAggregateRoot<Guid>
     public string? ElectoralDistrict { get; set; }
 
     public string? CensusSubdivision { get; set; }
+
     public string? RegionalDistrict { get; set; }
+
+    public Guid? TenantId { get; set; }
 }

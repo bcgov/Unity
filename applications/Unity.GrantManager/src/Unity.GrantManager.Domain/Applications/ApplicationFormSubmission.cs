@@ -1,10 +1,11 @@
 ﻿using System;
 using Volo.Abp.Domain.Entities.Auditing;
 using System.ComponentModel.DataAnnotations.Schema;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Applications;
 
-public class ApplicationFormSubmission : AuditedAggregateRoot<Guid>
+public class ApplicationFormSubmission : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public string OidcSub { get; set; } = string.Empty;
     public Guid ApplicantId { get; set; }
@@ -13,4 +14,5 @@ public class ApplicationFormSubmission : AuditedAggregateRoot<Guid>
     public string ChefsSubmissionGuid { get; set; } = string.Empty;
     [Column(TypeName = "jsonb")]
     public string Submission { get; set; } = string.Empty;
+    public Guid? TenantId { get; set; }
 }

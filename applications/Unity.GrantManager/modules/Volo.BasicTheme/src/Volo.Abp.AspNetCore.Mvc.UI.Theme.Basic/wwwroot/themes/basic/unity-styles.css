@@ -184,3 +184,9 @@
     .input-group-with-icons > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
         margin-left: calc(var(--bs-border-width) * -4);
     }
+
+.navbar-nav-link-btn {
+    font-style: normal;
+    color: white;
+    text-decoration: none;
+}

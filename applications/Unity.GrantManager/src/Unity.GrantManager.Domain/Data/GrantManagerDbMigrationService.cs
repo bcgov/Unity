@@ -9,7 +9,6 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 
@@ -57,32 +56,40 @@ public class GrantManagerDbMigrationService : ITransientDependency
         var tenants = await _tenantRepository.GetListAsync(includeDetails: true);
 
         var migratedDatabaseSchemas = new HashSet<string>();
+
         foreach (var tenant in tenants)
         {
-            using (_currentTenant.Change(tenant.Id))
-            {
-                if (tenant.ConnectionStrings.Any())
-                {
-                    var tenantConnectionStrings = tenant.ConnectionStrings
-                        .Select(x => x.Value)
-                        .ToList();
-
-                    if (!migratedDatabaseSchemas.IsSupersetOf(tenantConnectionStrings))
-                    {
-                        await MigrateDatabaseSchemaAsync(tenant);
-
-                        migratedDatabaseSchemas.AddIfNotContains(tenantConnectionStrings);
-                    }
-                }
-
-                await SeedDataAsync(tenant);
-            }
+            await MigrateAndSeedTenantAsync(migratedDatabaseSchemas, tenant);
 
             Logger.LogInformation("Successfully completed {tenantName} tenant database migrations.", tenant.Name);
         }
 
         Logger.LogInformation("Successfully completed all database migrations.");
         Logger.LogInformation("You can safely end this process...");
+    }
+
+    public async Task MigrateAndSeedTenantAsync(HashSet<string> migratedDatabaseSchemas, Tenant? tenant)
+    {
+        if (tenant == null) { return; }
+
+        using (_currentTenant.Change(tenant.Id))
+        {
+            if (tenant.ConnectionStrings.Any())
+            {
+                var tenantConnectionStrings = tenant.ConnectionStrings
+                    .Select(x => x.Value)
+                    .ToList();
+
+                if (!migratedDatabaseSchemas.IsSupersetOf(tenantConnectionStrings))
+                {
+                    await MigrateDatabaseSchemaAsync(tenant);
+
+                    migratedDatabaseSchemas.AddIfNotContains(tenantConnectionStrings);
+                }
+            }
+
+            await SeedDataAsync(tenant);
+        }
     }
 
     private async Task MigrateDatabaseSchemaAsync(Tenant? tenant = null)
@@ -99,10 +106,14 @@ public class GrantManagerDbMigrationService : ITransientDependency
     {
         Logger.LogInformation("Executing {database} database seed...", tenant == null ? "host" : tenant.Name + " tenant");
 
-        await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id)
-            .WithProperty(IdentityDataSeedContributor.AdminEmailPropertyName, IdentityDataSeedContributor.AdminEmailDefaultValue)
-            .WithProperty(IdentityDataSeedContributor.AdminPasswordPropertyName, IdentityDataSeedContributor.AdminPasswordDefaultValue)
-        );
+        try
+        {
+            await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
     }
 
     private bool AddInitialMigrationIfNotExist()

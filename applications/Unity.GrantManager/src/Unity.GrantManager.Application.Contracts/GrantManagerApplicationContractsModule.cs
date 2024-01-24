@@ -1,10 +1,10 @@
-﻿using Volo.Abp.FeatureManagement;
+﻿using Unity.TenantManagement;
+using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
 using Volo.Abp.ObjectExtending;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
-using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager;
 
@@ -14,7 +14,7 @@ namespace Unity.GrantManager;
     typeof(AbpIdentityApplicationContractsModule),
     typeof(AbpPermissionManagementApplicationContractsModule),
     typeof(AbpSettingManagementApplicationContractsModule),
-    typeof(AbpTenantManagementApplicationContractsModule),
+    typeof(UnityTenantManagementApplicationContractsModule),
     typeof(AbpObjectExtendingModule)
 )]
 public class GrantManagerApplicationContractsModule : AbpModule

@@ -1,0 +1,30 @@
+﻿::-ms-reveal {
+    display: none;
+}
+
+#AbpContentToolbar {
+    display: flex !important;
+    background-color: transparent;
+}
+
+#TenantsTable_filter label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+    margin-right: 5px;
+}
+
+#TenantsTable_filter input {
+    margin: 0.25rem;
+}
+
+#TenantsWrapper {
+    background-color: transparent;
+}
+
+#UserSearchTable tbody tr {
+    cursor: pointer;
+}

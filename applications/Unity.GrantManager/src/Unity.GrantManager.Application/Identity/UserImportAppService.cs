@@ -13,7 +13,7 @@ using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Identity
 {
-    [Authorize(IdentityPermissions.Users.Default)]
+    [Authorize(IdentityPermissions.Users.Create)]
     public class UserImportAppService : GrantManagerAppService, IUserImportAppService
     {
         private readonly ICssUsersApiService _cssUsersApiService;
@@ -54,6 +54,11 @@ namespace Unity.GrantManager.Identity
             if (identityUser == null) throw new UserFriendlyException("Error creating user account");
 
             await _userManager.AddDefaultRolesAsync(identityUser);
+
+            if (importUserDto.Roles?.Length > 0)
+            {
+                await _userManager.AddToRolesAsync(identityUser, importUserDto.Roles);
+            }
 
             var oicdSub = cssUser.Username ?? newUserId.ToString();
             var displayName = cssUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();

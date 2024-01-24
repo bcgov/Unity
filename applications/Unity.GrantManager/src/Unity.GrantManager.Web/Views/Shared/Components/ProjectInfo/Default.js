@@ -79,7 +79,7 @@
         $.each(subSectors, function (index, item) {
             childDropdown.append($('<option>', {
                 value: item.subSectorName,
-                text: ` ${item.subSectorCode} - ${item.subSectorName}`
+                text: item.subSectorName
             }));
         });
       });
@@ -112,10 +112,5 @@ function enableSaveBtn(inputText) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
     }    
-
-    if (inputText?.value?.trim() != "") {
-        $('#saveProjectInfoBtn').prop('disabled', false);
-    } else {
-        $('#saveProjectInfoBtn').prop('disabled', true);
-    }
+    $('#saveProjectInfoBtn').prop('disabled', false);
 }

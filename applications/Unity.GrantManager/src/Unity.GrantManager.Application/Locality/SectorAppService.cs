@@ -30,6 +30,7 @@ namespace Unity.GrantManager.Locality
             var query = from sector in sectorsQueryable
                         join subsector in await _subSectorRepository.GetQueryableAsync()
                             on sector.Id equals subsector.SectorId into subSectors
+                        orderby sector.SectorName
                         select new { sector, subSectors, sector.SectorCode };
 
             var queryResult = await AsyncExecuter.ToListAsync(query);
@@ -37,7 +38,7 @@ namespace Unity.GrantManager.Locality
             var applicationSectorDtos = queryResult.Select(x =>
             {
                 var sector = ObjectMapper.Map<Sector, SectorDto>(x.sector);
-                sector.SubSectors = ObjectMapper.Map<List<SubSector>, List<SubSectorDto>>((List<SubSector>)x.subSectors);
+                sector.SubSectors = ObjectMapper.Map<List<SubSector>, List<SubSectorDto>>(x.subSectors.OrderBy(ss => ss.SubSectorName).ToList());
                 return sector;
             }).ToList();
 

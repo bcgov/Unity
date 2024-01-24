@@ -64,7 +64,9 @@ namespace Unity.GrantManager.Intakes
                 }
             } catch(Exception ex) 
             {
-                Debug.WriteLine(ex.ToString());
+                // Duplicates are not an issue when adding the components 
+                // as it is a hash if it exists already it should be ok just continue on
+                Logger.LogException(ex);
             }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
@@ -178,13 +180,13 @@ namespace Unity.GrantManager.Intakes
         {
             return new IntakeMapping()
             {                
-                ProjectName = form.name,
-                ApplicantName = data.applicantName,
-                Sector = data.sector,
-                TotalProjectBudget = data.totalProjectBudget,
-                RequestedAmount = data.requestedAmount,
-                PhysicalCity = data.city,
-                EconomicRegion = data.economicRegion
+                ProjectName = form.name is string ? form.name : null,
+                ApplicantName = data.applicantName is string ? data.applicantName : null,
+                Sector = data.sector is string ? data.sector : null,
+                TotalProjectBudget = data.totalProjectBudget is string ? data.totalProjectBudget : null,
+                RequestedAmount = data.requestedAmount is string ? data.requestedAmount : null,
+                PhysicalCity = data.city is string ? data.city : null,
+                EconomicRegion = data.economicRegion is string ? data.economicRegion : null,
             };
         }
 

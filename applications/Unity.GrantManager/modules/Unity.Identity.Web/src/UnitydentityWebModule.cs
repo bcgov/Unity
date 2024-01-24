@@ -18,6 +18,7 @@ using Volo.Abp.Identity;
 using Volo.Abp.Identity.Web;
 using Unity.Identity.Web.Navigation;
 using Unity.GrantManager.Localization;
+using Volo.Abp.TenantManagement.Localization;
 
 namespace Unity.Identity.Web;
 
@@ -74,6 +75,35 @@ public class UnitydentityWebModule : AbpModule
         Configure<DynamicJavaScriptProxyOptions>(options =>
         {
             options.DisableModule(IdentityRemoteServiceConsts.ModuleName);
+        });
+
+        Configure<AbpPageToolbarOptions>(options =>
+        {
+            options.Configure<Pages.Identity.Users.IndexModel>(
+                toolbar =>
+                {
+                    toolbar.AddButton(
+                        LocalizableString.Create<AbpTenantManagementResource>("Import"),
+                        icon: " fl fl-add-to",
+                        name: "ImportUser",
+                        requiredPolicyName: IdentityPermissions.Users.Create,
+                        type: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button.AbpButtonType.Light
+                    );
+                }
+            );
+
+            options.Configure<Pages.Identity.Roles.IndexModel>(
+                toolbar =>
+                {
+                    toolbar.AddButton(
+                        LocalizableString.Create<AbpTenantManagementResource>("NewRole"),
+                        icon: " fl fl-add-to",
+                        name: "CreateRole",
+                        requiredPolicyName: IdentityPermissions.Roles.Create,
+                        type: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button.AbpButtonType.Light
+                    );
+                }
+            );
         });
     }
 

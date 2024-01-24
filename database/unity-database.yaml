@@ -26,7 +26,7 @@ metadata:
     openshift.io/long-description: This template provides a standalone PostgreSQL
       server with an initial database created.  The database is stored on persistent storage.
       The database name, username, and password are chosen via parameters when provisioning.
-    tags: unity-database,postgresql
+    tags: database,postgresql
 parameters:
 # Project namespace parameters
 - description: The name of the application grouping.
@@ -83,7 +83,7 @@ parameters:
   name: IMAGESTREAM_TAG
   required: true
   value: latest
-- description: The registry path of the postgresql container image to use.
+- description: The offical registry path of the container image used.
   displayName: Registry container image to pull
   name: IMAGEPULL_REGISTRY
   value: registry.redhat.io/rhel9/
@@ -230,8 +230,6 @@ objects:
               secretKeyRef:
                 key: database-name
                 name: ${DATABASE_SERVICE_NAME}
-          image: ' '
-          imagePullPolicy: IfNotPresent
           livenessProbe:
             exec:
               command:

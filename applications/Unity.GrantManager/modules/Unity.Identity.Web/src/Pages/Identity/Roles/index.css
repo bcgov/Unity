@@ -17,5 +17,10 @@
 }
 
 #AbpContentToolbar {
-    display: none;
+    display: flex !important;
+    background-color: transparent;
+}
+
+#IdentityRolesWrapper {
+    background-color: transparent;
 }
