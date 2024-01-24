@@ -50,64 +50,54 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             const decimal ProjectFundingMultiply = 0.2M;
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
-            List<SectorDto> sectors = (await _applicationSectorAppService.GetListAsync()).ToList();
+            List<SectorDto> Sectors = (await _applicationSectorAppService.GetListAsync()).ToList();
 
-            List<EconomicRegionDto> economicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
+            List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
 
-            List<ElectoralDistrictDto> electoralDistricts = (await _applicationElectoralDistrictAppService.GetListAsync()).ToList();
+            List<ElectoralDistrictDto> ElectoralDistricts = (await _applicationElectoralDistrictAppService.GetListAsync()).ToList();
 
-            List<RegionalDistrictDto> regionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
+            List<RegionalDistrictDto> RegionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
 
-            List<CensusSubdivisionDto> censusSubdivisions = (await _applicationCensusSubdivisionAppService.GetListAsync()).ToList();
+            List<CensusSubdivisionDto> CensusSubdivisions = (await _applicationCensusSubdivisionAppService.GetListAsync()).ToList();
 
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
-                ApplicationSectors = sectors,
-                RegionalDistricts = regionalDistricts,
-                CensusSubdivisions = censusSubdivisions,
+                ApplicationSectors = Sectors,
+                RegionalDistricts = RegionalDistricts,
+                CensusSubdivisions = CensusSubdivisions,
             };
 
-            foreach (SectorDto sector in sectors)
-            {
-                model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorName, Text = sector.SectorName   });
-            }
+            model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
+                new SelectListItem { Value = Sector.SectorName, Text = Sector.SectorName }));
+            
+            model.EconomicRegionList.AddRange(EconomicRegions.Select(EconomicRegion =>  
+                new SelectListItem { Value = EconomicRegion.EconomicRegionName, Text = EconomicRegion.EconomicRegionName }));
 
-            foreach (EconomicRegionDto economicRegion in economicRegions)
-            {
-                model.EconomicRegionList.Add(new SelectListItem { Value = economicRegion.EconomicRegionName, Text =  economicRegion.EconomicRegionName });
-            }
+            model.ElectoralDistrictList.AddRange(ElectoralDistricts.Select(ElectoralDistrict =>
+                new SelectListItem { Value = ElectoralDistrict.ElectoralDistrictName, Text = ElectoralDistrict.ElectoralDistrictName }));
 
-            foreach (ElectoralDistrictDto electoralDistrict in electoralDistricts)
-            {
-                model.ElectoralDistrictList.Add(new SelectListItem { Value = electoralDistrict.ElectoralDistrictName, Text = electoralDistrict.ElectoralDistrictName });
-            }
-            foreach (RegionalDistrictDto regionalDistrict  in regionalDistricts)
-            {
-                model.RegionalDistrictList.Add(new SelectListItem { Value = regionalDistrict.RegionalDistrictName, Text = regionalDistrict.RegionalDistrictName });
-            }
-            foreach (CensusSubdivisionDto censusSubdivision  in censusSubdivisions)
-            {
-                model.CensusSubdivisionList.Add(new SelectListItem { Value = censusSubdivision.CensusSubdivisionName, Text = $"{censusSubdivision.CensusSubdivisionName} - {censusSubdivision.Type}" });
-            }
+            model.RegionalDistrictList.AddRange(RegionalDistricts.Select(RegionalDistrict => 
+                new SelectListItem { Value = RegionalDistrict.RegionalDistrictName, Text = RegionalDistrict.RegionalDistrictName }));
 
-            if (sectors.Count > 0)
+            model.CensusSubdivisionList.AddRange(CensusSubdivisions.Select(CensusSubdivision =>
+                new SelectListItem { Value = CensusSubdivision.CensusSubdivisionName, Text = $"{CensusSubdivision.CensusSubdivisionName} - {CensusSubdivision.Type}" }));
+
+            if (Sectors.Count > 0)
             {
                 List<SubSectorDto> SubSectors = new();
                 if (string.IsNullOrEmpty(application.SubSector))
                 {
-                    SubSectors = sectors[0].SubSectors ?? SubSectors;
+                    SubSectors = Sectors[0].SubSectors ?? SubSectors;
                 }
                 else
                 {
-                    SectorDto? applicationSector = sectors.Find(x => x.SectorName == application.Sector);                                                                
+                    SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);                                                                
                     SubSectors = applicationSector?.SubSectors ?? SubSectors;
                 }
 
-                foreach (SubSectorDto subSector in SubSectors)
-                {
-                    model.ApplicationSubSectorsList.Add(new SelectListItem { Value = subSector.SubSectorName, Text = subSector.SubSectorName });
-                }
+                model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector => 
+                    new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
             }
 
 
