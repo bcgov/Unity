@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Locality
         {
             var economicRegions = await _economicRegionRepository.GetListAsync();
 
-            return ObjectMapper.Map<List<EconomicRegion>, List<EconomicRegionDto>>(economicRegions.OrderBy(s => s.EconomicRegionCode).ToList());
+            return ObjectMapper.Map<List<EconomicRegion>, List<EconomicRegionDto>>(economicRegions.OrderBy(s => s.EconomicRegionName).ToList());
         }
     }
 }

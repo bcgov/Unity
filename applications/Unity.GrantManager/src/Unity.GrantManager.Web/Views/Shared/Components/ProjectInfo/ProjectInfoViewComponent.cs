@@ -70,21 +70,21 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             foreach (SectorDto sector in sectors)
             {
-                model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorName, Text = $"{sector.SectorCode} - {sector.SectorName}"   });
+                model.ApplicationSectorsList.Add(new SelectListItem { Value = sector.SectorName, Text = sector.SectorName   });
             }
 
             foreach (EconomicRegionDto economicRegion in economicRegions)
             {
-                model.EconomicRegionList.Add(new SelectListItem { Value = economicRegion.EconomicRegionName, Text =  $"{economicRegion.EconomicRegionCode} - {economicRegion.EconomicRegionName}"   });
+                model.EconomicRegionList.Add(new SelectListItem { Value = economicRegion.EconomicRegionName, Text =  economicRegion.EconomicRegionName });
             }
 
             foreach (ElectoralDistrictDto electoralDistrict in electoralDistricts)
             {
-                model.ElectoralDistrictList.Add(new SelectListItem { Value = electoralDistrict.ElectoralDistrictName, Text = $"{electoralDistrict.ElectoralDistrictCode} - {electoralDistrict.ElectoralDistrictName}"   });
+                model.ElectoralDistrictList.Add(new SelectListItem { Value = electoralDistrict.ElectoralDistrictName, Text = electoralDistrict.ElectoralDistrictName });
             }
             foreach (RegionalDistrictDto regionalDistrict  in regionalDistricts)
             {
-                model.RegionalDistrictList.Add(new SelectListItem { Value = regionalDistrict.RegionalDistrictName, Text = $"{regionalDistrict.RegionalDistrictCode} - {regionalDistrict.RegionalDistrictName}" });
+                model.RegionalDistrictList.Add(new SelectListItem { Value = regionalDistrict.RegionalDistrictName, Text = regionalDistrict.RegionalDistrictName });
             }
             foreach (CensusSubdivisionDto censusSubdivision  in censusSubdivisions)
             {
@@ -106,7 +106,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
                 foreach (SubSectorDto subSector in SubSectors)
                 {
-                    model.ApplicationSubSectorsList.Add(new SelectListItem { Value = subSector.SubSectorName, Text =   $"{subSector.SubSectorCode} - {subSector.SubSectorName}" });
+                    model.ApplicationSubSectorsList.Add(new SelectListItem { Value = subSector.SubSectorName, Text = subSector.SubSectorName });
                 }
             }
 
