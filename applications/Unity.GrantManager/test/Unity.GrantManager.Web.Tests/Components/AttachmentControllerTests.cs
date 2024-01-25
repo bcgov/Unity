@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Controllers;
+using Unity.GrantManager.Intakes;
 using Volo.Abp.Validation;
 using Xunit;
 
@@ -21,7 +22,8 @@ namespace Unity.GrantManager.Components
             var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
             var configuration = builder.Build();
             var fileAppService = Substitute.For<IFileAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration);
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService);
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
