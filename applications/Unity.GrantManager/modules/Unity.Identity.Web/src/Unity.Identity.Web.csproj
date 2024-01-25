@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   
   
@@ -32,13 +32,6 @@
     <Content Remove="Components\**\*.css" />
     <Content Remove="wwwroot\**\*.js" />
     <Content Remove="wwwroot\**\*.css" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.4\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.analyze.json" />
-    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.4\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.json" />
-    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.permissionmanagement.web\7.4.4\contentFiles\any\net7.0\Volo.Abp.PermissionManagement.Web.abppkg.analyze.json" />
-    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.permissionmanagement.web\7.4.4\contentFiles\any\net7.0\Volo.Abp.PermissionManagement.Web.abppkg.json" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi.Client\Unity.TenantManagement.HttpApi.Client.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
   </ItemGroup>
 

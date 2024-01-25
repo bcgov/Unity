@@ -237,7 +237,7 @@ DECLARE
       },
       {
         "SubSectorCode": "405",
-        "SubSectorName": " Education/Outreach "
+        "SubSectorName": "Education/Outreach"
       },
       {
         "SubSectorCode": "406",

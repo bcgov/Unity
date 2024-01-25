@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  
+  
+
+  <PropertyGroup><LangVersion>latest</LangVersion>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>Unity.TenantManagement.HttpApi</AssemblyName>
+    <PackageId>Unity.TenantManagement.HttpApi</PackageId>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <RootNamespace />
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="7.4.0" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.HttpApi" Version="7.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Unity.TenantManagement.Application.Contracts\Unity.TenantManagement.Application.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

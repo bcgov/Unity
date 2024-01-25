@@ -1,7 +1,9 @@
 ﻿@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.Brand
 @using Volo.Abp.MultiTenancy;
+@using Volo.Abp.Users;
 
 @inject ICurrentTenant CurrentTenant
+@inject ICurrentUser CurrentUser
 
 @{
     string userName = (@ViewBag.UserName == null) ? "Test" : @ViewBag.UserName;
@@ -12,8 +14,15 @@
 }
 
 <nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-sub-navbar" id="sub-navbar">
-    <div class="container-fluid">
-        <h6>@pageTitle</h6>
+    <div class="container-fluid">        
+        <h6>
+            @if (CurrentUser.IsAuthenticated
+            && CurrentUser.FindClaims("tenant").Length > 1)
+            {
+                <a class="navbar-nav-link-btn" href="/GrantPrograms" title="Switch Grant Programs"><i class="fl fl-mini-contract-2-mirrored"></i></a>
+            }
+            @pageTitle
+        </h6>
         <div class="search-input" style="display:none">
             <div class="input-group input-group-with-icons">
                 <div class="input-group-prepend">

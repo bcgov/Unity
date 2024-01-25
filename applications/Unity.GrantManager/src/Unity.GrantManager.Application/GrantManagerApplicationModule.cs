@@ -10,6 +10,7 @@ using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
 using Unity.GrantManager.Integrations.Sso;
+using Unity.TenantManagement;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.FeatureManagement;
@@ -17,7 +18,6 @@ using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
-using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager;
 
@@ -26,7 +26,7 @@ namespace Unity.GrantManager;
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
     typeof(AbpPermissionManagementApplicationModule),
-    typeof(AbpTenantManagementApplicationModule),
+    typeof(UnityTenantManagementApplicationModule),
     typeof(AbpFeatureManagementApplicationModule),
     typeof(AbpSettingManagementApplicationModule)
     )]

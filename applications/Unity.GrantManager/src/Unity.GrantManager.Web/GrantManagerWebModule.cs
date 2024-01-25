@@ -24,6 +24,7 @@ using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.Identity.Web;
+using Unity.TenantManagement.Web;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
@@ -44,7 +45,6 @@ using Volo.Abp.OpenIddict.Tokens;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
-using Volo.Abp.TenantManagement.Web;
 using Volo.Abp.Timing;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
@@ -56,10 +56,10 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerHttpApiModule),
     typeof(GrantManagerApplicationModule),
     typeof(GrantManagerEntityFrameworkCoreModule),
-    typeof(AbpAutofacModule),    
+    typeof(AbpAutofacModule),
     typeof(AbpSettingManagementWebModule),
     typeof(AbpAspNetCoreMvcUiBasicThemeModule),
-    typeof(AbpTenantManagementWebModule),
+    typeof(UnityTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
@@ -196,8 +196,8 @@ public class GrantManagerWebModule : AbpModule
 
             options.Events.OnTokenValidated = async (tokenValidatedContext) =>
             {
-                var updater = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginUpdater>();
-                await updater!.CreateOrUpdateAsync(tokenValidatedContext);
+                var loginHandler = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginHandler>();
+                await loginHandler!.HandleAsync(tokenValidatedContext);
             };
 
             if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
@@ -240,7 +240,7 @@ public class GrantManagerWebModule : AbpModule
         context.Services.AddAccessTokenManagement(options =>
         {
         })
-        .ConfigureBackchannelHttpClient();        
+        .ConfigureBackchannelHttpClient();
 
         // registers HTTP client that uses the managed user access token
         context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>

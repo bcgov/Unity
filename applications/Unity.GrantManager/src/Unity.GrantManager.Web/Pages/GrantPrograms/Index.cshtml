@@ -1,0 +1,34 @@
+﻿@page
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.GrantManager.Web.Pages.Intakes
+@using Microsoft.Extensions.Localization
+@model Unity.GrantManager.Web.Pages.GrantPrograms.IndexModel
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.MenuItemName = "GrantManager.GrantPrograms";
+    PageLayout.Content.Title = L["GrantPrograms"].Value;
+    ViewBag.PageTitle = "Grant Programs";
+}
+
+@section styles {
+    <abp-style src="/Pages/GrantPrograms/Index.css" />
+}
+@section scripts
+    {
+    <abp-script src="/Pages/GrantPrograms/Index.js" />
+}
+
+<div class="container-fluid px-2">
+    <div class="d-flex my-1 p-2">
+        <abp-column size="_6">
+            <abp-card-title>@L["GrantPrograms"]</abp-card-title>
+        </abp-column>
+    </div>
+    <abp-table id="UserGrantProgramsTable"></abp-table>
+</div>
+
+<form id="tenantSwapForm" method="post">    
+    <abp-input id="SwapTenantId" asp-for="SwapTenantId" suppress-label hidden />
+</form>

@@ -12,5 +12,7 @@ public static class GrantManagerConsts
 
     public const string DefaultTenantName = "Default Grants Program";
 
-    public const string TenantConnectionStringName = "Tenant";
+    public const string DefaultTenantConnectionStringName = "Tenant";
+
+    public const string DefaultConnectionStringName = "Default";
 }

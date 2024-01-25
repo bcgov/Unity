@@ -3,10 +3,12 @@
     public class IntakeMapping
     {
         // These parameters are ordered alphabetically - please ensure order as rendered on screen
+        public string? Acquisition { get; set; }
         public string? ApplicantName { get; set; } 
         public string? ApproxNumberOfEmployees { get; set; }
         public string? CensusSubdivision { get; set; }
-        public string? Community { get; set; }        
+        public string? Community { get; set; }
+        public string? CommunityPopulation { get; set; }
         public string? ConfirmationId { get; set; }
         public string? ContactEmail { get; set; } = string.Empty;
         public string? ContactName { get; set; } = string.Empty;
@@ -15,6 +17,8 @@
         public string? ContactTitle { get; set; } = string.Empty;
         public string? EconomicRegion { get; set; }
         public string? ElectoralDistrict { get; set; }
+        public string? Foresty { get; set; }
+        public string? ForestyFocus { get; set; }
         public string? IndigenousOrgInd { get; set; }
         public string? MailingCity { get; set; }
         public string? MailingCountry { get; set; }
@@ -35,7 +39,9 @@
         public string? PhysicalStreet { get; set; }
         public string? PhysicalStreet2 { get; set; }
         public string? PhysicalUnit { get; set; }
+        public string? ProjectEndDate { get; set; }
         public string? ProjectName { get; set; }
+        public string? ProjectStartDate { get; set; }
         public string? RegionalDistrict { get; set; }
         public string? RequestedAmount { get; set; }
         public string? Sector { get; set; }
@@ -43,6 +49,5 @@
         public string? SubmissionId { get; set; }
         public string? SubSector { get; set; }
         public string? TotalProjectBudget { get; set; }
-
     }
 }

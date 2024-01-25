@@ -34,7 +34,6 @@
     }
 
     var isHomePage = (PageLayout.Content.Title == "Home");
-    var isIdentityPage = (PageLayout.Content.Title == "Roles" || PageLayout.Content.Title == "Users");
 
     var rtl = CultureHelper.IsRtl ? "rtl" : string.Empty;
 
@@ -82,21 +81,19 @@
             }
 
             <div class="flex-fill @applicationContainerClass">
-                @if (isIdentityPage)
-                {
-                    <div id="AbpContentToolbar" class="card identity-toolbar">
-                        <div>
-                            @(
-                                await Component.InvokeAsync<ContentTitleViewComponent>()
-                                )
-                        </div>
-                        <div>
-                            <div class="text-end">
-                                @await RenderSectionAsync("content_toolbar", false)
-                            </div>
+                <div id="AbpContentToolbar" class="card identity-toolbar" style="display:none"> <!-- Not used in most module, need to fix this, left behind for abp modules but hidden -->
+                    <div>
+                        @(
+                            await Component.InvokeAsync<ContentTitleViewComponent>()
+                            )
+                    </div>
+                    <div>
+                        <div class="text-end">
+                            @await RenderSectionAsync("content_toolbar", false)
                         </div>
                     </div>
-                }
+                </div>
+                
                 @RenderBody()
             </div>
         </div>

@@ -17,5 +17,5 @@ public class SideNavbarViewComponent : AbpViewComponent
     {
         var menu = await MenuManager.GetMainMenuAsync();
         return View("~/Themes/Basic/Components/SideNavbar/Default.cshtml", menu);
-    }
+    }    
 }

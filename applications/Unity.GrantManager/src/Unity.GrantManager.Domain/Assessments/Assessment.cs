@@ -3,10 +3,11 @@ using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using Unity.GrantManager.Workflow;
 using Volo.Abp.Domain.Entities.Auditing;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Assessments;
 
-public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentState, AssessmentAction>
+public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentState, AssessmentAction>, IMultiTenant
 {
     public Guid ApplicationId { get; private set; }
     public Guid AssessorId { get; private set; }
@@ -25,6 +26,8 @@ public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentSta
 
     [NotMapped]
     public UnityWorkflow<AssessmentState, AssessmentAction> Workflow { get; private set; }
+
+    public Guid? TenantId { get; set; }
 
     public Assessment()
     {

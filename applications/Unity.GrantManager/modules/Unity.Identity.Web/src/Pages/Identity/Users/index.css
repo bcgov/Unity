@@ -16,10 +16,15 @@
     margin: 0.25rem;
 }
 
-#AbpContentToolbar {
-    display: none;
-}
-
 #UserSearchTable tbody tr {
     cursor: pointer;
+}
+
+#AbpContentToolbar {
+    display: flex !important;
+    background-color: transparent;
+}
+
+#UsersWrapper {
+    background-color: transparent;
 }
