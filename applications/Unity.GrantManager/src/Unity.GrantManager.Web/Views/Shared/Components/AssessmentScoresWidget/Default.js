@@ -13,7 +13,7 @@
                     'Assessment scores has been updated.'
                 );
                 PubSub.publish('refresh_assessment_scores', null);
-                PubSub.publish('refresh_review_list', $("#AssessmentId").val());
+                PubSub.publish('refresh_review_list_without_select', $("#AssessmentId").val());
             });
 
     }

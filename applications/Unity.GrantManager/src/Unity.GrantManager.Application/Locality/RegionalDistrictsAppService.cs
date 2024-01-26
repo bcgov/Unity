@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Locality
         {
             var regionalDistrict = await _regionalDistrictRepository.GetListAsync();
 
-            return ObjectMapper.Map<List<RegionalDistrict>, List<RegionalDistrictDto>>(regionalDistrict.OrderBy(r => r.RegionalDistrictCode).ToList());
+            return ObjectMapper.Map<List<RegionalDistrict>, List<RegionalDistrictDto>>(regionalDistrict.OrderBy(r => r.RegionalDistrictName).ToList());
         }
     }
 }

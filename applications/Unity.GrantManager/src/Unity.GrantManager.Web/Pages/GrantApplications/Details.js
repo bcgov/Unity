@@ -157,7 +157,7 @@ $(function () {
                     abp.notify.success(
                         'The recommendation has been updated.'
                     );
-                    PubSub.publish('refresh_review_list', id);
+                    PubSub.publish('refresh_review_list_without_select', id);
                 });
 
         }
