@@ -15,6 +15,7 @@
 @inject IPageLayout PageLayout
 @{
     PageLayout.Content.Title = L["Grants"].Value;
+    ViewBag.PageTitle = $"Applications / {Model.ApplicationName}({Model.ApplicationNumber}) - {Model.ApplicationStatus}";
 }
 @section styles
     {
