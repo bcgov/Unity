@@ -10,6 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Users;
 using Microsoft.Extensions.Configuration;
+using Unity.GrantManager.Applications;
 
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
@@ -43,6 +44,10 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public string? CurrentUserName { get; set; }
+
+
+        [BindProperty(SupportsGet = true)]
+        public List<ApplicationChefsFileAttachment> ApplicationChefsFileAttachmentList { get; set; } = new List<ApplicationChefsFileAttachment>();
 
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
@@ -78,6 +83,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             {
                 ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
             }
+
+            ApplicationChefsFileAttachmentList = await _grantApplicationAppService.GetApplicationChefsFileAttachments(ApplicationId);
         }
 
         public async Task<IActionResult> OnPostAsync()
