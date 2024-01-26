@@ -47,7 +47,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
-        private readonly IConfiguration _configuration;
+        public string ApplicationName { get; set; } = "";
+        public string ApplicationStatus { get; set; } = "";
+        public string ApplicationNumber { get; set; } = "";
 
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -56,15 +58,21 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             _grantApplicationAppService = grantApplicationAppService;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
-            _configuration = configuration;
-            Extensions =  _configuration["S3:DisallowedFileTypes"] ?? "";
-            MaxFileSize = _configuration["S3:MaxFileSize"] ?? "";
+            Extensions =  configuration["S3:DisallowedFileTypes"] ?? "";
+            MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         
         public async Task OnGetAsync()
         {
             var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(ApplicationId);
+
+            if(application != null) {
+                ApplicationName = application.ApplicationName;
+                ApplicationStatus = application.StatusCode.ToString();
+                ApplicationNumber = application.ReferenceNo.ToString();
+            }
             
             if (applicationFormSubmission != null)
             {
