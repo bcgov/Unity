@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.HostMigrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    partial class GrantManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240124203135_AddTenantTokens")]
+    partial class AddTenantTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -338,6 +341,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Value")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");

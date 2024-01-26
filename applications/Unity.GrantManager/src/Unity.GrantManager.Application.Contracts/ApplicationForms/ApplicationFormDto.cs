@@ -16,5 +16,6 @@ namespace Unity.GrantManager.ApplicationForms
         public string? AvailableChefsFields { get; set; }
         public string? Category { get; set; }
         public int? Version { get; set; }
+        public string? ApiToken { get; set; }
     }
 }

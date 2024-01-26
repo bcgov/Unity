@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.Controllers.Authentication
+﻿namespace Unity.GrantManager.ApplicationForms
 {
     public static class AuthConstants
     {

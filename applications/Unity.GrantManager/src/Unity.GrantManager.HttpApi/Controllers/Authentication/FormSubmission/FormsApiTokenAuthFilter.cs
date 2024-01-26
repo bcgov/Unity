@@ -3,14 +3,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
-using Unity.GrantManager.Controllers.Authentication;
 using Unity.GrantManager.ApplicationForms;
 using System;
-using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Newtonsoft.Json.Linq;
+using Unity.GrantManager.Controllers.Authentication.FormSubmission;
+using System.Web;
+using System.Text.RegularExpressions;
 
 namespace Unity.GrantManager.Controllers.Auth.FormSubmission
 {
@@ -18,29 +16,32 @@ namespace Unity.GrantManager.Controllers.Auth.FormSubmission
     {
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
-        private readonly IApplicationFormApiAppService _formsApiAppService;
-        private readonly IEnumerable<IFormIdResolver> _formIdResolvers;
+        private readonly IApplicationFormTokenAppService _formTokenAppService;
+        private readonly IEnumerable<IFormIdResolver> _formIdResolvers;        
 
         public FormsApiTokenAuthFilter(ITenantRepository tenantRepository,
             ICurrentTenant currentTenant,
-            IApplicationFormApiAppService formsApiAppService,
+            IApplicationFormTokenAppService formTokenAppService,
             IEnumerable<IFormIdResolver> formIdResolvers)
         {
             _currentTenant = currentTenant;
             _tenantRepository = tenantRepository;
-            _formsApiAppService = formsApiAppService;
+            _formTokenAppService = formTokenAppService;
             _formIdResolvers = formIdResolvers;
         }
 
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
-            if (!context.HttpContext.Request.Headers.TryGetValue(AuthConstants.ApiKeyHeader, out var extractedApiKey))
+            var apiToken = await GetTenantApiTokenAsync();
+            if (apiToken == null) { return; } // No API auth tokens setup for the tenant
+
+            if (!context.HttpContext.Request.Headers.TryGetValue(AuthConstants.ApiKeyHeader, out var extractedApiToken))
             {
                 context.Result = new UnauthorizedObjectResult("API Key missing");
                 return;
             }
 
-            var formId = await ResolveFormIdAsync(context);
+            Guid? formId = await ResolveFormIdAsync(context);
 
             if (formId == null)
             {
@@ -48,25 +49,31 @@ namespace Unity.GrantManager.Controllers.Auth.FormSubmission
                 return;
             }
 
-            var apiKey = await GetFormApiKeyAsync(formId.Value);
-            if (!apiKey.Equals(extractedApiKey))
+            var formattedApiToken = Regex.Unescape(HttpUtility.UrlDecode(extractedApiToken));
+            if (apiToken != formattedApiToken)
             {
                 context.Result = new UnauthorizedObjectResult("Invalid API Key");
             }
         }
 
-        private async Task<string> GetFormApiKeyAsync(Guid formId)
+        private async Task<string?> GetTenantApiTokenAsync()
         {
+            string? apiToken;
+
             if (_currentTenant.Id == null)
             {
                 var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
                 using (_currentTenant.Change(defaultTenant.Id, defaultTenant.Name))
                 {
-                    return await _formsApiAppService.GetToken(formId);
+                    apiToken = await _formTokenAppService.GetFormApiTokenAsync();
                 }
             }
+            else
+            {
+                apiToken = await _formTokenAppService.GetFormApiTokenAsync();
+            }
 
-            return _currentTenant.Id.Value.ToString();
+            return apiToken;
         }
 
         private async Task<Guid?> ResolveFormIdAsync(AuthorizationFilterContext context)
@@ -74,8 +81,8 @@ namespace Unity.GrantManager.Controllers.Auth.FormSubmission
             foreach (var formIdResolver in _formIdResolvers)
             {
                 var formId = await formIdResolver.ResolvedFormIdAsync(context);
-                
-                if (formId != null)
+
+                if (formId != null && formId != Guid.Empty)
                     return formId;
             }
 

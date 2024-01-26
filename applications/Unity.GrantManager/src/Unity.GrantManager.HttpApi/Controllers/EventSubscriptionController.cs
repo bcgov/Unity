@@ -6,12 +6,13 @@ using Unity.GrantManager.Intakes;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
-using System;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Unity.GrantManager.Controllers
 {
     [ApiController]
     [Route("api/chefs/event")]
+    [AllowAnonymous]
     public class EventSubscriptionController : AbpControllerBase
     {
         private readonly IIntakeSubmissionAppService _intakeSubmissionAppService;
@@ -50,25 +51,17 @@ namespace Unity.GrantManager.Controllers
             return await HandleIntakeEventAsync(eventSubscription);
         }
 
-        [HttpPost]
-        [Route("{__tenant}/{formId}")]
-        [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
-        public async Task<dynamic> PostEventSubscriptionTenantFormIdAsync([FromBody] EventSubscription eventSubscription, Guid formId)
-        {
-            return await HandleIntakeEventAsync(eventSubscription);
-        }
-
         private async Task<dynamic> HandleIntakeEventAsync(EventSubscription eventSubscription)
         {
-                EventSubscriptionDto eventSubscriptionDto = ObjectMapper.Map<EventSubscription, EventSubscriptionDto>(eventSubscription);
-                return eventSubscription.SubscriptionEvent switch
-                {
-                    ChefsEventTypesConsts.FORM_SUBMITTED => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
-                    ChefsEventTypesConsts.FORM_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
-                    ChefsEventTypesConsts.FORM_DRAFT_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
-                    ChefsEventTypesConsts.FORM_UN_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
-                    _ => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
-                };
+            EventSubscriptionDto eventSubscriptionDto = ObjectMapper.Map<EventSubscription, EventSubscriptionDto>(eventSubscription);
+            return eventSubscription.SubscriptionEvent switch
+            {
+                ChefsEventTypesConsts.FORM_SUBMITTED => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
+                ChefsEventTypesConsts.FORM_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
+                ChefsEventTypesConsts.FORM_DRAFT_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
+                ChefsEventTypesConsts.FORM_UN_PUBLISHED => await _iChefsEventSubscriptionService.PublishedFormAsync(eventSubscriptionDto),
+                _ => await _intakeSubmissionAppService.CreateIntakeSubmissionAsync(eventSubscriptionDto),
+            };
         }
     }
 }
