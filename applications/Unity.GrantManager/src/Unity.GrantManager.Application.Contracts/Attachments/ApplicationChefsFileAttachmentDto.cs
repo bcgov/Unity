@@ -6,8 +6,8 @@ namespace Unity.GrantManager.GrantApplications
     public class ApplicationChefsFileAttachmentDto : EntityDto<Guid>
     {
         public Guid ApplicationId { get; set; }
-        public string ChefsSumbissionId { get; set; }
-        public string ChefsFileId { get; set; }
+        public string ChefsSumbissionId { get; set; } = string.Empty;
+        public string ChefsFileId { get; set; } = string.Empty;
         public string? Name { get; set; }
     }
 }

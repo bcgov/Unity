@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Intakes
     public class IntakeFormSubmissionMapper : DomainService, IIntakeFormSubmissionMapper
     {
         private readonly Dictionary<string, string> components = new Dictionary<string, string>();
-        private IApplicationChefsFileAttachmentRepository _iApplicationChefsFileAttachmentRepository;
+        private readonly IApplicationChefsFileAttachmentRepository _iApplicationChefsFileAttachmentRepository;
 
         public IntakeFormSubmissionMapper(IApplicationChefsFileAttachmentRepository iApplicationChefsFileAttachmentRepository) {
             _iApplicationChefsFileAttachmentRepository = iApplicationChefsFileAttachmentRepository;
@@ -212,7 +212,7 @@ namespace Unity.GrantManager.Intakes
 
         }
 
-        private void FindNodes(JToken json, string name, List<JToken> nodes)
+        private static void FindNodes(JToken json, string name, List<JToken> nodes)
         {
             if (json.Type == JTokenType.Object)
             {

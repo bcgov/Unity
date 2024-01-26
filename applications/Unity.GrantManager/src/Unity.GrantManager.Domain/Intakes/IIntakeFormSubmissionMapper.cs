@@ -8,6 +8,6 @@ namespace Unity.GrantManager.Intakes
         string InitializeAvailableFormFields(dynamic formVersion);
 
         IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission, string? mapFormSubmissionFields);
-        void SaveChefsFiles(dynamic formSubmission, Guid applicantId);
+        void SaveChefsFiles(dynamic formSubmission, Guid applicationId);
     }
 }
