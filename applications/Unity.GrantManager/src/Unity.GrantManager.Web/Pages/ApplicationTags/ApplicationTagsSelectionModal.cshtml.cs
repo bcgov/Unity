@@ -191,11 +191,11 @@ namespace Unity.GrantManager.Web.Pages.ApplicationTags
                     }
                 }
 
-                await _applicationTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = removeDuplicates(applicationTagString) });
+                await _applicationTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = RemoveDuplicates(applicationTagString) });
             }
         }
 
-        private string removeDuplicates(string applicationTagString)
+        private string RemoveDuplicates(string applicationTagString)
         {
             var tagArray = applicationTagString.Split(",");
             var noDuplicates = tagArray.Distinct().ToArray();
