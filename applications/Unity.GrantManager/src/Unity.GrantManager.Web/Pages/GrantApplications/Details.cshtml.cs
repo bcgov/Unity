@@ -10,6 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Users;
 using Microsoft.Extensions.Configuration;
+using Unity.GrantManager.Applications;
 
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
@@ -44,10 +45,16 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public string? CurrentUserName { get; set; }
 
+
+        [BindProperty(SupportsGet = true)]
+        public List<ApplicationChefsFileAttachment> ApplicationChefsFileAttachmentList { get; set; } = new List<ApplicationChefsFileAttachment>();
+
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
-        private readonly IConfiguration _configuration;
+        public string ApplicationName { get; set; } = "";
+        public string ApplicationStatus { get; set; } = "";
+        public string ApplicationNumber { get; set; } = "";
 
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -56,20 +63,28 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             _grantApplicationAppService = grantApplicationAppService;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
-            _configuration = configuration;
-            Extensions =  _configuration["S3:DisallowedFileTypes"] ?? "";
-            MaxFileSize = _configuration["S3:MaxFileSize"] ?? "";
+            Extensions =  configuration["S3:DisallowedFileTypes"] ?? "";
+            MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         
         public async Task OnGetAsync()
         {
             var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(ApplicationId);
+
+            if(application != null) {
+                ApplicationName = application.ApplicationName;
+                ApplicationStatus = application.StatusCode.ToString();
+                ApplicationNumber = application.ReferenceNo.ToString();
+            }
             
             if (applicationFormSubmission != null)
             {
                 ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
             }
+
+            ApplicationChefsFileAttachmentList = await _grantApplicationAppService.GetApplicationChefsFileAttachments(ApplicationId);
         }
 
         public async Task<IActionResult> OnPostAsync()

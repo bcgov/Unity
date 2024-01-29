@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Text.Json;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Services;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Unity.GrantManager.Intakes
@@ -17,8 +16,11 @@ namespace Unity.GrantManager.Intakes
     public class IntakeFormSubmissionMapper : DomainService, IIntakeFormSubmissionMapper
     {
         private readonly Dictionary<string, string> components = new Dictionary<string, string>();
+        private readonly IApplicationChefsFileAttachmentRepository _iApplicationChefsFileAttachmentRepository;
 
-        public IntakeFormSubmissionMapper() { }
+        public IntakeFormSubmissionMapper(IApplicationChefsFileAttachmentRepository iApplicationChefsFileAttachmentRepository) {
+            _iApplicationChefsFileAttachmentRepository = iApplicationChefsFileAttachmentRepository;
+        }
 
         private readonly List<string> AllowableContainerTypes = new List<string> (new string[] 
             {
@@ -173,6 +175,62 @@ namespace Unity.GrantManager.Intakes
             else
             {
                 return ApplyDefaultConfigurationMapping(data, form);
+            }
+        }
+
+        public async void SaveChefsFiles(dynamic formSubmission, Guid applicationId)
+        {
+            try
+            {
+                var submission = formSubmission.submission;
+                var data = submission.submission.data;                
+                List<JToken> nodes = new List<JToken>();
+                FindNodes(data, "simplefile", nodes);
+#pragma warning disable S4158
+                foreach (JToken file in nodes)
+#pragma warning restore S4158
+                {
+                    var nodeName = ((JProperty)file).Name;
+                    dynamic? fileObject = new JObject(file);
+                    var id = fileObject[nodeName][0]["data"]["id"].Value;
+                    var originalName = fileObject[nodeName][0]["originalName"].Value;
+                    ApplicationChefsFileAttachment applicationChefsFileAttachment = new()
+                    {
+                        ApplicationId = applicationId,
+                        ChefsFileId = id,
+                        ChefsSumbissionId = submission.id,
+                        Name = originalName,
+                    };
+
+                    await _iApplicationChefsFileAttachmentRepository.InsertAsync(applicationChefsFileAttachment);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex);
+            }
+
+        }
+
+        private static void FindNodes(JToken json, string name, List<JToken> nodes)
+        {
+            if (json.Type == JTokenType.Object)
+            {
+                foreach (JProperty child in json.Children<JProperty>())
+                {
+                    if (child.Name.StartsWith(name))
+                    {
+                        nodes.Add(child);
+                    }
+                    FindNodes(child.Value, name, nodes);
+                }
+            }
+            else if (json.Type == JTokenType.Array)
+            {
+                foreach (JToken child in json.Children())
+                {
+                    FindNodes(child, name, nodes);
+                }
             }
         }
 
