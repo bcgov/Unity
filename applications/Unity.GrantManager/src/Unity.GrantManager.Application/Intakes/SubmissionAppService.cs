@@ -125,9 +125,9 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         if (((int)response.StatusCode) != 200)
         {
             throw new ApiException((int)response.StatusCode, "Error calling GetChefsFileAttachment: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
-        }
+        }        
 
-        return new BlobDto { Name = name, Content = response.RawBytes?? [], ContentType = response.ContentType ?? "application/octet-stream" };
+        return new BlobDto { Name = name, Content = response.RawBytes ?? Array.Empty<byte>(), ContentType = response.ContentType ?? "application/octet-stream" };
     }
 
 
