@@ -11,3 +11,7 @@
 #ApplicationFormsTable_filter input {
     margin: 0.25rem;
 }
+
+#FormsManageDropdown a {
+    cursor: pointer;
+}

@@ -12,11 +12,16 @@
     ViewBag.PageTitle = "ApplicationForms";
 }
 @section styles {
-    <abp-style src="/Pages/ApplicationForms/Index.css" />
+    <abp-style-bundle>
+        <abp-style src="/Pages/ApplicationForms/Index.css" />
+        <abp-style src="/Pages/ApplicationForms/TokenModal.css" />
+    </abp-style-bundle>
 }
-@section scripts
-    {
-    <abp-script src="/Pages/ApplicationForms/Index.js" />
+@section scripts {
+    <abp-script-bundle>
+        <abp-script src="/Pages/ApplicationForms/Index.js" />
+        <abp-script src="/Pages/ApplicationForms/TokenModal.js" />
+    </abp-script-bundle>
 }
 
 <div class="container-fluid px-2">
@@ -30,8 +35,14 @@
                         icon-type="Other"
                         icon="fl fl-add-to"
                         button-type="Light" />
+            <abp-dropdown id="FormsManageDropdown">
+                <abp-dropdown-button button-type="Secondary" text="@L["ApplicationForms:APIConfiguration"].Value" icon-type="Other" icon="fl fl-settings" />
+                <abp-dropdown-menu>
+                    <abp-dropdown-item id="SetApiTokenBtn">@L["ApplicationForms:UpdateAPIToken"].Value</abp-dropdown-item>
+                    <abp-dropdown-item id="GetApiTokenBtn">@L["ApplicationForms:DownloadAPIConfiguration"].Value</abp-dropdown-item>
+                </abp-dropdown-menu>
+            </abp-dropdown>
         </abp-column>
     </div>
     <abp-table id="ApplicationFormsTable"></abp-table>
 </div>
-

@@ -14,12 +14,18 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Controllers.Auth.FormSubmission;
+using Unity.GrantManager.Controllers.Authentication.FormSubmission;
+using Unity.GrantManager.Controllers.Authentication.FormSubmission.FormIdResolvers;
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
+using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
@@ -93,8 +99,9 @@ public class GrantManagerWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
-        ConfigurePolicies(context);
+        ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);
+        ConfigurePolicies(context);
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureAutoMapper();
@@ -148,6 +155,15 @@ public class GrantManagerWebModule : AbpModule
         {
             x.ApplicationName = "GrantManager";
         });
+    }
+
+    private static void ConfgureFormsApiAuhentication(ServiceConfigurationContext context)
+    {
+        context.Services.AddScoped<FormsApiTokenAuthFilter>();
+        context.Services.AddScoped<IFormIdResolver, FormIdHeadersResolver>();
+        context.Services.AddScoped<IFormIdResolver, FormIdQueryStringResolver>();
+        context.Services.AddScoped<IFormIdResolver, FormIdRequestBodyResolver>();
+        context.Services.AddScoped<IFormIdResolver, FormIdRouteResolver>();
     }
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
@@ -324,6 +340,15 @@ public class GrantManagerWebModule : AbpModule
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "GrantManager API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
                 options.CustomSchemaIds(type => type.FullName);
+                options.OperationFilter<ApiTokenAuthorizationHeaderParameter>();
+                options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+                {
+                    Name = AuthConstants.ApiKeyHeader,
+                    Description = "Authorization by x-api-key inside request's header",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,                    
+                    Scheme = "ApiKeyScheme"                    
+                });
             }
         );
     }

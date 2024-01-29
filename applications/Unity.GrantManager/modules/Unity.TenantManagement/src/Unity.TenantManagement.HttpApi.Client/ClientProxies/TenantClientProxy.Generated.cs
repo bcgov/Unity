@@ -77,12 +77,4 @@ public partial class TenantClientProxy : ClientProxyBase<ITenantAppService>, ITe
             { typeof(Guid), id }
         });
     }
-
-    public virtual async Task AssignManagerAsync(TenantAssignManagerDto input)
-    {
-        await RequestAsync(nameof(AssignManagerAsync), new ClientProxyRequestTypeValue
-        {            
-            { typeof(TenantAssignManagerDto), input }
-        });
-    }
 }

@@ -1,0 +1,27 @@
+﻿@page
+@using Unity.GrantManager.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Unity.GrantManager.Web.Pages.ApplicationForms.TokenModalModel
+@inject IStringLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+
+<form id="AppFormsTokenForm" method="post" action="@Url.Page("/ApplicationForms/TokenModal")">
+    <abp-modal>
+        <abp-modal-header title="@L["Common:Command:Update"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <div class="app-forms-token-wrapper">
+                <abp-input asp-for="@Model.Token" class="app-forms-token-input" id="ApplicationForm_ApiToken" />
+                <div class="app-forms-token-btns">
+                    <abp-button type="button" id="GenerateApiTokenBtn" class="btn btn-icon" abp-tooltip="Generate"><i class="fl fl-update-restore"></i></abp-button>
+                    <abp-button type="button" id="ViewApiTokenBtn" class="btn btn-icon" abp-tooltip="View"><i class="fl fl-red-eye"></i></abp-button>
+                    <abp-button type="button" id="CopyApiTokenBtn" class="btn btn-icon" abp-tooltip="Copy"><i class="fl fl-copy"></i></abp-button>
+                    <abp-button type="button" id="ClearApiTokenBtn" class="btn btn-icon" abp-tooltip="Delete"><i class="fl fl-delete"></i></abp-button>
+                </div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Save|AbpModalButtons.Cancel)"></abp-modal-footer>
+    </abp-modal>
+</form>

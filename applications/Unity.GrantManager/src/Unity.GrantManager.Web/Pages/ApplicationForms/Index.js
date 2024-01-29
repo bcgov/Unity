@@ -1,10 +1,15 @@
 ﻿$(function () {
     const l = abp.localization.getResource('GrantManager');
     let createModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/CreateModal');
-    let updateModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/UpdateModal');
+    let updateModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/UpdateModal');        
+    let tokenModal = new abp.ModalManager({
+        viewUrl: '/ApplicationForms/TokenModal',
+        modalClass: 'ManageTokens'
+    })
+    let _applicationFormsAppService = unity.grantManager.applicationForms.applicationForm;
 
     /**
-     * Intakes: List All
+     * Application Forms: List All
      */
     let dataTable = $('#ApplicationFormsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -13,8 +18,28 @@
             order: [[1, "asc"]],
             searching: true,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(unity.grantManager.applicationForms.applicationForm.getList),
+            ajax: abp.libs.datatables.createAjax(_applicationFormsAppService.getList),
             columnDefs: [
+                {
+                    title: l('Actions'),
+                    rowAction: {
+                        items:
+                            [
+                                {
+                                    text: l('Common:Command:Edit'),
+                                    action: function (data) {
+                                        updateModal.open({ id: data.record.id })
+                                    }
+                                },
+                                {
+                                    text: l('ApplicationForms:Mapping'),
+                                    action: function (data) {
+                                        location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id
+                                    }
+                                },
+                            ]
+                    }
+                },
                 {
                     title: l('Common:Name'),
                     data: "applicationFormName"
@@ -24,37 +49,12 @@
                     data: "applicationFormDescription",
                 },
                 {
+                    title: l('ApplicationForms:Category'),
+                    data: "category",
+                },
+                {
                     title: l('ApplicationForms:ChefsFormId'),
                     data: "chefsApplicationFormGuid",
-                },
-                {
-                    title: l("ApplicationForms:ChefsCriteriaFormId"),
-                    data: "chefsCriteriaFormGuid"
-                },
-                {
-                    title: l('Common:Command:Edit'),
-                    rowAction: {
-                        items:
-                            [
-                                {
-                                    text: l('Common:Command:Edit'),
-                                    action: (data) => updateModal.open({ id: data.record.id })
-                                }
-                            ]
-                    }
-                },
-                {
-                    title: 'Mapping',
-                    rowAction: {
-                        items:
-                            [
-                                {
-                                    text: 'Mapping',
-                                    action: (data) => location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id,
-                                    enabled: (data) => { return true; }
-                                }
-                            ]
-                    }
                 }
             ]
         })
@@ -73,6 +73,20 @@
         createModal.open();
     });
 
+    $('#SetApiTokenBtn').click(function (e) {
+        e.preventDefault();
+        tokenModal.open();
+    });
+
+    $('#GetApiTokenBtn').click(function (e) {
+        e.preventDefault();
+        let link = document.createElement("a");
+        link.setAttribute('download', '');
+        link.href = '/api/app/configurationFile/applicationforms';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    });
 });
 
 

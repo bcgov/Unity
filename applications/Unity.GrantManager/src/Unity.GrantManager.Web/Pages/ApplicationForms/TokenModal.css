@@ -1,0 +1,34 @@
+﻿.app-forms-token-input {
+    color: var(--bc-colors-grey-text-200);
+    pointer-events: none;
+    background-color: var(--bc-colors-grey-hover) !important;
+    opacity: var(--bs-btn-disabled-opacity);
+    background-blend-mode: difference;
+    border: none !important;
+}
+
+.app-forms-token-wrapper {
+    display: flex;
+}
+
+    .app-forms-token-wrapper > div:first-child {
+        flex: 1;
+    }
+
+    .app-forms-token-wrapper > div:last-child {
+        margin-left: auto;
+    }
+
+.app-forms-token-btns {
+    display: flex;
+    align-items: center;
+    margin-bottom: -12px;
+}
+
+    .app-forms-token-btns button {
+        padding: 0.15rem;
+    }
+
+.app-forms-btn-toggled {
+    background-color: var(--bc-colors-grey-text-100, lightgray);
+}

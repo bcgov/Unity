@@ -319,3 +319,18 @@
     content: '\E8EC';
 }
 
+.fl-copy:before {
+    content: '\E8C8';
+}
+
+.fl-update-restore:before {
+    content: '\E777';
+}
+
+.fl-red-eye:before {
+    content: '\E7B3';
+}
+
+.fl-delete:before {
+    content: '\E74D';
+}
