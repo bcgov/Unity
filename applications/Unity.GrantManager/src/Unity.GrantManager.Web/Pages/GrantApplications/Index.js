@@ -96,11 +96,13 @@
         let filterValue = $('.dataTables_filter input').val();
         if (filterValue.length > 0) {
             $('#externalLink').prop('disabled', true);
+            $('#applicationLink').prop('disabled', true);
             Array.from(document.getElementsByClassName('selected')).forEach(
                 function (element, index, array) {
                     element.classList.toggle('selected');
                 }
             );
+            PubSub.publish("deselect_application", "reset_data");
         }
     }
 
