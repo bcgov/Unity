@@ -44,14 +44,19 @@ namespace Unity.GrantManager.Controllers
             using (var ms = new MemoryStream())
             {
                 using TextWriter tw = new StreamWriter(ms);
-                tw.Write(JsonSerializer.Serialize(await _applicationFormConfigurationAppService.GetConfiguration(), options: new JsonSerializerOptions() { WriteIndented = true }));
+                tw.Write(JsonSerializer.Serialize(await _applicationFormConfigurationAppService.GetConfiguration(), 
+                    options: new JsonSerializerOptions() 
+                        { 
+                            WriteIndented = true,
+                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                        }));
                 tw.Flush();
                 ms.Position = 0;
                 bytes = ms.ToArray();
                 ms.Close();
             }
 
-            return File(bytes, "application/json", $"forms-config-{_currentTenant.Id}.json");
+            return File(bytes, "application/json", $"forms-config-{_currentTenant.Id}.txt");
         }
     }
 }

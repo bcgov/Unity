@@ -7,8 +7,6 @@ using Unity.GrantManager.ApplicationForms;
 using System;
 using System.Collections.Generic;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission;
-using System.Web;
-using System.Text.RegularExpressions;
 
 namespace Unity.GrantManager.Controllers.Auth.FormSubmission
 {
@@ -49,8 +47,7 @@ namespace Unity.GrantManager.Controllers.Auth.FormSubmission
                 return;
             }
 
-            var formattedApiToken = Regex.Unescape(HttpUtility.UrlDecode(extractedApiToken));
-            if (apiToken != formattedApiToken)
+            if (apiToken != extractedApiToken)
             {
                 context.Result = new UnauthorizedObjectResult("Invalid API Key");
             }
