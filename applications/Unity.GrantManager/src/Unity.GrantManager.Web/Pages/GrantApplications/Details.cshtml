@@ -142,9 +142,9 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                 </li>
-                <li class="nav-item" role="presentation">
+                @* <li class="nav-item" role="presentation">
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="chefs_file_count">@Model.ApplicationChefsFileAttachmentList.Count</span>)</button>
-                </li>
+                </li> *@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
                 </li>
@@ -230,25 +230,13 @@
 
                 @*-------- Links Tab Section ---------*@
                 <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab" style="text-align:center">
-                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Chefs File Attachments</h6>
-                    @foreach (var applicationChefsFileAttachmentList in Model.ApplicationChefsFileAttachmentList)
-                    {
-                        <div class="px-3 pb-2 chefs-attachment">
-                            <a href="/api/app/attachment/chefs/@Model.ApplicationFormSubmissionId/download/@applicationChefsFileAttachmentList.ChefsFileId/@Uri.EscapeDataString(@applicationChefsFileAttachmentList.Name??"")" target="_blank" download="@applicationChefsFileAttachmentList.Name" class="fullwidth">
-                                <abp-button text="@applicationChefsFileAttachmentList.Name"
-                                            icon-type="Other"
-                                            file-id="@applicationChefsFileAttachmentList.ChefsFileId"
-                                            icon="fl fl-download"
-                                            button-type="Light" />
-                            </a>
-                        </div>
-                    }
+                    <img src="/images/under-construction.png" alt="under-construction">
                 </div>
                 @*------- Links Tab Section END ---------*@
 
                 @*-------- Attachments Tab Section ---------*@
                 <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
-
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Application Attachments</h6>
                     @await Component.InvokeAsync("ApplicationAttachments")
 
                     <div class="d-flex justify-content-end m-3">
@@ -261,6 +249,24 @@
                                         button-type="Light" />
                         </form>
                     </div>
+
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Submission Attachments</h6>
+                    @foreach (var applicationChefsFileAttachmentList in Model.ApplicationChefsFileAttachmentList)
+                    {
+                        <div class="px-3 pb-2 chefs-attachment">
+                            <a href="/api/app/attachment/chefs/@Model.ApplicationFormSubmissionId/download/@applicationChefsFileAttachmentList.ChefsFileId/@Uri.EscapeDataString(@applicationChefsFileAttachmentList.Name??"")" target="_blank" download="@applicationChefsFileAttachmentList.Name" class="fullwidth">
+                                <abp-button text="@applicationChefsFileAttachmentList.Name"
+                                            icon-type="Other"
+                                            file-id="@applicationChefsFileAttachmentList.ChefsFileId"
+                                            icon="fl fl-download"
+                                            button-type="Light" />
+                            </a>
+                        </div>
+                    }
+                    @if (Model.ApplicationChefsFileAttachmentList.IsNullOrEmpty())
+                    {
+                        <div class="px-3 pb-2 chefs-attachment">No data available</div>
+                    }
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
             </div>
