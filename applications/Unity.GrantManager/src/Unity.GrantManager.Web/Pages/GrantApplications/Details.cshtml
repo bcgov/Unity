@@ -251,22 +251,7 @@
                     </div>
 
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Submission Attachments</h6>
-                    @foreach (var applicationChefsFileAttachmentList in Model.ApplicationChefsFileAttachmentList)
-                    {
-                        <div class="px-3 pb-2 chefs-attachment">
-                            <a href="/api/app/attachment/chefs/@Model.ApplicationFormSubmissionId/download/@applicationChefsFileAttachmentList.ChefsFileId/@Uri.EscapeDataString(@applicationChefsFileAttachmentList.Name??"")" target="_blank" download="@applicationChefsFileAttachmentList.Name" class="fullwidth">
-                                <abp-button text="@applicationChefsFileAttachmentList.Name"
-                                            icon-type="Other"
-                                            file-id="@applicationChefsFileAttachmentList.ChefsFileId"
-                                            icon="fl fl-download"
-                                            button-type="Light" />
-                            </a>
-                        </div>
-                    }
-                    @if (Model.ApplicationChefsFileAttachmentList.IsNullOrEmpty())
-                    {
-                        <div class="px-3 pb-2 chefs-attachment">No data available</div>
-                    }
+                    <abp-table id="ChefsAttachmentsTable" hoverable-rows="true" class="attachments-table"></abp-table>
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
             </div>

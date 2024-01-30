@@ -18,14 +18,17 @@ namespace Unity.GrantManager.GrantApplications
         private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
         private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
         private readonly IPersonRepository _personRepository;
+        private readonly IApplicationChefsFileAttachmentRepository _applicationChefsFileAttachmentRepository;
 
         public AttachmentService(IApplicationAttachmentRepository applicationAttachmentRepository, 
             IAssessmentAttachmentRepository assessmentAttachmentRepository,
-            IPersonRepository personUserRepository)
+            IPersonRepository personUserRepository,
+            IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository)
         {
             _applicationAttachmentRepository = applicationAttachmentRepository;
             _assessmentAttachmentRepository = assessmentAttachmentRepository;
             _personRepository = personUserRepository;
+            _applicationChefsFileAttachmentRepository = applicationChefsFileAttachmentRepository;
         }
 
         public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
@@ -62,6 +65,11 @@ namespace Unity.GrantManager.GrantApplications
                         };
 
             return query.ToList();
+        }
+
+        public async Task<List<ApplicationChefsFileAttachment>> GetApplicationChefsFileAttachmentsAsync(Guid applicationId)
+        {
+            return await _applicationChefsFileAttachmentRepository.GetListAsync(applicationId);
         }
     }
 }
