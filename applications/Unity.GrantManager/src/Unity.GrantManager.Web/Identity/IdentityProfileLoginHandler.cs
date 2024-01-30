@@ -90,10 +90,7 @@ namespace Unity.GrantManager.Web.Identity
             // filter out host account if coming in as tenant - add support for this later
             userTenantAccounts = userTenantAccounts?.Where(s => s.TenantId != null).ToList();
             if (userTenantAccounts == null || userTenantAccounts.Count == 0)
-            {
-                // Needs to be called to sign out
-                await validatedTokenContext.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                await validatedTokenContext.HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
+            {                        
                 throw new NoGrantProgramsLinkedException("User is not linked to any grant programs");
             }
 
