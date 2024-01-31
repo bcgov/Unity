@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Forms;
-using Unity.GrantManager.Web.ViewModels;
+using Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels;
 
 namespace Unity.GrantManager.Web.Mapping
 {
@@ -9,7 +9,7 @@ namespace Unity.GrantManager.Web.Mapping
     {
         public ApplicationFormsMapper()
         {
-            CreateMap<ApplicationFormDto, CreateUpdateApplicationFormDto>();
+            CreateMap<ApplicationFormDto, CreateUpdateApplicationFormDto>();            
             CreateMap<CreateUpdateApplicationFormViewModel, CreateUpdateApplicationFormDto>();
             CreateMap<ApplicationFormDto, CreateUpdateApplicationFormViewModel>();
         }

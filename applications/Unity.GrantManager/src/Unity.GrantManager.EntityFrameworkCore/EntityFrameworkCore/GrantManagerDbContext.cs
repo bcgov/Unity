@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Unity.GrantManager.Locality;
+using Unity.GrantManager.Tokens;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -33,6 +34,8 @@ public class GrantManagerDbContext :
     public DbSet<ElectoralDistrict> ElectoralDistricts { get; set; }
     public DbSet<RegionalDistrict> RegionalDistricts { get; set; }
     public DbSet<CensusSubdivision> CensusSubdivisions { get; set; }
+    public DbSet<TenantToken> TenantTokens { get; set; }
+
 
     #region Entities from the modules
 
@@ -76,7 +79,7 @@ public class GrantManagerDbContext :
         modelBuilder.ConfigureSettingManagement();
         modelBuilder.ConfigureBackgroundJobs();
         modelBuilder.ConfigureAuditLogging();
-        modelBuilder.ConfigureIdentity();        
+        modelBuilder.ConfigureIdentity();
         modelBuilder.ConfigureFeatureManagement();
         modelBuilder.ConfigureTenantManagement();
 
@@ -125,6 +128,13 @@ public class GrantManagerDbContext :
         modelBuilder.Entity<RegionalDistrict>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "RegionalDistricts",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+        modelBuilder.Entity<TenantToken>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "TenantTokens",
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();

@@ -9,7 +9,6 @@ using Volo.Abp.Uow;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
 using Xunit.Abstractions;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Comments
 {

@@ -10,7 +10,10 @@
     string[] userNameInitialsArr = userName.Split(" ");
     string userNameInitials = userNameInitialsArr[0].Truncate(1) + ((userNameInitialsArr.Length > 1) ? userNameInitialsArr[1].Truncate(1) : "");
 
-    string pageTitle = CurrentTenant.Name + " - " + ViewBag.PageTitle;
+    string pageTitle = CurrentTenant.Name;
+    if (ViewBag.PageTitle != null) {
+        pageTitle += $" / {ViewBag.PageTitle}";
+    }
 }
 
 <nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-sub-navbar" id="sub-navbar">
@@ -39,12 +42,12 @@
             </div>
         </div>
         <div class="d-flex">
-            <div class="">
+            <div class="" style="display:none">
                 <button type="button" class="btn btn-icon">
                     <i class="fs-5 fl fl-settings"></i>
                 </button>
             </div>
-            <div class="mx-1">
+            <div class="mx-1" style="display:none">
                 <button type="button" class="btn btn-icon">
                     <i class="fs-5 fl fl-unknown"></i>
                 </button>

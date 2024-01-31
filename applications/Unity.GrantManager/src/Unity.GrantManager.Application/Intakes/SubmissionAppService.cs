@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using RestSharp;
+using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Attachments;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
@@ -19,6 +21,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
     private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
     private readonly RestClient _intakeClient;
+    private readonly IStringEncryptionService _stringEncryptionService;
     private static List<string> SummaryFieldsFilter
     {
         // NOTE: This will be replaced by a customizable filter.
@@ -45,6 +48,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _applicationFormRepository = applicationFormRepository;
         _intakeClient = restClient;
+        _stringEncryptionService = stringEncryptionService;
     }
 
 
@@ -81,6 +85,51 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
         return applicationFormSubmisssion.Submission;
     }
 
+    public async Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name)
+    {
+        if (formSubmissionId == null)
+        {
+            throw new ApiException(400, "Missing required parameter 'formId' when calling GetSubmission");
+        }
+
+        if (chefsFileAttachmentId == null)
+        {
+            throw new ApiException(400, "Missing required parameter 'chefsFileAttachmentId' when calling GetFileAttachment");
+        }
+
+        ApplicationForm? applicationForm = await GetApplicationFormBySubmissionId(formSubmissionId);
+
+        if (applicationForm == null)
+        {
+            throw new ApiException(400, "Missing Form configuration");
+        }
+
+        if (applicationForm.ChefsApplicationFormGuid == null)
+        {
+            throw new ApiException(400, "Missing CHEFS form Id");
+        }
+
+        if (applicationForm.ApiKey == null)
+        {
+            throw new ApiException(400, "Missing CHEFS Api Key");
+        }
+
+        var request = new RestRequest($"/files/{chefsFileAttachmentId}", Method.Get)
+        {
+            Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
+        };
+
+        var response = await _intakeClient.GetAsync(request);
+
+
+        if (((int)response.StatusCode) != 200)
+        {
+            throw new ApiException((int)response.StatusCode, "Error calling GetChefsFileAttachment: " + response.Content, response.ErrorMessage ?? $"{response.StatusCode}");
+        }        
+
+        return new BlobDto { Name = name, Content = response.RawBytes ?? Array.Empty<byte>(), ContentType = response.ContentType ?? "application/octet-stream" };
+    }
+
 
     public async Task<ApplicationForm?> GetApplicationFormBySubmissionId(Guid? formSubmissionId)
     {
@@ -103,7 +152,7 @@ public class SubmissionAppService : GrantManagerAppService, ISubmissionAppServic
 
         if (formSubmissionId != null)
         {
-            var query = from applicationFormSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()                       
+            var query = from applicationFormSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()
                         where applicationFormSubmission.ChefsSubmissionGuid == formSubmissionId.ToString()
                         select applicationFormSubmission;
             applicationFormSubmissionData = await AsyncExecuter.FirstOrDefaultAsync(query);

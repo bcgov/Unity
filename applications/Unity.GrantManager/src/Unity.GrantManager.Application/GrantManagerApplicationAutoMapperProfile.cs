@@ -35,6 +35,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
                 dest => dest.StartDate,
                 opts => opts.MapFrom(src => src.CreationTime));
         CreateMap<AssessmentWithAssessorQueryResultItem, AssessmentListItemDto>();
+        CreateMap<ApplicationChefsFileAttachment, ApplicationChefsFileAttachmentDto>();
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();

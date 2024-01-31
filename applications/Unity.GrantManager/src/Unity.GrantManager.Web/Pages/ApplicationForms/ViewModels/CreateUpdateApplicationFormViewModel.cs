@@ -5,7 +5,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 
-namespace Unity.GrantManager.Web.ViewModels
+namespace Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels
 {
     public class CreateUpdateApplicationFormViewModel
     {
@@ -13,8 +13,8 @@ namespace Unity.GrantManager.Web.ViewModels
         public Guid IntakeId { get; set; }
 
         [Required]
-        public List<SelectListItem> IntakesList { get; set; } = new List<SelectListItem>();       
-        
+        public List<SelectListItem> IntakesList { get; set; } = new List<SelectListItem>();
+
         [DisabledInput]
         [DisplayName("Common:Name")]
         public string ApplicationFormName { get; set; } = string.Empty;
@@ -28,7 +28,7 @@ namespace Unity.GrantManager.Web.ViewModels
         public string? ApiKey { get; set; }
 
         [DisplayName("Common:Description")]
-        public string? ApplicationFormDescription { get; set; }        
+        public string? ApplicationFormDescription { get; set; }
 
         [DisplayName("ApplicationForms:Category")]
         public string? Category { get; set; }

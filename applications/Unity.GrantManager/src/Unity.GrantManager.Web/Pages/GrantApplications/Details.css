@@ -279,3 +279,29 @@ select.selected{
 .formio-component-submit{
     display: none;
 }
+
+.chefs-attachment a {
+    text-decoration: none;
+    display: block;
+}
+
+.chefs-attachment a:hover {
+    background-color: #f1f1f1;
+}
+
+#formio a {
+    pointer-events: none;
+    cursor: default;
+    text-decoration: none;
+    color: black;
+}
+
+#ChefsAttachmentsTable_wrapper .dataTables_scrollBody {
+    overflow: unset !important;
+}
+
+#ChefsAttachmentsTable a {
+    text-decoration: none;
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
+}

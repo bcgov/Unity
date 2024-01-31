@@ -47,13 +47,13 @@ namespace Unity.GrantManager.ApplicationForms
         public override async Task<ApplicationFormDto> CreateAsync(CreateUpdateApplicationFormDto input)
         {
             input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);
-            ApplicationFormDto applicationFormDto = await base.CreateAsync(input);            
+            ApplicationFormDto applicationFormDto = await base.CreateAsync(input);
             return await InitializeFormVersion(applicationFormDto.Id, input);
         }
 
         public override async Task<ApplicationFormDto> UpdateAsync(Guid id, CreateUpdateApplicationFormDto input)
         {
-            input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);                        
+            input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);
             return await InitializeFormVersion(id, input); 
         }
 
@@ -91,6 +91,7 @@ namespace Unity.GrantManager.ApplicationForms
         {
             var dto = await base.GetAsync(id);
             dto.ApiKey = _stringEncryptionService.Decrypt(dto.ApiKey);
+            dto.ApiToken = _stringEncryptionService.Decrypt(dto.ApiToken);
             return dto;
         }
 

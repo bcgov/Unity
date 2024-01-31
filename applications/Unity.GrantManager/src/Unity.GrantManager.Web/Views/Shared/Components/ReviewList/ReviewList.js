@@ -191,6 +191,10 @@ $(function () {
         refreshReviewList(data, reviewListTable);
     });
 
+    PubSub.subscribe('refresh_review_list_without_select', (msg, data) => {
+        refreshReviewList(data, reviewListTable, false);
+    });
+
     PubSub.subscribe(
         'assessment_action_completed',
         (msg, data) => {
@@ -215,7 +219,6 @@ $(function () {
 function handleRowSelection(e, dt, type, indexes, reviewListTable) {
     if (type === 'row') {
         let selectedData = reviewListTable.row(indexes).data();
-        console.log('Selected Data:', selectedData);
         document.getElementById("AssessmentId").value = selectedData.id;
         PubSub.publish('select_application_review', selectedData);
         PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
@@ -233,14 +236,15 @@ function handleRowDeselection(e, dt, type, indexes, reviewListTable) {
     }
 }
 
-function refreshReviewList(data, reviewListTable) {
+function refreshReviewList(data, reviewListTable, isSelect = true) {
     reviewListTable.ajax.reload(function (json) {
         if (data) {
             let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
                 return reviewListTable.cell(rowIdx, 0).data() === data;
             });
-
-            reviewListTable.row(indexes).select();
+            if(isSelect) {
+                reviewListTable.row(indexes).select();
+            }
         }
     });
 }

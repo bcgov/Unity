@@ -157,7 +157,7 @@ $(function () {
                     abp.notify.success(
                         'The recommendation has been updated.'
                     );
-                    PubSub.publish('refresh_review_list', id);
+                    PubSub.publish('refresh_review_list_without_select', id);
                 });
 
         }
@@ -338,7 +338,60 @@ $(function () {
     }
 
     initializeDetailsPage();
+    let inputAction = function (requestData, dataTableSettings) {
+        const urlParams = new URL(window.location.toLocaleString()).searchParams;
+        const applicationId = urlParams.get('ApplicationId');
+        return applicationId;
+    }
+    let responseCallback = function (result) {
+        return {
+            data: result
+        };
+    };
 
+    
+    const dataTable = $('#ChefsAttachmentsTable').DataTable(
+        abp.libs.datatables.normalizeConfiguration({
+            serverSide: false,
+            order: [[2, 'asc']],
+            searching: false,
+            paging: false,
+            select: false,
+            info: false,
+            scrollX: true,
+            ajax: abp.libs.datatables.createAjax(
+                unity.grantManager.grantApplications.attachment.getApplicationChefsFileAttachments, inputAction, responseCallback
+            ),
+            columnDefs: [
+                {
+                    title: '<i class="fl fl-paperclip" ></i>',
+                    render: function (data) {
+                        return '<i class="fl fl-paperclip" ></i>';
+                    },
+                    orderable: false
+                },
+                {
+                    title: l('AssessmentResultAttachments:DocumentName'),
+                    data: 'name',
+                    className: 'data-table-header',
+                },
+                {
+                    title: '',
+                    data: 'chefsFileId',
+                    render: function (data, type, full, meta) {
+                        let html = '<a href="/api/app/attachment/chefs/' + encodeURIComponent(full.chefsSumbissionId) + '/download/' + encodeURIComponent(data) + '/' + encodeURIComponent(full.name) + '" target = "_blank" download = "' + full.name + '" >';
+                        html += '<button class="btn" type="button"><i class="fl fl-download"></i><span>Download</span></button></a>';
+                        return html;
+                    },
+                    orderable: false
+                }
+            ],
+        })
+    );
+
+    $('#attachments-tab').one('click', function () {
+        dataTable.columns.adjust();
+    });
 });
 
 function uploadApplicationFiles(inputId) {    

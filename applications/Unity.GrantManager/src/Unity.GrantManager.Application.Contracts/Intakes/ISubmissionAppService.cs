@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.Attachments;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -24,4 +25,13 @@ public interface ISubmissionAppService : IApplicationService
     /// <param name="formSubmissionId">ID of the Submission</param>
     /// <returns>SubmissionFormVersion</returns>
     Task<object?> GetSubmission(Guid? formSubmissionId);
+
+    /// <summary>
+    /// Get chefs file attachment
+    /// </summary>
+    /// <param name="formSubmissionId">ID of the Submission</param>
+    /// <param name="chefsFileAttachmentId">ID of the Chefs file attachment</param>
+    /// <param name="name">File name of the chefs attachment</param>
+    /// <returns>BlobDto</returns>
+    Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name);
 }

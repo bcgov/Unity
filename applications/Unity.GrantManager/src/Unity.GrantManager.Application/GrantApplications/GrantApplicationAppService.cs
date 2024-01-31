@@ -49,7 +49,9 @@ public class GrantApplicationAppService :
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
 
+#pragma warning disable IDE0290 // Use primary constructor
     public GrantApplicationAppService(IRepository<Application, Guid> repository,
+#pragma warning restore IDE0290 // Use primary constructor
         IApplicationManager applicationManager,
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,

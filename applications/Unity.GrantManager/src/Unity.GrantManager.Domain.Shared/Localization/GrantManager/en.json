@@ -140,6 +140,11 @@
     "ApplicationForms:ChefsCriteriaFormId": "CHEFS Criteria Form Id",
     "ApplicationForms:ChefsFormApiKey": "CHEFS Form Api Key",
     "ApplicationForms:Category": "Category",
+    "ApplicationForms:FormApiToken": "API Token",
+    "ApplicationForms:Mapping": "Mapping",
+    "ApplicationForms:APIConfiguration": "API Configuration",
+    "ApplicationForms:DownloadAPIConfiguration": "Download API Configuration",
+    "ApplicationForms:UpdateAPIToken": "Update API Token",
 
     "Intakes": "Intakes",
 
