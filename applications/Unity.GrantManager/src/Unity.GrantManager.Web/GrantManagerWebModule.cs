@@ -19,6 +19,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.BackgroundWorkers;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission.FormIdResolvers;
@@ -95,7 +96,7 @@ public class GrantManagerWebModule : AbpModule
         });
     }
 
-    public override void ConfigureServices(ServiceConfigurationContext context)
+    public override async void ConfigureServices(ServiceConfigurationContext context)
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
@@ -114,7 +115,7 @@ public class GrantManagerWebModule : AbpModule
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
-            options.IsJobExecutionEnabled = false; //Disables job execution
+            options.IsJobExecutionEnabled = true; // Highlighting that is enabled
         });
 
         Configure<AbpAntiForgeryOptions>(options =>
@@ -360,8 +361,8 @@ public class GrantManagerWebModule : AbpModule
                     Name = AuthConstants.ApiKeyHeader,
                     Description = "Authorization by x-api-key inside request's header",
                     In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.ApiKey,                    
-                    Scheme = "ApiKeyScheme"                    
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "ApiKeyScheme"
                 });
             }
         );
