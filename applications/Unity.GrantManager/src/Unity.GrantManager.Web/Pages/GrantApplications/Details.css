@@ -295,3 +295,13 @@ select.selected{
     text-decoration: none;
     color: black;
 }
+
+#ChefsAttachmentsTable_wrapper .dataTables_scrollBody {
+    overflow: unset !important;
+}
+
+#ChefsAttachmentsTable a {
+    text-decoration: none;
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
+}
