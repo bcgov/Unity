@@ -10,14 +10,13 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
+#pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member. - ABP pattern issue, will not fix
+
 namespace Unity.GrantManager.Repositories
 {
     [Dependency(ReplaceServices = true)]
-    [ExposeServices(typeof(IAssessmentAttachmentRepository))]
-#pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
-    // This pattern is an implementation ontop of ABP framework, will not change this
+    [ExposeServices(typeof(IAssessmentAttachmentRepository))]    
     public class AssessmentAttachmentRepository : EfCoreRepository<GrantTenantDbContext, AssessmentAttachment, Guid>, IAssessmentAttachmentRepository
-#pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
         public AssessmentAttachmentRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
         {
@@ -28,7 +27,9 @@ namespace Unity.GrantManager.Repositories
             return await dbSet
                 .WhereIf(
                     !filter.IsNullOrWhiteSpace(),
-                    assessmentAttachment => assessmentAttachment.FileName.Contains(filter)
+                    assessmentAttachment => 
+                        assessmentAttachment.FileName != null 
+                        && assessmentAttachment.FileName.Contains(filter)
                  )
                 .OrderBy(sorting)
                 .Skip(skipCount)
