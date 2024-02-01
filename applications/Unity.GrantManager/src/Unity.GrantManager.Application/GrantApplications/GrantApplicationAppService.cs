@@ -142,6 +142,7 @@ public class GrantApplicationAppService :
         var dto = await _applicationRepository.GetAsync(id);
         var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
         appDto.StatusCode = dto.ApplicationStatus.StatusCode;
+        appDto.Status = dto.ApplicationStatus.InternalStatus;
         var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId==dto.ApplicantId && s.ApplicationId==dto.Id);
         if(contactInfo != null) 
         {

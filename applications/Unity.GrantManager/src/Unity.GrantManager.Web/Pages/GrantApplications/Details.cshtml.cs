@@ -75,7 +75,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             if(application != null) {
                 ApplicationName = application.ApplicationName;
-                ApplicationStatus = application.StatusCode.ToString();
+                ApplicationStatus = application.Status.ToString();
                 ApplicationNumber = application.ReferenceNo.ToString();
             }
             
