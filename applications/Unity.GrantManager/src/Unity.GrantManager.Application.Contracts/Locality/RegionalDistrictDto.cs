@@ -10,4 +10,6 @@ public class RegionalDistrictDto : EntityDto<Guid>
 
     public string RegionalDistrictCode { get; set; } = string.Empty;
 
+    public string EconomicRegionCode { get; set; } = string.Empty;
+
 }

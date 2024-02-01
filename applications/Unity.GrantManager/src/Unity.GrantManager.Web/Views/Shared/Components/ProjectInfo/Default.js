@@ -87,20 +87,37 @@
         let childDropdown = $('#censusSubdivisions');
         childDropdown.empty();
         const selectedValue = $(this).val();
-        console.log(selectedValue)
         let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
         let allCensusSubdivisions = JSON.parse($('#allCensusSubdivisionList').text());
 
-       let  selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);
+        let  selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);
         let censusSubdivisions = allCensusSubdivisions.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode)
         $.each(censusSubdivisions, function (index, item) {
             childDropdown.append($('<option>', {
                 value: item.censusSubdivisionName,
-                text: `${item.censusSubdivisionName} - ${item.type}`
+                text: item.censusSubdivisionName
+            }));
+        });
+    });
+
+    $('#economicRegions').change(function () {
+        let childDropdown = $('#regionalDistricts');
+        childDropdown.empty();
+
+        const selectedValue = $(this).val();
+        let allEconomicRegions = JSON.parse($('#allEconomicRegionList').text());
+        let allRegionalDistricts = JSON.parse($('#allRegionalDistrictList').text());
+
+        let selectedEconomicRegion = allEconomicRegions.find(d => d.economicRegionName == selectedValue);
+        let regionalDistricts = allRegionalDistricts.filter(d => d.economicRegionCode == selectedEconomicRegion.economicRegionCode);
+        $.each(regionalDistricts, function (index, item) {
+            childDropdown.append($('<option>', {
+                value: item.regionalDistrictName,
+                text: item.regionalDistrictName
             }));
         });
 
-
+        $('#regionalDistricts').change();
     });
 });
 

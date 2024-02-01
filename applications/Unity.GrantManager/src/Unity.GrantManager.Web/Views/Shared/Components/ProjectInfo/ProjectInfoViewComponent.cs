@@ -66,6 +66,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 ApplicationSectors = Sectors,
                 RegionalDistricts = RegionalDistricts,
                 CensusSubdivisions = CensusSubdivisions,
+                EconomicRegions = EconomicRegions,
             };
 
             model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
@@ -81,7 +82,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 new SelectListItem { Value = RegionalDistrict.RegionalDistrictName, Text = RegionalDistrict.RegionalDistrictName }));
 
             model.CensusSubdivisionList.AddRange(CensusSubdivisions.Select(CensusSubdivision =>
-                new SelectListItem { Value = CensusSubdivision.CensusSubdivisionName, Text = $"{CensusSubdivision.CensusSubdivisionName} - {CensusSubdivision.Type}" }));
+                new SelectListItem { Value = CensusSubdivision.CensusSubdivisionName, Text = CensusSubdivision.CensusSubdivisionName }));
 
             if (Sectors.Count > 0)
             {
