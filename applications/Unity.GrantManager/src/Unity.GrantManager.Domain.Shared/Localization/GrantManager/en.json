@@ -198,7 +198,7 @@
     "Enum:GrantApplicationAction.Message.CompleteAssessment": "The Assessment is completed!",
     "Enum:GrantApplicationAction.Message.Close": "The Application is closed!",
     "Enum:GrantApplicationAction.Message.Withdraw": "The Application is withdrawn!",
-    "Enum:GrantApplicationAction.Message.Approve": "Grant Approved",
+    "Enum:GrantApplicationAction.Message.Approve": "Approved",
     "Enum:GrantApplicationAction.Message.Deny": "Declined",
 
     "Summary:ApplicationSummaryTitle": "Application Summary",
