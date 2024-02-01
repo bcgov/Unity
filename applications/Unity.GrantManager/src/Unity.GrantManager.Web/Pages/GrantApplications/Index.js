@@ -278,7 +278,7 @@
                      {
                         extend: 'colvis',
                         text: 'Manage Columns',
-                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37],
+                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
                          className: 'btn btn-light custom-table-btn cln-visible',
 
                        
@@ -708,6 +708,24 @@
                         title: '% of Total Project Budget',
                         name: 'percentageTotalProjectBudget',
                         data: 'percentageTotalProjectBudget',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '';
+                        },
+                    },
+                    { //38
+                        title: 'Organization Type',
+                        name: 'organizationType',
+                        data: 'organizationType',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '';
+                        },
+                    },
+                    { //39
+                        title: 'Organization Name',
+                        name: 'organizationName',
+                        data: 'organizationName',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '';

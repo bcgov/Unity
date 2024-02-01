@@ -121,6 +121,8 @@ public class GrantApplicationAppService :
             appDto.AssessmentCount = x.AssessmentCount;
             appDto.AssessmentReviewCount = x.AssessmentReviewCount;
             appDto.ApplicationTag = x.tag?.Text ?? string.Empty;
+            appDto.OrganizationName = x.applicant?.OrgName ?? string.Empty;
+            appDto.OrganizationType = x.applicant?.OrganizationType ?? string.Empty;
             return appDto;
         }).ToList();
 
