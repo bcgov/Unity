@@ -67,7 +67,7 @@ namespace Unity.GrantManager.Intakes
             string? formVersionSubmissionHeaderMapping = await GetApplicationFormVersionMapping(formVersionId);
             IntakeMapping intakeMap = _intakeFormSubmissionMapper.MapFormSubmissionFields(applicationForm, formSubmission, formVersionSubmissionHeaderMapping);
             intakeMap.SubmissionId = formSubmission.submission.id;
-            intakeMap.SubmissionDate = formSubmission.submission.createdAt;
+            intakeMap.SubmissionDate = formSubmission.submission.updatedAt;
             intakeMap.ConfirmationId = formSubmission.submission.confirmationId;
             using var uow = _unitOfWorkManager.Begin();
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
