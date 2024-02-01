@@ -211,7 +211,7 @@
     "Summary:Application.City": "City",
     "Summary:Application.Community": "Community",
     "Summary:Application.RequestedAmount": "Requested Amount",
-    "Summary:Application.ProjectBudget": "Project Budget",
+    "Summary:Application.ProjectBudget": "Total Project Budget",
     "Summary:Application.Sector": "Sector",
     "Summary:Assessment.Status": "Status",
     "Summary:Assessment.LikelihoodOfFunding": "Likelihood Of Funding",
