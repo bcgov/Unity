@@ -9,24 +9,26 @@
     let dataTable, currentRow, previousRow, currentCell, previousCell, originalContent, previousUserOptionsSelected, currentUserOptionsSelected;
     let userDivChanged = false;
     let modifiedAssignments = new Map();
-    let mapTitles = new Map();
+    /* let mapTitles = new Map(); = not used */
+    /* commented out clear filter functionality - needs to be looked at again or deleted */
 
     dataTable = initializeDataTable();
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
-   
-   
-    //$('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
-    //$('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
+
+    /* Removed for now - to be added/looked at later
+    $('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
+    $('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
+    */
     
     const UIElements = {
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
-        filterIcon: $("i.fl.fl-filter"),
+        /* ClearFilter filterIcon: $("i.fl.fl-filter"), */
         btnSave: $('#btn-save'),
         userDiv: $('#users-div'),
         users: $('#users'),
-        clearFilter: $('#btn-clear-filter')
+        /* ClearFilter clearFilter: $('#btn-clear-filter') */
     };
     init();
     function init() {
@@ -35,13 +37,14 @@
         $('.csv-download').prepend('<i class="fl fl-export"></i>');
         $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
         bindUIEvents();
-        UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html());
+        /* ClearFilter UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html()); */
+        dataTable.search('').columns().search('').draw();
     }
 
     function bindUIEvents() {
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
-        UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden'));
-        UIElements.clearFilter.on('click', clearFilter);
+        /* ClearFilter UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden')); */
+        /* ClearFilter UIElements.clearFilter.on('click', clearFilter); */
         UIElements.btnSave.on('click', handleSave);
         UIElements.userDiv.on('change', markUserDivAsChanged);
         UIElements.userDiv.on('blur', checkUserDivChanged);
@@ -67,7 +70,8 @@
         $('#dtFilterRow').toggleClass('hidden');
     }
 
-    function clearFilter() {
+    /* Clear filter button removed - to review if needed again
+    function clearFilter() {        
         $(".filter-input").each(function () {
             if (this.value != "") {
                 this.value = "";
@@ -80,6 +84,7 @@
 
         $('#btn-clear-filter')[0].disabled = true;
     }
+    */
 
     function markUserDivAsChanged() {
         userDivChanged = true;
@@ -264,6 +269,7 @@
                 orderCellsTop: true,
                 //fixedHeader: true,
                 stateSave: true,
+                stateDuration: 0,
                 dom: 'Bfrtip',
                 buttons: [
                     {
@@ -763,7 +769,6 @@
             $(".tr-toggle-filter").show();
         }
     }
-
   
 
     function modifyAssignmentsOnServer() {
