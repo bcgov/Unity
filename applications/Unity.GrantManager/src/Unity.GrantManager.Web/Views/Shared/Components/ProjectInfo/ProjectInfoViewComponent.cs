@@ -78,12 +78,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             model.ElectoralDistrictList.AddRange(ElectoralDistricts.Select(ElectoralDistrict =>
                 new SelectListItem { Value = ElectoralDistrict.ElectoralDistrictName, Text = ElectoralDistrict.ElectoralDistrictName }));
 
-            model.RegionalDistrictList.AddRange(RegionalDistricts.Select(RegionalDistrict => 
-                new SelectListItem { Value = RegionalDistrict.RegionalDistrictName, Text = RegionalDistrict.RegionalDistrictName }));
-
-            model.CensusSubdivisionList.AddRange(CensusSubdivisions.Select(CensusSubdivision =>
-                new SelectListItem { Value = CensusSubdivision.CensusSubdivisionName, Text = CensusSubdivision.CensusSubdivisionName }));
-
             if (Sectors.Count > 0)
             {
                 List<SubSectorDto> SubSectors = new();
@@ -99,6 +93,32 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
                 model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector => 
                     new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
+            }
+
+            if(EconomicRegions.Count > 0) {
+                String EconomicRegionCode = string.Empty;
+                var economicRegionSelected = EconomicRegions.Find(x => x.EconomicRegionName == application.EconomicRegion);
+                if (economicRegionSelected != null) {
+                    EconomicRegionCode = economicRegionSelected.EconomicRegionCode;
+                }
+                else {
+                    EconomicRegionCode = EconomicRegions[0].EconomicRegionCode;
+                }
+                model.RegionalDistrictList.AddRange(RegionalDistricts.FindAll(x => x.EconomicRegionCode == EconomicRegionCode).Select(RegionalDistrict => 
+                    new SelectListItem { Value = RegionalDistrict.RegionalDistrictName, Text = RegionalDistrict.RegionalDistrictName }));
+            }
+
+            if(RegionalDistricts.Count > 0) {
+                String RegionalDistrictCode = string.Empty;
+                var regionalDistrictSelected = RegionalDistricts.Find(x => x.RegionalDistrictName == application.RegionalDistrict);
+                if (regionalDistrictSelected != null) {
+                    RegionalDistrictCode = regionalDistrictSelected.RegionalDistrictCode;
+                }
+                else {
+                    RegionalDistrictCode = RegionalDistricts[0].RegionalDistrictCode;
+                }
+                model.CensusSubdivisionList.AddRange(CensusSubdivisions.FindAll(x => x.RegionalDistrictCode == RegionalDistrictCode).Select(CensusSubdivision =>
+                    new SelectListItem { Value = CensusSubdivision.CensusSubdivisionName, Text = CensusSubdivision.CensusSubdivisionName }));
             }
 
 

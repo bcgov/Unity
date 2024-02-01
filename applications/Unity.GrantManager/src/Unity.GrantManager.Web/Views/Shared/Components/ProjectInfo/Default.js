@@ -66,7 +66,7 @@
         console.log(event, picker);
       });
 
-      $('#sectorDropdown').change(function () {
+    $('#sectorDropdown').change(function () {
         const selectedValue = $(this).val();
 
         let sectorList = JSON.parse($('#applicationSectorList').text());
@@ -82,13 +82,15 @@
                 text: item.subSectorName
             }));
         });
-      });
+    });
+
     $('#regionalDistricts').change(function () {
-        let childDropdown = $('#censusSubdivisions');
-        childDropdown.empty();
         const selectedValue = $(this).val();
         let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
         let allCensusSubdivisions = JSON.parse($('#allCensusSubdivisionList').text());
+
+        let childDropdown = $('#censusSubdivisions');
+        childDropdown.empty();
 
         let  selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);
         let censusSubdivisions = allCensusSubdivisions.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode)
