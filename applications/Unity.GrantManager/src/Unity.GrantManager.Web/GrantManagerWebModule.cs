@@ -25,6 +25,7 @@ using Unity.GrantManager.Controllers.Authentication.FormSubmission.FormIdResolve
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
+using Unity.GrantManager.Web.Exceptions;
 using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
@@ -212,8 +213,21 @@ public class GrantManagerWebModule : AbpModule
 
             options.Events.OnTokenValidated = async (tokenValidatedContext) =>
             {
-                var loginHandler = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginHandler>();
-                await loginHandler!.HandleAsync(tokenValidatedContext);
+                try
+                {
+                    var loginHandler = tokenValidatedContext.HttpContext.RequestServices.GetService<IdentityProfileLoginHandler>();
+                    await loginHandler!.HandleAsync(tokenValidatedContext);
+                }
+                catch (NoGrantProgramsLinkedException)
+                {
+                    // Extend this to more custom handling if this is extended
+                    tokenValidatedContext.HandleResponse();
+
+                    await tokenValidatedContext.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    await tokenValidatedContext.HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
+
+                    tokenValidatedContext.Response.Redirect("Account/NoGrantPrograms");
+                }
             };
 
             if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))

@@ -111,12 +111,15 @@ $(function () {
     PubSub.subscribe("select_application", (msg, data) => {
         selectedApplicationIds.push(data.id);
         manageActionButtons();
-
     });
-    PubSub.subscribe("deselect_application", (msg, data) => {
-        selectedApplicationIds.pop(data.id);
-        manageActionButtons();
 
+    PubSub.subscribe("deselect_application", (msg, data) => {
+        if (data === "reset_data") {
+            selectedApplicationIds = [];
+        } else {
+            selectedApplicationIds = selectedApplicationIds.filter(item => item !== data.id);
+        }
+        manageActionButtons();
     });
 
     PubSub.subscribe("clear_selected_application", (msg, data) => {
