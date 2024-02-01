@@ -35,6 +35,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public bool IsFinalDecisionMade { get; set; }
         public ProjectInfoViewModelModel ProjectInfo { get; set; } = new();
 
+        public List<EconomicRegionDto> EconomicRegions  { get; set; } = new List<EconomicRegionDto>();
         public List<RegionalDistrictDto> RegionalDistricts  { get; set; } = new List<RegionalDistrictDto>();
         public List<CensusSubdivisionDto> CensusSubdivisions { get; set; } = new List<CensusSubdivisionDto>();
         public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
