@@ -2,7 +2,6 @@
 using Quartz;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
-using Volo.Abp.Application.Dtos;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
@@ -13,20 +12,20 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
     {
         private readonly ICurrentTenant _currentTenant;
         private readonly ITenantRepository _tenantRepository;
-
-        private readonly IApplicationFormAppService _appFormsService;
+        private readonly IApplicationFormSycnronizationService _applicationFormSynchronizationService;
 
         public IntakeSyncWorker(ICurrentTenant currentTenant,
             ITenantRepository tenantRepository,
-            IApplicationFormAppService appFormsSerrvice)
+            IApplicationFormSycnronizationService applicationFormSynchronizationService)
         {
             _currentTenant = currentTenant;
             _tenantRepository = tenantRepository;
-            _appFormsService = appFormsSerrvice;
+            _applicationFormSynchronizationService = applicationFormSynchronizationService;
+
 
             JobDetail = JobBuilder.Create<IntakeSyncWorker>().WithIdentity(nameof(IntakeSyncWorker)).Build();
             Trigger = TriggerBuilder.Create().WithIdentity(nameof(IntakeSyncWorker))
-                .WithSimpleSchedule(s => s.WithIntervalInSeconds(10)
+                .WithSimpleSchedule(s => s.WithIntervalInSeconds(600)
                 .RepeatForever()
                 .WithMisfireHandlingInstructionIgnoreMisfires())
                 .Build();
@@ -45,11 +44,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
             {
                 using (_currentTenant.Change(tenant.Id))
                 {
-                    var forms = await _appFormsService.GetListAsync(new PagedAndSortedResultRequestDto());
-                    foreach (var form in forms.Items)
-                    {
-                        Logger.LogInformation("TenantName: {tenantName} TenantId: {tenantId} FormId: {formId} FormName: {formName}", tenant.Name, _currentTenant.Id, form.Id, form.ApplicationFormName);
-                    }
+                    var result = _applicationFormSynchronizationService.GetMissingSubmissions();
                 }
             }
 
