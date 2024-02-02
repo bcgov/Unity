@@ -9,8 +9,4 @@ $(function () {
         $('.landing-navigation-child').removeClass("active");
         $(this).addClass("active");
     });
-    
-    $('#unityLogoutBtn').click(function(e) {
-        localStorage.removeItem("DataTables_GrantApplicationsTable_/GrantApplications");
-    })
 });
