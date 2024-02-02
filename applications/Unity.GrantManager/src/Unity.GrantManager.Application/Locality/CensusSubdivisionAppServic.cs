@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+
 namespace Unity.GrantManager.Locality
 {
     [Authorize]

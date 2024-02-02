@@ -35,6 +35,7 @@ public class GrantManagerDbContext :
     public DbSet<RegionalDistrict> RegionalDistricts { get; set; }
     public DbSet<CensusSubdivision> CensusSubdivisions { get; set; }
     public DbSet<TenantToken> TenantTokens { get; set; }
+    public DbSet<Community> Communities { get; set; }
 
 
     #region Entities from the modules
