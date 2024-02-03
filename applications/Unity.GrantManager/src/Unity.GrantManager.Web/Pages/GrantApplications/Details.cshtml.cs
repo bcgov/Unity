@@ -47,7 +47,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
-        public string ApplicationName { get; set; } = "";
+        public string ApplicantName { get; set; } = "";
         public string ApplicationStatus { get; set; } = "";
         public string ApplicationNumber { get; set; } = "";
 
@@ -69,7 +69,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(ApplicationId);
 
             if(application != null) {
-                ApplicationName = application.ApplicationName;
+                ApplicantName = application.Applicant.ApplicantName;
                 ApplicationStatus = application.Status.ToString();
                 ApplicationNumber = application.ReferenceNo.ToString();
             }

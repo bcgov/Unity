@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -112,8 +111,12 @@ namespace Unity.GrantManager.Intakes
                     SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
                     ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
                     ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
-                    TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget)
-                }                
+                    TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
+                    Community = intakeMap.Community ?? "{Community}",                    
+                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",                    
+                    CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
+                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}"
+                }
             );   
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
             return application;
@@ -176,12 +179,7 @@ namespace Unity.GrantManager.Intakes
                 Sector = intakeMap.Sector ?? "{Sector}",
                 SubSector = intakeMap.SubSector ?? "{SubSector}",
                 ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
-                Community = intakeMap.Community ?? "{Community}",
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
-                ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
-                CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
-                RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
             });
 
             await CreateApplicantAddressAsync(intakeMap, applicant);
