@@ -20,6 +20,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -116,7 +117,7 @@ public class GrantApplicationAppService :
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
             appDto.Status = x.appStatus.InternalStatus;
             appDto.Assignees = await GetAssigneesAsync(x.application.Id);
-            appDto.Applicant = x.applicant.ApplicantName;
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(x.applicant);
             appDto.Category = x.appForm.Category ?? string.Empty;
             appDto.AssessmentCount = x.AssessmentCount;
             appDto.AssessmentReviewCount = x.AssessmentReviewCount;
@@ -141,7 +142,9 @@ public class GrantApplicationAppService :
         appDto.StatusCode = dto.ApplicationStatus.StatusCode;
         appDto.Status = dto.ApplicationStatus.InternalStatus;
         var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId==dto.ApplicantId && s.ApplicationId==dto.Id);
-        if(contactInfo != null) 
+        var applicant = await _applicantRepository.FirstOrDefaultAsync(s => s.Id == dto.ApplicantId);
+
+        if (contactInfo != null) 
         {
             appDto.ContactFullName = contactInfo.Name;
             appDto.ContactEmail = contactInfo.Email;
@@ -149,6 +152,13 @@ public class GrantApplicationAppService :
             appDto.ContactBusinessPhone = contactInfo.Phone;
             appDto.ContactCellPhone = contactInfo.Phone2;
         }
+
+        if (applicant != null) 
+        {
+            appDto.Sector = applicant.Sector;
+            appDto.SubSector = applicant.SubSector;
+        }
+
         return appDto;
     }
 
@@ -269,14 +279,18 @@ public class GrantApplicationAppService :
             application.Acquisition = input.Acquisition;
             application.Forestry = input.Forestry;
             application.ForestryFocus = input.ForestryFocus;
-            application.Sector = input.Sector;
-            application.SubSector = input.SubSector;
             application.EconomicRegion = input.EconomicRegion;
             application.ElectoralDistrict = input.ElectoralDistrict;
             application.CensusSubdivision = input.CensusSubdivision;
             application.RegionalDistrict = input.RegionalDistrict;
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId);
+            applicant.Sector = input.Sector ?? "";
+            applicant.SubSector = input.SubSector ?? "";
+
+            applicant = await _applicantRepository.UpdateAsync(applicant);
 
             if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
                 || !string.IsNullOrEmpty(input.ContactBusinessPhone) || !string.IsNullOrEmpty(input.ContactCellPhone))

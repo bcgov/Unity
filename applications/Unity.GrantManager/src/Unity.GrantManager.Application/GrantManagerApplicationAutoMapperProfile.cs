@@ -47,7 +47,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<AssessmentAttachment, AssessmentAttachmentDto>();
         CreateMap<ApplicationActionResultItem, ApplicationActionDto>();
         CreateMap<EventSubscription, EventSubscriptionDto>();
-        CreateMap<EventSubscriptionDto, EventSubscription>();        
+        CreateMap<EventSubscriptionDto, EventSubscription>();
         CreateMap<Sector, SectorDto>();
         CreateMap<SubSector, SubSectorDto>();
         CreateMap<EconomicRegion, EconomicRegionDto>();
@@ -55,6 +55,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<CensusSubdivision, CensusSubdivisionDto>();
         CreateMap<RegionalDistrict, RegionalDistrictDto>();
         CreateMap<ApplicationTags, ApplicationTagsDto>();
+        CreateMap<Applicant, GrantApplicationApplicantDto>();
     }
 }
 
