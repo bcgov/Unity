@@ -17,7 +17,7 @@
 <div id="applicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
 <div id="allEconomicRegionList" style="display: none;">@Html.Raw(Json.Serialize(Model.EconomicRegions))</div>
 <div id="allRegionalDistrictList" style="display: none;">@Html.Raw(Json.Serialize(Model.RegionalDistricts))</div>
-<div id="allCensusSubdivisionList" style="display: none;">@Html.Raw(Json.Serialize(Model.CensusSubdivisions))</div>
+<div id="allCommunitiesList" style="display: none;">@Html.Raw(Json.Serialize(Model.Communities))</div>
 
 <abp-row class="px-1 pb-2 mb-4 project-info-container">
     <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
@@ -130,7 +130,7 @@
                     </abp-select>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
-                        <abp-select asp-for="@Model.ProjectInfo.Community" asp-items="@Model.CensusSubdivisionList" id="censusSubdivisions"
+                        <abp-select asp-for="@Model.ProjectInfo.Community" asp-items="@Model.CommunityList" id="communities"
                                 onchange="enableSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>

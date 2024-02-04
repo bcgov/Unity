@@ -86,18 +86,19 @@
 
     $('#regionalDistricts').change(function () {
         const selectedValue = $(this).val();
+        if (!selectedValue) return;
         let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
-        let allCensusSubdivisions = JSON.parse($('#allCensusSubdivisionList').text());
+        let allCommunities = JSON.parse($('#allCommunitiesList').text());
 
-        let childDropdown = $('#censusSubdivisions');
+        let childDropdown = $('#communities');
         childDropdown.empty();
 
-        let  selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);
-        let censusSubdivisions = allCensusSubdivisions.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode)
-        $.each(censusSubdivisions, function (index, item) {
+        let selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);        
+        let communities = allCommunities.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode);
+        $.each(communities, function (index, item) {
             childDropdown.append($('<option>', {
-                value: item.censusSubdivisionName,
-                text: item.censusSubdivisionName
+                value: item.name,
+                text: item.name
             }));
         });
     });

@@ -203,8 +203,7 @@ public class GrantApplicationAppService :
                         AssessmentResult = application.AssessmentResultStatus != null && application.AssessmentResultStatus != "" ? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus] : "",
                         RecommendedAmount = application.RecommendedAmount,
                         ApprovedAmount = application.ApprovedAmount,
-                        Batch = "", // to-do: ask BA for the implementation of Batch field,
-                        CensusSubdivision = application.CensusSubdivision,
+                        Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
                     };
 
@@ -292,8 +291,7 @@ public class GrantApplicationAppService :
             application.Forestry = input.Forestry;
             application.ForestryFocus = input.ForestryFocus;
             application.EconomicRegion = input.EconomicRegion;
-            application.ElectoralDistrict = input.ElectoralDistrict;
-            application.CensusSubdivision = input.CensusSubdivision;
+            application.ElectoralDistrict = input.ElectoralDistrict;            
             application.RegionalDistrict = input.RegionalDistrict;
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);

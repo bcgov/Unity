@@ -113,8 +113,7 @@ namespace Unity.GrantManager.Intakes
                     ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
                     TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
                     Community = intakeMap.Community ?? "{Community}",                    
-                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",                    
-                    CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
+                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",                                       
                     RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}"
                 }
             );   
