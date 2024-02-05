@@ -29,7 +29,7 @@ $(function () {
         this.input.setAttribute("id", "user-tags-input");
         this.input.focus();
         init(this);
-        initEvents(this);
+        
 
         this.initialized = true;
         return this;

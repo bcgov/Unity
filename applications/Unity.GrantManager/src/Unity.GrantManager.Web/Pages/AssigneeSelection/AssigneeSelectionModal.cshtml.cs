@@ -139,7 +139,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                     }
 
 
-                    var allAssignees = assignees.Select(assignee => assignee.AssigneeId).Distinct().ToList();
+                   
 
                     // Step 2: Iterate through the second list and categorize Assignees
                     var commonArray = assignees
@@ -286,16 +286,16 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                             var currentAssigneeListSelectedApplication = currentAssigneeList.FindAll(x => x.ApplicationId == applicationId);
                                             if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
                                             {
-                                                foreach (var assignee in currentAssigneeListSelectedApplication)
-                                                {
-                                                    var assigneeDetails = uncommonAssignees.Find(x => x.Id == assignee.AssigneeId.ToString());
-                                                    if (assigneeDetails == null)
+
+                                                    currentAssigneeListSelectedApplication.ForEach( async assignee =>
                                                     {
-                                                        await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
-                                                    }
-
-
-                                                }
+                                                        var assigneeDetails = uncommonAssignees.Find(x => x.Id == assignee.AssigneeId.ToString());
+                                                        if (assigneeDetails == null)
+                                                        {
+                                                            await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
+                                                        }
+                                                    });
+                                              
                                             }
                                         }
                                     }
@@ -324,7 +324,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                             var currentAssigneeListSelectedApplication = currentAssigneeList.FindAll(x => x.ApplicationId == applicationId);
                                             if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
                                             {
-                                                foreach (var assignee in currentAssigneeListSelectedApplication)
+                                                currentAssigneeListSelectedApplication.ForEach(async assignee =>
                                                 {
                                                     var assigneeDetails = selectedAssignees.Find(x => x.Id == assignee.AssigneeId.ToString());
                                                     if (assigneeDetails == null)
@@ -333,7 +333,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                                     }
 
 
-                                                }
+                                                });
                                             }
                                         }
 
@@ -355,12 +355,12 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                     var currentAssigneeListSelectedApplication = currentAssigneeList.FindAll(x => x.ApplicationId == applicationId);
                                     if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
                                     {
-                                        foreach (var assignee in currentAssigneeListSelectedApplication)
+                                        currentAssigneeListSelectedApplication.ForEach(async assignee =>
                                         {
 
                                             await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
 
-                                        }
+                                        });
                                     }
 
 
