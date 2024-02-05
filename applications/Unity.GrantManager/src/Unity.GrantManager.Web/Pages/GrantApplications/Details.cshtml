@@ -15,7 +15,7 @@
 @inject IPageLayout PageLayout
 @{
     PageLayout.Content.Title = L["Grants"].Value;
-    ViewBag.PageTitle = $"Applications / {Model.ApplicationName}({Model.ApplicationNumber}) - {Model.ApplicationStatus}";
+    ViewBag.PageTitle = $"Applications / {Model.ApplicantName}({Model.ApplicationNumber}) - {Model.ApplicationStatus}";
 }
 @section styles
     {
@@ -60,8 +60,8 @@
         <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
 
-                @*-------- Application Summary Section ---------*@
-                <abp-tab name="nav-summery" active="true" title="Application Summary">
+                @*-------- Submission Section ---------*@
+                <abp-tab name="nav-summery" active="true" title="Submission">
 
                     <div class="container-fluid">
                         <abp-row>
@@ -82,7 +82,7 @@
                         </abp-column>
                     </abp-row>
                 </abp-tab>
-                @*-------- Application Summary Section END ---------*@
+                @*-------- Submission Section END ---------*@
 
                 @*-------- Review & Assessment Section ---------*@
                 <abp-tab name="nav-review-and-assessment" title="Review & Assessment">

@@ -16,12 +16,12 @@
                     button-type="Primary" />
 
         <abp-button id="assignApplication"
-                    data-selector="applications-table-actions"
                     text="@L["ApplicationList:AssignButton"].Value"
                     disabled="true"
                     icon-type="Other"
                     icon="fl fl-add-friend"
                     button-type="Light" />
+
 
         <abp-button id="tagApplication"
                     data-selector="applications-table-actions"
@@ -47,26 +47,23 @@
                     icon="fl fl-download"
                     button-type="Light" /> *@
     </div>
-    <div  id="dynamicButtonContainerId" class="d-flex align-items-end justify-content-end gap-2">
 
+    <div id="dynamicButtonContainerId" class="d-flex align-items-end justify-content-end gap-2">
         <abp-button id="btn-save"
                     text="Save"
                     disabled="true"
                     icon-type="Other"
                     icon="fl fl-save"
                     button-type="Primary" />
-        <abp-button 
+
+        <abp-button id="btn-toggle-filter"
                     text="Filter"
-                    disabled="false"
-                    id="btn-toggle-filter"
+                    disabled="false"                    
                     icon-type="Other"
                     icon="fl fl-filter"
                     button-type="Light" />
 
-
-
-        <abp-button id="applicationLink"
-                  
+        <abp-button id="applicationLink"                  
                     text="@L["ApplicationList:InfoButton"].Value"
                     icon-type="Other"
                     disabled="true"

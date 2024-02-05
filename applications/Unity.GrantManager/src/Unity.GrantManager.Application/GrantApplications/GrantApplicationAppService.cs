@@ -139,20 +139,37 @@ public class GrantApplicationAppService :
 
     public override async Task<GrantApplicationDto> GetAsync(Guid id)
     {
-        var dto = await _applicationRepository.GetAsync(id);
-        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
-        appDto.StatusCode = dto.ApplicationStatus.StatusCode;
-        appDto.Status = dto.ApplicationStatus.InternalStatus;
-        var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId==dto.ApplicantId && s.ApplicationId==dto.Id);
-        if(contactInfo != null) 
-        {
-            appDto.ContactFullName = contactInfo.Name;
-            appDto.ContactEmail = contactInfo.Email;
-            appDto.ContactTitle = contactInfo.Title;
-            appDto.ContactBusinessPhone = contactInfo.Phone;
-            appDto.ContactCellPhone = contactInfo.Phone2;
-        }
-        return appDto;
+        var query = from application in await _applicationRepository.GetQueryableAsync()
+                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    where application.Id == id
+                    select new {
+                        application,
+                        applicant,
+                        appStatus
+                    };
+
+        var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
+
+        if (queryResult != null) {
+            var dto = queryResult.application;
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
+            appDto.StatusCode = queryResult.appStatus.StatusCode;
+            appDto.Status = queryResult.appStatus.InternalStatus;
+            appDto.Applicant = queryResult.applicant.ApplicantName;
+            var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId==dto.ApplicantId && s.ApplicationId==dto.Id);
+            if(contactInfo != null) 
+            {
+                appDto.ContactFullName = contactInfo.Name;
+                appDto.ContactEmail = contactInfo.Email;
+                appDto.ContactTitle = contactInfo.Title;
+                appDto.ContactBusinessPhone = contactInfo.Phone;
+                appDto.ContactCellPhone = contactInfo.Phone2;
+            }
+            return appDto;
+        } else {
+            return await Task.FromResult<GrantApplicationDto>(new GrantApplicationDto());
+        }        
     }
 
     public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
@@ -172,7 +189,7 @@ public class GrantApplicationAppService :
                         RequestedAmount = application.RequestedAmount,
                         ProjectBudget = application.TotalProjectBudget,
                         Sector = application.Sector,
-                        Community = applicant.Community,
+                        Community = application.Community,
                         Status = application.ApplicationStatus.InternalStatus,
                         LikelihoodOfFunding = application.LikelihoodOfFunding != null && application.LikelihoodOfFunding != "" ? AssessmentResultsOptionsList.FundingList[application.LikelihoodOfFunding] : "",
                         AssessmentStartDate = string.Format("{0:yyyy/MM/dd}", application.AssessmentStartDate),
@@ -184,15 +201,12 @@ public class GrantApplicationAppService :
                         Batch = "", // to-do: ask BA for the implementation of Batch field,
                         CensusSubdivision = application.CensusSubdivision,
                         RegionalDistrict = application.RegionalDistrict,
-    };
+                    };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
-        if (queryResult != null)
-        {
+        if (queryResult != null) {
             return queryResult;
-        }
-        else
-        {
+        } else {
             return await Task.FromResult<GetSummaryDto>(new GetSummaryDto());
         }
 
