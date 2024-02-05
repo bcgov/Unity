@@ -156,7 +156,7 @@
                 @*-------- Details Tab Section ---------*@
                 <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
                     <div id="applicationDetails">
-                        <div id="applicationStatusWidget">
+                        <div id="applicationStatusWidget" style="display:none">
                             @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
                         </div>
                         <div id="applicationTagsWidget">
