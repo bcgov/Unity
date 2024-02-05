@@ -381,7 +381,6 @@
                         data: 'assignees',
                         name: 'assignees',
                         className: 'dt-editable',
-                        createdCell: createdCell,                        
                         render: function (data, type, row) {
                             let displayText = ' ';
 
