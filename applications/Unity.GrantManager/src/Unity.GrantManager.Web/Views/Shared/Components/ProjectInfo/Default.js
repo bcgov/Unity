@@ -89,40 +89,53 @@
 
     $('#regionalDistricts').change(function () {
         const selectedValue = $(this).val();
-        if (!selectedValue) return;
-        let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
-        let allCommunities = JSON.parse($('#allCommunitiesList').text());
-
         let childDropdown = $('#communities');
         childDropdown.empty();
 
-        let selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);        
-        let communities = allCommunities.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode);
-        $.each(communities, function (index, item) {
+        if (selectedValue) {
+            let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
+            let allCommunities = JSON.parse($('#allCommunitiesList').text());
+            let selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);        
+            let communities = allCommunities.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode);
             childDropdown.append($('<option>', {
-                value: item.name,
-                text: item.name
+                value: '',
+                text: 'Please Choose...'
             }));
-        });
+            $.each(communities, function (index, item) {
+                childDropdown.append($('<option>', {
+                    value: item.name,
+                    text: item.name
+                }));
+            });
+        }
     });
 
     $('#economicRegions').change(function () {
         let childDropdown = $('#regionalDistricts');
-        childDropdown.empty();
+
 
         const selectedValue = $(this).val();
         let allEconomicRegions = JSON.parse($('#allEconomicRegionList').text());
         let allRegionalDistricts = JSON.parse($('#allRegionalDistrictList').text());
 
         let selectedEconomicRegion = allEconomicRegions.find(d => d.economicRegionName == selectedValue);
-        let regionalDistricts = allRegionalDistricts.filter(d => d.economicRegionCode == selectedEconomicRegion.economicRegionCode);
-        $.each(regionalDistricts, function (index, item) {
-            childDropdown.append($('<option>', {
-                value: item.regionalDistrictName,
-                text: item.regionalDistrictName
-            }));
-        });
 
+        if (!selectedValue) {
+            childDropdown.empty();
+            $('#regionalDistricts').change();
+        } else {
+            let regionalDistricts = allRegionalDistricts.filter(d => d.economicRegionCode == selectedEconomicRegion.economicRegionCode);
+            childDropdown.append($('<option>', {
+                value: '',
+                text: 'Please Choose...'
+            }));        
+            $.each(regionalDistricts, function (index, item) {
+                childDropdown.append($('<option>', {
+                    value: item.regionalDistrictName,
+                    text: item.regionalDistrictName
+                }));
+            });
+        }
         $('#regionalDistricts').change();
     });
 });
