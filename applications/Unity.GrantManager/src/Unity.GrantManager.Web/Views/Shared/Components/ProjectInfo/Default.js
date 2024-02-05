@@ -1,7 +1,7 @@
 ﻿$(function () {    
     $('.currency-input').maskMoney();
 
-    $('body').on('click', '#saveProjectInfoBtn', function () {       
+    $('body').on('click', '#saveProjectInfoBtn', function () {
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
         let projectInfoObj = {};
@@ -29,7 +29,7 @@
                         'The project info has been updated.'
                     );
                     $('#saveProjectInfoBtn').prop('disabled', true);
-                    PubSub.publish('project_info_saved');                    
+                    PubSub.publish('project_info_saved');
                 });
         }
         catch (error) {
@@ -75,7 +75,10 @@
         childDropdown.empty();
 
         let subSectors = sectorList.find(sector => (sector.sectorName === selectedValue))?.subSectors;
-
+        childDropdown.append($('<option>', {
+            value: '',
+            text: 'Please Choose...'
+        }));
         $.each(subSectors, function (index, item) {
             childDropdown.append($('<option>', {
                 value: item.subSectorName,
