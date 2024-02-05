@@ -24,9 +24,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
-    public decimal TotalProjectBudget { get; set; }
-    public string? Sector { get; set; } = null;
-    public string? SubSector { get; set; } = null;
+    public decimal TotalProjectBudget { get; set; }    
     public string? EconomicRegion { get; set; } = null;
     public string? City { get; set; } = null;
     public DateTime? ProposalDate { get; set; }
