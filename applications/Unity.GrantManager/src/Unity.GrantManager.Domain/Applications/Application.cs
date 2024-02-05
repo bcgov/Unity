@@ -85,4 +85,6 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? RegionalDistrict { get; set; }
 
     public Guid? TenantId { get; set; }
+
+    public Guid? OwnerId { get; set; }
 }

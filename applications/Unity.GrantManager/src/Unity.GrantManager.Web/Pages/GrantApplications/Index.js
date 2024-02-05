@@ -278,7 +278,7 @@
                      {
                         extend: 'colvis',
                         text: 'Manage Columns',
-                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
+                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35],
                          className: 'btn btn-light custom-table-btn cln-visible',
 
                        
@@ -382,11 +382,11 @@
                             if (data != null && data.length == 1) {
                                 displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
                             } else if (data.length > 1) {
-                                displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
+                                displayText = getNames(data);
                             }
 
                             return `<span class="d-flex align-items-center dt-select-assignees">
-                                <i class="fl fl-edit"></i>
+                               
                                 <span class="ps-2 flex-fill" data-toggle="tooltip" title="`
                                 + getNames(data) + '">' + displayText + '</span>' +
                                 `</span>`;
@@ -688,6 +688,15 @@
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
                             }).toLocaleString() : '{Due Date}';
+                        },
+                    },
+                    { //35 -- mapped
+                        title: 'Owner',
+                        name: 'Owner',
+                        data: 'owner',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data != null ? data.fullName : '{Owner}';
                         },
                     },
                 ],

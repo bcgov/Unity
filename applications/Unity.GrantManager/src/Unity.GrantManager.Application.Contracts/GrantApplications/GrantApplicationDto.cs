@@ -59,4 +59,6 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? ContactBusinessPhone { get; set; }
     public string? ContactCellPhone { get; set; }
     public string? ApplicationTag  { get; set; }
+    public Guid? OwnerId { get; set; }
+    public GrantApplicationAssigneeDto Owner { get; set; } = new();
 }

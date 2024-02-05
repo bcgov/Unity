@@ -1,3 +1,4 @@
+using Amazon.S3.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -20,6 +21,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -121,6 +123,7 @@ public class GrantApplicationAppService :
             appDto.AssessmentCount = x.AssessmentCount;
             appDto.AssessmentReviewCount = x.AssessmentReviewCount;
             appDto.ApplicationTag = x.tag?.Text ?? string.Empty;
+            appDto.Owner = x.application.OwnerId != null ? await GetOwnerAsync(new Guid(x.application.OwnerId.ToString())) : new GrantApplicationAssigneeDto();
             return appDto;
         }).ToList();
 
@@ -342,6 +345,18 @@ public class GrantApplicationAppService :
 
         return query.ToList();
     }
+    public async Task<GrantApplicationAssigneeDto> GetOwnerAsync(Guid ownerId)
+    {
+
+        var owner = await _personRepository.GetAsync(ownerId, false);
+                    
+
+        return new GrantApplicationAssigneeDto
+        {
+            Id = owner.Id,
+            FullName = owner.FullName
+        };
+    }
 
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
     {
@@ -394,29 +409,31 @@ public class GrantApplicationAppService :
         }
     }
 
-    public async Task InsertAssigneeAsync(Guid[] applicationIds, Guid assigneeId)
+    public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? role)
     {
-        foreach (Guid applicationId in applicationIds)
-        {
+        
             try
             {
                 var assignees = await GetAssigneesAsync(applicationId);
                 if (assignees == null || assignees.FindIndex(a => a.AssigneeId == assigneeId) == -1)
                 {
-                    await _applicationManager.AssignUserAsync(applicationId, assigneeId);
+                    await _applicationManager.AssignUserAsync(applicationId, assigneeId, role);
                 }
+                else
+                {
+                await _applicationManager.UpdateAssigneeAsync(applicationId, assigneeId ,role);
+                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
             }
-        }
+        
     }
 
-    public async Task DeleteAssigneeAsync(Guid[] applicationIds, Guid assigneeId)
+    public async Task DeleteAssigneeAsync(Guid applicationId, Guid assigneeId)
     {
-        foreach (Guid applicationId in applicationIds)
-        {
+        
             try
             {
                 await _applicationManager.RemoveAssigneeAsync(applicationId, assigneeId);
@@ -425,7 +442,52 @@ public class GrantApplicationAppService :
             {
                 Debug.WriteLine(ex.ToString());
             }
+        
+    }
+    public async Task<IList<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
+    {
+
+            var applications = await _applicationRepository.GetListAsync(e => applicationIds.Contains(e.Id));
+
+            return ObjectMapper.Map<List<Application>, List<GrantApplicationDto>>(applications.OrderBy(t => t.Id).ToList());
+
+    }
+    public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)
+    {
+
+        try
+        {
+            var application = await _applicationRepository.GetAsync(applicationId, false);
+            if (application != null)
+            {
+                application.OwnerId = assigneeId;
+                await _applicationRepository.UpdateAsync(application);
+            }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
+    }
+
+    public async Task DeleteOwnerAsync(Guid applicationId)
+    {
+
+        try
+        {
+            var application = await _applicationRepository.GetAsync(applicationId, false);
+            if (application != null)
+            {
+                application.OwnerId = null;
+                await _applicationRepository.UpdateAsync(application);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
     }
 
     [HttpPut]
