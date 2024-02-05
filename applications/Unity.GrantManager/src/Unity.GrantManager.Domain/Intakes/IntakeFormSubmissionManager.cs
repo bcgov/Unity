@@ -105,15 +105,14 @@ namespace Unity.GrantManager.Intakes
                     ForestryFocus = intakeMap.ForestyFocus ?? null,
                     City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
                     EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
-                    Sector = intakeMap.Sector ?? "{Sector}",
                     CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
                     RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
                     SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
                     ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
                     ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
                     TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
-                    Community = intakeMap.Community ?? "{Community}",                    
-                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",                    
+                    Community = intakeMap.Community ?? "{Community}",
+                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
                     CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
                     RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}"
                 }
