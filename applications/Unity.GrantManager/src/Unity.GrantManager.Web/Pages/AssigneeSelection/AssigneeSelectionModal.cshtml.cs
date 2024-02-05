@@ -50,7 +50,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
         public class AssigneeRole
         {
-            public string Id { get; set; }
+            public required string Id { get; set; }
             public string? Role { get; set; }
         }
 
