@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Components
         private readonly IAbpLazyServiceProvider lazyServiceProvider;
 
         public ProjectInfoWidgetTests()
-        {            
+        {
             lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         }
 
@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Components
             var economicRegionService = Substitute.For<IEconomicRegionService>();
             var electoralDistrictService = Substitute.For<IElectoralDistrictService>();
             var regionalDistrictService = Substitute.For<IRegionalDistrictService>();
-            var censusSubdivisionService = Substitute.For<ICensusSubdivisionService>();
+            var communitiesService = Substitute.For<ICommunityService>();
             var viewContext = new ViewContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new ProjectInfoViewComponent(appService,sectorService,economicRegionService,electoralDistrictService,regionalDistrictService, censusSubdivisionService)
+            var viewComponent = new ProjectInfoViewComponent(appService, sectorService, economicRegionService, electoralDistrictService, regionalDistrictService, communitiesService)
             {
                 ViewComponentContext = viewComponentContext,
                 LazyServiceProvider = lazyServiceProvider

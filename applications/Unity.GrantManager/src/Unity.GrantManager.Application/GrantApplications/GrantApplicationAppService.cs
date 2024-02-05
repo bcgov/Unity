@@ -203,8 +203,7 @@ public class GrantApplicationAppService :
                         AssessmentResult = application.AssessmentResultStatus != null && application.AssessmentResultStatus != "" ? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus] : "",
                         RecommendedAmount = application.RecommendedAmount,
                         ApprovedAmount = application.ApprovedAmount,
-                        Batch = "", // to-do: ask BA for the implementation of Batch field,
-                        CensusSubdivision = application.CensusSubdivision,
+                        Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
                     };
 
@@ -292,16 +291,17 @@ public class GrantApplicationAppService :
             application.Forestry = input.Forestry;
             application.ForestryFocus = input.ForestryFocus;
             application.EconomicRegion = input.EconomicRegion;
-            application.ElectoralDistrict = input.ElectoralDistrict;
-            application.CensusSubdivision = input.CensusSubdivision;
+            application.ElectoralDistrict = input.ElectoralDistrict;            
             application.RegionalDistrict = input.RegionalDistrict;
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
 
-            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId);
+            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+            // This applicant should never be null!
+
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
-            applicant = await _applicantRepository.UpdateAsync(applicant);
+            _ = await _applicantRepository.UpdateAsync(applicant);
 
             if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
                 || !string.IsNullOrEmpty(input.ContactBusinessPhone) || !string.IsNullOrEmpty(input.ContactCellPhone))
@@ -344,8 +344,7 @@ public class GrantApplicationAppService :
             } else
             {
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
-            }
-     
+            }     
         }
         else
         {

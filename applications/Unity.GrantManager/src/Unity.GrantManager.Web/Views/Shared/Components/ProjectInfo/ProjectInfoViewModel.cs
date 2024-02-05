@@ -37,10 +37,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
         public List<EconomicRegionDto> EconomicRegions  { get; set; } = new List<EconomicRegionDto>();
         public List<RegionalDistrictDto> RegionalDistricts  { get; set; } = new List<RegionalDistrictDto>();
-        public List<CensusSubdivisionDto> CensusSubdivisions { get; set; } = new List<CensusSubdivisionDto>();
+        public List<SelectListItem> CommunityList { get; set; } = new List<SelectListItem>();
+        public List<CommunityDto> Communities { get; set; } = new List<CommunityDto>();
         public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
-
-        public List<SelectListItem> CensusSubdivisionList { get; set; } = new List<SelectListItem>();
 
 
         public class ProjectInfoViewModelModel
@@ -82,9 +81,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             [SelectItems(nameof(ApplicationSubSectorsList))]
             public string? SubSector { get; set; }
 
-            [Display(Name = "ProjectInfoView:ProjectInfo.Community")]
-            public string? Community { get; set; }
-
             [Display(Name = "ProjectInfoView:ProjectInfo.EconomicRegion")]
             [SelectItems(nameof(EconomicRegionList))]
             public string? EconomicRegion { get; set; }
@@ -112,20 +108,25 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             [SelectItems(nameof(RegionalDistrictList))]
             public string? RegionalDistrict { get; set; }
 
-            [Display(Name = "ProjectInfoView:ProjectInfo.CensusSubdivision")]
-            [SelectItems(nameof(CensusSubdivisionList))]
-            public string? CensusSubdivision { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.Community")]
+            [SelectItems(nameof(CommunityList))]
+            public string? Community { get; set; }
+
             [Display(Name = "ProjectInfoView:ProjectInfo.ContactFullName")]
             public string? ContactFullName { get; set; }
+
             [Display(Name = "ProjectInfoView:ProjectInfo.ContactTitle")]
             public string? ContactTitle { get; set; }
+
             [Display(Name = "ProjectInfoView:ProjectInfo.ContactEmail")]
             [DataType(DataType.EmailAddress, ErrorMessage = "Provided email is not valid")]
             public string? ContactEmail { get; set; }
+
             [Display(Name = "ProjectInfoView:ProjectInfo.ContactBusinessPhone")]
             [DataType(DataType.PhoneNumber, ErrorMessage = "Invalid Phone Number")]
             [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
             public string? ContactBusinessPhone { get; set; }
+
             [Display(Name = "ProjectInfoView:ProjectInfo.ContactCellPhone")]
             [DataType(DataType.PhoneNumber, ErrorMessage = "Invalid Phone Number")]
             [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
