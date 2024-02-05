@@ -193,7 +193,7 @@ public class GrantApplicationAppService :
                         City = application.City,
                         RequestedAmount = application.RequestedAmount,
                         ProjectBudget = application.TotalProjectBudget,
-                        Sector = application.Sector,
+                        Sector = applicant.Sector,
                         Community = application.Community,
                         Status = application.ApplicationStatus.InternalStatus,
                         LikelihoodOfFunding = application.LikelihoodOfFunding != null && application.LikelihoodOfFunding != "" ? AssessmentResultsOptionsList.FundingList[application.LikelihoodOfFunding] : "",
