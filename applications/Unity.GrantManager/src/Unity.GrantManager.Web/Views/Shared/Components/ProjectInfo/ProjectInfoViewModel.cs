@@ -46,6 +46,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         {
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ProjectName")]
+            [MaxLength(255, ErrorMessage = "Must be a maximum of 255 characters")]
             public string? ProjectName { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ProjectSummary")]
@@ -113,6 +114,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? Community { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContactFullName")]
+            [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]
             public string? ContactFullName { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContactTitle")]

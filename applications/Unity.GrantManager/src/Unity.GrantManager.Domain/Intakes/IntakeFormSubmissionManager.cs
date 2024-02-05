@@ -95,7 +95,7 @@ namespace Unity.GrantManager.Intakes
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = intakeMap.ProjectName ?? "{Project Name}",
+                    ProjectName = !string.IsNullOrEmpty(intakeMap.ProjectName) ? intakeMap.ProjectName.Substring(0, 255) : "{Project Name}",
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
@@ -169,7 +169,7 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = intakeMap.ApplicantName ?? "{ApplicantName}",
+                ApplicantName = !string.IsNullOrEmpty(intakeMap.ApplicantName) ? intakeMap.ApplicantName.Substring(0, 600) : "{ApplicantName}", 
                 NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
                 OrgName = intakeMap.OrgName ?? "{OrgName}",
                 OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
