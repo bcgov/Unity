@@ -1,4 +1,3 @@
-using Amazon.S3.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -123,7 +122,7 @@ public class GrantApplicationAppService :
             appDto.AssessmentCount = x.AssessmentCount;
             appDto.AssessmentReviewCount = x.AssessmentReviewCount;
             appDto.ApplicationTag = x.tag?.Text ?? string.Empty;
-            appDto.Owner = x.application.OwnerId != null ? await GetOwnerAsync(new Guid(x.application.OwnerId.ToString())) : new GrantApplicationAssigneeDto();
+            appDto.Owner = x.application.OwnerId != null && x.application.OwnerId == Guid.Empty ? await GetOwnerAsync(x.application.OwnerId ?? Guid.Empty) : new GrantApplicationAssigneeDto();
             return appDto;
         }).ToList();
 

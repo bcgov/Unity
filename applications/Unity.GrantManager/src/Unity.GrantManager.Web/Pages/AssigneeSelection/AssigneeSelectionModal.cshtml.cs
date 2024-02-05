@@ -50,7 +50,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
         public class AssigneeRole
         {
-            public string Id { get; set; }
+            public string? Id { get; set; }
             public string? Role { get; set; }
         }
 
@@ -165,7 +165,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                     }
                     var uncommonAssignees = assignees
                                             .Where(a => selectedApplicationIds.Contains(a.ApplicationId))
-                                            .Where(a => !commonArray.Any(c => c.AssigneeId == a.AssigneeId && c.Role == a.Role))
+                                            .Where(a => !commonArray.Exists(c => c.AssigneeId == a.AssigneeId && c.Role == a.Role))
                                             .GroupBy(a => new { a.AssigneeId, a.FullName, a.Role })
                                             .Select(group => new { AssigneeId = group.Key.AssigneeId, FullName = group.Key.FullName, Role = group.Key.Role })
                                             .ToList();
@@ -187,93 +187,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                     }
 
                 
-
-                    Console.WriteLine("All Assignees: " + string.Join(", ", allAssignees));
-                    Console.WriteLine("Common Assignees: " + string.Join(", ", commonAssigneeList.Select(assignee => assignee.AssigneeId)));
-                    Console.WriteLine("Uncommon Assignees: " + string.Join(", ", unCommonAssigneeList.Select(assignee => assignee.AssigneeId)));
-
-
-
-                    //var missingApplicationIds = selectedApplicationIds.Except(assignees.Select(assignee => assignee.ApplicationId));
-                    //var assigneeIds = assignees.Select(item => item.AssigneeId).ToList();
-                    //var commonAssigneeIds = assignees.GroupBy(obj => new { obj.AssigneeId, obj.Role })
-                    //                        .Where(group => group.Count() == assignees.Count)
-                    //                        .Select(group => group.Key.AssigneeId);
-
-                    //var uncommonAssigneeIds = assigneeIds.Except(commonAssigneeIds).ToList();
-                    //foreach (var assingee in assignees)
-                    //{
-                    //    var user = users.Items.FirstOrDefault(s => s.Id == assingee.AssigneeId);
-                    //    if (user != null)
-                    //    {
-
-                    //        currentAssigneeList.Add(new GrantApplicationAssigneeDto()
-                    //        {
-                    //            Id = assingee.Id,
-                    //            FullName = $"{user.Name} {user.Surname}",
-                    //            Role = assingee.Role,
-                    //            AssigneeId = assingee.AssigneeId,
-                    //            ApplicationId = assingee.ApplicationId,
-                    //        });
-                    //        if (selectedApplicationIds.Count > 1)
-                    //        {
-                    //            if (missingApplicationIds.Any())
-                    //            {
-
-                    //                unCommonAssigneeList.Add(new GrantApplicationAssigneeDto()
-                    //                {
-                    //                    Id = user.Id,
-                    //                    FullName = $"{user.Name} {user.Surname}",
-                    //                    Role = assingee.Role,
-                    //                    AssigneeId = user.Id,
-                    //                });
-                    //            }
-                    //            else
-                    //            {
-                    //                if (commonAssigneeIds.Contains(assingee.AssigneeId))
-                    //                {
-                    //                    bool itemWithPropertyExists = commonAssigneeList.Exists(item => item.AssigneeId == assingee.AssigneeId);
-                    //                    if (!itemWithPropertyExists)
-                    //                    {
-                    //                        commonAssigneeList.Add(new GrantApplicationAssigneeDto()
-                    //                        {
-                    //                            Id = user.Id,
-                    //                            FullName = $"{user.Name} {user.Surname}",
-                    //                            Role = assingee.Role,
-                    //                            AssigneeId = user.Id,
-                    //                        });
-                    //                    }
-
-
-
-                    //                }
-                    //                if (uncommonAssigneeIds.Contains(assingee.AssigneeId))
-                    //                {
-
-                    //                    unCommonAssigneeList.Add(new GrantApplicationAssigneeDto()
-                    //                    {
-                    //                        Id = user.Id,
-                    //                        FullName = $"{user.Name} {user.Surname}",
-                    //                        Role = assingee.Role,
-                    //                        AssigneeId = user.Id,
-                    //                    });
-
-                    //                }
-                    //            }
-                    //        }
-                    //        else
-                    //        {
-                    //            commonAssigneeList.Add(new GrantApplicationAssigneeDto()
-                    //            {
-                    //                Id = user.Id,
-                    //                FullName = $"{user.Name} {user.Surname}",
-                    //                Role = assingee.Role,
-                    //                AssigneeId = user.Id,
-                    //            });
-                    //        }
-                    //    }
-
-                    //}
+                    
 
                     if (selectedApplicationIds.Count == 1)
                     {
@@ -315,7 +229,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                     CommonAssigneeList = JsonConvert.SerializeObject(commonAssigneeList);
                     UnCommonAssigneeList = JsonConvert.SerializeObject(unCommonAssigneeList);
                     CurrentAssigneeList = JsonConvert.SerializeObject(currentAssigneeList);
-                    Console.WriteLine(CurrentAssigneeList);
+                   
                 }
 
             }

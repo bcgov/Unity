@@ -52,7 +52,6 @@ $(function () {
         if (this.anyErrors(Id))
             return;
 
-        //let roleText = this.input.value.trim();
 
         // Push the tag and role to this.arr
         this.arr.push({ Id: Id, Role: roleText });
@@ -255,10 +254,7 @@ $(function () {
         }
     }
 
-    // initialize the Events
-    function initEvents(tags) {
-       
-    }
+  
     UserTagsInput.prototype.getTags = function () {
         return this.arr.slice(); // Return a copy of the array to prevent external modification
     }
