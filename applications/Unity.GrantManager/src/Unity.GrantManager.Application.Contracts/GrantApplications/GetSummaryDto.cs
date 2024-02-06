@@ -25,6 +25,5 @@ public class GetSummaryDto
     public decimal? RecommendedAmount { get; set; }
     public decimal? ApprovedAmount { get; set; }
     public string? Batch { get; set; }
-    public string? CensusSubdivision { get; set; }
     public string? RegionalDistrict { get; set; }
 }

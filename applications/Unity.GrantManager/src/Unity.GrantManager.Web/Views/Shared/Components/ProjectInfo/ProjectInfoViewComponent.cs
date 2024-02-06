@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         private readonly IEconomicRegionService _applicationEconomicRegionAppService;
         private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
         private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
-        private readonly ICensusSubdivisionService _applicationCensusSubdivisionAppService;
+        private readonly ICommunityService _applicationCommunityAppService;
 
         public ProjectInfoViewComponent(
             IGrantApplicationAppService grantApplicationAppService,
@@ -33,7 +33,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             IEconomicRegionService applicationEconomicRegionAppService,
             IElectoralDistrictService applicationElectoralDistrictAppService,
             IRegionalDistrictService applicationRegionalDistrictAppService,
-            ICensusSubdivisionService applicationCensusSubdivisionAppService
+            ICommunityService applicationCommunityAppService
             )
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
             _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
             _applicationRegionalDistrictAppService = applicationRegionalDistrictAppService;
-            _applicationCensusSubdivisionAppService = applicationCensusSubdivisionAppService;
+            _applicationCommunityAppService = applicationCommunityAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -58,14 +58,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             List<RegionalDistrictDto> RegionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
 
-            List<CensusSubdivisionDto> CensusSubdivisions = (await _applicationCensusSubdivisionAppService.GetListAsync()).ToList();
+            List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();
 
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationSectors = Sectors,
                 RegionalDistricts = RegionalDistricts,
-                CensusSubdivisions = CensusSubdivisions,
+                Communities = Communities,
                 EconomicRegions = EconomicRegions,
             };
 
@@ -117,8 +117,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 else {
                     RegionalDistrictCode = RegionalDistricts[0].RegionalDistrictCode;
                 }
-                model.CensusSubdivisionList.AddRange(CensusSubdivisions.FindAll(x => x.RegionalDistrictCode == RegionalDistrictCode).Select(CensusSubdivision =>
-                    new SelectListItem { Value = CensusSubdivision.CensusSubdivisionName, Text = CensusSubdivision.CensusSubdivisionName }));
+                model.CommunityList.AddRange(Communities.FindAll(x => x.RegionalDistrictCode == RegionalDistrictCode).Select(community =>
+                    new SelectListItem { Value = community.Name, Text = community.Name }));
             }
 
 
@@ -157,7 +157,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 SubSector = application.SubSector,
                 EconomicRegion = application.EconomicRegion,
                 ElectoralDistrict = application.ElectoralDistrict,
-                CensusSubdivision = application.CensusSubdivision,
                 RegionalDistrict = application.RegionalDistrict,
                 ContactFullName = application.ContactFullName,
                 ContactTitle = application.ContactTitle,
