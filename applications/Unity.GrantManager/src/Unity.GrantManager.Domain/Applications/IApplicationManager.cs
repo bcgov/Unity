@@ -6,7 +6,8 @@ using Unity.GrantManager.GrantApplications;
 namespace Unity.GrantManager.Applications;
 public interface IApplicationManager
 {
-    Task AssignUserAsync(Guid applicationId, Guid assigneeId);
+    Task AssignUserAsync(Guid applicationId, Guid assigneeId, string? role);
+    Task UpdateAssigneeAsync(Guid applicationId, Guid assigneeId, string? role);
     Task RemoveAssigneeAsync(Guid applicationId, Guid assigneeId);
     Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId);    
     Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);

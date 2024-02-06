@@ -43,15 +43,15 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];        
 
-        Guid[] applicationIds = new Guid[1];
-        applicationIds.SetValue(application.Id, 0);
+        //Guid applicationIds = new Guid[1];
+        //applicationIds application.Id, 0);
         var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
         if (users != null && users.Items.Count > 0)
         {
             UserData uData = users.Items[0];
 
             // Act
-            await _grantApplicationAppServiceTest.InsertAssigneeAsync(applicationIds, uData.Id);
+            await _grantApplicationAppServiceTest.InsertAssigneeAsync(application.Id, uData.Id,"");
             await uow.SaveChangesAsync();
 
 
@@ -61,7 +61,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
             assignments.Count.ShouldBe(1);
 
             // Act
-            await _grantApplicationAppServiceTest.DeleteAssigneeAsync(applicationIds, uData.Id);
+            await _grantApplicationAppServiceTest.DeleteAssigneeAsync(application.Id, uData.Id);
             await uow.SaveChangesAsync();
 
             IQueryable<ApplicationAssignment> queryableAssignment2 = _userAssignmentRepository.GetQueryableAsync().Result;
