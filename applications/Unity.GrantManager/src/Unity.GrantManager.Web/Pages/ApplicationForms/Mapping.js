@@ -36,6 +36,7 @@
                           'simpleurladvanced',
                           'simplecheckbox',
                           'simpleradios',
+                          'simpleradioadvanced',
                           'simplecheckboxes',
                           'simplecheckboxadvanced',
                           'simplecurrencyadvanced', 
