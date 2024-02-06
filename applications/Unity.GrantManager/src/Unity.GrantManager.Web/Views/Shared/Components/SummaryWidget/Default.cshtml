@@ -20,6 +20,34 @@
             <th></th>
         </tr>
         <tr>
+            <td colspan="2">
+                @Html.LabelFor(model => model.Category, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.Owner.FullName)
+                </div>
+            </td>
+        
+        </tr>
+        <tr>
+            <td colspan="2">
+                @Html.LabelFor(model => model.Category, new { @class= "" })
+                <div class="display-input">
+                    <div class="user-tags-input-wrapper ">
+
+                
+                    @foreach (var assignee in Model.Assignees)
+                    {
+                            <div class="user-tag tags-common tag-wrap">
+                                <label class="full-length-tag">@assignee.FullName</label>
+                                <br><label>@assignee.Role</label></div>
+                    }
+                    </div>
+
+                </div>
+            </td>
+        </tr>
+        <tr>
+           
             <td>
                 @Html.LabelFor(model => model.Category, new { @class= "display-input-label" })
                 <div class="display-input">

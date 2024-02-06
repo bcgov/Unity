@@ -207,10 +207,16 @@ public class GrantApplicationAppService :
                         ApprovedAmount = application.ApprovedAmount,
                         Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
-                    };
+                        OwnerId  =  application.OwnerId,
+                      
+    };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
         if (queryResult != null) {
+            var ownerId = queryResult.OwnerId ?? Guid.Empty;
+            queryResult.Owner = await GetOwnerAsync(ownerId);
+            queryResult.Assignees =  await GetAssigneesAsync(applicationId);
+          
             return queryResult;
         } else {
             return await Task.FromResult<GetSummaryDto>(new GetSummaryDto());
@@ -363,7 +369,8 @@ public class GrantApplicationAppService :
                     {
                         Id = userAssignment.Id,
                         AssigneeId = userAssignment.AssigneeId,
-                        FullName = user.FullName
+                        FullName = user.FullName,
+                        Role = userAssignment.Role,
                     };
 
         return query.ToList();

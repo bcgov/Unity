@@ -37,3 +37,10 @@
     border-collapse: separate;
     border-spacing: 5px 5px;
 }
+.tag-wrap {
+    flex-wrap: wrap;
+}
+
+.full-length-tag {
+    width: 100%;
+}
