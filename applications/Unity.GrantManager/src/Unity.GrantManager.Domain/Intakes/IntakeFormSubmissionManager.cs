@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -94,7 +95,7 @@ namespace Unity.GrantManager.Intakes
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = geFormattedString(255, "{ProjectName}", intakeMap.ProjectName),
+                    ProjectName = ResolveAndTruncateField(255, "{ProjectName}", intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
@@ -119,10 +120,11 @@ namespace Unity.GrantManager.Intakes
             return application;
         }
 
-        private string geFormattedString(int maxLength, string defaultFieldName, string? valueString) {
+        private string ResolveAndTruncateField(int maxLength, string defaultFieldName, string? valueString) {
             string fieldValue = defaultFieldName;
 
             if(!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength) {
+                Logger.LogWarning("Truncation: {fieldName} has been truncated! - Max length: {length}", defaultFieldName, maxLength);
                 fieldValue = valueString.Substring(0, maxLength);
             } else if (!string.IsNullOrEmpty(valueString)) {
                 fieldValue = valueString.Trim();
@@ -180,7 +182,7 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = geFormattedString(600, "{ApplicantName}", intakeMap.ApplicantName), 
+                ApplicantName = ResolveAndTruncateField(600, "{ApplicantName}", intakeMap.ApplicantName), 
                 NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
                 OrgName = intakeMap.OrgName ?? "{OrgName}",
                 OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
