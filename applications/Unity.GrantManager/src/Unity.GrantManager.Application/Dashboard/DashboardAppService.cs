@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.VisualBasic;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,16 +18,19 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicantRepository _applicantRepository;
+    private readonly IApplicationTagsRepository _applicationTagsRepository;
 
     public DashboardAppService(IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
-        IApplicantRepository applicantRepository
+        IApplicantRepository applicantRepository,
+        IApplicationTagsRepository applicationTagsRepository
         )
          : base()
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatusRepository;
         _applicantRepository = applicantRepository;
+        _applicationTagsRepository = applicationTagsRepository;
     }
 
     public async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync()
@@ -62,4 +66,15 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return queryResult;
     }
 
+    public async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync()
+    {
+        var applicationTags = await _applicationTagsRepository.GetListAsync();
+        List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList();
+        List<string> tags = [];
+        concatenatedTags.ForEach(txt => tags.AddRange(txt.Split(',').ToList()));
+        tags = tags.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+        var uniqueTags = new HashSet<string>(tags);
+        var result = uniqueTags.Select(tag => new GetApplicationTagDto { ApplicationTag = tag, Count= tags.Count(tg => tg==tag)}).ToList();
+        return result;
+    }
 }
