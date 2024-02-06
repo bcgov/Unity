@@ -239,6 +239,7 @@ namespace Unity.GrantManager.Web.Identity
         {
             claimsPrinicipal.AddClaim("DisplayName", displayName);
             claimsPrinicipal.AddClaim("UserId", userId.ToString());
+            claimsPrinicipal.AddClaim("Badge", Utils.CreateUserBadge(displayName));
         }
 
         private static void AssignDefaultPermissions(ClaimsPrincipal claimsPrincipal)

@@ -5,23 +5,7 @@
 @inject ICurrentTenant CurrentTenant
 @inject ICurrentUser CurrentUser
 
-@{
-    string userNameInitials = "";
-    if (CurrentUser != null)
-    {
-        if (CurrentUser.SurName.Length > 0)
-        {
-            userNameInitials += CurrentUser.SurName.Substring(0, 1);
-        }
-        if (CurrentUser.Name.Length > 0)
-        {
-            userNameInitials += CurrentUser.Name.Substring(0, 1);
-        }
-    }
-    if (userNameInitials.IsNullOrEmpty())
-    {
-        userNameInitials = "TU"; //TU for Test User
-    }
+@{  
     string pageTitle = CurrentTenant.Name;
     if (ViewBag.PageTitle != null) {
         pageTitle += $" / {ViewBag.PageTitle}";
@@ -65,8 +49,8 @@
                 </button>
             </div>
             <div class="px-2 d-flex align-items-center">
-                <div class="unity-user-initials">
-                    @userNameInitials
+                <div class="unity-user-initials">                    
+                    @Html.Raw(CurrentUser.FindClaimValue("Badge"))                 
                 </div>
             </div>
         </div>
