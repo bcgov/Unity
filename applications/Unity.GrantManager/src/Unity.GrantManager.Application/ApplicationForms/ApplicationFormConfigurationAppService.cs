@@ -30,11 +30,12 @@ namespace Unity.GrantManager.ApplicationForms
         }
 
         public async Task<ApplicationFormsConfigurationDto> GetConfiguration()
-        {            
+        {
+            var scheme = "https"; // default to https
             var request = _httpContextAccessor.HttpContext.Request;
             var host = request.Host.ToUriComponent();
             var pathBase = request.PathBase.ToUriComponent();
-            var baseUrl = $"{request.Scheme}://{host}{pathBase}";
+            var baseUrl = $"{scheme}://{host}{pathBase}";
 
             TenantToken? tenantToken = null;
             var tokenValue = string.Empty;
