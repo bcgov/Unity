@@ -20,18 +20,10 @@
             <th></th>
         </tr>
         <tr>
-            <td colspan="2">
+            <td>
                 @Html.LabelFor(model => model.Category, new { @class= "display-input-label" })
                 <div class="display-input">
                     @Html.DisplayFor(model => model.Category)
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                @Html.LabelFor(model => model.EconomicRegion, new { @class= "display-input-label" })
-                <div class="display-input">
-                    @Html.DisplayFor(model => model.EconomicRegion)
                 </div>
             </td>
             <td>
@@ -59,12 +51,20 @@
         </tr>
         <tr>
             <td>
-                @Html.LabelFor(model => model.City, new { @class= "display-input-label" })
+                @Html.LabelFor(model => model.EconomicRegion, new { @class= "display-input-label" })
                 <div class="display-input">
-                    @Html.DisplayFor(model => model.City)
+                    @Html.DisplayFor(model => model.EconomicRegion)
                 </div>
             </td>
             <td>
+                @Html.LabelFor(model => model.RegionalDistrict, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.RegionalDistrict)
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
                 @Html.LabelFor(model => model.Community, new { @class= "display-input-label" })
                 <div class="display-input">
                     @Html.DisplayFor(model => model.Community)
