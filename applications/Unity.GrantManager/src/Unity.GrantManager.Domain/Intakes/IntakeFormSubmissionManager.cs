@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -123,7 +124,7 @@ namespace Unity.GrantManager.Intakes
             string fieldValue = defaultFieldName;
 
             if(!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength) {
-                Logger.LogWarning("Truncation: {fieldName} has been truncated! - Max length: {length}", fieldName, length);
+                Logger.LogWarning("Truncation: {fieldName} has been truncated! - Max length: {length}", defaultFieldName, maxLength);
                 fieldValue = valueString.Substring(0, maxLength);
             } else if (!string.IsNullOrEmpty(valueString)) {
                 fieldValue = valueString.Trim();
