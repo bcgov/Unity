@@ -20,6 +20,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -116,7 +117,7 @@ public class GrantApplicationAppService :
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
             appDto.Status = x.appStatus.InternalStatus;
             appDto.Assignees = await GetAssigneesAsync(x.application.Id);
-            appDto.Applicant = x.applicant.ApplicantName;
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(x.applicant);
             appDto.Category = x.appForm.Category ?? string.Empty;
             appDto.AssessmentCount = x.AssessmentCount;
             appDto.AssessmentReviewCount = x.AssessmentReviewCount;
@@ -153,7 +154,7 @@ public class GrantApplicationAppService :
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
             appDto.StatusCode = queryResult.appStatus.StatusCode;
             appDto.Status = queryResult.appStatus.InternalStatus;
-            appDto.Applicant = queryResult.applicant.ApplicantName;
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(queryResult.applicant);
             var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId==dto.ApplicantId && s.ApplicationId==dto.Id);
             if(contactInfo != null) 
             {
@@ -163,6 +164,13 @@ public class GrantApplicationAppService :
                 appDto.ContactBusinessPhone = contactInfo.Phone;
                 appDto.ContactCellPhone = contactInfo.Phone2;
             }
+            
+            if (appDto.Applicant != null) 
+            {
+                appDto.Sector = appDto.Applicant.Sector;
+                appDto.SubSector = appDto.Applicant.SubSector;
+            }
+
             return appDto;
         } else {
             return await Task.FromResult<GrantApplicationDto>(new GrantApplicationDto());
@@ -185,7 +193,7 @@ public class GrantApplicationAppService :
                         City = application.City,
                         RequestedAmount = application.RequestedAmount,
                         ProjectBudget = application.TotalProjectBudget,
-                        Sector = application.Sector,
+                        Sector = applicant.Sector,
                         Community = application.Community,
                         Status = application.ApplicationStatus.InternalStatus,
                         LikelihoodOfFunding = application.LikelihoodOfFunding != null && application.LikelihoodOfFunding != "" ? AssessmentResultsOptionsList.FundingList[application.LikelihoodOfFunding] : "",
@@ -195,8 +203,7 @@ public class GrantApplicationAppService :
                         AssessmentResult = application.AssessmentResultStatus != null && application.AssessmentResultStatus != "" ? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus] : "",
                         RecommendedAmount = application.RecommendedAmount,
                         ApprovedAmount = application.ApprovedAmount,
-                        Batch = "", // to-do: ask BA for the implementation of Batch field,
-                        CensusSubdivision = application.CensusSubdivision,
+                        Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
                     };
 
@@ -283,14 +290,18 @@ public class GrantApplicationAppService :
             application.Acquisition = input.Acquisition;
             application.Forestry = input.Forestry;
             application.ForestryFocus = input.ForestryFocus;
-            application.Sector = input.Sector;
-            application.SubSector = input.SubSector;
             application.EconomicRegion = input.EconomicRegion;
-            application.ElectoralDistrict = input.ElectoralDistrict;
-            application.CensusSubdivision = input.CensusSubdivision;
+            application.ElectoralDistrict = input.ElectoralDistrict;            
             application.RegionalDistrict = input.RegionalDistrict;
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+            // This applicant should never be null!
+
+            applicant.Sector = input.Sector ?? "";
+            applicant.SubSector = input.SubSector ?? "";
+            _ = await _applicantRepository.UpdateAsync(applicant);
 
             if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
                 || !string.IsNullOrEmpty(input.ContactBusinessPhone) || !string.IsNullOrEmpty(input.ContactCellPhone))
@@ -333,8 +344,7 @@ public class GrantApplicationAppService :
             } else
             {
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
-            }
-     
+            }     
         }
         else
         {

@@ -5,8 +5,7 @@
         // These parameters are ordered alphabetically - please ensure order as rendered on screen
         public string? Acquisition { get; set; }
         public string? ApplicantName { get; set; } 
-        public string? ApproxNumberOfEmployees { get; set; }
-        public string? CensusSubdivision { get; set; }
+        public string? ApproxNumberOfEmployees { get; set; }        
         public string? Community { get; set; }
         public string? CommunityPopulation { get; set; }
         public string? ConfirmationId { get; set; }
