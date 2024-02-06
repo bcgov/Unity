@@ -123,7 +123,7 @@ public class GrantApplicationAppService :
             appDto.AssessmentCount = x.AssessmentCount;
             appDto.AssessmentReviewCount = x.AssessmentReviewCount;
             appDto.ApplicationTag = x.tag?.Text ?? string.Empty;
-            appDto.Owner = x.application.OwnerId != null && x.application.OwnerId == Guid.Empty ? await GetOwnerAsync(x.application.OwnerId ?? Guid.Empty) : new GrantApplicationAssigneeDto();
+            appDto.Owner = x.application.OwnerId != null && x.application.OwnerId != Guid.Empty ? await GetOwnerAsync(x.application.OwnerId ?? Guid.Empty) : new GrantApplicationAssigneeDto();
             return appDto;
         }).ToList();
 
