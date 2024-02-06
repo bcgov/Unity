@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -91,11 +92,10 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await CreateApplicantAsync(intakeMap);
             var submittedStatus = await _applicationStatusRepository.FirstAsync(s => s.StatusCode.Equals(GrantApplicationState.SUBMITTED));
-
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = !string.IsNullOrEmpty(intakeMap.ProjectName) ? intakeMap.ProjectName.Substring(0, 255) : "{Project Name}",
+                    ProjectName = ResolveAndTruncateField(255, "{ProjectName}", intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
@@ -118,6 +118,19 @@ namespace Unity.GrantManager.Intakes
             );   
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
             return application;
+        }
+
+        private string ResolveAndTruncateField(int maxLength, string defaultFieldName, string? valueString) {
+            string fieldValue = defaultFieldName;
+
+            if(!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength) {
+                Logger.LogWarning("Truncation: {fieldName} has been truncated! - Max length: {length}", defaultFieldName, maxLength);
+                fieldValue = valueString.Substring(0, maxLength);
+            } else if (!string.IsNullOrEmpty(valueString)) {
+                fieldValue = valueString.Trim();
+            }
+
+            return fieldValue;
         }
 
         private int? ConvertToIntFromString(string? intString)
@@ -169,7 +182,7 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = !string.IsNullOrEmpty(intakeMap.ApplicantName) ? intakeMap.ApplicantName.Substring(0, 600) : "{ApplicantName}", 
+                ApplicantName = ResolveAndTruncateField(600, "{ApplicantName}", intakeMap.ApplicantName), 
                 NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
                 OrgName = intakeMap.OrgName ?? "{OrgName}",
                 OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
