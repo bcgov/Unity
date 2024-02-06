@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -96,7 +95,7 @@ namespace Unity.GrantManager.Intakes
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = intakeMap.ProjectName ?? "{Project Name}",
+                    ProjectName = !string.IsNullOrEmpty(intakeMap.ProjectName) ? intakeMap.ProjectName.Substring(0, 255) : "{Project Name}",
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
@@ -106,14 +105,16 @@ namespace Unity.GrantManager.Intakes
                     ForestryFocus = intakeMap.ForestyFocus ?? null,
                     City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
                     EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
-                    Sector = intakeMap.Sector ?? "{Sector}",
                     CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
                     RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
                     SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
                     ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
                     ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
-                    TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget)
-                }                
+                    TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
+                    Community = intakeMap.Community ?? "{Community}",
+                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
+                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}"
+                }
             );   
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
             return application;
@@ -168,7 +169,7 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = intakeMap.ApplicantName ?? "{ApplicantName}",
+                ApplicantName = !string.IsNullOrEmpty(intakeMap.ApplicantName) ? intakeMap.ApplicantName.Substring(0, 600) : "{ApplicantName}", 
                 NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
                 OrgName = intakeMap.OrgName ?? "{OrgName}",
                 OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
@@ -176,12 +177,7 @@ namespace Unity.GrantManager.Intakes
                 Sector = intakeMap.Sector ?? "{Sector}",
                 SubSector = intakeMap.SubSector ?? "{SubSector}",
                 ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
-                Community = intakeMap.Community ?? "{Community}",
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
-                ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
-                CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
-                RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
             });
 
             await CreateApplicantAddressAsync(intakeMap, applicant);

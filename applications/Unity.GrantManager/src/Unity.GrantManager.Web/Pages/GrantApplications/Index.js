@@ -286,8 +286,6 @@
                         text: 'Manage Columns',
                          columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35],
                          className: 'btn btn-light custom-table-btn cln-visible',
-
-                       
                     }
                 ],
                 drawCallback: function () {
@@ -325,8 +323,8 @@
                     },
                     { //1
                         title: 'Applicant Name',
-                        data: 'applicant',
-                        name: 'applicant',
+                        data: 'applicant.applicantName',
+                        name: 'applicant.applicantName',
                         className: 'data-table-header',
                     },
                     { //2
@@ -360,8 +358,8 @@
                     },
                     { //6
                         title: 'Sector',
-                        name: 'sector',
-                        data: 'sector',
+                        name: 'applicant.sector',
+                        data: 'applicant.sector',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '{Sector}';
@@ -430,12 +428,6 @@
                             return formatter.format(data);
                         },
                     },
-                    //{ // -- 
-                    //    title: 'Final Decision Date',
-                    //    name: 'finalDecisionDate',
-                    //    className: 'data-table-header',
-                    //    visible: false,                    
-                    //},
                     { //12
                         title: 'Approved Amount',
                         name: 'approved Amount',
@@ -455,16 +447,24 @@
                         },
                     },
                     { //14
-                        title: 'City',
-                        name: 'city',
-                        data: 'city',
+                        title: 'Regional District',
+                        name: 'regional District',
+                        data: 'regionalDistrict',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{City}';
+                            return data ?? '{Regional District}';
                         },
                     },
-                              
                     { //15
+                        title: 'Community',
+                        name: 'community',
+                        data: 'community',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Community}';
+                        },
+                    },
+                    { //16
                         title: 'Organization Number',
                         name: 'organizationNumber',
                         data: 'organizationNumber',
@@ -474,7 +474,7 @@
                             return data ?? '{Organization Number}';
                         },
                     },
-                    { //16
+                    { //17
                         title: 'Org Book Status',
                         name: 'orgBookStatus',
                         data: 'orgBookStatus',
@@ -483,7 +483,7 @@
                             return data ?? '{Org Book Status}';
                         },
                     },
-                    { //17 -- mapped
+                    { //18 -- mapped
                         title: 'Project Start Date',
                         name: 'projectStartDate',
                         data: 'projectStartDate',
@@ -494,7 +494,7 @@
                             }).toLocaleString() : '{Project Start Date}' ;
                         },
                     },
-                    { //18 -- mapped
+                    { //19 -- mapped
                         title: 'Project End Date',
                         name: 'projectEndDate',
                         data: 'projectEndDate',
@@ -505,7 +505,7 @@
                             }).toLocaleString() : '{Project End Date}';
                         },
                     },
-                    { //19  -- mapped
+                    { //20  -- mapped
                         title: 'Projected Funding Total',
                         name: 'projectFundingTotal',
                         data: 'projectFundingTotal',
@@ -514,7 +514,7 @@
                             return formatter.format(data) ?? '{Projected Funding Total}';
                         },
                     },
-                    { //20  -- mapped
+                    { //21  -- mapped
                         title: '% of Total Project Budget',
                         name: 'percentageTotalProjectBudget',
                         data: 'percentageTotalProjectBudget',
@@ -523,7 +523,7 @@
                             return data ?? '{% of Total Project Budget}';
                         },
                     },
-                    { //21
+                    { //22
                         title: 'Total Paid Amount $',
                         name: 'projectFundingTotal',
                         data: 'projectFundingTotal',
@@ -532,7 +532,7 @@
                             return  formatter.format(data) ?? '{Total Paid Amount $}';
                         },
                     },
-                    { //22
+                    { //23
                         title: 'Electoral District',
                         name: 'electoralDistrict',
                         data: 'electoralDistrict',
@@ -541,7 +541,7 @@
                             return data ?? '{Electoral District}';
                         },
                     },
-                    { //23 -- mapped
+                    { //24 -- mapped
                         title: 'Forestry or Non-Forestry',
                         name: 'forestryOrNonForestry',
                         data: 'forestry',
@@ -553,7 +553,7 @@
                                 return '{Forestry or Non-Forestry}';
                         },
                     },
-                    { //24 -- mapped
+                    { //25 -- mapped
                         title: 'Forestry Focus',
                         name: 'forestryFocus',
                         data: 'forestryFocus',
@@ -576,7 +576,7 @@
                          
                         },
                     },
-                    { //25 -- mapped
+                    { //26 -- mapped
                         title: 'Acquisition',
                         name: 'acquisition',
                         data: 'acquisition',
@@ -592,16 +592,16 @@
                           
                         },
                     },
-                    { //26 -- mapped
-                        title: 'Community',
-                        name: 'community',
-                        data: 'community',
+                    { //27-- mapped
+                        title: 'City',
+                        name: 'city',
+                        data: 'city',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{community}';
+                            return data ?? '{city}';
                         },
                     },
-                    { //27 -- mapped
+                    { //28 -- mapped
                         title: 'Community Population',
                         name: 'communityPopulation',
                         data: 'communityPopulation',
@@ -610,7 +610,7 @@
                             return data ?? '{Community Population}';
                         },
                     },
-                    { //28 -- mapped
+                    { //29 -- mapped
                         title: 'Likelihood of Funding',
                         name: 'likelihoodOfFunding',
                         data: 'likelihoodOfFunding',
@@ -624,7 +624,7 @@
                             }
                         },
                     },
-                    { //29 -- mapped
+                    { //30 -- mapped
                         title: 'Recommendation',
                         name: 'recommendation',
                         data: 'recommendation',
@@ -643,7 +643,7 @@
                             }
                         },
                     },
-                    { //30
+                    { //31
                         title: 'Tags',
                         name: 'applicationTag',
                         data: 'applicationTag',
@@ -652,7 +652,7 @@
                             return data.replace(/,/g, ', ') ?? '{Tags}';
                         },
                     },
-                    { //31 -- mapped
+                    { //32 -- mapped
                         title: 'Total Score',
                         name: 'totalScore',
                         data: 'totalScore',
@@ -661,7 +661,7 @@
                             return data ?? '{Total Score}';
                         },
                         },
-                    { //32 -- mapped
+                    { //33 -- mapped
                         title: 'Assessment Result',
                         name: 'assessmentResult',
                         data: 'assessmentResultStatus',
@@ -675,7 +675,7 @@
                             }
                         },
                      },
-                    { //33 -- mapped
+                    { //34 -- mapped
                         title: 'Recommended Amount',
                         name: 'recommendedAmount',
                         data: 'recommendedAmount',
@@ -684,7 +684,7 @@
                             return formatter.format(data) ?? '{Recommended Amount}';
                         },
                     },
-                    { //34 -- mapped
+                    { //35 -- mapped
                         title: 'Due Date',
                         name: 'dueDate',
                         data: 'dueDate',
@@ -708,7 +708,7 @@
 
                 columnDefs: [
                     {
-                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], // Index of columns to be visible by default
+                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], // Index of columns to be visible by default
                         visible: true
                     },
                     {
@@ -777,7 +777,6 @@
             $(".tr-toggle-filter").show();
         }
     }
-  
 
     function modifyAssignmentsOnServer() {
         let id,

@@ -22,8 +22,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
         [Display(Name = "Summary:Application.EconomicRegion")]
         public string? EconomicRegion { get; set; }
 
-        [Display(Name = "Summary:Application.City")]
-        public string? City { get; set; }
+        [Display(Name = "Summary:Application.RegionalDistrict")]
+        public string? RegionalDistrict { get; set; }
 
         [Display(Name = "Summary:Application.Community")]
         public string? Community { get; set; }
