@@ -115,19 +115,18 @@ public class GrantApplicationAppService :
                         applicationPerson,
                         applicationOwner
                     };
-        
-        var queryResult = await AsyncExecuter
-            .ToListAsync(
-                query
-                .OrderBy(NormalizeSorting(input.Sorting ?? string.Empty))
-                .GroupBy(s => s.application.Id));
 
-        // Needs to be further optimized
+        var result = query
+                .OrderBy(NormalizeSorting(input.Sorting ?? string.Empty))
+                .OrderBy(s => s.application.Id)
+                .GroupBy(s => s.application.Id)
+                .AsEnumerable()
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+                .ToList();
 
         var appDtos = new List<GrantApplicationDto>();
-        foreach (var grouping in queryResult
-            .Skip(input.SkipCount)
-            .Take(input.MaxResultCount))
+        foreach (var grouping in result)
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
             appDto.Status = grouping.First().appStatus.InternalStatus;
