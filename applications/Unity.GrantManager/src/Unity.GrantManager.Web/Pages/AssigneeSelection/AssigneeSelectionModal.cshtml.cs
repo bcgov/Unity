@@ -287,14 +287,14 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                             if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
                                             {
 
-                                                    currentAssigneeListSelectedApplication.ForEach( async assignee =>
+                                                    foreach (var assignee in currentAssigneeListSelectedApplication)
                                                     {
                                                         var assigneeDetails = uncommonAssignees.Find(x => x.Id == assignee.AssigneeId.ToString());
                                                         if (assigneeDetails == null)
                                                         {
                                                             await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
                                                         }
-                                                    });
+                                                    };
                                               
                                             }
                                         }
@@ -324,7 +324,8 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                             var currentAssigneeListSelectedApplication = currentAssigneeList.FindAll(x => x.ApplicationId == applicationId);
                                             if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
                                             {
-                                                currentAssigneeListSelectedApplication.ForEach(async assignee =>
+                                               
+                                                foreach(var assignee in currentAssigneeListSelectedApplication)
                                                 {
                                                     var assigneeDetails = selectedAssignees.Find(x => x.Id == assignee.AssigneeId.ToString());
                                                     if (assigneeDetails == null)
@@ -333,7 +334,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                                     }
 
 
-                                                });
+                                                };
                                             }
                                         }
 
@@ -355,12 +356,12 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                     var currentAssigneeListSelectedApplication = currentAssigneeList.FindAll(x => x.ApplicationId == applicationId);
                                     if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
                                     {
-                                        currentAssigneeListSelectedApplication.ForEach(async assignee =>
+                                        foreach (var assignee in currentAssigneeListSelectedApplication)
                                         {
 
                                             await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
 
-                                        });
+                                        };
                                     }
 
 
