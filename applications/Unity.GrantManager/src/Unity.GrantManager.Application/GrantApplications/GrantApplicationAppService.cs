@@ -424,15 +424,23 @@ public class GrantApplicationAppService :
 
     public async Task<GrantApplicationAssigneeDto> GetOwnerAsync(Guid ownerId)
     {
-
-        var owner = await _personRepository.GetAsync(ownerId, false);
-
-
-        return new GrantApplicationAssigneeDto
+        try
         {
-            Id = owner.Id,
-            FullName = owner.FullName
-        };
+            var owner = await _personRepository.GetAsync(ownerId, false);
+
+
+            return new GrantApplicationAssigneeDto
+            {
+                Id = owner.Id,
+                FullName = owner.FullName
+            };
+        }
+        catch(Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+            return new GrantApplicationAssigneeDto();
+        }
+        
     }
 
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)

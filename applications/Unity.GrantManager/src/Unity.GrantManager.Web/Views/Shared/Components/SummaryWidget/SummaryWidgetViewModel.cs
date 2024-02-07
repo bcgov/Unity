@@ -72,10 +72,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
         [Display(Name = "Summary:Assessment.Batch")]
         public string? Batch { get; set; }
 
-        [Display(Name = "Summary:Assessment.Batch")]
+        [Display(Name = "Summary:Application.Assignees")]
         public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
 
-        [Display(Name = "Summary:Assessment.Batch")]
+        [Display(Name = "Summary:Application.Owner")]
         public GrantApplicationAssigneeDto Owner { get; set; } = new();
     }
 }

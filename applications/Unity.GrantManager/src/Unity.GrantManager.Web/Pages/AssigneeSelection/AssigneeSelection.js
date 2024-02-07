@@ -68,7 +68,7 @@ $(function () {
 
         let roleInput = document.createElement('input');
         roleInput.type = 'text';
-        roleInput.placeholder = 'Add their role';
+        roleInput.placeholder = 'Add their duties';
         roleInput.value = roleText;
         roleInput.classList.add('user-tags-role-input');
         roleInput.addEventListener('blur', function () {
