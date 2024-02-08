@@ -69,7 +69,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     {
         var applicationTags = await _applicationTagsRepository.GetListAsync();
         List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList();
-        List<string> tags = [];
+        List<string> tags = new List<string>();
         concatenatedTags.ForEach(txt => tags.AddRange(txt.Split(',').ToList()));
         tags = tags.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
         var uniqueTags = new HashSet<string>(tags);
