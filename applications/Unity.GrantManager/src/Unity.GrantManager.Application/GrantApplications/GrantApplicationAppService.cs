@@ -277,10 +277,30 @@ public class GrantApplicationAppService :
             }
             else if (IsFinalDecisionMade && !IsEditApprovedAmount)
             {
-                throw new UnauthorizedAccessException(message: "Final decision is made, Update not allowed!");
+                if(application.ApplicationStatus.StatusCode == GrantApplicationState.GRANT_APPROVED)
+                {
+                    //Notes,SubStatus, and LikelihooodOfFunding is editable after approval
+                    application.Notes = input.Notes;
+                    application.SubStatus = input.SubStatus;
+                    application.LikelihoodOfFunding = input.LikelihoodOfFunding;
+
+                    await _applicationRepository.UpdateAsync(application, autoSave: true);
+                    return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException(message: "Final decision is made, Update not allowed!");
+                }
             }
             else
             {
+                if (application.ApplicationStatus.StatusCode == GrantApplicationState.GRANT_APPROVED)
+                {
+                    //Notes,SubStatus, and LikelihooodOfFunding is editable after approval
+                    application.Notes = input.Notes;
+                    application.SubStatus = input.SubStatus;
+                    application.LikelihoodOfFunding = input.LikelihoodOfFunding;
+                }
                 // These are some business rules that should be pushed further down into domain
                 if (IsEditApprovedAmount && IsFinalDecisionMade) // Only users with EditApprovedAmount permission can edit the value after final decision
                 {

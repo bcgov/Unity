@@ -52,7 +52,7 @@
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.LikelihoodOfFunding" asp-items="@Model.FundingRiskList"
-                                    onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
+                                    onchange="enableResultSaveBtn(this)" >
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
@@ -86,7 +86,7 @@
                     </abp-column>
                     <abp-column size="_6" class="px-1">
                         <abp-input asp-for="@Model.AssessmentResults.Notes"
-                                   onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)" />
+                                   onchange="enableResultSaveBtn(this)" />
                     </abp-column>
                 </abp-row>
             </abp-column>
