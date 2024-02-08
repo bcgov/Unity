@@ -478,23 +478,10 @@
                         },
                     },
                     { //30 -- mapped
-                        title: 'Recommendation',
-                        name: 'recommendation',
-                        data: 'recommendation',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            if (data) {
-                                if (data == 'APPROVE') {
-                                    return 'Recommended for Approval'
-                                }
-                                else if (data == 'DENY') {
-                                    return 'Recommended for Denial'
-                                }
-                            }
-                            else {
-                                return '{Recommendation}';
-                            }
-                        },
+                        title: 'Sub-Status',
+                        name: 'subStatusDisplayValue',
+                        data: 'subStatusDisplayValue',
+                        className: 'data-table-header',                        
                     },
                     { //31
                         title: 'Tags',
