@@ -1,14 +1,10 @@
 ﻿$(function () {
-    const formatter = createNumberFormatter();
-    const userDiv = document.getElementById('users-div');
+    const formatter = createNumberFormatter();    
     const l = abp.localization.getResource('GrantManager');
     const maxRowsPerPage = 15;
-    const createdCell = getCreatedCell();
-    let dt = $('#GrantApplicationsTable');
-    let userOptions = document.getElementById('users');
+    // const createdCell = getCreatedCell();
+    let dt = $('#GrantApplicationsTable');    
     let dataTable, currentRow, previousRow, currentCell, previousCell, originalContent, previousUserOptionsSelected, currentUserOptionsSelected;
-    let userDivChanged = false;
-    let modifiedAssignments = new Map();
     /* let mapTitles = new Map(); = not used */
     /* commented out clear filter functionality - needs to be looked at again or deleted */
 
@@ -25,14 +21,10 @@
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
         /* ClearFilter filterIcon: $("i.fl.fl-filter"), */
-        btnSave: $('#btn-save'),
-        userDiv: $('#users-div'),
-        users: $('#users'),
         /* ClearFilter clearFilter: $('#btn-clear-filter') */
     };
     init();
     function init() {
-        $('#users').select2();
         $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
         $('.csv-download').prepend('<i class="fl fl-export"></i>');
         $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
@@ -45,10 +37,6 @@
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
         /* ClearFilter UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden')); */
         /* ClearFilter UIElements.clearFilter.on('click', clearFilter); */
-        UIElements.btnSave.on('click', handleSave);
-        UIElements.userDiv.on('change', markUserDivAsChanged);
-        UIElements.userDiv.on('blur', checkUserDivChanged);
-        UIElements.users.on('blur', checkUserDivChanged);
     }
 
     dataTable.on('select', function (e, dt, type, indexes) {
@@ -86,17 +74,6 @@
     }
     */
 
-    function markUserDivAsChanged() {
-        userDivChanged = true;
-        $('#btn-save').attr('disabled', false);
-    }
-
-    function handleSave() {
-        changeCellContent(currentCell);
-        markUserDivAsUnchanged();
-        modifyAssignmentsOnServer();
-    }
-
     function handleSearch() {
         let filterValue = $('.dataTables_filter input').val();
         if (filterValue.length > 0) {
@@ -111,18 +88,6 @@
         }
     }
 
-    function checkUserDivChanged() {
-        if (userDivChanged) {
-            changeCellContent(currentCell);
-            userDivChanged = false;
-        }
-    }
-
-    function markUserDivAsUnchanged() {
-        userDivChanged = false;
-        $('#btn-save').attr('disabled', true);
-    }
-
     function createNumberFormatter() {
         return new Intl.NumberFormat('en-CA', {
             style: 'currency',
@@ -131,118 +96,6 @@
             maximumFractionDigits: 2,
         });
     }
-
-    function changeCellContent(cell) {
-        let count = 0;
-        let content = '';
-        let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
-        aData.assignees = [];
-
-        for (let userOption of userOptions) {
-            if (userOption.selected) {
-                count++;
-                content = userOption.text;
-                aData.assignees.push({
-                    fullName: userOption.text,
-                    assigneeId: userOption.value,
-                });
-            }
-        }
-
-        if (count === 1) {
-            cell.textContent = content;
-        } else if (count > 1) {
-            cell.textContent = 'Multiple assignees';
-        } else if (count === 0) {
-            cell.textContent = '';
-        }
-
-        modifiedAssignments.set(aData.id, aData.assignees);
-    }
-
-    function getUserOptionSelectedCount() {
-        let userOptionSelectedCount = 0;
-        for (let userOption of userOptions) {
-            if ($(userOption).prop('selected')) {
-                userOptionSelectedCount++;
-            }
-        }
-        return userOptionSelectedCount;
-    }
-
-    function getCreatedCell() {
-        return function (cell) {
-            cell.setAttribute('contenteditable', true);
-            cell.addEventListener('focus', function (e) {
-                checkUserDivChanged();
-                if (e.target.children.length == 0 ||
-                    (e.target.children.length == 1
-                    && e.target.children[0].className.includes('dt-select-assignees'))) {
-                    let currentContent = e.target.textContent;
-                    e.target.textContent = '';
-                    currentRow = e.target.parentElement._DT_RowIndex;
-                    let assigness = dataTable.row(e.target.parentElement).context[0]
-                        .aoData[currentRow]._aData.assignees;
-                    let assigneeIds = [];
-
-                    $(assigness).each(function (key, assignee) {
-                        assigneeIds.push(assignee.assigneeId);
-                    });
-
-                    previousUserOptionsSelected = getUserOptionSelectedCount();
-
-                    if (originalContent != ""
-                        && previousCell + "" != "undefined"
-                        && previousCell.textContent == ""
-                        && previousUserOptionsSelected > 0
-                        && currentRow != previousRow
-                    ) {
-                        previousCell.textContent = originalContent;
-                    }
-
-                    for (let userOption of userOptions) {
-                        $(userOption).prop(
-                            'selected',
-                            assigneeIds.includes(userOption.value)
-                        );
-                    }
-
-                    if (originalContent != " "
-                        && previousCell + "" != "undefined"
-                        && currentUserOptionsSelected + "" != "undefined"
-                        && previousUserOptionsSelected == currentUserOptionsSelected
-                        && currentRow != previousRow
-                    ) {
-                        previousCell.textContent = originalContent;
-                    }
-
-                    currentUserOptionsSelected = getUserOptionSelectedCount();
-
-                    $(userDiv).appendTo(this);
-                    $('#users').select2();
-                    userDiv.classList.remove('hidden');
-                    $('ul').click();
-
-                    originalContent = currentContent;
-                    previousCell = this;
-                    previousRow = currentRow;
-                    setTableHeighDynamic();
-                }
-                currentCell = this;                
-            });
-
-            cell.addEventListener('blur', function (e) {
-                if (
-                    e.relatedTarget != null &&
-                    e.relatedTarget.classList.value != 'select2-selection select2-selection--multiple' &&
-                    e.relatedTarget.classList.value != 'select2-search__field'
-                ) {
-                    changeCellContent(e.currentTarget);
-                }
-            });
-        };
-    }
-
 
     function initializeDataTable() {
         return dt.DataTable(
@@ -775,23 +628,6 @@
         $("#GrantApplicationsTable thead").after(newRow);
         if (optionsOpen) {
             $(".tr-toggle-filter").show();
-        }
-    }
-
-    function modifyAssignmentsOnServer() {
-        let id,
-            obj = Object.fromEntries(modifiedAssignments);
-        let jsonString = JSON.stringify(obj);
-
-        try {
-            unity.grantManager.grantApplications.grantApplication
-                .updateAssignees(jsonString)
-                .done(function () {
-                    abp.notify.success('The application has been updated.');
-                    PubSub.publish('refresh_application_list', id);
-                });
-        } catch (error) {
-            console.log(error);
         }
     }
 
