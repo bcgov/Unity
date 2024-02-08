@@ -150,3 +150,14 @@ function enableSaveBtn(inputText) {
     }    
     $('#saveProjectInfoBtn').prop('disabled', false);
 }
+
+function calculatePercentage() {
+    const requestedAmount = parseFloat(document.getElementById("ProjectInfo_RequestedAmount").value.replace(/,/g, ''));
+    const totalProjectBudget = parseFloat(document.getElementById("ProjectInfo_TotalProjectBudget").value.replace(/,/g, ''));
+    if (isNaN(requestedAmount) || isNaN(totalProjectBudget)) {
+        document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
+        return;
+    }
+    const percentage = (requestedAmount / totalProjectBudget) * 100.00;
+    document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = percentage.toFixed(2);
+}
