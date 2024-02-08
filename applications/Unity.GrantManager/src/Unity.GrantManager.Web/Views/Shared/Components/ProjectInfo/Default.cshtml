@@ -48,17 +48,17 @@
                 <abp-column size="_4" class="px-1">
                     <div class="unity-input-group">
                         <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" class="unity-currency-input" onchange="enableSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" class="unity-currency-input" onchange="calculatePercentage();enableSaveBtn(this);" />
                     </div>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                     <div class="unity-input-group">
                         <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" class="unity-currency-input" onchange="enableSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" class="unity-currency-input" onchange="calculatePercentage();enableSaveBtn(this);" />
                     </div>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="enableSaveBtn(this)" />
+                    <abp-input asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="calculatePercentage();enableSaveBtn(this);" disabled />
                 </abp-column>
 
                

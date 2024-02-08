@@ -322,6 +322,7 @@ public class GrantApplicationAppService :
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
+        var percentageTotalProjectBudget = input.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(input.RequestedAmount ?? 0, input.TotalProjectBudget ?? 0), 100).To<double>();
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
@@ -330,7 +331,7 @@ public class GrantApplicationAppService :
             application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
             application.ProjectStartDate = input.ProjectStartDate;
             application.ProjectEndDate = input.ProjectEndDate;
-            application.PercentageTotalProjectBudget = input.PercentageTotalProjectBudget;
+            application.PercentageTotalProjectBudget = Math.Round(percentageTotalProjectBudget, 2);
             application.ProjectFundingTotal = input.ProjectFundingTotal;
             application.Community = input.Community;
             application.CommunityPopulation = input.CommunityPopulation;
