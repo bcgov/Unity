@@ -131,10 +131,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 projectFundingTotal = (projectFundingTotal > ProjectFundingMax) ? ProjectFundingMax : projectFundingTotal;
             }
 
-            if (percentageTotalProjectBudget == 0)
-            {
-                percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Divide(application.RequestedAmount, application.TotalProjectBudget).To<double>();
-            }
+            percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(application.RequestedAmount, application.TotalProjectBudget),100).To<double>();
 
             model.IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
 
