@@ -475,7 +475,7 @@ input[type=number]::-webkit-outer-spin-button {
 .user-tags-input{
     width:100%;
 }
-.user-tags-role-input {
+.user-tags-duty-input {
     max-width: 9.375rem;
 }
 .user-tag {

@@ -157,7 +157,7 @@ public class GrantApplicationAppService :
                 AssigneeId = assignment.AssigneeId,
                 FullName = persons.FirstOrDefault(s => s.Id == assignment.AssigneeId)?.FullName ?? string.Empty,
                 Id = assignment.Id,
-                Role = assignment.Role
+                Duty = assignment.Duty
             };
         }
     }
@@ -416,7 +416,7 @@ public class GrantApplicationAppService :
                         Id = userAssignment.Id,
                         AssigneeId = userAssignment.AssigneeId,
                         FullName = user.FullName,
-                        Role = userAssignment.Role,
+                        Duty = userAssignment.Duty,
                     };
 
         return query.ToList();
@@ -494,7 +494,7 @@ public class GrantApplicationAppService :
         }
     }
 
-    public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? role)
+    public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
     {
 
         try
@@ -502,11 +502,11 @@ public class GrantApplicationAppService :
             var assignees = await GetAssigneesAsync(applicationId);
             if (assignees == null || assignees.FindIndex(a => a.AssigneeId == assigneeId) == -1)
             {
-                await _applicationManager.AssignUserAsync(applicationId, assigneeId, role);
+                await _applicationManager.AssignUserAsync(applicationId, assigneeId, duty);
             }
             else
             {
-                await _applicationManager.UpdateAssigneeAsync(applicationId, assigneeId, role);
+                await _applicationManager.UpdateAssigneeAsync(applicationId, assigneeId, duty);
             }
         }
         catch (Exception ex)

@@ -39,13 +39,13 @@ $(function () {
     // Add Tags
     UserTagsInput.prototype.addTag = function (tagData) {
         let defaultClass = 'tags-common';
-        let tagText, tagClass, Id, roleText;
+        let tagText, tagClass, Id, dutyText;
 
 
         tagText = tagData.FullName || '';
         tagClass = tagData.class || defaultClass;
         Id = tagData.Id;
-        roleText = tagData.Role || '';
+        dutyText = tagData.Duty || '';
 
 
 
@@ -53,8 +53,8 @@ $(function () {
             return;
 
 
-        // Push the tag and role to this.arr
-        this.arr.push({ Id: Id, Role: roleText });
+        // Push the tag and duty to this.arr
+        this.arr.push({ Id: Id, Duty: dutyText });
 
         let tagInput = this;
 
@@ -66,21 +66,21 @@ $(function () {
         let label = document.createElement('label');
         label.textContent = tagText;
 
-        let roleInput = document.createElement('input');
-        roleInput.type = 'text';
-        roleInput.placeholder = 'Add their duties';
-        roleInput.value = roleText;
-        roleInput.classList.add('user-tags-role-input');
-        roleInput.addEventListener('blur', function () {
-            // Update role value in this.arr when input field loses focus
+        let dutyInput = document.createElement('input');
+        dutyInput.type = 'text';
+        dutyInput.placeholder = 'Add their duties';
+        dutyInput.value = dutyText;
+        dutyInput.classList.add('user-tags-duty-input');
+        dutyInput.addEventListener('blur', function () {
+            // Update duty value in this.arr when input field loses focus
             let index = Array.from(tagInput.wrapper.childNodes).indexOf(tag);
-            tagInput.arr[index].Role = roleInput.value.trim();
+            tagInput.arr[index].Duty = dutyInput.value.trim();
             tagInput.orignal_input.value = JSON.stringify(tagInput.arr);
         });
         let lineBreak = document.createElement('br');
         innerDiv.appendChild(label);
         innerDiv.appendChild(lineBreak);
-        innerDiv.appendChild(roleInput);
+        innerDiv.appendChild(dutyInput);
 
         let closeDiv = document.createElement('div');
         closeDiv.className = 'tag tags-close-wraper';
