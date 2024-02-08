@@ -144,7 +144,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         return await _applicationRepository.UpdateAsync(application);
     }
 
-    public async Task AssignUserAsync(Guid applicationId, Guid assigneeId, string? role)
+    public async Task AssignUserAsync(Guid applicationId, Guid assigneeId, string? duty)
     {        
         using var uow = _unitOfWorkManager.Begin();
         var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
@@ -153,7 +153,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             {
                 AssigneeId = person.Id,
                 ApplicationId = applicationId ,
-                Role = role,
+                Duty = duty,
             });
 
         var application = await _applicationRepository.GetAsync(userAssignment.ApplicationId, true);
@@ -168,7 +168,7 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         await uow.SaveChangesAsync();
     }   
-    public async Task UpdateAssigneeAsync(Guid applicationId, Guid assigneeId, string? role)
+    public async Task UpdateAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
     {        
         using var uow = _unitOfWorkManager.Begin();
         var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
@@ -177,7 +177,7 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         if(userAssignment != null)
         {
-            userAssignment.Role = role;
+            userAssignment.Duty = duty;
 
             await _applicationAssignmentRepository.UpdateAsync(userAssignment);
         }
@@ -188,7 +188,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             {
                 AssigneeId = person.Id,
                 ApplicationId = applicationId,
-                Role = role
+                Duty = duty
             });
         }
            

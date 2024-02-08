@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace Unity.GrantManager.GrantApplications;
@@ -26,4 +27,7 @@ public class GetSummaryDto
     public decimal? ApprovedAmount { get; set; }
     public string? Batch { get; set; }
     public string? RegionalDistrict { get; set; }
+    public Guid? OwnerId { get; set; }
+    public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
+    public GrantApplicationAssigneeDto Owner { get; set; } = new();
 }

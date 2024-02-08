@@ -214,6 +214,8 @@
     "Summary:Application.RequestedAmount": "Requested Amount",
     "Summary:Application.ProjectBudget": "Project Budget",
     "Summary:Application.Sector": "Sector",
+    "Summary:Application.Owner": "Owner",
+    "Summary:Application.Assignees": "Assignees",
     "Summary:Assessment.Status": "Status",
     "Summary:Assessment.LikelihoodOfFunding": "Likelihood Of Funding",
     "Summary:Assessment.AssessmentStartDate": "Assessment Start Date",

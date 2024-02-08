@@ -37,3 +37,19 @@
     border-collapse: separate;
     border-spacing: 5px 5px;
 }
+.tag-wrap {
+    flex-wrap: wrap;
+    padding-right: 0px;
+}
+
+.full-length-tag {
+    width: 100%;
+}
+.empty-user-role{
+    color : gray;
+}
+
+
+.user-tags-details-input-wrapper {
+    border: 0px;
+}
