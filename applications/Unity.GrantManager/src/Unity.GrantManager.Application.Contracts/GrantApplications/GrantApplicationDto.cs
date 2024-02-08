@@ -6,7 +6,7 @@ namespace Unity.GrantManager.GrantApplications;
 
 public class GrantApplicationDto : AuditedEntityDto<Guid>
 {
-    public string ProjectName { get; set; } = string.Empty;    
+    public string ProjectName { get; set; } = string.Empty;
     public GrantApplicationApplicantDto Applicant { get; set; } = new();
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
@@ -34,6 +34,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string LikelihoodOfFunding { get; set; } = string.Empty;
     public string DueDiligenceStatus { get; set; } = string.Empty;
     public string SubStatus { get; set; } = string.Empty;
+    public string SubStatusDisplayValue { get; set; } = string.Empty;
     public string DeclineRational { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
     public string AssessmentResultStatus { get; set; } = string.Empty;
@@ -57,7 +58,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? ContactEmail { get; set; }
     public string? ContactBusinessPhone { get; set; }
     public string? ContactCellPhone { get; set; }
-    public string? ApplicationTag  { get; set; }
+    public string? ApplicationTag { get; set; }
     public Guid? OwnerId { get; set; }
     public GrantApplicationAssigneeDto Owner { get; set; } = new();
 }

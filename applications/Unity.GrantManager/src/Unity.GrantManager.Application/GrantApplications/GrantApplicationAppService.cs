@@ -139,12 +139,19 @@ public class GrantApplicationAppService :
             appDto.Owner = BuildApplicationOwner(grouping.First().applicationOwner);
 
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
+            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDtos.Add(appDto);
         }
 
         var totalCount = await _applicationRepository.GetCountAsync();
 
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
+    }
+
+    private static string MapSubstatusDisplayValue(string subStatus)
+    {
+        if (subStatus == null) { return string.Empty; }
+        return AssessmentResultsOptionsList.SubStatusActionList.ContainsKey(subStatus) ? AssessmentResultsOptionsList.SubStatusActionList[subStatus] : string.Empty;
     }
 
     private static IEnumerable<GrantApplicationAssigneeDto> BuildApplicationAssignees(IEnumerable<ApplicationAssignment> applicationAssignments, IEnumerable<Person> persons)
