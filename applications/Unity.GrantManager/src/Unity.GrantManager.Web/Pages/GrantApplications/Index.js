@@ -2,9 +2,8 @@
     const formatter = createNumberFormatter();    
     const l = abp.localization.getResource('GrantManager');
     const maxRowsPerPage = 15;
-    // const createdCell = getCreatedCell();
     let dt = $('#GrantApplicationsTable');    
-    let dataTable, currentRow, previousRow, currentCell, previousCell, originalContent, previousUserOptionsSelected, currentUserOptionsSelected;
+    let dataTable;
     /* let mapTitles = new Map(); = not used */
     /* commented out clear filter functionality - needs to be looked at again or deleted */
 
