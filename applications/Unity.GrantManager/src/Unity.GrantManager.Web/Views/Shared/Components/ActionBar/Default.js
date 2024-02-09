@@ -18,7 +18,6 @@ $(function () {
 
     let tagApplicationModal = new abp.ModalManager({
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
-        scriptUrl: '/Pages/ApplicationTags/ApplicationTags.js', //Lazy Load URL
     });
 
     tagApplicationModal.onOpen(function () {
