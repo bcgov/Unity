@@ -19,6 +19,9 @@
                         projectInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
                     }
                 }
+                else if (projectInfoObj[input.name.split(".")[1]] == '') {
+                    projectInfoObj[input.name.split(".")[1]] = null;
+                }
             }
         });
         try {
@@ -138,16 +141,27 @@
         }
         $('#regionalDistricts').change();
     });
+
+    $('.remove-leading-zeros').on('input', function () {
+        let inputValue = $(this).val();
+        let newValue = inputValue.replace(/^0+(?!$)/, '');
+        $(this).val(newValue);
+    });
 });
 
 
 function enableSaveBtn(inputText) {
+    if (!$("#projectInfoForm").valid()) {
+        $('#saveProjectInfoBtn').prop('disabled', true);
+        return;
+    }
     if (!document.getElementById("ProjectInfo_ContactEmail").validity.valid ||
         !document.getElementById("ProjectInfo_ContactBusinessPhone").checkValidity() ||
         !document.getElementById("ProjectInfo_ContactCellPhone").checkValidity()) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
-    }    
+    } 
+
     $('#saveProjectInfoBtn').prop('disabled', false);
 }
 
