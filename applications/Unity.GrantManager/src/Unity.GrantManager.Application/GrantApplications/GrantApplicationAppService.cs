@@ -137,7 +137,8 @@ public class GrantApplicationAppService :
             appDto.AssessmentReviewCount = grouping.First().AssessmentReviewCount;
             appDto.ApplicationTag = grouping.First().tag?.Text ?? string.Empty;
             appDto.Owner = BuildApplicationOwner(grouping.First().applicationOwner);
-
+            appDto.OrganizationName = grouping.First().applicant?.OrgName ?? string.Empty;
+            appDto.OrganizationType = grouping.First().applicant?.OrganizationType ?? string.Empty;
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDtos.Add(appDto);
@@ -147,6 +148,7 @@ public class GrantApplicationAppService :
 
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
+
 
     private static string MapSubstatusDisplayValue(string subStatus)
     {
