@@ -554,7 +554,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Decision Date}';
+                            }).toUTC().toLocaleString() : '{Decision Date}';
                         },
                     },
                     { //38
