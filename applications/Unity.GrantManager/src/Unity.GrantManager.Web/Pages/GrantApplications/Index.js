@@ -219,6 +219,15 @@
                         },
                     },
                     { //7
+                        title: 'SubSector',
+                        name: 'applicant.subsector',
+                        data: 'applicant.subsector',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{SubSector}';
+                        },
+                    }, 
+                    { //8
                         title: 'Total Project Budget',
                         name: 'totalProjectBudget',
                         data: 'totalProjectBudget',
@@ -227,7 +236,7 @@
                             return formatter.format(data);
                         },
                     },
-                    { //8
+                    { //9
                         title: l('Assignee'),
                         data: 'assignees',
                         name: 'assignees',
@@ -248,7 +257,7 @@
                                 `</span>`;
                         },
                     },
-                    { //9
+                    { //10
                         title: l('Assignee'),
                         data: 'assignees',
                         name: 'assignees-hidden',
@@ -262,7 +271,7 @@
                             return displayText;
                         },
                     },
-                    { //10
+                    { //11
                         title: l('GrantApplicationStatus'),
                         data: 'status',
                         name: 'status',
@@ -272,7 +281,7 @@
                             return `<span class="d-flex align-items-center"><i class="${fill} fa-bookmark text-primary"></i><span class="ps-2 flex-fill">${row.status}</span></span>`;
                         },
                     },
-                    { //11
+                    { //12
                         title: l('RequestedAmount'),
                         data: 'requestedAmount',
                         name: 'requestedAmount',
@@ -281,7 +290,7 @@
                             return formatter.format(data);
                         },
                     },
-                    { //12
+                    { //13
                         title: 'Approved Amount',
                         name: 'approved Amount',
                         data: 'approvedAmount',
@@ -290,7 +299,7 @@
                             return formatter.format(data);
                         },
                     },
-                    { //13
+                    { //14
                         title: 'Economic Region',
                         name: 'economic Region',
                         data: 'economicRegion',
@@ -299,7 +308,7 @@
                             return data ?? '{Region}';
                         },
                     },
-                    { //14
+                    { //15
                         title: 'Regional District',
                         name: 'regional District',
                         data: 'regionalDistrict',
@@ -308,7 +317,7 @@
                             return data ?? '{Regional District}';
                         },
                     },
-                    { //15
+                    { //16
                         title: 'Community',
                         name: 'community',
                         data: 'community',
@@ -317,7 +326,7 @@
                             return data ?? '{Community}';
                         },
                     },
-                    { //16
+                    { //17
                         title: 'Organization Number',
                         name: 'organizationNumber',
                         data: 'organizationNumber',
@@ -327,7 +336,7 @@
                             return data ?? '{Organization Number}';
                         },
                     },
-                    { //17
+                    { //18
                         title: 'Org Book Status',
                         name: 'orgBookStatus',
                         data: 'orgBookStatus',
@@ -336,7 +345,7 @@
                             return data ?? '{Org Book Status}';
                         },
                     },
-                    { //18 -- mapped
+                    { //19 -- mapped
                         title: 'Project Start Date',
                         name: 'projectStartDate',
                         data: 'projectStartDate',
@@ -347,7 +356,7 @@
                             }).toUTC().toLocaleString() : '{Project Start Date}' ;
                         },
                     },
-                    { //19 -- mapped
+                    { //20 -- mapped
                         title: 'Project End Date',
                         name: 'projectEndDate',
                         data: 'projectEndDate',
@@ -355,10 +364,10 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toUTC().toLocaleString() : '{Project End Date}';
+                            }).toLocaleString() : '{Project End Date}';
                         },
                     },
-                    { //20  -- mapped
+                    { //21  -- mapped
                         title: 'Projected Funding Total',
                         name: 'projectFundingTotal',
                         data: 'projectFundingTotal',
@@ -367,7 +376,7 @@
                             return formatter.format(data) ?? '{Projected Funding Total}';
                         },
                     },
-                    { //21  -- mapped
+                    { //22  -- mapped
                         title: '% of Total Project Budget',
                         name: 'percentageTotalProjectBudget',
                         data: 'percentageTotalProjectBudget',
@@ -376,7 +385,7 @@
                             return data ?? '{% of Total Project Budget}';
                         },
                     },
-                    { //22
+                    { //23
                         title: 'Total Paid Amount $',
                         name: 'projectFundingTotal',
                         data: 'projectFundingTotal',
@@ -385,7 +394,7 @@
                             return  formatter.format(data) ?? '{Total Paid Amount $}';
                         },
                     },
-                    { //23
+                    { //24
                         title: 'Electoral District',
                         name: 'electoralDistrict',
                         data: 'electoralDistrict',
@@ -394,7 +403,7 @@
                             return data ?? '{Electoral District}';
                         },
                     },
-                    { //24 -- mapped
+                    { //25 -- mapped
                         title: 'Forestry or Non-Forestry',
                         name: 'forestryOrNonForestry',
                         data: 'forestry',
@@ -406,7 +415,7 @@
                                 return '{Forestry or Non-Forestry}';
                         },
                     },
-                    { //25 -- mapped
+                    { //26 -- mapped
                         title: 'Forestry Focus',
                         name: 'forestryFocus',
                         data: 'forestryFocus',
@@ -429,7 +438,7 @@
                          
                         },
                     },
-                    { //26 -- mapped
+                    { //27 -- mapped
                         title: 'Acquisition',
                         name: 'acquisition',
                         data: 'acquisition',
@@ -445,7 +454,7 @@
                           
                         },
                     },
-                    { //27-- mapped
+                    { //28-- mapped
                         title: 'City',
                         name: 'city',
                         data: 'city',
@@ -454,7 +463,7 @@
                             return data ?? '{city}';
                         },
                     },
-                    { //28 -- mapped
+                    { //29 -- mapped
                         title: 'Community Population',
                         name: 'communityPopulation',
                         data: 'communityPopulation',
@@ -463,7 +472,7 @@
                             return data ?? '{Community Population}';
                         },
                     },
-                    { //29 -- mapped
+                    { //30 -- mapped
                         title: 'Likelihood of Funding',
                         name: 'likelihoodOfFunding',
                         data: 'likelihoodOfFunding',
@@ -477,13 +486,13 @@
                             }
                         },
                     },
-                    { //30 -- mapped
+                    { //31 -- mapped
                         title: 'Sub-Status',
                         name: 'subStatusDisplayValue',
                         data: 'subStatusDisplayValue',
                         className: 'data-table-header',                        
                     },
-                    { //31
+                    { //32
                         title: 'Tags',
                         name: 'applicationTag',
                         data: 'applicationTag',
@@ -492,7 +501,7 @@
                             return data.replace(/,/g, ', ') ?? '{Tags}';
                         },
                     },
-                    { //32 -- mapped
+                    { //33 - mapped
                         title: 'Total Score',
                         name: 'totalScore',
                         data: 'totalScore',
@@ -501,7 +510,7 @@
                             return data ?? '{Total Score}';
                         },
                         },
-                    { //33 -- mapped
+                    { //34 -- mapped
                         title: 'Assessment Result',
                         name: 'assessmentResult',
                         data: 'assessmentResultStatus',
@@ -515,7 +524,7 @@
                             }
                         },
                      },
-                    { //34 -- mapped
+                    { //35 -- mapped
                         title: 'Recommended Amount',
                         name: 'recommendedAmount',
                         data: 'recommendedAmount',
@@ -524,7 +533,7 @@
                             return formatter.format(data) ?? '{Recommended Amount}';
                         },
                     },
-                    { //35 -- mapped
+                    { //36 -- mapped
                         title: 'Due Date',
                         name: 'dueDate',
                         data: 'dueDate',
@@ -535,7 +544,7 @@
                             }).toUTC().toLocaleString() : '{Due Date}';
                         },
                     },
-                    { //36 -- mapped
+                    { //37 -- mapped
                         title: 'Owner',
                         name: 'Owner',
                         data: 'owner',
@@ -548,7 +557,7 @@
 
                 columnDefs: [
                     {
-                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], // Index of columns to be visible by default
+                        targets: [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], // Index of columns to be visible by default
                         visible: true
                     },
                     {
