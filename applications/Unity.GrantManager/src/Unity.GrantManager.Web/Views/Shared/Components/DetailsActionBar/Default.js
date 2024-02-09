@@ -112,7 +112,7 @@ $(function () {
     });
     tagApplicationModal.onResult(function () {
         abp.notify.success(
-            'The application tags has been successfully updated.',
+            'The application tags have been successfully updated.',
             'Application Tags'
         );
         PubSub.publish("ApplicationTags_refresh");

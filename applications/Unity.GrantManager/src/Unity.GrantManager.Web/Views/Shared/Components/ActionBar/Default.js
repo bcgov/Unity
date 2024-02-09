@@ -18,7 +18,6 @@ $(function () {
 
     let tagApplicationModal = new abp.ModalManager({
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
-        scriptUrl: '/Pages/ApplicationTags/ApplicationTags.js', //Lazy Load URL
     });
 
     tagApplicationModal.onOpen(function () {
@@ -98,7 +97,7 @@ $(function () {
     });
     tagApplicationModal.onResult(function () {
         abp.notify.success(
-            'The application tags has been successfully updated.',
+            'The application tags have been successfully updated.',
             'Application Tags'
         );
         PubSub.publish("refresh_application_list");
