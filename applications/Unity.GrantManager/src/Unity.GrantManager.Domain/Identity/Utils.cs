@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Identity
             var chars = new char?[2];
             chars[0] = names.Length > 0 ? names[0][0] : null;
             chars[1] = names.Length > 1 ? names[1][0] : null;
-            return $"{chars[1]}{chars[0]}";
+            return $"{chars[0]}{chars[1]}";
         }
     }
 }
