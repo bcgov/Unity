@@ -153,7 +153,11 @@ public class GrantApplicationAppService :
     private static string MapSubstatusDisplayValue(string subStatus)
     {
         if (subStatus == null) { return string.Empty; }
-        return AssessmentResultsOptionsList.SubStatusActionList.ContainsKey(subStatus) ? AssessmentResultsOptionsList.SubStatusActionList[subStatus] : string.Empty;
+        var hasKey = AssessmentResultsOptionsList.SubStatusActionList.TryGetValue(subStatus, out string? subStatusValue);
+        if (hasKey)
+            return subStatusValue ?? string.Empty;
+        else
+            return string.Empty;
     }
 
     private static IEnumerable<GrantApplicationAssigneeDto> BuildApplicationAssignees(IEnumerable<ApplicationAssignment> applicationAssignments, IEnumerable<Person> persons)
