@@ -139,12 +139,19 @@ public class GrantApplicationAppService :
             appDto.Owner = BuildApplicationOwner(grouping.First().applicationOwner);
 
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
+            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDtos.Add(appDto);
         }
 
         var totalCount = await _applicationRepository.GetCountAsync();
 
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
+    }
+
+    private static string MapSubstatusDisplayValue(string subStatus)
+    {
+        if (subStatus == null) { return string.Empty; }
+        return AssessmentResultsOptionsList.SubStatusActionList.ContainsKey(subStatus) ? AssessmentResultsOptionsList.SubStatusActionList[subStatus] : string.Empty;
     }
 
     private static IEnumerable<GrantApplicationAssigneeDto> BuildApplicationAssignees(IEnumerable<ApplicationAssignment> applicationAssignments, IEnumerable<Person> persons)
@@ -157,7 +164,7 @@ public class GrantApplicationAppService :
                 AssigneeId = assignment.AssigneeId,
                 FullName = persons.FirstOrDefault(s => s.Id == assignment.AssigneeId)?.FullName ?? string.Empty,
                 Id = assignment.Id,
-                Role = assignment.Role
+                Duty = assignment.Duty
             };
         }
     }
@@ -249,11 +256,17 @@ public class GrantApplicationAppService :
                         ApprovedAmount = application.ApprovedAmount,
                         Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
-                    };
+                        OwnerId  =  application.OwnerId,
+                      
+    };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
         if (queryResult != null)
         {
+            var ownerId = queryResult.OwnerId ?? Guid.Empty;
+            queryResult.Owner = await GetOwnerAsync(ownerId);
+            queryResult.Assignees =  await GetAssigneesAsync(applicationId);
+          
             return queryResult;
         }
         else
@@ -430,7 +443,8 @@ public class GrantApplicationAppService :
                     {
                         Id = userAssignment.Id,
                         AssigneeId = userAssignment.AssigneeId,
-                        FullName = user.FullName
+                        FullName = user.FullName,
+                        Duty = userAssignment.Duty,
                     };
 
         return query.ToList();
@@ -438,15 +452,23 @@ public class GrantApplicationAppService :
 
     public async Task<GrantApplicationAssigneeDto> GetOwnerAsync(Guid ownerId)
     {
-
-        var owner = await _personRepository.GetAsync(ownerId, false);
-
-
-        return new GrantApplicationAssigneeDto
+        try
         {
-            Id = owner.Id,
-            FullName = owner.FullName
-        };
+            var owner = await _personRepository.GetAsync(ownerId, false);
+
+
+            return new GrantApplicationAssigneeDto
+            {
+                Id = owner.Id,
+                FullName = owner.FullName
+            };
+        }
+        catch(Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+            return new GrantApplicationAssigneeDto();
+        }
+        
     }
 
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
@@ -500,7 +522,7 @@ public class GrantApplicationAppService :
         }
     }
 
-    public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? role)
+    public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
     {
 
         try
@@ -508,11 +530,11 @@ public class GrantApplicationAppService :
             var assignees = await GetAssigneesAsync(applicationId);
             if (assignees == null || assignees.FindIndex(a => a.AssigneeId == assigneeId) == -1)
             {
-                await _applicationManager.AssignUserAsync(applicationId, assigneeId, role);
+                await _applicationManager.AssignUserAsync(applicationId, assigneeId, duty);
             }
             else
             {
-                await _applicationManager.UpdateAssigneeAsync(applicationId, assigneeId, role);
+                await _applicationManager.UpdateAssigneeAsync(applicationId, assigneeId, duty);
             }
         }
         catch (Exception ex)

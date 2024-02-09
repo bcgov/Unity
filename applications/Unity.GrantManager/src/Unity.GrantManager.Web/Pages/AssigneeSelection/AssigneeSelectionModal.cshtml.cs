@@ -48,10 +48,10 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
         public Guid OwnerUserId { get; set; }
 
-        public class AssigneeRole
+        public class AssigneeDuty
         {
             public required string Id { get; set; }
-            public string? Role { get; set; }
+            public string? Duty { get; set; }
         }
 
         
@@ -131,7 +131,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                             {
                                 Id = assingee.Id,
                                 FullName = $"{user.Name} {user.Surname}",
-                                Role = assingee.Role,
+                                Duty = assingee.Duty,
                                 AssigneeId = assingee.AssigneeId,
                                 ApplicationId = assingee.ApplicationId,
                             });
@@ -144,9 +144,9 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                     // Step 2: Iterate through the second list and categorize Assignees
                     var commonArray = assignees
                    .Where(a => selectedApplicationIds.Contains(a.ApplicationId))
-                   .GroupBy(a => new { a.AssigneeId, a.Role })
+                   .GroupBy(a => new { a.AssigneeId, a.Duty })
                    .Where(group => group.Count() == selectedApplicationIds.Count)
-                   .Select(group => new { AssigneeId = group.Key.AssigneeId, Role = group.Key.Role })
+                   .Select(group => new { AssigneeId = group.Key.AssigneeId, Duty = group.Key.Duty })
                    .ToList();
                     foreach (var common in commonArray)
                     {
@@ -157,7 +157,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                             {
                                 Id = user.Id,
                                 FullName = $"{user.Name} {user.Surname}",
-                                Role = common.Role,
+                                Duty = common.Duty,
                                 AssigneeId = user.Id,
                             });
                         }
@@ -165,9 +165,9 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                     }
                     var uncommonAssignees = assignees
                                             .Where(a => selectedApplicationIds.Contains(a.ApplicationId))
-                                            .Where(a => !commonArray.Exists(c => c.AssigneeId == a.AssigneeId && c.Role == a.Role))
-                                            .GroupBy(a => new { a.AssigneeId, a.FullName, a.Role })
-                                            .Select(group => new { AssigneeId = group.Key.AssigneeId, FullName = group.Key.FullName, Role = group.Key.Role })
+                                            .Where(a => !commonArray.Exists(c => c.AssigneeId == a.AssigneeId && c.Duty == a.Duty))
+                                            .GroupBy(a => new { a.AssigneeId, a.FullName, a.Duty })
+                                            .Select(group => new { AssigneeId = group.Key.AssigneeId, FullName = group.Key.FullName, Duty = group.Key.Duty })
                                             .ToList();
 
                     foreach (var uncommon in uncommonAssignees)
@@ -179,7 +179,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                             {
                                 Id = user.Id,
                                 FullName = $"{user.Name} {user.Surname}",
-                                Role = uncommon.Role,
+                                Duty = uncommon.Duty,
                                 AssigneeId = user.Id,
                             });
                         }
@@ -253,7 +253,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                     var currentAssigneeList = JsonConvert.DeserializeObject<List<GrantApplicationAssigneeDto>>(CurrentAssigneeList);
                     if (SelectedAssignees != null)
                     {
-                        var selectedAssignees = JsonConvert.DeserializeObject<List<AssigneeRole>>(SelectedAssignees);
+                        var selectedAssignees = JsonConvert.DeserializeObject<List<AssigneeDuty>>(SelectedAssignees);
                         if (selectedAssignees != null && selectedAssignees.Count > 0)
                         {
                             var elementToRemove = selectedAssignees.Find(e => e.Id.ToString() == uncommonId);
@@ -266,7 +266,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                     {
                                         foreach (var assignee in selectedAssignees)
                                         {
-                                            await _applicationService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Role);
+                                            await _applicationService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Duty);
 
                                         }
 
@@ -274,7 +274,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                 }
                                 else
                                 {
-                                    var uncommonAssignees = JsonConvert.DeserializeObject<List<AssigneeRole>>(UnCommonAssigneeList);
+                                    var uncommonAssignees = JsonConvert.DeserializeObject<List<AssigneeDuty>>(UnCommonAssigneeList);
                                     if (uncommonAssignees != null)
                                     {
 
@@ -316,7 +316,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                     {
                                         foreach (var assignee in selectedAssignees)
                                         {
-                                            await _applicationService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Role);
+                                            await _applicationService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Duty);
 
                                         }
                                         if (currentAssigneeList != null && currentAssigneeList.Count > 0)

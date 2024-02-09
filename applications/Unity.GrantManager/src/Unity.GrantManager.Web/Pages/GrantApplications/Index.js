@@ -344,7 +344,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Project Start Date}' ;
+                            }).toUTC().toLocaleString() : '{Project Start Date}' ;
                         },
                     },
                     { //19 -- mapped
@@ -355,7 +355,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Project End Date}';
+                            }).toUTC().toLocaleString() : '{Project End Date}';
                         },
                     },
                     { //20  -- mapped
@@ -478,23 +478,10 @@
                         },
                     },
                     { //30 -- mapped
-                        title: 'Recommendation',
-                        name: 'recommendation',
-                        data: 'recommendation',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            if (data) {
-                                if (data == 'APPROVE') {
-                                    return 'Recommended for Approval'
-                                }
-                                else if (data == 'DENY') {
-                                    return 'Recommended for Denial'
-                                }
-                            }
-                            else {
-                                return '{Recommendation}';
-                            }
-                        },
+                        title: 'Sub-Status',
+                        name: 'subStatusDisplayValue',
+                        data: 'subStatusDisplayValue',
+                        className: 'data-table-header',                        
                     },
                     { //31
                         title: 'Tags',
@@ -545,7 +532,7 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Due Date}';
+                            }).toUTC().toLocaleString() : '{Due Date}';
                         },
                     },
                     { //36 -- mapped
