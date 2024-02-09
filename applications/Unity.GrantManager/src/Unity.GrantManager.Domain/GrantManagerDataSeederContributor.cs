@@ -105,8 +105,8 @@ public class GrantManagerDataSeederContributor : IDataSeedContributor, ITransien
                 new ApplicationStatus
                 {
                     StatusCode = GrantApplicationState.GRANT_APPROVED,
-                    ExternalStatus = "Grant Approved",
-                    InternalStatus = "Grant Approved"
+                    ExternalStatus = "Approved",
+                    InternalStatus = "Approved"
                 }
             );
 

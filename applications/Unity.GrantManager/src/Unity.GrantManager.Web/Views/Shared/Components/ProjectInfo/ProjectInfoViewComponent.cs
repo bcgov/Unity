@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         private readonly IEconomicRegionService _applicationEconomicRegionAppService;
         private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
         private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
-        private readonly ICensusSubdivisionService _applicationCensusSubdivisionAppService;
+        private readonly ICommunityService _applicationCommunityAppService;
 
         public ProjectInfoViewComponent(
             IGrantApplicationAppService grantApplicationAppService,
@@ -33,7 +33,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             IEconomicRegionService applicationEconomicRegionAppService,
             IElectoralDistrictService applicationElectoralDistrictAppService,
             IRegionalDistrictService applicationRegionalDistrictAppService,
-            ICensusSubdivisionService applicationCensusSubdivisionAppService
+            ICommunityService applicationCommunityAppService
             )
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
             _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
             _applicationRegionalDistrictAppService = applicationRegionalDistrictAppService;
-            _applicationCensusSubdivisionAppService = applicationCensusSubdivisionAppService;
+            _applicationCommunityAppService = applicationCommunityAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -58,14 +58,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             List<RegionalDistrictDto> RegionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
 
-            List<CensusSubdivisionDto> CensusSubdivisions = (await _applicationCensusSubdivisionAppService.GetListAsync()).ToList();
+            List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();
 
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationSectors = Sectors,
                 RegionalDistricts = RegionalDistricts,
-                CensusSubdivisions = CensusSubdivisions,
+                Communities = Communities,
+                EconomicRegions = EconomicRegions,
             };
 
             model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
@@ -76,12 +77,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             model.ElectoralDistrictList.AddRange(ElectoralDistricts.Select(ElectoralDistrict =>
                 new SelectListItem { Value = ElectoralDistrict.ElectoralDistrictName, Text = ElectoralDistrict.ElectoralDistrictName }));
-
-            model.RegionalDistrictList.AddRange(RegionalDistricts.Select(RegionalDistrict => 
-                new SelectListItem { Value = RegionalDistrict.RegionalDistrictName, Text = RegionalDistrict.RegionalDistrictName }));
-
-            model.CensusSubdivisionList.AddRange(CensusSubdivisions.Select(CensusSubdivision =>
-                new SelectListItem { Value = CensusSubdivision.CensusSubdivisionName, Text = $"{CensusSubdivision.CensusSubdivisionName} - {CensusSubdivision.Type}" }));
 
             if (Sectors.Count > 0)
             {
@@ -100,6 +95,32 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                     new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
             }
 
+            if(EconomicRegions.Count > 0) {
+                String EconomicRegionCode = string.Empty;
+                var economicRegionSelected = EconomicRegions.Find(x => x.EconomicRegionName == application.EconomicRegion);
+                if (economicRegionSelected != null) {
+                    EconomicRegionCode = economicRegionSelected.EconomicRegionCode;
+                }
+                else {
+                    EconomicRegionCode = EconomicRegions[0].EconomicRegionCode;
+                }
+                model.RegionalDistrictList.AddRange(RegionalDistricts.FindAll(x => x.EconomicRegionCode == EconomicRegionCode).Select(RegionalDistrict => 
+                    new SelectListItem { Value = RegionalDistrict.RegionalDistrictName, Text = RegionalDistrict.RegionalDistrictName }));
+            }
+
+            if(RegionalDistricts.Count > 0) {
+                String RegionalDistrictCode = string.Empty;
+                var regionalDistrictSelected = RegionalDistricts.Find(x => x.RegionalDistrictName == application.RegionalDistrict);
+                if (regionalDistrictSelected != null) {
+                    RegionalDistrictCode = regionalDistrictSelected.RegionalDistrictCode;
+                }
+                else {
+                    RegionalDistrictCode = RegionalDistricts[0].RegionalDistrictCode;
+                }
+                model.CommunityList.AddRange(Communities.FindAll(x => x.RegionalDistrictCode == RegionalDistrictCode).Select(community =>
+                    new SelectListItem { Value = community.Name, Text = community.Name }));
+            }
+
 
             decimal projectFundingTotal = application.ProjectFundingTotal ?? 0;
             double percentageTotalProjectBudget = application.PercentageTotalProjectBudget ?? 0;
@@ -110,10 +131,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 projectFundingTotal = (projectFundingTotal > ProjectFundingMax) ? ProjectFundingMax : projectFundingTotal;
             }
 
-            if (percentageTotalProjectBudget == 0)
-            {
-                percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Divide(application.RequestedAmount, application.TotalProjectBudget).To<double>();
-            }
+            percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(application.RequestedAmount, application.TotalProjectBudget),100).To<double>();
 
             model.IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
 
@@ -136,7 +154,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 SubSector = application.SubSector,
                 EconomicRegion = application.EconomicRegion,
                 ElectoralDistrict = application.ElectoralDistrict,
-                CensusSubdivision = application.CensusSubdivision,
                 RegionalDistrict = application.RegionalDistrict,
                 ContactFullName = application.ContactFullName,
                 ContactTitle = application.ContactTitle,

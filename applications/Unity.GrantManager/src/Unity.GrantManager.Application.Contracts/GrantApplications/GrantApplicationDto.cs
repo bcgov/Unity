@@ -7,7 +7,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class GrantApplicationDto : AuditedEntityDto<Guid>
 {
     public string ProjectName { get; set; } = string.Empty;
-    public string Applicant { get; set; } = string.Empty;
+    public GrantApplicationApplicantDto Applicant { get; set; } = new();
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
     public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
@@ -21,8 +21,8 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string EconomicRegion { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public decimal TotalProjectBudget { get; set; }
-    public string Sector { get; set; } = string.Empty;
-    public string SubSector { get; set; } = string.Empty;
+    public string? Sector { get; set; } = string.Empty;
+    public string? SubSector { get; set; } = string.Empty;
 
     public int AssessmentCount { get; set; } = 0;
     public int AssessmentReviewCount { get; set; } = 0;
@@ -34,6 +34,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string LikelihoodOfFunding { get; set; } = string.Empty;
     public string DueDiligenceStatus { get; set; } = string.Empty;
     public string SubStatus { get; set; } = string.Empty;
+    public string SubStatusDisplayValue { get; set; } = string.Empty;
     public string DeclineRational { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
     public string AssessmentResultStatus { get; set; } = string.Empty;
@@ -51,14 +52,15 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? Forestry { get; set; }
     public string? ForestryFocus { get; set; }
     public string? ElectoralDistrict { get; set; }
-    public string? CensusSubdivision { get; set; }
     public string? RegionalDistrict { get; set; }
     public string? ContactFullName { get; set; }
     public string? ContactTitle { get; set; }
     public string? ContactEmail { get; set; }
     public string? ContactBusinessPhone { get; set; }
     public string? ContactCellPhone { get; set; }
-    public string? ApplicationTag  { get; set; }
+    public string? ApplicationTag { get; set; }
+    public Guid? OwnerId { get; set; }
     public string? OrganizationName { get; set; }
     public string? OrganizationType { get; set; }
+    public GrantApplicationAssigneeDto Owner { get; set; } = new();
 }

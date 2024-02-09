@@ -14,16 +14,11 @@ namespace Unity.GrantManager.Events
 {
     public class ChefsEventSubscriptionServiceTests : GrantManagerApplicationTestBase
     {
-        private readonly ChefsEventSubscriptionService _chefsEventSubscriptionService;
         private readonly IApplicationFormRepository _applicationFormRepository;
-
-
         private readonly IUnitOfWorkManager _unitOfWorkManager;
-        private ICurrentUser? _currentUser;
 
         public ChefsEventSubscriptionServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
-            _chefsEventSubscriptionService = GetRequiredService<ChefsEventSubscriptionService>();
             _applicationFormRepository = GetRequiredService<IApplicationFormRepository>();
             _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
         }
@@ -34,7 +29,7 @@ namespace Unity.GrantManager.Events
             services.AddSingleton(_currentUser);
         }
 
-        private void Login(Guid userId)
+        new private void Login(Guid userId)
         {
             _currentUser?.Id.Returns(userId);
             _currentUser?.IsAuthenticated.Returns(true);

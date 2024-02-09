@@ -1,51 +1,42 @@
 ﻿$(function () {
-    const formatter = createNumberFormatter();
-    const userDiv = document.getElementById('users-div');
+    const formatter = createNumberFormatter();    
     const l = abp.localization.getResource('GrantManager');
     const maxRowsPerPage = 15;
-    const createdCell = getCreatedCell();
-    let dt = $('#GrantApplicationsTable');
-    let userOptions = document.getElementById('users');
+    // const createdCell = getCreatedCell();
+    let dt = $('#GrantApplicationsTable');    
     let dataTable, currentRow, previousRow, currentCell, previousCell, originalContent, previousUserOptionsSelected, currentUserOptionsSelected;
-    let userDivChanged = false;
-    let modifiedAssignments = new Map();
-    let mapTitles = new Map();
+    /* let mapTitles = new Map(); = not used */
+    /* commented out clear filter functionality - needs to be looked at again or deleted */
 
     dataTable = initializeDataTable();
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
-   
-   
-    //$('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
-    //$('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
+
+    /* Removed for now - to be added/looked at later
+    $('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
+    $('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
+    */
     
     const UIElements = {
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
-        filterIcon: $("i.fl.fl-filter"),
-        btnSave: $('#btn-save'),
-        userDiv: $('#users-div'),
-        users: $('#users'),
-        clearFilter: $('#btn-clear-filter')
+        /* ClearFilter filterIcon: $("i.fl.fl-filter"), */
+        /* ClearFilter clearFilter: $('#btn-clear-filter') */
     };
     init();
     function init() {
-        $('#users').select2();
         $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
         $('.csv-download').prepend('<i class="fl fl-export"></i>');
         $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
         bindUIEvents();
-        UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html());
+        /* ClearFilter UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html()); */
+        dataTable.search('').columns().search('').draw();
     }
 
     function bindUIEvents() {
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
-        UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden'));
-        UIElements.clearFilter.on('click', clearFilter);
-        UIElements.btnSave.on('click', handleSave);
-        UIElements.userDiv.on('change', markUserDivAsChanged);
-        UIElements.userDiv.on('blur', checkUserDivChanged);
-        UIElements.users.on('blur', checkUserDivChanged);
+        /* ClearFilter UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden')); */
+        /* ClearFilter UIElements.clearFilter.on('click', clearFilter); */
     }
 
     dataTable.on('select', function (e, dt, type, indexes) {
@@ -67,7 +58,8 @@
         $('#dtFilterRow').toggleClass('hidden');
     }
 
-    function clearFilter() {
+    /* Clear filter button removed - to review if needed again
+    function clearFilter() {        
         $(".filter-input").each(function () {
             if (this.value != "") {
                 this.value = "";
@@ -80,17 +72,7 @@
 
         $('#btn-clear-filter')[0].disabled = true;
     }
-
-    function markUserDivAsChanged() {
-        userDivChanged = true;
-        $('#btn-save').attr('disabled', false);
-    }
-
-    function handleSave() {
-        changeCellContent(currentCell);
-        markUserDivAsUnchanged();
-        modifyAssignmentsOnServer();
-    }
+    */
 
     function handleSearch() {
         let filterValue = $('.dataTables_filter input').val();
@@ -106,18 +88,6 @@
         }
     }
 
-    function checkUserDivChanged() {
-        if (userDivChanged) {
-            changeCellContent(currentCell);
-            userDivChanged = false;
-        }
-    }
-
-    function markUserDivAsUnchanged() {
-        userDivChanged = false;
-        $('#btn-save').attr('disabled', true);
-    }
-
     function createNumberFormatter() {
         return new Intl.NumberFormat('en-CA', {
             style: 'currency',
@@ -126,118 +96,6 @@
             maximumFractionDigits: 2,
         });
     }
-
-    function changeCellContent(cell) {
-        let count = 0;
-        let content = '';
-        let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
-        aData.assignees = [];
-
-        for (let userOption of userOptions) {
-            if (userOption.selected) {
-                count++;
-                content = userOption.text;
-                aData.assignees.push({
-                    fullName: userOption.text,
-                    assigneeId: userOption.value,
-                });
-            }
-        }
-
-        if (count === 1) {
-            cell.textContent = content;
-        } else if (count > 1) {
-            cell.textContent = 'Multiple assignees';
-        } else if (count === 0) {
-            cell.textContent = '';
-        }
-
-        modifiedAssignments.set(aData.id, aData.assignees);
-    }
-
-    function getUserOptionSelectedCount() {
-        let userOptionSelectedCount = 0;
-        for (let userOption of userOptions) {
-            if ($(userOption).prop('selected')) {
-                userOptionSelectedCount++;
-            }
-        }
-        return userOptionSelectedCount;
-    }
-
-    function getCreatedCell() {
-        return function (cell) {
-            cell.setAttribute('contenteditable', true);
-            cell.addEventListener('focus', function (e) {
-                checkUserDivChanged();
-                if (e.target.children.length == 0 ||
-                    (e.target.children.length == 1
-                    && e.target.children[0].className.includes('dt-select-assignees'))) {
-                    let currentContent = e.target.textContent;
-                    e.target.textContent = '';
-                    currentRow = e.target.parentElement._DT_RowIndex;
-                    let assigness = dataTable.row(e.target.parentElement).context[0]
-                        .aoData[currentRow]._aData.assignees;
-                    let assigneeIds = [];
-
-                    $(assigness).each(function (key, assignee) {
-                        assigneeIds.push(assignee.assigneeId);
-                    });
-
-                    previousUserOptionsSelected = getUserOptionSelectedCount();
-
-                    if (originalContent != ""
-                        && previousCell + "" != "undefined"
-                        && previousCell.textContent == ""
-                        && previousUserOptionsSelected > 0
-                        && currentRow != previousRow
-                    ) {
-                        previousCell.textContent = originalContent;
-                    }
-
-                    for (let userOption of userOptions) {
-                        $(userOption).prop(
-                            'selected',
-                            assigneeIds.includes(userOption.value)
-                        );
-                    }
-
-                    if (originalContent != " "
-                        && previousCell + "" != "undefined"
-                        && currentUserOptionsSelected + "" != "undefined"
-                        && previousUserOptionsSelected == currentUserOptionsSelected
-                        && currentRow != previousRow
-                    ) {
-                        previousCell.textContent = originalContent;
-                    }
-
-                    currentUserOptionsSelected = getUserOptionSelectedCount();
-
-                    $(userDiv).appendTo(this);
-                    $('#users').select2();
-                    userDiv.classList.remove('hidden');
-                    $('ul').click();
-
-                    originalContent = currentContent;
-                    previousCell = this;
-                    previousRow = currentRow;
-                    setTableHeighDynamic();
-                }
-                currentCell = this;                
-            });
-
-            cell.addEventListener('blur', function (e) {
-                if (
-                    e.relatedTarget != null &&
-                    e.relatedTarget.classList.value != 'select2-selection select2-selection--multiple' &&
-                    e.relatedTarget.classList.value != 'select2-search__field'
-                ) {
-                    changeCellContent(e.currentTarget);
-                }
-            });
-        };
-    }
-
 
     function initializeDataTable() {
         return dt.DataTable(
@@ -264,6 +122,7 @@
                 orderCellsTop: true,
                 //fixedHeader: true,
                 stateSave: true,
+                stateDuration: 0,
                 dom: 'Bfrtip',
                 buttons: [
                     {
@@ -278,10 +137,10 @@
                      {
                         extend: 'colvis',
                         text: 'Manage Columns',
-                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
-                         className: 'btn btn-light custom-table-btn cln-visible',
 
-                       
+                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41],
+
+                         className: 'btn btn-light custom-table-btn cln-visible',
                     }
                 ],
                 drawCallback: function () {
@@ -319,8 +178,8 @@
                     },
                     { //1
                         title: 'Applicant Name',
-                        data: 'applicant',
-                        name: 'applicant',
+                        data: 'applicant.applicantName',
+                        name: 'applicant.applicantName',
                         className: 'data-table-header',
                     },
                     { //2
@@ -354,8 +213,8 @@
                     },
                     { //6
                         title: 'Sector',
-                        name: 'sector',
-                        data: 'sector',
+                        name: 'applicant.sector',
+                        data: 'applicant.sector',
                         className: 'data-table-header',
                         render: function (data) {
                             return data ?? '{Sector}';
@@ -375,18 +234,17 @@
                         data: 'assignees',
                         name: 'assignees',
                         className: 'dt-editable',
-                        createdCell: createdCell,                        
                         render: function (data, type, row) {
                             let displayText = ' ';
 
                             if (data != null && data.length == 1) {
                                 displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
                             } else if (data.length > 1) {
-                                displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
+                                displayText = getNames(data);
                             }
 
                             return `<span class="d-flex align-items-center dt-select-assignees">
-                                <i class="fl fl-edit"></i>
+                               
                                 <span class="ps-2 flex-fill" data-toggle="tooltip" title="`
                                 + getNames(data) + '">' + displayText + '</span>' +
                                 `</span>`;
@@ -444,16 +302,24 @@
                         },
                     },
                     { //14
-                        title: 'City',
-                        name: 'city',
-                        data: 'city',
+                        title: 'Regional District',
+                        name: 'regional District',
+                        data: 'regionalDistrict',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{City}';
+                            return data ?? '{Regional District}';
                         },
                     },
-                              
                     { //15
+                        title: 'Community',
+                        name: 'community',
+                        data: 'community',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data ?? '{Community}';
+                        },
+                    },
+                    { //16
                         title: 'Organization Number',
                         name: 'organizationNumber',
                         data: 'organizationNumber',
@@ -463,7 +329,7 @@
                             return data ?? '{Organization Number}';
                         },
                     },
-                    { //16
+                    { //17
                         title: 'Org Book Status',
                         name: 'orgBookStatus',
                         data: 'orgBookStatus',
@@ -472,7 +338,7 @@
                             return data ?? '{Org Book Status}';
                         },
                     },
-                    { //17 -- mapped
+                    { //18 -- mapped
                         title: 'Project Start Date',
                         name: 'projectStartDate',
                         data: 'projectStartDate',
@@ -480,10 +346,10 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Project Start Date}' ;
+                            }).toUTC().toLocaleString() : '{Project Start Date}' ;
                         },
                     },
-                    { //18 -- mapped
+                    { //19 -- mapped
                         title: 'Project End Date',
                         name: 'projectEndDate',
                         data: 'projectEndDate',
@@ -491,10 +357,10 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Project End Date}';
+                            }).toUTC().toLocaleString() : '{Project End Date}';
                         },
                     },
-                    { //19  -- mapped
+                    { //20  -- mapped
                         title: 'Projected Funding Total',
                         name: 'projectFundingTotal',
                         data: 'projectFundingTotal',
@@ -503,7 +369,7 @@
                             return formatter.format(data) ?? '{Projected Funding Total}';
                         },
                     },
-                    { //20  -- mapped
+                    { //21  -- mapped
                         title: '% of Total Project Budget',
                         name: 'percentageTotalProjectBudget',
                         data: 'percentageTotalProjectBudget',
@@ -512,7 +378,7 @@
                             return data ?? '{% of Total Project Budget}';
                         },
                     },
-                    { //21
+                    { //22
                         title: 'Total Paid Amount $',
                         name: 'projectFundingTotal',
                         data: 'projectFundingTotal',
@@ -521,7 +387,7 @@
                             return  formatter.format(data) ?? '{Total Paid Amount $}';
                         },
                     },
-                    { //22
+                    { //23
                         title: 'Electoral District',
                         name: 'electoralDistrict',
                         data: 'electoralDistrict',
@@ -530,7 +396,7 @@
                             return data ?? '{Electoral District}';
                         },
                     },
-                    { //23 -- mapped
+                    { //24 -- mapped
                         title: 'Forestry or Non-Forestry',
                         name: 'forestryOrNonForestry',
                         data: 'forestry',
@@ -542,7 +408,7 @@
                                 return '{Forestry or Non-Forestry}';
                         },
                     },
-                    { //24 -- mapped
+                    { //25 -- mapped
                         title: 'Forestry Focus',
                         name: 'forestryFocus',
                         data: 'forestryFocus',
@@ -565,7 +431,7 @@
                          
                         },
                     },
-                    { //25 -- mapped
+                    { //26 -- mapped
                         title: 'Acquisition',
                         name: 'acquisition',
                         data: 'acquisition',
@@ -581,16 +447,16 @@
                           
                         },
                     },
-                    { //26 -- mapped
-                        title: 'Community',
-                        name: 'community',
-                        data: 'community',
+                    { //27-- mapped
+                        title: 'City',
+                        name: 'city',
+                        data: 'city',
                         className: 'data-table-header',
                         render: function (data) {
-                            return data ?? '{community}';
+                            return data ?? '{city}';
                         },
                     },
-                    { //27 -- mapped
+                    { //28 -- mapped
                         title: 'Community Population',
                         name: 'communityPopulation',
                         data: 'communityPopulation',
@@ -599,7 +465,7 @@
                             return data ?? '{Community Population}';
                         },
                     },
-                    { //28 -- mapped
+                    { //29 -- mapped
                         title: 'Likelihood of Funding',
                         name: 'likelihoodOfFunding',
                         data: 'likelihoodOfFunding',
@@ -613,26 +479,13 @@
                             }
                         },
                     },
-                    { //29 -- mapped
-                        title: 'Recommendation',
-                        name: 'recommendation',
-                        data: 'recommendation',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            if (data) {
-                                if (data == 'APPROVE') {
-                                    return 'Recommended for Approval'
-                                }
-                                else if (data == 'DENY') {
-                                    return 'Recommended for Denial'
-                                }
-                            }
-                            else {
-                                return '{Recommendation}';
-                            }
-                        },
+                    { //30 -- mapped
+                        title: 'Sub-Status',
+                        name: 'subStatusDisplayValue',
+                        data: 'subStatusDisplayValue',
+                        className: 'data-table-header',                        
                     },
-                    { //30
+                    { //31
                         title: 'Tags',
                         name: 'applicationTag',
                         data: 'applicationTag',
@@ -641,7 +494,7 @@
                             return data.replace(/,/g, ', ') ?? '{Tags}';
                         },
                     },
-                    { //31 -- mapped
+                    { //32 -- mapped
                         title: 'Total Score',
                         name: 'totalScore',
                         data: 'totalScore',
@@ -650,7 +503,7 @@
                             return data ?? '{Total Score}';
                         },
                         },
-                    { //32 -- mapped
+                    { //33 -- mapped
                         title: 'Assessment Result',
                         name: 'assessmentResult',
                         data: 'assessmentResultStatus',
@@ -664,7 +517,7 @@
                             }
                         },
                      },
-                    { //33 -- mapped
+                    { //34 -- mapped
                         title: 'Recommended Amount',
                         name: 'recommendedAmount',
                         data: 'recommendedAmount',
@@ -673,7 +526,7 @@
                             return formatter.format(data) ?? '{Recommended Amount}';
                         },
                     },
-                    { //34 -- mapped
+                    { //35 -- mapped
                         title: 'Due Date',
                         name: 'dueDate',
                         data: 'dueDate',
@@ -681,10 +534,19 @@
                         render: function (data) {
                             return data != null ? luxon.DateTime.fromISO(data, {
                                 locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Due Date}';
+                            }).toUTC().toLocaleString() : '{Due Date}';
                         },
                     },
-                    { //35 --
+                    { //36 -- mapped
+                        title: 'Owner',
+                        name: 'Owner',
+                        data: 'owner',
+                        className: 'data-table-header',
+                        render: function (data) {
+                            return data != null ? data.fullName : '{Owner}';
+                        },
+                    },
+                    { //37 --
                         title: 'Decision Date',
                         name: 'finalDecisionDate',
                         data: 'finalDecisionDate',
@@ -695,7 +557,7 @@
                             }).toLocaleString() : '{Decision Date}';
                         },
                     },
-                    { //36
+                    { //38
                         title: 'Project Summary',
                         name: 'projectSummary',
                         data: 'projectSummary',
@@ -704,7 +566,7 @@
                             return data ?? '{Project Summary}';
                         },
                     },
-                    { //37
+                    { //39
                         title: '% of Total Project Budget',
                         name: 'percentageTotalProjectBudget',
                         data: 'percentageTotalProjectBudget',
@@ -713,7 +575,7 @@
                             return data ?? '';
                         },
                     },
-                    { //38
+                    { //40
                         title: 'Organization Type',
                         name: 'organizationType',
                         data: 'organizationType',
@@ -722,7 +584,7 @@
                             return data ?? '';
                         },
                     },
-                    { //39
+                    { //41
                         title: 'Organization Name',
                         name: 'organizationName',
                         data: 'organizationName',
@@ -735,7 +597,7 @@
 
                 columnDefs: [
                     {
-                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], // Index of columns to be visible by default
+                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], // Index of columns to be visible by default
                         visible: true
                     },
                     {
@@ -802,25 +664,6 @@
         $("#GrantApplicationsTable thead").after(newRow);
         if (optionsOpen) {
             $(".tr-toggle-filter").show();
-        }
-    }
-
-  
-
-    function modifyAssignmentsOnServer() {
-        let id,
-            obj = Object.fromEntries(modifiedAssignments);
-        let jsonString = JSON.stringify(obj);
-
-        try {
-            unity.grantManager.grantApplications.grantApplication
-                .updateAssignees(jsonString)
-                .done(function () {
-                    abp.notify.success('The application has been updated.');
-                    PubSub.publish('refresh_application_list', id);
-                });
-        } catch (error) {
-            console.log(error);
         }
     }
 
