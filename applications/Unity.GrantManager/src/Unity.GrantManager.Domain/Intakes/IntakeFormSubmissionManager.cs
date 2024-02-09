@@ -101,8 +101,8 @@ namespace Unity.GrantManager.Intakes
                     ApplicationStatusId = submittedStatus.Id,
                     ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
                     Acquisition = intakeMap.Acquisition ?? null,
-                    Forestry = intakeMap.Foresty ?? null,
-                    ForestryFocus = intakeMap.ForestyFocus ?? null,
+                    Forestry = intakeMap.Forestry ?? null,
+                    ForestryFocus = intakeMap.ForestryFocus ?? null,
                     City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
                     EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
                     CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
