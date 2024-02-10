@@ -430,8 +430,8 @@
     function getOrganizationNumberColumn() {
         return { // 16
             title: 'Organization Number',
-            name: 'organizationNumber',
-            data: 'organizationNumber',
+            name: 'applicant.orgNumber',
+            data: 'applicant.orgNumber',
             className: 'data-table-header',
             visible: false,
             render: function (data) {
