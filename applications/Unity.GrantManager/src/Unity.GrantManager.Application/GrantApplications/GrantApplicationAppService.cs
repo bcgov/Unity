@@ -102,6 +102,9 @@ public class GrantApplicationAppService :
                     join owner in await _personRepository.GetQueryableAsync() on application.OwnerId equals owner.Id into owners
                     from applicationOwner in owners.DefaultIfEmpty()
 
+                    join contact in await  _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
+                    from applicantAgent in contacts.DefaultIfEmpty()
+
                     select new
                     {
                         application,
@@ -113,7 +116,9 @@ public class GrantApplicationAppService :
                         tag,
                         applicationUserAssignment,
                         applicationPerson,
-                        applicationOwner
+                        applicationOwner,
+                        applicantAgent
+
                     };
 
         var result = query
@@ -141,6 +146,12 @@ public class GrantApplicationAppService :
             appDto.OrganizationType = grouping.First().applicant?.OrganizationType ?? string.Empty;
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
+            appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
+            appDto.ContactFullName = grouping.First().applicantAgent?.Name ?? string.Empty; ;
+            appDto.ContactEmail = grouping.First().applicantAgent?.Email ?? string.Empty; ;
+            appDto.ContactTitle = grouping.First().applicantAgent?.Title ?? string.Empty; ;
+            appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone ?? string.Empty; ;
+            appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2 ?? string.Empty; ;
             appDtos.Add(appDto);
         }
 
@@ -154,6 +165,15 @@ public class GrantApplicationAppService :
     {
         if (subStatus == null) { return string.Empty; }
         var hasKey = AssessmentResultsOptionsList.SubStatusActionList.TryGetValue(subStatus, out string? subStatusValue);
+        if (hasKey)
+            return subStatusValue ?? string.Empty;
+        else
+            return string.Empty;
+    }  
+    private static string MapDeclineRationalDisplayValue(string value)
+    {
+        if (value == null) { return string.Empty; }
+        var hasKey = AssessmentResultsOptionsList.DeclineRationalActionList.TryGetValue(value, out string? subStatusValue);
         if (hasKey)
             return subStatusValue ?? string.Empty;
         else
@@ -173,8 +193,8 @@ public class GrantApplicationAppService :
                 Duty = assignment.Duty
             };
         }
-    }
-
+    }   
+ 
     private static GrantApplicationAssigneeDto BuildApplicationOwner(Person applicationOwner)
     {
         if (applicationOwner != null)
