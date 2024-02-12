@@ -9,6 +9,6 @@ public class GrantApplicationAssigneeDto : EntityDto<Guid>
     public Guid AssigneeId { get; set; }
     public Guid ApplicationId { get; set; }
     public string FullName { get; set; } = string.Empty;
-    public string? Role  { get; set; } = string.Empty;
+    public string? Duty  { get; set; } = string.Empty;
 
 }

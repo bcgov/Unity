@@ -19,8 +19,8 @@ namespace Unity.GrantManager.GrantApplications
         public DateTime? FinalDecisionDate { get; set; }
         public DateTime? DueDate { get; set; }
         public string? Acquisition { get; set; }
-        public string? Foresty { get; set; }
-        public string? ForestyFocus { get; set; }
+        public string? Forestry { get; set; }
+        public string? ForestryFocus { get; set; }
         public int? CommunityPopulation { get; set; }
         public DateTime? ProjectStartDate { get; set; }
         public DateTime? ProjectEndDate { get; set; }

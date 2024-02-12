@@ -24,7 +24,8 @@ namespace Unity.GrantManager.Intakes
 
         private readonly List<string> AllowableContainerTypes = new List<string> (new string[] 
             {
-                "tabs",            
+                "tabs",
+                "table",
                 "simplecols2",
                 "simplecols3",
                 "simplecols4",
@@ -80,6 +81,8 @@ namespace Unity.GrantManager.Intakes
             if(tokenType != null && ColumnTypes.Contains(tokenType.ToString()))
             {
                 subTokenString = "columns";
+            } else if(tokenType != null && tokenType.ToString().Equals("table")) {
+                subTokenString = "rows";
             }
 #pragma warning restore CS8602
             return subTokenString;
@@ -133,7 +136,12 @@ namespace Unity.GrantManager.Intakes
                             if (nestedTokenComponents != null) { 
                                 foreach (JToken nestedTokenComponent in nestedTokenComponents.Children())
                                 {
-                                    ConsumeToken(nestedTokenComponent);
+                                    if(subTokenString == "rows")
+                                    {
+                                        GetAllInputComponents(nestedTokenComponent);
+                                    } else {
+                                        ConsumeToken(nestedTokenComponent);
+                                    }
                                 }
                             }
                         } else

@@ -16,8 +16,8 @@
         public string? ContactTitle { get; set; } = string.Empty;
         public string? EconomicRegion { get; set; }
         public string? ElectoralDistrict { get; set; }
-        public string? Foresty { get; set; }
-        public string? ForestyFocus { get; set; }
+        public string? Forestry { get; set; }
+        public string? ForestryFocus { get; set; }
         public string? IndigenousOrgInd { get; set; }
         public string? MailingCity { get; set; }
         public string? MailingCountry { get; set; }

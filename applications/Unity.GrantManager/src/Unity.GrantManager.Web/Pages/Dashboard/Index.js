@@ -13,8 +13,13 @@
 
 
     unity.grantManager.dashboard.dashboard.getApplicationStatusCount().then(applicationStatus => {
-        initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
+        initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count), 
             'Application Status Overview', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
+    });
+
+    unity.grantManager.dashboard.dashboard.getApplicationTagsCount().then(applicationTags => {
+        initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count), 
+            'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
     });
 
     function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
@@ -28,7 +33,12 @@
             }]
         };
 
-        const sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
+        let sum = 0;
+        if (chartId === 'applicationTagsChart') {
+            sum = labelsArray.length;
+        } else {
+            sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
+        }
 
         const centerText = {
             id: 'centerText',

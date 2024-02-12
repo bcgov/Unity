@@ -1,5 +1,7 @@
 ﻿
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
 {
@@ -69,5 +71,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
 
         [Display(Name = "Summary:Assessment.Batch")]
         public string? Batch { get; set; }
+
+        [Display(Name = "Summary:Application.Assignees")]
+        public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
+
+        [Display(Name = "Summary:Application.Owner")]
+        public GrantApplicationAssigneeDto Owner { get; set; } = new();
     }
 }

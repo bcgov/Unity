@@ -8,4 +8,5 @@ public class GrantApplicationApplicantDto : AuditedEntityDto<Guid>
     public string ApplicantName { get; set; } = string.Empty;
     public string Sector { get; set; } = string.Empty;
     public string SubSector { get; set; } = string.Empty;
+    public string OrgNumber { get; set; } = string.Empty;
 }

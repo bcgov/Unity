@@ -122,27 +122,6 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.AssessmentResults.EditApprovedAmount,
               }, context.TenantId);
 
-            // - BusinessAreaAdmin
-            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.BusinessAreaAdmin,
-             new List<string>
-             {
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
-                    GrantApplicationPermissions.Applicants.Edit,
-                    GrantApplicationPermissions.Approvals.Complete,
-                    GrantApplicationPermissions.Comments.Add,
-                    IdentitySeedPermissions.Users.Default,
-                    IdentitySeedPermissions.Users.Create,
-                    IdentitySeedPermissions.Users.Update,
-                    IdentitySeedPermissions.Users.Delete,
-                    IdentitySeedPermissions.Users.ManagePermissions,
-                    IdentitySeedPermissions.Roles.Default,
-                    IdentitySeedPermissions.Roles.Create,
-                    IdentitySeedPermissions.Roles.Update,
-                    IdentitySeedPermissions.Roles.Delete,
-                    IdentitySeedPermissions.Roles.ManagePermissions
-             }, context.TenantId);
-
             // - SystemAdmin
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.SystemAdmin,
              new List<string>
