@@ -1,7 +1,7 @@
 ﻿$(function () {    
     $('.currency-input').maskMoney();
 
-    $('body').on('click', '#saveProjectInfoBtn', function () {       
+    $('body').on('click', '#saveProjectInfoBtn', function () {
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
         let projectInfoObj = {};
@@ -19,6 +19,9 @@
                         projectInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
                     }
                 }
+                else if (projectInfoObj[input.name.split(".")[1]] == '') {
+                    projectInfoObj[input.name.split(".")[1]] = null;
+                }
             }
         });
         try {
@@ -29,7 +32,7 @@
                         'The project info has been updated.'
                     );
                     $('#saveProjectInfoBtn').prop('disabled', true);
-                    PubSub.publish('project_info_saved');                    
+                    PubSub.publish('project_info_saved');
                 });
         }
         catch (error) {
@@ -64,18 +67,20 @@
 
     $('#startDate').on('apply.daterangepicker', function(event, picker) {
         console.log(event, picker);
-      });
+    });
 
     $('#sectorDropdown').change(function () {
         const selectedValue = $(this).val();
-
         let sectorList = JSON.parse($('#applicationSectorList').text());
 
         let childDropdown = $('#subSectorDropdown');
         childDropdown.empty();
 
         let subSectors = sectorList.find(sector => (sector.sectorName === selectedValue))?.subSectors;
-
+        childDropdown.append($('<option>', {
+            value: '',
+            text: 'Please Choose...'
+        }));
         $.each(subSectors, function (index, item) {
             childDropdown.append($('<option>', {
                 value: item.subSectorName,
@@ -84,52 +89,85 @@
         });
     });
 
-    $('#regionalDistricts').change(function () {
-        const selectedValue = $(this).val();
-        let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
-        let allCensusSubdivisions = JSON.parse($('#allCensusSubdivisionList').text());
-
-        let childDropdown = $('#censusSubdivisions');
-        childDropdown.empty();
-
-        let  selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);
-        let censusSubdivisions = allCensusSubdivisions.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode)
-        $.each(censusSubdivisions, function (index, item) {
-            childDropdown.append($('<option>', {
-                value: item.censusSubdivisionName,
-                text: item.censusSubdivisionName
-            }));
-        });
-    });
-
     $('#economicRegions').change(function () {
-        let childDropdown = $('#regionalDistricts');
-        childDropdown.empty();
 
         const selectedValue = $(this).val();
         let allEconomicRegions = JSON.parse($('#allEconomicRegionList').text());
         let allRegionalDistricts = JSON.parse($('#allRegionalDistrictList').text());
-
         let selectedEconomicRegion = allEconomicRegions.find(d => d.economicRegionName == selectedValue);
-        let regionalDistricts = allRegionalDistricts.filter(d => d.economicRegionCode == selectedEconomicRegion.economicRegionCode);
-        $.each(regionalDistricts, function (index, item) {
-            childDropdown.append($('<option>', {
-                value: item.regionalDistrictName,
-                text: item.regionalDistrictName
-            }));
-        });
+        let childDropdown = initializeDroplist('#regionalDistricts');
 
+        if (selectedValue) {
+            let regionalDistricts = allRegionalDistricts.filter(d => d.economicRegionCode == selectedEconomicRegion.economicRegionCode);
+            $.each(regionalDistricts, function (index, item) {
+                childDropdown.append($('<option>', {
+                    value: item.regionalDistrictName,
+                    text: item.regionalDistrictName
+                }));
+            });
+        }
         $('#regionalDistricts').change();
+    });
+
+    $('#regionalDistricts').change(function () {
+        const selectedValue = $(this).val();
+        let childDropdown = initializeDroplist('#communities');
+        if (selectedValue) {
+            let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
+            let allCommunities = JSON.parse($('#allCommunitiesList').text());
+            let selectedSubDistrict = allSubdistricts.find(d => d.regionalDistrictName == selectedValue);
+            let communities = allCommunities.filter(d => d.regionalDistrictCode == selectedSubDistrict.regionalDistrictCode);
+
+            $.each(communities, function (index, item) {
+                childDropdown.append($('<option>', {
+                    value: item.name,
+                    text: item.name
+                }));
+            });
+        }
+    });
+
+    function initializeDroplist(dropListId) {
+        let initializedDropList = $(dropListId);
+        initializedDropList.empty();
+        initializedDropList.append($('<option>', {
+            value: '',
+            text: 'Please Choose...'
+        }));
+
+        return initializedDropList;
+    }
+
+    $('.remove-leading-zeros').on('input', function () {
+        let inputValue = $(this).val();
+        let newValue = inputValue.replace(/^0+(?!$)/, '');
+        $(this).val(newValue);
     });
 });
 
 
 function enableSaveBtn(inputText) {
+    if (!$("#projectInfoForm").valid()) {
+        $('#saveProjectInfoBtn').prop('disabled', true);
+        return;
+    }
     if (!document.getElementById("ProjectInfo_ContactEmail").validity.valid ||
         !document.getElementById("ProjectInfo_ContactBusinessPhone").checkValidity() ||
         !document.getElementById("ProjectInfo_ContactCellPhone").checkValidity()) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
-    }    
+    } 
+
     $('#saveProjectInfoBtn').prop('disabled', false);
+}
+
+function calculatePercentage() {
+    const requestedAmount = parseFloat(document.getElementById("ProjectInfo_RequestedAmount").value.replace(/,/g, ''));
+    const totalProjectBudget = parseFloat(document.getElementById("ProjectInfo_TotalProjectBudget").value.replace(/,/g, ''));
+    if (isNaN(requestedAmount) || isNaN(totalProjectBudget) || totalProjectBudget == 0) {
+        document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
+        return;
+    }
+    const percentage = (requestedAmount / totalProjectBudget) * 100.00;
+    document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = percentage.toFixed(2);
 }

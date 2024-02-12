@@ -63,7 +63,7 @@ public class GrantApplicationAppService :
         IAssessmentRepository assessmentRepository,
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
-        IApplicationTagsRepository  applicationTagsRepository
+        IApplicationTagsRepository applicationTagsRepository
         )
          : base(repository)
     {
@@ -83,16 +83,25 @@ public class GrantApplicationAppService :
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        var applicationQueryable = await _applicationRepository.GetQueryableAsync();
         PagedAndSortedResultRequestDto.DefaultMaxResultCount = 1000;
 
-        var query = from application in applicationQueryable
+        var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
                     join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
                     join assessment in await _assessmentRepository.GetQueryableAsync() on application.Id equals assessment.ApplicationId into assessments
                     join applicationTag in await _applicationTagsRepository.GetQueryableAsync() on application.Id equals applicationTag.ApplicationId into tags
                     from tag in tags.DefaultIfEmpty()
+
+                    join userAssignment in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals userAssignment.ApplicationId into userAssignments
+                    from applicationUserAssignment in userAssignments.DefaultIfEmpty()
+
+                    join person in await _personRepository.GetQueryableAsync() on applicationUserAssignment.AssigneeId equals person.Id into persons
+                    from applicationPerson in persons.DefaultIfEmpty()
+
+                    join owner in await _personRepository.GetQueryableAsync() on application.OwnerId equals owner.Id into owners
+                    from applicationOwner in owners.DefaultIfEmpty()
+
                     select new
                     {
                         application,
@@ -101,37 +110,82 @@ public class GrantApplicationAppService :
                         appForm,
                         AssessmentCount = assessments.Count(),
                         AssessmentReviewCount = assessments.Count(a => a.Status == AssessmentState.IN_REVIEW),
-                        tag
+                        tag,
+                        applicationUserAssignment,
+                        applicationPerson,
+                        applicationOwner
                     };
 
-        query = query
-            .OrderBy(NormalizeSorting(input.Sorting ?? string.Empty))
-            .Skip(input.SkipCount)
-            .Take(input.MaxResultCount);
+        var result = query
+                .OrderBy(NormalizeSorting(input.Sorting ?? string.Empty))
+                .OrderBy(s => s.application.Id)
+                .GroupBy(s => s.application.Id)
+                .AsEnumerable()
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+                .ToList();
 
-        var queryResult = await AsyncExecuter.ToListAsync(query);
-
-        var applicationDtoTasks = queryResult.Select(async x =>
+        var appDtos = new List<GrantApplicationDto>();
+        foreach (var grouping in result)
         {
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(x.application);
-            appDto.Status = x.appStatus.InternalStatus;
-            appDto.Assignees = await GetAssigneesAsync(x.application.Id);
-            appDto.Applicant = x.applicant.ApplicantName;
-            appDto.Category = x.appForm.Category ?? string.Empty;
-            appDto.AssessmentCount = x.AssessmentCount;
-            appDto.AssessmentReviewCount = x.AssessmentReviewCount;
-            appDto.ApplicationTag = x.tag?.Text ?? string.Empty;
-            return appDto;
-        }).ToList();
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
+            appDto.Status = grouping.First().appStatus.InternalStatus;
 
-        var applicationDtos = await Task.WhenAll(applicationDtoTasks);
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().applicant);
+            appDto.Category = grouping.First().appForm.Category ?? string.Empty;
+            appDto.AssessmentCount = grouping.First().AssessmentCount;
+            appDto.AssessmentReviewCount = grouping.First().AssessmentReviewCount;
+            appDto.ApplicationTag = grouping.First().tag?.Text ?? string.Empty;
+            appDto.Owner = BuildApplicationOwner(grouping.First().applicationOwner);
+            appDto.OrganizationName = grouping.First().applicant?.OrgName ?? string.Empty;
+            appDto.OrganizationType = grouping.First().applicant?.OrganizationType ?? string.Empty;
+            appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
+            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
+            appDtos.Add(appDto);
+        }
 
         var totalCount = await _applicationRepository.GetCountAsync();
 
-        return new PagedResultDto<GrantApplicationDto>(
-            totalCount,
-            applicationDtos
-        );
+        return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
+    }
+
+
+    private static string MapSubstatusDisplayValue(string subStatus)
+    {
+        if (subStatus == null) { return string.Empty; }
+        var hasKey = AssessmentResultsOptionsList.SubStatusActionList.TryGetValue(subStatus, out string? subStatusValue);
+        if (hasKey)
+            return subStatusValue ?? string.Empty;
+        else
+            return string.Empty;
+    }
+
+    private static IEnumerable<GrantApplicationAssigneeDto> BuildApplicationAssignees(IEnumerable<ApplicationAssignment> applicationAssignments, IEnumerable<Person> persons)
+    {
+        foreach (var assignment in applicationAssignments)
+        {
+            yield return new GrantApplicationAssigneeDto()
+            {
+                ApplicationId = assignment.ApplicationId,
+                AssigneeId = assignment.AssigneeId,
+                FullName = persons.FirstOrDefault(s => s.Id == assignment.AssigneeId)?.FullName ?? string.Empty,
+                Id = assignment.Id,
+                Duty = assignment.Duty
+            };
+        }
+    }
+
+    private static GrantApplicationAssigneeDto BuildApplicationOwner(Person applicationOwner)
+    {
+        if (applicationOwner != null)
+        {
+            return new GrantApplicationAssigneeDto()
+            {
+                Id = applicationOwner.Id,
+                FullName = applicationOwner.FullName
+            };
+        }
+        return new GrantApplicationAssigneeDto();
     }
 
     public override async Task<GrantApplicationDto> GetAsync(Guid id)
@@ -140,7 +194,8 @@ public class GrantApplicationAppService :
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
                     where application.Id == id
-                    select new {
+                    select new
+                    {
                         application,
                         applicant,
                         appStatus
@@ -148,14 +203,15 @@ public class GrantApplicationAppService :
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
 
-        if (queryResult != null) {
+        if (queryResult != null)
+        {
             var dto = queryResult.application;
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
             appDto.StatusCode = queryResult.appStatus.StatusCode;
             appDto.Status = queryResult.appStatus.InternalStatus;
-            appDto.Applicant = queryResult.applicant.ApplicantName;
-            var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId==dto.ApplicantId && s.ApplicationId==dto.Id);
-            if(contactInfo != null) 
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(queryResult.applicant);
+            var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId == dto.ApplicantId && s.ApplicationId == dto.Id);
+            if (contactInfo != null)
             {
                 appDto.ContactFullName = contactInfo.Name;
                 appDto.ContactEmail = contactInfo.Email;
@@ -163,10 +219,19 @@ public class GrantApplicationAppService :
                 appDto.ContactBusinessPhone = contactInfo.Phone;
                 appDto.ContactCellPhone = contactInfo.Phone2;
             }
+
+            if (appDto.Applicant != null)
+            {
+                appDto.Sector = appDto.Applicant.Sector;
+                appDto.SubSector = appDto.Applicant.SubSector;
+            }
+
             return appDto;
-        } else {
+        }
+        else
+        {
             return await Task.FromResult<GrantApplicationDto>(new GrantApplicationDto());
-        }        
+        }
     }
 
     public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
@@ -178,14 +243,14 @@ public class GrantApplicationAppService :
                     select new GetSummaryDto
                     {
                         Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = TimeZoneInfo.ConvertTimeFromUtc(application.SubmissionDate,TimeZoneInfo.Local).ToShortDateString(),
+                        SubmissionDate = TimeZoneInfo.ConvertTimeFromUtc(application.SubmissionDate, TimeZoneInfo.Local).ToShortDateString(),
                         OrganizationName = applicant.OrgName,
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
                         City = application.City,
                         RequestedAmount = application.RequestedAmount,
                         ProjectBudget = application.TotalProjectBudget,
-                        Sector = application.Sector,
+                        Sector = applicant.Sector,
                         Community = application.Community,
                         Status = application.ApplicationStatus.InternalStatus,
                         LikelihoodOfFunding = application.LikelihoodOfFunding != null && application.LikelihoodOfFunding != "" ? AssessmentResultsOptionsList.FundingList[application.LikelihoodOfFunding] : "",
@@ -195,15 +260,23 @@ public class GrantApplicationAppService :
                         AssessmentResult = application.AssessmentResultStatus != null && application.AssessmentResultStatus != "" ? AssessmentResultsOptionsList.AssessmentResultStatusList[application.AssessmentResultStatus] : "",
                         RecommendedAmount = application.RecommendedAmount,
                         ApprovedAmount = application.ApprovedAmount,
-                        Batch = "", // to-do: ask BA for the implementation of Batch field,
-                        CensusSubdivision = application.CensusSubdivision,
+                        Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
-                    };
+                        OwnerId  =  application.OwnerId,
+                      
+    };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
-        if (queryResult != null) {
+        if (queryResult != null)
+        {
+            var ownerId = queryResult.OwnerId ?? Guid.Empty;
+            queryResult.Owner = await GetOwnerAsync(ownerId);
+            queryResult.Assignees =  await GetAssigneesAsync(applicationId);
+          
             return queryResult;
-        } else {
+        }
+        else
+        {
             return await Task.FromResult<GetSummaryDto>(new GetSummaryDto());
         }
 
@@ -268,6 +341,7 @@ public class GrantApplicationAppService :
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
+        var percentageTotalProjectBudget = input.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(input.RequestedAmount ?? 0, input.TotalProjectBudget ?? 0), 100).To<double>();
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
@@ -276,21 +350,25 @@ public class GrantApplicationAppService :
             application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
             application.ProjectStartDate = input.ProjectStartDate;
             application.ProjectEndDate = input.ProjectEndDate;
-            application.PercentageTotalProjectBudget = input.PercentageTotalProjectBudget;
+            application.PercentageTotalProjectBudget = Math.Round(percentageTotalProjectBudget, 2);
             application.ProjectFundingTotal = input.ProjectFundingTotal;
             application.Community = input.Community;
             application.CommunityPopulation = input.CommunityPopulation;
             application.Acquisition = input.Acquisition;
             application.Forestry = input.Forestry;
             application.ForestryFocus = input.ForestryFocus;
-            application.Sector = input.Sector;
-            application.SubSector = input.SubSector;
             application.EconomicRegion = input.EconomicRegion;
             application.ElectoralDistrict = input.ElectoralDistrict;
-            application.CensusSubdivision = input.CensusSubdivision;
             application.RegionalDistrict = input.RegionalDistrict;
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+            // This applicant should never be null!
+
+            applicant.Sector = input.Sector ?? "";
+            applicant.SubSector = input.SubSector ?? "";
+            _ = await _applicantRepository.UpdateAsync(applicant);
 
             if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
                 || !string.IsNullOrEmpty(input.ContactBusinessPhone) || !string.IsNullOrEmpty(input.ContactCellPhone))
@@ -330,11 +408,11 @@ public class GrantApplicationAppService :
 
                 return appDto;
 
-            } else
+            }
+            else
             {
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
             }
-     
         }
         else
         {
@@ -351,10 +429,32 @@ public class GrantApplicationAppService :
                     {
                         Id = userAssignment.Id,
                         AssigneeId = userAssignment.AssigneeId,
-                        FullName = user.FullName
+                        FullName = user.FullName,
+                        Duty = userAssignment.Duty,
                     };
 
         return query.ToList();
+    }
+
+    public async Task<GrantApplicationAssigneeDto> GetOwnerAsync(Guid ownerId)
+    {
+        try
+        {
+            var owner = await _personRepository.GetAsync(ownerId, false);
+
+
+            return new GrantApplicationAssigneeDto
+            {
+                Id = owner.Id,
+                FullName = owner.FullName
+            };
+        }
+        catch(Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+            return new GrantApplicationAssigneeDto();
+        }
+        
     }
 
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
@@ -408,38 +508,85 @@ public class GrantApplicationAppService :
         }
     }
 
-    public async Task InsertAssigneeAsync(Guid[] applicationIds, Guid assigneeId)
+    public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
     {
-        foreach (Guid applicationId in applicationIds)
+
+        try
         {
-            try
+            var assignees = await GetAssigneesAsync(applicationId);
+            if (assignees == null || assignees.FindIndex(a => a.AssigneeId == assigneeId) == -1)
             {
-                var assignees = await GetAssigneesAsync(applicationId);
-                if (assignees == null || assignees.FindIndex(a => a.AssigneeId == assigneeId) == -1)
-                {
-                    await _applicationManager.AssignUserAsync(applicationId, assigneeId);
-                }
+                await _applicationManager.AssignUserAsync(applicationId, assigneeId, duty);
             }
-            catch (Exception ex)
+            else
             {
-                Debug.WriteLine(ex.ToString());
+                await _applicationManager.UpdateAssigneeAsync(applicationId, assigneeId, duty);
             }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
     }
 
-    public async Task DeleteAssigneeAsync(Guid[] applicationIds, Guid assigneeId)
+    public async Task DeleteAssigneeAsync(Guid applicationId, Guid assigneeId)
     {
-        foreach (Guid applicationId in applicationIds)
+
+        try
         {
-            try
+            await _applicationManager.RemoveAssigneeAsync(applicationId, assigneeId);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
+    }
+    public async Task<IList<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
+    {
+
+        var applications = await _applicationRepository.GetListAsync(e => applicationIds.Contains(e.Id));
+
+        return ObjectMapper.Map<List<Application>, List<GrantApplicationDto>>(applications.OrderBy(t => t.Id).ToList());
+
+    }
+    public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)
+    {
+
+        try
+        {
+            var application = await _applicationRepository.GetAsync(applicationId, false);
+            if (application != null)
             {
-                await _applicationManager.RemoveAssigneeAsync(applicationId, assigneeId);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
+                application.OwnerId = assigneeId;
+                await _applicationRepository.UpdateAsync(application);
             }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
+    }
+
+    public async Task DeleteOwnerAsync(Guid applicationId)
+    {
+
+        try
+        {
+            var application = await _applicationRepository.GetAsync(applicationId, false);
+            if (application != null)
+            {
+                application.OwnerId = null;
+                await _applicationRepository.UpdateAsync(application);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+
     }
 
     [HttpPut]

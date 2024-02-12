@@ -144,7 +144,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         return await _applicationRepository.UpdateAsync(application);
     }
 
-    public async Task AssignUserAsync(Guid applicationId, Guid assigneeId)
+    public async Task AssignUserAsync(Guid applicationId, Guid assigneeId, string? duty)
     {        
         using var uow = _unitOfWorkManager.Begin();
         var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
@@ -152,10 +152,48 @@ public class ApplicationManager : DomainService, IApplicationManager
             new ApplicationAssignment
             {
                 AssigneeId = person.Id,
-                ApplicationId = applicationId                
+                ApplicationId = applicationId ,
+                Duty = duty,
             });
 
         var application = await _applicationRepository.GetAsync(userAssignment.ApplicationId, true);
+
+        // BUSINESS RULE: If an application is in the SUBMITTED state and has
+        // a user assigned, move to the ASSIGNED state.
+
+        if (application != null && application.ApplicationStatus.StatusCode == GrantApplicationState.SUBMITTED)
+        {
+            await TriggerAction(application.Id, GrantApplicationAction.Internal_Assign);
+        }
+
+        await uow.SaveChangesAsync();
+    }   
+    public async Task UpdateAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
+    {        
+        using var uow = _unitOfWorkManager.Begin();
+        var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
+       
+        var userAssignment = await _applicationAssignmentRepository.GetAsync(e => e.ApplicationId == applicationId && e.AssigneeId == assigneeId);
+
+        if(userAssignment != null)
+        {
+            userAssignment.Duty = duty;
+
+            await _applicationAssignmentRepository.UpdateAsync(userAssignment);
+        }
+        else
+        {
+           await _applicationAssignmentRepository.InsertAsync(
+            new ApplicationAssignment
+            {
+                AssigneeId = person.Id,
+                ApplicationId = applicationId,
+                Duty = duty
+            });
+        }
+           
+
+        var application = await _applicationRepository.GetAsync(applicationId, true);
 
         // BUSINESS RULE: If an application is in the SUBMITTED state and has
         // a user assigned, move to the ASSIGNED state.

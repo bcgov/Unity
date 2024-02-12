@@ -69,7 +69,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(ApplicationId);
 
             if(application != null) {
-                ApplicantName = application.Applicant;
+                ApplicantName = application.Applicant.ApplicantName;
                 ApplicationStatus = application.Status.ToString();
                 ApplicationNumber = application.ReferenceNo.ToString();
             }

@@ -16,19 +16,13 @@
                     button-type="Primary" />
 
         <abp-button id="assignApplication"
+                    data-selector="applications-table-actions"
                     text="@L["ApplicationList:AssignButton"].Value"
                     disabled="true"
                     icon-type="Other"
                     icon="fl fl-add-friend"
                     button-type="Light" />
 
-        <abp-button id="unAssignApplication" style="display:none"
-                    data-selector="applications-table-actions"
-                    text="Un-Assign"
-                    disabled="true"
-                    icon-type="Other"
-                    icon="fl fl-remove-friend"
-                    button-type="Light" />
 
         <abp-button id="tagApplication"
                     data-selector="applications-table-actions"
@@ -56,13 +50,6 @@
     </div>
 
     <div id="dynamicButtonContainerId" class="d-flex align-items-end justify-content-end gap-2">
-        <abp-button id="btn-save"
-                    text="Save"
-                    disabled="true"
-                    icon-type="Other"
-                    icon="fl fl-save"
-                    button-type="Primary" />
-
         <abp-button id="btn-toggle-filter"
                     text="Filter"
                     disabled="false"                    

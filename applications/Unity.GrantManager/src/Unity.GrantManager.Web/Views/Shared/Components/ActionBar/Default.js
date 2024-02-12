@@ -18,7 +18,6 @@ $(function () {
 
     let tagApplicationModal = new abp.ModalManager({
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
-        scriptUrl: '/Pages/ApplicationTags/ApplicationTags.js', //Lazy Load URL
     });
 
     tagApplicationModal.onOpen(function () {
@@ -57,9 +56,48 @@ $(function () {
         tagInput.addData(tagInputArray);
 
     });
+
+    assignApplicationModal.onOpen(function () {
+        let userTagsInput = new UserTagsInput({
+            selector: 'SelectedAssignees',
+            duplicate: false,
+            max: 50
+        });
+        let suggestionsArray = [];
+        let uncommonTags = $('#UnCommonAssigneeList').val();
+        let commonTags = $('#CommonAssigneeList').val();
+        let allTags = $('#AllAssignees').val();
+        if (allTags) {
+            suggestionsArray = JSON.parse(allTags);
+            console.log(suggestionsArray)
+        }
+        userTagsInput.setSuggestions(suggestionsArray);
+
+         let tagInputArray = [];
+       
+        if (uncommonTags && uncommonTags != null && uncommonTags !="[]") {
+            tagInputArray.push({ FullName: 'Uncommon Assignees', class: 'tags-uncommon', Id: 'uncommonAssignees' , Role: 'Various Roles' })
+            
+        }
+        
+        if (commonTags && commonTags != null && commonTags != "[]") {
+            const commonTagsArray = JSON.parse(commonTags);
+            if (commonTagsArray.length) {
+
+                commonTagsArray.forEach(function (item) {
+
+                    tagInputArray.push(item)
+                });
+               
+            }
+        }
+        userTagsInput.addData(tagInputArray);
+        $('#user-tags-input').focus();
+
+    });
     tagApplicationModal.onResult(function () {
         abp.notify.success(
-            'The application tags has been successfully updated.',
+            'The application tags have been successfully updated.',
             'Application Tags'
         );
         PubSub.publish("refresh_application_list");

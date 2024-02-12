@@ -21,17 +21,55 @@
         </tr>
         <tr>
             <td colspan="2">
-                @Html.LabelFor(model => model.Category, new { @class= "display-input-label" })
+                @Html.LabelFor(model => model.Owner, new { @class= "display-input-label" })
                 <div class="display-input">
-                    @Html.DisplayFor(model => model.Category)
+                    @if(!Model.Owner.FullName.IsNullOrEmpty())
+                    {
+                    @Html.DisplayFor(model => model.Owner.FullName)
+                    }
+                    else
+                    {
+                    <label class="empty-user-role">{Owner}</label>
+                    }
+                    
+                </div>
+            </td>
+        
+        </tr>
+        <tr>
+            <td colspan="2">
+                @Html.LabelFor(model => model.Assignees, new { @class= "display-input-label" })
+                <div class="display-input">
+                    <div class="user-tags-input-wrapper user-tags-details-input-wrapper">
+
+                
+                    @foreach (var assignee in Model.Assignees)
+                    {
+                            <div class="user-tag tags-common tag-wrap">
+                                <label class="full-length-tag">@assignee.FullName</label>
+                                <br>
+                                @if(!assignee.Duty.IsNullOrEmpty() )
+                                {
+                                    <label>@assignee.Duty</label>
+                                }
+                                else
+                                {
+                                    <label class="empty-user-role">Duties</label>
+                                }
+
+                            </div>
+                    }
+                    </div>
+
                 </div>
             </td>
         </tr>
         <tr>
+           
             <td>
-                @Html.LabelFor(model => model.EconomicRegion, new { @class= "display-input-label" })
+                @Html.LabelFor(model => model.Category, new { @class= "display-input-label" })
                 <div class="display-input">
-                    @Html.DisplayFor(model => model.EconomicRegion)
+                    @Html.DisplayFor(model => model.Category)
                 </div>
             </td>
             <td>
@@ -59,12 +97,20 @@
         </tr>
         <tr>
             <td>
-                @Html.LabelFor(model => model.City, new { @class= "display-input-label" })
+                @Html.LabelFor(model => model.EconomicRegion, new { @class= "display-input-label" })
                 <div class="display-input">
-                    @Html.DisplayFor(model => model.City)
+                    @Html.DisplayFor(model => model.EconomicRegion)
                 </div>
             </td>
             <td>
+                @Html.LabelFor(model => model.RegionalDistrict, new { @class= "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.RegionalDistrict)
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
                 @Html.LabelFor(model => model.Community, new { @class= "display-input-label" })
                 <div class="display-input">
                     @Html.DisplayFor(model => model.Community)

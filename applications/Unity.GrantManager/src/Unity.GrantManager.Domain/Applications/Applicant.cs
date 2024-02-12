@@ -16,11 +16,6 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? SubSector { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;
     public string? ApproxNumberOfEmployees { get; set; }
-    public string? EconomicRegion { get; set; }
-    public string? Community { get; set; }
     public string? IndigenousOrgInd { get; set; }
-    public string? ElectoralDistrict { get; set; }
-    public string? CensusSubdivision { get; set; }
-    public string? RegionalDistrict { get; set; }
     public Guid? TenantId { get; set; }
 }

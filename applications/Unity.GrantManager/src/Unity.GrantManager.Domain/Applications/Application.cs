@@ -24,9 +24,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
-    public decimal TotalProjectBudget { get; set; }
-    public string? Sector { get; set; } = null;
-    public string? SubSector { get; set; } = null;
+    public decimal TotalProjectBudget { get; set; }    
     public string? EconomicRegion { get; set; } = null;
     public string? City { get; set; } = null;
     public DateTime? ProposalDate { get; set; }
@@ -78,11 +76,11 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? ForestryFocus { get; set; }
 
-    public string? ElectoralDistrict { get; set; }
-
-    public string? CensusSubdivision { get; set; }
+    public string? ElectoralDistrict { get; set; }    
 
     public string? RegionalDistrict { get; set; }
 
     public Guid? TenantId { get; set; }
+
+    public Guid? OwnerId { get; set; }
 }

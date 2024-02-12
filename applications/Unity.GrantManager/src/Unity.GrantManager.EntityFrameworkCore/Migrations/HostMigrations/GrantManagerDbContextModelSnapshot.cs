@@ -24,14 +24,10 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Unity.GrantManager.Locality.CensusSubdivision", b =>
+            modelBuilder.Entity("Unity.GrantManager.Locality.Community", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("CensusSubdivisionName")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -61,6 +57,10 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("RegionalDistrictCode")
                         .IsRequired()
                         .HasColumnType("text");
@@ -71,7 +71,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CensusSubdivisions", (string)null);
+                    b.ToTable("Communities", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Locality.EconomicRegion", b =>
