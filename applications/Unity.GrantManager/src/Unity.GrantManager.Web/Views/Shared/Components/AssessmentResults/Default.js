@@ -85,7 +85,30 @@
     initDatePicker();
 });
 
-
+let dueDateHasChanged = false;
+let decisionDateHasChanged = false;
 function enableResultSaveBtn(inputText) {
+    if (dueDateHasChanged) {
+        if (document.getElementById('AssessmentResults_DueDate').value && !document.getElementById('AssessmentResults_DueDate').validity.valid) {
+            $('#saveAssessmentResultBtn').prop('disabled', true);
+            return;
+        }
+    }
+    if (decisionDateHasChanged) {
+        if (document.getElementById('AssessmentResults_FinalDecisionDate').value && !document.getElementById('AssessmentResults_FinalDecisionDate').validity.valid) {
+            $('#saveAssessmentResultBtn').prop('disabled', true);
+            return;
+        }
+    }
     $('#saveAssessmentResultBtn').prop('disabled', false);
+}
+
+function validateDueDate() {
+    dueDateHasChanged = true;
+    enableResultSaveBtn('dueDate');
+}
+
+function validateDecisionDate() {
+    decisionDateHasChanged = true;
+    enableResultSaveBtn('decisionDate');
 }
