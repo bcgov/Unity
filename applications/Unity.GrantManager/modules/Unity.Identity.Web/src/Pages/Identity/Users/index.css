@@ -28,3 +28,8 @@
 #UsersWrapper {
     background-color: transparent;
 }
+
+#UsersWrapper .dataTables_scrollBody{
+    max-height: calc(100vh - 370px);
+    overflow-y: scroll;
+}
