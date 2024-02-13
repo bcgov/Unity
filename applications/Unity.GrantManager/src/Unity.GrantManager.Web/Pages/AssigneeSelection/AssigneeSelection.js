@@ -27,6 +27,7 @@ $(function () {
         this.input = document.createElement('input');
         this.input.classList.add('user-tags-input');
         this.input.setAttribute("id", "user-tags-input");
+        this.input.setAttribute("placeholder", "Start typing their name");
         this.input.focus();
         init(this);
         
@@ -106,7 +107,7 @@ $(function () {
 
         this.wrapper.insertBefore(tag, this.input);
         this.orignal_input.value = JSON.stringify(this.arr);
-
+        this.input.focus();
         return this;
     }
 
