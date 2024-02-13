@@ -20,6 +20,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -287,6 +288,7 @@ public class GrantApplicationAppService :
         var application = await _applicationRepository.GetAsync(id);
         if (application != null)
         {
+            ValidateLegacyDates(application, input);
             bool IsEditGranted = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
             bool IsEditApprovedAmount = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
             bool IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.ApplicationStatus.StatusCode);
@@ -335,6 +337,18 @@ public class GrantApplicationAppService :
         else
         {
             throw new EntityNotFoundException();
+        }
+    }
+
+    private void ValidateLegacyDates(Application application, CreateUpdateGrantApplicationDto input)
+    {
+        if ((application?.DueDate != input?.DueDate) && (input?.DueDate < DateTime.Now.AddDays(-1)))
+        {
+            throw new AbpValidationException("Due Date should not be past date.");
+        }
+        if ((application?.FinalDecisionDate != input?.FinalDecisionDate) && (input?.FinalDecisionDate > DateTime.Now))
+        {
+            throw new AbpValidationException("Decision Date should not be future date.");
         }
     }
 
