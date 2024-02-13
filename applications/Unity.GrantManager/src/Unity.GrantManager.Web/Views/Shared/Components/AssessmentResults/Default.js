@@ -87,21 +87,6 @@
 
 let dueDateHasChanged = false;
 let decisionDateHasChanged = false;
-function enableResultSaveBtn(inputText) {
-    if (dueDateHasChanged) {
-        if (document.getElementById('AssessmentResults_DueDate').value && !document.getElementById('AssessmentResults_DueDate').validity.valid) {
-            $('#saveAssessmentResultBtn').prop('disabled', true);
-            return;
-        }
-    }
-    if (decisionDateHasChanged) {
-        if (document.getElementById('AssessmentResults_FinalDecisionDate').value && !document.getElementById('AssessmentResults_FinalDecisionDate').validity.valid) {
-            $('#saveAssessmentResultBtn').prop('disabled', true);
-            return;
-        }
-    }
-    $('#saveAssessmentResultBtn').prop('disabled', false);
-}
 
 function validateDueDate() {
     dueDateHasChanged = true;
@@ -112,3 +97,29 @@ function validateDecisionDate() {
     decisionDateHasChanged = true;
     enableResultSaveBtn('decisionDate');
 }
+
+function areLegacyDatesInvalid() {
+    if (dueDateHasChanged) {
+        if (document.getElementById('AssessmentResults_DueDate').value && !document.getElementById('AssessmentResults_DueDate').validity.valid) {
+            $('#saveAssessmentResultBtn').prop('disabled', true);
+            return true;
+        }
+    }
+    if (decisionDateHasChanged) {
+        if (document.getElementById('AssessmentResults_FinalDecisionDate').value && !document.getElementById('AssessmentResults_FinalDecisionDate').validity.valid) {
+            $('#saveAssessmentResultBtn').prop('disabled', true);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function enableResultSaveBtn(inputText) {
+    if (areLegacyDatesInvalid()) {
+        return;
+    }
+    $('#saveAssessmentResultBtn').prop('disabled', false);
+}
+
+
