@@ -298,19 +298,20 @@ public class GrantApplicationAppService :
         else
         {
             application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.DueDate);
-            application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
-
+            
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+
                 application.UpdateFieldsOnlyForPreFinalDecision(input.ProjectSummary,
                     input.DueDiligenceStatus,
                     input.TotalProjectBudget,
                     input.RecommendedAmount,
                     input.DeclineRational,
                     input.FinalDecisionDate);
-            }
 
-            application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
+                application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
+            }            
         }
 
         await _applicationRepository.UpdateAsync(application);
