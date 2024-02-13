@@ -83,6 +83,13 @@
         }, 500)
     }
     initDatePicker();
+
+    PubSub.subscribe(
+        'init_date_pickers',
+        async (msg, data) => {
+            initDatePicker();
+        }
+    );
 });
 
 let dueDateHasChanged = false;
