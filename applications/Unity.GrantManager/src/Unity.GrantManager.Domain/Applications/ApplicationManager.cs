@@ -42,8 +42,6 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)                                   // 2.4 - Close Application; Role: Reviewer
             .Permit(GrantApplicationAction.Internal_Unasign, GrantApplicationState.SUBMITTED);
 
-        stateMachine.Configure(GrantApplicationState.CLOSED);
-
         stateMachine.Configure(GrantApplicationState.SUBMITTED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED);                      // 2.1 - Internal_Assign;            Role: Team Lead
@@ -74,7 +72,8 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         stateMachine.Configure(GrantApplicationState.WITHDRAWN);
 
-        stateMachine.Configure(GrantApplicationState.GRANT_APPROVED);
+        stateMachine.Configure(GrantApplicationState.GRANT_APPROVED)
+            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN);
 
         stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED);
     }
@@ -89,7 +88,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             s => application.ApplicationStatus.StatusCode = s,
         ConfigureWorkflow);
 
-        var allActions = Workflow.GetAllActions().ToList();
+        var allActions = Workflow.GetAllActions().Distinct().ToList();
         var permittedActions = Workflow.GetPermittedActions().ToList();
 
         var actionsList = allActions
