@@ -156,7 +156,7 @@
 
     "Permission:GrantApplicationPermissions.AssessmentResults.Default": "Assessment Results",
     "Permission:GrantApplicationPermissions.AssessmentResults.Edit": "Assessment Results Update",
-    "Permission:GrantApplicationPermissions.AssessmentResults.EditApprovedAmount": "Edit Fields After Approval",
+    "Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields": "Edit Fields After Approval",
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",

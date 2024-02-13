@@ -325,7 +325,7 @@ public class GrantApplicationAppService :
 
     private async Task<bool> CurrentUserCanUpdateFieldsPostFinalDecisionAsync()
     {
-        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
+        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
     }
 
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
