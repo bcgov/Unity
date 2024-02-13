@@ -1,51 +1,41 @@
 ﻿$(function () {
     const formatter = createNumberFormatter();
-    const userDiv = document.getElementById('users-div');
     const l = abp.localization.getResource('GrantManager');
     const maxRowsPerPage = 15;
-    const createdCell = getCreatedCell();
     let dt = $('#GrantApplicationsTable');
-    let userOptions = document.getElementById('users');
-    let dataTable, currentRow, previousRow, currentCell, previousCell, originalContent, previousUserOptionsSelected, currentUserOptionsSelected;
-    let userDivChanged = false;
-    let modifiedAssignments = new Map();
-    let mapTitles = new Map();
+    let dataTable;
+    /* let mapTitles = new Map(); = not used */
+    /* commented out clear filter functionality - needs to be looked at again or deleted */
 
     dataTable = initializeDataTable();
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
-   
-   
-    //$('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
-    //$('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
-    
+
+    /* Removed for now - to be added/looked at later
+    $('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
+    $('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
+    */
+
     const UIElements = {
         searchBar: $('#search-bar'),
         btnToggleFilter: $('#btn-toggle-filter'),
-        filterIcon: $("i.fl.fl-filter"),
-        btnSave: $('#btn-save'),
-        userDiv: $('#users-div'),
-        users: $('#users'),
-        clearFilter: $('#btn-clear-filter')
+        /* ClearFilter filterIcon: $("i.fl.fl-filter"), */
+        /* ClearFilter clearFilter: $('#btn-clear-filter') */
     };
     init();
     function init() {
-        $('#users').select2();
         $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
         $('.csv-download').prepend('<i class="fl fl-export"></i>');
         $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
         bindUIEvents();
-        UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html());
+        /* ClearFilter UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html()); */
+        dataTable.search('').columns().search('').draw();
     }
 
     function bindUIEvents() {
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
-        UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden'));
-        UIElements.clearFilter.on('click', clearFilter);
-        UIElements.btnSave.on('click', handleSave);
-        UIElements.userDiv.on('change', markUserDivAsChanged);
-        UIElements.userDiv.on('blur', checkUserDivChanged);
-        UIElements.users.on('blur', checkUserDivChanged);
+        /* ClearFilter UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden')); */
+        /* ClearFilter UIElements.clearFilter.on('click', clearFilter); */
     }
 
     dataTable.on('select', function (e, dt, type, indexes) {
@@ -67,7 +57,8 @@
         $('#dtFilterRow').toggleClass('hidden');
     }
 
-    function clearFilter() {
+    /* Clear filter button removed - to review if needed again
+    function clearFilter() {        
         $(".filter-input").each(function () {
             if (this.value != "") {
                 this.value = "";
@@ -80,17 +71,7 @@
 
         $('#btn-clear-filter')[0].disabled = true;
     }
-
-    function markUserDivAsChanged() {
-        userDivChanged = true;
-        $('#btn-save').attr('disabled', false);
-    }
-
-    function handleSave() {
-        changeCellContent(currentCell);
-        markUserDivAsUnchanged();
-        modifyAssignmentsOnServer();
-    }
+    */
 
     function handleSearch() {
         let filterValue = $('.dataTables_filter input').val();
@@ -106,18 +87,6 @@
         }
     }
 
-    function checkUserDivChanged() {
-        if (userDivChanged) {
-            changeCellContent(currentCell);
-            userDivChanged = false;
-        }
-    }
-
-    function markUserDivAsUnchanged() {
-        userDivChanged = false;
-        $('#btn-save').attr('disabled', true);
-    }
-
     function createNumberFormatter() {
         return new Intl.NumberFormat('en-CA', {
             style: 'currency',
@@ -126,118 +95,6 @@
             maximumFractionDigits: 2,
         });
     }
-
-    function changeCellContent(cell) {
-        let count = 0;
-        let content = '';
-        let aData = dataTable.row(cell).context[0].aoData[currentRow]._aData;
-        aData.assignees = [];
-
-        for (let userOption of userOptions) {
-            if (userOption.selected) {
-                count++;
-                content = userOption.text;
-                aData.assignees.push({
-                    fullName: userOption.text,
-                    assigneeId: userOption.value,
-                });
-            }
-        }
-
-        if (count === 1) {
-            cell.textContent = content;
-        } else if (count > 1) {
-            cell.textContent = 'Multiple assignees';
-        } else if (count === 0) {
-            cell.textContent = '';
-        }
-
-        modifiedAssignments.set(aData.id, aData.assignees);
-    }
-
-    function getUserOptionSelectedCount() {
-        let userOptionSelectedCount = 0;
-        for (let userOption of userOptions) {
-            if ($(userOption).prop('selected')) {
-                userOptionSelectedCount++;
-            }
-        }
-        return userOptionSelectedCount;
-    }
-
-    function getCreatedCell() {
-        return function (cell) {
-            cell.setAttribute('contenteditable', true);
-            cell.addEventListener('focus', function (e) {
-                checkUserDivChanged();
-                if (e.target.children.length == 0 ||
-                    (e.target.children.length == 1
-                    && e.target.children[0].className.includes('dt-select-assignees'))) {
-                    let currentContent = e.target.textContent;
-                    e.target.textContent = '';
-                    currentRow = e.target.parentElement._DT_RowIndex;
-                    let assigness = dataTable.row(e.target.parentElement).context[0]
-                        .aoData[currentRow]._aData.assignees;
-                    let assigneeIds = [];
-
-                    $(assigness).each(function (key, assignee) {
-                        assigneeIds.push(assignee.assigneeId);
-                    });
-
-                    previousUserOptionsSelected = getUserOptionSelectedCount();
-
-                    if (originalContent != ""
-                        && previousCell + "" != "undefined"
-                        && previousCell.textContent == ""
-                        && previousUserOptionsSelected > 0
-                        && currentRow != previousRow
-                    ) {
-                        previousCell.textContent = originalContent;
-                    }
-
-                    for (let userOption of userOptions) {
-                        $(userOption).prop(
-                            'selected',
-                            assigneeIds.includes(userOption.value)
-                        );
-                    }
-
-                    if (originalContent != " "
-                        && previousCell + "" != "undefined"
-                        && currentUserOptionsSelected + "" != "undefined"
-                        && previousUserOptionsSelected == currentUserOptionsSelected
-                        && currentRow != previousRow
-                    ) {
-                        previousCell.textContent = originalContent;
-                    }
-
-                    currentUserOptionsSelected = getUserOptionSelectedCount();
-
-                    $(userDiv).appendTo(this);
-                    $('#users').select2();
-                    userDiv.classList.remove('hidden');
-                    $('ul').click();
-
-                    originalContent = currentContent;
-                    previousCell = this;
-                    previousRow = currentRow;
-                    setTableHeighDynamic();
-                }
-                currentCell = this;                
-            });
-
-            cell.addEventListener('blur', function (e) {
-                if (
-                    e.relatedTarget != null &&
-                    e.relatedTarget.classList.value != 'select2-selection select2-selection--multiple' &&
-                    e.relatedTarget.classList.value != 'select2-search__field'
-                ) {
-                    changeCellContent(e.currentTarget);
-                }
-            });
-        };
-    }
-
 
     function initializeDataTable() {
         return dt.DataTable(
@@ -264,6 +121,7 @@
                 orderCellsTop: true,
                 //fixedHeader: true,
                 stateSave: true,
+                stateDuration: 0,
                 dom: 'Bfrtip',
                 buttons: [
                     {
@@ -275,13 +133,13 @@
                             orthogonal: 'fullName',
                         }
                     },
-                     {
+                    {
                         extend: 'colvis',
                         text: 'Manage Columns',
-                         columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
-                         className: 'btn btn-light custom-table-btn cln-visible',
 
-                       
+                        columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
+
+                        className: 'btn btn-light custom-table-btn cln-visible',
                     }
                 ],
                 drawCallback: function () {
@@ -308,393 +166,10 @@
                 initComplete: function () {
                     updateFilter();
                 },
-                columns: [
-                    { //0
-                        title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
-                        orderable: false,
-                        className: 'notexport',
-                        render: function (data) {
-                            return '<div class="select-checkbox" title="Select Application" ></div>';
-                        },
-                    },
-                    { //1
-                        title: 'Applicant Name',
-                        data: 'applicant',
-                        name: 'applicant',
-                        className: 'data-table-header',
-                    },
-                    { //2
-                        title: 'Application #',
-                        data: 'referenceNo',
-                        name: 'referenceNo',
-                        className: 'data-table-header',
-                    },
-                    { //3
-                        title: 'Category',
-                        data: 'category',
-                        name: 'category',
-                        className: 'data-table-header',
-                    },
-                    { //4
-                        title: l('SubmissionDate'),
-                        data: 'submissionDate',
-                        name: 'submissionDate',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return luxon.DateTime.fromISO(data, {
-                                locale: abp.localization.currentCulture.name,
-                            }).toLocaleString();
-                        },
-                    },
-                    { //5
-                        title: 'Project Name',
-                        data: 'projectName',
-                        name: 'projectName',
-                        className: 'data-table-header',
-                    },
-                    { //6
-                        title: 'Sector',
-                        name: 'sector',
-                        data: 'sector',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{Sector}';
-                        },
-                    },
-                    { //7
-                        title: 'Total Project Budget',
-                        name: 'totalProjectBudget',
-                        data: 'totalProjectBudget',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return formatter.format(data);
-                        },
-                    },
-                    { //8
-                        title: l('Assignee'),
-                        data: 'assignees',
-                        name: 'assignees',
-                        className: 'dt-editable',
-                        createdCell: createdCell,                        
-                        render: function (data, type, row) {
-                            let displayText = ' ';
-
-                            if (data != null && data.length == 1) {
-                                displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
-                            } else if (data.length > 1) {
-                                displayText = type === 'fullName' ? getNames(data) : l('Multiple assignees')
-                            }
-
-                            return `<span class="d-flex align-items-center dt-select-assignees">
-                                <i class="fl fl-edit"></i>
-                                <span class="ps-2 flex-fill" data-toggle="tooltip" title="`
-                                + getNames(data) + '">' + displayText + '</span>' +
-                                `</span>`;
-                        },
-                    },
-                    { //9
-                        title: l('Assignee'),
-                        data: 'assignees',
-                        name: 'assignees-hidden',
-                        visible: false,
-                        render: function (data, type, row) {
-                            let displayText = ' ';
-
-                            if (data != null) {
-                                displayText = getNames(data);
-                            }
-                            return displayText;
-                        },
-                    },
-                    { //10
-                        title: l('GrantApplicationStatus'),
-                        data: 'status',
-                        name: 'status',
-                        className: 'data-table-header',
-                        render: function (data, type, row) {
-                            let fill = row.assessmentReviewCount > 0 ? 'fas' : 'far';
-                            return `<span class="d-flex align-items-center"><i class="${fill} fa-bookmark text-primary"></i><span class="ps-2 flex-fill">${row.status}</span></span>`;
-                        },
-                    },
-                    { //11
-                        title: l('RequestedAmount'),
-                        data: 'requestedAmount',
-                        name: 'requestedAmount',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return formatter.format(data);
-                        },
-                    },
-                    //{ // -- 
-                    //    title: 'Final Decision Date',
-                    //    name: 'finalDecisionDate',
-                    //    className: 'data-table-header',
-                    //    visible: false,                    
-                    //},
-                    { //12
-                        title: 'Approved Amount',
-                        name: 'approved Amount',
-                        data: 'approvedAmount',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return formatter.format(data);
-                        },
-                    },
-                    { //13
-                        title: 'Economic Region',
-                        name: 'economic Region',
-                        data: 'economicRegion',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{Region}';
-                        },
-                    },
-                    { //14
-                        title: 'City',
-                        name: 'city',
-                        data: 'city',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{City}';
-                        },
-                    },
-                              
-                    { //15
-                        title: 'Organization Number',
-                        name: 'organizationNumber',
-                        data: 'organizationNumber',
-                        className: 'data-table-header',
-                        visible: false,
-                        render: function (data) {
-                            return data ?? '{Organization Number}';
-                        },
-                    },
-                    { //16
-                        title: 'Org Book Status',
-                        name: 'orgBookStatus',
-                        data: 'orgBookStatus',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{Org Book Status}';
-                        },
-                    },
-                    { //17 -- mapped
-                        title: 'Project Start Date',
-                        name: 'projectStartDate',
-                        data: 'projectStartDate',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data != null ? luxon.DateTime.fromISO(data, {
-                                locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Project Start Date}' ;
-                        },
-                    },
-                    { //18 -- mapped
-                        title: 'Project End Date',
-                        name: 'projectEndDate',
-                        data: 'projectEndDate',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data != null ? luxon.DateTime.fromISO(data, {
-                                locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Project End Date}';
-                        },
-                    },
-                    { //19  -- mapped
-                        title: 'Projected Funding Total',
-                        name: 'projectFundingTotal',
-                        data: 'projectFundingTotal',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return formatter.format(data) ?? '{Projected Funding Total}';
-                        },
-                    },
-                    { //20  -- mapped
-                        title: '% of Total Project Budget',
-                        name: 'percentageTotalProjectBudget',
-                        data: 'percentageTotalProjectBudget',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{% of Total Project Budget}';
-                        },
-                    },
-                    { //21
-                        title: 'Total Paid Amount $',
-                        name: 'projectFundingTotal',
-                        data: 'projectFundingTotal',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return  formatter.format(data) ?? '{Total Paid Amount $}';
-                        },
-                    },
-                    { //22
-                        title: 'Electoral District',
-                        name: 'electoralDistrict',
-                        data: 'electoralDistrict',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{Electoral District}';
-                        },
-                    },
-                    { //23 -- mapped
-                        title: 'Forestry or Non-Forestry',
-                        name: 'forestryOrNonForestry',
-                        data: 'forestry',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            if (data != null)
-                                return data == 'FORESTRY' ? 'Forestry' : 'Non Forestry';
-                            else
-                                return '{Forestry or Non-Forestry}';
-                        },
-                    },
-                    { //24 -- mapped
-                        title: 'Forestry Focus',
-                        name: 'forestryFocus',
-                        data: 'forestryFocus',
-                        className: 'data-table-header',
-                        render: function (data) {
-
-                            if (data) {
-                                if (data == 'PRIMARY') {
-                                    return 'Primary processing'
-                                }
-                                else if (data == 'SECONDARY') {
-                                    return 'Secondary/Value-Added/Not Mass Timber'
-                                } else if (data == 'MASS_TIMBER') {
-                                    return 'Mass Timber';
-                                }
-                            }
-                            else {
-                                return '{Forestry Focus}';
-                            }
-                         
-                        },
-                    },
-                    { //25 -- mapped
-                        title: 'Acquisition',
-                        name: 'acquisition',
-                        data: 'acquisition',
-                        className: 'data-table-header',
-                        render: function (data) {
-
-                            if (data) {
-                                return titleCase(data);
-                            }
-                            else {
-                                return  '{Acquisition}';
-                            }
-                          
-                        },
-                    },
-                    { //26 -- mapped
-                        title: 'Community',
-                        name: 'community',
-                        data: 'community',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{community}';
-                        },
-                    },
-                    { //27 -- mapped
-                        title: 'Community Population',
-                        name: 'communityPopulation',
-                        data: 'communityPopulation',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{Community Population}';
-                        },
-                    },
-                    { //28 -- mapped
-                        title: 'Likelihood of Funding',
-                        name: 'likelihoodOfFunding',
-                        data: 'likelihoodOfFunding',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            if (data != null) {
-                                return titleCase(data);
-                            }
-                            else {
-                                return '{Likelihood of Funding}';
-                            }
-                        },
-                    },
-                    { //29 -- mapped
-                        title: 'Recommendation',
-                        name: 'recommendation',
-                        data: 'recommendation',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            if (data) {
-                                if (data == 'APPROVE') {
-                                    return 'Recommended for Approval'
-                                }
-                                else if (data == 'DENY') {
-                                    return 'Recommended for Denial'
-                                }
-                            }
-                            else {
-                                return '{Recommendation}';
-                            }
-                        },
-                    },
-                    { //30
-                        title: 'Tags',
-                        name: 'applicationTag',
-                        data: 'applicationTag',
-                        className: '',
-                        render: function (data) {
-                            return data.replace(/,/g, ', ') ?? '{Tags}';
-                        },
-                    },
-                    { //31 -- mapped
-                        title: 'Total Score',
-                        name: 'totalScore',
-                        data: 'totalScore',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data ?? '{Total Score}';
-                        },
-                        },
-                    { //32 -- mapped
-                        title: 'Assessment Result',
-                        name: 'assessmentResult',
-                        data: 'assessmentResultStatus',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            if (data != null) {
-                                return titleCase(data);
-                            }
-                            else {
-                                return '{Assessment Result}';
-                            }
-                        },
-                     },
-                    { //33 -- mapped
-                        title: 'Recommended Amount',
-                        name: 'recommendedAmount',
-                        data: 'recommendedAmount',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return formatter.format(data) ?? '{Recommended Amount}';
-                        },
-                    },
-                    { //34 -- mapped
-                        title: 'Due Date',
-                        name: 'dueDate',
-                        data: 'dueDate',
-                        className: 'data-table-header',
-                        render: function (data) {
-                            return data != null ? luxon.DateTime.fromISO(data, {
-                                locale: abp.localization.currentCulture.name,
-                            }).toLocaleString() : '{Due Date}';
-                        },
-                    },
-                ],
-
+                columns: getColumns(),
                 columnDefs: [
                     {
-                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], // Index of columns to be visible by default
+                        targets: [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], // Index of columns to be visible by default
                         visible: true
                     },
                     {
@@ -705,6 +180,620 @@
             })
         );
     }
+
+    function getColumns() {
+        return [
+            getSelectColumn(),// 0
+            getApplicantNameColumn(), // 1
+            getApplicationNumberColumn(), // 2
+            getCategoryColumn(), // 3
+            getSubmissionDateColumn(), // 4
+            getProjectNameColumn(), // 5
+            getSectorColumn(), // 6
+            getSubSectorColumn(), // 7
+            getTotalProjectBudgetColumn(), // 8
+            getAssigneesColumn(), // 9
+            getAssignedHiddenColumn(), // 10
+            getStatusColumn(), // 11
+            getRequestedAmountColumn(), // 12
+            getApprovedAmountColumn(), // 13
+            getEconomicRegionColumn(), // 14
+            getRegionalDistrictColumn(), // 15
+            getCommunityColumn(), // 16
+            getOrganizationNumberColumn(), // 17
+            getOrgBookStatusColumn(), // 18    
+            getProjectStartDateColumn(), // 19
+            getProjectEndDateColumn(), // 20
+            getProjectedFundingTotalColumn(), // 21
+            getTotalProjectBudgetPercentageColumn(), // 22
+            getTotalPaidAmountColumn(), // 23
+            getElectoralDistrictColumn(), // 24
+            getForestryOrNonForestryColumn(), // 25
+            getForestryFocusColumn(), // 26
+            getAcquisitionColumn(), // 27
+            getCityColumn(), // 28            
+            getCommunityPopulationColumn(), // 29
+            getLikelihoodOfFundingColumn(), // 30
+            getSubStatusColumn(), // 31
+            getTagsColumn(), // 32
+            getTotalScoreColumn(), // 33
+            getAssessmentResultColumn(), // 34
+            getRecommendedAmountColumn(), // 35
+            getDueDateColumn(), // 36
+            getOwnerColumn(), // 37
+            getDecisionDateColumn(), // 38
+            getProjectSummaryColumn(), // 39
+            getPercentageTotalProjectBudgetColumn(), // 40
+            getOrganizationTypeColumn(), // 41
+            getOrganizationNameColumn(), // 42
+        ];
+    }
+
+    function getSelectColumn() {
+        return { //0
+            title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
+            orderable: false,
+            className: 'notexport',
+            render: function (data) {
+                return '<div class="select-checkbox" title="Select Application" ></div>';
+            }
+        }
+    }
+
+    function getApplicantNameColumn() {
+        return { // 1
+            title: 'Applicant Name',
+            data: 'applicant.applicantName',
+            name: 'applicant.applicantName',
+            className: 'data-table-header',
+        }
+    }
+
+    function getApplicationNumberColumn() {
+        return { // 2
+            title: 'Application #',
+            data: 'referenceNo',
+            name: 'referenceNo',
+            className: 'data-table-header',
+        }
+    }
+
+    function getCategoryColumn() {
+        return { // 3
+            title: 'Category',
+            data: 'category',
+            name: 'category',
+            className: 'data-table-header',
+        }
+    }
+
+    function getSubmissionDateColumn() {
+        return { // 4
+            title: l('SubmissionDate'),
+            data: 'submissionDate',
+            name: 'submissionDate',
+            className: 'data-table-header',
+            render: function (data) {
+                return luxon.DateTime.fromISO(data, {
+                    locale: abp.localization.currentCulture.name,
+                }).toLocaleString();
+            },
+        }
+    }
+
+    function getProjectNameColumn() {
+        return { // 5
+            title: 'Project Name',
+            data: 'projectName',
+            name: 'projectName',
+            className: 'data-table-header',
+        }
+    }
+
+    function getSectorColumn() {
+        return { // 6
+            title: 'Sector',
+            name: 'applicant.sector',
+            data: 'applicant.sector',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Sector}';
+            },
+        }
+    }
+
+    function getSubSectorColumn() {
+        return { // 7
+            title: 'SubSector',
+            name: 'applicant.subsector',
+            data: 'applicant.subsector',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SubSector}';
+            },
+        }
+    }
+
+    function getTotalProjectBudgetColumn() {
+        return { // 8
+            title: 'Total Project Budget',
+            name: 'totalProjectBudget',
+            data: 'totalProjectBudget',
+            className: 'data-table-header',
+            render: function (data) {
+                return formatter.format(data);
+            },
+        }
+    }
+
+    function getAssigneesColumn() {
+        return { // 9
+            title: l('Assignee'),
+            data: 'assignees',
+            name: 'assignees',
+            className: 'dt-editable',
+            render: function (data, type, row) {
+                let displayText = ' ';
+
+                if (data != null && data.length == 1) {
+                    displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
+                } else if (data.length > 1) {
+                    displayText = getNames(data);
+                }
+
+                return `<span class="d-flex align-items-center dt-select-assignees">
+                               
+                                <span class="ps-2 flex-fill" data-toggle="tooltip" title="`
+                    + getNames(data) + '">' + displayText + '</span>' +
+                    `</span>`;
+            },
+        }
+    }
+
+    function getAssignedHiddenColumn() {
+        return { // 10
+            title: l('Assignee'),
+            data: 'assignees',
+            name: 'assignees-hidden',
+            visible: false,
+            render: function (data, type, row) {
+                let displayText = ' ';
+
+                if (data != null) {
+                    displayText = getNames(data);
+                }
+                return displayText;
+            },
+        }
+    }
+
+    function getStatusColumn() {
+        return { // 11
+            title: l('GrantApplicationStatus'),
+            data: 'status',
+            name: 'status',
+            className: 'data-table-header',
+            render: function (data, type, row) {
+                let fill = row.assessmentReviewCount > 0 ? 'fas' : 'far';
+                return `<span class="d-flex align-items-center"><i class="${fill} fa-bookmark text-primary"></i><span class="ps-2 flex-fill">${row.status}</span></span>`;
+            },
+        }
+    }
+
+    function getRequestedAmountColumn() {
+        return { // 12
+            title: l('RequestedAmount'),
+            data: 'requestedAmount',
+            name: 'requestedAmount',
+            className: 'data-table-header',
+            render: function (data) {
+                return formatter.format(data);
+            },
+        }
+    }
+
+    function getApprovedAmountColumn() {
+        return { // 13
+            title: 'Approved Amount',
+            name: 'approved Amount',
+            data: 'approvedAmount',
+            className: 'data-table-header',
+            render: function (data) {
+                return formatter.format(data);
+            },
+        }
+    }
+
+    function getEconomicRegionColumn() {
+        return { // 14
+            title: 'Economic Region',
+            name: 'economic Region',
+            data: 'economicRegion',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Region}';
+            }
+        }
+    }
+
+    function getRegionalDistrictColumn() {
+        return { // 15
+            title: 'Regional District',
+            name: 'regional District',
+            data: 'regionalDistrict',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Regional District}';
+            },
+        }
+    }
+
+    function getCommunityColumn() {
+        return { // 16
+            title: 'Community',
+            name: 'community',
+            data: 'community',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Community}';
+            }
+        }
+    }
+
+    function getOrganizationNumberColumn() {
+        return { // 17
+            title: 'Organization Number',
+            name: 'applicant.orgNumber',
+            data: 'applicant.orgNumber',
+            className: 'data-table-header',
+            visible: false,
+            render: function (data) {
+                return data ?? '{Organization Number}';
+            },
+        }
+    }
+
+    function getOrgBookStatusColumn() {
+        return { // 18
+            title: 'Org Book Status',
+            name: 'orgBookStatus',
+            data: 'orgBookStatus',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Org Book Status}';
+            },
+        }
+    }
+
+    function getProjectStartDateColumn() {
+        return { // 19 -- mapped
+            title: 'Project Start Date',
+            name: 'projectStartDate',
+            data: 'projectStartDate',
+            className: 'data-table-header',
+            render: function (data) {
+                return data != null ? luxon.DateTime.fromISO(data, {
+                    locale: abp.localization.currentCulture.name,
+                }).toUTC().toLocaleString() : '{Project Start Date}';
+            },
+        }
+    }
+
+    function getProjectEndDateColumn() {
+        return { // 20 -- mapped
+            title: 'Project End Date',
+            name: 'projectEndDate',
+            data: 'projectEndDate',
+            className: 'data-table-header',
+            render: function (data) {
+                return data != null ? luxon.DateTime.fromISO(data, {
+                    locale: abp.localization.currentCulture.name,
+                }).toUTC().toLocaleString() : '{Project End Date}';
+            },
+        }
+    }
+
+    function getProjectedFundingTotalColumn() {
+        return { // 21  -- mapped
+            title: 'Projected Funding Total',
+            name: 'projectFundingTotal',
+            data: 'projectFundingTotal',
+            className: 'data-table-header',
+            render: function (data) {
+                return formatter.format(data) ?? '{Projected Funding Total}';
+            },
+        }
+    }
+
+    function getTotalProjectBudgetPercentageColumn() {
+        return { // 22  -- mapped
+            title: '% of Total Project Budget',
+            name: 'percentageTotalProjectBudget',
+            data: 'percentageTotalProjectBudget',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{% of Total Project Budget}';
+            },
+        }
+    }
+
+    function getTotalPaidAmountColumn() {
+        return { // 23
+            title: 'Total Paid Amount $',
+            name: 'projectFundingTotal',
+            data: 'projectFundingTotal',
+            className: 'data-table-header',
+            render: function (data) {
+                return formatter.format(data) ?? '{Total Paid Amount $}';
+            },
+        }
+    }
+
+    function getElectoralDistrictColumn() {
+        return { // 24
+            title: 'Electoral District',
+            name: 'electoralDistrict',
+            data: 'electoralDistrict',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Electoral District}';
+            },
+        }
+    }
+
+    function getForestryOrNonForestryColumn() {
+        return { // 25 -- mapped
+            title: 'Forestry or Non-Forestry',
+            name: 'forestryOrNonForestry',
+            data: 'forestry',
+            className: 'data-table-header',
+            render: function (data) {
+                if (data != null)
+                    return data == 'FORESTRY' ? 'Forestry' : 'Non Forestry';
+                else
+                    return '{Forestry or Non-Forestry}';
+            },
+        }
+    }
+
+    function getForestryFocusColumn() {
+        return { // 26 -- mapped
+            title: 'Forestry Focus',
+            name: 'forestryFocus',
+            data: 'forestryFocus',
+            className: 'data-table-header',
+            render: function (data) {
+
+                if (data) {
+                    if (data == 'PRIMARY') {
+                        return 'Primary processing'
+                    }
+                    else if (data == 'SECONDARY') {
+                        return 'Secondary/Value-Added/Not Mass Timber'
+                    } else if (data == 'MASS_TIMBER') {
+                        return 'Mass Timber';
+                    }
+                }
+                else {
+                    return '{Forestry Focus}';
+                }
+
+            },
+        }
+    }
+
+    function getAcquisitionColumn() {
+        return { // 27 -- mapped
+            title: 'Acquisition',
+            name: 'acquisition',
+            data: 'acquisition',
+            className: 'data-table-header',
+            render: function (data) {
+
+                if (data) {
+                    return titleCase(data);
+                }
+                else {
+                    return '{Acquisition}';
+                }
+
+            },
+        }
+    }
+
+    function getCityColumn() {
+        return { //28 -- mapped
+            title: 'City',
+            name: 'city',
+            data: 'city',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{city}';
+
+            }
+        }
+    }
+
+    function getCommunityPopulationColumn() {
+        return { // 29 -- mapped
+            title: 'Community Population',
+            name: 'communityPopulation',
+            data: 'communityPopulation',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Community Population}';
+            }
+
+        }
+    }
+
+    function getLikelihoodOfFundingColumn() {
+        return { // 30 -- mapped
+            title: 'Likelihood of Funding',
+            name: 'likelihoodOfFunding',
+            data: 'likelihoodOfFunding',
+            className: 'data-table-header',
+            render: function (data) {
+                if (data != null) {
+                    return titleCase(data);
+                }
+                else {
+                    return '{Likelihood of Funding}';
+                }
+            }
+        }
+    }
+
+    function getSubStatusColumn() {
+        return { // 31 -- mapped
+            title: 'Sub-Status',
+            name: 'subStatusDisplayValue',
+            data: 'subStatusDisplayValue',
+            className: 'data-table-header',
+        }
+    }
+
+    function getTagsColumn() {
+        return { // 32
+            title: 'Tags',
+            name: 'applicationTag',
+            data: 'applicationTag',
+            className: '',
+            render: function (data) {
+                return data.replace(/,/g, ', ') ?? '{Tags}';
+            },
+        }
+    }
+
+    function getTotalScoreColumn() {
+        return { // 33 -- mapped
+            title: 'Total Score',
+            name: 'totalScore',
+            data: 'totalScore',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Total Score}';
+            },
+        }
+    }
+
+    function getAssessmentResultColumn() {
+        return { // 34 -- mapped
+            title: 'Assessment Result',
+            name: 'assessmentResult',
+            data: 'assessmentResultStatus',
+            className: 'data-table-header',
+            render: function (data) {
+                if (data != null) {
+                    return titleCase(data);
+                }
+                else {
+                    return '{Assessment Result}';
+                }
+            },
+        }
+    }
+
+    function getRecommendedAmountColumn() {
+        return { // 35 -- mapped
+            title: 'Recommended Amount',
+            name: 'recommendedAmount',
+            data: 'recommendedAmount',
+            className: 'data-table-header',
+            render: function (data) {
+                return formatter.format(data) ?? '{Recommended Amount}';
+            },
+        }
+    }
+
+    function getDueDateColumn() {
+        return { // 36 -- mapped
+            title: 'Due Date',
+            name: 'dueDate',
+            data: 'dueDate',
+            className: 'data-table-header',
+            render: function (data) {
+                return data != null ? luxon.DateTime.fromISO(data, {
+                    locale: abp.localization.currentCulture.name,
+                }).toUTC().toLocaleString() : '{Due Date}';
+            },
+        }
+    }
+
+    function getOwnerColumn() {
+        return { // 37 -- mapped
+            title: 'Owner',
+            name: 'Owner',
+            data: 'owner',
+            className: 'data-table-header',
+            render: function (data) {
+                return data != null ? data.fullName : '{Owner}';
+            },
+        }
+    }
+
+    function getDecisionDateColumn() {
+        return { // 38 --
+            title: 'Decision Date',
+            name: 'finalDecisionDate',
+            data: 'finalDecisionDate',
+            className: 'data-table-header',
+            render: function (data) {
+                return data != null ? luxon.DateTime.fromISO(data, {
+                    locale: abp.localization.currentCulture.name,
+                }).toUTC().toLocaleString() : '{Decision Date}';
+            },
+        }
+    }
+
+    function getProjectSummaryColumn() {
+        return { // 39
+            title: 'Project Summary',
+            name: 'projectSummary',
+            data: 'projectSummary',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{Project Summary}';
+            },
+        }
+    }
+
+    function getPercentageTotalProjectBudgetColumn() {
+        return { // 40
+            title: '% of Total Project Budget',
+            name: 'percentageTotalProjectBudget',
+            data: 'percentageTotalProjectBudget',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+        }
+    }
+
+    function getOrganizationTypeColumn() {
+        return { // 41
+            title: 'Organization Type',
+            name: 'organizationType',
+            data: 'organizationType',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+        }
+    }
+
+    function getOrganizationNameColumn() {
+        return { //42
+            title: 'Organization Name',
+            name: 'organizationName',
+            data: 'organizationName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+        }
+    }
+
     window.addEventListener('resize', setTableHeighDynamic);
     function setTableHeighDynamic() {
         let tableHeight = $("#GrantApplicationsTable")[0].clientHeight;
@@ -748,7 +837,7 @@
                         });
 
                         newRow.append(newCell);
-                       
+
                     }
                     else {
                         let newCell = $("<td>");
@@ -761,25 +850,6 @@
         $("#GrantApplicationsTable thead").after(newRow);
         if (optionsOpen) {
             $(".tr-toggle-filter").show();
-        }
-    }
-
-  
-
-    function modifyAssignmentsOnServer() {
-        let id,
-            obj = Object.fromEntries(modifiedAssignments);
-        let jsonString = JSON.stringify(obj);
-
-        try {
-            unity.grantManager.grantApplications.grantApplication
-                .updateAssignees(jsonString)
-                .done(function () {
-                    abp.notify.success('The application has been updated.');
-                    PubSub.publish('refresh_application_list', id);
-                });
-        } catch (error) {
-            console.log(error);
         }
     }
 

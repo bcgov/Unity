@@ -32,9 +32,9 @@ public class GrantManagerDbContext :
     public DbSet<SubSector> SubSectors { get; set; }
     public DbSet<EconomicRegion> EconomicRegion { get; set; }
     public DbSet<ElectoralDistrict> ElectoralDistricts { get; set; }
-    public DbSet<RegionalDistrict> RegionalDistricts { get; set; }
-    public DbSet<CensusSubdivision> CensusSubdivisions { get; set; }
+    public DbSet<RegionalDistrict> RegionalDistricts { get; set; }    
     public DbSet<TenantToken> TenantTokens { get; set; }
+    public DbSet<Community> Communities { get; set; }
 
 
     #region Entities from the modules
@@ -118,9 +118,9 @@ public class GrantManagerDbContext :
 
             b.ConfigureByConvention();
         });
-        modelBuilder.Entity<CensusSubdivision>(b =>
+        modelBuilder.Entity<Community>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "CensusSubdivisions",
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "Communities",
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();

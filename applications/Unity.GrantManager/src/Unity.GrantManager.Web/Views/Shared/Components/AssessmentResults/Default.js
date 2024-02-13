@@ -86,10 +86,6 @@
 });
 
 
-function enableResultSaveBtn(inputText) {    
-    if (inputText.value.trim() != "") {
-        $('#saveAssessmentResultBtn').prop('disabled', false);
-    } else {
-        $('#saveAssessmentResultBtn').prop('disabled', true);
-    }
+function enableResultSaveBtn(inputText) {
+    $('#saveAssessmentResultBtn').prop('disabled', false);
 }

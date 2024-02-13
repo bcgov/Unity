@@ -6,7 +6,7 @@
     let chefsFormId = document.getElementById('chefsFormId').value;
     let formVersionId = document.getElementById('formVersionId').value;
     let intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
-    let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId'];
+    let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
     let dataTable;
     toastr.options.positionClass = 'toast-top-center';
 
@@ -17,7 +17,13 @@
                           'datetime', 
                           'checkbox',
                           'select',
+                          'selectboxes',
                           'radio',
+                          'phoneNumber',
+                          'email',
+                          'number',
+                          'time',
+                          'day',
                           'simpletextfield', 
                           'simpletextfieldadvanced',
                           'simpletime',
@@ -36,6 +42,7 @@
                           'simpleurladvanced',
                           'simplecheckbox',
                           'simpleradios',
+                          'simpleradioadvanced',
                           'simplecheckboxes',
                           'simplecheckboxadvanced',
                           'simplecurrencyadvanced', 

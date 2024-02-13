@@ -72,7 +72,7 @@ namespace Unity.GrantManager.Events
                 await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
             }
-            else
+            else if(applicationForm == null)
             {
                 EventSubscription eventSubscription = ObjectMapper.Map<EventSubscriptionDto, EventSubscription>(eventSubscriptionDto);
                 applicationForm = await _applicationFormManager.InitializeApplicationForm(eventSubscription);

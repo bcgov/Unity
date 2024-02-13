@@ -44,15 +44,10 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public string? CurrentUserName { get; set; }
-
-
-        [BindProperty(SupportsGet = true)]
-        public List<ApplicationChefsFileAttachment> ApplicationChefsFileAttachmentList { get; set; } = new List<ApplicationChefsFileAttachment>();
-
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
-        public string ApplicationName { get; set; } = "";
+        public string ApplicantName { get; set; } = "";
         public string ApplicationStatus { get; set; } = "";
         public string ApplicationNumber { get; set; } = "";
 
@@ -74,8 +69,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(ApplicationId);
 
             if(application != null) {
-                ApplicationName = application.ApplicationName;
-                ApplicationStatus = application.StatusCode.ToString();
+                ApplicantName = application.Applicant.ApplicantName;
+                ApplicationStatus = application.Status.ToString();
                 ApplicationNumber = application.ReferenceNo.ToString();
             }
             
@@ -83,8 +78,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             {
                 ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
             }
-
-            ApplicationChefsFileAttachmentList = await _grantApplicationAppService.GetApplicationChefsFileAttachments(ApplicationId);
         }
 
         public async Task<IActionResult> OnPostAsync()

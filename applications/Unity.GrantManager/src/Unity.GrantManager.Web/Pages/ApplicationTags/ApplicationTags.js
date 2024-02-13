@@ -230,22 +230,34 @@ $(function () {
             tags.input.focus();
         });
 
+        // for saving tags that are typed, but not added as a chip/pill
+        tags.input.addEventListener('focusout', function () {
+            $('#applicationTagsModelSaveBtn').click(function () {
+                trimAndAddTag(tags);
+            })
+        });
+
 
         tags.input.addEventListener('keydown', function (e) {
-            let str = tags.input.value.trim();
 
             if (~[9, 13, 188, 32].indexOf(e.keyCode)) {
                 e.preventDefault();
-                tags.input.value = "";
-                if (str != "") {
-                    tags.addTag(str);
-                }
+                trimAndAddTag(tags);
                 removeSuggestions(tags);
 
             }
 
         });
     }
+
+    function trimAndAddTag(tags) {
+        let str = tags.input.value.trim();
+        if (str != "") {
+            tags.addTag(str);
+        }
+        tags.input.value = "";
+    }
+
     TagsInput.prototype.getTags = function () {
         return this.arr.slice(); // Return a copy of the array to prevent external modification
     }

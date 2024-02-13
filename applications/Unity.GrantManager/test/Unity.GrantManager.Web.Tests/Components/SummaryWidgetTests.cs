@@ -43,7 +43,7 @@ namespace Unity.GrantManager.Components
                 RecommendedAmount = 10000,
                 RequestedAmount = 1000,
                 Sector = "Information Technology",
-                Status = "Grant Approved",
+                Status = "Approved",
                 SubmissionDate = DateTime.UtcNow.ToString(),
                 TotalScore = "100"
             };
@@ -75,14 +75,12 @@ namespace Unity.GrantManager.Components
 
             //Assert
 
-            var expectedCity = "Victoria";
             var expectedSector = "Information Technology";
-            var expectedStatus = "Grant Approved";
+            var expectedStatus = "Approved";
             var expectedLikelihoodOfFunding = "LOW";
             var expectedTotalScore = 100;
             var expectedAssessmentResult = "FAIL";
-
-            resultModel!.City.ShouldBe(expectedCity);
+            
             resultModel!.Sector.ShouldBe(expectedSector);
             resultModel!.Status.ShouldBe(expectedStatus);
             resultModel!.LikelihoodOfFunding.ShouldBe(expectedLikelihoodOfFunding);

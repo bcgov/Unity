@@ -1,5 +1,5 @@
-﻿using System;
-using System.Globalization;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -67,7 +67,7 @@ namespace Unity.GrantManager.Intakes
             string? formVersionSubmissionHeaderMapping = await GetApplicationFormVersionMapping(formVersionId);
             IntakeMapping intakeMap = _intakeFormSubmissionMapper.MapFormSubmissionFields(applicationForm, formSubmission, formVersionSubmissionHeaderMapping);
             intakeMap.SubmissionId = formSubmission.submission.id;
-            intakeMap.SubmissionDate = formSubmission.submission.createdAt;
+            intakeMap.SubmissionDate = formSubmission.submission.updatedAt;
             intakeMap.ConfirmationId = formSubmission.submission.confirmationId;
             using var uow = _unitOfWorkManager.Begin();
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
@@ -92,31 +92,45 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await CreateApplicantAsync(intakeMap);
             var submittedStatus = await _applicationStatusRepository.FirstAsync(s => s.StatusCode.Equals(GrantApplicationState.SUBMITTED));
-
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = intakeMap.ProjectName ?? "{Project Name}",
+                    ProjectName = ResolveAndTruncateField(255, "{ProjectName}", intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
                     ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
                     Acquisition = intakeMap.Acquisition ?? null,
-                    Forestry = intakeMap.Foresty ?? null,
-                    ForestryFocus = intakeMap.ForestyFocus ?? null,
+                    Forestry = intakeMap.Forestry ?? null,
+                    ForestryFocus = intakeMap.ForestryFocus ?? null,
                     City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
                     EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
-                    Sector = intakeMap.Sector ?? "{Sector}",
                     CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
                     RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
                     SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
                     ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
                     ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
-                    TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget)
-                }                
+                    TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
+                    Community = intakeMap.Community ?? "{Community}",
+                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
+                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}"
+                }
             );   
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
             return application;
+        }
+
+        private string ResolveAndTruncateField(int maxLength, string defaultFieldName, string? valueString) {
+            string fieldValue = defaultFieldName;
+
+            if(!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength) {
+                Logger.LogWarning("Truncation: {fieldName} has been truncated! - Max length: {length}", defaultFieldName, maxLength);
+                fieldValue = valueString.Substring(0, maxLength);
+            } else if (!string.IsNullOrEmpty(valueString)) {
+                fieldValue = valueString.Trim();
+            }
+
+            return fieldValue;
         }
 
         private int? ConvertToIntFromString(string? intString)
@@ -168,7 +182,7 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = intakeMap.ApplicantName ?? "{ApplicantName}",
+                ApplicantName = ResolveAndTruncateField(600, "{ApplicantName}", intakeMap.ApplicantName), 
                 NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
                 OrgName = intakeMap.OrgName ?? "{OrgName}",
                 OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
@@ -176,12 +190,7 @@ namespace Unity.GrantManager.Intakes
                 Sector = intakeMap.Sector ?? "{Sector}",
                 SubSector = intakeMap.SubSector ?? "{SubSector}",
                 ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
-                Community = intakeMap.Community ?? "{Community}",
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
-                ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
-                CensusSubdivision = intakeMap.CensusSubdivision ?? "{CensusSubdivision}",
-                RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
             });
 
             await CreateApplicantAddressAsync(intakeMap, applicant);
