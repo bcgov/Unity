@@ -647,7 +647,7 @@
             data: 'subStatusDisplayValue',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Sub Status}';
+                return data ?? '{SubStatus}';
             },
         }
     }
@@ -752,7 +752,7 @@
             data: 'projectSummary',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Project Summary}';
+                return data ?? '{ProjectSummary}';
             },
         }
     }
@@ -788,7 +788,7 @@
             data: 'organizationName',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Organization Name}';
+                return data ?? '{OrgName}';
             },
         }
     }
@@ -799,7 +799,7 @@
             data: 'dueDiligenceStatus',
             className: 'data-table-header',
             render: function (data) {
-                return titleCase(data ?? '') || '{Due Diligence Status}';
+                return titleCase(data ?? '') ?? '{DueDiligenceStatus}';
             },
         }
     }
@@ -811,7 +811,7 @@
             data: 'declineRational',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Decline Rationale}';
+                return data ?? '{DeclineRationale}';
             },
         }
     }
@@ -824,7 +824,7 @@
             data: 'applicant.subSector',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Sub Sector}';
+                return data ?? '{SubSector}';
             },
         }
     }
@@ -835,7 +835,7 @@
             data: 'contactFullName',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Contact Full Name}';
+                return data ?? '{ContactFullName}';
             },
         }
     }
@@ -846,7 +846,7 @@
             data: 'contactTitle',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Contact Title}';
+                return data ?? '{ContactTitle}';
             },
         }
     }
@@ -857,7 +857,7 @@
             data: 'contactEmail',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Contact Email}';
+                return data ?? '{ContactEmail}';
             },
         }
     }
@@ -868,7 +868,7 @@
             data: 'contactBusinessPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Contact Business Phone}';
+                return data ?? '{ContactBusinessPhone}';
             },
         }
     }
@@ -879,7 +879,7 @@
             data: 'contactCellPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data || '{Contact Cell Phone}';
+                return data ?? '{ContactCellPhone}';
             },
         }
     }

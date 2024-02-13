@@ -147,11 +147,11 @@ public class GrantApplicationAppService :
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
-            appDto.ContactFullName = grouping.First().applicantAgent?.Name ?? string.Empty; ;
-            appDto.ContactEmail = grouping.First().applicantAgent?.Email ?? string.Empty; ;
-            appDto.ContactTitle = grouping.First().applicantAgent?.Title ?? string.Empty; ;
-            appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone ?? string.Empty; ;
-            appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2 ?? string.Empty; ;
+            appDto.ContactFullName = grouping.First().applicantAgent?.Name;
+            appDto.ContactEmail = grouping.First().applicantAgent?.Email;
+            appDto.ContactTitle = grouping.First().applicantAgent?.Title;
+            appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone;
+            appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2;
             appDtos.Add(appDto);
         }
 
