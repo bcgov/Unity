@@ -858,7 +858,7 @@
     PubSub.subscribe(
         'refresh_application_list',
         (msg, data) => {
-            dataTable.ajax.reload();
+            dataTable.ajax.reload(null, false);
             PubSub.publish('clear_selected_application');
         }
     );
