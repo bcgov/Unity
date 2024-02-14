@@ -126,6 +126,7 @@ public class GrantApplicationAppService :
                 .ToList();
 
         var appDtos = new List<GrantApplicationDto>();
+        var rowCounter = 0;
         foreach (var grouping in result)
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
@@ -141,7 +142,10 @@ public class GrantApplicationAppService :
             appDto.OrganizationType = grouping.First().applicant?.OrganizationType ?? string.Empty;
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
+            appDto.RowCount = rowCounter;
             appDtos.Add(appDto);
+            
+            rowCounter++;
         }
 
         var totalCount = await _applicationRepository.GetCountAsync();

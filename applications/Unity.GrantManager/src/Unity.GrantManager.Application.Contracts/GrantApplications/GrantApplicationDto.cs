@@ -6,6 +6,7 @@ namespace Unity.GrantManager.GrantApplications;
 
 public class GrantApplicationDto : AuditedEntityDto<Guid>
 {
+    public int RowCount { get; set; } = 0;
     public string ProjectName { get; set; } = string.Empty;
     public GrantApplicationApplicantDto Applicant { get; set; } = new();
     public string ReferenceNo { get; set; } = string.Empty;

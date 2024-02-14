@@ -226,7 +226,7 @@
             getPercentageTotalProjectBudgetColumn(), // 40
             getOrganizationTypeColumn(), // 41
             getOrganizationNameColumn(), // 42
-        ];
+        ].map((column, index) => ({ ...column, targets: [index], orderData: [index, 0] }));
     }
 
     function getSelectColumn() {
@@ -234,6 +234,7 @@
             title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
             orderable: false,
             className: 'notexport',
+            data: 'rowCount',
             render: function (data) {
                 return '<div class="select-checkbox" title="Select Application" ></div>';
             }
