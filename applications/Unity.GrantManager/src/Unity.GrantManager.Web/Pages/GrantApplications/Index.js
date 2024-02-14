@@ -226,8 +226,8 @@
             getPercentageTotalProjectBudgetColumn(), // 40
             getOrganizationTypeColumn(), // 41
             getOrganizationNameColumn(), // 42
-            getDeclineRationaleColumn(), // 43
-            getSubSectorColumn(), // 44
+            getDueDiligenceStatusColumn(), // 43
+            getDeclineRationaleColumn(), // 44            
             getContactFullNameColumn(), // 45
             getContactTitleColumn(), // 46
             getContactEmailColumn(), // 47
@@ -808,7 +808,7 @@
         }
     }
     function getDueDiligenceStatusColumn() {
-        return { //42
+        return { //43
             title: 'Due Diligence Status',
             name: 'dueDiligenceStatus',
             data: 'dueDiligenceStatus',
@@ -820,7 +820,7 @@
     }
 
     function getDeclineRationaleColumn() {
-        return { //43
+        return { //44
             title: 'Decline Rationale',
             name: 'declineRationale',
             data: 'declineRational',
@@ -831,18 +831,6 @@
         }
     }
 
-
-    function getSubSectorColumn() {
-        return { //44
-            title: 'Sub Sector',
-            name: 'subSector',
-            data: 'applicant.subSector',
-            className: 'data-table-header',
-            render: function (data) {
-                return data ?? '{SubSector}';
-            },
-        }
-    }
     function getContactFullNameColumn() {
         return { //45
             title: 'Contact Full Name',
