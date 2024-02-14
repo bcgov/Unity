@@ -102,6 +102,9 @@ public class GrantApplicationAppService :
                     join owner in await _personRepository.GetQueryableAsync() on application.OwnerId equals owner.Id into owners
                     from applicationOwner in owners.DefaultIfEmpty()
 
+                    join contact in await  _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
+                    from applicantAgent in contacts.DefaultIfEmpty()
+
                     select new
                     {
                         application,
@@ -113,7 +116,9 @@ public class GrantApplicationAppService :
                         tag,
                         applicationUserAssignment,
                         applicationPerson,
-                        applicationOwner
+                        applicationOwner,
+                        applicantAgent
+
                     };
 
         var result = query
@@ -143,6 +148,12 @@ public class GrantApplicationAppService :
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDto.RowCount = rowCounter;
+            appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
+            appDto.ContactFullName = grouping.First().applicantAgent?.Name;
+            appDto.ContactEmail = grouping.First().applicantAgent?.Email;
+            appDto.ContactTitle = grouping.First().applicantAgent?.Title;
+            appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone;
+            appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2;
             appDtos.Add(appDto);
             
             rowCounter++;
@@ -162,6 +173,15 @@ public class GrantApplicationAppService :
             return subStatusValue ?? string.Empty;
         else
             return string.Empty;
+    }  
+    private static string MapDeclineRationalDisplayValue(string value)
+    {
+        if (value == null) { return string.Empty; }
+        var hasKey = AssessmentResultsOptionsList.DeclineRationalActionList.TryGetValue(value, out string? subStatusValue);
+        if (hasKey)
+            return subStatusValue ?? string.Empty;
+        else
+            return string.Empty;
     }
 
     private static IEnumerable<GrantApplicationAssigneeDto> BuildApplicationAssignees(IEnumerable<ApplicationAssignment> applicationAssignments, IEnumerable<Person> persons)
@@ -177,8 +197,8 @@ public class GrantApplicationAppService :
                 Duty = assignment.Duty
             };
         }
-    }
-
+    }   
+ 
     private static GrantApplicationAssigneeDto BuildApplicationOwner(Person applicationOwner)
     {
         if (applicationOwner != null)

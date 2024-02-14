@@ -137,7 +137,7 @@
                         extend: 'colvis',
                         text: 'Manage Columns',
 
-                        columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
+                        columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
 
                         className: 'btn btn-light custom-table-btn cln-visible',
                     }
@@ -226,7 +226,14 @@
             getPercentageTotalProjectBudgetColumn(), // 40
             getOrganizationTypeColumn(), // 41
             getOrganizationNameColumn(), // 42
-        ].map((column, index) => ({ ...column, targets: [index], orderData: [index, 0] }));
+            getDeclineRationaleColumn(), // 43
+            getSubSectorColumn(), // 44
+            getContactFullNameColumn(), // 45
+            getContactTitleColumn(), // 46
+            getContactEmailColumn(), // 47
+            getContactBusinessPhoneColumn(), // 48
+            getContactCellPhoneColumn(), // 49
+     .map((column, index) => ({ ...column, targets: [index], orderData: [index, 0] }));
     }
 
     function getSelectColumn() {
@@ -653,6 +660,9 @@
             name: 'subStatusDisplayValue',
             data: 'subStatusDisplayValue',
             className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SubStatus}';
+            },
         }
     }
 
@@ -756,7 +766,7 @@
             data: 'projectSummary',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Project Summary}';
+                return data ?? '{ProjectSummary}';
             },
         }
     }
@@ -792,11 +802,101 @@
             data: 'organizationName',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '';
+                return data ?? '{OrgName}';
+            },
+        }
+    }
+    function getDueDiligenceStatusColumn() {
+        return { //42
+            title: 'Due Diligence Status',
+            name: 'dueDiligenceStatus',
+            data: 'dueDiligenceStatus',
+            className: 'data-table-header',
+            render: function (data) {
+                return titleCase(data ?? '') ?? '{DueDiligenceStatus}';
             },
         }
     }
 
+    function getDeclineRationaleColumn() {
+        return { //43
+            title: 'Decline Rationale',
+            name: 'declineRationale',
+            data: 'declineRational',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{DeclineRationale}';
+            },
+        }
+    }
+
+
+    function getSubSectorColumn() {
+        return { //44
+            title: 'Sub Sector',
+            name: 'subSector',
+            data: 'applicant.subSector',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SubSector}';
+            },
+        }
+    }
+    function getContactFullNameColumn() {
+        return { //45
+            title: 'Contact Full Name',
+            name: 'contactFullName',
+            data: 'contactFullName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactFullName}';
+            },
+        }
+    }
+    function getContactTitleColumn() {
+        return { //46
+            title: 'Contact Title',
+            name: 'contactTitle',
+            data: 'contactTitle',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactTitle}';
+            },
+        }
+    }
+    function getContactEmailColumn() {
+        return { //47
+            title: 'Contact Email',
+            name: 'contactEmail',
+            data: 'contactEmail',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactEmail}';
+            },
+        }
+    }
+    function getContactBusinessPhoneColumn() {
+        return { //48
+            title: 'Contact Business Phone',
+            name: 'contactBusinessPhone',
+            data: 'contactBusinessPhone',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactBusinessPhone}';
+            },
+        }
+    }
+    function getContactCellPhoneColumn() {
+        return { //49
+            title: 'Contact Cell Phone',
+            name: 'contactCellPhone',
+            data: 'contactCellPhone',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactCellPhone}';
+            },
+        }
+    }
     window.addEventListener('resize', setTableHeighDynamic);
     function setTableHeighDynamic() {
         let tableHeight = $("#GrantApplicationsTable")[0].clientHeight;
