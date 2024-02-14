@@ -282,17 +282,17 @@ public class GrantApplicationAppService :
                         ApprovedAmount = application.ApprovedAmount,
                         Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
-                        OwnerId  =  application.OwnerId,
-                      
-    };
+                        OwnerId = application.OwnerId,
+
+                    };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
         if (queryResult != null)
         {
             var ownerId = queryResult.OwnerId ?? Guid.Empty;
             queryResult.Owner = await GetOwnerAsync(ownerId);
-            queryResult.Assignees =  await GetAssigneesAsync(applicationId);
-          
+            queryResult.Assignees = await GetAssigneesAsync(applicationId);
+
             return queryResult;
         }
         else
@@ -305,57 +305,47 @@ public class GrantApplicationAppService :
     public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
-        if (application != null)
+
+        if (application.IsInFinalDecisionState())
         {
-            bool IsEditGranted = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
-            bool IsEditApprovedAmount = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
-            bool IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.ApplicationStatus.StatusCode);
-            if (!IsEditGranted)
-            {
-                throw new UnauthorizedAccessException(message: "No permission to update");
-            }
-            else if (IsFinalDecisionMade && !IsEditApprovedAmount)
-            {
-                throw new UnauthorizedAccessException(message: "Final decision is made, Update not allowed!");
-            }
-            else
-            {
-                // These are some business rules that should be pushed further down into domain
-                if (IsEditApprovedAmount && IsFinalDecisionMade) // Only users with EditApprovedAmount permission can edit the value after final decision
-                {
-                    application.ApprovedAmount = input.ApprovedAmount ?? 0;
-                }
-                else
-                {
-                    application.ProjectSummary = input.ProjectSummary;
-                    application.RequestedAmount = input.RequestedAmount ?? 0;
-                    application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
-                    application.RecommendedAmount = input.RecommendedAmount ?? 0;
-                    application.ApprovedAmount = input.ApprovedAmount ?? 0;
-                    application.LikelihoodOfFunding = input.LikelihoodOfFunding;
-                    application.DueDiligenceStatus = input.DueDiligenceStatus;
-                    application.SubStatus = input.SubStatus;
-                    application.DeclineRational = input.DeclineRational;
-                    application.TotalScore = input.TotalScore;
-                    application.Notes = input.Notes;
-                    if (input.AssessmentResultStatus != application.AssessmentResultStatus)
-                    {
-                        application.AssessmentResultDate = DateTime.UtcNow;
-                    }
-                    application.AssessmentResultStatus = input.AssessmentResultStatus;
-                    application.FinalDecisionDate = input.FinalDecisionDate;
-                    application.DueDate = input.DueDate;
-                }
+            application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.DueDate);
 
-                await _applicationRepository.UpdateAsync(application, autoSave: true);
-
-                return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+            if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
+            {
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
             }
         }
         else
         {
-            throw new EntityNotFoundException();
+            application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.DueDate);
+            
+            if (await CurrentUsCanUpdateAssessmentFieldsAsync())
+            {
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+
+                application.UpdateFieldsOnlyForPreFinalDecision(input.ProjectSummary,
+                    input.DueDiligenceStatus,
+                    input.TotalProjectBudget,
+                    input.RecommendedAmount,
+                    input.DeclineRational,
+                    input.FinalDecisionDate);
+
+                application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
+            }            
         }
+
+        await _applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
+    {
+        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
+    }
+
+    private async Task<bool> CurrentUserCanUpdateFieldsPostFinalDecisionAsync()
+    {
+        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
     }
 
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
@@ -469,12 +459,12 @@ public class GrantApplicationAppService :
                 FullName = owner.FullName
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Debug.WriteLine(ex.ToString());
             return new GrantApplicationAssigneeDto();
         }
-        
+
     }
 
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)

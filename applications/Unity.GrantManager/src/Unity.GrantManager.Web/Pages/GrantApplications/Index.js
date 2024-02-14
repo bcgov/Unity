@@ -169,7 +169,7 @@
                 columns: getColumns(),
                 columnDefs: [
                     {
-                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], // Index of columns to be visible by default
+                        targets: [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], // Index of columns to be visible by default
                         visible: true
                     },
                     {
@@ -190,41 +190,42 @@
             getSubmissionDateColumn(), // 4
             getProjectNameColumn(), // 5
             getSectorColumn(), // 6
-            getTotalProjectBudgetColumn(), // 7
-            getAssigneesColumn(), // 8
-            getAssignedHiddenColumn(), // 9
-            getStatusColumn(), // 10
-            getRequestedAmountColumn(), // 11
-            getApprovedAmountColumn(), // 12
-            getEconomicRegionColumn(), // 13
-            getRegionalDistrictColumn(), // 14
-            getCommunityColumn(), // 15
-            getOrganizationNumberColumn(), // 16
-            getOrgBookStatusColumn(), // 17    
-            getProjectStartDateColumn(), // 18
-            getProjectEndDateColumn(), // 19
-            getProjectedFundingTotalColumn(), // 20
-            getTotalProjectBudgetPercentageColumn(), // 21
-            getTotalPaidAmountColumn(), // 22
-            getElectoralDistrictColumn(), // 23
-            getForestryOrNonForestryColumn(), // 24
-            getForestryFocusColumn(), // 25
-            getAcquisitionColumn(), // 26
-            getCityColumn(), // 27            
-            getCommunityPopulationColumn(), // 28
-            getLikelihoodOfFundingColumn(), // 29
-            getSubStatusColumn(), // 30
-            getTagsColumn(), // 31
-            getTotalScoreColumn(), // 32
-            getAssessmentResultColumn(), // 33
-            getRecommendedAmountColumn(), // 34
-            getDueDateColumn(), // 35
-            getOwnerColumn(), // 36
-            getDecisionDateColumn(), // 37
-            getProjectSummaryColumn(), // 38
-            getPercentageTotalProjectBudgetColumn(), // 39
-            getOrganizationTypeColumn(), // 40
-            getOrganizationNameColumn(), // 41
+            getSubSectorColumn(), // 7
+            getTotalProjectBudgetColumn(), // 8
+            getAssigneesColumn(), // 9
+            getAssignedHiddenColumn(), // 10
+            getStatusColumn(), // 11
+            getRequestedAmountColumn(), // 12
+            getApprovedAmountColumn(), // 13
+            getEconomicRegionColumn(), // 14
+            getRegionalDistrictColumn(), // 15
+            getCommunityColumn(), // 16
+            getOrganizationNumberColumn(), // 17
+            getOrgBookStatusColumn(), // 18    
+            getProjectStartDateColumn(), // 19
+            getProjectEndDateColumn(), // 20
+            getProjectedFundingTotalColumn(), // 21
+            getTotalProjectBudgetPercentageColumn(), // 22
+            getTotalPaidAmountColumn(), // 23
+            getElectoralDistrictColumn(), // 24
+            getForestryOrNonForestryColumn(), // 25
+            getForestryFocusColumn(), // 26
+            getAcquisitionColumn(), // 27
+            getCityColumn(), // 28            
+            getCommunityPopulationColumn(), // 29
+            getLikelihoodOfFundingColumn(), // 30
+            getSubStatusColumn(), // 31
+            getTagsColumn(), // 32
+            getTotalScoreColumn(), // 33
+            getAssessmentResultColumn(), // 34
+            getRecommendedAmountColumn(), // 35
+            getDueDateColumn(), // 36
+            getOwnerColumn(), // 37
+            getDecisionDateColumn(), // 38
+            getProjectSummaryColumn(), // 39
+            getPercentageTotalProjectBudgetColumn(), // 40
+            getOrganizationTypeColumn(), // 41
+            getOrganizationNameColumn(), // 42
             getDueDiligenceStatusColumn(), // 42
             getDeclineRationaleColumn(), // 43
             getSubSectorColumn(), // 44
@@ -310,8 +311,20 @@
         }
     }
 
-    function getTotalProjectBudgetColumn() {
+    function getSubSectorColumn() {
         return { // 7
+            title: 'SubSector',
+            name: 'applicant.subsector',
+            data: 'applicant.subsector',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SubSector}';
+            },
+        }
+    }
+
+    function getTotalProjectBudgetColumn() {
+        return { // 8
             title: 'Total Project Budget',
             name: 'totalProjectBudget',
             data: 'totalProjectBudget',
@@ -323,7 +336,7 @@
     }
 
     function getAssigneesColumn() {
-        return { // 8
+        return { // 9
             title: l('Assignee'),
             data: 'assignees',
             name: 'assignees',
@@ -347,7 +360,7 @@
     }
 
     function getAssignedHiddenColumn() {
-        return { // 9
+        return { // 10
             title: l('Assignee'),
             data: 'assignees',
             name: 'assignees-hidden',
@@ -364,7 +377,7 @@
     }
 
     function getStatusColumn() {
-        return { // 10
+        return { // 11
             title: l('GrantApplicationStatus'),
             data: 'status',
             name: 'status',
@@ -377,7 +390,7 @@
     }
 
     function getRequestedAmountColumn() {
-        return { // 11
+        return { // 12
             title: l('RequestedAmount'),
             data: 'requestedAmount',
             name: 'requestedAmount',
@@ -389,7 +402,7 @@
     }
 
     function getApprovedAmountColumn() {
-        return { // 12
+        return { // 13
             title: 'Approved Amount',
             name: 'approved Amount',
             data: 'approvedAmount',
@@ -401,7 +414,7 @@
     }
 
     function getEconomicRegionColumn() {
-        return { // 13
+        return { // 14
             title: 'Economic Region',
             name: 'economic Region',
             data: 'economicRegion',
@@ -413,7 +426,7 @@
     }
 
     function getRegionalDistrictColumn() {
-        return { // 14
+        return { // 15
             title: 'Regional District',
             name: 'regional District',
             data: 'regionalDistrict',
@@ -425,7 +438,7 @@
     }
 
     function getCommunityColumn() {
-        return { // 15
+        return { // 16
             title: 'Community',
             name: 'community',
             data: 'community',
@@ -437,7 +450,7 @@
     }
 
     function getOrganizationNumberColumn() {
-        return { // 16
+        return { // 17
             title: 'Organization Number',
             name: 'applicant.orgNumber',
             data: 'applicant.orgNumber',
@@ -450,7 +463,7 @@
     }
 
     function getOrgBookStatusColumn() {
-        return { // 17
+        return { // 18
             title: 'Org Book Status',
             name: 'orgBookStatus',
             data: 'orgBookStatus',
@@ -462,7 +475,7 @@
     }
 
     function getProjectStartDateColumn() {
-        return { // 18 -- mapped
+        return { // 19 -- mapped
             title: 'Project Start Date',
             name: 'projectStartDate',
             data: 'projectStartDate',
@@ -476,7 +489,7 @@
     }
 
     function getProjectEndDateColumn() {
-        return { // 19 -- mapped
+        return { // 20 -- mapped
             title: 'Project End Date',
             name: 'projectEndDate',
             data: 'projectEndDate',
@@ -490,7 +503,7 @@
     }
 
     function getProjectedFundingTotalColumn() {
-        return { // 20  -- mapped
+        return { // 21  -- mapped
             title: 'Projected Funding Total',
             name: 'projectFundingTotal',
             data: 'projectFundingTotal',
@@ -502,7 +515,7 @@
     }
 
     function getTotalProjectBudgetPercentageColumn() {
-        return { // 21  -- mapped
+        return { // 22  -- mapped
             title: '% of Total Project Budget',
             name: 'percentageTotalProjectBudget',
             data: 'percentageTotalProjectBudget',
@@ -514,7 +527,7 @@
     }
 
     function getTotalPaidAmountColumn() {
-        return { // 22
+        return { // 23
             title: 'Total Paid Amount $',
             name: 'projectFundingTotal',
             data: 'projectFundingTotal',
@@ -526,7 +539,7 @@
     }
 
     function getElectoralDistrictColumn() {
-        return { // 23
+        return { // 24
             title: 'Electoral District',
             name: 'electoralDistrict',
             data: 'electoralDistrict',
@@ -538,7 +551,7 @@
     }
 
     function getForestryOrNonForestryColumn() {
-        return { // 24 -- mapped
+        return { // 25 -- mapped
             title: 'Forestry or Non-Forestry',
             name: 'forestryOrNonForestry',
             data: 'forestry',
@@ -553,7 +566,7 @@
     }
 
     function getForestryFocusColumn() {
-        return { // 25 -- mapped
+        return { // 26 -- mapped
             title: 'Forestry Focus',
             name: 'forestryFocus',
             data: 'forestryFocus',
@@ -568,6 +581,8 @@
                         return 'Secondary/Value-Added/Not Mass Timber'
                     } else if (data == 'MASS_TIMBER') {
                         return 'Mass Timber';
+                    } else {
+                        return '{Forestry Focus}';
                     }
                 }
                 else {
@@ -579,7 +594,7 @@
     }
 
     function getAcquisitionColumn() {
-        return { // 26 -- mapped
+        return { // 27 -- mapped
             title: 'Acquisition',
             name: 'acquisition',
             data: 'acquisition',
@@ -598,7 +613,7 @@
     }
 
     function getCityColumn() {
-        return { //27 -- mapped
+        return { //28 -- mapped
             title: 'City',
             name: 'city',
             data: 'city',
@@ -611,7 +626,7 @@
     }
 
     function getCommunityPopulationColumn() {
-        return { // 28 -- mapped
+        return { // 29 -- mapped
             title: 'Community Population',
             name: 'communityPopulation',
             data: 'communityPopulation',
@@ -624,7 +639,7 @@
     }
 
     function getLikelihoodOfFundingColumn() {
-        return { // 29 -- mapped
+        return { // 30 -- mapped
             title: 'Likelihood of Funding',
             name: 'likelihoodOfFunding',
             data: 'likelihoodOfFunding',
@@ -641,7 +656,7 @@
     }
 
     function getSubStatusColumn() {
-        return { // 30 -- mapped         
+        return { // 31 -- mapped
             title: 'Sub-Status',
             name: 'subStatusDisplayValue',
             data: 'subStatusDisplayValue',
@@ -653,7 +668,7 @@
     }
 
     function getTagsColumn() {
-        return { // 31
+        return { // 32
             title: 'Tags',
             name: 'applicationTag',
             data: 'applicationTag',
@@ -665,7 +680,7 @@
     }
 
     function getTotalScoreColumn() {
-        return { // 32 -- mapped
+        return { // 33 -- mapped
             title: 'Total Score',
             name: 'totalScore',
             data: 'totalScore',
@@ -677,7 +692,7 @@
     }
 
     function getAssessmentResultColumn() {
-        return { // 33 -- mapped
+        return { // 34 -- mapped
             title: 'Assessment Result',
             name: 'assessmentResult',
             data: 'assessmentResultStatus',
@@ -694,7 +709,7 @@
     }
 
     function getRecommendedAmountColumn() {
-        return { // 34 -- mapped
+        return { // 35 -- mapped
             title: 'Recommended Amount',
             name: 'recommendedAmount',
             data: 'recommendedAmount',
@@ -706,7 +721,7 @@
     }
 
     function getDueDateColumn() {
-        return { // 35 -- mapped
+        return { // 36 -- mapped
             title: 'Due Date',
             name: 'dueDate',
             data: 'dueDate',
@@ -720,7 +735,7 @@
     }
 
     function getOwnerColumn() {
-        return { // 36 -- mapped
+        return { // 37 -- mapped
             title: 'Owner',
             name: 'Owner',
             data: 'owner',
@@ -732,7 +747,7 @@
     }
 
     function getDecisionDateColumn() {
-        return { // 37 --
+        return { // 38 --
             title: 'Decision Date',
             name: 'finalDecisionDate',
             data: 'finalDecisionDate',
@@ -746,7 +761,7 @@
     }
 
     function getProjectSummaryColumn() {
-        return { // 38
+        return { // 39
             title: 'Project Summary',
             name: 'projectSummary',
             data: 'projectSummary',
@@ -758,7 +773,7 @@
     }
 
     function getPercentageTotalProjectBudgetColumn() {
-        return { // 39
+        return { // 40
             title: '% of Total Project Budget',
             name: 'percentageTotalProjectBudget',
             data: 'percentageTotalProjectBudget',
@@ -770,7 +785,7 @@
     }
 
     function getOrganizationTypeColumn() {
-        return { // 40
+        return { // 41
             title: 'Organization Type',
             name: 'organizationType',
             data: 'organizationType',
@@ -782,7 +797,7 @@
     }
 
     function getOrganizationNameColumn() {
-        return { //41
+        return { //42
             title: 'Organization Name',
             name: 'organizationName',
             data: 'organizationName',
