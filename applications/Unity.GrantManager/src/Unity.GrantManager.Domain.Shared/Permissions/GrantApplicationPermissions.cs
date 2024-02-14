@@ -55,7 +55,7 @@ namespace Unity.GrantManager.Permissions
         {
             public const string Default = GroupName + ".AssessmentResults";
             public const string Edit = Default + ".Update";
-            public const string EditApprovedAmount = Default + ".EditApprovedAmount";
+            public const string EditFinalStateFields = Default + ".EditFinalStateFields";
         }
 
         public static string[] GetAll()
@@ -64,3 +64,5 @@ namespace Unity.GrantManager.Permissions
         }
     }
 }
+
+//EditApprovedAmount

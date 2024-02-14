@@ -573,6 +573,8 @@
                         return 'Secondary/Value-Added/Not Mass Timber'
                     } else if (data == 'MASS_TIMBER') {
                         return 'Mass Timber';
+                    } else {
+                        return '{Forestry Focus}';
                     }
                 }
                 else {
