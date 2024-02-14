@@ -121,19 +121,19 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                 {
                     var assignees = await _applicationAssigneeService.GetListWithApplicationIdsAsync(selectedApplicationIds);
                     var applications = await _applicationService.GetApplicationListAsync(selectedApplicationIds);
-                    foreach (var assingee in assignees)
+                    foreach (var assignee in assignees)
                     {
-                        var user = users.Items.FirstOrDefault(s => s.Id == assingee.AssigneeId);
+                        var user = users.Items.FirstOrDefault(s => s.Id == assignee.AssigneeId);
                         if (user != null)
                         {
 
                             currentAssigneeList.Add(new GrantApplicationAssigneeDto()
                             {
-                                Id = assingee.Id,
+                                Id = assignee.Id,
                                 FullName = $"{user.Name} {user.Surname}",
-                                Duty = assingee.Duty,
-                                AssigneeId = assingee.AssigneeId,
-                                ApplicationId = assingee.ApplicationId,
+                                Duty = assignee.Duty,
+                                AssigneeId = assignee.AssigneeId,
+                                ApplicationId = assignee.ApplicationId,
                             });
                         }
                     }
