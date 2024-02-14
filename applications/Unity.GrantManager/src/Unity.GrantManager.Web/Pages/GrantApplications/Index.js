@@ -232,8 +232,9 @@
             getContactTitleColumn(), // 46
             getContactEmailColumn(), // 47
             getContactBusinessPhoneColumn(), // 48
-            getContactCellPhoneColumn(), // 49
-     .map((column, index) => ({ ...column, targets: [index], orderData: [index, 0] }));
+            getContactCellPhoneColumn() // 49
+        ]
+        .map((column, index) => ({ ...column, targets: [index], orderData: [index, 0] }));
     }
 
     function getSelectColumn() {
