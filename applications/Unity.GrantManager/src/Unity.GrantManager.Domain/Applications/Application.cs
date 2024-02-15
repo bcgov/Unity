@@ -5,7 +5,6 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Applications;
 
@@ -148,10 +147,5 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         {
             FinalDecisionDate = finalDecisionDate;
         }
-    }
-
-    public void ValidateAndChangeDueDate(object dueDate)
-    {
-        throw new NotImplementedException();
     }
 }
