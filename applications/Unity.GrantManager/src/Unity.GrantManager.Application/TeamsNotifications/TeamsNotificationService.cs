@@ -27,35 +27,24 @@ namespace Unity.GrantManager.TeamsNotifications
         private static string InitializeMessageCard(string activityTitle, string activitySubtitle, List<Fact> facts)
         {
 
-            dynamic messageCard = PublishEventMessageCard.GetMessageCard();
-            string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            dynamic messageCard = MessageCard.GetMessageCard();
             JObject jsonObj = JsonConvert.DeserializeObject<dynamic>(messageCard)!;
             jsonObj["summary"] = "Message Summary";
 
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             (jsonObj)["sections"].Children().FirstOrDefault()["activityTitle"] = activityTitle;
             (jsonObj)["sections"].Children().FirstOrDefault()["activitySubtitle"] = activitySubtitle;
-#pragma warning disable CS8604 // Possible null reference argument.
-
             // Add Facts
             foreach(var fact in facts)
             {
                 JObject obj = JObject.Parse(JsonConvert.SerializeObject(fact));
                 (jsonObj)["sections"].Children().FirstOrDefault().Value<JArray>("facts").Add(obj);
             }
-
-#pragma warning restore CS8604 // Possible null reference argument.
 #pragma warning restore CS8602 // Possible null reference argument.
             return jsonObj.ToString(Formatting.None);
         }
 
         public static async Task PostChefsEventToTeamsAsync(EventSubscriptionDto eventSubscriptionDto, dynamic form, dynamic chefsFormVersion)
-        {
-            string messageCard = GetChefsEventMessageCard(eventSubscriptionDto, form, chefsFormVersion);
-            await PostToTeamsChannelAsync(TeamsNotificationChannelWebhook, messageCard);
-        }
-
-        private static string GetChefsEventMessageCard(EventSubscriptionDto eventSubscriptionDto, dynamic form, dynamic chefsFormVersion)
         {
             string eventDescription = eventSubscriptionDto.SubscriptionEvent switch
             {
@@ -76,25 +65,47 @@ namespace Unity.GrantManager.TeamsNotifications
             JToken? updatedBy = ((JObject)chefsFormVersion).SelectToken("updatedBy");
             JToken? updatedAt = ((JObject)chefsFormVersion).SelectToken("updatedAt");
 
-            dynamic messageCard = PublishEventMessageCard.GetMessageCard();
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-            JObject jsonObj = JsonConvert.DeserializeObject<dynamic>(messageCard)!;
-            jsonObj["summary"] = "Message Summary";
-
+            string activityTitle = eventDescription + " with an event posting to the " + envInfo + " environment";
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-            (jsonObj)["sections"].Children().FirstOrDefault()["activityTitle"] = eventDescription + " with an event posting to the " + envInfo + " environment";
-            (jsonObj)["sections"].Children().FirstOrDefault()["activitySubtitle"] = "Form Name: " + formName.ToString();
-#pragma warning disable CS8604 // Possible null reference argument.
-            (jsonObj)["sections"].Children().FirstOrDefault().Value<JArray>("facts").ToArray()[0]["value"] = version.ToString();
-            (jsonObj)["sections"].Children().FirstOrDefault().Value<JArray>("facts").ToArray()[1]["value"] = published.ToString();
-            (jsonObj)["sections"].Children().FirstOrDefault().Value<JArray>("facts").ToArray()[2]["value"] = updatedBy.ToString();
-            (jsonObj)["sections"].Children().FirstOrDefault().Value<JArray>("facts").ToArray()[3]["value"] = updatedAt.ToString() + " UTC";
-            (jsonObj)["sections"].Children().FirstOrDefault().Value<JArray>("facts").ToArray()[4]["value"] = createdBy.ToString();
-            (jsonObj)["sections"].Children().FirstOrDefault().Value<JArray>("facts").ToArray()[5]["value"] = createdAt.ToString() + " UTC";
-#pragma warning restore CS8604 // Possible null reference argument.
-#pragma warning restore CS8602 // Possible null reference argument.
-            return jsonObj.ToString(Formatting.None);
+            string activitySubtitle = "Form Name: " + formName.ToString();
+
+            List<Fact> facts =
+            [
+                new Fact
+                {
+                    name = "Form Version: ",
+                    value = version.ToString()
+                },
+                new Fact
+                {
+                    name = "Published: ",
+                    value = published.ToString()
+                },
+                new Fact
+                {
+                    name = "Updated By: ",
+                    value = updatedBy.ToString()
+                },
+                new Fact
+                {
+                    name = "Updated At: ",
+                    value = updatedAt.ToString() + " UTC"
+                },
+                new Fact
+                {
+                    name = "Created By: ",
+                    value = createdBy.ToString()
+                },
+                new Fact
+                {
+                    name = "Created At: ",
+                    value = createdAt.ToString() + " UTC"
+                },
+            ];
+#pragma warning restore CS8602
+
+            await PostToTeamsAsync(activityTitle, activitySubtitle, facts);
         }
 
         private static async Task PostToTeamsChannelAsync(string teamsChannel, string messageCard) {
