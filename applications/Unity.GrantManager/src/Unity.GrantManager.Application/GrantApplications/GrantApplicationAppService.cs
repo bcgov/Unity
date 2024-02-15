@@ -305,14 +305,15 @@ public class GrantApplicationAppService :
 
     }
 
-    public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
+    public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
 
+        application.ValidateAndChangeDueDate(input.DueDate);
+        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding);
+
         if (application.IsInFinalDecisionState())
         {
-            application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.DueDate);
-
             if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
             {
                 application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
@@ -320,18 +321,15 @@ public class GrantApplicationAppService :
         }
         else
         {
-            application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.DueDate);
-            
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
-
+                application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
                 application.UpdateFieldsOnlyForPreFinalDecision(input.ProjectSummary,
                     input.DueDiligenceStatus,
                     input.TotalProjectBudget,
                     input.RecommendedAmount,
-                    input.DeclineRational,
-                    input.FinalDecisionDate);
+                    input.DeclineRational);
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
             }            

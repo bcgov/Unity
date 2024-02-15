@@ -84,6 +84,7 @@
                     );
                     PubSub.publish("application_status_changed", triggerAction);
                     PubSub.publish("refresh_detail_panel_summary");
+                    PubSub.publish("init_date_pickers");
                 })
                 .catch(function () { widgetManager.refresh(); });
         }
