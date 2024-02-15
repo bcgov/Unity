@@ -24,16 +24,11 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
 
 
             JobDetail = JobBuilder.Create<IntakeSyncWorker>().WithIdentity(nameof(IntakeSyncWorker)).Build();
-            Trigger = TriggerBuilder.Create().WithIdentity(nameof(IntakeSyncWorker))
-                .WithSimpleSchedule(s => s.WithIntervalInSeconds(600)
-                .RepeatForever()
-                .WithMisfireHandlingInstructionIgnoreMisfires())
-                .Build();
 
             // -- Nightly job execution --
-            //Trigger = TriggerBuilder.Create().WithIdentity(nameof(IntakeSyncWorker))
-            //    .WithCronSchedule("0 0 0 * * *") -- validate this expression
-            //    .Build();
+            Trigger = TriggerBuilder.Create().WithIdentity(nameof(IntakeSyncWorker))
+               .WithCronSchedule("0 0 1 1 / 1 * ? *")
+               .Build();
         }
 
         public override async Task Execute(IJobExecutionContext context)
