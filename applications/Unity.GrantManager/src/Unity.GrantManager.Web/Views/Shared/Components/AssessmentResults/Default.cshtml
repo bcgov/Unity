@@ -24,7 +24,7 @@
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
                             <abp-input asp-for="@Model.AssessmentResults.RequestedAmount"
-                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsEditGranted)" />
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsPostEditFieldsAllowed)" />
                         </div>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
@@ -45,14 +45,14 @@
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
                             <abp-input asp-for="@Model.AssessmentResults.ApprovedAmount"
-                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" id="approvedAmountInput" disabled="@(!Model.IsEditApprovedAmount)" />
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" id="approvedAmountInput" disabled="@(!Model.IsPostEditFieldsAllowed)" />
                         </div>
                     </abp-column>
                 </abp-row>
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.LikelihoodOfFunding" asp-items="@Model.FundingRiskList"
-                                    onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
+                                    onchange="enableResultSaveBtn(this)" >
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
@@ -77,23 +77,23 @@
                 </abp-row>
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
-                        <abp-input type="date" asp-for="@Model.AssessmentResults.DueDate" onchange="enableResultSaveBtn({'value':'date'})" disabled="@(!Model.IsEditGranted)" abp-data-datepicker="false">
+                        <abp-input type="date" asp-for="@Model.AssessmentResults.DueDate" onchange="validateDueDate();" abp-data-datepicker="false">
                         </abp-input>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
-                        <abp-input type="date" asp-for="@Model.AssessmentResults.FinalDecisionDate" onchange="enableResultSaveBtn({'value':'date'})" disabled="@(!Model.IsEditGranted)" abp-data-datepicker="false">
+                        <abp-input type="date" asp-for="@Model.AssessmentResults.FinalDecisionDate" onchange="validateDecisionDate();" disabled="@(!Model.IsEditGranted)" abp-data-datepicker="false">
                         </abp-input>
                     </abp-column>
                     <abp-column size="_6" class="px-1">
                         <abp-input asp-for="@Model.AssessmentResults.Notes"
-                                   onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)" />
+                                   onchange="enableResultSaveBtn(this)" />
                     </abp-column>
                 </abp-row>
             </abp-column>
             <abp-column size="_2" class="px-0">
                 <abp-column size="_12" class="px-1">
                     <abp-input type="number" asp-for="@Model.AssessmentResults.TotalScore"
-                               onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)" min="0" max="2147483647" />
+                               onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsPostEditFieldsAllowed)" min="0" max="2147483647" />
                 </abp-column>
                 <abp-column size="_12" class="px-1">
                     <abp-select asp-for="@Model.AssessmentResults.DeclineRational" asp-items="@Model.DeclineRationalActionList"

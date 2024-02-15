@@ -1,5 +1,8 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using Unity.GrantManager.GrantApplications;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -24,7 +27,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
-    public decimal TotalProjectBudget { get; set; }    
+    public decimal TotalProjectBudget { get; set; }
     public string? EconomicRegion { get; set; } = null;
     public string? City { get; set; } = null;
     public DateTime? ProposalDate { get; set; }
@@ -76,11 +79,73 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? ForestryFocus { get; set; }
 
-    public string? ElectoralDistrict { get; set; }    
+    public string? ElectoralDistrict { get; set; }
 
     public string? RegionalDistrict { get; set; }
 
     public Guid? TenantId { get; set; }
 
     public Guid? OwnerId { get; set; }
+
+    public bool IsInFinalDecisionState()
+    {
+        return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
+    }
+
+    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding)
+    {
+        Notes = notes;
+        SubStatus = subStatus;
+        LikelihoodOfFunding = likelihoodOfFunding;
+    }
+
+    public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore)
+    {
+        ApprovedAmount = approvedAmount ?? 0;
+        RequestedAmount = requestedAmount ?? 0;
+        TotalScore = totalScore ?? 0;
+    }
+
+    public void UpdateAssessmentResultStatus(string? assessmentResultStatus)
+    {
+        if (assessmentResultStatus != AssessmentResultStatus)
+        {
+            AssessmentResultDate = DateTime.UtcNow;
+        }
+
+        AssessmentResultStatus = assessmentResultStatus;
+    }
+
+    public void UpdateFieldsOnlyForPreFinalDecision(string? projectSummary, string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
+    {
+        ProjectSummary = projectSummary;
+        DueDiligenceStatus = dueDiligenceStatus;
+        TotalProjectBudget = totalProjectBudget ?? 0;
+        RecommendedAmount = recommendedAmount ?? 0;
+        DeclineRational = declineRational;
+    }
+
+    public void ValidateAndChangeDueDate(DateTime? dueDate)
+    {
+        if ((DueDate != dueDate) && dueDate != null && dueDate.Value < DateTime.Now.AddDays(-1))
+        {
+            throw new BusinessException("Due Date cannot be a past date.");
+        }
+        else
+        {
+            DueDate = dueDate;
+        }
+    }
+
+    public void ValidateAndChangeFinalDecisionDate(DateTime? finalDecisionDate)
+    {
+        if ((FinalDecisionDate != finalDecisionDate) && finalDecisionDate != null && finalDecisionDate.Value > DateTime.Now)
+        {
+            throw new BusinessException("Decision Date cannot not be a future date.");
+        }
+        else
+        {
+            FinalDecisionDate = finalDecisionDate;
+        }
+    }
 }

@@ -102,6 +102,9 @@ public class GrantApplicationAppService :
                     join owner in await _personRepository.GetQueryableAsync() on application.OwnerId equals owner.Id into owners
                     from applicationOwner in owners.DefaultIfEmpty()
 
+                    join contact in await  _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
+                    from applicantAgent in contacts.DefaultIfEmpty()
+
                     select new
                     {
                         application,
@@ -113,7 +116,9 @@ public class GrantApplicationAppService :
                         tag,
                         applicationUserAssignment,
                         applicationPerson,
-                        applicationOwner
+                        applicationOwner,
+                        applicantAgent
+
                     };
 
         var result = query
@@ -126,6 +131,7 @@ public class GrantApplicationAppService :
                 .ToList();
 
         var appDtos = new List<GrantApplicationDto>();
+        var rowCounter = 0;
         foreach (var grouping in result)
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
@@ -140,8 +146,16 @@ public class GrantApplicationAppService :
             appDto.OrganizationName = grouping.First().applicant?.OrgName ?? string.Empty;
             appDto.OrganizationType = grouping.First().applicant?.OrganizationType ?? string.Empty;
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
-            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
-            appDtos.Add(appDto);
+            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);            
+            appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
+            appDto.ContactFullName = grouping.First().applicantAgent?.Name;
+            appDto.ContactEmail = grouping.First().applicantAgent?.Email;
+            appDto.ContactTitle = grouping.First().applicantAgent?.Title;
+            appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone;
+            appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2;
+            appDto.RowCount = rowCounter;
+            appDtos.Add(appDto);            
+            rowCounter++;
         }
 
         var totalCount = await _applicationRepository.GetCountAsync();
@@ -154,6 +168,15 @@ public class GrantApplicationAppService :
     {
         if (subStatus == null) { return string.Empty; }
         var hasKey = AssessmentResultsOptionsList.SubStatusActionList.TryGetValue(subStatus, out string? subStatusValue);
+        if (hasKey)
+            return subStatusValue ?? string.Empty;
+        else
+            return string.Empty;
+    }  
+    private static string MapDeclineRationalDisplayValue(string value)
+    {
+        if (value == null) { return string.Empty; }
+        var hasKey = AssessmentResultsOptionsList.DeclineRationalActionList.TryGetValue(value, out string? subStatusValue);
         if (hasKey)
             return subStatusValue ?? string.Empty;
         else
@@ -173,8 +196,8 @@ public class GrantApplicationAppService :
                 Duty = assignment.Duty
             };
         }
-    }
-
+    }   
+ 
     private static GrantApplicationAssigneeDto BuildApplicationOwner(Person applicationOwner)
     {
         if (applicationOwner != null)
@@ -262,17 +285,17 @@ public class GrantApplicationAppService :
                         ApprovedAmount = application.ApprovedAmount,
                         Batch = "", // to-do: ask BA for the implementation of Batch field,                        
                         RegionalDistrict = application.RegionalDistrict,
-                        OwnerId  =  application.OwnerId,
-                      
-    };
+                        OwnerId = application.OwnerId,
+
+                    };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
         if (queryResult != null)
         {
             var ownerId = queryResult.OwnerId ?? Guid.Empty;
             queryResult.Owner = await GetOwnerAsync(ownerId);
-            queryResult.Assignees =  await GetAssigneesAsync(applicationId);
-          
+            queryResult.Assignees = await GetAssigneesAsync(applicationId);
+
             return queryResult;
         }
         else
@@ -282,60 +305,48 @@ public class GrantApplicationAppService :
 
     }
 
-    public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
+    public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
-        if (application != null)
+
+        application.ValidateAndChangeDueDate(input.DueDate);
+        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding);
+
+        if (application.IsInFinalDecisionState())
         {
-            bool IsEditGranted = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
-            bool IsEditApprovedAmount = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount);
-            bool IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.ApplicationStatus.StatusCode);
-            if (!IsEditGranted)
+            if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
             {
-                throw new UnauthorizedAccessException(message: "No permission to update");
-            }
-            else if (IsFinalDecisionMade && !IsEditApprovedAmount)
-            {
-                throw new UnauthorizedAccessException(message: "Final decision is made, Update not allowed!");
-            }
-            else
-            {
-                // These are some business rules that should be pushed further down into domain
-                if (IsEditApprovedAmount && IsFinalDecisionMade) // Only users with EditApprovedAmount permission can edit the value after final decision
-                {
-                    application.ApprovedAmount = input.ApprovedAmount ?? 0;
-                }
-                else
-                {
-                    application.ProjectSummary = input.ProjectSummary;
-                    application.RequestedAmount = input.RequestedAmount ?? 0;
-                    application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
-                    application.RecommendedAmount = input.RecommendedAmount ?? 0;
-                    application.ApprovedAmount = input.ApprovedAmount ?? 0;
-                    application.LikelihoodOfFunding = input.LikelihoodOfFunding;
-                    application.DueDiligenceStatus = input.DueDiligenceStatus;
-                    application.SubStatus = input.SubStatus;
-                    application.DeclineRational = input.DeclineRational;
-                    application.TotalScore = input.TotalScore;
-                    application.Notes = input.Notes;
-                    if (input.AssessmentResultStatus != application.AssessmentResultStatus)
-                    {
-                        application.AssessmentResultDate = DateTime.UtcNow;
-                    }
-                    application.AssessmentResultStatus = input.AssessmentResultStatus;
-                    application.FinalDecisionDate = input.FinalDecisionDate;
-                    application.DueDate = input.DueDate;
-                }
-
-                await _applicationRepository.UpdateAsync(application, autoSave: true);
-
-                return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
             }
         }
         else
         {
-            throw new EntityNotFoundException();
+            if (await CurrentUsCanUpdateAssessmentFieldsAsync())
+            {
+                application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
+                application.UpdateFieldsOnlyForPreFinalDecision(input.ProjectSummary,
+                    input.DueDiligenceStatus,
+                    input.TotalProjectBudget,
+                    input.RecommendedAmount,
+                    input.DeclineRational);
+
+                application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
+            }            
         }
+
+        await _applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
+    {
+        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit);
+    }
+
+    private async Task<bool> CurrentUserCanUpdateFieldsPostFinalDecisionAsync()
+    {
+        return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
     }
 
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
@@ -449,12 +460,12 @@ public class GrantApplicationAppService :
                 FullName = owner.FullName
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Debug.WriteLine(ex.ToString());
             return new GrantApplicationAssigneeDto();
         }
-        
+
     }
 
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)

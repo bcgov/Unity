@@ -136,7 +136,9 @@
                     {
                         extend: 'colvis',
                         text: 'Manage Columns',
-                        columns: getAllColumnsSortedByTitle(),
+
+                        columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+
                         className: 'btn btn-light custom-table-btn cln-visible',
                     }
                 ],
@@ -167,7 +169,7 @@
                 columns: getColumns(),
                 columnDefs: [
                     {
-                        targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], // Index of columns to be visible by default
+                        targets: [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], // Index of columns to be visible by default
                         visible: true
                     },
                     {
@@ -179,14 +181,6 @@
         );
     }
 
-    function getAllColumnsSortedByTitle() {       
-        return getColumns()
-            .map((obj, indx) => ({ title: obj.title, index: indx, data: obj.data, visible: obj.visible }))
-            .filter(obj => obj.data != null && obj.visible !== false)
-            .sort((a, b) => a.title.localeCompare(b.title))
-            .map(a => a.index);        
-    }
-
     function getColumns() {
         return [
             getSelectColumn(),// 0
@@ -196,41 +190,51 @@
             getSubmissionDateColumn(), // 4
             getProjectNameColumn(), // 5
             getSectorColumn(), // 6
-            getTotalProjectBudgetColumn(), // 7
-            getAssigneesColumn(), // 8
-            getStatusColumn(), // 9
-            getRequestedAmountColumn(), // 10
-            getApprovedAmountColumn(), // 11
-            getEconomicRegionColumn(), // 12
-            getRegionalDistrictColumn(), // 13
-            getCommunityColumn(), // 14
-            getOrganizationNumberColumn(), // 15
-            getOrgBookStatusColumn(), // 16
-            getProjectStartDateColumn(), // 17
-            getProjectEndDateColumn(), // 18
-            getProjectedFundingTotalColumn(), // 19
-            getTotalProjectBudgetPercentageColumn(), // 20
-            getTotalPaidAmountColumn(), // 21
-            getElectoralDistrictColumn(), // 22
-            getForestryOrNonForestryColumn(), // 23
-            getForestryFocusColumn(), // 24
-            getAcquisitionColumn(), // 25
-            getCityColumn(), // 26     
-            getCommunityPopulationColumn(), // 27
-            getLikelihoodOfFundingColumn(), // 28
-            getSubStatusColumn(), // 29
-            getTagsColumn(), // 30
-            getTotalScoreColumn(), // 31
-            getAssessmentResultColumn(), // 32
-            getRecommendedAmountColumn(), // 33
-            getDueDateColumn(), // 34
-            getOwnerColumn(), // 35
-            getDecisionDateColumn(), // 36
-            getProjectSummaryColumn(), // 37
-            getPercentageTotalProjectBudgetColumn(), // 38
-            getOrganizationTypeColumn(), // 39
-            getOrganizationNameColumn(), // 40
-        ];
+            getSubSectorColumn(), // 7
+            getTotalProjectBudgetColumn(), // 8
+            getAssigneesColumn(), // 9
+            getAssignedHiddenColumn(), // 10
+            getStatusColumn(), // 11
+            getRequestedAmountColumn(), // 12
+            getApprovedAmountColumn(), // 13
+            getEconomicRegionColumn(), // 14
+            getRegionalDistrictColumn(), // 15
+            getCommunityColumn(), // 16
+            getOrganizationNumberColumn(), // 17
+            getOrgBookStatusColumn(), // 18    
+            getProjectStartDateColumn(), // 19
+            getProjectEndDateColumn(), // 20
+            getProjectedFundingTotalColumn(), // 21
+            getTotalProjectBudgetPercentageColumn(), // 22
+            getTotalPaidAmountColumn(), // 23
+            getElectoralDistrictColumn(), // 24
+            getForestryOrNonForestryColumn(), // 25
+            getForestryFocusColumn(), // 26
+            getAcquisitionColumn(), // 27
+            getCityColumn(), // 28            
+            getCommunityPopulationColumn(), // 29
+            getLikelihoodOfFundingColumn(), // 30
+            getSubStatusColumn(), // 31
+            getTagsColumn(), // 32
+            getTotalScoreColumn(), // 33
+            getAssessmentResultColumn(), // 34
+            getRecommendedAmountColumn(), // 35
+            getDueDateColumn(), // 36
+            getOwnerColumn(), // 37
+            getDecisionDateColumn(), // 38
+            getProjectSummaryColumn(), // 39
+            getPercentageTotalProjectBudgetColumn(), // 40
+            getOrganizationTypeColumn(), // 41
+            getOrganizationNameColumn(), // 42
+            getDueDiligenceStatusColumn(), // 43
+            getDeclineRationaleColumn(), // 44            
+            getContactFullNameColumn(), // 45
+            getContactTitleColumn(), // 46
+            getContactEmailColumn(), // 47
+            getContactBusinessPhoneColumn(), // 48
+            getContactCellPhoneColumn() // 49
+        ]
+        .map((column, index) => ({ ...column, targets: [index], orderData: [index, 0] }));
     }
 
     function getSelectColumn() {
@@ -238,6 +242,7 @@
             title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
             orderable: false,
             className: 'notexport',
+            data: 'rowCount',
             render: function (data) {
                 return '<div class="select-checkbox" title="Select Application" ></div>';
             }
@@ -249,7 +254,7 @@
             title: 'Applicant Name',
             data: 'applicant.applicantName',
             name: 'applicant.applicantName',
-            className: 'data-table-header'
+            className: 'data-table-header',
         }
     }
 
@@ -258,7 +263,7 @@
             title: 'Application #',
             data: 'referenceNo',
             name: 'referenceNo',
-            className: 'data-table-header'
+            className: 'data-table-header',
         }
     }
 
@@ -267,7 +272,7 @@
             title: 'Category',
             data: 'category',
             name: 'category',
-            className: 'data-table-header'
+            className: 'data-table-header',
         }
     }
 
@@ -281,7 +286,7 @@
                 return luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
                 }).toLocaleString();
-            }
+            },
         }
     }
 
@@ -290,7 +295,7 @@
             title: 'Project Name',
             data: 'projectName',
             name: 'projectName',
-            className: 'data-table-header'
+            className: 'data-table-header',
         }
     }
 
@@ -302,24 +307,36 @@
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{Sector}';
-            }
+            },
+        }
+    }
+
+    function getSubSectorColumn() {
+        return { // 7
+            title: 'SubSector',
+            name: 'applicant.subsector',
+            data: 'applicant.subsector',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SubSector}';
+            },
         }
     }
 
     function getTotalProjectBudgetColumn() {
-        return { // 7
+        return { // 8
             title: 'Total Project Budget',
             name: 'totalProjectBudget',
             data: 'totalProjectBudget',
             className: 'data-table-header',
             render: function (data) {
                 return formatter.format(data);
-            }
+            },
         }
     }
 
     function getAssigneesColumn() {
-        return { // 8
+        return { // 9
             title: l('Assignee'),
             data: 'assignees',
             name: 'assignees',
@@ -338,12 +355,29 @@
                                 <span class="ps-2 flex-fill" data-toggle="tooltip" title="`
                     + getNames(data) + '">' + displayText + '</span>' +
                     `</span>`;
-            }
+            },
+        }
+    }
+
+    function getAssignedHiddenColumn() {
+        return { // 10
+            title: l('Assignee'),
+            data: 'assignees',
+            name: 'assignees-hidden',
+            visible: false,
+            render: function (data, type, row) {
+                let displayText = ' ';
+
+                if (data != null) {
+                    displayText = getNames(data);
+                }
+                return displayText;
+            },
         }
     }
 
     function getStatusColumn() {
-        return { // 9
+        return { // 11
             title: l('GrantApplicationStatus'),
             data: 'status',
             name: 'status',
@@ -351,36 +385,36 @@
             render: function (data, type, row) {
                 let fill = row.assessmentReviewCount > 0 ? 'fas' : 'far';
                 return `<span class="d-flex align-items-center"><i class="${fill} fa-bookmark text-primary"></i><span class="ps-2 flex-fill">${row.status}</span></span>`;
-            }
+            },
         }
     }
 
     function getRequestedAmountColumn() {
-        return { // 10
+        return { // 12
             title: l('RequestedAmount'),
             data: 'requestedAmount',
             name: 'requestedAmount',
             className: 'data-table-header',
             render: function (data) {
                 return formatter.format(data);
-            }
+            },
         }
     }
 
     function getApprovedAmountColumn() {
-        return { // 11
+        return { // 13
             title: 'Approved Amount',
             name: 'approved Amount',
             data: 'approvedAmount',
             className: 'data-table-header',
             render: function (data) {
                 return formatter.format(data);
-            }
+            },
         }
     }
 
     function getEconomicRegionColumn() {
-        return { // 12
+        return { // 14
             title: 'Economic Region',
             name: 'economic Region',
             data: 'economicRegion',
@@ -392,19 +426,19 @@
     }
 
     function getRegionalDistrictColumn() {
-        return { // 13
+        return { // 15
             title: 'Regional District',
             name: 'regional District',
             data: 'regionalDistrict',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{Regional District}';
-            }
+            },
         }
     }
 
     function getCommunityColumn() {
-        return { // 14
+        return { // 16
             title: 'Community',
             name: 'community',
             data: 'community',
@@ -416,32 +450,32 @@
     }
 
     function getOrganizationNumberColumn() {
-        return { // 15
+        return { // 17
             title: 'Organization Number',
-            name: 'organizationNumber',
-            data: 'organizationNumber',
+            name: 'applicant.orgNumber',
+            data: 'applicant.orgNumber',
             className: 'data-table-header',
             visible: false,
             render: function (data) {
                 return data ?? '{Organization Number}';
-            }
+            },
         }
     }
 
     function getOrgBookStatusColumn() {
-        return { // 16
+        return { // 18
             title: 'Org Book Status',
             name: 'orgBookStatus',
             data: 'orgBookStatus',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{Org Book Status}';
-            }
+            },
         }
     }
 
     function getProjectStartDateColumn() {
-        return { // 17 -- mapped
+        return { // 19 -- mapped
             title: 'Project Start Date',
             name: 'projectStartDate',
             data: 'projectStartDate',
@@ -450,12 +484,12 @@
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
                 }).toUTC().toLocaleString() : '{Project Start Date}';
-            }
+            },
         }
     }
 
     function getProjectEndDateColumn() {
-        return { // 18 -- mapped
+        return { // 20 -- mapped
             title: 'Project End Date',
             name: 'projectEndDate',
             data: 'projectEndDate',
@@ -464,60 +498,60 @@
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
                 }).toUTC().toLocaleString() : '{Project End Date}';
-            }
+            },
         }
     }
 
     function getProjectedFundingTotalColumn() {
-        return { // 19  -- mapped
+        return { // 21  -- mapped
             title: 'Projected Funding Total',
             name: 'projectFundingTotal',
             data: 'projectFundingTotal',
             className: 'data-table-header',
             render: function (data) {
                 return formatter.format(data) ?? '{Projected Funding Total}';
-            }
+            },
         }
     }
 
     function getTotalProjectBudgetPercentageColumn() {
-        return { // 20  -- mapped
+        return { // 22  -- mapped
             title: '% of Total Project Budget',
             name: 'percentageTotalProjectBudget',
             data: 'percentageTotalProjectBudget',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{% of Total Project Budget}';
-            }
+            },
         }
     }
 
     function getTotalPaidAmountColumn() {
-        return { // 21
+        return { // 23
             title: 'Total Paid Amount $',
             name: 'projectFundingTotal',
             data: 'projectFundingTotal',
             className: 'data-table-header',
             render: function (data) {
                 return formatter.format(data) ?? '{Total Paid Amount $}';
-            }
+            },
         }
     }
 
     function getElectoralDistrictColumn() {
-        return { // 22
+        return { // 24
             title: 'Electoral District',
             name: 'electoralDistrict',
             data: 'electoralDistrict',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{Electoral District}';
-            }
+            },
         }
     }
 
     function getForestryOrNonForestryColumn() {
-        return { // 23 -- mapped
+        return { // 25 -- mapped
             title: 'Forestry or Non-Forestry',
             name: 'forestryOrNonForestry',
             data: 'forestry',
@@ -527,12 +561,12 @@
                     return data == 'FORESTRY' ? 'Forestry' : 'Non Forestry';
                 else
                     return '{Forestry or Non-Forestry}';
-            }
+            },
         }
     }
 
     function getForestryFocusColumn() {
-        return { // 24 -- mapped
+        return { // 26 -- mapped
             title: 'Forestry Focus',
             name: 'forestryFocus',
             data: 'forestryFocus',
@@ -547,17 +581,20 @@
                         return 'Secondary/Value-Added/Not Mass Timber'
                     } else if (data == 'MASS_TIMBER') {
                         return 'Mass Timber';
+                    } else {
+                        return '{Forestry Focus}';
                     }
                 }
                 else {
                     return '{Forestry Focus}';
                 }
-            }
+
+            },
         }
     }
 
     function getAcquisitionColumn() {
-        return { // 25 -- mapped
+        return { // 27 -- mapped
             title: 'Acquisition',
             name: 'acquisition',
             data: 'acquisition',
@@ -570,24 +607,26 @@
                 else {
                     return '{Acquisition}';
                 }
-            }
+
+            },
         }
     }
 
     function getCityColumn() {
-        return { // 26 -- mapped
+        return { //28 -- mapped
             title: 'City',
             name: 'city',
             data: 'city',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{city}';
+
             }
         }
     }
 
     function getCommunityPopulationColumn() {
-        return { // 27 -- mapped
+        return { // 29 -- mapped
             title: 'Community Population',
             name: 'communityPopulation',
             data: 'communityPopulation',
@@ -595,11 +634,12 @@
             render: function (data) {
                 return data ?? '{Community Population}';
             }
+
         }
     }
 
     function getLikelihoodOfFundingColumn() {
-        return { // 28 -- mapped
+        return { // 30 -- mapped
             title: 'Likelihood of Funding',
             name: 'likelihoodOfFunding',
             data: 'likelihoodOfFunding',
@@ -616,40 +656,43 @@
     }
 
     function getSubStatusColumn() {
-        return { // 29 -- mapped         
+        return { // 31 -- mapped
             title: 'Sub-Status',
             name: 'subStatusDisplayValue',
             data: 'subStatusDisplayValue',
-            className: 'data-table-header'
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SubStatus}';
+            },
         }
     }
 
     function getTagsColumn() {
-        return { // 30
+        return { // 32
             title: 'Tags',
             name: 'applicationTag',
             data: 'applicationTag',
             className: '',
             render: function (data) {
                 return data.replace(/,/g, ', ') ?? '{Tags}';
-            }
+            },
         }
     }
 
     function getTotalScoreColumn() {
-        return { // 31 -- mapped
+        return { // 33 -- mapped
             title: 'Total Score',
             name: 'totalScore',
             data: 'totalScore',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{Total Score}';
-            }
+            },
         }
     }
 
     function getAssessmentResultColumn() {
-        return { // 32 -- mapped
+        return { // 34 -- mapped
             title: 'Assessment Result',
             name: 'assessmentResult',
             data: 'assessmentResultStatus',
@@ -661,24 +704,24 @@
                 else {
                     return '{Assessment Result}';
                 }
-            }
+            },
         }
     }
 
     function getRecommendedAmountColumn() {
-        return { // 33 -- mapped
+        return { // 35 -- mapped
             title: 'Recommended Amount',
             name: 'recommendedAmount',
             data: 'recommendedAmount',
             className: 'data-table-header',
             render: function (data) {
                 return formatter.format(data) ?? '{Recommended Amount}';
-            }
+            },
         }
     }
 
     function getDueDateColumn() {
-        return { // 34 -- mapped
+        return { // 36 -- mapped
             title: 'Due Date',
             name: 'dueDate',
             data: 'dueDate',
@@ -687,24 +730,24 @@
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
                 }).toUTC().toLocaleString() : '{Due Date}';
-            }
+            },
         }
     }
 
     function getOwnerColumn() {
-        return { // 35 -- mapped
+        return { // 37 -- mapped
             title: 'Owner',
             name: 'Owner',
             data: 'owner',
             className: 'data-table-header',
             render: function (data) {
                 return data != null ? data.fullName : '{Owner}';
-            }
+            },
         }
     }
 
     function getDecisionDateColumn() {
-        return { // 36 --
+        return { // 38 --
             title: 'Decision Date',
             name: 'finalDecisionDate',
             data: 'finalDecisionDate',
@@ -713,58 +756,136 @@
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
                 }).toUTC().toLocaleString() : '{Decision Date}';
-            }
+            },
         }
     }
 
     function getProjectSummaryColumn() {
-        return { // 37
+        return { // 39
             title: 'Project Summary',
             name: 'projectSummary',
             data: 'projectSummary',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Project Summary}';
-            }
+                return data ?? '{ProjectSummary}';
+            },
         }
     }
 
     function getPercentageTotalProjectBudgetColumn() {
-        return { // 38
+        return { // 40
             title: '% of Total Project Budget',
             name: 'percentageTotalProjectBudget',
             data: 'percentageTotalProjectBudget',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';
-            }
+            },
         }
     }
 
     function getOrganizationTypeColumn() {
-        return { // 39
+        return { // 41
             title: 'Organization Type',
             name: 'organizationType',
             data: 'organizationType',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';
-            }
+            },
         }
     }
 
     function getOrganizationNameColumn() {
-        return { // 40
+        return { //42
             title: 'Organization Name',
             name: 'organizationName',
             data: 'organizationName',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '';
-            }
+                return data ?? '{OrgName}';
+            },
+        }
+    }
+    function getDueDiligenceStatusColumn() {
+        return { //43
+            title: 'Due Diligence Status',
+            name: 'dueDiligenceStatus',
+            data: 'dueDiligenceStatus',
+            className: 'data-table-header',
+            render: function (data) {
+                return titleCase(data ?? '') ?? '{DueDiligenceStatus}';
+            },
         }
     }
 
+    function getDeclineRationaleColumn() {
+        return { //44
+            title: 'Decline Rationale',
+            name: 'declineRationale',
+            data: 'declineRational',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{DeclineRationale}';
+            },
+        }
+    }
+
+    function getContactFullNameColumn() {
+        return { //45
+            title: 'Contact Full Name',
+            name: 'contactFullName',
+            data: 'contactFullName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactFullName}';
+            },
+        }
+    }
+    function getContactTitleColumn() {
+        return { //46
+            title: 'Contact Title',
+            name: 'contactTitle',
+            data: 'contactTitle',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactTitle}';
+            },
+        }
+    }
+    function getContactEmailColumn() {
+        return { //47
+            title: 'Contact Email',
+            name: 'contactEmail',
+            data: 'contactEmail',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactEmail}';
+            },
+        }
+    }
+    function getContactBusinessPhoneColumn() {
+        return { //48
+            title: 'Contact Business Phone',
+            name: 'contactBusinessPhone',
+            data: 'contactBusinessPhone',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactBusinessPhone}';
+            },
+        }
+    }
+    function getContactCellPhoneColumn() {
+        return { //49
+            title: 'Contact Cell Phone',
+            name: 'contactCellPhone',
+            data: 'contactCellPhone',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{ContactCellPhone}';
+            },
+        }
+    }
     window.addEventListener('resize', setTableHeighDynamic);
     function setTableHeighDynamic() {
         let tableHeight = $("#GrantApplicationsTable")[0].clientHeight;
@@ -827,7 +948,7 @@
     PubSub.subscribe(
         'refresh_application_list',
         (msg, data) => {
-            dataTable.ajax.reload();
+            dataTable.ajax.reload(null, false);
             PubSub.publish('clear_selected_application');
         }
     );

@@ -12,6 +12,11 @@
     margin: 0.25rem;
 }
 
+#ApplicationFormsTable_wrapper .dataTables_scrollBody {
+    max-height: calc(100vh - 350px);
+    overflow-y: scroll
+}
+
 #FormsManageDropdown a {
     cursor: pointer;
 }

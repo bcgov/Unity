@@ -33,13 +33,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
-            bool finalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
+            bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
+            bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
+            bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
 
             AssessmentResultsPageModel model = new()
             {
                 ApplicationId = applicationId,
-                IsEditGranted = (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit)) && !finalDecisionMade,
-                IsEditApprovedAmount = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditApprovedAmount),
+                IsEditGranted = isEditGranted, 
+                IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
 
                 AssessmentResults = new()
                 {
