@@ -2,8 +2,10 @@ using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Applications;
 
@@ -91,12 +93,11 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
     }
 
-    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, DateTime? dueDate)
+    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding)
     {
         Notes = notes;
         SubStatus = subStatus;
         LikelihoodOfFunding = likelihoodOfFunding;
-        DueDate = dueDate;
     }
 
     public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore)
@@ -116,13 +117,41 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         AssessmentResultStatus = assessmentResultStatus;
     }
 
-    public void UpdateFieldsOnlyForPreFinalDecision(string? projectSummary, string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational, DateTime? finalDecisionDate)
+    public void UpdateFieldsOnlyForPreFinalDecision(string? projectSummary, string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
     {
         ProjectSummary = projectSummary;
         DueDiligenceStatus = dueDiligenceStatus;
         TotalProjectBudget = totalProjectBudget ?? 0;
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
-        FinalDecisionDate = finalDecisionDate;
+    }
+
+    public void ValidateAndChangeDueDate(DateTime? dueDate)
+    {
+        if ((DueDate != dueDate) && dueDate != null && dueDate.Value < DateTime.Now.AddDays(-1))
+        {
+            throw new BusinessException("Due Date cannot be a past date.");
+        }
+        else
+        {
+            DueDate = dueDate;
+        }
+    }
+
+    public void ValidateAndChangeFinalDecisionDate(DateTime? finalDecisionDate)
+    {
+        if ((FinalDecisionDate != finalDecisionDate) && finalDecisionDate != null && finalDecisionDate.Value > DateTime.Now)
+        {
+            throw new BusinessException("Decision Date cannot not be a future date.");
+        }
+        else
+        {
+            FinalDecisionDate = finalDecisionDate;
+        }
+    }
+
+    public void ValidateAndChangeDueDate(object dueDate)
+    {
+        throw new NotImplementedException();
     }
 }

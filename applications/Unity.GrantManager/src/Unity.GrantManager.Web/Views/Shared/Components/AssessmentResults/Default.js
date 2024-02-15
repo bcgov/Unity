@@ -1,7 +1,7 @@
-﻿$(function () {    
+﻿$(function () {
     $('.unity-currency-input').maskMoney();
 
-    $('body').on('click', '#saveAssessmentResultBtn', function () {               
+    $('body').on('click', '#saveAssessmentResultBtn', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
@@ -23,7 +23,7 @@
         });
         try {
             unity.grantManager.grantApplications.grantApplication
-                .update(applicationId, assessmentResultObj)
+                .updateAssessmentResults(applicationId, assessmentResultObj)
                 .done(function () {
                     abp.notify.success(
                         'The application has been updated.'
@@ -78,7 +78,7 @@
                 day = '0' + day.toString();
             let todayDate = year + '-' + month + '-' + day;
             $('#AssessmentResults_FinalDecisionDate').attr({ 'max': todayDate });
-            $('#AssessmentResults_DueDate').attr({ 'min': todayDate }); 
+            $('#AssessmentResults_DueDate').attr({ 'min': todayDate });
         }, 500)
     }
     initDatePicker();
@@ -104,27 +104,45 @@ function validateDecisionDate() {
     enableResultSaveBtn('decisionDate');
 }
 
-function areLegacyDatesInvalid() {
-    if (dueDateHasChanged) {
-        if (document.getElementById('AssessmentResults_DueDate').value && !document.getElementById('AssessmentResults_DueDate').validity.valid) {
-            $('#saveAssessmentResultBtn').prop('disabled', true);
-            return true;
+function hasInvalidExplicitValidations() {
+    let explicitChangedValueValidations = [
+        {
+            flag: dueDateHasChanged,
+            name: 'AssessmentResults_DueDate'
+        },
+        {
+            flag: decisionDateHasChanged,
+            name: 'AssessmentResults_FinalDecisionDate'
         }
-    }
-    if (decisionDateHasChanged) {
-        if (document.getElementById('AssessmentResults_FinalDecisionDate').value && !document.getElementById('AssessmentResults_FinalDecisionDate').validity.valid) {
-            $('#saveAssessmentResultBtn').prop('disabled', true);
-            return true;
+    ];
+
+    for (const element of explicitChangedValueValidations) {
+        let obj = element;
+        let result = flaggedFieldIsValid(obj.flag, obj.name);
+        if (!result) {
+            return true; // validation error, exit
         }
     }
 
     return false;
 }
 
+function flaggedFieldIsValid(flag, name) {
+    if (flag === true) {
+        if (document.getElementById(name).value && !document.getElementById(name).validity.valid) {            
+            return false;
+        }
+    }
+
+    return true;
+}
+
 function enableResultSaveBtn(inputText) {
-    if (areLegacyDatesInvalid()) {
+    if (hasInvalidExplicitValidations()) {
+        $('#saveAssessmentResultBtn').prop('disabled', true);
         return;
     }
+
     $('#saveAssessmentResultBtn').prop('disabled', false);
 }
 

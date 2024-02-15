@@ -20,7 +20,6 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -283,16 +282,15 @@ public class GrantApplicationAppService :
 
     }
 
-    public override async Task<GrantApplicationDto> UpdateAsync(Guid id, CreateUpdateGrantApplicationDto input)
+    public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
 
-        ValidateLegacyDates(application, input);
+        application.ValidateAndChangeDueDate(input.DueDate);
+        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding);
 
         if (application.IsInFinalDecisionState())
         {
-            application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.DueDate);
-
             if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
             {
                 application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
@@ -300,18 +298,15 @@ public class GrantApplicationAppService :
         }
         else
         {
-            application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.DueDate);
-            
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
-
+                application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
                 application.UpdateFieldsOnlyForPreFinalDecision(input.ProjectSummary,
                     input.DueDiligenceStatus,
                     input.TotalProjectBudget,
                     input.RecommendedAmount,
-                    input.DeclineRational,
-                    input.FinalDecisionDate);
+                    input.DeclineRational);
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
             }            
@@ -329,18 +324,6 @@ public class GrantApplicationAppService :
     private async Task<bool> CurrentUserCanUpdateFieldsPostFinalDecisionAsync()
     {
         return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
-    }
-
-    private void ValidateLegacyDates(Application application, CreateUpdateGrantApplicationDto input)
-    {
-        if ((application?.DueDate != input?.DueDate) && (input?.DueDate < DateTime.Now.AddDays(-1)))
-        {
-            throw new AbpValidationException("Due Date should not be past date.");
-        }
-        if ((application?.FinalDecisionDate != input?.FinalDecisionDate) && (input?.FinalDecisionDate > DateTime.Now))
-        {
-            throw new AbpValidationException("Decision Date should not be future date.");
-        }
     }
 
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
