@@ -1,0 +1,13 @@
+{
+  "@type": "MessageCard",
+  "@context": "http://schema.org/extensions",
+  "themeColor": "0076D7",
+  "summary": "Message Summary",
+  "sections": [{
+      "activityTitle": "",
+      "activitySubtitle": "",
+      "activityImage": "https://unity.gov.bc.ca/images/logo/bcgov/BC_Logo_Light.png",
+      "facts": [],
+      "markdown": true
+  }]
+}

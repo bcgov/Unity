@@ -6,6 +6,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.TeamsNotifications;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
@@ -71,6 +72,7 @@ namespace Unity.GrantManager.Events
                 applicationForm = _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
                 await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
+                TeamsNotificationService.PostChefsEventToTeamsAsync(eventSubscriptionDto, form, formVersion);
             }
             else if(applicationForm == null)
             {

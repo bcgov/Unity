@@ -3,13 +3,14 @@ using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.TeamsNotifications;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -32,7 +33,9 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IStringEncryptionService _stringEncryptionService;
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
+        private readonly IChefsMissedSubmissionsRepository _chefsMissedSubmissionsRepository;
         private readonly RestClient _intakeClient;
+        private const int PREVIOS_DAY = -1;
 
         public List<ApplicationFormDto>? ApplicationFormDtoList { get; set; }
 
@@ -42,14 +45,14 @@ namespace Unity.GrantManager.ApplicationForms
             IStringEncryptionService stringEncryptionService,
             IApplicationFormRepository applicationFormRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-            ISubmissionAppService submissionAppService,
-            IFormsApiService formsApiService)
+            IChefsMissedSubmissionsRepository chefsMissedSubmissionsRepository)
             : base(repository)
         {
             _intakeClient = restClient;
             _stringEncryptionService = stringEncryptionService;
             _applicationFormRepository = applicationFormRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
+            _chefsMissedSubmissionsRepository = chefsMissedSubmissionsRepository;
         }
 
         public async Task<HashSet<string>> GetMissingSubmissions()
@@ -58,31 +61,84 @@ namespace Unity.GrantManager.ApplicationForms
             HashSet<string> missingSubmissions = new HashSet<string>();
             // Get all forms with api keys
             ApplicationFormDtoList = (List<ApplicationFormDto>?)await GetConnectedApplicationFormsAsync();
+            List<Fact> facts = new List<Fact>();
             
             if(ApplicationFormDtoList != null)
             {
-                int numberOfDaysToCheck = -100;
-
+                int numberOfDaysToCheck = PREVIOS_DAY;
                 foreach (ApplicationFormDto applicationFormDto in ApplicationFormDtoList)
                 {
-                    // Turn results into a hashet of submission ids
                     try
                     {
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
                         HashSet<string> existingSubmissions = (HashSet<string>)await GetSubmissionsByFormAsync(applicationFormDto.Id);
                         missingSubmissions = newChefsSubmissions.Except(existingSubmissions).ToHashSet();
-                        // For each of the submissions do we have a form version to map from??
+                        if (missingSubmissions != null && missingSubmissions.Count > 0)
+                        {
+                            var chefsMissedSubmissions = await _chefsMissedSubmissionsRepository.InsertAsync(
+                                new ChefsMissedSubmission
+                                {
+                                    ChefsSubmissionGuids = string.Join(", ", missingSubmissions),
+                                    ChefsApplicationFormGuid = applicationFormDto.ChefsApplicationFormGuid,
+                                    TenantId = applicationFormDto.TenantId
+                                }
+                            );
+
+                            // Store the count of missing submissions and Application Form Name
+                            var fact = new Fact
+                            {
+                                name = "Application Form Name: ",
+                                value = applicationFormDto.ApplicationFormName
+                            };
+                            facts.Add(fact);
+
+                            fact = new Fact
+                            {
+                                name = "Missing Submissions Count: ",
+                                value = missingSubmissions.Count.ToString()
+                            };
+
+                            facts.Add(fact);
+                        }
                     }
-                    catch (ApiException apiException)
+                    catch (Exception ex)
                     {
-                        // Save the error to the application form new fields
-                        // applicationFormDto.ConnectionHttpStatus = 
+                        // If this is an API Exception
+                        if (ex is HttpRequestException)
+                        {
+                            string statusCode = ((HttpRequestException)ex).StatusCode.ToString() ?? string.Empty;
+                            var fact = new Fact
+                            {
+                                name = "Application Form ApiException: ",
+                                value = applicationFormDto.ApplicationFormName
+                            };
+                            facts.Add(fact);
+
+                            fact = new Fact
+                            {
+                                name = "Status Code: ",
+                                value = statusCode
+                            };
+
+                            facts.Add(fact);
+
+                            fact = new Fact
+                            {
+                                name = "Message: ",
+                                value = ((HttpRequestException)ex).Message
+                            };
+
+                            facts.Add(fact);
+                        }
                     }
                 }
-
             }
-
-            return missingSubmissions;
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            string activityTitle = "Review Missed Chefs Submissions";
+            string activitySubtitle= "Environment: " + envInfo;
+            await TeamsNotificationService.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+            return missingSubmissions ?? new HashSet<string>();
         }
 
         public async Task<HashSet<string>> GetSubmissionsByFormAsync(Guid applicationFormId)

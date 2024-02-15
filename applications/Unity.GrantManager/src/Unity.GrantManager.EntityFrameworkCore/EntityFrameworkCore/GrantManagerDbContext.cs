@@ -2,6 +2,7 @@
 using System.Linq;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
+using Unity.GrantManager.Intakes;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -15,6 +16,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using Unity.GrantManager.Migrations.HostMigrations;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
 
@@ -35,6 +37,7 @@ public class GrantManagerDbContext :
     public DbSet<RegionalDistrict> RegionalDistricts { get; set; }    
     public DbSet<TenantToken> TenantTokens { get; set; }
     public DbSet<Community> Communities { get; set; }
+    public DbSet<ChefsMissedSubmission> ChefsMissedSubmissions { get; set; }
 
 
     #region Entities from the modules
@@ -135,6 +138,14 @@ public class GrantManagerDbContext :
         modelBuilder.Entity<TenantToken>(b =>
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "TenantTokens",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<ChefsMissedSubmission>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ChefsMissedSubmissions",
                 GrantManagerConsts.DbSchema);
 
             b.ConfigureByConvention();
