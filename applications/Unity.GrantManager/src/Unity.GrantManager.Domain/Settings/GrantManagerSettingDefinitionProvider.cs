@@ -6,7 +6,8 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
 {
     public override void Define(ISettingDefinitionContext context)
     {
-        //Define your own settings here. Example:
-        //context.Add(new SettingDefinition(GrantManagerSettings.MySetting1));
+        context.Add(
+            new SettingDefinition("SectorFilter","",null,null,isVisibleToClients:true,isInherited:false,isEncrypted:false).WithProviders(TenantSettingValueProvider.ProviderName)
+        );
     }
 }
