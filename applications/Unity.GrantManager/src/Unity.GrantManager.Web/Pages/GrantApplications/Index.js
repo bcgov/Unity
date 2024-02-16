@@ -137,7 +137,7 @@
                         extend: 'colvis',
                         text: 'Manage Columns',
 
-                        columns: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+                        columns: [1, 2, 3, 4, 5, 6, 7, 8,  11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
 
                         className: 'btn btn-light custom-table-btn cln-visible',
                     }
@@ -345,7 +345,7 @@
                 let displayText = ' ';
 
                 if (data != null && data.length == 1) {
-                    displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
+                    displayText = type === 'fullName' ? getNames(data) : (data[0].fullName + getDutyText(data[0]));
                 } else if (data.length > 1) {
                     displayText = getNames(data);
                 }
@@ -956,7 +956,7 @@
     function getNames(data) {
         let name = '';
         data.forEach((d, index) => {
-            name = name + ' ' + d.fullName;
+            name = name + (' ' + d.fullName + getDutyText(d)) ;
 
             if (index != (data.length - 1)) {
                 name = name + ',';
@@ -971,5 +971,9 @@
             str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
         }
         return str.join(' ');
+    }
+
+    function getDutyText(data) {
+        return data.duty ? (" [" + data.duty + "]") : '';
     }
 });
