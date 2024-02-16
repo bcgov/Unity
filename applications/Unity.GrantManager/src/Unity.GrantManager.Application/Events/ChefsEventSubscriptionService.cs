@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,14 +22,18 @@ namespace Unity.GrantManager.Events
         private readonly ISubmissionsApiService _submissionsIntService;
         private readonly IFormsApiService _formsApiService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
+        private readonly IConfiguration _configuration;
 
-        public ChefsEventSubscriptionService(IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
+        public ChefsEventSubscriptionService(
+            IConfiguration configuration,
+            IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IApplicationFormManager applicationFormManager,
             ISubmissionsApiService submissionsIntService,
             IApplicationFormRepository applicationFormRepository,
             IFormsApiService formsApiService,
             IApplicationFormVersionAppService applicationFormVersionAppService)
         {
+            _configuration = configuration;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _submissionsIntService = submissionsIntService;
             _applicationFormRepository = applicationFormRepository;
@@ -72,7 +77,8 @@ namespace Unity.GrantManager.Events
                 applicationForm = _applicationFormManager.SynchronizePublishedForm(applicationForm, formVersion, form);
                 await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
-                TeamsNotificationService.PostChefsEventToTeamsAsync(eventSubscriptionDto, form, formVersion);
+                string teamsChannel = _configuration["Teams:NotificationsChannelWebhook"];
+                TeamsNotificationService.PostChefsEventToTeamsAsync(teamsChannel, eventSubscriptionDto, form, formVersion);
             }
             else if(applicationForm == null)
             {

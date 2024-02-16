@@ -1,4 +1,5 @@
-﻿using RestSharp;
+﻿using Microsoft.Extensions.Configuration;
+using RestSharp;
 using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,7 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IApplicationFormRepository _applicationFormRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IChefsMissedSubmissionsRepository _chefsMissedSubmissionsRepository;
+        private readonly IConfiguration _configuration;
         private readonly RestClient _intakeClient;
         private const int PREVIOS_DAY = -1;
 
@@ -42,6 +44,7 @@ namespace Unity.GrantManager.ApplicationForms
         public ApplicationFormSycnronizationService(IRepository<ApplicationForm,
             Guid> repository,
             RestClient restClient,
+            IConfiguration configuration,
             IStringEncryptionService stringEncryptionService,
             IApplicationFormRepository applicationFormRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
@@ -49,6 +52,7 @@ namespace Unity.GrantManager.ApplicationForms
             : base(repository)
         {
             _intakeClient = restClient;
+            _configuration = configuration;
             _stringEncryptionService = stringEncryptionService;
             _applicationFormRepository = applicationFormRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
@@ -137,7 +141,8 @@ namespace Unity.GrantManager.ApplicationForms
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Review Missed Chefs Submissions";
             string activitySubtitle= "Environment: " + envInfo;
-            await TeamsNotificationService.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+            string teamsChannel = _configuration["Teams:NotificationsChannelWebhook"];
+            await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
             return missingSubmissions ?? new HashSet<string>();
         }
 

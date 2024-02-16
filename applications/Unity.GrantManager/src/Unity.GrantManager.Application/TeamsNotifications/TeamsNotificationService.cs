@@ -3,7 +3,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -15,13 +14,10 @@ namespace Unity.GrantManager.TeamsNotifications
 {
     public class TeamsNotificationService
     {
-        private static string TeamsNotificationChannelWebhook = "https://bcgov.webhook.office.com/webhookb2/d7f6b10c-adf3-4dd1-ad14-8f526f197bd2@6fdb5200-3d0d-4a8a-b036-d3685e359adc/IncomingWebhook/2f6fa0633b614793b3073e087d043bc4/f366bba6-e526-4920-ad6f-ce6ae509430a";
-
-
-        public static async Task PostToTeamsAsync(string activityTitle, string activitySubtitle, List<Fact> facts)
+        public static async Task PostToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle, List<Fact> facts)
         {
             string messageCard = InitializeMessageCard(activityTitle, activitySubtitle, facts);
-            await PostToTeamsChannelAsync(TeamsNotificationChannelWebhook, messageCard);
+            await PostToTeamsChannelAsync(teamsChannel, messageCard);
         }
 
         private static string InitializeMessageCard(string activityTitle, string activitySubtitle, List<Fact> facts)
@@ -44,7 +40,7 @@ namespace Unity.GrantManager.TeamsNotifications
             return jsonObj.ToString(Formatting.None);
         }
 
-        public static async Task PostChefsEventToTeamsAsync(EventSubscriptionDto eventSubscriptionDto, dynamic form, dynamic chefsFormVersion)
+        public static async Task PostChefsEventToTeamsAsync(string teamsChannel, EventSubscriptionDto eventSubscriptionDto, dynamic form, dynamic chefsFormVersion)
         {
             string eventDescription = eventSubscriptionDto.SubscriptionEvent switch
             {
@@ -105,7 +101,7 @@ namespace Unity.GrantManager.TeamsNotifications
             ];
 #pragma warning restore CS8602
 
-            await PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+            await PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
         }
 
         private static async Task PostToTeamsChannelAsync(string teamsChannel, string messageCard) {
