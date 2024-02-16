@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager;
 
+#pragma warning disable S1118 // Utility classes should not have public constructors
 public class GrantManagerWebTestStartup
 {
     public static void ConfigureServices(IServiceCollection services)

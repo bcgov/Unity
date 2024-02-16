@@ -66,8 +66,8 @@ namespace Unity.GrantManager.TeamsNotifications
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             string activitySubtitle = "Form Name: " + formName.ToString();
 
-            List<Fact> facts =
-            [
+            List<Fact> facts = new()
+            {
                 new Fact
                 {
                     name = "Form Version: ",
@@ -97,8 +97,8 @@ namespace Unity.GrantManager.TeamsNotifications
                 {
                     name = "Created At: ",
                     value = createdAt.ToString() + " UTC"
-                },
-            ];
+                }
+            };
 #pragma warning restore CS8602
 
             await PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);

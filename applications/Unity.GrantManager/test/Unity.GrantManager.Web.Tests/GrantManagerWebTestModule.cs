@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Globalization;
-using AutoMapper.Internal.Mappers;
 using Localization.Resources.AbpUi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Localization;
@@ -8,19 +7,21 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Web;
-using Unity.GrantManager.Web.Menus;
 using Volo.Abp.AspNetCore.TestBase;
+using Volo.Abp.Autofac;
+using Volo.Abp.AutoMapper;
+using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
-using Volo.Abp.UI.Navigation;
 using Volo.Abp.Validation.Localization;
 
 namespace Unity.GrantManager;
 
 [DependsOn(
     typeof(AbpAspNetCoreTestBaseModule),
-    typeof(GrantManagerWebModule),
-    typeof(GrantManagerApplicationTestModule)
+    typeof(AbpAutofacModule),
+    typeof(AbpAutoMapperModule)
 )]
 public class GrantManagerWebTestModule : AbpModule
 {
@@ -34,8 +35,26 @@ public class GrantManagerWebTestModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        Configure<AbpBackgroundWorkerQuartzOptions>(options =>
+        {
+            options.IsAutoRegisterEnabled = false;
+        });
+
+        Configure<AbpBackgroundJobOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = false;
+        });
+
+        ConfigureAutoMapper();
         ConfigureLocalizationServices(context.Services);
-        ConfigureNavigationServices(context.Services);        
+    }
+
+    private void ConfigureAutoMapper()
+    {
+        Configure<AbpAutoMapperOptions>(options =>
+        {
+            options.AddMaps<GrantManagerWebModule>();
+        });
     }
 
     private static void ConfigureLocalizationServices(IServiceCollection services)
@@ -56,14 +75,6 @@ public class GrantManagerWebTestModule : AbpModule
                     typeof(AbpValidationResource),
                     typeof(AbpUiResource)
                 );
-        });
-    }
-
-    private static void ConfigureNavigationServices(IServiceCollection services)
-    {
-        services.Configure<AbpNavigationOptions>(options =>
-        {
-            options.MenuContributors.Add(new GrantManagerMenuContributor());
         });
     }
 }
