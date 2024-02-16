@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.SettingManagement;
 
 namespace Unity.GrantManager.Locality
 {
@@ -15,12 +16,15 @@ namespace Unity.GrantManager.Locality
         private readonly ISectorRepository _sectorRepository;
 
         private readonly ISubSectorRepository _subSectorRepository;
+        private readonly ISettingManager _settingManager;
 
         public SectorAppService(ISectorRepository sectorRepository,
-            ISubSectorRepository subSectorRepository)
+            ISubSectorRepository subSectorRepository,
+            ISettingManager settingManager)
         {
             _sectorRepository = sectorRepository;
             _subSectorRepository = subSectorRepository;
+            _settingManager = settingManager;
         }
 
         public async Task<IList<SectorDto>> GetListAsync()
@@ -42,7 +46,16 @@ namespace Unity.GrantManager.Locality
                 return sector;
             }).ToList();
 
-            return applicationSectorDtos;
+            var sectorFilter = await _settingManager.GetOrNullForCurrentTenantAsync("SectorFilter");
+            if (string.IsNullOrEmpty(sectorFilter))
+            {
+                return applicationSectorDtos;
+            }
+            else
+            {
+                string[] sectorCodes = sectorFilter.Split(',');
+                return applicationSectorDtos.Where(x => sectorCodes.Contains(x.SectorCode)).ToList();
+            }
         }
     }
 }
