@@ -1,9 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Unity.GrantManager.Cache;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 
 namespace Unity.GrantManager.Locality
@@ -17,18 +21,38 @@ namespace Unity.GrantManager.Locality
 
         private readonly ISubSectorRepository _subSectorRepository;
         private readonly ISettingManager _settingManager;
+        private readonly IDistributedCache<IList<SectorDto>, CacheKey> _cache;
+        private readonly ICurrentTenant _currentTenant;
+
+        private readonly string _filterType = "SectorFilter";
 
         public SectorAppService(ISectorRepository sectorRepository,
             ISubSectorRepository subSectorRepository,
-            ISettingManager settingManager)
+            ISettingManager settingManager,
+            ICurrentTenant currentTenant,
+            IDistributedCache<IList<SectorDto>, CacheKey> cache)
         {
             _sectorRepository = sectorRepository;
             _subSectorRepository = subSectorRepository;
             _settingManager = settingManager;
+            _currentTenant = currentTenant;
+            _cache = cache;
         }
 
         public async Task<IList<SectorDto>> GetListAsync()
         {
+            var cacheKey = new CacheKey { CacheType = _filterType, TenantGuid = _currentTenant.GetId() };
+#pragma warning disable CS8603 // Possible null reference return.
+            return await _cache.GetOrAddAsync(
+                cacheKey,
+                async () => await GetTenantSectors()
+            );
+#pragma warning restore CS8603 // Possible null reference return.
+
+        }
+
+        public async Task<IList<SectorDto>> GetTenantSectors()
+        { 
             var sectorsQueryable = await _sectorRepository.GetQueryableAsync();
 
             var query = from sector in sectorsQueryable
@@ -46,7 +70,7 @@ namespace Unity.GrantManager.Locality
                 return sector;
             }).ToList();
 
-            var sectorFilter = await _settingManager.GetOrNullForCurrentTenantAsync("SectorFilter");
+            var sectorFilter = await _settingManager.GetOrNullForCurrentTenantAsync(_filterType);
             if (string.IsNullOrEmpty(sectorFilter))
             {
                 return applicationSectorDtos;
