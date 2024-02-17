@@ -42,13 +42,10 @@ namespace Unity.GrantManager.Locality
         public async Task<IList<SectorDto>> GetListAsync()
         {
             var cacheKey = new CacheKey { CacheType = _filterType, TenantGuid = _currentTenant.GetId() };
-#pragma warning disable CS8603 // Possible null reference return.
             return await _cache.GetOrAddAsync(
                 cacheKey,
                 async () => await GetTenantSectors()
-            );
-#pragma warning restore CS8603 // Possible null reference return.
-
+            ) ?? new List<SectorDto>();
         }
 
         public async Task<IList<SectorDto>> GetTenantSectors()
