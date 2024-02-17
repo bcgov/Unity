@@ -245,8 +245,7 @@ namespace Unity.GrantManager.Intakes
         private static IntakeMapping ApplyDefaultConfigurationMapping(dynamic data, dynamic form)
         {
             return new IntakeMapping()
-            {                
-                ProjectName = form.name is string ? form.name : null,
+            {
                 ApplicantName = data.applicantName is string ? data.applicantName : null,
                 Sector = data.sector is string ? data.sector : null,
                 TotalProjectBudget = data.totalProjectBudget is string ? data.totalProjectBudget : null,
