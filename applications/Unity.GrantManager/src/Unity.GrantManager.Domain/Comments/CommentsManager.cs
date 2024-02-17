@@ -105,7 +105,7 @@ namespace Unity.GrantManager.Comments
                                                      CommenterId = applicationComment.CommenterId,
                                                      CommenterDisplayName = user.OidcDisplayName,
                                                      CommenterBadge = user.Badge,
-                                                     CreationTime = user.CreationTime,
+                                                     CreationTime = applicationComment.CreationTime,
                                                      OwnerId = ownerId,
                                                      Id = applicationComment.Id
                                                  };
@@ -121,7 +121,7 @@ namespace Unity.GrantManager.Comments
                                                     CommenterId = assessmentComment.CommenterId,
                                                     CommenterDisplayName = user.OidcDisplayName,
                                                     CommenterBadge = user.Badge,
-                                                    CreationTime = user.CreationTime,
+                                                    CreationTime = assessmentComment.CreationTime,
                                                     OwnerId = ownerId,
                                                     Id = assessmentComment.Id
                                                 };
