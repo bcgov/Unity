@@ -75,7 +75,7 @@ namespace Unity.GrantManager.ApplicationForms
                     try
                     {
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
-                        HashSet<string> existingSubmissions = (HashSet<string>)await GetSubmissionsByFormAsync(applicationFormDto.Id);
+                        HashSet<string> existingSubmissions = (HashSet<string>)GetSubmissionsByForm(applicationFormDto.Id);
                         missingSubmissions = newChefsSubmissions.Except(existingSubmissions).ToHashSet();
                         if (missingSubmissions != null && missingSubmissions.Count > 0)
                         {
@@ -141,12 +141,12 @@ namespace Unity.GrantManager.ApplicationForms
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Review Missed Chefs Submissions";
             string activitySubtitle= "Environment: " + envInfo;
-            string teamsChannel = _configuration["Teams:NotificationsChannelWebhook"];
+            string teamsChannel = _configuration["Teams:NotificationsChannelWebhook"] ?? "";
             await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
             return missingSubmissions ?? new HashSet<string>();
         }
 
-        public async Task<HashSet<string>> GetSubmissionsByFormAsync(Guid applicationFormId)
+        public HashSet<string> GetSubmissionsByForm(Guid applicationFormId)
         {
             IQueryable<ApplicationFormSubmission> queryableApplicationFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
             var formSubmissionGuids = queryableApplicationFormSubmissions.Where(x => x.ApplicationFormId.Equals(applicationFormId)).Select(o => o.ChefsSubmissionGuid).ToHashSet();

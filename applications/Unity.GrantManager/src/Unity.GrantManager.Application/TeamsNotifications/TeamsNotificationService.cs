@@ -16,28 +16,41 @@ namespace Unity.GrantManager.TeamsNotifications
     {
         public static async Task PostToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle, List<Fact> facts)
         {
-            string messageCard = InitializeMessageCard(activityTitle, activitySubtitle, facts);
-            await PostToTeamsChannelAsync(teamsChannel, messageCard);
+            if(!teamsChannel.IsNullOrEmpty()) {
+                string messageCard = InitializeMessageCard(activityTitle, activitySubtitle, facts);
+                await PostToTeamsChannelAsync(teamsChannel, messageCard);
+            }
         }
 
         private static string InitializeMessageCard(string activityTitle, string activitySubtitle, List<Fact> facts)
         {
-
             dynamic messageCard = MessageCard.GetMessageCard();
             JObject jsonObj = JsonConvert.DeserializeObject<dynamic>(messageCard)!;
-            jsonObj["summary"] = "Message Summary";
+            string messageCardString = string.Empty;
+
+            if(jsonObj != null)
+            {
+                jsonObj["summary"] = "Message Summary";
 
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-            (jsonObj)["sections"].Children().FirstOrDefault()["activityTitle"] = activityTitle;
-            (jsonObj)["sections"].Children().FirstOrDefault()["activitySubtitle"] = activitySubtitle;
-            // Add Facts
-            foreach(var fact in facts)
-            {
-                JObject obj = JObject.Parse(JsonConvert.SerializeObject(fact));
-                (jsonObj)["sections"].Children().FirstOrDefault().Value<JArray>("facts").Add(obj);
+                if(jsonObj["sections"] != null)
+                {
+                    var sections = jsonObj["sections"];
+                    var firstChild = sections.Children().First();
+                    firstChild["activityTitle"] = activityTitle;
+                    firstChild["activitySubtitle"] = activitySubtitle;
+                    // Add Facts
+                    foreach (var fact in facts)
+                    {
+                        JObject obj = JObject.Parse(JsonConvert.SerializeObject(fact));
+                        firstChild.Value<JArray>("facts").Add(obj);
+                    }
+                }
+#pragma warning restore CS8602 // Possible null reference argument
+                messageCardString = jsonObj.ToString(Formatting.None);
             }
-#pragma warning restore CS8602 // Possible null reference argument.
-            return jsonObj.ToString(Formatting.None);
+
+            return messageCardString;
         }
 
         public static async Task PostChefsEventToTeamsAsync(string teamsChannel, EventSubscriptionDto eventSubscriptionDto, dynamic form, dynamic chefsFormVersion)
