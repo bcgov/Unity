@@ -249,3 +249,7 @@ div.dt-buttons div.dropdown-menu {
 .dt-buttons {
     width: max-content;
 }
+
+.text-right {
+    text-align: right;
+}

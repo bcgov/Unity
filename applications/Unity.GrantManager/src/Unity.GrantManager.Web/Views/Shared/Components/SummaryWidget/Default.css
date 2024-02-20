@@ -53,3 +53,7 @@
 .user-tags-details-input-wrapper {
     border: 0px;
 }
+
+.text-right {
+    text-align: right;
+}
