@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
+using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
@@ -31,6 +32,8 @@ public class GrantManagerTestBaseModule : AbpModule
         {
             options.IsJobExecutionEnabled = false;
         });
+
+        Configure<AbpBackgroundWorkerQuartzOptions>(options => { options.IsAutoRegisterEnabled = false; });
 
         context.Services.AddAlwaysAllowAuthorization();
     }
