@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RestSharp;
 using RestSharp.Authenticators;
 using System;
@@ -75,11 +76,11 @@ namespace Unity.GrantManager.ApplicationForms
                     try
                     {
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
-                        HashSet<string> existingSubmissions = (HashSet<string>)GetSubmissionsByForm(applicationFormDto.Id);
+                        HashSet<string> existingSubmissions = GetSubmissionsByForm(applicationFormDto.Id);
                         missingSubmissions = newChefsSubmissions.Except(existingSubmissions).ToHashSet();
                         if (missingSubmissions != null && missingSubmissions.Count > 0)
                         {
-                            var chefsMissedSubmissions = await _chefsMissedSubmissionsRepository.InsertAsync(
+                            await _chefsMissedSubmissionsRepository.InsertAsync(
                                 new ChefsMissedSubmission
                                 {
                                     ChefsSubmissionGuids = string.Join(", ", missingSubmissions),
@@ -105,35 +106,35 @@ namespace Unity.GrantManager.ApplicationForms
                             facts.Add(fact);
                         }
                     }
+                    catch (HttpRequestException hrex)
+                    {
+                        string statusCode = hrex.StatusCode.ToString() ?? string.Empty;
+                        var fact = new Fact
+                        {
+                            name = "Application Form ApiException: ",
+                            value = applicationFormDto.ApplicationFormName
+                        };
+                        facts.Add(fact);
+
+                        fact = new Fact
+                        {
+                            name = "Status Code: ",
+                            value = statusCode
+                        };
+
+                        facts.Add(fact);
+
+                        fact = new Fact
+                        {
+                            name = "Message: ",
+                            value = hrex.Message
+                        };
+
+                        facts.Add(fact);
+                    }
                     catch (Exception ex)
                     {
-                        // If this is an API Exception
-                        if (ex is HttpRequestException)
-                        {
-                            string statusCode = ((HttpRequestException)ex).StatusCode.ToString() ?? string.Empty;
-                            var fact = new Fact
-                            {
-                                name = "Application Form ApiException: ",
-                                value = applicationFormDto.ApplicationFormName
-                            };
-                            facts.Add(fact);
-
-                            fact = new Fact
-                            {
-                                name = "Status Code: ",
-                                value = statusCode
-                            };
-
-                            facts.Add(fact);
-
-                            fact = new Fact
-                            {
-                                name = "Message: ",
-                                value = ((HttpRequestException)ex).Message
-                            };
-
-                            facts.Add(fact);
-                        }
+                        Logger.LogError("Exception: {ex.Message}", ex.Message);
                     }
                 }
             }

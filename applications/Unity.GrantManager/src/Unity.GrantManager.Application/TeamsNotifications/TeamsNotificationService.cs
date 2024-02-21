@@ -14,6 +14,8 @@ namespace Unity.GrantManager.TeamsNotifications
 {
     public class TeamsNotificationService
     {
+        public TeamsNotificationService() : base() { }
+
         public static async Task PostToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle, List<Fact> facts)
         {
             if(!teamsChannel.IsNullOrEmpty()) {
@@ -124,7 +126,7 @@ namespace Unity.GrantManager.TeamsNotifications
                 {
                     request.Content = new StringContent(messageCard);
                     request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                    var response = await httpClient.SendAsync(request);
+                    await httpClient.SendAsync(request);
                 }
             }
         }
