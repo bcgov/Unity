@@ -371,7 +371,7 @@
             title: 'Total Project Budget',
             name: 'totalProjectBudget',
             data: 'totalProjectBudget',
-            className: 'data-table-header text-right',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data);
             },
@@ -423,7 +423,7 @@
             title: l('RequestedAmount'),
             data: 'requestedAmount',
             name: 'requestedAmount',
-            className: 'data-table-header text-right',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data);
             },
@@ -436,7 +436,7 @@
             title: 'Approved Amount',
             name: 'approvedAmount',
             data: 'approvedAmount',
-            className: 'data-table-header text-right',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data);
             },
@@ -545,7 +545,7 @@
             title: 'Projected Funding Total',
             name: 'projectFundingTotal',
             data: 'projectFundingTotal',
-            className: 'data-table-header text-right',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data) ?? '{Projected Funding Total}';
             },
@@ -571,7 +571,7 @@
             title: 'Total Paid Amount $',
             name: 'projectFundingTotal',
             data: 'projectFundingTotal',
-            className: 'data-table-header text-right',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data) ?? '{Total Paid Amount $}';
             },
@@ -764,7 +764,7 @@
             title: 'Recommended Amount',
             name: 'recommendedAmount',
             data: 'recommendedAmount',
-            className: 'data-table-header text-right',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data) ?? '{Recommended Amount}';
             },
