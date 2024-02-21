@@ -206,7 +206,45 @@
         </tr>
     </table>
 </abp-row>
-
+<abp-row class="px-1 pb-2 mb-4 summary-container">
+    <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
+    <div class="mx-2">
+        <p class="px-2 mb-0 fw-bold text-muted">Info</p>
+        <hr class="my-2"/>
+        <div>
+            <div class="d-flex px-2 justify-content-between align-items-center">
+                <div>
+                    <p>Signing Authority</p>
+                    <p class="fw-bold text-muted">Jessica Alba, CEO</p>
+                    <div class="d-flex text-muted">
+                        <i class="fl fl-mail" aria-hidden="true"></i> 
+                        <div class="ms-2">jessica@comp.ca</div>
+                    </div>
+                    <div class="d-flex text-muted">
+                        <i class="fl fl-phone" aria-hidden="true"></i> 
+                        <div class="ms-2">+1 604-276-2424</div>
+                    </div>
+                    <div class="d-flex text-muted">
+                        <i class="fl fl-work" aria-hidden="true"></i> 
+                        <div class="ms-2">+1 604-276-2424</div>
+                    </div>
+                </div>
+                <div class="pe-2">
+                    <i class="fl fl-cross contact-edit-btn"></i>
+                </div>
+            </div>
+            <hr class="my-3"/>
+        </div>
+    </div>
+    <div class="d-flex justify-content-end">
+        <abp-button text="Add Contact"
+            id="addContactBtn"
+            class="add_contact_btn"
+            icon-type="Other"
+            icon="fl fl-plus"
+            button-type="Light" />
+    </div>
+</abp-row>
 
 
 

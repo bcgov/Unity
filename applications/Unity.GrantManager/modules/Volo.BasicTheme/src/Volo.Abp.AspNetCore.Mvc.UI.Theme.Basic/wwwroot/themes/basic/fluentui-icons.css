@@ -334,3 +334,11 @@
 .fl-delete:before {
     content: '\E74D';
 }
+
+.fl-phone:before {
+    content: '\E717';
+}
+
+.fl-work:before {
+    content: '\E821';
+}
