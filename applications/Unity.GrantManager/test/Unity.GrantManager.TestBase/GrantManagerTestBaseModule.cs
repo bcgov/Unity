@@ -33,7 +33,11 @@ public class GrantManagerTestBaseModule : AbpModule
             options.IsJobExecutionEnabled = false;
         });
 
-        Configure<AbpBackgroundWorkerQuartzOptions>(options => { options.IsAutoRegisterEnabled = false; });
+        Configure<AbpBackgroundWorkerQuartzOptions>(options => 
+        { 
+            options.IsAutoRegisterEnabled = false; 
+            options.SchedulerName = Guid.NewGuid().ToString();
+        });
 
         context.Services.AddAlwaysAllowAuthorization();
     }
