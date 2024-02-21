@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
             _tenantRepository = tenantRepository;
             _applicationFormSynchronizationService = applicationFormSynchronizationService;
 
-            JobDetail = JobBuilder.Create<IntakeSyncWorker>().WithIdentity(nameof(IntakeSyncWorker)).Build();
+            //JobDetail = JobBuilder.Create<IntakeSyncWorker>().WithIdentity(nameof(IntakeSyncWorker)).Build();
 
             // Trigger = TriggerBuilder.Create().WithIdentity(nameof(IntakeSyncWorker))
             // .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(01,00)
