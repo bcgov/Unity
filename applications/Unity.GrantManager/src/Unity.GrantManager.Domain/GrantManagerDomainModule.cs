@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Unity.GrantManager.MultiTenancy;
 using Volo.Abp.AuditLogging;
@@ -14,6 +14,7 @@ using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.PermissionManagement.OpenIddict;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Caching;
 
 namespace Unity.GrantManager;
 
@@ -30,7 +31,8 @@ namespace Unity.GrantManager;
     typeof(AbpTenantManagementDomainModule),
     typeof(AbpEmailingModule)
 )]
-public class GrantManagerDomainModule : AbpModule
+[DependsOn(typeof(AbpCachingModule))]
+    public class GrantManagerDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
