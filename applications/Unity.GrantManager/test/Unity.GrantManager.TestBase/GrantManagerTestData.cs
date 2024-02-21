@@ -1,7 +1,6 @@
 ﻿using System;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
-using Unity.GrantManager.GrantPrograms;
 using Unity.GrantManager.Intakes;
 
 namespace Unity.GrantManager;
