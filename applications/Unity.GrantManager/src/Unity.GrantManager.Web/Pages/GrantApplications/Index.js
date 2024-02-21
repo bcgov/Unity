@@ -389,7 +389,8 @@
                 let displayText = ' ';
 
                 if (data != null && data.length == 1) {
-                    displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
+                    // displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
+                    displayText = type === 'fullName' ? getNames(data) : (data[0].fullName + getDutyText(data[0]));
                 } else if (data.length > 1) {
                     displayText = getNames(data);
                 }
@@ -402,6 +403,10 @@
             },
             index: 9
         }
+    }
+
+    function getDutyText(data) {
+        return data.duty ? (" [" + data.duty + "]") : '';
     }
 
     function getStatusColumn() {
@@ -1021,9 +1026,8 @@
 
     function getNames(data) {
         let name = '';
-        data.forEach((d, index) => {
-            name = name + ' ' + d.fullName;
-
+        data.forEach((d, index) => {            
+            name = name + (' ' + d.fullName + getDutyText(d));
             if (index != (data.length - 1)) {
                 name = name + ',';
             }

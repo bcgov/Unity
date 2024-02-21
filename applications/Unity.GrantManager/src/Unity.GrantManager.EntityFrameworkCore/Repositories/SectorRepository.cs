@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.Locality;
 using Volo.Abp.DependencyInjection;
@@ -16,6 +18,12 @@ namespace Unity.GrantManager.Repositories
     {
         public SectorRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider) : base(dbContextProvider)
         {
+        }
+
+        public override async Task<IQueryable<Sector>> WithDetailsAsync()
+        {
+            // Uses the extension method defined above
+            return (await GetQueryableAsync()).IncludeDetails();
         }
     }
 }
