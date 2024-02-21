@@ -2,6 +2,6 @@
 {
     public static class SettingsConstants
     {
-        public const string SectorFilterName = "SectorFilter";
+        public const string SectorFilterName = "GrantManager.Locality.SectorFilter";
     }
 }

@@ -201,8 +201,8 @@
     "Enum:GrantApplicationAction.Message.Approve": "Approved",
     "Enum:GrantApplicationAction.Message.Deny": "Declined",
 
-    "Setting:SectorFilter.DisplayName": "SectorFilter",
-    "Setting:SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
+    "Setting:GrantManager.Locality.SectorFilter.DisplayName": "SectorFilter",
+    "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
 
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
