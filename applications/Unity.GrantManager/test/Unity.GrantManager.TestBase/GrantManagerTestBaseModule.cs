@@ -8,6 +8,8 @@ using Volo.Abp.Data;
 using Volo.Abp.Modularity;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
+using Volo.Abp.Quartz;
+using System;
 
 namespace Unity.GrantManager;
 
@@ -22,6 +24,15 @@ public class GrantManagerTestBaseModule : AbpModule
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddDataMigrationEnvironment();
+
+        PreConfigure<AbpQuartzOptions>(options =>
+        {
+            options.Configurator = configure =>
+            {
+                configure.SchedulerName = Guid.NewGuid().ToString();
+            };
+        });
+
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
