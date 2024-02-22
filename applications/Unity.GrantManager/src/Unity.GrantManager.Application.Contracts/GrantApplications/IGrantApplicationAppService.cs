@@ -14,7 +14,7 @@ namespace Unity.GrantManager.GrantApplications
     {
         Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id);
         Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false);
-        Task<GetSummaryDto> GetSummaryAsync(Guid applicationId);
+        Task<GetSummaryDto> GetSummaryAsync(Guid applicationId, int timeZoneOffset);
 
         Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input);
         Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input);

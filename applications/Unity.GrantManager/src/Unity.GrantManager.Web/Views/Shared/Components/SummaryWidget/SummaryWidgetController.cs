@@ -12,9 +12,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
         
         [HttpGet]
         [Route("RefreshSummary")]
-        public IActionResult Summary(Guid applicationId)
+        public IActionResult Summary(Guid applicationId, int timeZoneOffset)
         {
-            return ViewComponent("SummaryWidget", new { applicationId });
+            return ViewComponent("SummaryWidget", new { applicationId, timeZoneOffset });
         }
         
     }

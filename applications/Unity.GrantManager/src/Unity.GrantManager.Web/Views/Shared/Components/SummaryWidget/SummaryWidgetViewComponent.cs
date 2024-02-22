@@ -24,14 +24,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
             _grantApplicationService = grantApplicationAppService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, int timeZoneOffset)
         {
             if (applicationId == Guid.Empty)
             {
                 return View(new SummaryWidgetViewModel());
             }
 
-            var summaryDto = await _grantApplicationService.GetSummaryAsync(applicationId);
+            var summaryDto = await _grantApplicationService.GetSummaryAsync(applicationId, timeZoneOffset);
 
             return View(ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto));
         }

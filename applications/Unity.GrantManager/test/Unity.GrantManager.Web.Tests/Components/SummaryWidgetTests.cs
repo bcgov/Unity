@@ -50,7 +50,7 @@ namespace Unity.GrantManager.Components
 
             // Arrange
             var appService = Substitute.For<IGrantApplicationAppService>();
-            appService.GetSummaryAsync(Arg.Any<Guid>()).Returns(summaryDto);
+            appService.GetSummaryAsync(Arg.Any<Guid>(),480).Returns(summaryDto);
 
             var viewContext = new ViewContext
             {
@@ -68,7 +68,7 @@ namespace Unity.GrantManager.Components
             };
 
             //Act
-            var result = await viewComponent.InvokeAsync(Guid.NewGuid()) as ViewViewComponentResult;
+            var result = await viewComponent.InvokeAsync(Guid.NewGuid(), 480) as ViewViewComponentResult;
             SummaryWidgetViewModel? resultModel;
 
             resultModel = result!.ViewData!.Model! as SummaryWidgetViewModel;

@@ -257,8 +257,9 @@ public class GrantApplicationAppService :
         }
     }
 
-    public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
+    public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId, int timeZoneOffset)
     {
+        var browserTimezoneOffset = TimeSpan.FromMinutes(timeZoneOffset);
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join applicationForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals applicationForm.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
@@ -266,7 +267,7 @@ public class GrantApplicationAppService :
                     select new GetSummaryDto
                     {
                         Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = TimeZoneInfo.ConvertTimeFromUtc(application.SubmissionDate, TimeZoneInfo.Local).ToShortDateString(),
+                        SubmissionDate = (application.SubmissionDate - browserTimezoneOffset).ToShortDateString(),
                         OrganizationName = applicant.OrgName,
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
