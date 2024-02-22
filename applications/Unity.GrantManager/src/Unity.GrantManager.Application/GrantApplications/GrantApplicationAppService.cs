@@ -247,6 +247,7 @@ public class GrantApplicationAppService :
             {
                 appDto.Sector = appDto.Applicant.Sector;
                 appDto.SubSector = appDto.Applicant.SubSector;
+                appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
             }
 
             return appDto;
@@ -379,6 +380,7 @@ public class GrantApplicationAppService :
 
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
+            applicant.SectorSubSectorIndustryDesc= input.SectorSubSectorIndustryDesc ?? "";
             _ = await _applicantRepository.UpdateAsync(applicant);
 
             if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
