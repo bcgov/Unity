@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Components
                 RequestedAmount = 1000,
                 Sector = "Information Technology",
                 Status = "Approved",
-                SubmissionDate = DateTime.UtcNow.ToString(),
+                SubmissionDate = DateTime.UtcNow,
                 TotalScore = "100"
             };
 
