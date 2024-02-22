@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
             {
                 using (_currentTenant.Change(tenant.Id))
                 {
-                    var result = _applicationFormSynchronizationService.GetMissingSubmissions();
+                    _applicationFormSynchronizationService.GetMissingSubmissions();
                 }
             }
 

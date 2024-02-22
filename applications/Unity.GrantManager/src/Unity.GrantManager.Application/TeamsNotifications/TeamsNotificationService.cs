@@ -14,7 +14,7 @@ namespace Unity.GrantManager.TeamsNotifications
 {
     public class TeamsNotificationService
     {
-        public TeamsNotificationService() : base() { }
+        protected TeamsNotificationService() : base() { }
 
         public static async Task PostToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle, List<Fact> facts)
         {
