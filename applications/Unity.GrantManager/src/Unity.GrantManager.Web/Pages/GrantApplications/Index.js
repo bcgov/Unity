@@ -266,7 +266,8 @@
             getContactTitleColumn(),
             getContactEmailColumn(),
             getContactBusinessPhoneColumn(),
-            getContactCellPhoneColumn()
+            getContactCellPhoneColumn(),
+            getSectorSubSectorIndustryDescColumn(),
         ]
         .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -955,6 +956,19 @@
                 return data ?? '{ContactCellPhone}';
             },
             index: 48
+        }
+    }
+
+    function getSectorSubSectorIndustryDescColumn() {
+        return {
+            title: 'Other Sector/Sub/Industry Description',
+            name: 'sectorSubSectorIndustryDesc',
+            data: 'applicant.sectorSubSectorIndustryDesc',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SectorSubSectorIndustryDesc}';
+            },
+            index: 49
         }
     }
     window.addEventListener('resize', setTableHeighDynamic);
