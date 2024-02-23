@@ -6,7 +6,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class GetSummaryDto
 {
     public string? Category { get; set; }
-    public string? SubmissionDate { get; set; }
+    public DateTime? SubmissionDate { get; set; }
     public string? OrganizationName { get; set; }
     public string? OrganizationNumber { get; set; }
     public string? EconomicRegion { get; set; }

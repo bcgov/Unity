@@ -6,6 +6,7 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Web.Services;
 using Unity.GrantManager.Web.Views.Shared.Components.Summary;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
 using Volo.Abp.DependencyInjection;
@@ -19,7 +20,7 @@ namespace Unity.GrantManager.Components
 
         public SummaryWidgetTests()
         {            
-            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();            
         }
 
         [Fact]
@@ -44,12 +45,14 @@ namespace Unity.GrantManager.Components
                 RequestedAmount = 1000,
                 Sector = "Information Technology",
                 Status = "Approved",
-                SubmissionDate = DateTime.UtcNow.ToString(),
+                SubmissionDate = DateTime.UtcNow,
                 TotalScore = "100"
             };
 
             // Arrange
             var appService = Substitute.For<IGrantApplicationAppService>();
+            var context = Substitute.For<IHttpContextAccessor>();
+            var browserUtils = new BrowserUtils(context);
             appService.GetSummaryAsync(Arg.Any<Guid>()).Returns(summaryDto);
 
             var viewContext = new ViewContext
@@ -61,7 +64,7 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new SummaryWidgetViewComponent(appService)
+            var viewComponent = new SummaryWidgetViewComponent(appService, browserUtils)
             {
                 ViewComponentContext = viewComponentContext,
                 LazyServiceProvider = lazyServiceProvider

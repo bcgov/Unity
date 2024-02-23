@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Web.Services;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 {
@@ -18,10 +19,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
     public class CommentsWidgetViewComponent : AbpViewComponent
     {
         private readonly CommentAppService _commentAppService;
+        private readonly BrowserUtils _browserUtils;
 
-        public CommentsWidgetViewComponent(CommentAppService commentAppService)
+        public CommentsWidgetViewComponent(CommentAppService commentAppService, 
+            BrowserUtils browserUtils)
         {
             _commentAppService = commentAppService;
+            _browserUtils = browserUtils;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, CommentType commentType, Guid currentUserId)
@@ -38,15 +42,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
         }
 
         private IEnumerable<CommentDto> MapToCommentDisplay(IReadOnlyList<CommentDto> commentDtos)
-        {
-            // Hook in to the timezoneoffset cookie explicitly added, there surely must be a better way to do this 
-            var offsetValue = "0";
-            if (HttpContext.Request.Cookies.ContainsKey("timezoneoffset"))
-            {
-                _ = HttpContext.Request.Cookies.TryGetValue("timezoneoffset", out offsetValue);
-            }
-
-            _ = int.TryParse(offsetValue, out int offset);
+        {            
+            var offset = _browserUtils.GetBrowserOffset();
 
             foreach (var item in commentDtos)
             {
