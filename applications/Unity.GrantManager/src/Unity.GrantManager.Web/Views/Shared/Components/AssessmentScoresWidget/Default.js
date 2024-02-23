@@ -33,6 +33,16 @@ function enableSaveButton(inputText) {
     } else {
         $('#saveAssessmentScoresBtn').prop('disabled', true);
     }    
+    updateSum();
+}
+
+function updateSum() {
+    let financialAnalysis = $('#financialAnalysis').val() || 0;
+    let inclusiveGrowth = $('#inclusiveGrowth').val() || 0;
+    let cleanGrowth = $('#cleanGrowth').val() || 0;
+    let economicImpact = $('#economicImpact').val() || 0;
+    let sum = parseInt(financialAnalysis) + parseInt(inclusiveGrowth) + parseInt(cleanGrowth) + parseInt(economicImpact);
+    $('#subTotal').val(sum);
 }
 
 function positiveIntegersOnly(e) {
