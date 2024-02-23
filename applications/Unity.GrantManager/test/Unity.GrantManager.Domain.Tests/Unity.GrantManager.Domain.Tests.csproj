@@ -16,4 +16,20 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Intake\Files\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Intake\Files\test-submission1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Intake\Files\test-submission2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Intake\Files\test-submission3.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
