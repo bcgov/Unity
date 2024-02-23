@@ -62,13 +62,12 @@ namespace Unity.GrantManager.ApplicationForms
 
         public async Task<HashSet<string>> GetMissingSubmissions()
         {
-
             HashSet<string> missingSubmissions = new HashSet<string>();
             // Get all forms with api keys
             ApplicationFormDtoList = (List<ApplicationFormDto>?)await GetConnectedApplicationFormsAsync();
-            List<Fact> facts = new List<Fact>();
-            
-            if(ApplicationFormDtoList != null)
+            List<Fact> facts = new ();
+
+            if (ApplicationFormDtoList != null)
             {
                 int numberOfDaysToCheck = PREVIOS_DAY;
                 foreach (ApplicationFormDto applicationFormDto in ApplicationFormDtoList)
@@ -92,15 +91,15 @@ namespace Unity.GrantManager.ApplicationForms
                             // Store the count of missing submissions and Application Form Name
                             var fact = new Fact
                             {
-                                name = "Application Form Name: ",
-                                value = applicationFormDto.ApplicationFormName
+                                Name = "Application Form Name: ",
+                                Value = applicationFormDto.ApplicationFormName
                             };
                             facts.Add(fact);
 
                             fact = new Fact
                             {
-                                name = "Missing Submissions Count: ",
-                                value = missingSubmissions.Count.ToString()
+                                Name = "Missing Submissions Count: ",
+                                Value = missingSubmissions.Count.ToString()
                             };
 
                             facts.Add(fact);
@@ -111,23 +110,23 @@ namespace Unity.GrantManager.ApplicationForms
                         string statusCode = hrex.StatusCode.ToString() ?? string.Empty;
                         var fact = new Fact
                         {
-                            name = "Application Form ApiException: ",
-                            value = applicationFormDto.ApplicationFormName
+                            Name = "Application Form ApiException: ",
+                            Value = applicationFormDto.ApplicationFormName
                         };
                         facts.Add(fact);
 
                         fact = new Fact
                         {
-                            name = "Status Code: ",
-                            value = statusCode
+                            Name = "Status Code: ",
+                            Value = statusCode
                         };
 
                         facts.Add(fact);
 
                         fact = new Fact
                         {
-                            name = "Message: ",
-                            value = hrex.Message
+                            Name = "Message: ",
+                            Value = hrex.Message
                         };
 
                         facts.Add(fact);
@@ -138,10 +137,10 @@ namespace Unity.GrantManager.ApplicationForms
                     }
                 }
             }
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Review Missed Chefs Submissions";
-            string activitySubtitle= "Environment: " + envInfo;
+            string activitySubtitle = "Environment: " + envInfo;
             string teamsChannel = _configuration["Teams:NotificationsChannelWebhook"] ?? "";
             await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
             return missingSubmissions ?? new HashSet<string>();
@@ -168,8 +167,9 @@ namespace Unity.GrantManager.ApplicationForms
             string maxDate = DateTime.Now.ToString("yyyy-MM-dd");
             string queryString = $"?createdAt[]={minDate}&createdAt[]={maxDate}";
             List<FormSubmissionSummaryDto>? pagedResult = await GetSubmissionsList(applicationFormDto, queryString);
-            if(pagedResult != null && pagedResult.Count > 0) { 
-                foreach(FormSubmissionSummaryDto submissionSummaryDto in pagedResult)
+            if (pagedResult != null && pagedResult.Count > 0)
+            {
+                foreach (FormSubmissionSummaryDto submissionSummaryDto in pagedResult)
                 {
                     chefsSubmissionIds.Add(submissionSummaryDto.Id.ToString());
                     // Need to store the submissionSummaryDto.FormVersionId to see if it can be mapped
@@ -189,7 +189,7 @@ namespace Unity.GrantManager.ApplicationForms
             string requestUrl = $"/forms/{applicationForm.ChefsApplicationFormGuid}/submissions";
             if (!string.IsNullOrEmpty(queryString))
             {
-                requestUrl = requestUrl + queryString;
+                requestUrl += queryString;
             }
 
             var restRequest = new RestRequest(requestUrl, Method.Get)

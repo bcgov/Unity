@@ -1,8 +1,13 @@
-﻿namespace Unity.GrantManager.TeamsNotifications
+﻿using System.Text.Json.Serialization;
+
+namespace Unity.GrantManager.TeamsNotifications
 {
     public class Fact
     {
-        public string name { get; set; } = string.Empty;
-        public string value { get; set; } = string.Empty;
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("value")]
+        public string Value { get; set; } = string.Empty;
     }
 }

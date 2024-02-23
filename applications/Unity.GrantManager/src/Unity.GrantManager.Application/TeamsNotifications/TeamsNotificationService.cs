@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.GrantApplications;
 
-
 namespace Unity.GrantManager.TeamsNotifications
 {
     public class TeamsNotificationService
@@ -34,21 +33,24 @@ namespace Unity.GrantManager.TeamsNotifications
             {
                 jsonObj["summary"] = "Message Summary";
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
                 if(jsonObj["sections"] != null)
                 {
                     var sections = jsonObj["sections"];
-                    var firstChild = sections.Children().First();
-                    firstChild["activityTitle"] = activityTitle;
-                    firstChild["activitySubtitle"] = activitySubtitle;
-                    // Add Facts
-                    foreach (var fact in facts)
+                    var firstChild = sections?.Children().First();
+
+                    if (firstChild != null)
                     {
-                        JObject obj = JObject.Parse(JsonConvert.SerializeObject(fact));
-                        firstChild.Value<JArray>("facts").Add(obj);
+                        firstChild["activityTitle"] = activityTitle;
+                        firstChild["activitySubtitle"] = activitySubtitle;
+                        // Add Facts
+                        foreach (var fact in facts)
+                        {
+                            JObject obj = JObject.Parse(JsonConvert.SerializeObject(fact));
+                            firstChild.Value<JArray>("facts")?.Add(obj);
+                        }
                     }
                 }
-#pragma warning restore CS8602 // Possible null reference argument
+
                 messageCardString = jsonObj.ToString(Formatting.None);
             }
 
@@ -78,58 +80,52 @@ namespace Unity.GrantManager.TeamsNotifications
 
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = eventDescription + " with an event posting to the " + envInfo + " environment";
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            string activitySubtitle = "Form Name: " + formName.ToString();
 
-            List<Fact> facts =
-            [
+            string activitySubtitle = "Form Name: " + formName?.ToString();
+
+            List<Fact> facts = new()
+            {
                 new Fact
                 {
-                    name = "Form Version: ",
-                    value = version.ToString()
+                    Name = "Form Version: ",
+                    Value = version?.ToString() ?? string.Empty
                 },
                 new Fact
                 {
-                    name = "Published: ",
-                    value = published.ToString()
+                    Name = "Published: ",
+                    Value = published?.ToString() ?? string.Empty
                 },
                 new Fact
                 {
-                    name = "Updated By: ",
-                    value = updatedBy.ToString()
+                    Name = "Updated By: ",
+                    Value = updatedBy?.ToString() ?? string.Empty
                 },
                 new Fact
                 {
-                    name = "Updated At: ",
-                    value = updatedAt.ToString() + " UTC"
+                    Name = "Updated At: ",
+                    Value = updatedAt?.ToString() + " UTC"
                 },
                 new Fact
                 {
-                    name = "Created By: ",
-                    value = createdBy.ToString()
+                    Name = "Created By: ",
+                    Value = createdBy?.ToString() ?? string.Empty
                 },
                 new Fact
                 {
-                    name = "Created At: ",
-                    value = createdAt.ToString() + " UTC"
+                    Name = "Created At: ",
+                    Value = createdAt?.ToString() + " UTC"
                 },
-            ];
-#pragma warning restore CS8602
+            };
 
             await PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
         }
 
         private static async Task PostToTeamsChannelAsync(string teamsChannel, string messageCard) {
-            using (var httpClient = new HttpClient())
-            {
-                using (var request = new HttpRequestMessage(new HttpMethod("POST"), teamsChannel))
-                {
-                    request.Content = new StringContent(messageCard);
-                    request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                    await httpClient.SendAsync(request);
-                }
-            }
+            using var httpClient = new HttpClient();
+            using var request = new HttpRequestMessage(new HttpMethod("POST"), teamsChannel);
+            request.Content = new StringContent(messageCard);
+            request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+            await httpClient.SendAsync(request);
         }
     }
-  
 }
