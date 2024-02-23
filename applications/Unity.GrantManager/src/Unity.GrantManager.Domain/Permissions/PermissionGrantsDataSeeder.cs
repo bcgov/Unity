@@ -119,7 +119,7 @@ namespace Unity.GrantManager.Permissions
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
-                    GrantApplicationPermissions.AssessmentResults.EditApprovedAmount,
+                    GrantApplicationPermissions.AssessmentResults.EditFinalStateFields,
               }, context.TenantId);
 
             // - SystemAdmin

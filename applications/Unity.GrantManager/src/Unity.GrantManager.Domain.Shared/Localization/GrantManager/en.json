@@ -156,7 +156,7 @@
 
     "Permission:GrantApplicationPermissions.AssessmentResults.Default": "Assessment Results",
     "Permission:GrantApplicationPermissions.AssessmentResults.Edit": "Assessment Results Update",
-    "Permission:GrantApplicationPermissions.AssessmentResults.EditApprovedAmount": "Assessment Results Edit Approved Amount",
+    "Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields": "Edit Fields After Approval",
 
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
@@ -201,6 +201,9 @@
     "Enum:GrantApplicationAction.Message.Approve": "Approved",
     "Enum:GrantApplicationAction.Message.Deny": "Declined",
 
+    "Setting:GrantManager.Locality.SectorFilter.DisplayName": "SectorFilter",
+    "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
+
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
     "Summary:Application.Category": "Category",
@@ -233,7 +236,7 @@
     "ProjectInfoView:ProjectInfo.ProjectStartDate": "Project Start Date",
     "ProjectInfoView:ProjectInfo.ProjectEndDate": "Project End Date",
     "ProjectInfoView:ProjectInfo.RequestedAmount": "Requested Amount",
-    "ProjectInfoView:ProjectInfo.TotalProjectBudget": "Project Budget",
+    "ProjectInfoView:ProjectInfo.TotalProjectBudget": "Total Project Budget",
     "ProjectInfoView:ProjectInfo.PercentageTotalProjectBudget": "% of Total Project Budget",
     "ProjectInfoView:ProjectInfo.ProjectFundingTotal": "Projected Funding Total",
     "ProjectInfoView:ProjectInfo.Sector": "Sector",
@@ -241,12 +244,12 @@
     "ProjectInfoView:ProjectInfo.Community": "Community",
     "ProjectInfoView:ProjectInfo.EconomicRegion": "Economic Region",
     "ProjectInfoView:ProjectInfo.ElectoralDistrict": "Electoral District",
-    "ProjectInfoView:ProjectInfo.CommunityPopulation": "Community Census Population",
+    "ProjectInfoView:ProjectInfo.CommunityPopulation": "Community Population",
     "ProjectInfoView:ProjectInfo.Acquisition": "Acquisition",
     "ProjectInfoView:ProjectInfo.Forestry": "Forestry/Non-Forestry",
     "ProjectInfoView:ProjectInfo.ForestryFocus": "Forestry Focus",
     "ProjectInfoView:ProjectInfo.CensusSubdivision": "Census Subdivision",
-    "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District (Census Division)",
+    "ProjectInfoView:ProjectInfo.RegionalDistrict": "Regional District",
     "ProjectInfoView:ProjectInfoLocation": "Project Location",
     "ProjectInfoView:ProjectInfoContactInfo": "Contact Info",
     "ProjectInfoView:ProjectInfo.ContactFullName": "Contact Full Name",

@@ -53,3 +53,7 @@
 .user-tags-details-input-wrapper {
     border: 0px;
 }
+
+.currency-display {
+    text-align: right;
+}

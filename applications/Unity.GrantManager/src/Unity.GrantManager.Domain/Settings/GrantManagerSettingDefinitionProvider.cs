@@ -1,4 +1,6 @@
-﻿using Volo.Abp.Settings;
+﻿using Unity.GrantManager.Localization;
+using Volo.Abp.Localization;
+using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.Settings;
 
@@ -6,7 +8,13 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
 {
     public override void Define(ISettingDefinitionContext context)
     {
-        //Define your own settings here. Example:
-        //context.Add(new SettingDefinition(GrantManagerSettings.MySetting1));
+        context.Add(
+            new SettingDefinition(SettingsConstants.SectorFilterName,string.Empty, L("Setting:GrantManager.Locality.SectorFilter.DisplayName"), L("Setting:GrantManager.Locality.SectorFilter.Description"),isVisibleToClients:true,isInherited:false,isEncrypted:false).WithProviders(TenantSettingValueProvider.ProviderName)
+        );
+    }
+
+    private static LocalizableString L(string name)
+    {
+        return LocalizableString.Create<GrantManagerResource>(name);
     }
 }
