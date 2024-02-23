@@ -30,6 +30,7 @@ using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
+using Unity.GrantManager.Web.Services;
 using Unity.Identity.Web;
 using Unity.TenantManagement.Web;
 using Volo.Abp;
@@ -111,6 +112,7 @@ public class GrantManagerWebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
+        ConfigureUtils(context);
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
@@ -156,6 +158,11 @@ public class GrantManagerWebModule : AbpModule
         {
             x.ApplicationName = "GrantManager";
         });
+    }
+
+    private static void ConfigureUtils(ServiceConfigurationContext context)
+    {
+        context.Services.AddScoped<BrowserUtils>();
     }
 
     private static void ConfgureFormsApiAuhentication(ServiceConfigurationContext context)
