@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -237,6 +238,17 @@ namespace Unity.GrantManager.Intakes
 
             }
             return address;
+        }
+
+        public async Task ResyncSubmissionAttachments(Guid applicationId)
+        {
+            var query = from applicationFormSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()
+                            where applicationFormSubmission.ApplicationId == applicationId
+                            select applicationFormSubmission;
+            ApplicationFormSubmission? applicationFormSubmissionData = await AsyncExecuter.FirstOrDefaultAsync(query);
+            if(applicationFormSubmissionData == null) return;
+            var formSubmission = JsonConvert.DeserializeObject<dynamic>(applicationFormSubmissionData.Submission)!;
+            await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(applicationId, formSubmission);
         }
     }
 }

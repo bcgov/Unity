@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Intakes;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 
@@ -19,16 +20,19 @@ namespace Unity.GrantManager.GrantApplications
         private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
         private readonly IPersonRepository _personRepository;
         private readonly IApplicationChefsFileAttachmentRepository _applicationChefsFileAttachmentRepository;
+        private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
 
-        public AttachmentService(IApplicationAttachmentRepository applicationAttachmentRepository, 
+        public AttachmentService(IApplicationAttachmentRepository applicationAttachmentRepository,
             IAssessmentAttachmentRepository assessmentAttachmentRepository,
             IPersonRepository personUserRepository,
-            IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository)
+            IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
+            IIntakeFormSubmissionManager intakeFormSubmissionManager)
         {
             _applicationAttachmentRepository = applicationAttachmentRepository;
             _assessmentAttachmentRepository = assessmentAttachmentRepository;
             _personRepository = personUserRepository;
             _applicationChefsFileAttachmentRepository = applicationChefsFileAttachmentRepository;
+            _intakeFormSubmissionManager = intakeFormSubmissionManager;
         }
 
         public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
@@ -70,6 +74,11 @@ namespace Unity.GrantManager.GrantApplications
         public async Task<List<ApplicationChefsFileAttachment>> GetApplicationChefsFileAttachmentsAsync(Guid applicationId)
         {
             return await _applicationChefsFileAttachmentRepository.GetListAsync(applicationId);
+        }
+
+        public async Task ResyncSubmissionAttachmentsAsync(Guid applicationId)
+        {
+            await _intakeFormSubmissionManager.ResyncSubmissionAttachments(applicationId);
         }
     }
 }
