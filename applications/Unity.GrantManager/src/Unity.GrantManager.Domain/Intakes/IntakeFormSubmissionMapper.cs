@@ -18,11 +18,12 @@ namespace Unity.GrantManager.Intakes
         private readonly Dictionary<string, string> components = new Dictionary<string, string>();
         private readonly IApplicationChefsFileAttachmentRepository _iApplicationChefsFileAttachmentRepository;
 
-        public IntakeFormSubmissionMapper(IApplicationChefsFileAttachmentRepository iApplicationChefsFileAttachmentRepository) {
+        public IntakeFormSubmissionMapper(IApplicationChefsFileAttachmentRepository iApplicationChefsFileAttachmentRepository)
+        {
             _iApplicationChefsFileAttachmentRepository = iApplicationChefsFileAttachmentRepository;
         }
 
-        private readonly List<string> AllowableContainerTypes = new List<string> (new string[] 
+        private readonly List<string> AllowableContainerTypes = new List<string>(new string[]
             {
                 "tabs",
                 "table",
@@ -65,7 +66,8 @@ namespace Unity.GrantManager.Intakes
                     }
 
                 }
-            } catch(Exception ex) 
+            }
+            catch (Exception ex)
             {
                 // Duplicates are not an issue when adding the components 
                 // as it is a hash if it exists already it should be ok just continue on
@@ -78,10 +80,12 @@ namespace Unity.GrantManager.Intakes
         {
             string subTokenString = "components";
 #pragma warning disable CS8602 
-            if(tokenType != null && ColumnTypes.Contains(tokenType.ToString()))
+            if (tokenType != null && ColumnTypes.Contains(tokenType.ToString()))
             {
                 subTokenString = "columns";
-            } else if(tokenType != null && tokenType.ToString().Equals("table")) {
+            }
+            else if (tokenType != null && tokenType.ToString().Equals("table"))
+            {
                 subTokenString = "rows";
             }
 #pragma warning restore CS8602
@@ -109,16 +113,16 @@ namespace Unity.GrantManager.Intakes
         }
 
         public void GetAllInputComponents(JToken? tokenComponents)
-        {             
-             // check if the type is in 'datagrid', 'editgrid', 'dynamicWizard' 
-             // check the visibility comp._visible
-             // check if the nestedComp.component.type equals 'panel'
+        {
+            // check if the type is in 'datagrid', 'editgrid', 'dynamicWizard' 
+            // check the visibility comp._visible
+            // check if the nestedComp.component.type equals 'panel'
             if (tokenComponents != null)
             {
                 // Iterate through tokenComponents.ChildTokens
                 foreach (JToken? childToken in tokenComponents.Children())
                 {
-                    if(childToken != null && childToken.Type == JTokenType.Object)
+                    if (childToken != null && childToken.Type == JTokenType.Object)
                     {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                         dynamic? tokenInput = childToken["input"];
@@ -133,18 +137,22 @@ namespace Unity.GrantManager.Intakes
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
                             dynamic nestedTokenComponents = childToken.SelectToken(subTokenString);
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-                            if (nestedTokenComponents != null) { 
+                            if (nestedTokenComponents != null)
+                            {
                                 foreach (JToken nestedTokenComponent in nestedTokenComponents.Children())
                                 {
-                                    if(subTokenString == "rows")
+                                    if (subTokenString == "rows")
                                     {
                                         GetAllInputComponents(nestedTokenComponent);
-                                    } else {
+                                    }
+                                    else
+                                    {
                                         ConsumeToken(nestedTokenComponent);
                                     }
                                 }
                             }
-                        } else
+                        }
+                        else
                         {
                             ConsumeToken(childToken);
                         }
@@ -188,36 +196,20 @@ namespace Unity.GrantManager.Intakes
 
         public async void SaveChefsFiles(dynamic formSubmission, Guid applicationId)
         {
-            try
+            Dictionary<Guid, string> files = ExtractSubmissionFiles(formSubmission);
+            var submissionId = formSubmission.submission.id;
+
+            foreach (var file in files)
             {
-                var submission = formSubmission.submission;
-                var data = submission.submission.data;                
-                List<JToken> nodes = new List<JToken>();
-                FindNodes(data, "simplefile", nodes);
-#pragma warning disable S4158
-                foreach (JToken file in nodes)
-#pragma warning restore S4158
-                {
-                    var nodeName = ((JProperty)file).Name;
-                    dynamic? fileObject = new JObject(file);
-                    var id = fileObject[nodeName][0]["data"]["id"].Value;
-                    var originalName = fileObject[nodeName][0]["originalName"].Value;
-                    ApplicationChefsFileAttachment applicationChefsFileAttachment = new()
+                await _iApplicationChefsFileAttachmentRepository
+                    .InsertAsync(new ApplicationChefsFileAttachment
                     {
                         ApplicationId = applicationId,
-                        ChefsFileId = id,
-                        ChefsSumbissionId = submission.id,
-                        Name = originalName,
-                    };
-
-                    await _iApplicationChefsFileAttachmentRepository.InsertAsync(applicationChefsFileAttachment);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogException(ex);
-            }
-
+                        ChefsFileId = file.Key.ToString(),
+                        ChefsSumbissionId = submissionId,
+                        Name = file.Value,
+                    });
+            }            
         }
 
         private static void FindNodes(JToken json, string name, List<JToken> nodes)
@@ -240,6 +232,13 @@ namespace Unity.GrantManager.Intakes
                     FindNodes(child, name, nodes);
                 }
             }
+        }
+
+        private static List<JToken> FindNodes(JToken json, string name)
+        {
+            var nodes = new List<JToken>();
+            FindNodes(json, name, nodes);
+            return nodes;
         }
 
         private static IntakeMapping ApplyDefaultConfigurationMapping(dynamic data, dynamic form)
@@ -280,6 +279,76 @@ namespace Unity.GrantManager.Intakes
 
             return intakeMapping;
         }
+
+        public Dictionary<Guid, string> ExtractSubmissionFiles(dynamic formSubmission)
+        {
+            var files = new Dictionary<Guid, string>();
+
+            var submission = formSubmission.submission;
+            var data = submission.submission.data;
+            var version = formSubmission.version;
+
+            foreach (var fileKey in GetFileKeys(version))
+            {
+                var nodes = FindNodes(data, fileKey);
+
+                foreach (JToken filesNode in nodes) //object containing array of files
+                {
+                    foreach (JToken prop in filesNode) //array of files
+                    {
+                        foreach (var obj in (JArray)prop) //each file in array
+                        {
+                            dynamic? fileObject = obj;
+                            var id = fileObject.data.id;
+                            var originalName = fileObject.originalName;
+                            var uuid = Guid.Parse(Convert.ToString(id));
+                            if (!files.ContainsKey(uuid))
+                                files.Add(uuid, Convert.ToString(originalName));
+                        }
+                    }
+                }
+            }
+
+            return files;
+        }
+
+        private List<string> GetFileKeys(dynamic version)
+        {
+            return FindFileKeys(version, "type", "simplefile");
+        }
+
+        private static List<string> FindFileKeys(JToken json, string key, string value)
+        {
+            var nodes = new List<JToken>();
+            FindFileKeyNodes(json, key, value, nodes);
+            return nodes.Select(s => s.ToString()).ToList();
+        }
+
+        private static void FindFileKeyNodes(JToken json, string key, string value, List<JToken> nodes)
+        {
+            if (json.Type == JTokenType.Object)
+            {
+                foreach (JProperty child in json.Children<JProperty>())
+                {
+                    if (child.Name.StartsWith(key) && child.Value.ToString().Equals(value) && json!["key"] != null)
+                    {
+                        JToken? node = json!["key"];
+                        if (node != null)
+                        {
+                            nodes.Add(node);
+                        }
+                    }
+                    FindFileKeyNodes(child.Value, key, value, nodes);
+                }
+            }
+            else if (json.Type == JTokenType.Array)
+            {
+                foreach (JToken child in json.Children())
+                {
+                    FindFileKeyNodes(child, key, value, nodes);
+                }
+            }
+        }       
     }
 
     public static class MapperExtensions
