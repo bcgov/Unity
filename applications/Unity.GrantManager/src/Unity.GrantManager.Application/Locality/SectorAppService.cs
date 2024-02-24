@@ -56,12 +56,12 @@ namespace Unity.GrantManager.Locality
             var sectorFilter = await _settingManager.GetOrNullForCurrentTenantAsync(SettingsConstants.SectorFilterName);
             if (string.IsNullOrEmpty(sectorFilter))
             {
-                return applicationSectorDtos;
+                return applicationSectorDtos.OrderBy(s => s.SectorName).ToList();
             }
             else
             {
                 string[] sectorCodes = sectorFilter.Split(',');
-                return applicationSectorDtos.Where(x => sectorCodes.Contains(x.SectorCode)).ToList();
+                return applicationSectorDtos.Where(x => sectorCodes.Contains(x.SectorCode)).OrderBy(s => s.SectorName).ToList();
             }
         }
     }
