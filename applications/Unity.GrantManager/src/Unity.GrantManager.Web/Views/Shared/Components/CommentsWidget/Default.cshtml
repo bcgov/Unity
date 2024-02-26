@@ -48,7 +48,15 @@
                             @comment.Comment
                         </div>
                     </div>
-                    <div class="commented-time mt-3">@comment.CreationTime.ToString("yyyy-MM-dd h:mm tt")</div>
+                    @if (@comment.LastModificationTime != null)
+                    {
+                        <div class="commented-time mt-3">Modified: @comment.LastModificationTime?.ToString("yyyy-MM-dd h:mm tt")</div>
+                    }
+                    else
+                    {
+                        <div class="commented-time mt-3">@comment.CreationTime.ToString("yyyy-MM-dd h:mm tt")</div>
+                    }
+                    
                 </div>
 
                 <div class="single-comment edit-mode" data-id="@comment.Id"  style="display: none;">
