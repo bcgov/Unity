@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,9 +20,9 @@ public class ApplicationContactAppService : ApplicationService, IApplicationCont
         _applicationContactRepository = repository;
     }
 
-    public async Task<IList<ApplicationContactDto>> GetListAsync()
+    public async Task<IList<ApplicationContactDto>> GetListAsync(Guid applicationId)
     {        
-        var contacts = await _applicationContactRepository.GetListAsync();
+        var contacts = await _applicationContactRepository.GetListAsync(c => c.ApplicationId == applicationId);
 
         return ObjectMapper.Map<List<ApplicationContact>, List<ApplicationContactDto>>(contacts.OrderBy(c => c.ContactType).ToList());
     }
@@ -29,6 +30,12 @@ public class ApplicationContactAppService : ApplicationService, IApplicationCont
     public async Task<ApplicationContactDto> CreateAsync(ApplicationContactDto input)
     {
         var newContact = await _applicationContactRepository.InsertAsync(ObjectMapper.Map<ApplicationContactDto, ApplicationContact>(input), autoSave: true);
+        return ObjectMapper.Map<ApplicationContact, ApplicationContactDto>(newContact);
+    }
+
+    public async Task<ApplicationContactDto> UpdateAsync(ApplicationContactDto input)
+    {
+        var newContact = await _applicationContactRepository.UpdateAsync(ObjectMapper.Map<ApplicationContactDto, ApplicationContact>(input), autoSave: true);
         return ObjectMapper.Map<ApplicationContact, ApplicationContactDto>(newContact);
     }
 }
