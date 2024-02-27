@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Web.Pages.ApplicationContact;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
 
 namespace Unity.GrantManager.Web.Mapping
@@ -11,6 +12,7 @@ namespace Unity.GrantManager.Web.Mapping
         {
             CreateMap<Application, GrantApplicationDto>();
             CreateMap<GetSummaryDto, SummaryWidgetViewModel>();
+            CreateMap<ContactModalViewModel, ApplicationContactDto>();
         }
     }
 }
