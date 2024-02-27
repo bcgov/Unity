@@ -92,6 +92,7 @@
     "ReviewerList:EconomicImpact": "Economic Impact",
     "ReviewerList:InclusiveGrowth": "Inclusive Growth",
     "ReviewerList:CleanGrowth": "Clean Growth",
+    "ReviewerList:Subtotal": "Subtotal",
 
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",

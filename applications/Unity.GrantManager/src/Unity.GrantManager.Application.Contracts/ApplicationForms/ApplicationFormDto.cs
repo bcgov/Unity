@@ -17,5 +17,8 @@ namespace Unity.GrantManager.ApplicationForms
         public string? Category { get; set; }
         public int? Version { get; set; }
         public string? ApiToken { get; set; }
+        public string? ConnectionHttpStatus { get; set; }
+        public DateTime? AttemptedConnectionDate { get; set; }
+        public Guid? TenantId { get; set; }
     }
 }

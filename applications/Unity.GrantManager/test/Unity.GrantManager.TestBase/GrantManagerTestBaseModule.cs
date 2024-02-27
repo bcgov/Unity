@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
+using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
@@ -7,6 +8,9 @@ using Volo.Abp.Data;
 using Volo.Abp.Modularity;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
+using Volo.Abp.Quartz;
+using System;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager;
 
@@ -21,6 +25,14 @@ public class GrantManagerTestBaseModule : AbpModule
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddDataMigrationEnvironment();
+        Quartz.Logging.LogContext.SetCurrentLogProvider(NullLoggerFactory.Instance);
+        PreConfigure<AbpQuartzOptions>(options =>
+        {
+            options.Configurator = configure =>
+            {
+                configure.SchedulerName = Guid.NewGuid().ToString();
+            };
+        });
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -31,6 +43,8 @@ public class GrantManagerTestBaseModule : AbpModule
         {
             options.IsJobExecutionEnabled = false;
         });
+
+        Configure<AbpBackgroundWorkerQuartzOptions>(options => { options.IsAutoRegisterEnabled = false; });
 
         context.Services.AddAlwaysAllowAuthorization();
     }

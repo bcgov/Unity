@@ -30,5 +30,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 return false;
             }
         }
+
+        public int? ScoreTotal()
+        {
+            return FinancialAnalysis + EconomicImpact + InclusiveGrowth + CleanGrowth;
+        }
     }
 }
