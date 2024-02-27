@@ -12,6 +12,8 @@
     Layout = null;
 }
 
+<input type="hidden" id="SummaryWidgetApplicationId" value="@Model.ApplicationId" />
+
 <abp-row class="px-1 pb-2 mb-4 summary-container">
     <h6 class="ps-2 fw-bold">@L["Summary:ApplicationSummaryTitle"].Value</h6>
     <table aria-describedby="Submission" class="summary-table">
@@ -238,7 +240,7 @@
     </div>
     <div class="d-flex justify-content-end">
         <abp-button text="Add Contact"
-            id="addContactBtn"
+            id="AddContactButton"
             class="add_contact_btn"
             icon-type="Other"
             icon="fl fl-plus"

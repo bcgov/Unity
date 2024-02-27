@@ -33,7 +33,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 
             var summaryDto = await _grantApplicationService.GetSummaryAsync(applicationId);
 
-            return View(ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto));
+            SummaryWidgetViewModel summaryWidgetViewModel = ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto);
+            summaryWidgetViewModel.ApplicationId = applicationId.ToString();
+
+            return View(summaryWidgetViewModel);
         }
     }
 
