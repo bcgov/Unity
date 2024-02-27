@@ -29,4 +29,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         margin-bottom: 0;
-    }
+ }
+.assessment-sum{
+    margin-top :2px;
+}

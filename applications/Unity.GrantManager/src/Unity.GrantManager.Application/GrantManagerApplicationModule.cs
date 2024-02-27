@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -18,6 +18,7 @@ using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
+using Volo.Abp.BackgroundWorkers.Quartz;
 
 namespace Unity.GrantManager;
 
@@ -28,9 +29,11 @@ namespace Unity.GrantManager;
     typeof(AbpPermissionManagementApplicationModule),
     typeof(UnityTenantManagementApplicationModule),
     typeof(AbpFeatureManagementApplicationModule),
-    typeof(AbpSettingManagementApplicationModule)
+    typeof(AbpSettingManagementApplicationModule),
+    typeof(AbpBackgroundWorkersQuartzModule)
     )]
-public class GrantManagerApplicationModule : AbpModule
+[DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
+    public class GrantManagerApplicationModule : AbpModule
 {
     //Set some defaults 
 

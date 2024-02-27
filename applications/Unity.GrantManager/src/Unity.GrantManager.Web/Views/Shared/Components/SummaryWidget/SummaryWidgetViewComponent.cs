@@ -7,6 +7,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Web.Services;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 {
@@ -17,15 +18,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
         AutoInitialize = true)]
     public class SummaryWidgetViewComponent : AbpViewComponent
     {
-        private readonly IGrantApplicationAppService _grantApplicationService;        
+        private readonly IGrantApplicationAppService _grantApplicationService;
+        private readonly BrowserUtils _browserUtils;
 
-        public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService)
+        public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService,
+            BrowserUtils browserUtils)
         {
             _grantApplicationService = grantApplicationAppService;
+            _browserUtils = browserUtils;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
+            var offset = _browserUtils.GetBrowserOffset();
+
             if (applicationId == Guid.Empty)
             {
                 return View(new SummaryWidgetViewModel());
@@ -33,8 +39,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 
             var summaryDto = await _grantApplicationService.GetSummaryAsync(applicationId);
 
+            summaryDto.SubmissionDate = summaryDto.SubmissionDate?.AddMinutes(-offset);
+
             return View(ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto));
-        }
+        }      
     }
 
     public class SummaryWidgetStyleBundleContributor : BundleContributor
