@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Intakes
@@ -10,6 +11,7 @@ namespace Unity.GrantManager.Intakes
         string InitializeAvailableFormFields(dynamic formVersion);
 
         IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission, string? mapFormSubmissionFields);
-        void SaveChefsFiles(dynamic formSubmission, Guid applicationId);
+        Task ResyncSubmissionAttachments(Guid applicationId, dynamic formSubmission);
+        Task SaveChefsFiles(dynamic formSubmission, Guid applicationId);
     }
 }

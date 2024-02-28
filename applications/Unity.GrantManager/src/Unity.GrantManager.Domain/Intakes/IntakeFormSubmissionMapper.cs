@@ -3,10 +3,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Services;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -194,7 +194,7 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        public async void SaveChefsFiles(dynamic formSubmission, Guid applicationId)
+        public async Task SaveChefsFiles(dynamic formSubmission, Guid applicationId)
         {
             Dictionary<Guid, string> files = ExtractSubmissionFiles(formSubmission);
             var submissionId = formSubmission.submission.id;
@@ -348,7 +348,25 @@ namespace Unity.GrantManager.Intakes
                     FindFileKeyNodes(child, key, value, nodes);
                 }
             }
-        }       
+        }
+
+        public async Task ResyncSubmissionAttachments(Guid applicationId, dynamic formSubmission)
+        {
+            await DeleteExistingChefsAttachmentRecords(applicationId);
+            await SaveChefsFiles(formSubmission, applicationId);
+        }
+
+        private async Task DeleteExistingChefsAttachmentRecords(Guid applicationId)
+        {
+            var query = from chefsAttachment in await _iApplicationChefsFileAttachmentRepository.GetQueryableAsync()
+                        where chefsAttachment.ApplicationId == applicationId
+                        select chefsAttachment.Id;
+            IList<Guid> chefsAttachmentsGuids = query.ToList();
+            foreach (Guid chefsAttachmentGuid in chefsAttachmentsGuids)
+            {
+                await _iApplicationChefsFileAttachmentRepository.DeleteAsync(chefsAttachmentGuid);
+            }
+        }
     }
 
     public static class MapperExtensions
