@@ -10,6 +10,8 @@ namespace Unity.GrantManager.Comments
         public Guid CommenterId { get; set; }
         public DateTime CreationTime { get; set; }
         public Guid OwnerId { get; set; }     
-        public Guid Id { get; set; }    
-    }
+        public Guid Id { get; set; }
+        public DateTime? LastModificationTime { get; set; }
+
+}
 }

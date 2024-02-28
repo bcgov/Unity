@@ -54,6 +54,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
                     Commenter = item.Commenter,
                     CreationTime = item.CreationTime.AddMinutes(-offset),
                     CommenterId = item.CommenterId,
+                    LastModificationTime = item.LastModificationTime?.AddMinutes(-offset),
                     Id = item.Id,
                     OwnerId = item.OwnerId
                 };
