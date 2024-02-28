@@ -9,6 +9,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
 using Volo.Abp.PermissionManagement;
 using Microsoft.Extensions.Configuration;
+using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.Web.Identity.LoginHandlers
 {
@@ -21,6 +22,9 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
         protected PermissionManager PermissionManager => LazyServiceProvider.LazyGetRequiredService<PermissionManager>();
         protected IIdentityUserRepository IdentityUserRepository => LazyServiceProvider.LazyGetRequiredService<IIdentityUserRepository>();
         protected IConfiguration Configuration => LazyServiceProvider.LazyGetRequiredService<IConfiguration>();
+        protected IUserImportAppService UserImportAppService => LazyServiceProvider.LazyGetRequiredService<IUserImportAppService>();
+        protected ITenantRepository TenantRepository => LazyServiceProvider.LazyGetRequiredService<ITenantRepository>();
+        protected IUserTenantAppService UserTenantsAppService => LazyServiceProvider.LazyGetRequiredService<IUserTenantAppService>();
 
         protected static void AssignDefaultClaims(ClaimsPrincipal claimsPrinicipal, string displayName, Guid userId)
         {

@@ -6,6 +6,7 @@ namespace Unity.GrantManager.Identity
 {
     public interface IUserImportAppService : IApplicationService
     {
+        Task AutoImportUserIntenalAsync(ImportUserDto importUserDto);
         Task ImportUserAsync(ImportUserDto importUserDto);
         Task<IList<UserDto>> SearchAsync(UserSearchDto importUserSearchDto);
     }

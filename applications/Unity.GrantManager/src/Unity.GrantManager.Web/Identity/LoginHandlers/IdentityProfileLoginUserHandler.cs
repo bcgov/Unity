@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using OpenIddict.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -18,6 +19,9 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
 {
     internal class IdentityProfileLoginUserHandler : IdentityProfileLoginBase
     {
+        internal readonly ImmutableArray<string> _userPermissions = ImmutableArray
+            .Create(GrantManagerPermissions.Default, IdentityPermissions.UserLookup.Default);
+
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
           IList<UserTenantAccountDto>? userTenantAccounts)
         {
@@ -27,7 +31,15 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             {
                 if (UseAutoRegisterUserWithDefault())
                 {
-                    userTenantAccounts = await AutoRegisterUserWithDefaultAsync();
+                    var userIdentifier = GetClaimValue(validatedTokenContext.SecurityToken, UnityClaimsTypes.IDirUserGuid);
+                    var userSubject = GetClaimValue(validatedTokenContext.SecurityToken, UnityClaimsTypes.Subject);
+
+                    if (userIdentifier == null || userSubject == null)
+                    {
+                        throw new AutoRegisterUserException("Error auto registering user");
+                    }
+
+                    userTenantAccounts = await AutoRegisterUserWithDefaultAsync(userIdentifier, userSubject);
                 }
                 else
                 {
@@ -64,9 +76,9 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
 
                 foreach (var permissionName in userPermissions.Select(s => s.Name))
                 {
-                    if (!principal.HasClaim("Permission", permissionName))
+                    if (!principal.HasClaim(UnityClaimsTypes.Permission, permissionName))
                     {
-                        principal.AddClaim("Permission", permissionName);
+                        principal.AddClaim(UnityClaimsTypes.Permission, permissionName);
                     }
                 }
             }
@@ -79,9 +91,24 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             return userTenantAccount;
         }
 
-        private Task<IList<UserTenantAccountDto>> AutoRegisterUserWithDefaultAsync()
+        private async Task<IList<UserTenantAccountDto>> AutoRegisterUserWithDefaultAsync(string userIdentifier, string userSubject)
         {
-            throw new NotImplementedException();
+            var tenant = await TenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
+
+            using (CurrentTenant.Change(tenant.Id))
+            {
+                await UserImportAppService.AutoImportUserIntenalAsync(new ImportUserDto()
+                {
+                    Directory = "IDIR",
+                    Guid = userIdentifier,
+                    Roles = new string[] { UnityRoles.ProgramManager }
+                });
+
+                // Re-read tenant accounts and return
+                return (await UserTenantsAppService
+                    .GetUserTenantsAsync(userSubject))
+                    .Where(s => s.TenantId != null).ToList();
+            }
         }
 
         private bool UseAutoRegisterUserWithDefault()
@@ -97,13 +124,12 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
 
         private bool IsAutoRegisterFlagSet()
         {
-            return Configuration.GetValue<bool>("IdentityProfileLogin:AutoCreateUser");            
+            return Configuration.GetValue<bool>("IdentityProfileLogin:AutoCreateUser");
         }
 
-        private static void AssignDefaultPermissions(ClaimsPrincipal claimsPrincipal)
+        private void AssignDefaultPermissions(ClaimsPrincipal claimsPrincipal)
         {
-            claimsPrincipal.AddClaim("Permission", GrantManagerPermissions.Default);
-            claimsPrincipal.AddClaim("Permission", IdentityPermissions.UserLookup.Default);
+            claimsPrincipal.AddPermissions(_userPermissions);
         }
     }
 }
