@@ -389,6 +389,24 @@ $(function () {
         })
     );
 
+    $('#resyncSubmissionAttachments').click(function () {
+        let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
+        try {
+            unity.grantManager.grantApplications.attachment
+                .resyncSubmissionAttachments(applicationId)
+                .done(function () {
+                    abp.notify.success(
+                        'Submission Attachment/s has been resynced.'
+                    );
+                    dataTable.ajax.reload();
+                    dataTable.columns.adjust();
+                });
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
+
     $('#attachments-tab').one('click', function () {
         dataTable.columns.adjust();
     });
@@ -570,6 +588,7 @@ function initCommentsWidget() {
             tagsWidgetManager.refresh();
         }
     );
+    
 }
 
 function setDetailsContext(context) {
