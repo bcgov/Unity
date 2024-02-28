@@ -267,7 +267,7 @@ public class GrantApplicationAppService :
                     select new GetSummaryDto
                     {
                         Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = TimeZoneInfo.ConvertTimeFromUtc(application.SubmissionDate, TimeZoneInfo.Local).ToShortDateString(),
+                        SubmissionDate = application.SubmissionDate,
                         OrganizationName = applicant.OrgName,
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
