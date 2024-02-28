@@ -55,6 +55,7 @@
                     );
                     toggleEditMode(commentId);
                     $(".comment-lbl[data-id='" + commentId + "']").text(comment);
+                    PubSub.publish(commentType + '_refresh');
                 });
         }
         catch (error) {

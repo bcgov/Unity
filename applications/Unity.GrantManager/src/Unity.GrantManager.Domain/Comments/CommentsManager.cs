@@ -107,7 +107,8 @@ namespace Unity.GrantManager.Comments
                                                      CommenterBadge = user.Badge,
                                                      CreationTime = applicationComment.CreationTime,
                                                      OwnerId = ownerId,
-                                                     Id = applicationComment.Id
+                                                     Id = applicationComment.Id,
+                                                     LastModificationTime = applicationComment.LastModificationTime,
                                                  };
                     return applicationCommentsQry.ToList();
                 case CommentType.AssessmentComment:
@@ -123,7 +124,8 @@ namespace Unity.GrantManager.Comments
                                                     CommenterBadge = user.Badge,
                                                     CreationTime = assessmentComment.CreationTime,
                                                     OwnerId = ownerId,
-                                                    Id = assessmentComment.Id
+                                                    Id = assessmentComment.Id,
+                                                    LastModificationTime = assessmentComment.LastModificationTime,
                                                 };
                     return assessmentCommentsQry.ToList();
                 default:
