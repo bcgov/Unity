@@ -17,5 +17,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string? AvailableChefsFields { get; set; }
     public int? Version { get; set; }
     public string? Category { get; set; }
+    public string? ConnectionHttpStatus { get; set; }
+    public DateTime? AttemptedConnectionDate { get; set; }
     public Guid? TenantId { get; set; }
 }
