@@ -48,5 +48,7 @@
         public string? SubmissionId { get; set; }
         public string? SubSector { get; set; }
         public string? TotalProjectBudget { get; set; }
+
+        public string? SectorSubSectorIndustryDesc { get; set; }
     }
 }

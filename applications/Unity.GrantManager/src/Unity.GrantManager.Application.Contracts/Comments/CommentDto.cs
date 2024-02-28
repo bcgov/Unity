@@ -10,6 +10,7 @@ namespace Unity.GrantManager.Comments
         public string Badge { get; set; } = string.Empty;
         public DateTime CreationTime { get; set; }
         public Guid OwnerId { get; set; }
-        public Guid CommenterId { get; set; }           
+        public Guid CommenterId { get; set; }
+        public DateTime? LastModificationTime { get; set; }
     }
 }
