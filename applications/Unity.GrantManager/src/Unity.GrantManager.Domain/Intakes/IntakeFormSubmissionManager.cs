@@ -189,6 +189,7 @@ namespace Unity.GrantManager.Intakes
                 OrganizationType = intakeMap.OrganizationType ?? "{OrganizationType}",
                 Sector = intakeMap.Sector ?? "{Sector}",
                 SubSector = intakeMap.SubSector ?? "{SubSector}",
+                SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc ?? "{SectorSubSectorIndustryDesc}",
                 ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
             });

@@ -159,7 +159,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 ContactTitle = application.ContactTitle,
                 ContactEmail = application.ContactEmail,
                 ContactBusinessPhone = application.ContactBusinessPhone,
-                ContactCellPhone = application.ContactCellPhone
+                ContactCellPhone = application.ContactCellPhone,
+                SectorSubSectorIndustryDesc = application.SectorSubSectorIndustryDesc
             };
 
             return View(model);
