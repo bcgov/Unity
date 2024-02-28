@@ -83,6 +83,7 @@
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
     "ApplicationList:TagButton": "Tags",
     "ApplicationList:ResyncSubmissionAttachmentsButton": "Resync",
+    "ApplicationList:ResyncAllSubmissionAttachmentsButton": "Resync All Submission Attachments",
 
     "ReviewerList:AssessorName": "Assessor Name",
     "ReviewerList:StartDate": "Start Date",
