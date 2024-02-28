@@ -250,17 +250,18 @@
                                         button-type="Light" />
                         </form>
                     </div>
-                    <div>
+                    <div class="attachments__title-button-split">
                         <div style="display:inline-block">
                             <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Submission Attachments</h6>
                         </div>
                         <div style="display:inline-block">
                             @if (User.IsInRole(UnityRoles.SystemAdmin))
                             {
-                                <abp-button id="resyncSubmissionAttachments"
-                                            text="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value"
+                                <abp-button id="resyncSubmissionAttachments"                                            
                                             icon-type="Other"
-                                            icon="fl fl-link"
+                                            size="Large"
+                                            icon="fl fl-synch"
+                                            abp-tooltip="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value"
                                             button-type="Light" />
                             }
                         </div>

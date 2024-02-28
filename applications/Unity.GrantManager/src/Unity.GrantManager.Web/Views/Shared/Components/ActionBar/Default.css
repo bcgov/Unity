@@ -20,3 +20,9 @@
     align-items: center;
     justify-content: center;
 }
+
+.action-bar__drop-down-icon-link {
+    cursor: pointer;
+    display: flex;
+    gap: 0.5rem;
+}

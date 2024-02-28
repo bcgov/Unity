@@ -267,7 +267,7 @@ namespace Unity.GrantManager.Intakes
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine(ex.StackTrace);
+                    Logger.LogError("Error resyncing submission attachments for {submissionId} - {exception} ", submission.Id, ex);
                 }
             }
         }
