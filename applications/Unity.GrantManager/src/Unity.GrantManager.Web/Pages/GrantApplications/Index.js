@@ -358,7 +358,7 @@
         return {
             title: 'SubSector',
             name: 'subsector',
-            data: 'applicant.subsector',
+            data: 'applicant.subSector',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{SubSector}';
