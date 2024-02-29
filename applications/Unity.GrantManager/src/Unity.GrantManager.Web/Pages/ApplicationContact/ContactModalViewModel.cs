@@ -35,6 +35,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationContact
 
         [HiddenInput]
         public Guid? ApplicationId { get; set; }
+        
+        [HiddenInput]
+        public Guid? Id { get; set; }
 
 
         public static List<SelectListItem> FormatOptionsList(Dictionary<string, string> optionsList)

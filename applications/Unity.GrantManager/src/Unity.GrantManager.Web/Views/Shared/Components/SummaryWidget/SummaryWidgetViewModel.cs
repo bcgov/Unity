@@ -82,5 +82,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
 
         [HiddenInput]
         public string ApplicationId { get; set; } = String.Empty;
+
+        public List<ApplicationContactDto> ApplicationContacts {get; set; } = new List<ApplicationContactDto>();
     }
 }

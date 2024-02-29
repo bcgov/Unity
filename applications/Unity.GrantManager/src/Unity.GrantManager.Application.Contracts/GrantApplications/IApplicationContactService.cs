@@ -7,9 +7,12 @@ namespace Unity.GrantManager.GrantApplications;
 
 public interface IApplicationContactService : IApplicationService
 {
-    Task<IList<ApplicationContactDto>> GetListAsync(Guid applicationId);
+    Task<List<ApplicationContactDto>> GetListAsync(Guid applicationId);
+
+    Task<ApplicationContactDto> GetAsync(Guid id);
 
     Task<ApplicationContactDto> CreateAsync(ApplicationContactDto input);
-    
+
     Task<ApplicationContactDto> UpdateAsync(ApplicationContactDto input);
+    
 }

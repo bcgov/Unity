@@ -18,10 +18,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
     public class SummaryWidgetViewComponent : AbpViewComponent
     {
         private readonly IGrantApplicationAppService _grantApplicationService;        
+        private readonly IApplicationContactService _applicationContactService;        
 
-        public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService)
+        public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService, IApplicationContactService applicationContactService)
         {
             _grantApplicationService = grantApplicationAppService;
+            _applicationContactService = applicationContactService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -35,6 +37,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 
             SummaryWidgetViewModel summaryWidgetViewModel = ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto);
             summaryWidgetViewModel.ApplicationId = applicationId.ToString();
+
+            var applicationContacts = await _applicationContactService.GetListAsync(applicationId);
+            summaryWidgetViewModel.ApplicationContacts = applicationContacts;
 
             return View(summaryWidgetViewModel);
         }

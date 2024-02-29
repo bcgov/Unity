@@ -213,34 +213,43 @@
     <div class="mx-2">
         <p class="px-2 mb-0 fw-bold text-muted">Info</p>
         <hr class="my-2"/>
-        <div>
-            <div class="d-flex px-2 justify-content-between align-items-center">
-                <div>
-                    <p>Signing Authority</p>
-                    <p class="fw-bold text-muted">Jessica Alba, CEO</p>
-                    <div class="d-flex text-muted">
-                        <i class="fl fl-mail" aria-hidden="true"></i> 
-                        <div class="ms-2">jessica@comp.ca</div>
+        @foreach (var contact in Model.ApplicationContacts) {
+            <div data-id="@contact.Id">
+                <div class="d-flex px-2 justify-content-between align-items-center">
+                    <div>
+                        <p>@contact.ContactType</p>
+                        <p class="fw-bold text-muted">@contact.ContactFullName, @contact.ContactTitle</p>
+                        @if (!contact.ContactEmail.IsNullOrEmpty()) {
+                            <div class="d-flex text-muted">
+                                <i class="fl fl-mail" aria-hidden="true"></i> 
+                                <div class="ms-2">@contact.ContactEmail</div>
+                            </div>
+                        }
+                        @if (!contact.ContactMobilePhone.IsNullOrEmpty()) {
+                            <div class="d-flex text-muted">
+                                <i class="fl fl-phone" aria-hidden="true"></i> 
+                                <div class="ms-2">@contact.ContactMobilePhone</div>
+                            </div>
+                        }
+                        @if (!contact.ContactWorkPhone.IsNullOrEmpty()) {
+                            <div class="d-flex text-muted">
+                                <i class="fl fl-work" aria-hidden="true"></i> 
+                                <div class="ms-2">@contact.ContactWorkPhone</div>
+                            </div>
+                        }
                     </div>
-                    <div class="d-flex text-muted">
-                        <i class="fl fl-phone" aria-hidden="true"></i> 
-                        <div class="ms-2">+1 604-276-2424</div>
-                    </div>
-                    <div class="d-flex text-muted">
-                        <i class="fl fl-work" aria-hidden="true"></i> 
-                        <div class="ms-2">+1 604-276-2424</div>
+                    <div class="pe-2">
+                        <abp-button
+                            data-id="@contact.Id"
+                            class="contact-edit-btn"
+                            icon-type="Other"
+                            icon="fl fl-edit"
+                            button-type="Light" />
                     </div>
                 </div>
-                <div class="pe-2">
-                    <abp-button
-                        class="contact-edit-btn"
-                        icon-type="Other"
-                        icon="fl fl-edit"
-                        button-type="Light" />
-                </div>
+                <hr class="my-3"/>
             </div>
-            <hr class="my-3"/>
-        </div>
+        }
     </div>
     <div class="d-flex justify-content-end">
         <abp-button text="Add Contact"

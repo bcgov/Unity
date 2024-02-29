@@ -20,11 +20,17 @@ public class ApplicationContactAppService : ApplicationService, IApplicationCont
         _applicationContactRepository = repository;
     }
 
-    public async Task<IList<ApplicationContactDto>> GetListAsync(Guid applicationId)
-    {        
+    public async Task<List<ApplicationContactDto>> GetListAsync(Guid applicationId)
+    {
         var contacts = await _applicationContactRepository.GetListAsync(c => c.ApplicationId == applicationId);
 
         return ObjectMapper.Map<List<ApplicationContact>, List<ApplicationContactDto>>(contacts.OrderBy(c => c.ContactType).ToList());
+    }
+
+    public async Task<ApplicationContactDto> GetAsync(Guid id)
+    {
+        var contact = await _applicationContactRepository.GetAsync(id);
+        return ObjectMapper.Map<ApplicationContact, ApplicationContactDto>(contact);
     }
 
     public async Task<ApplicationContactDto> CreateAsync(ApplicationContactDto input)

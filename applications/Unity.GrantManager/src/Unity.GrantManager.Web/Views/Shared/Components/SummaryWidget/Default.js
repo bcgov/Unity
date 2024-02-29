@@ -14,4 +14,10 @@
       console.log('Contact Modal result');
   });
 
+  $('.contact-edit-btn').click(function (){
+    let itemId = $(this).data('id');  
+    console.log(itemId);
+  });
+
 });
+

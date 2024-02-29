@@ -12,6 +12,5 @@ namespace Unity.GrantManager.GrantApplications
         public string? ContactEmail { get; set; }
         public string? ContactMobilePhone { get; set; }
         public string? ContactWorkPhone { get; set; }
-        public Guid? TenantId { get; set; }   
     }
 }

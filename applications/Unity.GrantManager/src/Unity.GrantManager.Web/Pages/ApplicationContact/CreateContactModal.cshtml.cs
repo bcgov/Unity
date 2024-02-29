@@ -11,8 +11,6 @@ public class CreateContactModal : AbpPageModel
     [BindProperty]
     public ContactModalViewModel? ContactForm { get; set; }
     private readonly IApplicationContactService _applicationContactService;
-
-    private string testVar { get; set; } = String.Empty;
     
     public CreateContactModal(IApplicationContactService applicationContactService)
     {
