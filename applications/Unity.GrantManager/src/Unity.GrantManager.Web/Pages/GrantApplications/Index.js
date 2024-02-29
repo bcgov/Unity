@@ -358,7 +358,7 @@
         return {
             title: 'SubSector',
             name: 'subsector',
-            data: 'applicant.subsector',
+            data: 'applicant.subSector',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{SubSector}';
@@ -630,6 +630,8 @@
                         return 'Secondary/Value-Added/Not Mass Timber'
                     } else if (data == 'MASS_TIMBER') {
                         return 'Mass Timber';
+                    } else if(data != ''){
+                        return data;
                     } else {
                         return '{Forestry Focus}';
                     }
