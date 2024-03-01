@@ -7,7 +7,9 @@ $(function () {
     }
     let responseCallback = function (result) {
         if (result) {
-            PubSub.publish('update_application_attachment_count', result.length);
+            setTimeout(function () {
+                PubSub.publish('update_application_attachment_count', result.length);
+            }, 1000);
         }
 
         return {

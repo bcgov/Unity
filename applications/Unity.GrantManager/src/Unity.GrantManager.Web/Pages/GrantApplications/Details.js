@@ -338,17 +338,29 @@ $(function () {
     }
 
     initializeDetailsPage();
+
+    let chefsAttachmentCount = 0;
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
         return applicationId;
     }
     let responseCallback = function (result) {
+        if (result) {
+            chefsAttachmentCount = result.length;
+        }
         return {
             data: result
         };
     };
 
+    PubSub.subscribe(
+        'update_application_attachment_count',
+        (msg, data) => {
+            const totalAttachmentCount = data + chefsAttachmentCount;
+            $('#application_attachment_count').html(totalAttachmentCount);
+        }
+    );
     
     const dataTable = $('#ChefsAttachmentsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -494,15 +506,6 @@ function uploadFiles(inputId, urlStr, channel) {
         }
     );
 }
-
-const update_application_attachment_count_subscription = PubSub.subscribe(
-    'update_application_attachment_count',
-    (msg, data) => {
-        $('#application_attachment_count').html(data)
-
-
-    }
-);
 
 function getCurrentUser() {
     return abp.currentUser.id;
