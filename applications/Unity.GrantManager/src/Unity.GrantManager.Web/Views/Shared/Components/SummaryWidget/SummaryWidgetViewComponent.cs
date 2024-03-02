@@ -36,7 +36,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
             var summaryDto = await _grantApplicationService.GetSummaryAsync(applicationId);
 
             SummaryWidgetViewModel summaryWidgetViewModel = ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto);
-            summaryWidgetViewModel.ApplicationId = applicationId.ToString();
+            summaryWidgetViewModel.ApplicationId = applicationId;
 
             var applicationContacts = await _applicationContactService.GetListAsync(applicationId);
             summaryWidgetViewModel.ApplicationContacts = applicationContacts;

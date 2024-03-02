@@ -81,7 +81,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
         public GrantApplicationAssigneeDto Owner { get; set; } = new();
 
         [HiddenInput]
-        public string ApplicationId { get; set; } = String.Empty;
+        public Guid ApplicationId { get; set; }
 
         public List<ApplicationContactDto> ApplicationContacts {get; set; } = new List<ApplicationContactDto>();
     }

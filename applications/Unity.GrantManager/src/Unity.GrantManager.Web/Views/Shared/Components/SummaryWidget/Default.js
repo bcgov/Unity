@@ -1,9 +1,17 @@
 ﻿$(function () {
+  let applicationId = document.getElementById('SummaryWidgetApplicationId').value;
   let contactModal = new abp.ModalManager(abp.appPath + 'ApplicationContact/CreateContactModal');
 
-  $('#AddContactButton').click(function (e) {
-    let applicationId = document.getElementById('SummaryWidgetApplicationId').value;
-    
+  let applicationContactsWidgetManager = new abp.WidgetManager({
+    wrapper: '#applicationContactsWidget',
+    filterCallback: function () {
+        return {
+            'applicationId': applicationId
+        };
+    }
+  });
+
+  $('#AddContactButton').click(function (e) {    
     e.preventDefault();
     contactModal.open({
       applicationId: applicationId
@@ -12,12 +20,9 @@
 
   contactModal.onResult(function () {
       console.log('Contact Modal result');
+      applicationContactsWidgetManager.refresh();
   });
-
-  $('.contact-edit-btn').click(function (){
-    let itemId = $(this).data('id');  
-    console.log(itemId);
-  });
+  
 
 });
 
