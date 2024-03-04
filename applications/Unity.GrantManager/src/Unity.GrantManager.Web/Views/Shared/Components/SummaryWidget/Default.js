@@ -19,10 +19,18 @@
   });
 
   contactModal.onResult(function () {
-      console.log('Contact Modal result');
-      applicationContactsWidgetManager.refresh();
+    abp.notify.success(
+      'The application contact have been successfully added.',
+      'Application Contacts'
+    );
+    applicationContactsWidgetManager.refresh();
   });
-  
 
+  PubSub.subscribe(
+    'refresh_application_contacts',
+    (msg, data) => {
+      applicationContactsWidgetManager.refresh();
+    }
+  );
 });
 
