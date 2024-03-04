@@ -6,10 +6,10 @@ $(function () {
         return applicationId;
     }
     let responseCallback = function (result) {
-        if (result) {
+        if (result) {            
             setTimeout(function () {
-                PubSub.publish('update_application_attachment_count', result.length);
-            }, 1000);
+                PubSub.publish('update_application_attachment_count', { files: result.length });
+            }, 10);
         }
 
         return {

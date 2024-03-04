@@ -339,7 +339,10 @@ $(function () {
 
     initializeDetailsPage();
 
-    let chefsAttachmentCount = 0;
+    let attachCounters = {
+        files: 0,
+        chefs: 0
+    };
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
@@ -347,7 +350,9 @@ $(function () {
     }
     let responseCallback = function (result) {
         if (result) {
-            chefsAttachmentCount = result.length;
+            setTimeout(function () {
+                PubSub.publish('update_application_attachment_count', { chefs: result.length });
+            }, 10);
         }
         return {
             data: result
@@ -357,8 +362,13 @@ $(function () {
     PubSub.subscribe(
         'update_application_attachment_count',
         (msg, data) => {
-            const totalAttachmentCount = data + chefsAttachmentCount;
-            $('#application_attachment_count').html(totalAttachmentCount);
+            if (data.files) {
+                attachCounters.files = data.files;
+            }
+            if (data.chefs) {
+                attachCounters.chefs = data.chefs;
+            }
+            $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
         }
     );
     
