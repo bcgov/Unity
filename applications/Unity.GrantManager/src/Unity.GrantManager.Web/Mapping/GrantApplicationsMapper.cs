@@ -13,6 +13,7 @@ namespace Unity.GrantManager.Web.Mapping
             CreateMap<Application, GrantApplicationDto>();
             CreateMap<GetSummaryDto, SummaryWidgetViewModel>();
             CreateMap<ContactModalViewModel, ApplicationContactDto>();
+            CreateMap<ApplicationContactDto, ContactModalViewModel>();
         }
     }
 }
