@@ -8,10 +8,6 @@ namespace Unity.GrantManager.Web.Pages.ApplicationContact;
 
 public class EditContactModal : AbpPageModel
 {
-    [HiddenInput]
-    [BindProperty(SupportsGet = true)]
-    public Guid Id { get; set; }
-
     [BindProperty]
     public ContactModalViewModel? ContactForm { get; set; }
     private readonly IApplicationContactService _applicationContactService;
@@ -21,16 +17,16 @@ public class EditContactModal : AbpPageModel
         _applicationContactService = applicationContactService;
     }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(Guid id)
     {
-        ApplicationContactDto applicationContactDto = await _applicationContactService.GetAsync(Id);
+        ApplicationContactDto applicationContactDto = await _applicationContactService.GetAsync(id);
         ContactForm = ObjectMapper.Map<ApplicationContactDto, ContactModalViewModel>(applicationContactDto!);
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         ApplicationContactDto createDto = ObjectMapper.Map<ContactModalViewModel, ApplicationContactDto>(ContactForm!);
-        await _applicationContactService.UpdateAsync(createDto);
+        await _applicationContactService.UpdateAsync(createDto.Id, createDto);
         return NoContent();
     }
 }

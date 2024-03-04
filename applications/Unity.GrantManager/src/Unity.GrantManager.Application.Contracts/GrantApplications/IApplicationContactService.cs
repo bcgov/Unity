@@ -5,14 +5,10 @@ using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.GrantApplications;
 
-public interface IApplicationContactService : IApplicationService
+public interface IApplicationContactService : ICrudAppService<
+            ApplicationContactDto,
+            Guid>
 {
     Task<List<ApplicationContactDto>> GetListAsync(Guid applicationId);
-
-    Task<ApplicationContactDto> GetAsync(Guid id);
-
-    Task<ApplicationContactDto> CreateAsync(ApplicationContactDto input);
-
-    Task<ApplicationContactDto> UpdateAsync(ApplicationContactDto input);
     
 }

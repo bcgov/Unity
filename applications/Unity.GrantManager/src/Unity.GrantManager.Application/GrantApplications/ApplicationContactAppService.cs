@@ -6,18 +6,23 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(ApplicationContactAppService), typeof(IApplicationContactService))]
-public class ApplicationContactAppService : ApplicationService, IApplicationContactService
+public class ApplicationContactAppService : CrudAppService<
+            ApplicationContact,
+            ApplicationContactDto,
+            Guid>, IApplicationContactService
 {
     private readonly IApplicationContactRepository _applicationContactRepository;
-    public ApplicationContactAppService(IApplicationContactRepository repository)
+    public ApplicationContactAppService(IRepository<ApplicationContact, Guid> repository,
+        IApplicationContactRepository applicationContactRepository) : base(repository)
     {
-        _applicationContactRepository = repository;
+        _applicationContactRepository = applicationContactRepository;
     }
 
     public async Task<List<ApplicationContactDto>> GetListAsync(Guid applicationId)
@@ -25,23 +30,5 @@ public class ApplicationContactAppService : ApplicationService, IApplicationCont
         var contacts = await _applicationContactRepository.GetListAsync(c => c.ApplicationId == applicationId);
 
         return ObjectMapper.Map<List<ApplicationContact>, List<ApplicationContactDto>>(contacts.OrderBy(c => c.ContactType).ToList());
-    }
-
-    public async Task<ApplicationContactDto> GetAsync(Guid id)
-    {
-        var contact = await _applicationContactRepository.GetAsync(id);
-        return ObjectMapper.Map<ApplicationContact, ApplicationContactDto>(contact);
-    }
-
-    public async Task<ApplicationContactDto> CreateAsync(ApplicationContactDto input)
-    {
-        var newContact = await _applicationContactRepository.InsertAsync(ObjectMapper.Map<ApplicationContactDto, ApplicationContact>(input), autoSave: true);
-        return ObjectMapper.Map<ApplicationContact, ApplicationContactDto>(newContact);
-    }
-
-    public async Task<ApplicationContactDto> UpdateAsync(ApplicationContactDto input)
-    {
-        var newContact = await _applicationContactRepository.UpdateAsync(ObjectMapper.Map<ApplicationContactDto, ApplicationContact>(input), autoSave: true);
-        return ObjectMapper.Map<ApplicationContact, ApplicationContactDto>(newContact);
     }
 }
