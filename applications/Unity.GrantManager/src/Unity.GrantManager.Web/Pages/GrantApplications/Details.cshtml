@@ -10,7 +10,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
-@using Unity.GrantManager.Identity;
+
 @model DetailsModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
@@ -250,23 +250,7 @@
                                         button-type="Light" />
                         </form>
                     </div>
-                    <div class="attachments__title-button-split">
-                        <div style="display:inline-block">
-                            <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Submission Attachments</h6>
-                        </div>
-                        <div style="display:inline-block">
-                            @if (User.IsInRole(UnityRoles.SystemAdmin))
-                            {
-                                <abp-button id="resyncSubmissionAttachments"                                            
-                                            icon-type="Other"
-                                            size="Large"
-                                            icon="fl fl-synch"
-                                            abp-tooltip="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value"
-                                            button-type="Light" />
-                            }
-                        </div>
-                    </div>                    
-                    <abp-table id="ChefsAttachmentsTable" hoverable-rows="true" class="attachments-table"></abp-table>
+                    @await Component.InvokeAsync("ChefsAttachments")
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
             </div>
