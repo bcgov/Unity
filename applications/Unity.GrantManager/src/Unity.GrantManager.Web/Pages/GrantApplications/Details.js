@@ -346,13 +346,13 @@ $(function () {
 
     PubSub.subscribe(
         'update_application_attachment_count',
-        (msg, data) => {
-            if (data.files) {
+        (msg, data) => {            
+            if (data.files || data.files === 0) {
                 attachCounters.files = data.files;
-            }
-            if (data.chefs) {
+            } 
+            if (data.chefs || data.chefs === 0) {
                 attachCounters.chefs = data.chefs;
-            }
+            } 
             $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
         }
     );
