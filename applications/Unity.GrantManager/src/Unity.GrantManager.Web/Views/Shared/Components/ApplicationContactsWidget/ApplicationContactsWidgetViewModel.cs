@@ -13,5 +13,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
 
         public List<ApplicationContactDto> ApplicationContacts { get; set; }
         public Guid ApplicationId { get; set; }
+        public Boolean IsReadOnly { get; set; }
     }
 }

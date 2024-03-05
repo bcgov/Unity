@@ -82,7 +82,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
 
         [HiddenInput]
         public Guid ApplicationId { get; set; }
+        
+        [HiddenInput]
+        public Boolean IsReadOnly { get; set; } = false;
 
-        public List<ApplicationContactDto> ApplicationContacts {get; set; } = new List<ApplicationContactDto>();
     }
 }

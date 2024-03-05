@@ -22,14 +22,15 @@
         <abp-modal-header title="@L["ApplicationContact:EditTitle"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-form-content />
+            <div class="d-flex justify-content-end pb-4 pt-2">
+                <abp-button text="Delete This Contact"
+                    id="DeleteContactButton"
+                    class="delete_contact_btn"
+                    icon-type="Other"
+                    icon="fl fl-clear"
+                    button-type="Light" />
+            </div>
         </abp-modal-body>
-        <div class="d-flex px-4 justify-content-end pb-4 pt-2">
-            <abp-button text="Delete This Contact"
-                id="DeleteContactButton"
-                icon-type="Other"
-                icon="fl fl-clear"
-                button-type="Light" />
-        </div>
         <abp-modal-footer buttons="@(AbpModalButtons.Save|AbpModalButtons.Cancel)"></abp-modal-footer>
     </abp-modal>
 </abp-dynamic-form>

@@ -23,12 +23,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
             _applicationContactService = applicationContactService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Boolean isReadOnly)
         {
             List<ApplicationContactDto> applicationContacts = await _applicationContactService.GetListAsync(applicationId);
             ApplicationContactsWidgetViewModel model = new() {
                 ApplicationContacts = applicationContacts,
-                ApplicationId = applicationId
+                ApplicationId = applicationId,
+                IsReadOnly = isReadOnly
             };
 
             return View(model);

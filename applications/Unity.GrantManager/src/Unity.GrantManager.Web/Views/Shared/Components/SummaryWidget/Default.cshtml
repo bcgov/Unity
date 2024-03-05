@@ -1,5 +1,6 @@
 ﻿@using System.Globalization;
 @using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
 @using Unity.GrantManager.Localization;
@@ -13,6 +14,7 @@
 }
 
 <input type="hidden" id="SummaryWidgetApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="SummaryWidgetIsReadOnly" value="@Model.IsReadOnly" />
 
 <abp-row class="px-1 pb-2 mb-4 summary-container">
     <h6 class="ps-2 fw-bold">@L["Summary:ApplicationSummaryTitle"].Value</h6>
@@ -214,17 +216,19 @@
         <p class="px-2 mb-0 fw-bold text-muted">Info</p>
         <hr class="my-2"/>
         <div id="applicationContactsWidget">
-            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId })
+            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId, isReadOnly = Model.IsReadOnly })
         </div>
     </div>
-    <div class="d-flex justify-content-end">
-        <abp-button text="Add Contact"
-            id="AddContactButton"
-            class="add_contact_btn"
-            icon-type="Other"
-            icon="fl fl-plus"
-            button-type="Light" />
-    </div>
+    @if(!(Model.IsReadOnly)) {
+        <div class="d-flex justify-content-end">
+            <abp-button text="Add Contact"
+                id="AddContactButton"
+                class="add_contact_btn"
+                icon-type="Other"
+                icon="fl fl-plus"
+                button-type="Light" />
+        </div>
+    }
 </abp-row>
 
 

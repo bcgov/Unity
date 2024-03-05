@@ -36,10 +36,12 @@
                         </div>
                     }
                 </div>
-                <div class="pe-2">
-                    <abp-button data-id="@contact.Id" class="contact-edit-btn" icon-type="Other" icon="fl fl-edit"
-                        button-type="Light" />
-                </div>
+                @if(!(Model.IsReadOnly)) {
+                    <div class="pe-2">
+                        <abp-button data-id="@contact.Id" class="contact-edit-btn" icon-type="Other" icon="fl fl-edit"
+                            button-type="Light" />
+                    </div>
+                }
             </div>
             <hr class="my-3" />
         </div>

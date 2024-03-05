@@ -17,16 +17,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
         AutoInitialize = true)]
     public class SummaryWidgetViewComponent : AbpViewComponent
     {
-        private readonly IGrantApplicationAppService _grantApplicationService;        
-        private readonly IApplicationContactService _applicationContactService;        
-
-        public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService, IApplicationContactService applicationContactService)
+        private readonly IGrantApplicationAppService _grantApplicationService;
+        public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService)
         {
             _grantApplicationService = grantApplicationAppService;
-            _applicationContactService = applicationContactService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Boolean isReadOnly)
         {
             if (applicationId == Guid.Empty)
             {
@@ -37,9 +34,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 
             SummaryWidgetViewModel summaryWidgetViewModel = ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto);
             summaryWidgetViewModel.ApplicationId = applicationId;
-
-            var applicationContacts = await _applicationContactService.GetListAsync(applicationId);
-            summaryWidgetViewModel.ApplicationContacts = applicationContacts;
+            summaryWidgetViewModel.IsReadOnly = isReadOnly;
 
             return View(summaryWidgetViewModel);
         }

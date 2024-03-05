@@ -217,7 +217,8 @@ $(function () {
         wrapper: '#summaryWidgetArea',
         filterCallback: function () {
             return {
-                'applicationId': selectedApplicationIds.length == 1 ? selectedApplicationIds[0] : "00000000-0000-0000-0000-000000000000"
+                'applicationId': selectedApplicationIds.length == 1 ? selectedApplicationIds[0] : "00000000-0000-0000-0000-000000000000",
+                'isReadOnly': true
             }
         }
     });

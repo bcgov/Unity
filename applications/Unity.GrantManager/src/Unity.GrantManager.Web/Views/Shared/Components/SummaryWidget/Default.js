@@ -1,12 +1,14 @@
 ﻿$(function () {
   let applicationId = document.getElementById('SummaryWidgetApplicationId').value;
+  let isReadOnly = document.getElementById('SummaryWidgetIsReadOnly').value;
   let contactModal = new abp.ModalManager(abp.appPath + 'ApplicationContact/CreateContactModal');
 
   let applicationContactsWidgetManager = new abp.WidgetManager({
     wrapper: '#applicationContactsWidget',
     filterCallback: function () {
         return {
-            'applicationId': applicationId
+            'applicationId': applicationId,
+            'isReadOnly': isReadOnly
         };
     }
   });
