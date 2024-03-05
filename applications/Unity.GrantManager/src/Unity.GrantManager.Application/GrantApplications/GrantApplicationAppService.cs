@@ -82,7 +82,7 @@ public class GrantApplicationAppService :
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
-    {        
+    {
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
@@ -100,7 +100,7 @@ public class GrantApplicationAppService :
                     join owner in await _personRepository.GetQueryableAsync() on application.OwnerId equals owner.Id into owners
                     from applicationOwner in owners.DefaultIfEmpty()
 
-                    join contact in await  _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
+                    join contact in await _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
                     from applicantAgent in contacts.DefaultIfEmpty()
 
                     select new
@@ -144,7 +144,7 @@ public class GrantApplicationAppService :
             appDto.OrganizationName = grouping.First().applicant?.OrgName ?? string.Empty;
             appDto.OrganizationType = grouping.First().applicant?.OrganizationType ?? string.Empty;
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
-            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);            
+            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
             appDto.ContactFullName = grouping.First().applicantAgent?.Name;
             appDto.ContactEmail = grouping.First().applicantAgent?.Email;
@@ -152,7 +152,7 @@ public class GrantApplicationAppService :
             appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone;
             appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2;
             appDto.RowCount = rowCounter;
-            appDtos.Add(appDto);            
+            appDtos.Add(appDto);
             rowCounter++;
         }
 
@@ -170,7 +170,7 @@ public class GrantApplicationAppService :
             return subStatusValue ?? string.Empty;
         else
             return string.Empty;
-    }  
+    }
     private static string MapDeclineRationalDisplayValue(string value)
     {
         if (value == null) { return string.Empty; }
@@ -194,8 +194,8 @@ public class GrantApplicationAppService :
                 Duty = assignment.Duty
             };
         }
-    }   
- 
+    }
+
     private static GrantApplicationAssigneeDto BuildApplicationOwner(Person applicationOwner)
     {
         if (applicationOwner != null)
@@ -323,7 +323,7 @@ public class GrantApplicationAppService :
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
                 application.UpdateFieldsOnlyForPreFinalDecision(input.ProjectSummary,
                     input.DueDiligenceStatus,
                     input.TotalProjectBudget,
@@ -331,7 +331,7 @@ public class GrantApplicationAppService :
                     input.DeclineRational);
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
-            }            
+            }
         }
 
         await _applicationRepository.UpdateAsync(application);
@@ -378,7 +378,7 @@ public class GrantApplicationAppService :
 
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
-            applicant.SectorSubSectorIndustryDesc= input.SectorSubSectorIndustryDesc ?? "";
+            applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
             _ = await _applicantRepository.UpdateAsync(applicant);
 
             if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
@@ -700,10 +700,10 @@ public class GrantApplicationAppService :
     /// <param name="applicationId">The application</param>
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
-    {
+    {     
         var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
         // TODO: AUTHORIZATION HANDLING
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
-    #endregion APPLICATION WORKFLOW
+    #endregion APPLICATION WORKFLOW    
 }

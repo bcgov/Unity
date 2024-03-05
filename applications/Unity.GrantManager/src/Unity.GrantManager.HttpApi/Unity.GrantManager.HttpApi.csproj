@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -12,7 +12,7 @@
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi\Unity.TenantManagement.HttpApi.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
-  </ItemGroup>
+  <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.HttpApi\Unity.Payments.HttpApi.csproj" /></ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

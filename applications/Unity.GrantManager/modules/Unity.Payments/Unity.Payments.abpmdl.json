@@ -1,0 +1,111 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {},
+      "host": {}
+    }
+  },
+  "packages": {
+    "Unity.Payments.Domain.Shared": {
+      "path": "src/Unity.Payments.Domain.Shared/Unity.Payments.Domain.Shared.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.Domain": {
+      "path": "src/Unity.Payments.Domain/Unity.Payments.Domain.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.Application.Contracts": {
+      "path": "src/Unity.Payments.Application.Contracts/Unity.Payments.Application.Contracts.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.Application": {
+      "path": "src/Unity.Payments.Application/Unity.Payments.Application.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.EntityFrameworkCore": {
+      "path": "src/Unity.Payments.EntityFrameworkCore/Unity.Payments.EntityFrameworkCore.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.MongoDB": {
+      "path": "src/Unity.Payments.MongoDB/Unity.Payments.MongoDB.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.HttpApi": {
+      "path": "src/Unity.Payments.HttpApi/Unity.Payments.HttpApi.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.HttpApi.Client": {
+      "path": "src/Unity.Payments.HttpApi.Client/Unity.Payments.HttpApi.Client.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.TestBase": {
+      "path": "test/Unity.Payments.TestBase/Unity.Payments.TestBase.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Payments.EntityFrameworkCore.Tests": {
+      "path": "test/Unity.Payments.EntityFrameworkCore.Tests/Unity.Payments.EntityFrameworkCore.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Payments.MongoDB.Tests": {
+      "path": "test/Unity.Payments.MongoDB.Tests/Unity.Payments.MongoDB.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Payments.Domain.Tests": {
+      "path": "test/Unity.Payments.Domain.Tests/Unity.Payments.Domain.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Payments.Application.Tests": {
+      "path": "test/Unity.Payments.Application.Tests/Unity.Payments.Application.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Payments.HttpApi.Host": {
+      "path": "host/Unity.Payments.HttpApi.Host/Unity.Payments.HttpApi.Host.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Payments.Web": {
+      "path": "src/Unity.Payments.Web/Unity.Payments.Web.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/Unity.Payments.HttpApi.Client.ConsoleTestApp/Unity.Payments.HttpApi.Client.ConsoleTestApp.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Payments.Web.Host": {
+      "path": "host/Unity.Payments.Web.Host/Unity.Payments.Web.Host.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Payments.AuthServer": {
+      "path": "host/Unity.Payments.AuthServer/Unity.Payments.AuthServer.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Payments.Host.Shared": {
+      "path": "host/Unity.Payments.Host.Shared/Unity.Payments.Host.Shared.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Payments.Web.Unified": {
+      "path": "host/Unity.Payments.Web.Unified/Unity.Payments.Web.Unified.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Payments.Blazor": {
+      "path": "src/Unity.Payments.Blazor/Unity.Payments.Blazor.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.Blazor.Host": {
+      "path": "host/Unity.Payments.Blazor.Host/Unity.Payments.Blazor.Host.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Payments.Blazor.Server": {
+      "path": "src/Unity.Payments.Blazor.Server/Unity.Payments.Blazor.Server.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.Blazor.WebAssembly": {
+      "path": "src/Unity.Payments.Blazor.WebAssembly/Unity.Payments.Blazor.WebAssembly.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Payments.Blazor.Server.Host": {
+      "path": "host/Unity.Payments.Blazor.Server.Host/Unity.Payments.Blazor.Server.Host.abppkg.json",
+      "folder": "host"
+    }
+  }
+}
