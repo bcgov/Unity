@@ -1,0 +1,169 @@
+﻿@using Microsoft.AspNetCore.Authorization;
+@using Unity.GrantManager.Localization
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Permissions;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
+
+@inject IAuthorizationService AuthorizationService
+@inject IStringLocalizer<GrantManagerResource> L
+@model ApplicantInfoViewModel
+@{
+    Layout = null;
+}
+
+<input type="hidden" id="ApplicantInfoViewApplicationId" value="@Model.ApplicationId" />
+
+
+<div id="applicationSectorList" style="display: none;">@Html.Raw(Json.Serialize(Model.ApplicationSectors))</div>
+<div id="allEconomicRegionList" style="display: none;">@Html.Raw(Json.Serialize(Model.EconomicRegions))</div>
+<div id="allRegionalDistrictList" style="display: none;">@Html.Raw(Json.Serialize(Model.RegionalDistricts))</div>
+<div id="allCommunitiesList" style="display: none;">@Html.Raw(Json.Serialize(Model.Communities))</div>
+
+<abp-row class="px-1 pb-2 mb-4 project-info-container">
+    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
+        <div id="ApplicantInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+            <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle"].Value</h6>
+        </div>
+    </abp-column>
+    <form id="ApplicantInfoForm">
+        <abp-row class="m-0 project-info-form">
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.OrgName" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.OrgNumber" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                
+                        <abp-input asp-for="@Model.ApplicantInfo.OrgStatus" onchange="enableSaveBtn(this)" />
+              
+
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-select asp-for="@Model.ApplicantInfo.OrganizationType" asp-items="@Model.OrganizationTypeList" id="orgTypeDropdown"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    
+                        <abp-input asp-for="@Model.ApplicantInfo.OrganizationSize" onchange="enableSaveBtn(this)" />
+                   
+
+                </abp-column>
+                
+
+            </abp-row>
+           
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-select asp-for="@Model.ApplicantInfo.Sector" asp-items="@Model.ApplicationSectorsList" id="orgSectorDropdown"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-select asp-for="@Model.ApplicantInfo.SubSector" asp-items="@Model.ApplicationSubSectorsList" id="orgSubSectorDropdown"
+                                onchange="enableSaveBtn(this)">
+                        <option value="">Please choose...</option>
+                    </abp-select>
+                </abp-column>
+               
+            </abp-row>
+           
+           
+        </abp-row>
+        
+      
+        <abp-row class="m-0 project-info-location">
+          
+            
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                    <div id="ContactInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                        <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:ApplicantInfoContactInfo"].Value</h6>
+                    </div>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.ContactFullName" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.ContactTitle" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.ContactEmail" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.ContactBusinessPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.ContactCellPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                </abp-column>
+            </abp-row>
+           
+         </abp-row>
+        <abp-row class="m-0 project-info-location">
+
+
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                    <div id="ContactInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                        <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:SigningAuthorityTitle"].Value</h6>
+                    </div>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityFullName" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityTitle" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityEmail" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityBusinessPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityCellPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+
+                <abp-column size="_12" class="px-1 d-flex justify-content-end mt-2">
+                    <abp-button text="Save" id="saveApplicantInfoBtn" class="save-project-btn" icon-type="Other"
+                                icon="fl fl-save" button-type="Light" disabled="true" />
+                </abp-column>
+            </abp-row>
+        </abp-row>
+     
+     </form>
+</abp-row>
+
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney();
+        }
+    })();
+</script>

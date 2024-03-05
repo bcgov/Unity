@@ -27,4 +27,14 @@ public static class ProjectInfoOptionsList
             new KeyValuePair<string, string>("NO", "No"),
       });
 
+    public static ImmutableDictionary<string, string> OrganizationTypeList =>
+ ImmutableDictionary.CreateRange(new[]
+   {
+          new KeyValuePair<string, string>("CORPORATION", "Corporation"),
+          new KeyValuePair<string, string>("PARTNERSHIP", "Partnership"),
+          new KeyValuePair<string, string>("INCORPORATED_COOPERATIVE", "Incorporated Cooperative"),
+          new KeyValuePair<string, string>("FIRSR_NATION", "First Nation or Indigenous-Owned Enterprises"),
+          new KeyValuePair<string, string>("OTHER", "other"),
+   });
+
 }

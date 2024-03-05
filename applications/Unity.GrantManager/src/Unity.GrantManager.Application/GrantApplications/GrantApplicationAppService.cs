@@ -153,6 +153,11 @@ public class GrantApplicationAppService :
             appDto.ContactTitle = grouping.First().applicantAgent?.Title;
             appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone;
             appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2;
+            appDto.SigningAuthorityFullName = grouping.First().applicantAgent?.SigningAuthorityFullName;
+            appDto.SigningAuthorityTitle = grouping.First().applicantAgent?.SigningAuthorityTitle;
+            appDto.SigningAuthorityEmail = grouping.First().applicantAgent?.SigningAuthorityEmail;
+            appDto.SigningAuthorityBusinessPhone = grouping.First().applicantAgent?.SigningAuthorityBusinessPhone;
+            appDto.SigningAuthorityCellPhone = grouping.First().applicantAgent?.SigningAuthorityCellPhone;
             appDto.RowCount = rowCounter;
             appDtos.Add(appDto);            
             rowCounter++;
@@ -241,11 +246,26 @@ public class GrantApplicationAppService :
                 appDto.ContactTitle = contactInfo.Title;
                 appDto.ContactBusinessPhone = contactInfo.Phone;
                 appDto.ContactCellPhone = contactInfo.Phone2;
+
+                appDto.SigningAuthorityFullName = contactInfo.SigningAuthorityFullName;
+                appDto.SigningAuthorityTitle = contactInfo.SigningAuthorityTitle;
+                appDto.SigningAuthorityEmail = contactInfo.SigningAuthorityEmail;
+                appDto.SigningAuthorityBusinessPhone = contactInfo.SigningAuthorityBusinessPhone;
+                appDto.SigningAuthorityCellPhone = contactInfo.SigningAuthorityCellPhone;
+
             }
 
             if (appDto.Applicant != null)
             {
+                appDto.OrganizationName = appDto.Applicant.OrgName;
+                appDto.OrgNumber = appDto.Applicant.OrgNumber;
+                appDto.OrganizationSize = appDto.Applicant.OrganizationSize;
+                appDto.OrgStatus = appDto.Applicant.OrgStatus;
+                appDto.OrganizationName = appDto.Applicant.OrgName;
                 appDto.Sector = appDto.Applicant.Sector;
+                appDto.OrgStatus = appDto.Applicant.OrgStatus;
+                appDto.OrganizationType = appDto.Applicant.OrganizationType;
+                appDto.OrganizationSize = appDto.Applicant.OrganizationSize;
                 appDto.SubSector = appDto.Applicant.SubSector;
                 appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
             }
@@ -426,6 +446,79 @@ public class GrantApplicationAppService :
             {
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
             }
+        }
+        else
+        {
+            throw new EntityNotFoundException();
+        }
+    }
+       public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto  input)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+             if (application != null)
+        {
+          
+
+            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+            // This applicant should never be null!
+
+            applicant.OrganizationType = input.OrganizationType ?? "";
+            applicant.OrgName = input.OrgName ?? "";
+            applicant.OrgNumber = input.OrgNumber ?? "";
+            applicant.OrgStatus = input.OrgStatus ?? "";
+            applicant.OrganizationSize = input.OrganizationSize ?? "";
+            applicant.Sector = input.Sector ?? "";
+            applicant.SubSector = input.SubSector ?? "";
+          
+            _ = await _applicantRepository.UpdateAsync(applicant);
+
+           
+                var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
+                if (applicantAgent == null)
+                {
+                    applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
+                    {
+                        ApplicantId = application.ApplicantId,
+                        ApplicationId = application.Id,
+                        Name = input.ContactFullName ?? "",
+                        Phone = input.ContactBusinessPhone ?? "",
+                        Phone2 = input.ContactCellPhone ?? "",
+                        Email = input.ContactEmail ?? "",
+                        SigningAuthorityFullName = input.SigningAuthorityFullName ?? "",
+                        SigningAuthorityTitle = input.SigningAuthorityTitle ?? "",
+                        SigningAuthorityEmail = input.SigningAuthorityEmail ?? "",
+                        SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "",
+                        SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "",
+                        Title = input.ContactTitle ?? ""
+                    });
+                }
+                else
+                {
+                    applicantAgent.Name = input.ContactFullName ?? "";
+                    applicantAgent.Phone = input.ContactBusinessPhone ?? "";
+                    applicantAgent.Phone2 = input.ContactCellPhone ?? "";
+                    applicantAgent.Email = input.ContactEmail ?? "";
+                    applicantAgent.Title = input.ContactTitle ?? "";
+                    applicantAgent.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
+                    applicantAgent.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
+                    applicantAgent.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
+                    applicantAgent.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
+                    applicantAgent.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
+
+                    applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
+                }
+
+                var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+                appDto.ContactFullName = applicantAgent.Name;
+                appDto.ContactEmail = applicantAgent.Email;
+                appDto.ContactTitle = applicantAgent.Title;
+                appDto.ContactBusinessPhone = applicantAgent.Phone;
+                appDto.ContactCellPhone = applicantAgent.Phone2;
+
+                return appDto;
+
+          
         }
         else
         {

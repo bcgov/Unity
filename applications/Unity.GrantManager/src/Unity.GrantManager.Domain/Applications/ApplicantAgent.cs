@@ -19,4 +19,13 @@ public class ApplicantAgent : AuditedAggregateRoot<Guid>, IMultiTenant
     public string Email { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public Guid? TenantId { get; set; }
+
+    public string? SigningAuthorityFullName { get; set; }
+    public string? SigningAuthorityTitle { get; set; }
+    public string? SigningAuthorityEmail { get; set; }
+    public string? SigningAuthorityBusinessPhone { get; set; }
+    public string? SigningAuthorityCellPhone { get; set; }
+
+
+
 }
