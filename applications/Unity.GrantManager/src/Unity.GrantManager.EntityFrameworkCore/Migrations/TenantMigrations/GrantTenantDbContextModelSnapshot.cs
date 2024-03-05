@@ -248,21 +248,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("SigningAuthorityBusinessPhone")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SigningAuthorityCellPhone")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SigningAuthorityEmail")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SigningAuthorityFullName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SigningAuthorityTitle")
-                        .HasColumnType("text");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -632,9 +617,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<DateTime?>("AttemptedConnectionDate")
-                        .HasColumnType("timestamp without time zone");
-
                     b.Property<string>("AvailableChefsFields")
                         .HasColumnType("text");
 
@@ -653,9 +635,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<string>("ConnectionHttpStatus")
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")
