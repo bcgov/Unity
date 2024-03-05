@@ -38,6 +38,13 @@ namespace Unity.GrantManager.Identity
             _dataFilter = dataFilter;
         }
 
+        /// <summary>
+        /// Import a user creating both a host account and a local person entity for the relevant tenant
+        /// </summary>
+        /// <param name="importUserDto"></param>
+        /// <returns></returns>
+        /// <exception cref="AbpValidationException"></exception>
+        /// <exception cref="UserFriendlyException"></exception>
         public async Task ImportUserAsync(ImportUserDto importUserDto)
         {
             var newUserId = Guid.NewGuid();
@@ -67,52 +74,25 @@ namespace Unity.GrantManager.Identity
             await SyncUserToCurrentTenantAsync(newUserId, identityUser, oicdSub, displayName);
         }
 
-        private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, CssUser ssoUser)
+        /// <summary>
+        /// Allow internal non authenticated requests to also import users when required
+        /// </summary>
+        /// <param name="importUserDto"></param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [RemoteService(false)]
+        public async Task AutoImportUserIntenalAsync(ImportUserDto importUserDto)
         {
-            IdentityUser? identityUser = new(newUserId, ssoUser.Attributes?.IdirUsername?[0], ssoUser.Email ?? $"{ssoUser.Attributes?.IdirUsername}@{ssoUser.Attributes?.IdirUsername}.com", _currentTenant.Id)
-            {
-                Name = ssoUser.FirstName,
-                Surname = ssoUser.LastName
-            };
-            identityUser.SetEmailConfirmed(true);
-
-            // Use identity user manager to create the user
-            var createUserResult = await _userManager.CreateAsync(identityUser) ?? throw new AbpException("Unxpected error importing user");
-
-            if (!createUserResult.Succeeded)
-            {
-                var validationErrors = new List<ValidationResult>();
-                foreach (var error in createUserResult.Errors)
-                {
-                    validationErrors.Add(new ValidationResult($"{error.Code} {error.Description}"));
-                }
-                throw new AbpValidationException("Error importing user", validationErrors);
-            }
-
-            return identityUser;
+            await ImportUserAsync(importUserDto);
         }
 
-        private async Task<IdentityUser?> ReactivateAndGetDeletedUserAsync(CssUser ssoUser)
-        {
-            //Temporary disable the ISoftDelete filter - find delete user account and reactivate for import
-            using (_dataFilter.Disable<ISoftDelete>())
-            {
-                var identityUser = await _identityUserRepository
-                    .FindByTenantIdAndUserNameAsync(ssoUser.Attributes?.IdirUsername?[0], _currentTenant.Id);
-
-                if (identityUser != null)
-                {
-                    identityUser.IsDeleted = false;
-                    identityUser.DeleterId = null;
-                    identityUser.DeletionTime = null;
-                    await _identityUserRepository.UpdateAsync(identityUser);
-                    return identityUser;
-                }
-            }
-
-            return null;
-        }
-
+        /// <summary>
+        /// Search against the single sign on service for a user
+        /// </summary>
+        /// <param name="importUserSearchDto"></param>
+        /// <returns></returns>
+        /// <exception cref="AbpValidationException"></exception>
+        /// <exception cref="UserFriendlyException"></exception>
         public async Task<IList<UserDto>> SearchAsync(UserSearchDto importUserSearchDto)
         {
             var users = new List<UserDto>();
@@ -168,9 +148,55 @@ namespace Unity.GrantManager.Identity
             return users;
         }
 
+        private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, CssUser ssoUser)
+        {
+            IdentityUser? identityUser = new(newUserId, ssoUser.Attributes?.IdirUsername?[0], ssoUser.Email ?? $"{ssoUser.Attributes?.IdirUsername}@{ssoUser.Attributes?.IdirUsername}.com", _currentTenant.Id)
+            {
+                Name = ssoUser.FirstName,
+                Surname = ssoUser.LastName
+            };
+            identityUser.SetEmailConfirmed(true);
+
+            // Use identity user manager to create the user
+            var createUserResult = await _userManager.CreateAsync(identityUser) ?? throw new AbpException("Unxpected error importing user");
+
+            if (!createUserResult.Succeeded)
+            {
+                var validationErrors = new List<ValidationResult>();
+                foreach (var error in createUserResult.Errors)
+                {
+                    validationErrors.Add(new ValidationResult($"{error.Code} {error.Description}"));
+                }
+                throw new AbpValidationException("Error importing user", validationErrors);
+            }
+
+            return identityUser;
+        }
+
+        private async Task<IdentityUser?> ReactivateAndGetDeletedUserAsync(CssUser ssoUser)
+        {
+            //Temporary disable the ISoftDelete filter - find delete user account and reactivate for import
+            using (_dataFilter.Disable<ISoftDelete>())
+            {
+                var identityUser = await _identityUserRepository
+                    .FindByTenantIdAndUserNameAsync(ssoUser.Attributes?.IdirUsername?[0], _currentTenant.Id);
+
+                if (identityUser != null)
+                {
+                    identityUser.IsDeleted = false;
+                    identityUser.DeleterId = null;
+                    identityUser.DeletionTime = null;
+                    await _identityUserRepository.UpdateAsync(identityUser);
+                    return identityUser;
+                }
+            }
+
+            return null;
+        }       
+
         private async Task SyncUserToCurrentTenantAsync(Guid userId, IdentityUser user, string oidcSub, string displayName)
         {
-            var existingUser = await _personRepository.FindByOidcSub(oidcSub);
+            var existingUser = await _personRepository.FindByOidcSub(oidcSub);            
             if (existingUser == null)
             {
                 await _personRepository.InsertAsync(new Person()
