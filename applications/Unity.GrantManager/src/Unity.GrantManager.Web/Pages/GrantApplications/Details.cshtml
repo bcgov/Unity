@@ -10,6 +10,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
+
 @model DetailsModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
@@ -249,9 +250,7 @@
                                         button-type="Light" />
                         </form>
                     </div>
-
-                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Submission Attachments</h6>
-                    <abp-table id="ChefsAttachmentsTable" hoverable-rows="true" class="attachments-table"></abp-table>
+                    @await Component.InvokeAsync("ChefsAttachments")
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
             </div>

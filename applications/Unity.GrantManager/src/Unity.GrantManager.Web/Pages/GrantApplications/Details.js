@@ -338,60 +338,25 @@ $(function () {
     }
 
     initializeDetailsPage();
-    let inputAction = function (requestData, dataTableSettings) {
-        const urlParams = new URL(window.location.toLocaleString()).searchParams;
-        const applicationId = urlParams.get('ApplicationId');
-        return applicationId;
-    }
-    let responseCallback = function (result) {
-        return {
-            data: result
-        };
+
+    let attachCounters = {
+        files: 0,
+        chefs: 0
     };
 
-    
-    const dataTable = $('#ChefsAttachmentsTable').DataTable(
-        abp.libs.datatables.normalizeConfiguration({
-            serverSide: false,
-            order: [[2, 'asc']],
-            searching: false,
-            paging: false,
-            select: false,
-            info: false,
-            scrollX: true,
-            ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.grantApplications.attachment.getApplicationChefsFileAttachments, inputAction, responseCallback
-            ),
-            columnDefs: [
-                {
-                    title: '<i class="fl fl-paperclip" ></i>',
-                    render: function (data) {
-                        return '<i class="fl fl-paperclip" ></i>';
-                    },
-                    orderable: false
-                },
-                {
-                    title: l('AssessmentResultAttachments:DocumentName'),
-                    data: 'name',
-                    className: 'data-table-header',
-                },
-                {
-                    title: '',
-                    data: 'chefsFileId',
-                    render: function (data, type, full, meta) {
-                        let html = '<a href="/api/app/attachment/chefs/' + encodeURIComponent(full.chefsSumbissionId) + '/download/' + encodeURIComponent(data) + '/' + encodeURIComponent(full.name) + '" target = "_blank" download = "' + full.name + '" >';
-                        html += '<button class="btn" type="button"><i class="fl fl-download"></i><span>Download</span></button></a>';
-                        return html;
-                    },
-                    orderable: false
-                }
-            ],
-        })
+    PubSub.subscribe(
+        'update_application_attachment_count',
+        (msg, data) => {            
+            if (data.files || data.files === 0) {
+                attachCounters.files = data.files;
+            } 
+            if (data.chefs || data.chefs === 0) {
+                attachCounters.chefs = data.chefs;
+            } 
+            $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
+        }
     );
 
-    $('#attachments-tab').one('click', function () {
-        dataTable.columns.adjust();
-    });
 });
 
 function uploadApplicationFiles(inputId) {    
@@ -477,15 +442,6 @@ function uploadFiles(inputId, urlStr, channel) {
     );
 }
 
-const update_application_attachment_count_subscription = PubSub.subscribe(
-    'update_application_attachment_count',
-    (msg, data) => {
-        $('#application_attachment_count').html(data)
-
-
-    }
-);
-
 function getCurrentUser() {
     return abp.currentUser.id;
 }
@@ -570,6 +526,7 @@ function initCommentsWidget() {
             tagsWidgetManager.refresh();
         }
     );
+    
 }
 
 function setDetailsContext(context) {

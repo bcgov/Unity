@@ -203,11 +203,11 @@
             .map((name) => getColumnByName(name).index);        
     }
 
-    function getColumnByName(name) {
+    function getColumnByName(name) {        
         return listColumns.find(obj => obj.name === name);
     }
 
-    function getColumnsForManageList() {
+    function getColumnsForManageList() {        
         let exludeIndxs = [0];
         return listColumns
             .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
@@ -257,7 +257,6 @@
             getOwnerColumn(),
             getDecisionDateColumn(),
             getProjectSummaryColumn(),
-            getPercentageTotalProjectBudgetColumn(),
             getOrganizationTypeColumn(),
             getOrganizationNameColumn(),
             getDueDiligenceStatusColumn(),
@@ -266,7 +265,8 @@
             getContactTitleColumn(),
             getContactEmailColumn(),
             getContactBusinessPhoneColumn(),
-            getContactCellPhoneColumn()
+            getContactCellPhoneColumn(),
+            getSectorSubSectorIndustryDescColumn(),
         ]
         .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -357,7 +357,7 @@
         return {
             title: 'SubSector',
             name: 'subsector',
-            data: 'applicant.subsector',
+            data: 'applicant.subSector',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{SubSector}';
@@ -371,7 +371,7 @@
             title: 'Total Project Budget',
             name: 'totalProjectBudget',
             data: 'totalProjectBudget',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data);
             },
@@ -388,8 +388,8 @@
             render: function (data, type, row) {
                 let displayText = ' ';
 
-                if (data != null && data.length == 1) {
-                    displayText = type === 'fullName' ? getNames(data) : data[0].fullName;
+                if (data != null && data.length == 1) {                    
+                    displayText = type === 'fullName' ? getNames(data) : (data[0].fullName + getDutyText(data[0]));
                 } else if (data.length > 1) {
                     displayText = getNames(data);
                 }
@@ -402,6 +402,10 @@
             },
             index: 9
         }
+    }
+
+    function getDutyText(data) {
+        return data.duty ? (" [" + data.duty + "]") : '';
     }
 
     function getStatusColumn() {
@@ -423,7 +427,7 @@
             title: l('RequestedAmount'),
             data: 'requestedAmount',
             name: 'requestedAmount',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data);
             },
@@ -436,7 +440,7 @@
             title: 'Approved Amount',
             name: 'approvedAmount',
             data: 'approvedAmount',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data);
             },
@@ -545,7 +549,7 @@
             title: 'Projected Funding Total',
             name: 'projectFundingTotal',
             data: 'projectFundingTotal',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data) ?? '{Projected Funding Total}';
             },
@@ -571,7 +575,7 @@
             title: 'Total Paid Amount $',
             name: 'projectFundingTotal',
             data: 'projectFundingTotal',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data) ?? '{Total Paid Amount $}';
             },
@@ -624,6 +628,8 @@
                         return 'Secondary/Value-Added/Not Mass Timber'
                     } else if (data == 'MASS_TIMBER') {
                         return 'Mass Timber';
+                    } else if(data != ''){
+                        return data;
                     } else {
                         return '{Forestry Focus}';
                     }
@@ -764,7 +770,7 @@
             title: 'Recommended Amount',
             name: 'recommendedAmount',
             data: 'recommendedAmount',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             render: function (data) {
                 return formatter.format(data) ?? '{Recommended Amount}';
             },
@@ -828,19 +834,6 @@
         }
     }
 
-    function getPercentageTotalProjectBudgetColumn() {
-        return {
-            title: '% of Total Project Budget',
-            name: 'percentageTotalProjectBudget',
-            data: 'percentageTotalProjectBudget',
-            className: 'data-table-header',
-            render: function (data) {
-                return data ?? '';
-            },
-            index: 39
-        }
-    }
-
     function getOrganizationTypeColumn() {
         return {
             title: 'Organization Type',
@@ -850,7 +843,7 @@
             render: function (data) {
                 return data ?? '';
             },
-            index: 40
+            index: 39
         }
     }
 
@@ -863,7 +856,7 @@
             render: function (data) {
                 return data ?? '{OrgName}';
             },
-            index: 41
+            index: 40
         }
     }
     function getDueDiligenceStatusColumn() {
@@ -875,7 +868,7 @@
             render: function (data) {
                 return titleCase(data ?? '') ?? '{DueDiligenceStatus}';
             },
-            index: 42
+            index: 41
         }
     }
 
@@ -888,7 +881,7 @@
             render: function (data) {
                 return data ?? '{DeclineRationale}';
             },
-            index: 43
+            index: 42
         }
     }
 
@@ -901,7 +894,7 @@
             render: function (data) {
                 return data ?? '{ContactFullName}';
             },
-            index: 44
+            index: 43
         }
     }
     function getContactTitleColumn() {
@@ -913,7 +906,7 @@
             render: function (data) {
                 return data ?? '{ContactTitle}';
             },
-            index: 45
+            index: 44
         }
     }
     function getContactEmailColumn() {
@@ -925,7 +918,7 @@
             render: function (data) {
                 return data ?? '{ContactEmail}';
             },
-            index: 46
+            index: 45
         }
     }
     function getContactBusinessPhoneColumn() {
@@ -937,7 +930,7 @@
             render: function (data) {
                 return data ?? '{ContactBusinessPhone}';
             },
-            index: 47
+            index: 46
         }
     }
     function getContactCellPhoneColumn() {
@@ -948,6 +941,19 @@
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '{ContactCellPhone}';
+            },
+            index: 47
+        }
+    }
+
+    function getSectorSubSectorIndustryDescColumn() {
+        return {
+            title: 'Other Sector/Sub/Industry Description',
+            name: 'sectorSubSectorIndustryDesc',
+            data: 'applicant.sectorSubSectorIndustryDesc',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SectorSubSectorIndustryDesc}';
             },
             index: 48
         }
@@ -1021,9 +1027,8 @@
 
     function getNames(data) {
         let name = '';
-        data.forEach((d, index) => {
-            name = name + ' ' + d.fullName;
-
+        data.forEach((d, index) => {            
+            name = name + (' ' + d.fullName + getDutyText(d));
             if (index != (data.length - 1)) {
                 name = name + ',';
             }

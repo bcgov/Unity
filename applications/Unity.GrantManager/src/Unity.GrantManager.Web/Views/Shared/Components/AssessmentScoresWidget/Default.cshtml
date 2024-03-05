@@ -34,9 +34,12 @@
                         <label class="form-label" for="CleanGrowth">Clean Growth</label>
                         <input type="number" size="18" class="form-control" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="2147483647" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
                     </div>
-                </div>
+                </div> 
             </div>
-
+            <div class="assessment-sum">
+                <label class="form-label" for="subTotal">Subtotal</label>
+                <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" value="@Model.ScoreTotal()" min="0" max="2147483647" />
+            </div>
             <div class="scores-block-save">
                 <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" />
             </div>

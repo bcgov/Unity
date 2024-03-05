@@ -2,8 +2,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Unity.GrantManager.Caching;
+using Unity.GrantManager.Settings;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.SettingManagement;
 
 namespace Unity.GrantManager.Locality
 {
@@ -13,36 +18,51 @@ namespace Unity.GrantManager.Locality
     public class SectorAppService : ApplicationService, ISectorService
     {
         private readonly ISectorRepository _sectorRepository;
+        private readonly ISettingManager _settingManager;
+        private readonly IDistributedCache<IList<SectorDto>, LocalityCacheKey> _cache;
+        private readonly ICurrentTenant _currentTenant;
 
-        private readonly ISubSectorRepository _subSectorRepository;
-
-        public SectorAppService(ISectorRepository sectorRepository,
-            ISubSectorRepository subSectorRepository)
+        public SectorAppService(ISectorRepository sectorRepository,            
+            ISettingManager settingManager,
+            ICurrentTenant currentTenant,
+            IDistributedCache<IList<SectorDto>, LocalityCacheKey> cache)
         {
             _sectorRepository = sectorRepository;
-            _subSectorRepository = subSectorRepository;
+            _settingManager = settingManager;
+            _currentTenant = currentTenant;
+            _cache = cache;
         }
 
         public async Task<IList<SectorDto>> GetListAsync()
         {
-            var sectorsQueryable = await _sectorRepository.GetQueryableAsync();
+            var cacheKey = new LocalityCacheKey(SettingsConstants.SectorFilterName, _currentTenant.GetId());
+            return await _cache.GetOrAddAsync(
+                cacheKey,
+                GetTenantSectors
+            ) ?? new List<SectorDto>();
+        }
 
-            var query = from sector in sectorsQueryable
-                        join subsector in await _subSectorRepository.GetQueryableAsync()
-                            on sector.Id equals subsector.SectorId into subSectors
-                        orderby sector.SectorName
-                        select new { sector, subSectors, sector.SectorCode };
+        public async Task<IList<SectorDto>> GetTenantSectors()
+        {
+            var sectors = await _sectorRepository.GetListAsync(true);
 
-            var queryResult = await AsyncExecuter.ToListAsync(query);
-
-            var applicationSectorDtos = queryResult.Select(x =>
+            var applicationSectorDtos = sectors.Select(x =>
             {
-                var sector = ObjectMapper.Map<Sector, SectorDto>(x.sector);
-                sector.SubSectors = ObjectMapper.Map<List<SubSector>, List<SubSectorDto>>(x.subSectors.OrderBy(ss => ss.SubSectorName).ToList());
+                var sector = ObjectMapper.Map<Sector, SectorDto>(x);
+                sector.SubSectors = ObjectMapper.Map<List<SubSector>, List<SubSectorDto>>(x.SubSectors.OrderBy(ss => ss.SubSectorName).ToList());
                 return sector;
             }).ToList();
 
-            return applicationSectorDtos;
+            var sectorFilter = await _settingManager.GetOrNullForCurrentTenantAsync(SettingsConstants.SectorFilterName);
+            if (string.IsNullOrEmpty(sectorFilter))
+            {
+                return applicationSectorDtos.OrderBy(s => s.SectorName).ToList();
+            }
+            else
+            {
+                string[] sectorCodes = sectorFilter.Split(',');
+                return applicationSectorDtos.Where(x => sectorCodes.Contains(x.SectorCode)).OrderBy(s => s.SectorName).ToList();
+            }
         }
     }
 }

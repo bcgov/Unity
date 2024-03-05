@@ -154,6 +154,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Sector")
                         .HasColumnType("text");
 
+                    b.Property<string>("SectorSubSectorIndustryDesc")
+                        .HasColumnType("text");
+
                     b.Property<string>("Status")
                         .HasColumnType("text");
 

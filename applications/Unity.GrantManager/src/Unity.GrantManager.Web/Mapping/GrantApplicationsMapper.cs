@@ -11,7 +11,8 @@ namespace Unity.GrantManager.Web.Mapping
         public GrantApplicationsMapper()
         {
             CreateMap<Application, GrantApplicationDto>();
-            CreateMap<GetSummaryDto, SummaryWidgetViewModel>();
+            CreateMap<GetSummaryDto, SummaryWidgetViewModel>().
+                ForMember(dest => dest.SubmissionDate, opt => opt.MapFrom(s => s.SubmissionDate==null ? "" : s.SubmissionDate.Value.ToShortDateString()));
             CreateMap<ContactModalViewModel, ApplicationContactDto>();
             CreateMap<ApplicationContactDto, ContactModalViewModel>();
         }
