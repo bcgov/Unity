@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -189,6 +191,7 @@ namespace Unity.GrantManager.Intakes
                 OrganizationType = intakeMap.OrganizationType ?? "{OrganizationType}",
                 Sector = intakeMap.Sector ?? "{Sector}",
                 SubSector = intakeMap.SubSector ?? "{SubSector}",
+                SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc ?? "{SectorSubSectorIndustryDesc}",
                 ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
             });
@@ -237,6 +240,37 @@ namespace Unity.GrantManager.Intakes
 
             }
             return address;
+        }
+
+        public async Task ResyncSubmissionAttachments(Guid applicationId)
+        {
+            var query = from applicationFormSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()
+                            where applicationFormSubmission.ApplicationId == applicationId
+                            select applicationFormSubmission;
+            ApplicationFormSubmission? applicationFormSubmissionData = await AsyncExecuter.FirstOrDefaultAsync(query);
+            if(applicationFormSubmissionData == null) return;
+            var formSubmission = JsonConvert.DeserializeObject<dynamic>(applicationFormSubmissionData.Submission)!;
+            await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(applicationId, formSubmission);
+        }
+
+        public async Task ResyncAllSubmissionAttachments()
+        {
+            var query = from applicationFormSubmissions in await _applicationFormSubmissionRepository.GetQueryableAsync()
+                        select applicationFormSubmissions;
+            List<ApplicationFormSubmission> formSubmissions = await AsyncExecuter.ToListAsync(query);
+            foreach (ApplicationFormSubmission submission in formSubmissions)
+            {
+                try
+                {
+                    if (submission == null) continue;
+                    var formSubmission = JsonConvert.DeserializeObject<dynamic>(submission.Submission)!;
+                    await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(submission.ApplicationId, formSubmission);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("Error resyncing submission attachments for {submissionId} - {exception} ", submission.Id, ex);
+                }
+            }
         }
     }
 }

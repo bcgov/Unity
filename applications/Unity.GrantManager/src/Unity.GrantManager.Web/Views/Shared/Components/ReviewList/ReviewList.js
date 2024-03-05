@@ -155,6 +155,16 @@ $(function () {
                     width: "60px",
                     data: 'cleanGrowth',
                     className: 'data-table-header',
+                },
+                {
+                    title: l('ReviewerList:Subtotal'),
+                    width: "60px",
+                    className: 'data-table-header',
+                    data: null,
+                    render: function (data, type, row) {
+                        return parseInt(row.financialAnalysis ?? 0) + parseInt(row.economicImpact ?? 0) + parseInt(row.inclusiveGrowth ?? 0) + parseInt(row.cleanGrowth ?? 0);
+                    }
+                
                 }
             ],
         })

@@ -24,6 +24,7 @@
                           'number',
                           'time',
                           'day',
+                          'hidden',
                           'simpletextfield', 
                           'simpletextfieldadvanced',
                           'simpletime',

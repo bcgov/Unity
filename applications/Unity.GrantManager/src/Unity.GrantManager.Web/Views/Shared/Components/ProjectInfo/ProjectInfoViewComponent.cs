@@ -81,15 +81,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             if (Sectors.Count > 0)
             {
                 List<SubSectorDto> SubSectors = new();
-                if (string.IsNullOrEmpty(application.SubSector))
-                {
-                    SubSectors = Sectors[0].SubSectors ?? SubSectors;
-                }
-                else
-                {
-                    SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);                                                                
-                    SubSectors = applicationSector?.SubSectors ?? SubSectors;
-                }
+
+                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);
+                SubSectors = applicationSector?.SubSectors ?? SubSectors;
 
                 model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector => 
                     new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
@@ -159,7 +153,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 ContactTitle = application.ContactTitle,
                 ContactEmail = application.ContactEmail,
                 ContactBusinessPhone = application.ContactBusinessPhone,
-                ContactCellPhone = application.ContactCellPhone
+                ContactCellPhone = application.ContactCellPhone,
+                SectorSubSectorIndustryDesc = application.SectorSubSectorIndustryDesc
             };
 
             return View(model);

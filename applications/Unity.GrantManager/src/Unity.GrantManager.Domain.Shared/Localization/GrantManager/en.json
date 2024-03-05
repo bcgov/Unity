@@ -82,6 +82,8 @@
     "ApplicationList:StartAssessmentButton": "Start Assessment",
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
     "ApplicationList:TagButton": "Tags",
+    "ApplicationList:ResyncSubmissionAttachmentsButton": "Resync",
+    "ApplicationList:ResyncAllSubmissionAttachmentsButton": "Resync Submission Attachments",
 
     "ReviewerList:AssessorName": "Assessor Name",
     "ReviewerList:StartDate": "Start Date",
@@ -92,6 +94,7 @@
     "ReviewerList:EconomicImpact": "Economic Impact",
     "ReviewerList:InclusiveGrowth": "Inclusive Growth",
     "ReviewerList:CleanGrowth": "Clean Growth",
+    "ReviewerList:Subtotal": "Subtotal",
 
     "AssessmentResultAttachments:Id": "#",
     "AssessmentResultAttachments:DocumentName": "Document Name",
@@ -257,11 +260,15 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
+    "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
 
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",
     "UnityIdentity:LastName": "Last Name",
-    "UnityIdentity:Import": "Import"
+    "UnityIdentity:Import": "Import",
+
+    "ApplicationDetails:Comments.Modified": "Modified:",
+    "ApplicationDetails:Comments.Created": "Created:"
   }
 }
 

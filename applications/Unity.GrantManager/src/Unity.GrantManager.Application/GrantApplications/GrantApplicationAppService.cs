@@ -82,9 +82,7 @@ public class GrantApplicationAppService :
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
-    {
-        PagedAndSortedResultRequestDto.DefaultMaxResultCount = 1000;
-
+    {        
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
@@ -247,6 +245,7 @@ public class GrantApplicationAppService :
             {
                 appDto.Sector = appDto.Applicant.Sector;
                 appDto.SubSector = appDto.Applicant.SubSector;
+                appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
             }
 
             return appDto;
@@ -266,7 +265,7 @@ public class GrantApplicationAppService :
                     select new GetSummaryDto
                     {
                         Category = applicationForm == null ? string.Empty : applicationForm.Category,
-                        SubmissionDate = TimeZoneInfo.ConvertTimeFromUtc(application.SubmissionDate, TimeZoneInfo.Local).ToShortDateString(),
+                        SubmissionDate = application.SubmissionDate,
                         OrganizationName = applicant.OrgName,
                         OrganizationNumber = applicant.OrgNumber,
                         EconomicRegion = application.EconomicRegion,
@@ -379,6 +378,7 @@ public class GrantApplicationAppService :
 
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
+            applicant.SectorSubSectorIndustryDesc= input.SectorSubSectorIndustryDesc ?? "";
             _ = await _applicantRepository.UpdateAsync(applicant);
 
             if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)

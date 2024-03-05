@@ -133,6 +133,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             [DataType(DataType.PhoneNumber, ErrorMessage = "Invalid Phone Number")]
             [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
             public string? ContactCellPhone { get; set; }
+
+            [Display(Name = "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc")]
+            [TextArea(Rows = 2)]
+            public string? SectorSubSectorIndustryDesc { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

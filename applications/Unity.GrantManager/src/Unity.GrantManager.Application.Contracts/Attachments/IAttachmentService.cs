@@ -10,5 +10,6 @@ namespace Unity.GrantManager.Applications
     {        
         Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId);
         Task<IList<AssessmentAttachmentDto>> GetAssessmentAsync(Guid assessmentId);
+        Task ResyncSubmissionAttachmentsAsync(Guid applicationId);
     }
 }
