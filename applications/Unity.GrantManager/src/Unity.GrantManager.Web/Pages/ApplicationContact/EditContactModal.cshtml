@@ -12,12 +12,24 @@
     Layout = null;
 }
 
+@section scripts
+    {
+    <script src="/Pages/ApplicationContact/EditContact.js"></script>    
+}
+
 <abp-dynamic-form abp-model="ContactForm" asp-page="/ApplicationContact/EditContactModal" >
     <abp-modal>
         <abp-modal-header title="@L["ApplicationContact:EditTitle"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-form-content />
         </abp-modal-body>
+        <div class="d-flex px-4 justify-content-end pb-4 pt-2">
+            <abp-button text="Delete This Contact"
+                id="DeleteContactButton"
+                icon-type="Other"
+                icon="fl fl-clear"
+                button-type="Light" />
+        </div>
         <abp-modal-footer buttons="@(AbpModalButtons.Save|AbpModalButtons.Cancel)"></abp-modal-footer>
     </abp-modal>
 </abp-dynamic-form>

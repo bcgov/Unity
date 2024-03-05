@@ -342,3 +342,7 @@
 .fl-work:before {
     content: '\E821';
 }
+
+.fl-clear:before {
+    content: '\E894';
+}
