@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Unity.GrantManager.GrantApplications
+﻿namespace Unity.GrantManager.GrantApplications
 {
     public class CreateUpdateApplicantInfoDto
     {
