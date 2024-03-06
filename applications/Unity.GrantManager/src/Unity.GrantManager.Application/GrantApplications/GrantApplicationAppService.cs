@@ -341,6 +341,7 @@ public class GrantApplicationAppService :
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
+                application.ValidateAndChangeNotificationDate(input.NotificationDate);
                 application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
                 application.UpdateFieldsOnlyForPreFinalDecision(input.ProjectSummary,
                     input.DueDiligenceStatus,

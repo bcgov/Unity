@@ -43,6 +43,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public GrantApplicationState StatusCode { get; set; }
     public DateTime? FinalDecisionDate { get; set; }
     public DateTime? DueDate { get; set; }
+    public DateTime? NotificationDate { get; set; }
     public DateTime? ProjectStartDate { get; set; }
     public DateTime? ProjectEndDate { get; set; }
     public double? PercentageTotalProjectBudget { get; set; }

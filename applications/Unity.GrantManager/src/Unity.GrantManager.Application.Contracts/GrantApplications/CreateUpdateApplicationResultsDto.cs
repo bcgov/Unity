@@ -5,6 +5,7 @@ namespace Unity.GrantManager.GrantApplications
     public class CreateUpdateAssessmentResultsDto
     {
         public DateTime? DueDate { get; set; }
+        public DateTime? NotificationDate { get; set; }
         public string? Notes { get; set; }
         public string? SubStatus { get; set; }
         public string? LikelihoodOfFunding { get; set; }
