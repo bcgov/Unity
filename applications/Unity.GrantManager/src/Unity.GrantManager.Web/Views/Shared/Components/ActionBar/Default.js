@@ -104,7 +104,7 @@ $(function () {
     });
     assignApplicationModal.onResult(function () {
         abp.notify.success(
-            'The application assignees has been successfully updated.',
+            'The application assignee(s) have been successfully updated.',
             'Application Assignee'
         );
         PubSub.publish("refresh_application_list");
@@ -112,7 +112,7 @@ $(function () {
 
     unAssignApplicationModal.onResult(function () {
         abp.notify.success(
-            'The application assignee has been successfully removed.',
+            'The application assignee(s) have been successfully removed.',
             'Application Assignee'
         );
         PubSub.publish("refresh_application_list");
