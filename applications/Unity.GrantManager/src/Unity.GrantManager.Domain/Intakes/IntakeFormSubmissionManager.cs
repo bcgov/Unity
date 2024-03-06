@@ -215,7 +215,12 @@ namespace Unity.GrantManager.Intakes
                     Phone = intakeMap.ContactPhone ?? "{ContactPhone}",
                     Phone2 = intakeMap.ContactPhone2 ?? "{ContactPhone2}",
                     Email = intakeMap.ContactEmail ?? "{ContactEmail}",
-                    Title = intakeMap.ContactTitle ?? "{ContactTitle}"
+                    Title = intakeMap.ContactTitle ?? "{ContactTitle}",
+                    SigningAuthorityFullName = intakeMap.SigningAuthorityFullName ?? "{SigningAuthorityFullName}",
+                    SigningAuthorityTitle = intakeMap.SigningAuthorityTitle ?? "{SigningAuthorityTitle}",
+                    SigningAuthorityEmail = intakeMap.SigningAuthorityEmail ?? "{SigningAuthorityEmail}",
+                    SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone ?? "{SigningAuthorityBusinessPhone}",
+                    SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone ?? "{SigningAuthorityCellPhone}"
                 });
             }
 

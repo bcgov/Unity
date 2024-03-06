@@ -19,28 +19,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 new KeyValuePair<string, string>("VALUE2", "Value 2"),
             });
 
-        public List<SelectListItem> ForestryList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.ForestryList);
-
-        public List<SelectListItem> ForestryFocusList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.ForestryFocusList);
-
-        public List<SelectListItem> AcquisitionList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.AcquisitionList);
+      
         public List<SelectListItem> OrganizationTypeList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrganizationTypeList);
-
+        public List<SelectListItem> OrgBookStatusList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrgBookStatusList);
         public List<SelectListItem> ApplicationSectorsList { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ApplicationSubSectorsList { get; set; } = new List<SelectListItem>();
-        public List<SelectListItem> EconomicRegionList { get; set; } = new List<SelectListItem>();
-        public List<SelectListItem> ElectoralDistrictList { get; set; } = new List<SelectListItem>();
+
         
         public Guid ApplicationId { get; set; }
         public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
         public bool IsFinalDecisionMade { get; set; }
         public ApplicantInfoViewModelModel ApplicantInfo { get; set; } = new();
-
-        public List<EconomicRegionDto> EconomicRegions  { get; set; } = new List<EconomicRegionDto>();
-        public List<RegionalDistrictDto> RegionalDistricts  { get; set; } = new List<RegionalDistrictDto>();
-        public List<SelectListItem> CommunityList { get; set; } = new List<SelectListItem>();
-        public List<CommunityDto> Communities { get; set; } = new List<CommunityDto>();
-        public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
 
 
         public class ApplicantInfoViewModelModel
@@ -53,6 +42,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             public string? OrgNumber { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.OrgBookStatus")]
+            [SelectItems(nameof(OrgBookStatusList))]
             public string? OrgStatus { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.OrganizationType")]

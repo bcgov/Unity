@@ -69,25 +69,7 @@
         console.log(event, picker);
     });
 
-    $('#sectorDropdown').change(function () {
-        const selectedValue = $(this).val();
-        let sectorList = JSON.parse($('#applicationSectorList').text());
-
-        let childDropdown = $('#subSectorDropdown');
-        childDropdown.empty();
-
-        let subSectors = sectorList.find(sector => (sector.sectorName === selectedValue))?.subSectors;
-        childDropdown.append($('<option>', {
-            value: '',
-            text: 'Please Choose...'
-        }));
-        $.each(subSectors, function (index, item) {
-            childDropdown.append($('<option>', {
-                value: item.subSectorName,
-                text: item.subSectorName
-            }));
-        });
-    });
+   
 
     $('#economicRegions').change(function () {
 
@@ -146,17 +128,12 @@
 });
 
 
-function enableSaveBtn(inputText) {
+function enableProjectInfoSaveBtn(inputText) {
     if (!$("#projectInfoForm").valid()) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
     }
-    if (!document.getElementById("ProjectInfo_ContactEmail").validity.valid ||
-        !document.getElementById("ProjectInfo_ContactBusinessPhone").checkValidity() ||
-        !document.getElementById("ProjectInfo_ContactCellPhone").checkValidity()) {
-        $('#saveProjectInfoBtn').prop('disabled', true);
-        return;
-    } 
+  
 
     $('#saveProjectInfoBtn').prop('disabled', false);
 }

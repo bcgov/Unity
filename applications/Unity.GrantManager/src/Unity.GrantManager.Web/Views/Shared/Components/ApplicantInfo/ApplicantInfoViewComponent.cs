@@ -22,61 +22,32 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
     {
         private readonly IGrantApplicationAppService _grantApplicationAppService;
         private readonly ISectorService _applicationSectorAppService;
-        private readonly IEconomicRegionService _applicationEconomicRegionAppService;
-        private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
-        private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
-        private readonly ICommunityService _applicationCommunityAppService;
 
         public ApplicantInfoViewComponent(
             IGrantApplicationAppService grantApplicationAppService,
-            ISectorService applicationSectorAppService,
-            IEconomicRegionService applicationEconomicRegionAppService,
-            IElectoralDistrictService applicationElectoralDistrictAppService,
-            IRegionalDistrictService applicationRegionalDistrictAppService,
-            ICommunityService applicationCommunityAppService
+            ISectorService applicationSectorAppService
             )
         {
             _grantApplicationAppService = grantApplicationAppService;
             _applicationSectorAppService = applicationSectorAppService;
-            _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
-            _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
-            _applicationRegionalDistrictAppService = applicationRegionalDistrictAppService;
-            _applicationCommunityAppService = applicationCommunityAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            const decimal ProjectFundingMax = 10000000;
-            const decimal ProjectFundingMultiply = 0.2M;
+
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
             List<SectorDto> Sectors = (await _applicationSectorAppService.GetListAsync()).ToList();
-
-            List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
-
-            List<ElectoralDistrictDto> ElectoralDistricts = (await _applicationElectoralDistrictAppService.GetListAsync()).ToList();
-
-            List<RegionalDistrictDto> RegionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
-
-            List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();
 
             ApplicantInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationSectors = Sectors,
-                RegionalDistricts = RegionalDistricts,
-                Communities = Communities,
-                EconomicRegions = EconomicRegions,
             };
 
             model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
                 new SelectListItem { Value = Sector.SectorName, Text = Sector.SectorName }));
-            
-            model.EconomicRegionList.AddRange(EconomicRegions.Select(EconomicRegion =>  
-                new SelectListItem { Value = EconomicRegion.EconomicRegionName, Text = EconomicRegion.EconomicRegionName }));
 
-            model.ElectoralDistrictList.AddRange(ElectoralDistricts.Select(ElectoralDistrict =>
-                new SelectListItem { Value = ElectoralDistrict.ElectoralDistrictName, Text = ElectoralDistrict.ElectoralDistrictName }));
 
             if (Sectors.Count > 0)
             {
@@ -87,57 +58,18 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 }
                 else
                 {
-                    SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);                                                                
+                    SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);
                     SubSectors = applicationSector?.SubSectors ?? SubSectors;
                 }
 
-                model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector => 
+                model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
                     new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
             }
 
-            if(EconomicRegions.Count > 0) {
-                String EconomicRegionCode = string.Empty;
-                var economicRegionSelected = EconomicRegions.Find(x => x.EconomicRegionName == application.EconomicRegion);
-                if (economicRegionSelected != null) {
-                    EconomicRegionCode = economicRegionSelected.EconomicRegionCode;
-                }
-                else {
-                    EconomicRegionCode = EconomicRegions[0].EconomicRegionCode;
-                }
-                model.RegionalDistrictList.AddRange(RegionalDistricts.FindAll(x => x.EconomicRegionCode == EconomicRegionCode).Select(RegionalDistrict => 
-                    new SelectListItem { Value = RegionalDistrict.RegionalDistrictName, Text = RegionalDistrict.RegionalDistrictName }));
-            }
-
-            if(RegionalDistricts.Count > 0) {
-                String RegionalDistrictCode = string.Empty;
-                var regionalDistrictSelected = RegionalDistricts.Find(x => x.RegionalDistrictName == application.RegionalDistrict);
-                if (regionalDistrictSelected != null) {
-                    RegionalDistrictCode = regionalDistrictSelected.RegionalDistrictCode;
-                }
-                else {
-                    RegionalDistrictCode = RegionalDistricts[0].RegionalDistrictCode;
-                }
-                model.CommunityList.AddRange(Communities.FindAll(x => x.RegionalDistrictCode == RegionalDistrictCode).Select(community =>
-                    new SelectListItem { Value = community.Name, Text = community.Name }));
-            }
-
-
-            decimal projectFundingTotal = application.ProjectFundingTotal ?? 0;
-            double percentageTotalProjectBudget = application.PercentageTotalProjectBudget ?? 0;
-
-            if (projectFundingTotal == 0)
-            {
-                projectFundingTotal = decimal.Multiply(application.TotalProjectBudget, ProjectFundingMultiply);
-                projectFundingTotal = (projectFundingTotal > ProjectFundingMax) ? ProjectFundingMax : projectFundingTotal;
-            }
-
-            percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(application.RequestedAmount, application.TotalProjectBudget),100).To<double>();
-
-            model.IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
 
             model.ApplicantInfo = new()
             {
-               
+
                 Sector = application.Sector,
                 SubSector = application.SubSector,
                 ContactFullName = application.ContactFullName,
@@ -154,10 +86,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 SigningAuthorityEmail = application.SigningAuthorityEmail,
                 SigningAuthorityBusinessPhone = application.SigningAuthorityBusinessPhone,
                 SigningAuthorityCellPhone = application.SigningAuthorityCellPhone,
-
-
-
-
+                OrganizationSize = application.OrganizationSize,
 
             };
 

@@ -261,9 +261,7 @@ public class GrantApplicationAppService :
                 appDto.OrgStatus = appDto.Applicant.OrgStatus;
                 appDto.OrganizationName = appDto.Applicant.OrgName;
                 appDto.Sector = appDto.Applicant.Sector;
-                appDto.OrgStatus = appDto.Applicant.OrgStatus;
                 appDto.OrganizationType = appDto.Applicant.OrganizationType;
-                appDto.OrganizationSize = appDto.Applicant.OrganizationSize;
                 appDto.SubSector = appDto.Applicant.SubSector;
                 appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
             }
@@ -396,54 +394,11 @@ public class GrantApplicationAppService :
             var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
             // This applicant should never be null!
 
-            applicant.Sector = input.Sector ?? "";
-            applicant.SubSector = input.SubSector ?? "";
             applicant.SectorSubSectorIndustryDesc= input.SectorSubSectorIndustryDesc ?? "";
             _ = await _applicantRepository.UpdateAsync(applicant);
 
-            if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
-                || !string.IsNullOrEmpty(input.ContactBusinessPhone) || !string.IsNullOrEmpty(input.ContactCellPhone))
-            {
-                var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
-                if (applicantAgent == null)
-                {
-                    applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
-                    {
-                        ApplicantId = application.ApplicantId,
-                        ApplicationId = application.Id,
-                        Name = input.ContactFullName ?? "",
-                        Phone = input.ContactBusinessPhone ?? "",
-                        Phone2 = input.ContactCellPhone ?? "",
-                        Email = input.ContactEmail ?? "",
-                        Title = input.ContactTitle ?? ""
-                    });
-                }
-                else
-                {
-                    applicantAgent.Name = input.ContactFullName ?? "";
-                    applicantAgent.Phone = input.ContactBusinessPhone ?? "";
-                    applicantAgent.Phone2 = input.ContactCellPhone ?? "";
-                    applicantAgent.Email = input.ContactEmail ?? "";
-                    applicantAgent.Title = input.ContactTitle ?? "";
-
-                    applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
-                }
-
-                var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
-
-                appDto.ContactFullName = applicantAgent.Name;
-                appDto.ContactEmail = applicantAgent.Email;
-                appDto.ContactTitle = applicantAgent.Title;
-                appDto.ContactBusinessPhone = applicantAgent.Phone;
-                appDto.ContactCellPhone = applicantAgent.Phone2;
-
-                return appDto;
-
-            }
-            else
-            {
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
-            }
+            
         }
         else
         {
