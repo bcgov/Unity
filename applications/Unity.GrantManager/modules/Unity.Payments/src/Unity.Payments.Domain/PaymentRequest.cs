@@ -11,7 +11,7 @@ namespace Unity.Payments
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
         public virtual PaymentMethod Method { get; private set; }
-        public virtual PaymentStatus Status { get; private set; } = PaymentStatus.Created;
+        public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual string? Comment { get; private set; } = null;
 
         /// <summary>
@@ -21,6 +21,12 @@ namespace Unity.Payments
 
         public virtual PaymentRequestBatch? Batch { get; private set; }
         public bool IsRecon { get; internal set; }
+
+        // Filled on a recon
+        public virtual string? InvoiceStatus { get; private set; }
+        public virtual string? PaymentStatus { get; private set; }
+        public virtual string? PaymentNumber { get; private set; }
+        public virtual string? PaymentDate { get; private set; }
 
         protected PaymentRequest()
         {
@@ -60,10 +66,34 @@ namespace Unity.Payments
             return this;
         }
 
-        public PaymentRequest SetStatus(PaymentStatus status)
+        public PaymentRequest SetPaymentRequestStatus(PaymentRequestStatus status)
         {
             Status = status;
             return this;
         }
+
+        public PaymentRequest SetInvoiceStatus(string status)
+        {
+            InvoiceStatus = status;
+            return this;
+        }
+
+        public PaymentRequest SetPaymentStatus(string status)
+        {
+            PaymentStatus = status;
+            return this;
+        }
+
+        public PaymentRequest SetPaymentNumber(string paymentNumber)
+        {
+            PaymentNumber = paymentNumber;
+            return this;
+        }
+
+        public PaymentRequest SetPaymentDate(string paymentDate)
+        {
+            PaymentDate = paymentDate;
+            return this;
+        }     
     }
 }

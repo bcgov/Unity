@@ -15,9 +15,9 @@ namespace Unity.Payments
         public virtual string ExpenseAuthorityName { get; private set; } = string.Empty;
         public virtual string IssuedByName { get; private set; } = string.Empty;
         public virtual PaymentMethod Method { get; private set; }
-        public virtual PaymentStatus Status { get; private set; } = PaymentStatus.Created;
+        public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public bool IsApproved { get => Approvals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
-        public bool IsRecon { get => PaymentRequests.All(s => s.IsRecon == true); }
+        public bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }        
 
         public Collection<PaymentRequest> PaymentRequests { get; private set; }
         public Collection<ExpenseApproval> Approvals { get; private set; }
