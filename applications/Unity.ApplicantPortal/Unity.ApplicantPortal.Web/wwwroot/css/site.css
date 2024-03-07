@@ -1,0 +1,107 @@
+html {
+  font-size: 16px;
+  position: relative;
+  min-height: 100%;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+body {
+  margin-bottom: 60px;
+  background-color: #F5F1F1;
+  font-family: 'BCSans',var(--bs-font-sans-serif) !important;
+}
+
+.navbar {
+  padding: 0;
+  border-bottom: 1px #F5F1F1;
+  background-color: #FFF;
+}
+
+  .navbar .navbar-brand {
+    height: 5rem;
+    padding: 0;
+  }
+
+    .navbar .navbar-brand img {
+      height: 100%;
+    }
+
+  .navbar .navbar-nav {
+    height: 5rem;
+    line-height: 5rem;
+  }
+
+  .navbar .nav-item {
+    padding: 0 10px;
+  }
+
+    .navbar .nav-item.active,
+    aside .nav-item.active {
+      background-color: #00316A;
+    }
+
+    .navbar .nav-item a,
+    aside .nav-item a {
+      color: #00316A;
+      padding: 0;
+    }
+
+    .navbar .nav-item.active a,
+    aside .nav-item.active a {
+      color: #fff !important;
+    }
+
+main {
+  padding-top: 2rem;
+}
+
+aside {
+  width: 200px;
+}
+
+  aside .nav-item {
+    width: 90%;
+    height: 2rem;
+    line-height: 2rem;
+    border-top-right-radius: 1rem;
+    border-bottom-right-radius: 1rem;
+  }
+
+    aside .nav-item a {
+      padding-left: 20px;
+    }
+
+.page-container {
+  width: 99%; /*prevent scrollbars caused by column paddings*/
+}
+
+.page h1 {
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.form-container {
+  background-color: #FFF;
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-top: 20px;
+}
+
+  .form-container label {
+    color: #939291;
+  }
+
+  .form-container .btn-primary {
+    background-color: #00316A;
+    border-color: #00316A;
+  }
+
+  .form-container .field-validation-error {
+    color: #dc3545;
+    font-size: 0.8rem;
+  }
