@@ -19,6 +19,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.GrantManager.Integrations.Mail;
 
 namespace Unity.GrantManager;
 
@@ -70,10 +71,8 @@ namespace Unity.GrantManager;
             options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
 
-
-        context.Services.Configure<CssApiOptions>(
-            configuration.GetSection(
-                key: "CssApi"));
+        context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
+        context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
         context.Services.AddSingleton<RestClient>(provider =>
         {
