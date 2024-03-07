@@ -115,7 +115,13 @@ namespace Unity.GrantManager.Intakes
                     TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
                     Community = intakeMap.Community ?? "{Community}",
                     ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}"
+                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
+                    SigningAuthorityFullName = intakeMap.SigningAuthorityFullName ?? "{SigningAuthorityFullName}",
+                    SigningAuthorityTitle = intakeMap.SigningAuthorityTitle ?? "{SigningAuthorityTitle}",
+                    SigningAuthorityEmail = intakeMap.SigningAuthorityEmail ?? "{SigningAuthorityEmail}",
+                    SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone ?? "{SigningAuthorityBusinessPhone}",
+                    SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone ?? "{SigningAuthorityCellPhone}"
+
                 }
             );   
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
@@ -215,7 +221,7 @@ namespace Unity.GrantManager.Intakes
                     Phone = intakeMap.ContactPhone ?? "{ContactPhone}",
                     Phone2 = intakeMap.ContactPhone2 ?? "{ContactPhone2}",
                     Email = intakeMap.ContactEmail ?? "{ContactEmail}",
-                    Title = intakeMap.ContactTitle ?? "{ContactTitle}"
+                    Title = intakeMap.ContactTitle ?? "{ContactTitle}",
                 });
             }
 
@@ -253,24 +259,5 @@ namespace Unity.GrantManager.Intakes
             await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(applicationId, formSubmission);
         }
 
-        public async Task ResyncAllSubmissionAttachments()
-        {
-            var query = from applicationFormSubmissions in await _applicationFormSubmissionRepository.GetQueryableAsync()
-                        select applicationFormSubmissions;
-            List<ApplicationFormSubmission> formSubmissions = await AsyncExecuter.ToListAsync(query);
-            foreach (ApplicationFormSubmission submission in formSubmissions)
-            {
-                try
-                {
-                    if (submission == null) continue;
-                    var formSubmission = JsonConvert.DeserializeObject<dynamic>(submission.Submission)!;
-                    await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(submission.ApplicationId, formSubmission);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError("Error resyncing submission attachments for {submissionId} - {exception} ", submission.Id, ex);
-                }
-            }
-        }
     }
 }

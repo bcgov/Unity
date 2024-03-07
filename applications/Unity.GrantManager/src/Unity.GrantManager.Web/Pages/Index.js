@@ -17,10 +17,7 @@ $(function () {
 
     function setTimezoneCookie() {
         let timezone_cookie = "timezoneoffset";
-        let cookie = getCookie(timezone_cookie);
-        if (!cookie) {
-            setCookie(timezone_cookie, new Date().getTimezoneOffset(), 90);
-        }
+        setCookie(timezone_cookie, new Date().getTimezoneOffset(), 5);
     }
 
     function setCookie(cname, cvalue, exdays) {
@@ -29,20 +26,5 @@ $(function () {
         let expires = "expires=" + d.toUTCString();
         document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;domain=" +
             window.location.hostname;
-    }
-
-    function getCookie(cname) {
-        let name = cname + "=";
-        let ca = document.cookie.split(';');
-        for (const element of ca) {
-            let c = element;
-            while (c.charAt(0) == ' ') {
-                c = c.substring(1);
-            }
-            if (c.indexOf(name) == 0) {
-                return c.substring(name.length, c.length);
-            }
-        }
-        return "";
     }
 });

@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission.FormIdResolvers;
 using Unity.GrantManager.EntityFrameworkCore;
+using Unity.GrantManager.HealthChecks;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Web.Exceptions;
@@ -33,6 +35,7 @@ using Unity.GrantManager.Web.Services;
 using Unity.Identity.Web;
 using Unity.TenantManagement.Web;
 using Volo.Abp;
+using Volo.Abp.AspNetCore.Auditing;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
@@ -118,12 +121,12 @@ namespace Unity.GrantManager.Web;
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");            
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
         });
 
-        Configure<AbpBackgroundWorkerQuartzOptions>(options => 
-        { 
-            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled"); 
+        Configure<AbpBackgroundWorkerQuartzOptions>(options =>
+        {
+            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
         });
 
         Configure<AbpAntiForgeryOptions>(options =>
@@ -165,6 +168,20 @@ namespace Unity.GrantManager.Web;
         {
             x.ApplicationName = "GrantManager";
         });
+
+        Configure<AbpAspNetCoreAuditingOptions>(options =>
+        {
+            options.IgnoredUrls.AddIfNotContains("/healthz");
+        });
+
+        context.Services.AddHealthChecks()
+            .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
+
+        context.Services.AddHealthChecks()
+           .AddCheck<ReadyHealthCheck>("ready", tags: new[] { "ready" });
+
+        context.Services.AddHealthChecks()
+           .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });        
     }
 
     private static void ConfigureUtils(ServiceConfigurationContext context)

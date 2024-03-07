@@ -32,7 +32,13 @@ parameters:
 - description: The name of the application grouping.
   displayName: Application Group
   name: APPLICATION_GROUP
+  required: true
   value: unity-grantmanager
+- description: The name of the backup application.
+  displayName: Application Name
+  name: BACKUP_APPLICATION_NAME
+  required: true
+  value: unity-backup
 # Additional parameters for project database provisioning
 - description: The name of the OpenShift Service exposed for the database.
   displayName: Database Service Name
@@ -65,28 +71,47 @@ parameters:
   name: VOLUME_CAPACITY
   required: true
   value: 256Mi
-- description: Maximum amount of memory the container can use.
-  displayName: Memory Limit
-  name: MEMORY_LIMIT
-  required: true
-  value: 512Mi
 - description: The Namespace where the database container image resides default=redhat cluster=openshift, project=tools
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
+  required: true
   value: redhat
-- description: The Registry ImageStream Name the released version stream
+- description: The Openshift ImageStream Name
   displayName: Registry imagestream name
   name: IMAGESTREAM_NAME
+  required: true
   value: postgresql-15  
 - description: The version of the postgresql container image to use.
   displayName: Registry container image  to pull
   name: IMAGESTREAM_TAG
   required: true
   value: latest
-- description: The offical registry path of the container image used.
+- description: The registry path of the postgresql container image to use.
   displayName: Registry container image to pull
   name: IMAGEPULL_REGISTRY
+  required: true
   value: registry.redhat.io/rhel9/
+# Resource limits control how much CPU and memory a container will consume
+- description: The minimum amount of CPU the Container is guaranteed.
+  displayName: CPU Request
+  name: CPU_REQUEST
+  required: true
+  value: 50m
+- description: The maximum amount of CPU the Container is allowed to use when running.
+  displayName: CPU Limit
+  name: CPU_LIMIT
+  required: true
+  value: 250m
+- description: The minimum amount of Memory the Container is guaranteed.
+  displayName: Memory Request
+  name: MEMORY_REQUEST
+  required: true
+  value: 256Mi
+- description: The maximum amount of Memory the Container is allowed to use when running.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 512Mi
 # Template objects to instantiate the project database.
 objects:
 # Secrets 
@@ -138,11 +163,11 @@ objects:
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
   spec:
     ports:
-    - name: postgresql
+    - name: ${DATABASE_SERVICE_NAME}
       nodePort: 0
-      port: 5432
       protocol: TCP
-      targetPort: 5432
+      port: ${{DATABASE_PORT}}
+      targetPort: ${{DATABASE_PORT}}
     selector:
       name: ${DATABASE_SERVICE_NAME}
     sessionAffinity: None
@@ -230,6 +255,8 @@ objects:
               secretKeyRef:
                 key: database-name
                 name: ${DATABASE_SERVICE_NAME}
+          - name: PGPORT
+            value: ${DATABASE_PORT}
           livenessProbe:
             exec:
               command:
@@ -239,7 +266,7 @@ objects:
             timeoutSeconds: 10
           name: postgresql
           ports:
-          - containerPort: 5432
+          - containerPort: ${{DATABASE_PORT}}
             protocol: TCP
           readinessProbe:
             exec:
@@ -249,7 +276,11 @@ objects:
             timeoutSeconds: 1
           resources:
             limits:
+              cpu: ${CPU_LIMIT}
               memory: ${MEMORY_LIMIT}
+            requests:
+              cpu: ${CPU_REQUEST}
+              memory: ${MEMORY_REQUEST}
           securityContext:
             capabilities: {}
             privileged: false

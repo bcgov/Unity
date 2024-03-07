@@ -19,9 +19,11 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
 using Unity.Notifications;
 using Unity.Notifications.Integrations.Ches;
+using Unity.GrantManager.Intakes.BackgroundWorkers;
 
 namespace Unity.GrantManager;
 
@@ -65,6 +67,7 @@ namespace Unity.GrantManager;
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
+        context.Services.AddSingleton<IAuthorizationHandler, ApplicationAuthorizationHandler>();
 
         Configure<IntakeClientOptions>(options =>
         {
@@ -78,6 +81,13 @@ namespace Unity.GrantManager;
 
         context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
+        Configure<BackgroundJobsOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+            options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
+            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";
+            options.IntakeResync.NumDaysToCheck = configuration.GetValue<string>("BackgroundJobs:IntakeResync:NumDaysToCheck") ?? "-2";
+        });
 
         _ = context.Services.AddSingleton(provider =>
         {

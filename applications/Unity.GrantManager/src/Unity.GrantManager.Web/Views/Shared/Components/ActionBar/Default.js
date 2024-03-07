@@ -104,7 +104,7 @@ $(function () {
     });
     assignApplicationModal.onResult(function () {
         abp.notify.success(
-            'The application assignees has been successfully updated.',
+            'The application assignee(s) have been successfully updated.',
             'Application Assignee'
         );
         PubSub.publish("refresh_application_list");
@@ -112,7 +112,7 @@ $(function () {
 
     unAssignApplicationModal.onResult(function () {
         abp.notify.success(
-            'The application assignee has been successfully removed.',
+            'The application assignee(s) have been successfully removed.',
             'Application Assignee'
         );
         PubSub.publish("refresh_application_list");
@@ -217,7 +217,8 @@ $(function () {
         wrapper: '#summaryWidgetArea',
         filterCallback: function () {
             return {
-                'applicationId': selectedApplicationIds.length == 1 ? selectedApplicationIds[0] : "00000000-0000-0000-0000-000000000000"
+                'applicationId': selectedApplicationIds.length == 1 ? selectedApplicationIds[0] : "00000000-0000-0000-0000-000000000000",
+                'isReadOnly': true
             }
         }
     });
@@ -261,24 +262,5 @@ $(function () {
 
     $('.spinner-grow').hide();
 
-    $('#resyncAllSubmissionAttachments').click(function () {
-        try {
-            $('#resyncAllSubmissionAttachments').prop('disabled', true);
-            $('.spinner-grow').show();
-            unity.grantManager.grantApplications.attachment
-                .resyncAllSubmissionAttachments()
-                .done(function () {
-                    $('#resyncAllSubmissionAttachments').prop('disabled', false);
-                    $('.spinner-grow').hide();
-                    abp.notify.success(
-                        "All Submission Attachments are now resynced."
-                    );
-                    dataTable.ajax.reload();
-                    dataTable.columns.adjust();
-                });
-        }
-        catch (error) {
-            console.log(error);
-        }
-    });
+    
 });

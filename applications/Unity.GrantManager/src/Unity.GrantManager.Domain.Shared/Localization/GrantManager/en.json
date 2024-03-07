@@ -83,7 +83,6 @@
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
     "ApplicationList:TagButton": "Tags",
     "ApplicationList:ResyncSubmissionAttachmentsButton": "Resync",
-    "ApplicationList:ResyncAllSubmissionAttachmentsButton": "Resync Submission Attachments",
 
     "ReviewerList:AssessorName": "Assessor Name",
     "ReviewerList:StartDate": "Start Date",
@@ -148,6 +147,7 @@
     "ApplicationForms:APIConfiguration": "API Configuration",
     "ApplicationForms:DownloadAPIConfiguration": "Download API Configuration",
     "ApplicationForms:UpdateAPIToken": "Update API Token",
+    "ApplicationForms:Payable": "Payable",
 
     "Intakes": "Intakes",
 
@@ -193,6 +193,8 @@
     "Enum:GrantApplicationAction.Withdraw": "Withdraw",
     "Enum:GrantApplicationAction.Approve": "Approve",
     "Enum:GrantApplicationAction.Deny": "Decline",
+    "Enum:GrantApplicationAction.Defer": "Defer",
+    "Enum:GrantApplicationAction.OnHold": "On Hold",
     "Enum:GrantApplicationAction.Message.Open": "Open",
     "Enum:GrantApplicationAction.Message.Submit": "Submitted",
     "Enum:GrantApplicationAction.Message.Internal_Assign": "Assigned",
@@ -204,12 +206,15 @@
     "Enum:GrantApplicationAction.Message.Withdraw": "The Application is withdrawn!",
     "Enum:GrantApplicationAction.Message.Approve": "Approved",
     "Enum:GrantApplicationAction.Message.Deny": "Declined",
+    "Enum:GrantApplicationAction.Message.Defer": "Deferred",
+    "Enum:GrantApplicationAction.Message.OnHold": "On-Hold",
 
     "Setting:GrantManager.Locality.SectorFilter.DisplayName": "SectorFilter",
     "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
 
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
+    "Summary:ContactsTitle": "Contacts",
     "Summary:Application.Category": "Category",
     "Summary:Application.EconomicRegion": "Economic Region",
     "Summary:Application.RegionalDistrict": "Regional District",
@@ -261,7 +266,35 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-    "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
+    "ProjectInfoView:ProjectInfoContract": "Contract",
+    "ProjectInfoView:ProjectInfo.ContractNumber": "Contract #",
+    "ProjectInfoView:ProjectInfo.ContractExecutionDate": "Execution Date",
+
+
+    "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
+    "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
+    "ApplicantInfoView:ApplicantInfo.ContactFullName": "Full Name",
+    "ApplicantInfoView:ApplicantInfo.ContactTitle": "Title",
+    "ApplicantInfoView:ApplicantInfo.ContactEmail": "Email",
+    "ApplicantInfoView:ApplicantInfo.ContactBusinessPhone": "Business Phone",
+    "ApplicantInfoView:ApplicantInfo.ContactCellPhone": "Cell Phone",
+    "ApplicantInfoView:ApplicantInfo SigningAuthorityInfo": " Signing Authority",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityFullName": "Full Name",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityTitle": "Title",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityEmail": "Email",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityBusinessPhone": "Business Phone",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityCellPhone": "Phone",
+    "ApplicantInfoView:ApplicantInfo.OrgName": "Organization Name",
+    "ApplicantInfoView:ApplicantInfo.OrgNumber": "Organization Number",
+    "ApplicantInfoView:ApplicantInfo.OrgBookStatus": "Org book status ",
+    "ApplicantInfoView:ApplicantInfo.OrganizationType": "Organization Type",
+    "ApplicantInfoView:ApplicantInfo.OrganizationSize": "Organization Size",
+    "ApplicantInfoView:ApplicantInfo.Sector": "Sector",
+    "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
+    "ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle": "Applicant Info",
+    "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
+
+
 
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",
@@ -269,7 +302,17 @@
     "UnityIdentity:Import": "Import",
 
     "ApplicationDetails:Comments.Modified": "Modified:",
-    "ApplicationDetails:Comments.Created": "Created:"
+    "ApplicationDetails:Comments.Created": "Created:",
+
+    "ApplicationContact:AddTitle" : "Add New Contact",
+    "ApplicationContact:EditTitle" : "Edit Contact",
+    "ApplicationContact:Type": "Type",
+    "ApplicationContact:FullName": "Full Name",
+    "ApplicationContact:Title": "Title",
+    "ApplicationContact:Email": "Email",
+    "ApplicationContact:MobilePhone": "Mobile Phone Number",
+    "ApplicationContact:WorkPhone": "Work Phone Number",
+    "ApplicationContact:Delete": "Delete This Contact"
   }
 }
 
