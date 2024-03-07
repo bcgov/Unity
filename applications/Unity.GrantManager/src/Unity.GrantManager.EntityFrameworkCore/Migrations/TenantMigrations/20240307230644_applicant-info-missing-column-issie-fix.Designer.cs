@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    [Migration("20240306224754_applicant-info-tab")]
-    partial class applicantinfotab
+    [Migration("20240307230644_applicant-info-missing-column-issie-fix")]
+    partial class applicantinfomissingcolumnissiefix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -151,6 +151,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("OrgStatus")
                         .HasColumnType("text");
 
+                    b.Property<string>("OrganizationSize")
+                        .HasColumnType("text");
 
                     b.Property<string>("OrganizationType")
                         .HasColumnType("text");
