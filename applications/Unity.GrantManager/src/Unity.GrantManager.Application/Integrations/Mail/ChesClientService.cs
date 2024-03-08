@@ -37,7 +37,7 @@ namespace Unity.GrantManager.Integrations.Mail
         {
             // Ches Tokens Expire Immediately After use but we could use bulk send
             var tokenResponse = await GetAccessTokenAsync();
-            var resource = $"{_chesClientOptions.Value.ChesBaseUri}/email";
+            var resource = $"{_chesClientOptions.Value.BaseUri}/email";
             var authHeaders = new Dictionary<string, string>
             {
                 { "Authorization", $"Bearer {tokenResponse.AccessToken}" }
