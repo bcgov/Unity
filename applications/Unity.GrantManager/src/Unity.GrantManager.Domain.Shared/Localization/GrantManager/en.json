@@ -179,6 +179,7 @@
     "AssessmentResultsView:AssessmentResultsForm.AssessmentResult": "Assessment Result",
     "AssessmentResultsView:AssessmentResultsForm.FinalDecisionDate": "Decision Date",
     "AssessmentResultsView:AssessmentResultsForm.DueDate": "Due Date",
+    "AssessmentResultsView:AssessmentResultsForm.NotificationDate": "Notification Date",
 
     "GrantApplication:ActionButtonName": "Status Actions",
     "Enum:GrantApplicationAction.Open": "Open",

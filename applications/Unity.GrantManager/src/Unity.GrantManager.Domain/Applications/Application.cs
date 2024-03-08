@@ -35,6 +35,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public DateTime? AssessmentStartDate { get; set; }
     public DateTime? FinalDecisionDate { get; set; }
     public DateTime? DueDate { get; set; }
+    public DateTime? NotificationDate { get; set; }
 
     [Column(TypeName = "jsonb")]
     public string? Payload { get; set; }
@@ -86,7 +87,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? TenantId { get; set; }
 
     public Guid? OwnerId { get; set; }
-
+    
     public bool IsInFinalDecisionState()
     {
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
@@ -116,9 +117,8 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         AssessmentResultStatus = assessmentResultStatus;
     }
 
-    public void UpdateFieldsOnlyForPreFinalDecision(string? projectSummary, string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
-    {
-        ProjectSummary = projectSummary;
+    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
+    {        
         DueDiligenceStatus = dueDiligenceStatus;
         TotalProjectBudget = totalProjectBudget ?? 0;
         RecommendedAmount = recommendedAmount ?? 0;
@@ -134,6 +134,18 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         else
         {
             DueDate = dueDate;
+        }
+    }
+
+    public void ValidateAndChangeNotificationDate(DateTime? notificationDate)
+    {
+        if ((NotificationDate != notificationDate) && notificationDate != null && notificationDate.Value < DateTime.Now.AddDays(-1))
+        {
+            throw new BusinessException("Notification Date cannot be a past date.");
+        }
+        else
+        {
+            NotificationDate = notificationDate;
         }
     }
 

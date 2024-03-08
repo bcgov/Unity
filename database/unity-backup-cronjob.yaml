@@ -20,9 +20,9 @@ metadata:
     tags: unity-database,postgresql
 parameters:
 # Project namespace parameters
-- description: The name of the application.
+- description: The name of the backup application.
   displayName: Application Name
-  name: APPLICATION_NAME
+  name: BACKUP_APPLICATION_NAME
   required: true
   value: unity-backup
 - description: The name of the application grouping.
@@ -35,6 +35,11 @@ parameters:
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
+- description: The port exposed for the database.
+  displayName: Database Service Port
+  name: DATABASE_PORT
+  required: true
+  value: "5432"
 - description: Password for the PostgreSQL connection user.
   displayName: PostgreSQL Connection Password
   name: POSTGRESQL_PASSWORD
@@ -73,15 +78,15 @@ objects:
 - apiVersion: batch/v1
   kind: CronJob
   metadata:
-    name: ${APPLICATION_NAME}
+    name: ${BACKUP_APPLICATION_NAME}
     labels:
-      job-name: ${APPLICATION_NAME}
+      job-name: ${BACKUP_APPLICATION_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
-      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/name: ${BACKUP_APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   # Cronjob script works with both database or instance backup commands
-  # pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_NAME} 
+  # pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_SERVICE_NAME} 
   # pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean
   spec:
     schedule: ${DATABASE_BACKUP_SCHEDULE}
@@ -93,12 +98,12 @@ objects:
         template:
           spec:
             volumes:
-              - name: ${APPLICATION_NAME}
+              - name: ${BACKUP_APPLICATION_NAME}
                 persistentVolumeClaim:
                   claimName: ${DATABASE_BACKUP_VOLUME_CLAIM}
             containers:
-              - name: ${APPLICATION_NAME}
-                image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+              - name: ${BACKUP_APPLICATION_NAME}
+                image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
                 command:
                   - 'bash'
                   - '-eo'
@@ -106,8 +111,8 @@ objects:
                   - '-c'
                   - > 
                     trap "echo Backup failed; exit 0" ERR; date;
-                    FILENAME=dumpall-${DATABASE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
-                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
+                    FILENAME=dumpall-${DATABASE_SERVICE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
+                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_SERVICE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
                     PGPASSWORD="$DATABASE_PASSWORD" pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME); 
                     echo "";
                     echo "Backup successful"; du -h /var/lib/pgsql/backups/$FILENAME; 
@@ -121,7 +126,7 @@ objects:
                         key: UNITY_DB_PORT
                   - name: DATABASE_HOST
                     value: ${DATABASE_SERVICE_NAME}
-                  - name: DATABASE_NAME
+                  - name: DATABASE_SERVICE_NAME
                     valueFrom:
                       secretKeyRef:
                         name: ${DATABASE_SERVICE_NAME}
@@ -141,6 +146,6 @@ objects:
                   - name: TZ
                     value: Canada/Pacific
                 volumeMounts:
-                  - name: ${APPLICATION_NAME}
+                  - name: ${BACKUP_APPLICATION_NAME}
                     mountPath: /var/lib/pgsql/backups
             restartPolicy: Never
