@@ -79,6 +79,7 @@
             let todayDate = year + '-' + month + '-' + day;
             $('#AssessmentResults_FinalDecisionDate').attr({ 'max': todayDate });
             $('#AssessmentResults_DueDate').attr({ 'min': todayDate });
+            $('#AssessmentResults_NotificationDate').attr({ 'min': todayDate });
         }, 500)
     }
     initDatePicker();
@@ -93,15 +94,21 @@
 
 let dueDateHasChanged = false;
 let decisionDateHasChanged = false;
+let notificationDateHasChanged = false;
 
 function validateDueDate() {
     dueDateHasChanged = true;
-    enableResultSaveBtn('dueDate');
+    enableResultSaveBtn();
+}
+
+function validateNotificationDate() {
+    notificationDateHasChanged = true;
+    enableResultSaveBtn();
 }
 
 function validateDecisionDate() {
     decisionDateHasChanged = true;
-    enableResultSaveBtn('decisionDate');
+    enableResultSaveBtn();
 }
 
 function hasInvalidExplicitValidations() {
@@ -113,6 +120,10 @@ function hasInvalidExplicitValidations() {
         {
             flag: decisionDateHasChanged,
             name: 'AssessmentResults_FinalDecisionDate'
+        },
+        {
+            flag: notificationDateHasChanged,
+            name: 'AssessmentResults_NotificationDate'
         }
     ];
 
@@ -137,7 +148,7 @@ function flaggedFieldIsValid(flag, name) {
     return true;
 }
 
-function enableResultSaveBtn(inputText) {
+function enableResultSaveBtn() {
     if (hasInvalidExplicitValidations()) {
         $('#saveAssessmentResultBtn').prop('disabled', true);
         return;
