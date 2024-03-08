@@ -22,7 +22,6 @@ namespace Unity.GrantManager.Components
             lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         }
 
-        [Fact(Skip = "Failing Test")]
         public async Task ContactInfoReturnsStatus()
         {
             var applicationDto = new GrantApplicationDto()
