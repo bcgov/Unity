@@ -35,7 +35,7 @@ public class ApplicationManager : ApplicationService, IApplicationManager
         _personRepository = personRepository;
     }
 
-    public void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine)
+    public static void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine)
     {
         // TODO: ENSURE APPLICATION STATE MACHINE MATCHES WORKFLOW IN AB#8375
         stateMachine.Configure(GrantApplicationState.OPEN)
