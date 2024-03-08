@@ -58,7 +58,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                     Notes = application.Notes,
                     AssessmentResultStatus = application.AssessmentResultStatus,
                     FinalDecisionDate = application.FinalDecisionDate,
-                    DueDate = application.DueDate
+                    DueDate = application.DueDate,
+                    NotificationDate = application.NotificationDate
                 }
             };
 
