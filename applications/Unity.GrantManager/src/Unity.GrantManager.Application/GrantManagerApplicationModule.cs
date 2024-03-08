@@ -20,6 +20,7 @@ using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager;
 
@@ -119,5 +120,9 @@ namespace Unity.GrantManager;
                     );
             }
         });
+
+        // Set the max defaults as max - we are using non serverside paging and this effect this
+        PagedAndSortedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
+        PagedAndSortedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 }
