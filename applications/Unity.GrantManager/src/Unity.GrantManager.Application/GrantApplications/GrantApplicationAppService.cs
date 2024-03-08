@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Quartz;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -690,7 +689,7 @@ public class GrantApplicationAppService :
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // TODO: Replace placeholder loop with authorization handler mapped to permissions
         // AUTHORIZATION HANDLING
-        actionDtos.ForEach(item => { item.IsAuthorized = ApplicationWorkflowAuthService.IsAllowedStateChange(item.ApplicationAction, CurrentUser); });
+        actionDtos.ForEach(item => { item.IsAuthorized = true; });
 
         return new ListResultDto<ApplicationActionDto>(actionDtos);
     }
@@ -702,12 +701,6 @@ public class GrantApplicationAppService :
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
-        var canTriggerAction = ApplicationWorkflowAuthService.IsAllowedStateChange(triggerAction, CurrentUser);
-        if (!canTriggerAction)
-        {
-            throw new UnauthorizedAccessException();
-        }
-
         var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
         
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);

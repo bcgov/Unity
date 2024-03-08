@@ -7,34 +7,32 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Workflow;
 using Volo.Abp;
-using Volo.Abp.Domain.Services;
+using Volo.Abp.Application.Services;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 
 namespace Unity.GrantManager.Applications;
-public class ApplicationManager : DomainService, IApplicationManager
+public class ApplicationManager : ApplicationService, IApplicationManager
 {
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationAssignmentRepository _applicationAssignmentRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly IPersonRepository _personRepository;
-    private readonly ICurrentUser _currentUser;
 
     public ApplicationManager(
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatus,
         IApplicationAssignmentRepository applicationAssignmentRepository,
         IUnitOfWorkManager unitOfWorkManager,
-        IPersonRepository personRepository,
-        ICurrentUser currentUser)
+        IPersonRepository personRepository)
     {
         _applicationRepository = applicationRepository;
         _applicationStatusRepository = applicationStatus;
         _applicationAssignmentRepository = applicationAssignmentRepository;
         _unitOfWorkManager = unitOfWorkManager;
         _personRepository = personRepository;
-        _currentUser = currentUser;
     }
 
     public void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine)
@@ -75,18 +73,6 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         stateMachine.Configure(GrantApplicationState.CLOSED);
 
-        if (_currentUser.IsInRole(UnityRoles.Approver))
-        {
-            ConfigureApproverClosedStateWorkflow(stateMachine);
-        }
-        else
-        {
-            ConfigureDefaultClosedStateWorkflow(stateMachine);
-        }
-    }
-
-    public static void ConfigureApproverClosedStateWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine)
-    {
         stateMachine.Configure(GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
 
@@ -96,17 +82,7 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
-    }
-
-    public static void ConfigureDefaultClosedStateWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine)
-    {
-        stateMachine.Configure(GrantApplicationState.WITHDRAWN);
-
-        stateMachine.Configure(GrantApplicationState.GRANT_APPROVED)
-            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN);
-
-        stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED);
-    }
+    } 
 
     public async Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId)
     {
@@ -121,17 +97,24 @@ public class ApplicationManager : DomainService, IApplicationManager
         var permittedActions = Workflow.GetPermittedActions().ToList();
 
         var actionsList = allActions
-            .Select(trigger =>
+            .Select(async trigger => 
             new ApplicationActionResultItem
             {
                 ApplicationAction = trigger,
-                IsPermitted = permittedActions.Contains(trigger),
+                IsPermitted = permittedActions.Contains(trigger) && await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(trigger)),
                 IsInternal = trigger.ToString().StartsWith("Internal_")
             })
-            .OrderBy(x => (int)x.ApplicationAction)
+            .OrderBy(x => (int)x.Result.ApplicationAction)
             .ToList();
 
-        return actionsList;
+        ApplicationActionResultItem[] items = await Task.WhenAll(actionsList);
+
+        return new List<ApplicationActionResultItem>(items); 
+    }
+
+    private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(GrantApplicationAction triggerAction)
+    {
+        return new OperationAuthorizationRequirement { Name = triggerAction.ToString() };
     }
 
     public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
@@ -147,6 +130,11 @@ public class ApplicationManager : DomainService, IApplicationManager
         if ((triggerAction == GrantApplicationAction.Approve || triggerAction == GrantApplicationAction.Deny) && application.FinalDecisionDate == null)
         {
             throw new UserFriendlyException("The Decision Date is Required.");
+        }
+
+        if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
+        {
+            throw new UnauthorizedAccessException();
         }
 
         // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
