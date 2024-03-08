@@ -33,6 +33,11 @@ parameters:
   displayName: Application Group
   name: APPLICATION_GROUP
   value: unity-grantmanager
+- description: The name of the backup application.
+  displayName: Application Name
+  name: BACKUP_APPLICATION_NAME
+  required: true
+  value: unity-backup
 # Additional parameters for project database provisioning
 - description: The name of the OpenShift Service exposed for the database.
   displayName: Database Service Name
@@ -138,11 +143,11 @@ objects:
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
   spec:
     ports:
-    - name: postgresql
+    - name: ${DATABASE_SERVICE_NAME}
       nodePort: 0
-      port: 5432
       protocol: TCP
-      targetPort: 5432
+      port: ${{DATABASE_PORT}}
+      targetPort: ${{DATABASE_PORT}}
     selector:
       name: ${DATABASE_SERVICE_NAME}
     sessionAffinity: None
@@ -230,6 +235,8 @@ objects:
               secretKeyRef:
                 key: database-name
                 name: ${DATABASE_SERVICE_NAME}
+          - name: PGPORT
+            value: ${DATABASE_PORT}
           livenessProbe:
             exec:
               command:
@@ -239,7 +246,7 @@ objects:
             timeoutSeconds: 10
           name: postgresql
           ports:
-          - containerPort: 5432
+          - containerPort: ${{DATABASE_PORT}}
             protocol: TCP
           readinessProbe:
             exec:
