@@ -73,7 +73,6 @@ namespace Unity.GrantManager;
         });
 
         context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
-        context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
         context.Services.AddSingleton<RestClient>(provider =>
         {
@@ -117,6 +116,8 @@ namespace Unity.GrantManager;
                     );
             }
         });
+
+        //context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
         // Set the max defaults as max - we are using non serverside paging and this effect this
         PagedAndSortedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
