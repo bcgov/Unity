@@ -115,7 +115,13 @@ namespace Unity.GrantManager.Intakes
                     TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
                     Community = intakeMap.Community ?? "{Community}",
                     ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}"
+                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
+                    SigningAuthorityFullName = intakeMap.SigningAuthorityFullName ?? "{SigningAuthorityFullName}",
+                    SigningAuthorityTitle = intakeMap.SigningAuthorityTitle ?? "{SigningAuthorityTitle}",
+                    SigningAuthorityEmail = intakeMap.SigningAuthorityEmail ?? "{SigningAuthorityEmail}",
+                    SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone ?? "{SigningAuthorityBusinessPhone}",
+                    SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone ?? "{SigningAuthorityCellPhone}"
+
                 }
             );   
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
@@ -216,11 +222,6 @@ namespace Unity.GrantManager.Intakes
                     Phone2 = intakeMap.ContactPhone2 ?? "{ContactPhone2}",
                     Email = intakeMap.ContactEmail ?? "{ContactEmail}",
                     Title = intakeMap.ContactTitle ?? "{ContactTitle}",
-                    SigningAuthorityFullName = intakeMap.SigningAuthorityFullName ?? "{SigningAuthorityFullName}",
-                    SigningAuthorityTitle = intakeMap.SigningAuthorityTitle ?? "{SigningAuthorityTitle}",
-                    SigningAuthorityEmail = intakeMap.SigningAuthorityEmail ?? "{SigningAuthorityEmail}",
-                    SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone ?? "{SigningAuthorityBusinessPhone}",
-                    SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone ?? "{SigningAuthorityCellPhone}"
                 });
             }
 

@@ -87,7 +87,13 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? TenantId { get; set; }
 
     public Guid? OwnerId { get; set; }
-    
+
+    public string? SigningAuthorityFullName { get; set; }
+    public string? SigningAuthorityTitle { get; set; }
+    public string? SigningAuthorityEmail { get; set; }
+    public string? SigningAuthorityBusinessPhone { get; set; }
+    public string? SigningAuthorityCellPhone { get; set; }
+
     public bool IsInFinalDecisionState()
     {
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);

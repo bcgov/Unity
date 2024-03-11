@@ -151,11 +151,6 @@ public class GrantApplicationAppService :
             appDto.ContactTitle = grouping.First().applicantAgent?.Title;
             appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone;
             appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2;
-            appDto.SigningAuthorityFullName = grouping.First().applicantAgent?.SigningAuthorityFullName;
-            appDto.SigningAuthorityTitle = grouping.First().applicantAgent?.SigningAuthorityTitle;
-            appDto.SigningAuthorityEmail = grouping.First().applicantAgent?.SigningAuthorityEmail;
-            appDto.SigningAuthorityBusinessPhone = grouping.First().applicantAgent?.SigningAuthorityBusinessPhone;
-            appDto.SigningAuthorityCellPhone = grouping.First().applicantAgent?.SigningAuthorityCellPhone;
             appDto.RowCount = rowCounter;
             appDtos.Add(appDto);            
             rowCounter++;
@@ -244,12 +239,6 @@ public class GrantApplicationAppService :
                 appDto.ContactTitle = contactInfo.Title;
                 appDto.ContactBusinessPhone = contactInfo.Phone;
                 appDto.ContactCellPhone = contactInfo.Phone2;
-
-                appDto.SigningAuthorityFullName = contactInfo.SigningAuthorityFullName;
-                appDto.SigningAuthorityTitle = contactInfo.SigningAuthorityTitle;
-                appDto.SigningAuthorityEmail = contactInfo.SigningAuthorityEmail;
-                appDto.SigningAuthorityBusinessPhone = contactInfo.SigningAuthorityBusinessPhone;
-                appDto.SigningAuthorityCellPhone = contactInfo.SigningAuthorityCellPhone;
 
             }
 
@@ -438,11 +427,7 @@ public class GrantApplicationAppService :
                         Phone = input.ContactBusinessPhone ?? "",
                         Phone2 = input.ContactCellPhone ?? "",
                         Email = input.ContactEmail ?? "",
-                        SigningAuthorityFullName = input.SigningAuthorityFullName ?? "",
-                        SigningAuthorityTitle = input.SigningAuthorityTitle ?? "",
-                        SigningAuthorityEmail = input.SigningAuthorityEmail ?? "",
-                        SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "",
-                        SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "",
+       
                         Title = input.ContactTitle ?? ""
                     });
                 }
@@ -453,16 +438,20 @@ public class GrantApplicationAppService :
                     applicantAgent.Phone2 = input.ContactCellPhone ?? "";
                     applicantAgent.Email = input.ContactEmail ?? "";
                     applicantAgent.Title = input.ContactTitle ?? "";
-                    applicantAgent.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
-                    applicantAgent.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
-                    applicantAgent.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
-                    applicantAgent.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
-                    applicantAgent.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
-
                     applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
                 }
 
-                var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+
+            application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
+            application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
+            application.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
+            application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
+            application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
+
+            await _applicationRepository.UpdateAsync(application);
+
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
 
                 appDto.ContactFullName = applicantAgent.Name;
                 appDto.ContactEmail = applicantAgent.Email;

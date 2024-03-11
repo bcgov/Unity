@@ -21,7 +21,7 @@
                 .updateProjectApplicantInfo(applicationId, ApplicantInfoObj)
                 .done(function () {
                     abp.notify.success(
-                        'The project info has been updated.'
+                        'The Applicant info has been updated.'
                     );
                     $('#saveApplicantInfoBtn').prop('disabled', true);
                     PubSub.publish('project_info_saved');
