@@ -5,14 +5,6 @@ $(function () {
 $('.landing-navigation-child').first().addClass("active");
 
 $(function () {
-    $('.landing-navigation-child').click(function (e) {
-        $('.landing-navigation-child').removeClass("active");
-        $(this).addClass("active");
-    });
-});
-
-
-$(function () {
     setTimezoneCookie();
 
     function setTimezoneCookie() {
@@ -45,4 +37,35 @@ $(function () {
         }
         return "";
     }
+    $('.btn-forms-templte').click(function (e) {
+        document.getElementById("formsTemplateLibrary").style.display = "block";
+        document.getElementById("welcomeContent").style.display = "none";
+    });
+    $('.scrol-to-steps').click(function (e) {
+        e.preventDefault();
+
+        var element = document.getElementById('div-use-template');
+        var navBarHeight = 80;//5rem
+
+        element.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+        setTimeout(function () {
+
+            var scrolledY = window.scrollY;
+
+            if (scrolledY) {
+                window.scroll(0, scrolledY - navBarHeight);
+            }
+        }, 800);
+        });
+  
+
+        let addTemplateModal = new abp.ModalManager({
+            viewUrl: 'Template/TemplateModal'
+        });
+        $('#addTemplate').click(function () {
+            addTemplateModal.open({
+            });
+        })
+    
 });

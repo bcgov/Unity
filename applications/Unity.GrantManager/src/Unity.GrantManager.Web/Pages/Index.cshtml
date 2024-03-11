@@ -9,112 +9,285 @@
 }
 @section scripts {
     <abp-script src="/Pages/Index.js" />
+    <abp-script src="/Pages/Template/Index.js" />
 }
 
 @inject IPageLayout PageLayout
 
 @{
-
     PageLayout.Content.Title = "Home";
-
-    List<PageSection> PageSections = new List<PageSection>();
-
-
-    PageSections.Add(new PageSection() { Id = 1, Title = "Discover Unity's Journey" });
-    PageSections.Add(new PageSection() { Id = 2, Title = "How to use Unity Grant Manager" });
-    PageSections.Add(new PageSection() { Id = 3, Title = "Create a new Application Form", Url = "https://submit.digital.gov.bc.ca/app/" });    
-    PageSections.Add(new PageSection() { Id = 4, Title = "Review Current Applications", Url = "/GrantApplications" });
-    PageSections.Add(new PageSection() { Id = 5, Title = "Tools for Creating Forms" });
-    PageSections.Add(new PageSection() { Id = 6, Title = "Unity Contact Information" });
 }
 
 
 @if (CurrentUser.IsAuthenticated)
 {
-    <form asp-page-handler="cancel" method="post" style="position: absolute; right: 25px; top: 25px;">
-        <button class="btn btn-default">Logout</button>
+    <form asp-page-handler="cancel" method="post" class="div-login-logout">
+        <button class="btn btn-primary">Logout</button>
     </form>
 }
-
-<div class="home-container">
-    <div class="unity-banner-contanier">
-        <div class="gradient-blue">
+else
+{
+    <div class="d-flex justify-content-end div-login-logout">
+        <button type="button" class="btn btn-primary" onclick="window.location.href = '/GrantApplications';">LOGIN TO UNITY</button>
+    </div>
+}
+ <div class="home-container">
+    <div id="welcomeContent" style="display: block;">
+    <div class="row w-100 align-items-center home-div">
+        <div class="col-md-2"></div>
+            <div class="col-md-4">
+            <div class="row">
+            <div class="labels-container  justify-content-center">
+                    <div> <h4 class="home-heading"> User-Friendly Grant<br> Management Solution</h4></div>
+                    <div class="py-3">
+                            <h6>Designed By Government For <br />Government</h6>
+                            </div>
+                    <div class="col-12 d-flex justify-content-start">
+                <div class="col-5 d-flex justify-content-start">
+                                <a href="mailto:unitysupport@gov.bc.ca" class="btn btn-primary">REQUEST ACCESS</a>
+                </div>
+                <div class="col-5 d-flex justify-content-end">
+                                <button type="button" class="btn btn-secondary btn-forms-templte">CHECK OUT TEMPLATES</button>
+                </div>
+                        </div>
+                </div>
+            </div>
+            </div>
+        <div class="col-md-4">
+            <div class="home-image-container">
+                    <img src="/images/homepage/applications.png" alt="home-applcation-page">
+                </div>
+            </div>
+        <div class="col-md-2"></div>
+        <div class="w-100 align-items-center home-label">
+            <div class="text-center">
+                <h6>Features That <span class="home-heading">Make Your Work Easier</span> </h6>
+            </div>
+        </div>
         </div>
 
-        <div class="banner-title">
-            Unity Grant Management
+    <div class="row w-100 align-items-center home-div">
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+                <div class="home-image-container max-height-container">
+                <img src="/images/homepage/forms.png" alt="home-forms-page" >
+            </div>
         </div>
-
-        <div class="banner-desc">
-            Introducing Unity Grant Management, a customizable platform simplifying grant management for the Province of BC. Supporting application design and development, enhancing assessments, and streamlining payment and reporting processes, Unity empowers Ministries with an intuitive, efficient solution to achieve grant program objectives.
+        <div class="col-md-4">
+            <div class="row">
+                <div class="labels-container pl-3 justify-content-center">
+                        <h6 class="py-3"><span class="home-heading">Easy To Use </span>Form Creation Tool</h6>
+                    <p class="description p-1">Create, publish and receive submissions with a common component designed by the B.C. Government.</p>
+                    <p class="link"><a href="https://submit.digital.gov.bc.ca/app/">Check out CHEFS</a></p>
+            </div>
+            </div>
         </div>
-
-        <div class="banner-bg">
-            <img src="/images/splash.png" alt="landing-page-img">
-        </div>
+        <div class="col-md-2"></div>
     </div>
 
-    <div class="unity-content-container ">
+    <div class="row w-100 align-items-center home-div">
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+            <div class="row">
+            <div class="labels-container justify-content-center">
+                    <h6 class="py-3"><span class="home-heading">Customized View </span>For Applications And <br />Proposals</h6>
+                    <p class="description p-1">See the details that you care about by managing columns to customize</br> your view. Quickly sort through and find exactly what you are looking for.</label>
+            </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="home-image-container">
+                <img src="/images/homepage/customized_applications.png" alt="home-custom-app-page">
+            </div>
+        </div>
+        <div class="col-md-2"></div>
+    </div>
+
+    <div class="row w-100 align-items-center home-div">
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+                <div class="home-image-container max-height-container">
+                <img src="/images/homepage/status.png" alt="home-status-page">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="labels-container pl-3 justify-content-center">
+                    <h6 class="py-3">
+                        Understand The <span class="home-heading">
+                            Status At a Glance
+                        </span>
+                    </h6>
+                    <p class="description p-1">Simple workflow for approving grants and tracking their status.</p>
+            </div>
+            </div>
+        </div>
+        <div class="col-md-2"></div>
+    </div>
+
+    <div class="row w-100 align-items-center home-div">
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+            <div class="row">
+            <div class="labels-container justify-content-center">
+                    <h6 class="py-3">
+                        Make <span class="home-heading"> Numbers Work For You </span>
+                    </h6>
+                    <p class="description p-1">Easily see important data visualized in charts and graphs of your choice</br> on your dashboard.</p>
+            </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="home-image-container">
+                <img src="/images/homepage/dashboard.png" alt="home-dashboard-page">
+            </div>
+        </div>
+        <div class="col-md-2"></div>
+    </div>
+        <div class="labels-container justify-content-center text-center">
+            <h5 class="py-3">
+                Contact Us For <span class="home-heading"> Onboarding and Support </span>
+            </h5>
+        </div>
+
+    <div class="row w-100 align-items-center pb-12">
+        <div class="col-md-4"></div>
+        <div class="col-md-2 d-flex flex-column align-items-center text-center">
+                <div class="contact-image-container pt-2">
+                <img src="/images/homepage/support.png" alt="home-support-page">
+            </div>
+            <div class="labels-container justify-content-center">
+                    <div class="text-center text-nowrap">
+                    <p class="description">
+                        Onboarding and product design support:
+                    <br/>
+                    
+                        <a class="link" href="mailto:Christopher.Carmack@gov.bc.ca">Christopher.Carmack@gov.bc.ca</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 d-flex flex-column align-items-center text-center">
+                <div class="support-image-container pt-2">
+                <img src="/images/homepage/unity.svg" alt="home-unity-page">
+            </div>
+            <div class="labels-container justify-content-center">
+                <div class="text-center">
+                    <p class="description">
+                        Unity Support:
+                    <br/>
+                    <a class="link" href="mailto:unitysupport@gov.bc.ca">unitysupport@gov.bc.ca</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+    </div>
+    <!-- Forms Template Library (initially hidden) -->
+    <div id="formsTemplateLibrary" style="display: none;">
         <div class="row">
-            <div class="col-3">
-                <div class="landing-navigation" action="">
-                    <ul class="nav  nav-tabs flex-column" id="mainApplication" role="tablist">
+            <div class="row w-100 align-items-center text-center">
+                <div> <h4 class="home-heading"> Forms Template Library</h4></div>
+                <div class="py-3 labels-container">
+                    <h6 class="p-1">Use these easy-to-use templates as your starting point</h6>
+                    <p class="link scrol-to-steps"><a href="#">HOW TO USE THE TEMPLATES</a></p>
+                </div>
+        </div>
+            <div class="home-div">
+        <div class="templates-scrollable-content">
+                <div id="filter-container" class="filter-container">
+                    <abp-button id="addTemplate"
+                                text="ADD NEW TEMPLATE"
+                                    class="btn btn-bar" />
+                        <abp-button text="FILTER" class="btn btn-bar" id="filter-btn"></abp-button>
+                </div>
 
-                        <li class="nav-item" role="presentation">
-                            @foreach (var item in PageSections)
-                            {
-                                var target = item.UrlTarget ?? "_self";
-
-                                @if (target == "_self")
-                                {
-
-                                    var selfTarget = "#section-" + item.Id.ToString();
-                                    var tabId = "tab-" + item.Id.ToString();
-                                    <div class="landing-navigation-child nav-link" id="@tabId" data-id="@item.Id" data-bs-toggle="tab" role="tab" aria-selected="false" aria-controls="@selfTarget" data-bs-target="@selfTarget">
-                                        <div class="landing-navigation-child-indicator"></div>
-                                        @if (item.Url.IsNullOrEmpty())
-                                        {
-                                            @item.Title
-                                        }
-                                        else
-                                        {
-                                            <a target="@target" href="@item.Url">@item.Title</a>
-                                        }
-
-                                    </div>
-                                }
-
-                            }
-                        </li>
-                    </ul>
+                    <abp-table id="templateList" class="display"></abp-table>
+        </div>
+            </div>
+            <div class="row">
+            <div class="labels-container pl-3 justify-content-center text-center home-div">
+                <h5 class="py-3"><span class="home-heading">Use Templates</span> In 3 Simple Steps</h5>
+                </div>
+                </div>
+            <div class="row w-100 align-items-center home-div div-use-template" id="div-use-template">
+            <div class="col-md-2"></div>
+            <div class="col-md-4">
+                <div class="home-image-container">
+                    <img src="/images/homepage/new-form-chefs.png" alt="home-forms-page">
+                       @*  <div class="magnifier"></div> *@
                 </div>
             </div>
-            <div class="col-9">
-                <div class="tab-content">
-                    <div id="section-1" class="tab-pane  fade show active" role="tabpanel" aria-labelledby="section-1">
-                        <div class="unity-content-title">
-                            What is Unity Grant Manager?
-                        </div>
-                        <div class="unity-content">
-                            Your all-in-one solution for seamless grant management. Unity Grant Manager has been developed as a comprehensive and user-friendly platform designed to optimize the entire lifecycle of grant management and funding initiatives. Equipped with a robust toolkit, it guides you through each stage of the process—from initial application handling to oversight of post-award reporting. Unity Grant Manager is your partner for efficient and effective grant management.
-                        </div>
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="labels-container pl-3 justify-content-center">
+                        <h6 class="py-3">Step 1: <span class="home-heading">Create A New Form In CHEFS</span></h6>
+                        <p class="description p-1">Go to CHEFS portal. After login in click “Create a New Form” in the top left corner of the interface. Fill in all the required information for your new form like name, form access, etc. After you are done click “Continue” on the bottom of the page.</p>
+                        <p class="link"><a href="https://submit.digital.gov.bc.ca/app/">Login to CHEFS</a></p>
                     </div>
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
 
-                    <div id="section-7" class="tab-pane fade" role="tabpanel" aria-labelledby="section-7">
-                        <div class="unity-content-title">
-                            Unity Contact Information
-                        </div>
-                        <div class="unity-content">
-                           <div>
-                                For onboarding and product design questions please contact: Christopher Carmack at <a href="mailto: Christopher.Carmack@gov.bc.ca">Christopher.Carmack@gov.bc.ca</a>
-                           </div> 
-                            <div class="contact-info">
-                            For Unity Support please contact: Stephan McColm at <a href="mailto: unitysupport@gov.bc.ca">unitysupport@gov.bc.ca</a>
-                           </div>
-                        </div>
+        <div class="row w-100 align-items-center home-div">
+            <div class="col-md-2"></div>
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="labels-container justify-content-center">
+                        <h6 class="py-3">Step 2: <span class="home-heading">Import Downloaded Template File</span></h6>
+                        <p class="description p-1">On the next page click the small up-facing arrow on the right side of the page. Locate the template file that you just downloaded (most likely in your Downloads folder) and click open.</label>
                     </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="home-image-container">
+                    <img src="/images/homepage/import_downloded.png" alt="home-custom-app-page">
+                        @* <div class="magnifier"></div> *@
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+        <div class="row w-100 align-items-center home-div">
+            <div class="col-md-2"></div>
+            <div class="col-md-4">
+                <div class="home-image-container">
+                    <img src="/images/homepage/customize_form.png" alt="home-status-page">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="labels-container pl-3 justify-content-center">
+                        <h6 class="py-3">Step 3: <span class="home-heading">Customize The Form To Fit Your Need</span></h6>
+                        <p class="description p-1">Make additional changes to the form that are required based on your need; Changing images, tabs, elements, text, fields, etc. After that you can publish the form and get the data populated straight into Unity where you can make sense of the data, do assessments, export reports and track all of the progress!</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+        <div>
+        <div class="labels-container justify-content-center text-center home-div pb-2">
+            <h6 class="py-3">
+                Contact Us For <span class="home-heading"> Support </span>
+            </h6>
+        </div>
+        <div class="col-md-12 d-flex flex-column align-items-center text-center">
+            <div class="support-image-container">
+                <img src="/images/homepage/unity.svg" alt="home-unity-page">
+            </div>
+                    <div class="labels-container justify-content-center home-div">
+                <div class="text-center">
+                    <p class="description">
+                        Unity Support:
+                        <br />
+                        <a class="link" href="mailto:unitysupport@gov.bc.ca">unitysupport@gov.bc.ca</a>
+                    </p>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+        </div>
+  </div>
+  </div>
+  </div>

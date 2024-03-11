@@ -4,6 +4,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.ContentTitle
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.MainNavbar
+@using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.HomeNavbar
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Themes.Basic.Components.PageAlerts
 @using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Pages.Shared.Components.AbpPageToolbar;
 @using Volo.Abp.AspNetCore.Mvc.UI.Theming
@@ -64,11 +65,16 @@
 <body class="abp-application-layout @rtl">
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Application)
 
-    @(await Component.InvokeAsync<TopbarViewComponent>())
+    
 
     @if (!@isHomePage)
     {
+        @(await Component.InvokeAsync<TopbarViewComponent>())
         @(await Component.InvokeAsync<SubTopbarViewComponent>())
+    }
+    else
+    {
+        @(await Component.InvokeAsync<HomeTopbarViewComponent>())
     }
 
     <div class="@containerClass unity-app-container p-0">

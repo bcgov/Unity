@@ -15,6 +15,9 @@
     --bc-colors-grey-hover: #F2F8FC;
     --bc-colors-grey-dividers: #D6D6D6;
     --bc-colors-blue-hover: #ADDBFF;
+    --bc-colors-blue-primary: #2E5DD7;
+    --bc--surface-color-brand-gray-20: #F3F2F1;
+    --bc--surface-color-brand-gray-30: #ECEAE8;
     /* bc style variables */
     --bc-font-size: 1rem;
     --bc-font-size-sm: 0.833rem;
