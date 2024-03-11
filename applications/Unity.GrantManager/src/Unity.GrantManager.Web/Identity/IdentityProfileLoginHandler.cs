@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenIddict.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
@@ -29,6 +30,8 @@ namespace Unity.GrantManager.Web.Identity
             if (validatedTokenContext.Principal != null)
             {
                 var userTenantAccounts = await _userTenantsAppService.GetUserTenantsAsync(validatedTokenContext.SecurityToken.Subject);
+                var idp = validatedTokenContext.SecurityToken.Claims.FirstOrDefault(s => s.Type == UnityClaimsTypes.IdpProvider)?.Value ?? UnityClaimsTypes.Defaults.IdpProvider_Default;
+
                 UserTenantAccountDto signedInTenantAccount;
 
                 if (validatedTokenContext.Principal.IsInRole(IdentityConsts.ITAdmin))
@@ -63,7 +66,7 @@ namespace Unity.GrantManager.Web.Identity
             {
                 if (tenantAcc != null && tenantAcc.TenantId != null)
                 {
-                    claimsPrincipal.AddClaim("tenant", tenantAcc.TenantId.ToString() ?? Guid.Empty.ToString());
+                    claimsPrincipal.AddClaim(UnityClaimsTypes.Tenant, tenantAcc.TenantId.ToString() ?? Guid.Empty.ToString());
                 }
             }
         }               
