@@ -132,8 +132,6 @@ namespace Unity.GrantManager;
             }
         });
 
-        //context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
-
         // Set the max defaults as max - we are using non serverside paging and this effect this
         PagedAndSortedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         PagedAndSortedResultRequestDto.MaxMaxResultCount = int.MaxValue;
