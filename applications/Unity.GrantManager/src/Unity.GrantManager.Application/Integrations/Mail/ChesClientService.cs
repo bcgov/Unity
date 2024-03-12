@@ -34,7 +34,7 @@ namespace Unity.GrantManager.Integrations.Mail
             //_restClient = restClient;
 
 
-            var restOptions = new RestClientOptions("")
+            var restOptions = new RestClientOptions("http://test.com")
             {
                 // NOTE: Basic authentication only works for fetching forms and lists of form submissions
                 // Authenticator = options.UseBearerToken ?
