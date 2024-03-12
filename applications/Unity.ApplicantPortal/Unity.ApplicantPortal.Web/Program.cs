@@ -16,7 +16,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 //Authentication Schems
-var authenticationBuilder = builder.Services.AddAuthentication(options =>
+builder.Services.AddAuthentication(options =>
 {
     //Sets cookie authentication scheme
     options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
