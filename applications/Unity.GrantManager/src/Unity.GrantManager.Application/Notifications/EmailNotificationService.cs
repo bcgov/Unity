@@ -54,25 +54,25 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <summary>
     /// Send Email Notfication
     /// </summary>
-    /// <param name="applicationId">The application</param>
-    /// <param name="bodyContent">The body of the email</param>
-    /// <param name="subjectMessage">Subject Message</param>
-    public async Task SendEmailNotification(Guid applicationId, string bodyContent, string subjectMessage)
+    /// <param name="id">The application</param>
+    /// <param name="body">The body of the email</param>
+    /// <param name="subject">Subject Message</param>
+    public async Task SendEmailNotification(Guid id, string body, string subject)
     {
         try {
             // Lookup the applicant email
-            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == applicationId) ?? throw new EntityNotFoundException();
+            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == id) ?? throw new EntityNotFoundException();
             if(!string.IsNullOrEmpty(applicantAgent.Email))
             {
                 List<string> toList = [applicantAgent.Email];
                 var emailObject = new
                 {
-                    body = bodyContent,
+                    body = body,
                     bodyType = "html",
                     encoding = "utf-8",
                     from = _configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca",
                     priority = "normal",
-                    subject = subjectMessage,
+                    subject = subject,
                     tag = "tag",
                     to = toList
                 };

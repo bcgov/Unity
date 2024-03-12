@@ -31,31 +31,7 @@ namespace Unity.GrantManager.Integrations.Mail
         {
             _resilientRestClient = resilientHttpRequest;
             _chesClientOptions = chesClientOptions;
-            //_restClient = restClient;
-
-
-            var restOptions = new RestClientOptions("http://test.com")
-            {
-                // NOTE: Basic authentication only works for fetching forms and lists of form submissions
-                // Authenticator = options.UseBearerToken ?
-                //    new JwtAuthenticator(options.BearerTokenPlaceholder) :
-                //    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
-
-                FailOnDeserializationError = true,
-                ThrowOnDeserializationError = true
-            };
-
-            _restClient = new RestClient(
-                restOptions,
-                configureSerialization: s =>
-                    s.UseSystemTextJson(new System.Text.Json.JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        PropertyNameCaseInsensitive = true,
-                        ReadCommentHandling = JsonCommentHandling.Skip,
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                    })
-                );
+            _restClient = restClient;
 
         }
 
@@ -63,7 +39,7 @@ namespace Unity.GrantManager.Integrations.Mail
         {
             // Ches Tokens Expire Immediately After use but we could use bulk send
             var tokenResponse = await GetAccessTokenAsync();
-            var resource = $"{_chesClientOptions.Value.Url}/email";
+            var resource = $"{_chesClientOptions.Value.ChesUrl}/email";
             var authHeaders = new Dictionary<string, string>
             {
                { "Authorization", $"Bearer {tokenResponse.AccessToken}" }

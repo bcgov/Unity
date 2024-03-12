@@ -22,6 +22,7 @@ namespace Unity.GrantManager.Components
             lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         }
 
+        [Fact]
         public async Task ContactInfoReturnsStatus()
         {
             var applicationDto = new GrantApplicationDto()
