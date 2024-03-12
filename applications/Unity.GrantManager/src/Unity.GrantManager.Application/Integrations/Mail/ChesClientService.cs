@@ -13,8 +13,6 @@ using Volo.Abp;
 using Unity.GrantManager.Integration.Css;
 using Volo.Abp.DependencyInjection;
 using Unity.GrantManager.Integration.Ches;
-using RestSharp.Serializers.Json;
-using System.Text.Json.Serialization;
 
 namespace Unity.GrantManager.Integrations.Mail
 {
@@ -50,7 +48,7 @@ namespace Unity.GrantManager.Integrations.Mail
 
             if (response != null)
             {
-               throw new Exception(response.ErrorMessage);
+               throw new UserFriendlyException("ChesClientService SendAsync Exception: " + response.ErrorMessage);
             }
         }
 

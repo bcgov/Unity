@@ -80,10 +80,10 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
                 await _chesClientService.SendAsync(emailObject);
             } else
             {
-                Logger.LogError("EmailNotificationService: No Applicant Agent Email Found.");
+                Logger.LogError("EmailNotificationService->SendEmailNotification: No Applicant Agent Email Found.");
             }
         } catch (Exception ex) {
-            Logger.LogError(ex.Message);
+            Logger.LogError("EmailNotificationService->SendEmailNotification Exception: {message}", ex.Message);
         }
     }
 }
