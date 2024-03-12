@@ -1,0 +1,18 @@
+﻿@using Unity.AspNetCore.Mvc.UI.Themes.Standard.Components.Brand
+
+<nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="home-navbar">
+    <div class="container-fluid">
+        <div class="row w-100 align-items-center">
+            <div class="col-3 d-flex justify-content-start">
+                <button type="button" class="btn btn-secondary btn-forms-templte">FORMS TEMPLATE LIBRARY</button></div>
+            <div class="col-6 d-flex justify-content-center">
+                @(await Component.InvokeAsync<MainNavbarBrandViewComponent>())
+            </div>
+            <div class="col-3 d-flex justify-content-center">
+                <div class="col-12 d-flex justify-content-start">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href = 'https://submit.digital.gov.bc.ca/app/';">DESIGN YOUR FORM</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>

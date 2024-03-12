@@ -5,7 +5,7 @@ VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.Domain", "src\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj", "{554AD327-6DBA-4F8F-96F8-81CE7A0C863F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Volo.BasicTheme", "Volo.BasicTheme", "{F842C2BC-69B0-4F40-9774-6CA4EDE26A12}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity.Themes", "Unity.Themes", "{F842C2BC-69B0-4F40-9774-6CA4EDE26A12}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{00099710-CF66-4BD2-932C-5B7534B78185}"
 EndProject
@@ -39,9 +39,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.Domain.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.GrantManager.DbMigrator", "src\Unity.GrantManager.DbMigrator\Unity.GrantManager.DbMigrator.csproj", "{AA94D832-1CCC-4715-95A9-A483F23A1A5D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic", "modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.csproj", "{33ED9030-5498-4DFF-B938-62793F1BE0B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AspNetCore.Mvc.UI.Themes", "modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Unity.AspNetCore.Mvc.UI.Themes.csproj", "{33ED9030-5498-4DFF-B938-62793F1BE0B2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Theme.Tests", "modules\Volo.BasicTheme\test\Unity.Theme.Tests\Unity.Theme.Tests.csproj", "{210951F1-2104-4B12-BB6E-2DB7625B0864}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AspNetCore.Mvc.UI.Themes.Tests", "modules\Volo.BasicTheme\test\Unity.Theme.Tests\Unity.AspNetCore.Mvc.UI.Themes.Tests.csproj", "{210951F1-2104-4B12-BB6E-2DB7625B0864}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity.Identity.Web", "Unity.Identity.Web", "{F0333A40-3831-4AD2-A09A-42D35AC4F461}"
 EndProject
