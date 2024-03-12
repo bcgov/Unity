@@ -141,7 +141,7 @@ namespace Unity.GrantManager.ApplicationForms
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Review Missed Chefs Submissions";
             string activitySubtitle = "Environment: " + envInfo;
-            string teamsChannel = _configuration["Teams:NotificationsChannelWebhook"] ?? "";
+            string teamsChannel = _configuration["Notifications:TeamsNotificationsChannelWebhook"] ?? "";
             await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
             return missingSubmissions ?? new HashSet<string>();
         }
