@@ -13,6 +13,8 @@ using Volo.Abp;
 using Unity.GrantManager.Integration.Css;
 using Volo.Abp.DependencyInjection;
 using Unity.GrantManager.Integration.Ches;
+using RestSharp.Serializers.Json;
+using System.Text.Json.Serialization;
 
 namespace Unity.GrantManager.Integrations.Mail
 {
@@ -25,12 +27,36 @@ namespace Unity.GrantManager.Integrations.Mail
         private readonly RestClient _restClient;
 
         public ChesClientService(IResilientHttpRequest resilientHttpRequest,
-            IOptions<ChesClientOptions> chesClientOptions,
-            RestClient restClient)
+            IOptions<ChesClientOptions> chesClientOptions)
         {
             _resilientRestClient = resilientHttpRequest;
             _chesClientOptions = chesClientOptions;
-            _restClient = restClient;
+            //_restClient = restClient;
+
+
+            var restOptions = new RestClientOptions("")
+            {
+                // NOTE: Basic authentication only works for fetching forms and lists of form submissions
+                // Authenticator = options.UseBearerToken ?
+                //    new JwtAuthenticator(options.BearerTokenPlaceholder) :
+                //    new HttpBasicAuthenticator(options.FormId, options.ApiKey),
+
+                FailOnDeserializationError = true,
+                ThrowOnDeserializationError = true
+            };
+
+            _restClient = new RestClient(
+                restOptions,
+                configureSerialization: s =>
+                    s.UseSystemTextJson(new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        PropertyNameCaseInsensitive = true,
+                        ReadCommentHandling = JsonCommentHandling.Skip,
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    })
+                );
+
         }
 
         public async Task SendAsync(Object emailRequest)
