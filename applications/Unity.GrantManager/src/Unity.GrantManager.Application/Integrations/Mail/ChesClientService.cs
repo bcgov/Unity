@@ -62,52 +62,52 @@ namespace Unity.GrantManager.Integrations.Mail
         public async Task SendAsync(Object emailRequest)
         {
             // Ches Tokens Expire Immediately After use but we could use bulk send
-            //var tokenResponse = await GetAccessTokenAsync();
-            //var resource = $"{_chesClientOptions.Value.Url}/email";
-            //var authHeaders = new Dictionary<string, string>
-            //{
-            //    { "Authorization", $"Bearer {tokenResponse.AccessToken}" }
-            //};
+            var tokenResponse = await GetAccessTokenAsync();
+            var resource = $"{_chesClientOptions.Value.Url}/email";
+            var authHeaders = new Dictionary<string, string>
+            {
+               { "Authorization", $"Bearer {tokenResponse.AccessToken}" }
+            };
    
-            //var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, emailRequest);
+            var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, emailRequest);
 
-            //if (response != null)
-            //{
-            //    throw new Exception(response.ErrorMessage);
-            //}
+            if (response != null)
+            {
+               throw new Exception(response.ErrorMessage);
+            }
         }
 
-        //private async Task<TokenValidationResponse> GetAccessTokenAsync()
-        //{
-        //    var grantType = "client_credentials";
+        private async Task<TokenValidationResponse> GetAccessTokenAsync()
+        {
+            var grantType = "client_credentials";
 
-        //    var request = new RestRequest($"{_chesClientOptions.Value.ChesTokenUrl}")
-        //    {
-        //        Authenticator = new HttpBasicAuthenticator(_chesClientOptions.Value.ChesClientId, _chesClientOptions.Value.ChesClientSecret)
-        //    };
+            var request = new RestRequest($"{_chesClientOptions.Value.ChesTokenUrl}")
+            {
+                Authenticator = new HttpBasicAuthenticator(_chesClientOptions.Value.ChesClientId, _chesClientOptions.Value.ChesClientSecret)
+            };
 
-        //    request.AddHeader("content-type", "application/x-www-form-urlencoded");
-        //    request.AddParameter("application/x-www-form-urlencoded", $"grant_type={grantType}", ParameterType.RequestBody);
+            request.AddHeader("content-type", "application/x-www-form-urlencoded");
+            request.AddParameter("application/x-www-form-urlencoded", $"grant_type={grantType}", ParameterType.RequestBody);
 
-        //    var response = await _restClient.ExecuteAsync(request, Method.Post);
+            var response = await _restClient.ExecuteAsync(request, Method.Post);
 
-        //    if (response.Content == null)
-        //    {
-        //        throw new UserFriendlyException($"Error fetching Ches API token - content empty {response.StatusCode} {response.ErrorMessage}");
-        //    }
+            if (response.Content == null)
+            {
+                throw new UserFriendlyException($"Error fetching Ches API token - content empty {response.StatusCode} {response.ErrorMessage}");
+            }
 
-        //    if (response.StatusCode != HttpStatusCode.OK)
-        //    {
-        //        Logger.LogError("Error fetching CHES API token {statusCode} {errorMessage} {errorException}", response.StatusCode, response.ErrorMessage, response.ErrorException);
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                Logger.LogError("Error fetching CHES API token {statusCode} {errorMessage} {errorException}", response.StatusCode, response.ErrorMessage, response.ErrorException);
 
-        //        if (response.StatusCode == HttpStatusCode.Unauthorized)
-        //        {
-        //            throw new UnauthorizedAccessException(response.ErrorMessage);
-        //        }
-        //    }
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    throw new UnauthorizedAccessException(response.ErrorMessage);
+                }
+            }
 
-        //    var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
-        //    return tokenResponse;
-        //}
+            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
+            return tokenResponse;
+        }
     }
 }
