@@ -19,6 +19,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.GrantManager.Integrations.Mail;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager;
@@ -65,18 +66,18 @@ namespace Unity.GrantManager;
 
         Configure<IntakeClientOptions>(options =>
         {
-            options.BaseUri = configuration["Intake:BaseUri"] ?? "";
+            // This fails unit tests unless set to a non empty string
+            // RestClient will throw an error - baseUrl can not be empty
+            options.BaseUri = configuration["Intake:BaseUri"] ?? "https://submit.digital.gov.bc.ca/app/api/v1";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
             options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
 
+        context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
+        context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
-        context.Services.Configure<CssApiOptions>(
-            configuration.GetSection(
-                key: "CssApi"));
-
-        context.Services.AddSingleton<RestClient>(provider =>
+        _ = context.Services.AddSingleton(provider =>
         {
             var options = provider.GetService<IOptions<IntakeClientOptions>>()?.Value;
             if (null != options)

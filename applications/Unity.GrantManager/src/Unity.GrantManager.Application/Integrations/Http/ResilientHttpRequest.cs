@@ -63,15 +63,10 @@ namespace Unity.GrantManager.Integrations.Http
                     foreach (var header in headers)
                         restRequest.AddHeader(header.Key, header.Value);
 
-                if (httpVerb != Method.Get)
+                if (httpVerb != Method.Get && requestObject != null)
                 {
-                    object json = new();
-                    if (requestObject != null)
-                    {
-                        json = JsonSerialize(requestObject);
-                    }
                     restRequest.RequestFormat = DataFormat.Json;
-                    restRequest.AddParameter("application/json; charset=utf-8", json, ParameterType.RequestBody);
+                    restRequest.AddJsonBody(requestObject);
                 }
                 restResponse = await RestResponseWithPolicyAsync(restRequest, retryPolicy, circuitBreakerPolicy);
             }
