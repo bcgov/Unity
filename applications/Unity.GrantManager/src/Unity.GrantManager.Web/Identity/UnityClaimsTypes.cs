@@ -17,9 +17,4 @@ public static class UnityClaimsTypes
     public const string Permission = "Permission";
     public const string IdpProvider  = "identity_provider";
     public const string Tenant = "tenant";
-
-    public static class Defaults
-    {
-        public const string IdpProvider_Default = "idir";
-    }
 }

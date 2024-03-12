@@ -23,7 +23,8 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             .Create(GrantManagerPermissions.Default, IdentityPermissions.UserLookup.Default);
 
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
-          IList<UserTenantAccountDto>? userTenantAccounts)
+          IList<UserTenantAccountDto>? userTenantAccounts,
+          string? idp)
         {            
             // filter out host account if coming in as tenant - add support for this later
             userTenantAccounts = userTenantAccounts?.Where(s => s.TenantId != null).ToList();
@@ -32,15 +33,16 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
                 if (UseAutoRegisterUserWithDefault())
                 {
                     var token = validatedTokenContext.SecurityToken;
-                    var userSubject = GetClaimValue(validatedTokenContext.SecurityToken, UnityClaimsTypes.Subject) ?? throw new AutoRegisterUserException("Error auto registering user");
-                    var userIdentifier = userSubject[..userSubject.IndexOf("@")].ToUpper();
+                    var userSubject = GetClaimValue(validatedTokenContext.SecurityToken, UnityClaimsTypes.Subject, idp) ?? throw new AutoRegisterUserException("Error auto registering user");
+                    var idpSplitter = userSubject.IndexOf("@");
+                    var userIdentifier = userSubject[..(idpSplitter == -1 ? userSubject.Length : idpSplitter)].ToUpper();
                     userTenantAccounts = await AutoRegisterUserWithDefaultAsync(userIdentifier,
-                        GetClaimValue(token, UnityClaimsTypes.IDirUsername) ?? "Username",
-                        GetClaimValue(token, UnityClaimsTypes.GivenName) ?? "Given Name" ,
-                        GetClaimValue(token, UnityClaimsTypes.FamilyName) ?? "Family Name",
-                        GetClaimValue(token, UnityClaimsTypes.Email) ?? "Email",
+                        GetClaimValue(token, UnityClaimsTypes.PreferredUsername, idp) ?? UnityClaimsTypes.PreferredUsername,
+                        GetClaimValue(token, UnityClaimsTypes.GivenName, idp) ?? UnityClaimsTypes.GivenName,
+                        GetClaimValue(token, UnityClaimsTypes.FamilyName, idp) ?? UnityClaimsTypes.FamilyName,
+                        GetClaimValue(token, UnityClaimsTypes.Email, idp) ?? UnityClaimsTypes.Email,
                         userIdentifier,
-                        GetClaimValue(token, UnityClaimsTypes.DisplayName) ?? "DisplayName");
+                        GetClaimValue(token, UnityClaimsTypes.DisplayName, idp) ?? UnityClaimsTypes.DisplayName);
                 } 
                 else
                 {
