@@ -66,6 +66,8 @@ namespace Unity.GrantManager;
 
         Configure<IntakeClientOptions>(options =>
         {
+            // This fails unit tests unless set to a non empty string
+            // RestClient will throw an error - baseUrl can not be empty
             options.BaseUri = configuration["Intake:BaseUri"] ?? "https://submit.digital.gov.bc.ca/app/api/v1";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
@@ -75,7 +77,7 @@ namespace Unity.GrantManager;
         context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
-        context.Services.AddSingleton<RestClient>(provider =>
+        _ = context.Services.AddSingleton(provider =>
         {
             var options = provider.GetService<IOptions<IntakeClientOptions>>()?.Value;
             if (null != options)
