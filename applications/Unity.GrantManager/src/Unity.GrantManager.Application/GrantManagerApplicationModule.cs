@@ -94,7 +94,7 @@ namespace Unity.GrantManager;
             var options = provider.GetService<IOptions<IntakeClientOptions>>()?.Value;
             if (null != options)
             {
-                var restOptions = new RestClientOptions("https://submit.digital.gov.bc.ca/app/api/v1")
+                var restOptions = new RestClientOptions(options.BaseUri)
                 {
                     // NOTE: Basic authentication only works for fetching forms and lists of form submissions
                     // Authenticator = options.UseBearerToken ?
