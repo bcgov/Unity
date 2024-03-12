@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unity.ApplicantPortal.Data;
 using Unity.ApplicantPortal.Data.Entities;
@@ -6,6 +7,7 @@ using Unity.ApplicantPortal.Web.ViewModels;
 
 namespace Unity.ApplicantPortal.Web.Controllers;
 
+[Authorize]
 public class HomeController(ILogger<HomeController> logger, AppDbContext dbContext) : Controller
 {
     private readonly ILogger<HomeController> _logger = logger;

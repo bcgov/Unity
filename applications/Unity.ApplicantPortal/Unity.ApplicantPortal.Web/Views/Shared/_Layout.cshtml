@@ -18,10 +18,13 @@
                     <li class="nav-item active">
                         <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">My Portal</a>
                     </li>
-                </ul>
+                </ul>                
             </div>
         </nav>
     </header>
+    <div class="container-fluid user-container">
+        <span>@User.Identity?.Name</span>
+    </div>
     <main role="main">
         <div class="row page-container">
             <aside class="col-xxl-1 col-2">

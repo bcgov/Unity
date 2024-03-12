@@ -18,7 +18,7 @@ body {
 
 .navbar {
   padding: 0;
-  border-bottom: 1px #F5F1F1;
+  border-bottom: 2px solid #F5F1F1;
   background-color: #FFF;
 }
 
@@ -55,6 +55,11 @@ body {
     aside .nav-item.active a {
       color: #fff !important;
     }
+
+.user-container {
+  background-color: #FFF;
+  padding: 10px 20px;
+}
 
 main {
   padding-top: 2rem;
