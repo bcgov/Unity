@@ -46,8 +46,11 @@ function updateSum() {
 }
 
 function positiveIntegersOnly(e) {
-    if (e.keyCode === 9) {
+    if (e.keyCode === 9 || e.keyCode === 8) {
         return true;
+    }
+    if(e.target?.value?.length >= 2 ) {
+        return false;
     }
     if (!((e.keyCode > 95 && e.keyCode < 106)
         || (e.keyCode > 47 && e.keyCode < 58)
