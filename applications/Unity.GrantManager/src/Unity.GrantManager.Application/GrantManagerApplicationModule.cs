@@ -66,13 +66,14 @@ namespace Unity.GrantManager;
 
         Configure<IntakeClientOptions>(options =>
         {
-            options.BaseUri = configuration["Intake:BaseUri"] ?? "";
+            options.BaseUri = configuration["Intake:BaseUri"] ?? "https://submit.digital.gov.bc.ca/app/api/v1";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
             options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
 
         context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
+        context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
         context.Services.AddSingleton<RestClient>(provider =>
         {
@@ -116,8 +117,6 @@ namespace Unity.GrantManager;
                     );
             }
         });
-
-        //context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
 
         // Set the max defaults as max - we are using non serverside paging and this effect this
         PagedAndSortedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
