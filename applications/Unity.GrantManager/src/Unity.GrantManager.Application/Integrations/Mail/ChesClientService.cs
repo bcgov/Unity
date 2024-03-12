@@ -27,7 +27,8 @@ namespace Unity.GrantManager.Integrations.Mail
         private readonly RestClient _restClient;
 
         public ChesClientService(IResilientHttpRequest resilientHttpRequest,
-            IOptions<ChesClientOptions> chesClientOptions)
+            IOptions<ChesClientOptions> chesClientOptions,
+            RestClient restClient)
         {
             _resilientRestClient = resilientHttpRequest;
             _chesClientOptions = chesClientOptions;
