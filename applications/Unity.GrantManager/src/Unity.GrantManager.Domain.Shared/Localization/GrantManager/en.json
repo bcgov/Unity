@@ -148,6 +148,7 @@
     "ApplicationForms:APIConfiguration": "API Configuration",
     "ApplicationForms:DownloadAPIConfiguration": "Download API Configuration",
     "ApplicationForms:UpdateAPIToken": "Update API Token",
+    "ApplicationForms:Payable": "Payable",
 
     "Intakes": "Intakes",
 
