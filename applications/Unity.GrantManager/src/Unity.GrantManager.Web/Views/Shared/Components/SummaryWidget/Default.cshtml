@@ -212,12 +212,8 @@
 </abp-row>
 <abp-row class="px-1 pb-2 mb-4 summary-container">
     <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
-    <div class="mx-2">
-        <p class="px-2 mb-0 fw-bold text-muted">Info</p>
-        <hr class="my-2"/>
-        <div id="applicationContactsWidget">
-            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId, isReadOnly = Model.IsReadOnly })
-        </div>
+    <div id="applicationContactsWidget">
+        @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId, isReadOnly = Model.IsReadOnly })
     </div>
     @if(!(Model.IsReadOnly)) {
         <div class="d-flex justify-content-end">
