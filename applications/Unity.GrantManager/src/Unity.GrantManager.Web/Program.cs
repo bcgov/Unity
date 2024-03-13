@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.HealthChecks;
 
 namespace Unity.GrantManager.Web;
 
@@ -23,7 +24,10 @@ public static class Program
                 .UseSerilog((hostingContext, loggerConfiguration) =>
                 loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration));
             await builder.AddApplicationAsync<GrantManagerWebModule>();
+            builder.Services.AddSingleton<UnityHealthChecks>();
+            builder.Services.AddHealthChecks().AddCheck<UnityHealthChecks>("UnityHealthCheck");
             var app = builder.Build();
+            app.MapHealthChecks("/healthz");
             await app.InitializeApplicationAsync();
             await app.RunAsync();
             return 0;
