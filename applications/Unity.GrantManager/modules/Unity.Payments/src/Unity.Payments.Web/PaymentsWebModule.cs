@@ -8,7 +8,6 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
-using Unity.Payments.Permissions;
 
 namespace Unity.Payments.Web;
 
@@ -36,7 +35,7 @@ public class PaymentsWebModule : AbpModule
     {
         Configure<AbpNavigationOptions>(options =>
         {
-            options.MenuContributors.Add(new PaymentsMenuContributor());
+            options.MenuContributors.Add(new PaymentsMenuContributor());            
         });
 
         Configure<AbpVirtualFileSystemOptions>(options =>
@@ -52,7 +51,7 @@ public class PaymentsWebModule : AbpModule
 
         Configure<RazorPagesOptions>(options =>
         {
-                //Configure authorization.
-            });
+            options.Conventions.AllowAnonymousToPage("/Payments/Index");            
+        });
     }
 }

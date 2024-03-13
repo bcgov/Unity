@@ -72,10 +72,10 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
-    typeof(UnitydentityWebModule)
+    typeof(UnitydentityWebModule),
+    typeof(AbpBlobStoringModule),
+    typeof(PaymentsWebModule)
 )]
-[DependsOn(typeof(AbpBlobStoringModule))]
-[DependsOn(typeof(PaymentsWebModule))]
     public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)

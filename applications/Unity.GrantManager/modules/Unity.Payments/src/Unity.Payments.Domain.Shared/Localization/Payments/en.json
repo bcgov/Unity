@@ -1,7 +1,7 @@
 {
   "culture": "en",
   "texts": {
-    "MyAccount":  "My account",
-    "SamplePageMessage": "A sample page for the Payments module"
+    "Payments": "Payments",
+    "WelcomeToPayments": "Welcome to Payments Module"
   }
 }

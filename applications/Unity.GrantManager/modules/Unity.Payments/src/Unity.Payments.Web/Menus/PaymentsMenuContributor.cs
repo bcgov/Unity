@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
+using Volo.Abp.Features;
 using Volo.Abp.UI.Navigation;
 
 namespace Unity.Payments.Web.Menus;
@@ -7,9 +9,14 @@ public class PaymentsMenuContributor : IMenuContributor
 {
     public async Task ConfigureMenuAsync(MenuConfigurationContext context)
     {
-        if (context.Menu.Name == StandardMenus.Main)
+        var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
+
+        if (await featureChecker.IsEnabledAsync("GrantManager.Payments"))
         {
-            await ConfigureMainMenuAsync(context);
+            if (context.Menu.Name == StandardMenus.Main)
+            {
+                await ConfigureMainMenuAsync(context);
+            }
         }
     }
 
