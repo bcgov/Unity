@@ -24,6 +24,7 @@
                         'The Applicant info has been updated.'
                     );
                     $('#saveApplicantInfoBtn').prop('disabled', true);
+                    PubSub.publish("refresh_detail_panel_summary");
                     PubSub.publish('project_info_saved');
                 });
         }
