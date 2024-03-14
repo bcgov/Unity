@@ -1,12 +1,12 @@
 ﻿$(function () {
     let contactModal = new abp.ModalManager(abp.appPath + 'ApplicationContact/EditContactModal');
 
-    $('.contact-edit-btn').click(function (e){
+    $('body').on('click','.contact-edit-btn',function(e){
         e.preventDefault();
         let itemId = $(this).data('id');
         contactModal.open({
             id: itemId
-          });
+        });
     });
 
     contactModal.onResult(function () {
