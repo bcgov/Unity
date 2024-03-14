@@ -68,15 +68,19 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED);
 
         // CLOSED STATES
+
         stateMachine.Configure(GrantApplicationState.CLOSED);
 
-        stateMachine.Configure(GrantApplicationState.WITHDRAWN);
+        stateMachine.Configure(GrantApplicationState.WITHDRAWN)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
 
         stateMachine.Configure(GrantApplicationState.GRANT_APPROVED)
-            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN);
+            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
 
-        stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED);
-    }
+        stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
+    } 
 
     public async Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId)
     {
@@ -85,14 +89,13 @@ public class ApplicationManager : DomainService, IApplicationManager
         // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
         var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
             () => application.ApplicationStatus.StatusCode,
-            s => application.ApplicationStatus.StatusCode = s,
-        ConfigureWorkflow);
+            s => application.ApplicationStatus.StatusCode = s, ConfigureWorkflow);
 
         var allActions = Workflow.GetAllActions().Distinct().ToList();
         var permittedActions = Workflow.GetPermittedActions().ToList();
 
         var actionsList = allActions
-            .Select(trigger =>
+            .Select(trigger => 
             new ApplicationActionResultItem
             {
                 ApplicationAction = trigger,
@@ -101,7 +104,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             })
             .OrderBy(x => (int)x.ApplicationAction)
             .ToList();
-
+        
         return actionsList;
     }
 
@@ -135,7 +138,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         application.ApplicationStatusId = statusChangedTo.Id;
         application.ApplicationStatus = statusChangedTo;
 
-        if(triggerAction == GrantApplicationAction.StartAssessment)
+        if (triggerAction == GrantApplicationAction.StartAssessment)
         {
             application.AssessmentStartDate = DateTime.UtcNow;
         }
@@ -144,14 +147,14 @@ public class ApplicationManager : DomainService, IApplicationManager
     }
 
     public async Task AssignUserAsync(Guid applicationId, Guid assigneeId, string? duty)
-    {        
+    {
         using var uow = _unitOfWorkManager.Begin();
         var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
         var userAssignment = await _applicationAssignmentRepository.InsertAsync(
             new ApplicationAssignment
             {
                 AssigneeId = person.Id,
-                ApplicationId = applicationId ,
+                ApplicationId = applicationId,
                 Duty = duty,
             });
 
@@ -166,15 +169,15 @@ public class ApplicationManager : DomainService, IApplicationManager
         }
 
         await uow.SaveChangesAsync();
-    }   
+    }
     public async Task UpdateAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
-    {        
+    {
         using var uow = _unitOfWorkManager.Begin();
         var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
-       
+
         var userAssignment = await _applicationAssignmentRepository.GetAsync(e => e.ApplicationId == applicationId && e.AssigneeId == assigneeId);
 
-        if(userAssignment != null)
+        if (userAssignment != null)
         {
             userAssignment.Duty = duty;
 
@@ -182,15 +185,15 @@ public class ApplicationManager : DomainService, IApplicationManager
         }
         else
         {
-           await _applicationAssignmentRepository.InsertAsync(
-            new ApplicationAssignment
-            {
-                AssigneeId = person.Id,
-                ApplicationId = applicationId,
-                Duty = duty
-            });
+            await _applicationAssignmentRepository.InsertAsync(
+             new ApplicationAssignment
+             {
+                 AssigneeId = person.Id,
+                 ApplicationId = applicationId,
+                 Duty = duty
+             });
         }
-           
+
 
         var application = await _applicationRepository.GetAsync(applicationId, true);
 
@@ -214,7 +217,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         List<ApplicationAssignment> assignments = queryableAssignment
             .Where(a => a.ApplicationId.Equals(applicationId))
             .Where(b => b.AssigneeId.Equals(person.Id)).ToList();
-        
+
         var assignmentRemoved = false;
 
         // Only remove the assignee if they were already assigned
@@ -256,7 +259,7 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         // Remove all that shouldnt be there
         foreach (var assignment in currentUserAssignments)
-        {            
+        {
             var (assigneeId, fullName) = assigneeSubs.Find(s => s.assigneeId == assignment.AssigneeId);
 
             if (assigneeId == null && fullName == null)
@@ -273,7 +276,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             {
                 await _applicationAssignmentRepository.InsertAsync(new ApplicationAssignment()
                 {
-                    ApplicationId = applicationId,                    
+                    ApplicationId = applicationId,
                     AssigneeId = assigneeId.Value
                 }, false);
             }

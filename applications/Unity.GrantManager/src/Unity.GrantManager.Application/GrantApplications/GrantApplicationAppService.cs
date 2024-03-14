@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -716,6 +717,7 @@ public class GrantApplicationAppService :
     public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false)
     {
         var actionList = await _applicationManager.GetActions(applicationId);
+        var application = await _applicationRepository.GetAsync(applicationId, true);
 
         // Note: Remove internal state change actions that are side-effects of domain events
         var externalActionsList = actionList.Where(a => includeInternal || !a.IsInternal).ToList();
@@ -726,9 +728,18 @@ public class GrantApplicationAppService :
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // TODO: Replace placeholder loop with authorization handler mapped to permissions
         // AUTHORIZATION HANDLING
-        actionDtos.ForEach(item => { item.IsAuthorized = true; });
+        actionDtos.ForEach(async item => 
+        {
+            item.IsPermitted = item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
+            item.IsAuthorized = true; 
+        });
 
         return new ListResultDto<ApplicationActionDto>(actionDtos);
+    }
+
+    private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(GrantApplicationAction triggerAction)
+    {
+        return new OperationAuthorizationRequirement { Name = triggerAction.ToString() };
     }
 
     /// <summary>
@@ -738,8 +749,14 @@ public class GrantApplicationAppService :
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
-        var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
-        // TODO: AUTHORIZATION HANDLING
+        var application = await _applicationRepository.GetAsync(applicationId, true);
+        if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        application = await _applicationManager.TriggerAction(applicationId, triggerAction);
+        
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
     #endregion APPLICATION WORKFLOW

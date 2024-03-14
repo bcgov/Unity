@@ -19,6 +19,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
 using Unity.GrantManager.Intakes.BackgroundWorkers;
 
@@ -63,6 +64,7 @@ namespace Unity.GrantManager;
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
+        context.Services.AddSingleton<IAuthorizationHandler, ApplicationAuthorizationHandler>();
 
         Configure<IntakeClientOptions>(options =>
         {
