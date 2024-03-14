@@ -7,13 +7,11 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Workflow;
 using Volo.Abp;
-using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 
 namespace Unity.GrantManager.Applications;
-public class ApplicationManager : ApplicationService, IApplicationManager
+public class ApplicationManager : DomainService, IApplicationManager
 {
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
@@ -97,24 +95,17 @@ public class ApplicationManager : ApplicationService, IApplicationManager
         var permittedActions = Workflow.GetPermittedActions().ToList();
 
         var actionsList = allActions
-            .Select(async trigger => 
+            .Select(trigger => 
             new ApplicationActionResultItem
             {
                 ApplicationAction = trigger,
-                IsPermitted = permittedActions.Contains(trigger) && await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(trigger)),
+                IsPermitted = permittedActions.Contains(trigger),
                 IsInternal = trigger.ToString().StartsWith("Internal_")
             })
-            .OrderBy(x => (int)x.Result.ApplicationAction)
+            .OrderBy(x => (int)x.ApplicationAction)
             .ToList();
-
-        ApplicationActionResultItem[] items = await Task.WhenAll(actionsList);
-
-        return new List<ApplicationActionResultItem>(items); 
-    }
-
-    private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(GrantApplicationAction triggerAction)
-    {
-        return new OperationAuthorizationRequirement { Name = triggerAction.ToString() };
+        
+        return actionsList;
     }
 
     public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
@@ -130,11 +121,6 @@ public class ApplicationManager : ApplicationService, IApplicationManager
         if ((triggerAction == GrantApplicationAction.Approve || triggerAction == GrantApplicationAction.Deny) && application.FinalDecisionDate == null)
         {
             throw new UserFriendlyException("The Decision Date is Required.");
-        }
-
-        if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
-        {
-            throw new UnauthorizedAccessException();
         }
 
         // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
