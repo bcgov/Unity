@@ -114,7 +114,7 @@
         initializedDropList.empty();
         initializedDropList.append($('<option>', {
             value: '',
-            text: 'Please Choose...'
+            text: 'Please choose...'
         }));
 
         return initializedDropList;
