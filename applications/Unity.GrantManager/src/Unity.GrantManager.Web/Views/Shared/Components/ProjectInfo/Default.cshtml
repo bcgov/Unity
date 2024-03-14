@@ -29,36 +29,36 @@
         <abp-row class="m-0 project-info-form">
             <abp-row class="m-0 p-0">
                 <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ProjectName" onchange="enableSaveBtn(this)" />
+                    <abp-input asp-for="@Model.ProjectInfo.ProjectName" onchange="enableProjectInfoSaveBtn(this)" />
                 </abp-column>
                 <abp-column size="_3" class="px-1">
-                    <abp-input type="date" id="startDate" asp-for="@Model.ProjectInfo.ProjectStartDate" onchange="enableSaveBtn(this)" abp-data-datepicker="false" />
+                    <abp-input type="date" id="startDate" asp-for="@Model.ProjectInfo.ProjectStartDate" onchange="enableProjectInfoSaveBtn(this)" abp-data-datepicker="false" />
                 </abp-column>
                 <abp-column size="_3" class="px-1">
-                    <abp-input type="date" asp-for="@Model.ProjectInfo.ProjectEndDate" onchange="enableSaveBtn(this)" 
+                    <abp-input type="date" asp-for="@Model.ProjectInfo.ProjectEndDate" onchange="enableProjectInfoSaveBtn(this)" 
                         minDate="@Model.ProjectInfo.ProjectStartDate" abp-data-datepicker="false" />
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ProjectSummary" onchange="enableSaveBtn(this)" />
+                    <abp-input asp-for="@Model.ProjectInfo.ProjectSummary" onchange="enableProjectInfoSaveBtn(this)" />
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_4" class="px-1">
                     <div class="unity-input-group">
                         <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" class="unity-currency-input" onchange="calculatePercentage();enableSaveBtn(this);" />
+                        <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" class="unity-currency-input" onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" />
                     </div>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                     <div class="unity-input-group">
                         <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" class="unity-currency-input" onchange="calculatePercentage();enableSaveBtn(this);" />
+                        <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" class="unity-currency-input" onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" />
                     </div>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="calculatePercentage();enableSaveBtn(this);" disabled />
+                    <abp-input asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled />
                 </abp-column>
 
                
@@ -67,44 +67,32 @@
                 <abp-column size="_4" class="px-1">
                     <div class="unity-input-group">
                         <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.ProjectFundingTotal" class="unity-currency-input" onchange="enableSaveBtn(this)" />
+                        <abp-input asp-for="@Model.ProjectInfo.ProjectFundingTotal" class="unity-currency-input" onchange="enableProjectInfoSaveBtn(this)" />
                     </div>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.Sector" asp-items="@Model.ApplicationSectorsList" id="sectorDropdown"
-                                onchange="enableSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-select asp-for="@Model.ProjectInfo.SubSector" asp-items="@Model.ApplicationSubSectorsList" id="subSectorDropdown"
-                                onchange="enableSaveBtn(this)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
                 </abp-column>
                
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.SectorSubSectorIndustryDesc" onchange="enableSaveBtn(this)" />
+                    <abp-input asp-for="@Model.ProjectInfo.SectorSubSectorIndustryDesc" onchange="enableProjectInfoSaveBtn(this)" />
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_4" class="px-1">
                     <abp-select asp-for="@Model.ProjectInfo.Acquisition" asp-items="@Model.AcquisitionList"
-                                onchange="enableSaveBtn(this)">
+                                onchange="enableProjectInfoSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                     <abp-select asp-for="@Model.ProjectInfo.Forestry" asp-items="@Model.ForestryList"
-                                onchange="enableSaveBtn(this)">
+                                onchange="enableProjectInfoSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                     <abp-select asp-for="@Model.ProjectInfo.ForestryFocus" asp-items="@Model.ForestryFocusList"
-                                onchange="enableSaveBtn(this)">
+                                onchange="enableProjectInfoSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
@@ -124,19 +112,19 @@
             <abp-row class="m-0 p-0">
                 <abp-column size="_4" class="px-1">
                     <abp-select asp-for="@Model.ProjectInfo.EconomicRegion" asp-items="@Model.EconomicRegionList" id="economicRegions"
-                                onchange="enableSaveBtn(this)">
+                                onchange="enableProjectInfoSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                         <abp-select asp-for="@Model.ProjectInfo.RegionalDistrict" asp-items="@Model.RegionalDistrictList" id="regionalDistricts"
-                                onchange="enableSaveBtn(this)">
+                                onchange="enableProjectInfoSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                         <abp-select asp-for="@Model.ProjectInfo.Community" asp-items="@Model.CommunityList" id="communities"
-                                onchange="enableSaveBtn(this)">
+                                onchange="enableProjectInfoSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
@@ -144,45 +132,16 @@
 
             <abp-row class="m-0 p-0">
                 <abp-column size="_4" class="px-1">
-                    <abp-input class="remove-leading-zeros" type="number" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" step="1" asp-for="@Model.ProjectInfo.CommunityPopulation" onchange="enableSaveBtn(this)" />
+                    <abp-input class="remove-leading-zeros" type="number" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" step="1" asp-for="@Model.ProjectInfo.CommunityPopulation" onchange="enableProjectInfoSaveBtn(this)" />
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                     <abp-select asp-for="@Model.ProjectInfo.ElectoralDistrict" asp-items="@Model.ElectoralDistrictList"
-                                onchange="enableSaveBtn(this)">
+                                onchange="enableProjectInfoSaveBtn(this)">
                         <option value="">Please choose...</option>
                     </abp-select>
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                    <div id="ContactInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-                        <h6 class="ps-1 fw-bold">@L["ProjectInfoView:ProjectInfoContactInfo"].Value</h6>
-                    </div>
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ContactFullName" onchange="enableSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ContactTitle" onchange="enableSaveBtn(this)" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ContactEmail" onchange="enableSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ContactBusinessPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_6" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.ContactCellPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_6" class="px-1">
-                </abp-column>
-            </abp-row>
+          
             <abp-row class="m-0 p-0">
                 
                 <abp-column size="_12" class="px-1 d-flex justify-content-end mt-2">

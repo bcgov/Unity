@@ -12,6 +12,7 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? OrgNumber { get; set; } = string.Empty;
     public string? OrgStatus { get; set; } = string.Empty;
     public string? OrganizationType { get; set; } = string.Empty;
+    public string? OrganizationSize { get; set; } = string.Empty;
     public string? Sector { get; set; } = string.Empty;
     public string? SubSector { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;

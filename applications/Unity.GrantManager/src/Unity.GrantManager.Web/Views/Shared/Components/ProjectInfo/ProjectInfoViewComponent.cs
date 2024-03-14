@@ -21,7 +21,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
     public class ProjectInfoViewComponent : AbpViewComponent
     {
         private readonly IGrantApplicationAppService _grantApplicationAppService;
-        private readonly ISectorService _applicationSectorAppService;
         private readonly IEconomicRegionService _applicationEconomicRegionAppService;
         private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
         private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
@@ -37,7 +36,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             )
         {
             _grantApplicationAppService = grantApplicationAppService;
-            _applicationSectorAppService = applicationSectorAppService;
             _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
             _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
             _applicationRegionalDistrictAppService = applicationRegionalDistrictAppService;
@@ -50,7 +48,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             const decimal ProjectFundingMultiply = 0.2M;
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
-            List<SectorDto> Sectors = (await _applicationSectorAppService.GetListAsync()).ToList();
+
 
             List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
 
@@ -63,14 +61,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
-                ApplicationSectors = Sectors,
                 RegionalDistricts = RegionalDistricts,
                 Communities = Communities,
                 EconomicRegions = EconomicRegions,
             };
 
-            model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
-                new SelectListItem { Value = Sector.SectorName, Text = Sector.SectorName }));
+           
             
             model.EconomicRegionList.AddRange(EconomicRegions.Select(EconomicRegion =>  
                 new SelectListItem { Value = EconomicRegion.EconomicRegionName, Text = EconomicRegion.EconomicRegionName }));
@@ -78,16 +74,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             model.ElectoralDistrictList.AddRange(ElectoralDistricts.Select(ElectoralDistrict =>
                 new SelectListItem { Value = ElectoralDistrict.ElectoralDistrictName, Text = ElectoralDistrict.ElectoralDistrictName }));
 
-            if (Sectors.Count > 0)
-            {
-                List<SubSectorDto> SubSectors = new();
-
-                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);
-                SubSectors = applicationSector?.SubSectors ?? SubSectors;
-
-                model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector => 
-                    new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
-            }
+            
 
             if(EconomicRegions.Count > 0) {
                 String EconomicRegionCode = string.Empty;
@@ -144,16 +131,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 Forestry = application.Forestry,
                 ForestryFocus = application.ForestryFocus,
                 Acquisition = application.Acquisition,
-                Sector = application.Sector,
-                SubSector = application.SubSector,
                 EconomicRegion = application.EconomicRegion,
                 ElectoralDistrict = application.ElectoralDistrict,
                 RegionalDistrict = application.RegionalDistrict,
-                ContactFullName = application.ContactFullName,
-                ContactTitle = application.ContactTitle,
-                ContactEmail = application.ContactEmail,
-                ContactBusinessPhone = application.ContactBusinessPhone,
-                ContactCellPhone = application.ContactCellPhone,
                 SectorSubSectorIndustryDesc = application.SectorSubSectorIndustryDesc
             };
 
