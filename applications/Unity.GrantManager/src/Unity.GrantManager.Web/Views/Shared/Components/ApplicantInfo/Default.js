@@ -39,7 +39,7 @@
 
     $('#orgSectorDropdown').change(function () {
         const selectedValue = $(this).val();
-        let sectorList = JSON.parse($('#applicationSectorList').text());
+        let sectorList = JSON.parse($('#orgApplicationSectorList').text());
 
         let childDropdown = $('#orgSubSectorDropdown');
         childDropdown.empty();
