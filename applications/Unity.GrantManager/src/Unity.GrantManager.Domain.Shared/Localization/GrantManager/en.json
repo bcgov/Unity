@@ -148,6 +148,7 @@
     "ApplicationForms:APIConfiguration": "API Configuration",
     "ApplicationForms:DownloadAPIConfiguration": "Download API Configuration",
     "ApplicationForms:UpdateAPIToken": "Update API Token",
+    "ApplicationForms:Payable": "Payable",
 
     "Intakes": "Intakes",
 
@@ -262,6 +263,31 @@
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
     "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
+
+
+    "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
+    "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
+    "ApplicantInfoView:ApplicantInfo.ContactFullName": "Full Name",
+    "ApplicantInfoView:ApplicantInfo.ContactTitle": "Title",
+    "ApplicantInfoView:ApplicantInfo.ContactEmail": "Email",
+    "ApplicantInfoView:ApplicantInfo.ContactBusinessPhone": "Business Phone",
+    "ApplicantInfoView:ApplicantInfo.ContactCellPhone": "Cell Phone",
+    "ApplicantInfoView:ApplicantInfo SigningAuthorityInfo": " Signing Authority",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityFullName": "Full Name",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityTitle": "Title",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityEmail": "Email",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityBusinessPhone": "Business Phone",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityCellPhone": "Phone",
+    "ApplicantInfoView:ApplicantInfo.OrgName": "Organization Name",
+    "ApplicantInfoView:ApplicantInfo.OrgNumber": "Organization Number",
+    "ApplicantInfoView:ApplicantInfo.OrgBookStatus": "Org book status ",
+    "ApplicantInfoView:ApplicantInfo.OrganizationType": "Organization Type",
+    "ApplicantInfoView:ApplicantInfo.OrganizationSize": "Organization Size",
+    "ApplicantInfoView:ApplicantInfo.Sector": "Sector",
+    "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
+    "ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle": "Applicant Info",
+
+
 
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",
