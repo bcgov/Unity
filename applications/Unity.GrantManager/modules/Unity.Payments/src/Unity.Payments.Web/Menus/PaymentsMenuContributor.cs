@@ -11,7 +11,7 @@ public class PaymentsMenuContributor : IMenuContributor
     {
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
 
-        if (await featureChecker.IsEnabledAsync("GrantManager.Payments"))
+        if (await featureChecker.IsEnabledAsync("Unity.Payments"))
         {
             if (context.Menu.Name == StandardMenus.Main)
             {

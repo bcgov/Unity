@@ -6,11 +6,11 @@ namespace Unity.Payments.Samples;
 
 public class SampleAppService_Tests : PaymentsApplicationTestBase
 {
-    private readonly ISampleAppService _sampleAppService;
+    private readonly ISampleAppService _sampleAppService;    
 
     public SampleAppService_Tests()
     {
-        _sampleAppService = GetRequiredService<ISampleAppService>();
+        _sampleAppService = GetRequiredService<ISampleAppService>();        
     }
 
     [Fact]

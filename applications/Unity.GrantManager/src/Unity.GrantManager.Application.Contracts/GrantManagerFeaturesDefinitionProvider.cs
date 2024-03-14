@@ -12,7 +12,7 @@ namespace Unity.GrantManager
         {
             var myGroup = context.AddGroup("GrantManager");
 
-            myGroup.AddFeature("GrantManager.Payments", 
+            myGroup.AddFeature("Unity.Payments", 
                 defaultValue: "false",
                 displayName: LocalizableString
                                  .Create<PaymentsResource>("Payments"),
