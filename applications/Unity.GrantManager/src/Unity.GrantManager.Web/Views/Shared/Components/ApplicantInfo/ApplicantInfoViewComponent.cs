@@ -52,15 +52,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             if (Sectors.Count > 0)
             {
                 List<SubSectorDto> SubSectors = new();
-                if (string.IsNullOrEmpty(application.SubSector))
-                {
-                    SubSectors = Sectors[0].SubSectors ?? SubSectors;
-                }
-                else
-                {
-                    SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);
-                    SubSectors = applicationSector?.SubSectors ?? SubSectors;
-                }
+                
+                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);
+                SubSectors = applicationSector?.SubSectors ?? SubSectors;                
 
                 model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
                     new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
