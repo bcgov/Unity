@@ -139,7 +139,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? SectorSubSectorIndustryDesc { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractNumber")]
-            [RegularExpression(@"^\d+$", ErrorMessage = "Only digits are allowed")]
             public string? ContractNumber { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
