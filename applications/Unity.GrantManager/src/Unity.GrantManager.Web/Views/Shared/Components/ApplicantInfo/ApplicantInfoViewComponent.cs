@@ -81,6 +81,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 SigningAuthorityBusinessPhone = application.SigningAuthorityBusinessPhone,
                 SigningAuthorityCellPhone = application.SigningAuthorityCellPhone,
                 OrganizationSize = application.OrganizationSize,
+                SectorSubSectorIndustryDesc = application.SectorSubSectorIndustryDesc,
 
             };
 
