@@ -35,6 +35,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
+        public DbSet<ApplicationContact> ApplicationContacts { get; set; }    
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -249,6 +250,16 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .IsRequired()
                     .HasMaxLength(250);
 
+               
+            });
+
+            modelBuilder.Entity<ApplicationContact>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationContact",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
                
             });
 

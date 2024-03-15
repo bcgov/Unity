@@ -211,6 +211,7 @@
 
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
+    "Summary:ContactsTitle": "Contacts",
     "Summary:Application.Category": "Category",
     "Summary:Application.EconomicRegion": "Economic Region",
     "Summary:Application.RegionalDistrict": "Regional District",
@@ -298,7 +299,17 @@
     "UnityIdentity:Import": "Import",
 
     "ApplicationDetails:Comments.Modified": "Modified:",
-    "ApplicationDetails:Comments.Created": "Created:"
+    "ApplicationDetails:Comments.Created": "Created:",
+
+    "ApplicationContact:AddTitle" : "Add New Contact",
+    "ApplicationContact:EditTitle" : "Edit Contact",
+    "ApplicationContact:Type": "Type",
+    "ApplicationContact:FullName": "Full Name",
+    "ApplicationContact:Title": "Title",
+    "ApplicationContact:Email": "Email",
+    "ApplicationContact:MobilePhone": "Mobile Phone Number",
+    "ApplicationContact:WorkPhone": "Work Phone Number",
+    "ApplicationContact:Delete": "Delete This Contact"
   }
 }
 

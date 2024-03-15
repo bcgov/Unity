@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenIddict.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
@@ -28,18 +29,22 @@ namespace Unity.GrantManager.Web.Identity
         {
             if (validatedTokenContext.Principal != null)
             {
-                var userTenantAccounts = await _userTenantsAppService.GetUserTenantsAsync(validatedTokenContext.SecurityToken.Subject);
+                var idpSplitter = validatedTokenContext.SecurityToken.Subject.IndexOf("@");
+                var userIdentifier = validatedTokenContext.SecurityToken.Subject[..(idpSplitter == -1 ? validatedTokenContext.SecurityToken.Subject.Length : idpSplitter)].ToUpper();
+                var userTenantAccounts = await _userTenantsAppService.GetUserTenantsAsync(userIdentifier);
+                var idp = validatedTokenContext.SecurityToken.Claims.FirstOrDefault(s => s.Type == UnityClaimsTypes.IdpProvider)?.Value;
+
                 UserTenantAccountDto signedInTenantAccount;
 
                 if (validatedTokenContext.Principal.IsInRole(IdentityConsts.ITAdmin))
                 {
                     var adminLoginHandler = validatedTokenContext.HttpContext.RequestServices.GetService<IdentityProfileLoginAdminHandler>();                    
-                    signedInTenantAccount = await adminLoginHandler!.Handle(validatedTokenContext, userTenantAccounts);
+                    signedInTenantAccount = await adminLoginHandler!.Handle(validatedTokenContext, userTenantAccounts, idp);
                 }
                 else
                 {                    
                     var userLoginHandler = validatedTokenContext.HttpContext.RequestServices.GetService<IdentityProfileLoginUserHandler>();
-                    signedInTenantAccount = await userLoginHandler!.Handle(validatedTokenContext, userTenantAccounts);
+                    signedInTenantAccount = await userLoginHandler!.Handle(validatedTokenContext, userTenantAccounts, idp);
                 }
 
                 AddTenantClaims(validatedTokenContext.Principal!, userTenantAccounts);
@@ -50,7 +55,7 @@ namespace Unity.GrantManager.Web.Identity
                     securityLog.Identity = validatedTokenContext.SecurityToken.Subject;
                     securityLog.Action = "Login";
                     securityLog.UserId = signedInTenantAccount.Id;
-                    securityLog.UserName = validatedTokenContext.Principal!.GetClaim(UnityClaimsTypes.IDirUsername);
+                    securityLog.UserName = validatedTokenContext.Principal!.GetClaim(UnityClaimsResolver.ResolveFor(UnityClaimsTypes.PreferredUsername, idp));
                     securityLog.TenantId = signedInTenantAccount.TenantId;
                     securityLog.TenantName = signedInTenantAccount.TenantName;
                 });
@@ -63,7 +68,7 @@ namespace Unity.GrantManager.Web.Identity
             {
                 if (tenantAcc != null && tenantAcc.TenantId != null)
                 {
-                    claimsPrincipal.AddClaim("tenant", tenantAcc.TenantId.ToString() ?? Guid.Empty.ToString());
+                    claimsPrincipal.AddClaim(UnityClaimsTypes.Tenant, tenantAcc.TenantId.ToString() ?? Guid.Empty.ToString());
                 }
             }
         }               

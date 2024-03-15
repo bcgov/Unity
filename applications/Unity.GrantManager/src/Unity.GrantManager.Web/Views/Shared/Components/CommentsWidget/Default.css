@@ -37,28 +37,6 @@
     gap: 8px;
 }
 
-.fl-cross {
-    margin-top: 10px;
-    padding-left: 14px;
-    padding-right: 14px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    background: #E6EFF7;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-.fl-tick {
-    margin-top: 10px;
-    padding-left: 14px;
-    padding-right: 14px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    background: #E6EFF7;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
 .add-comment {
     display: none;
 }
@@ -100,6 +78,14 @@
 }
 
 .comment-btn {
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background: #E6EFF7;
+    border-radius: 3px;
+    cursor: pointer;
     transition: box-shadow .3s;
 }
 
