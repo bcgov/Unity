@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -239,11 +240,18 @@ public class GrantApplicationAppService :
                 appDto.ContactTitle = contactInfo.Title;
                 appDto.ContactBusinessPhone = contactInfo.Phone;
                 appDto.ContactCellPhone = contactInfo.Phone2;
+
             }
 
             if (appDto.Applicant != null)
             {
+                appDto.OrganizationName = appDto.Applicant.OrgName;
+                appDto.OrgNumber = appDto.Applicant.OrgNumber;
+                appDto.OrganizationSize = appDto.Applicant.OrganizationSize;
+                appDto.OrgStatus = appDto.Applicant.OrgStatus;
+                appDto.OrganizationName = appDto.Applicant.OrgName;
                 appDto.Sector = appDto.Applicant.Sector;
+                appDto.OrganizationType = appDto.Applicant.OrganizationType;
                 appDto.SubSector = appDto.Applicant.SubSector;
                 appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
             }
@@ -323,9 +331,9 @@ public class GrantApplicationAppService :
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
+                application.ValidateAndChangeNotificationDate(input.NotificationDate);
                 application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
-                application.UpdateFieldsOnlyForPreFinalDecision(input.ProjectSummary,
-                    input.DueDiligenceStatus,
+                application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.TotalProjectBudget,
                     input.RecommendedAmount,
                     input.DeclineRational);
@@ -376,14 +384,38 @@ public class GrantApplicationAppService :
             var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
             // This applicant should never be null!
 
-            applicant.Sector = input.Sector ?? "";
-            applicant.SubSector = input.SubSector ?? "";
             applicant.SectorSubSectorIndustryDesc= input.SectorSubSectorIndustryDesc ?? "";
             _ = await _applicantRepository.UpdateAsync(applicant);
 
-            if (!string.IsNullOrEmpty(input.ContactFullName) || !string.IsNullOrEmpty(input.ContactTitle) || !string.IsNullOrEmpty(input.ContactEmail)
-                || !string.IsNullOrEmpty(input.ContactBusinessPhone) || !string.IsNullOrEmpty(input.ContactCellPhone))
-            {
+                return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+            
+        }
+        else
+        {
+            throw new EntityNotFoundException();
+        }
+    }
+       public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto  input)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+             if (application != null)
+        {
+          
+
+            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
+            // This applicant should never be null!
+
+            applicant.OrganizationType = input.OrganizationType ?? "";
+            applicant.OrgName = input.OrgName ?? "";
+            applicant.OrgNumber = input.OrgNumber ?? "";
+            applicant.OrgStatus = input.OrgStatus ?? "";
+            applicant.OrganizationSize = input.OrganizationSize ?? "";
+            applicant.Sector = input.Sector ?? "";
+            applicant.SubSector = input.SubSector ?? "";
+          
+            _ = await _applicantRepository.UpdateAsync(applicant);
+
+           
                 var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
                 if (applicantAgent == null)
                 {
@@ -395,6 +427,7 @@ public class GrantApplicationAppService :
                         Phone = input.ContactBusinessPhone ?? "",
                         Phone2 = input.ContactCellPhone ?? "",
                         Email = input.ContactEmail ?? "",
+       
                         Title = input.ContactTitle ?? ""
                     });
                 }
@@ -405,11 +438,20 @@ public class GrantApplicationAppService :
                     applicantAgent.Phone2 = input.ContactCellPhone ?? "";
                     applicantAgent.Email = input.ContactEmail ?? "";
                     applicantAgent.Title = input.ContactTitle ?? "";
-
                     applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
                 }
 
-                var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+
+            application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
+            application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
+            application.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
+            application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
+            application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
+
+            await _applicationRepository.UpdateAsync(application);
+
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
 
                 appDto.ContactFullName = applicantAgent.Name;
                 appDto.ContactEmail = applicantAgent.Email;
@@ -419,11 +461,7 @@ public class GrantApplicationAppService :
 
                 return appDto;
 
-            }
-            else
-            {
-                return ObjectMapper.Map<Application, GrantApplicationDto>(application);
-            }
+          
         }
         else
         {
@@ -679,6 +717,7 @@ public class GrantApplicationAppService :
     public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false)
     {
         var actionList = await _applicationManager.GetActions(applicationId);
+        var application = await _applicationRepository.GetAsync(applicationId, true);
 
         // Note: Remove internal state change actions that are side-effects of domain events
         var externalActionsList = actionList.Where(a => includeInternal || !a.IsInternal).ToList();
@@ -689,9 +728,18 @@ public class GrantApplicationAppService :
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // TODO: Replace placeholder loop with authorization handler mapped to permissions
         // AUTHORIZATION HANDLING
-        actionDtos.ForEach(item => { item.IsAuthorized = true; });
+        actionDtos.ForEach(async item => 
+        {
+            item.IsPermitted = item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
+            item.IsAuthorized = true; 
+        });
 
         return new ListResultDto<ApplicationActionDto>(actionDtos);
+    }
+
+    private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(GrantApplicationAction triggerAction)
+    {
+        return new OperationAuthorizationRequirement { Name = triggerAction.ToString() };
     }
 
     /// <summary>
@@ -701,8 +749,14 @@ public class GrantApplicationAppService :
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
-        var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
-        // TODO: AUTHORIZATION HANDLING
+        var application = await _applicationRepository.GetAsync(applicationId, true);
+        if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        application = await _applicationManager.TriggerAction(applicationId, triggerAction);
+        
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
     #endregion APPLICATION WORKFLOW
