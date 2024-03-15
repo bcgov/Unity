@@ -235,7 +235,7 @@ namespace Unity.GrantManager.Identity
         {
             if (user != null)
             {
-                user.SetProperty("OidcSub", oidcSub);
+                user.SetProperty("OidcSub", oidcSub.ToSubjectWithoutIdp());
                 user.SetProperty("DisplayName", displayName);
                 await _identityUserRepository.UpdateAsync(user, true);
             }

@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
           IList<UserTenantAccountDto>? userTenantAccounts,
           string? idp)
-        {            
+        {
             // filter out host account if coming in as tenant - add support for this later
             userTenantAccounts = userTenantAccounts?.Where(s => s.TenantId != null).ToList();
             if (userTenantAccounts == null || userTenantAccounts.Count == 0)
@@ -34,8 +34,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
                 {
                     var token = validatedTokenContext.SecurityToken;
                     var userSubject = GetClaimValue(validatedTokenContext.SecurityToken, UnityClaimsTypes.Subject, idp) ?? throw new AutoRegisterUserException("Error auto registering user");
-                    var idpSplitter = userSubject.IndexOf("@");
-                    var userIdentifier = userSubject[..(idpSplitter == -1 ? userSubject.Length : idpSplitter)].ToUpper();
+                    var userIdentifier = userSubject.ToSubjectWithoutIdp();
                     userTenantAccounts = await AutoRegisterUserWithDefaultAsync(userIdentifier,
                         GetClaimValue(token, UnityClaimsTypes.PreferredUsername, idp) ?? UnityClaimsTypes.PreferredUsername,
                         GetClaimValue(token, UnityClaimsTypes.GivenName, idp) ?? UnityClaimsTypes.GivenName,
@@ -43,7 +42,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
                         GetClaimValue(token, UnityClaimsTypes.Email, idp) ?? UnityClaimsTypes.Email,
                         userIdentifier,
                         GetClaimValue(token, UnityClaimsTypes.DisplayName, idp) ?? UnityClaimsTypes.DisplayName);
-                } 
+                }
                 else
                 {
                     throw new NoGrantProgramsLinkedException("User is not linked to any grant programs");
@@ -95,11 +94,11 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
         }
 
         private async Task<IList<UserTenantAccountDto>> AutoRegisterUserWithDefaultAsync(string userIdentifier,
-            string username, 
-            string firstName, 
-            string lastName, 
-            string emailAddress, 
-            string oidcSub, 
+            string username,
+            string firstName,
+            string lastName,
+            string emailAddress,
+            string oidcSub,
             string displayName)
         {
             var tenant = await TenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
