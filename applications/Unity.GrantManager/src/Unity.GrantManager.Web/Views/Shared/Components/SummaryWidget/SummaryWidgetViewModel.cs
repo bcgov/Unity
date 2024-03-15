@@ -1,6 +1,8 @@
 ﻿
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
@@ -77,5 +79,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
 
         [Display(Name = "Summary:Application.Owner")]
         public GrantApplicationAssigneeDto Owner { get; set; } = new();
+
+        [HiddenInput]
+        public Guid ApplicationId { get; set; }
+        
+        [HiddenInput]
+        public Boolean IsReadOnly { get; set; } = false;
+
     }
 }

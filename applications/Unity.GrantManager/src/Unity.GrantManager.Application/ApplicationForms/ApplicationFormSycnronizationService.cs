@@ -170,6 +170,7 @@ namespace Unity.GrantManager.ApplicationForms
             string minDate = DateTime.Now.AddDays(numberOfDaysToCheck).ToString("yyyy-MM-dd");
             string maxDate = DateTime.Now.ToString("yyyy-MM-dd");
             string queryString = $"?createdAt[]={minDate}&createdAt[]={maxDate}";
+            Logger.LogInformation("ApplicationFormSynchronizationService queryString:  " + queryString);
             List<FormSubmissionSummaryDto>? pagedResult = await GetSubmissionsList(applicationFormDto, queryString);
             if (pagedResult != null && pagedResult.Count > 0)
             {
@@ -187,10 +188,12 @@ namespace Unity.GrantManager.ApplicationForms
         {
             if (applicationForm.ChefsApplicationFormGuid == null)
             {
+                Logger.LogError("Missing required parameter 'formId' when calling ListFormSubmissions");
                 throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
             }
 
             string requestUrl = $"/forms/{applicationForm.ChefsApplicationFormGuid}/submissions";
+            Logger.LogInformation("ApplicationFormSynchronizationService calling requestUrl:  " + requestUrl);
             if (!string.IsNullOrEmpty(queryString))
             {
                 requestUrl += queryString;
@@ -215,6 +218,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
+                Logger.LogError(errorMessage);
                 throw new ApiException((int)response.StatusCode, errorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
             }
 
@@ -227,6 +231,7 @@ namespace Unity.GrantManager.ApplicationForms
             };
 
             List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
+            Logger.LogInformation("ApplicationFormSynchronizationService jsonResponse:  " + jsonResponse);
             return jsonResponse;
         }
     }

@@ -1,0 +1,23 @@
+@page
+@using Unity.GrantManager.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Unity.GrantManager.Web.Pages.GrantApplications;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+
+@model Unity.GrantManager.Web.Pages.ApplicationContact.CreateContactModal
+
+@inject IStringLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+
+<abp-dynamic-form abp-model="ContactForm" asp-page="/ApplicationContact/CreateContactModal" >
+    <abp-modal>
+        <abp-modal-header title="@L["ApplicationContact:AddTitle"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-form-content />
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Save|AbpModalButtons.Cancel)"></abp-modal-footer>
+    </abp-modal>
+</abp-dynamic-form>
