@@ -20,7 +20,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
     {
         private readonly IGrantApplicationAppService _grantApplicationService;
         private readonly BrowserUtils _browserUtils;
-
         public SummaryWidgetViewComponent(IGrantApplicationAppService grantApplicationAppService,
             BrowserUtils browserUtils)
         {
@@ -28,7 +27,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
             _browserUtils = browserUtils;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Boolean isReadOnly)
         {
             var offset = _browserUtils.GetBrowserOffset();
 
@@ -41,7 +40,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.Summary
 
             summaryDto.SubmissionDate = summaryDto.SubmissionDate?.AddMinutes(-offset);
 
-            return View(ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto));
+            SummaryWidgetViewModel summaryWidgetViewModel = ObjectMapper.Map<GetSummaryDto, SummaryWidgetViewModel>(summaryDto);
+            summaryWidgetViewModel.ApplicationId = applicationId;
+            summaryWidgetViewModel.IsReadOnly = isReadOnly;
+
+            return View(summaryWidgetViewModel);
         }      
     }
 
