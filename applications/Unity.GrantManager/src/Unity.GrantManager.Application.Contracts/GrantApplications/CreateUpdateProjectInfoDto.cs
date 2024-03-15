@@ -27,7 +27,6 @@ namespace Unity.GrantManager.GrantApplications
         public string? ContactEmail { get; set;}
         public string? ContactBusinessPhone { get; set;}
         public string? ContactCellPhone { get; set;}
-        public string? SectorSubSectorIndustryDesc  { get; set; } = string.Empty;
         public string? SigningAuthorityFullName { get; set; }
         public string? SigningAuthorityTitle { get; set; }
         public string? SigningAuthorityEmail { get; set; }
