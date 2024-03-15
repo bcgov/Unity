@@ -70,6 +70,7 @@ namespace Unity.GrantManager.ApplicationForms
             if (ApplicationFormDtoList != null)
             {
                 int numberOfDaysToCheck = PREVIOS_DAY;
+                Logger.LogInformation("Appform SYNC: Iterating Forms ");
                 foreach (ApplicationFormDto applicationFormDto in ApplicationFormDtoList)
                 {
                     try
@@ -77,8 +78,10 @@ namespace Unity.GrantManager.ApplicationForms
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
                         HashSet<string> existingSubmissions = GetSubmissionsByForm(applicationFormDto.Id);
                         missingSubmissions = newChefsSubmissions.Except(existingSubmissions).ToHashSet();
+                        Logger.LogInformation("Appform SYNC: Looking up missing: " + missingSubmissions);
                         if (missingSubmissions != null && missingSubmissions.Count > 0)
                         {
+                            Logger.LogInformation("Appform SYNC: missingSubmissions: Count" + missingSubmissions.Count);
                             await _chefsMissedSubmissionsRepository.InsertAsync(
                                 new ChefsMissedSubmission
                                 {
@@ -142,6 +145,7 @@ namespace Unity.GrantManager.ApplicationForms
             string activityTitle = "Review Missed Chefs Submissions";
             string activitySubtitle = "Environment: " + envInfo;
             string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
+            Logger.LogInformation("Getting Teams Channel: " + teamsChannel + activitySubtitle);
             await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
             return missingSubmissions ?? new HashSet<string>();
         }
@@ -166,6 +170,7 @@ namespace Unity.GrantManager.ApplicationForms
             string minDate = DateTime.Now.AddDays(numberOfDaysToCheck).ToString("yyyy-MM-dd");
             string maxDate = DateTime.Now.ToString("yyyy-MM-dd");
             string queryString = $"?createdAt[]={minDate}&createdAt[]={maxDate}";
+            Logger.LogInformation("ApplicationFormSynchronizationService queryString:  " + queryString);
             List<FormSubmissionSummaryDto>? pagedResult = await GetSubmissionsList(applicationFormDto, queryString);
             if (pagedResult != null && pagedResult.Count > 0)
             {
@@ -183,10 +188,12 @@ namespace Unity.GrantManager.ApplicationForms
         {
             if (applicationForm.ChefsApplicationFormGuid == null)
             {
+                Logger.LogError("Missing required parameter 'formId' when calling ListFormSubmissions");
                 throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
             }
 
             string requestUrl = $"/forms/{applicationForm.ChefsApplicationFormGuid}/submissions";
+            Logger.LogInformation("ApplicationFormSynchronizationService calling requestUrl:  " + requestUrl);
             if (!string.IsNullOrEmpty(queryString))
             {
                 requestUrl += queryString;
@@ -211,6 +218,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
+                Logger.LogError(errorMessage);
                 throw new ApiException((int)response.StatusCode, errorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
             }
 
@@ -223,6 +231,7 @@ namespace Unity.GrantManager.ApplicationForms
             };
 
             List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, submissionOptions);
+            Logger.LogInformation("ApplicationFormSynchronizationService jsonResponse:  " + jsonResponse);
             return jsonResponse;
         }
     }
