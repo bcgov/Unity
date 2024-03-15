@@ -19,18 +19,27 @@ namespace Unity.GrantManager.Web.Pages.ApplicationContact
         public List<SelectListItem> ContactTypeList { get; set; } = FormatOptionsList(ApplicationContactOptionList.ContactTypeList);
 
         [DisplayName("ApplicationContact:FullName")]
+        [StringLength(100)]
+        [Required]
         public string ContactFullName { get; set; } = string.Empty;
 
         [DisplayName("ApplicationContact:Title")]
+        [StringLength(50)]
         public string? ContactTitle { get; set; }
 
         [DisplayName("ApplicationContact:Email")]
+        [EmailAddress]
         public string? ContactEmail { get; set; }
 
         [DisplayName("ApplicationContact:MobilePhone")]
+        [StringLength(10)]
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Enter a valid phone number")]
         public string? ContactMobilePhone { get; set; }
 
         [DisplayName("ApplicationContact:WorkPhone")]
+        [StringLength(10)]
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Enter a valid phone number")]
+        [Phone]
         public string? ContactWorkPhone { get; set; }
 
         [HiddenInput]
