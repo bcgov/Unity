@@ -70,6 +70,7 @@ namespace Unity.GrantManager.ApplicationForms
             if (ApplicationFormDtoList != null)
             {
                 int numberOfDaysToCheck = PREVIOS_DAY;
+                Logger.LogInformation("Appform SYNC: Iterating Forms ");
                 foreach (ApplicationFormDto applicationFormDto in ApplicationFormDtoList)
                 {
                     try
@@ -77,8 +78,10 @@ namespace Unity.GrantManager.ApplicationForms
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
                         HashSet<string> existingSubmissions = GetSubmissionsByForm(applicationFormDto.Id);
                         missingSubmissions = newChefsSubmissions.Except(existingSubmissions).ToHashSet();
+                        Logger.LogInformation("Appform SYNC: Looking up missing: " + missingSubmissions);
                         if (missingSubmissions != null && missingSubmissions.Count > 0)
                         {
+                            Logger.LogInformation("Appform SYNC: missingSubmissions: Count" + missingSubmissions.Count);
                             await _chefsMissedSubmissionsRepository.InsertAsync(
                                 new ChefsMissedSubmission
                                 {
@@ -141,7 +144,8 @@ namespace Unity.GrantManager.ApplicationForms
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Review Missed Chefs Submissions";
             string activitySubtitle = "Environment: " + envInfo;
-            string teamsChannel = _configuration["Teams:NotificationsChannelWebhook"] ?? "";
+            string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
+            Logger.LogInformation("Getting Teams Channel: " + teamsChannel + activitySubtitle);
             await TeamsNotificationService.PostToTeamsAsync(teamsChannel, activityTitle, activitySubtitle, facts);
             return missingSubmissions ?? new HashSet<string>();
         }
