@@ -93,6 +93,8 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? SigningAuthorityEmail { get; set; }
     public string? SigningAuthorityBusinessPhone { get; set; }
     public string? SigningAuthorityCellPhone { get; set; }
+    public string? ContractNumber { get; set; }
+    public DateTime? ContractExecutionDate { get; set; }
 
     public bool IsInFinalDecisionState()
     {

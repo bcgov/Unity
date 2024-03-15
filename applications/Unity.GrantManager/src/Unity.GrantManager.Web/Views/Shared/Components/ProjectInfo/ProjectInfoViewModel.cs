@@ -137,6 +137,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             [Display(Name = "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc")]
             [TextArea(Rows = 2)]
             public string? SectorSubSectorIndustryDesc { get; set; }
+
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContractNumber")]
+            [RegularExpression(@"^\d+$", ErrorMessage = "Only digits are allowed")]
+            public string? ContractNumber { get; set; }
+
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
+            public DateTime? ContractExecutionDate { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

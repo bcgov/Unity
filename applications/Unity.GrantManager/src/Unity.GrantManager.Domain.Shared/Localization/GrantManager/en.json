@@ -263,6 +263,9 @@
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
     "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
+    "ProjectInfoView:ProjectInfoContract": "Contract",
+    "ProjectInfoView:ProjectInfo.ContractNumber": "Contract #",
+    "ProjectInfoView:ProjectInfo.ContractExecutionDate": "Execution Date",
 
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
