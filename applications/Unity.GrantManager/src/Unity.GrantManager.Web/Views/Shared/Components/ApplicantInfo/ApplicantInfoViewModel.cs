@@ -107,7 +107,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
             public string? SigningAuthorityCellPhone { get; set; }
 
-
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc")]
+            [TextArea(Rows = 2)]
+            public string? SectorSubSectorIndustryDesc { get; set; }
+            
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

@@ -381,12 +381,6 @@ public class GrantApplicationAppService :
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
 
-            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
-            // This applicant should never be null!
-
-            applicant.SectorSubSectorIndustryDesc= input.SectorSubSectorIndustryDesc ?? "";
-            _ = await _applicantRepository.UpdateAsync(applicant);
-
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
             
         }
@@ -412,7 +406,8 @@ public class GrantApplicationAppService :
             applicant.OrganizationSize = input.OrganizationSize ?? "";
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
-          
+            applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
+
             _ = await _applicantRepository.UpdateAsync(applicant);
 
            

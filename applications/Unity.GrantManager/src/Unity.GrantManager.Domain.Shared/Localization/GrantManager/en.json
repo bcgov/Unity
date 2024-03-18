@@ -262,7 +262,6 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-    "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
 
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
@@ -286,6 +285,7 @@
     "ApplicantInfoView:ApplicantInfo.Sector": "Sector",
     "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
     "ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle": "Applicant Info",
+    "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
 
 
 
