@@ -1,0 +1,15 @@
+﻿.contact-edit-btn {
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background: #E6EFF7;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: box-shadow .3s;
+}
+
+    .contact-edit-btn:hover {
+        box-shadow: 0px 3px 11px -3px rgba(33,33,33,.2);
+    }

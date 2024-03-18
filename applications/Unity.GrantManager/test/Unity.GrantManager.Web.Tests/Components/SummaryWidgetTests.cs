@@ -71,7 +71,7 @@ namespace Unity.GrantManager.Components
             };
 
             //Act
-            var result = await viewComponent.InvokeAsync(Guid.NewGuid()) as ViewViewComponentResult;
+            var result = await viewComponent.InvokeAsync(Guid.NewGuid(), true) as ViewViewComponentResult;
             SummaryWidgetViewModel? resultModel;
 
             resultModel = result!.ViewData!.Model! as SummaryWidgetViewModel;

@@ -32,5 +32,8 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels
 
         [DisplayName("ApplicationForms:Category")]
         public string? Category { get; set; }
+
+        [DisplayName("ApplicationForms:Payable")]
+        public bool Payable { get; set; }
     }
 }

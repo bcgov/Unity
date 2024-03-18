@@ -19,8 +19,10 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.GrantManager.GrantApplications;
 using Unity.Payments;
 using Volo.Abp.Application.Dtos;
+using Unity.GrantManager.Intakes.BackgroundWorkers;
 
 namespace Unity.GrantManager;
 
@@ -64,6 +66,7 @@ namespace Unity.GrantManager;
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
+        context.Services.AddSingleton<IAuthorizationHandler, ApplicationAuthorizationHandler>();
 
         Configure<IntakeClientOptions>(options =>
         {
@@ -73,6 +76,12 @@ namespace Unity.GrantManager;
             options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
 
+        Configure<BackgroundJobsOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+            options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
+            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";            
+        });
 
         context.Services.Configure<CssApiOptions>(
             configuration.GetSection(
