@@ -14,11 +14,6 @@ namespace Unity.Payments
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual string? Comment { get; private set; } = null;
 
-        /// <summary>
-        /// The external system / module Id that this relates to
-        /// </summary>
-        public virtual Guid CorrelationId { get; private set; }
-
         public virtual PaymentRequestBatch? Batch { get; private set; }
         public bool IsRecon { get; internal set; }
 
@@ -27,6 +22,11 @@ namespace Unity.Payments
         public virtual string? PaymentStatus { get; private set; }
         public virtual string? PaymentNumber { get; private set; }
         public virtual string? PaymentDate { get; private set; }
+
+        /// <summary>
+        /// The external system / module Id that this relates to
+        /// </summary>
+        public virtual Guid CorrelationId { get; private set; }
 
         protected PaymentRequest()
         {
@@ -37,7 +37,7 @@ namespace Unity.Payments
             PaymentRequestBatch batch,
             decimal amount,
             PaymentMethod method,
-            Guid correlationId,
+            Guid correlationId,            
             string? comment = null)
             : base(id)
         {
@@ -45,7 +45,7 @@ namespace Unity.Payments
             Method = method;
             Comment = comment;
             Batch = batch;
-            CorrelationId = correlationId;
+            CorrelationId = correlationId;            
         }
 
         public PaymentRequest SetAmount(decimal amount)

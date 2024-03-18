@@ -17,7 +17,13 @@ namespace Unity.Payments
         public virtual PaymentMethod Method { get; private set; }
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public bool IsApproved { get => Approvals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
-        public bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }        
+        public bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }       
+        public string Comment { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// The external system / module correlation provider
+        /// </summary>
+        public virtual string CorrelationProvider { get; private set; } = string.Empty;
 
         public Collection<PaymentRequest> PaymentRequests { get; private set; }
         public Collection<ExpenseApproval> Approvals { get; private set; }
@@ -31,11 +37,15 @@ namespace Unity.Payments
 
         public PaymentRequestBatch(Guid id,
             string batchNumber,
-            PaymentMethod paymentMethod)
+            PaymentMethod paymentMethod,
+            string comment,
+            string correlationProvider)
            : base(id)
         {
             BatchNumber = batchNumber;
             Method = paymentMethod;
+            Comment = comment;
+            CorrelationProvider = correlationProvider;
             Approvals = GenerateDefaultExpenseApprovals();
             PaymentRequests = new Collection<PaymentRequest>();
         }        
@@ -55,11 +65,11 @@ namespace Unity.Payments
 
             BatchNumber = Guid.NewGuid().ToString();
             return this;
-        }        
+        } 
 
-        public PaymentRequestBatch AddPayment(PaymentRequest paymentRequest)
+        public PaymentRequestBatch AddPaymentRequest(PaymentRequest paymentRequest)
         {
-            decimal paymentThreshold = 500000;           
+            decimal paymentThreshold = 500000; // This value will be tenant specific!        
 
             if (paymentRequest.Amount >= paymentThreshold
                 && PaymentRequests.Count > 0)
