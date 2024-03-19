@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  
+  
+
+  <PropertyGroup><LangVersion>latest</LangVersion>
+    <TargetFramework>net7.0</TargetFramework>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <AssemblyName>Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic</AssemblyName>
+    <PackageId>Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic</PackageId>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <IsPackable>true</IsPackable>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="wwwroot\**\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\**\*.*" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.multitenancy\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy.abppkg.analyze.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.multitenancy\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy.abppkg.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.analyze.json" />
+    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.json" />
+    <Content Remove="wwwroot\themes\standard\fonts\" />
+    <Content Remove="wwwroot\themes\standard\fonts\icons\" />
+    <Content Remove="wwwroot\themes\standard\fonts\BCSans\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy" Version="7.4.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared" Version="7.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="wwwroot\favicon.svg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="wwwroot\favicon.svg">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Themes\Standard\Components\Topbar\" />
+    <None Remove="Themes\Standard\Components\SubTopbar\" />
+    <None Remove="Themes\Standard\Components\SideNavbar\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Unity.Theme\src\Unity.Theme\Unity.AspNetCore.Mvc.UI.Themes.csproj" />
+  </ItemGroup>
+</Project>

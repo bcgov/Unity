@@ -33,8 +33,9 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             claimsPrinicipal.AddClaim("Badge", Utils.CreateUserBadge(displayName));
         }
 
-        protected static string? GetClaimValue(JwtSecurityToken token, string type)
+        protected static string? GetClaimValue(JwtSecurityToken token, string type, string? idp)
         {
+            type = UnityClaimsResolver.ResolveFor(type, idp);
             return token.Claims.FirstOrDefault(s => s.Type == type)?.Value;
         }
     }

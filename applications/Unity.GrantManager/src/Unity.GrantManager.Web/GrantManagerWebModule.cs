@@ -17,6 +17,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.AspNetCore.Mvc.UI.Themes.Standard;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission;
@@ -39,9 +40,8 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
+using Unity.AspNetCore.Mvc.UI.Themes.Standard.Bundling;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
@@ -69,6 +69,7 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAutofacModule),
     typeof(AbpSettingManagementWebModule),
     //typeof(AbpAspNetCoreMvcUiBasicThemeModule),
+    typeof(UnityAspNetCoreMvcUiThemesModule),
     typeof(UnityTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),

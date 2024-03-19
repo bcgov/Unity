@@ -23,24 +23,27 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             .Create(GrantManagerPermissions.Default, IdentityPermissions.UserLookup.Default);
 
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
-          IList<UserTenantAccountDto>? userTenantAccounts)
-        {
+          IList<UserTenantAccountDto>? userTenantAccounts,
+          string? idp)
+        {            
             // filter out host account if coming in as tenant - add support for this later
             userTenantAccounts = userTenantAccounts?.Where(s => s.TenantId != null).ToList();
             if (userTenantAccounts == null || userTenantAccounts.Count == 0)
             {
                 if (UseAutoRegisterUserWithDefault())
                 {
-                    var userIdentifier = GetClaimValue(validatedTokenContext.SecurityToken, UnityClaimsTypes.IDirUserGuid);
-                    var userSubject = GetClaimValue(validatedTokenContext.SecurityToken, UnityClaimsTypes.Subject);
-
-                    if (userIdentifier == null || userSubject == null)
-                    {
-                        throw new AutoRegisterUserException("Error auto registering user");
-                    }
-
-                    userTenantAccounts = await AutoRegisterUserWithDefaultAsync(userIdentifier, userSubject);
-                }
+                    var token = validatedTokenContext.SecurityToken;
+                    var userSubject = GetClaimValue(validatedTokenContext.SecurityToken, UnityClaimsTypes.Subject, idp) ?? throw new AutoRegisterUserException("Error auto registering user");
+                    var idpSplitter = userSubject.IndexOf("@");
+                    var userIdentifier = userSubject[..(idpSplitter == -1 ? userSubject.Length : idpSplitter)].ToUpper();
+                    userTenantAccounts = await AutoRegisterUserWithDefaultAsync(userIdentifier,
+                        GetClaimValue(token, UnityClaimsTypes.PreferredUsername, idp) ?? UnityClaimsTypes.PreferredUsername,
+                        GetClaimValue(token, UnityClaimsTypes.GivenName, idp) ?? UnityClaimsTypes.GivenName,
+                        GetClaimValue(token, UnityClaimsTypes.FamilyName, idp) ?? UnityClaimsTypes.FamilyName,
+                        GetClaimValue(token, UnityClaimsTypes.Email, idp) ?? UnityClaimsTypes.Email,
+                        userIdentifier,
+                        GetClaimValue(token, UnityClaimsTypes.DisplayName, idp) ?? UnityClaimsTypes.DisplayName);
+                } 
                 else
                 {
                     throw new NoGrantProgramsLinkedException("User is not linked to any grant programs");
@@ -91,22 +94,28 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             return userTenantAccount;
         }
 
-        private async Task<IList<UserTenantAccountDto>> AutoRegisterUserWithDefaultAsync(string userIdentifier, string userSubject)
+        private async Task<IList<UserTenantAccountDto>> AutoRegisterUserWithDefaultAsync(string userIdentifier,
+            string username, 
+            string firstName, 
+            string lastName, 
+            string emailAddress, 
+            string oidcSub, 
+            string displayName)
         {
             var tenant = await TenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
 
             using (CurrentTenant.Change(tenant.Id))
             {
-                await UserImportAppService.AutoImportUserIntenalAsync(new ImportUserDto()
+                await UserImportAppService.AutoImportUserInternalAsync(new ImportUserDto()
                 {
                     Directory = "IDIR",
                     Guid = userIdentifier,
                     Roles = new string[] { UnityRoles.ProgramManager }
-                });
+                }, username, firstName, lastName, emailAddress, oidcSub, displayName);
 
                 // Re-read tenant accounts and return
                 return (await UserTenantsAppService
-                    .GetUserTenantsAsync(userSubject))
+                    .GetUserTenantsAsync(userIdentifier))
                     .Where(s => s.TenantId != null).ToList();
             }
         }
