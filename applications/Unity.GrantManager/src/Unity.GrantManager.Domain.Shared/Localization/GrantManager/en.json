@@ -148,6 +148,7 @@
     "ApplicationForms:APIConfiguration": "API Configuration",
     "ApplicationForms:DownloadAPIConfiguration": "Download API Configuration",
     "ApplicationForms:UpdateAPIToken": "Update API Token",
+    "ApplicationForms:Payable": "Payable",
 
     "Intakes": "Intakes",
 
@@ -210,6 +211,7 @@
 
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
+    "Summary:ContactsTitle": "Contacts",
     "Summary:Application.Category": "Category",
     "Summary:Application.EconomicRegion": "Economic Region",
     "Summary:Application.RegionalDistrict": "Regional District",
@@ -263,13 +265,48 @@
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
     "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
 
+
+    "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
+    "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
+    "ApplicantInfoView:ApplicantInfo.ContactFullName": "Full Name",
+    "ApplicantInfoView:ApplicantInfo.ContactTitle": "Title",
+    "ApplicantInfoView:ApplicantInfo.ContactEmail": "Email",
+    "ApplicantInfoView:ApplicantInfo.ContactBusinessPhone": "Business Phone",
+    "ApplicantInfoView:ApplicantInfo.ContactCellPhone": "Cell Phone",
+    "ApplicantInfoView:ApplicantInfo SigningAuthorityInfo": " Signing Authority",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityFullName": "Full Name",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityTitle": "Title",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityEmail": "Email",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityBusinessPhone": "Business Phone",
+    "ApplicantInfoView:ApplicantInfo.SigningAuthorityCellPhone": "Phone",
+    "ApplicantInfoView:ApplicantInfo.OrgName": "Organization Name",
+    "ApplicantInfoView:ApplicantInfo.OrgNumber": "Organization Number",
+    "ApplicantInfoView:ApplicantInfo.OrgBookStatus": "Org book status ",
+    "ApplicantInfoView:ApplicantInfo.OrganizationType": "Organization Type",
+    "ApplicantInfoView:ApplicantInfo.OrganizationSize": "Organization Size",
+    "ApplicantInfoView:ApplicantInfo.Sector": "Sector",
+    "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
+    "ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle": "Applicant Info",
+
+
+
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",
     "UnityIdentity:LastName": "Last Name",
     "UnityIdentity:Import": "Import",
 
     "ApplicationDetails:Comments.Modified": "Modified:",
-    "ApplicationDetails:Comments.Created": "Created:"
+    "ApplicationDetails:Comments.Created": "Created:",
+
+    "ApplicationContact:AddTitle" : "Add New Contact",
+    "ApplicationContact:EditTitle" : "Edit Contact",
+    "ApplicationContact:Type": "Type",
+    "ApplicationContact:FullName": "Full Name",
+    "ApplicationContact:Title": "Title",
+    "ApplicationContact:Email": "Email",
+    "ApplicationContact:MobilePhone": "Mobile Phone Number",
+    "ApplicationContact:WorkPhone": "Work Phone Number",
+    "ApplicationContact:Delete": "Delete This Contact"
   }
 }
 

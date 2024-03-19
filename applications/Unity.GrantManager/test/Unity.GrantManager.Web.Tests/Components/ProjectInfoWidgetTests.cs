@@ -27,11 +27,10 @@ namespace Unity.GrantManager.Components
         {
             var applicationDto = new GrantApplicationDto()
             {
-                ContactFullName = "John Doe",
-                ContactTitle = "Doctor",
-                ContactEmail = "john.doe@email.com",
-                ContactBusinessPhone = "+12501234567",
-                ContactCellPhone = "+12501234567"
+                ProjectName = "Unity",
+                ProjectSummary = "Grant",
+                RequestedAmount = 123456,
+                TotalProjectBudget = 50,
             };
 
             // Arrange
@@ -65,17 +64,16 @@ namespace Unity.GrantManager.Components
 
             //Assert
 
-            var expectedFullName = "John Doe";
-            var expectedTitle = "Doctor";
-            var expectedEmail = "john.doe@email.com";
-            var expectedBusinessPhone = "+12501234567";
-            var expectedCellPhone = "+12501234567";
+            var expectedProjectName = "Unity";
+            var expectedProjectSummary = "Grant";
+            var expectedRequestedAmount = 123456;
+            var expectedTotalProjectBudget = 50;
+          
 
-            resultModel!.ProjectInfo!.ContactFullName.ShouldBe(expectedFullName);
-            resultModel!.ProjectInfo!.ContactTitle.ShouldBe(expectedTitle);
-            resultModel!.ProjectInfo!.ContactEmail.ShouldBe(expectedEmail);
-            resultModel!.ProjectInfo!.ContactBusinessPhone.ShouldBe(expectedBusinessPhone);
-            resultModel!.ProjectInfo!.ContactCellPhone.ShouldBe(expectedCellPhone);
+            resultModel!.ProjectInfo!.ProjectName.ShouldBe(expectedProjectName);
+            resultModel!.ProjectInfo!.ProjectSummary.ShouldBe(expectedProjectSummary);
+            resultModel!.ProjectInfo!.RequestedAmount.ShouldBe(expectedRequestedAmount);
+            resultModel!.ProjectInfo!.TotalProjectBudget.ShouldBe(expectedTotalProjectBudget);
         }
     }
 }

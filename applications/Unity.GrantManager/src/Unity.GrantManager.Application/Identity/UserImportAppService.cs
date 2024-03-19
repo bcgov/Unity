@@ -67,7 +67,7 @@ namespace Unity.GrantManager.Identity
                 await _userManager.AddToRolesAsync(identityUser, importUserDto.Roles);
             }
 
-            var oidcSub = cssUser.Attributes?.IdirUserGuid?[0] ?? newUserId.ToString();
+            var oidcSub = (cssUser.Attributes?.IdirUserGuid?[0] ?? newUserId.ToString()).ToSubjectWithoutIdp();
             var displayName = cssUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();
 
             await UpdateAdditionalUserPropertiesAsync(identityUser, oidcSub, displayName);
@@ -223,7 +223,7 @@ namespace Unity.GrantManager.Identity
                 await _personRepository.InsertAsync(new Person()
                 {
                     Id = userId,
-                    OidcSub = oidcSub,
+                    OidcSub = oidcSub.ToSubjectWithoutIdp(),
                     OidcDisplayName = displayName,
                     FullName = $"{user.Name} {user.Surname}",
                     Badge = Utils.CreateUserBadge(user)
@@ -235,7 +235,7 @@ namespace Unity.GrantManager.Identity
         {
             if (user != null)
             {
-                user.SetProperty("OidcSub", oidcSub);
+                user.SetProperty("OidcSub", oidcSub.ToSubjectWithoutIdp());
                 user.SetProperty("DisplayName", displayName);
                 await _identityUserRepository.UpdateAsync(user, true);
             }
