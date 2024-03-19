@@ -1,0 +1,42 @@
+﻿
+@font-face {
+    font-family: 'BCSans';
+    src: url('fonts/BCSans/BCSans-Regular.ttf') format('truetype'), url('fonts/BCSans/BCSans-Regular.woff') format('woff'), url('fonts/BCSans/BCSans-Regular.woff2') format('woff2'), url('fonts/BCSans/BCSans-Regular.otf') format('opentype');
+    font-weight: 300 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'BCSans';
+    src: url('fonts/BCSans/BCSans-Bold.ttf') format('truetype'), url('fonts/BCSans/BCSans-Bold.woff') format('woff'), url('fonts/BCSans/BCSans-Bold.woff2') format('woff2'), url('fonts/BCSans/BCSans-Bold.otf') format('opentype');
+    font-weight: 700 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'BCSans';
+    src: url('fonts/BCSans/BCSans-Light.ttf') format('truetype'), url('fonts/BCSans/BCSans-Light.woff') format('woff'), url('fonts/BCSans/BCSans-Light.woff2') format('woff2'), url('fonts/BCSans/BCSans-Light.otf') format('opentype');
+    font-weight: 100 200;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'BCSans';
+    src: url('fonts/BCSans/BCSans-Italic.ttf') format('truetype'), url('fonts/BCSans/BCSans-Italic.woff') format('woff'), url('fonts/BCSans/BCSans-Italic.woff2') format('woff2'), url('fonts/BCSans/BCSans-Italic.otf') format('opentype');
+    font-weight: 400 600;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'BCSans';
+    src: url('fonts/BCSans/BCSans-BoldItalic.ttf') format('truetype'), url('fonts/BCSans/BCSans-BoldItalic.woff') format('woff'), url('fonts/BCSans/BCSans-BoldItalic.woff2') format('woff2'), url('fonts/BCSans/BCSans-BoldItalic.otf') format('opentype');
+    font-weight: 700 bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'BCSans';
+    src: url('fonts/BCSans/BCSans-LightItalic.ttf') format('truetype'), url('fonts/BCSans/BCSans-LightItalic.woff') format('woff'), url('fonts/BCSans/BCSans-LightItalic.woff2') format('woff2'), url('fonts/BCSans/BCSans-LightItalic.otf') format('opentype');
+    font-weight: 100 300;
+    font-style: italic;
+}

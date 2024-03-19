@@ -81,6 +81,16 @@ body {
     --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
     --bs-btn-disabled-bg: var(--bc-colors-grey-hover);
 }
+.btn-nav {
+    --bs-btn-color: var(--bc-colors-blue-background);
+    --bs-btn-bg: var(--bc-colors-white-primary-500);
+    --bs-btn-focus-shadow-rgb: 83, 117, 255;
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-background);
+    --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
+    --bs-btn-disabled-bg: var(--bc-colors-grey-hover);
+    --bs-btn-border-radius: 0px;
+}
 
 .btn-bar {
     padding: 5px 10px;
@@ -274,6 +284,9 @@ tr td:first-child {
 .navbar .dropdown-menu {
     margin: 0;
     padding: 0;
+    border: 2px solid var(--bc-colors-blue-primary);
+    border-radius: 0px 0px 16px 16px;
+    padding-bottom: 0.4rem
 }
 
     .navbar .dropdown-menu a {
@@ -476,8 +489,10 @@ abp-date-picker .btn {
 }
 
 .dropdown-toggle {
-    background-color: var(--bc-colors-grey-pressed) !important;
-    color: var(--bc-colors-grey-text-500) !important;
+    background-color: var(--bc-colors-blue-primary) !important;
+    color: var(--bc-colors-white-primary-500) !important;
+    border-radius: 16px 16px 0px 0px !important;
+    height: 50px
 }
 
 .swal2-confirm {

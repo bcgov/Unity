@@ -19,13 +19,16 @@ using Volo.Abp.Identity.Web;
 using Unity.Identity.Web.Navigation;
 using Unity.GrantManager.Localization;
 using Volo.Abp.TenantManagement.Localization;
+using Unity.AspNetCore.Mvc.UI.Themes;
 
 namespace Unity.Identity.Web;
 
 [DependsOn(typeof(AbpIdentityApplicationContractsModule))]
 [DependsOn(typeof(AbpAutoMapperModule))]
 [DependsOn(typeof(AbpPermissionManagementWebModule))]
-[DependsOn(typeof(AbpAspNetCoreMvcUiBasicThemeModule))]
+//[DependsOn(typeof(AbpAspNetCoreMvcUiBasicThemeModule))]
+[DependsOn(typeof(AbpAspNetCoreMvcUiUnityThemeModule))]
+
 public class UnitydentityWebModule : AbpModule
 {
     private static readonly OneTimeRunner OneTimeRunner = new OneTimeRunner();

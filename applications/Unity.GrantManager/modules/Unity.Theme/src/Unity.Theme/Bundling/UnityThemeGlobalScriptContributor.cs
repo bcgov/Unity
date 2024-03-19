@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 
-namespace Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
+namespace Unity.AspNetCore.Mvc.UI.Themes.Bundling;
 
-public class BasicThemeGlobalScriptContributor : BundleContributor
+public class UnityThemeGlobalScriptContributor : BundleContributor
 {
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
-        context.Files.Add("/themes/standard/layout.js");
+        context.Files.Add("/themes/Unity/layout.js");
 
         context.Files.AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
 

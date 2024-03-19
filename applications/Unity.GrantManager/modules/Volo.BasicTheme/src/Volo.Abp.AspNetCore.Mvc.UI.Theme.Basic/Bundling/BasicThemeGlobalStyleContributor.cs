@@ -7,11 +7,11 @@ public class BasicThemeGlobalStyleContributor : BundleContributor
 {
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
-        context.Files.Add("/themes/basic/fluentui-icons.css");
-        context.Files.Add("/themes/basic/fluenticons.min.css");
-        context.Files.Add("/themes/basic/fonts.css");
-        context.Files.Add("/themes/basic/layout.css");
-        context.Files.Add("/themes/basic/unity-styles.css");
+        context.Files.Add("/themes/standard/fluentui-icons.css");
+        context.Files.Add("/themes/standard/fluenticons.min.css");
+        context.Files.Add("/themes/standard/fonts.css");
+        context.Files.Add("/themes/standard/layout.css");
+        context.Files.Add("/themes/standard/unity-styles.css");
 
         context.Files.AddIfNotContains("/libs/datatables.net-bs5/css/dataTables.bootstrap5.css");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons-bs5/css/buttons.bootstrap5.css");
@@ -19,34 +19,34 @@ public class BasicThemeGlobalStyleContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder-bs5/css/colReorder.bootstrap5.css");
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.css");
 
-        // Add assets for "/themes/basic/fonts/**/*"
+        // Add assets for "/themes/standard/fonts/**/*"
         context.Files.AddRange(new[] {
-            "/themes/basic/fonts/icons/Segoe-Fluent-Icons.ttf",
-            "/themes/basic/fonts/icons/Segoe-MDL2-Assets.ttf",
-            "/themes/basic/fonts/BCSans/BCSans-Bold.otf",
-            "/themes/basic/fonts/BCSans/BCSans-Bold.ttf",
-            "/themes/basic/fonts/BCSans/BCSans-Bold.woff",
-            "/themes/basic/fonts/BCSans/BCSans-Bold.woff2",
-            "/themes/basic/fonts/BCSans/BCSans-BoldItalic.otf",
-            "/themes/basic/fonts/BCSans/BCSans-BoldItalic.ttf",
-            "/themes/basic/fonts/BCSans/BCSans-BoldItalic.woff",
-            "/themes/basic/fonts/BCSans/BCSans-BoldItalic.woff2",
-            "/themes/basic/fonts/BCSans/BCSans-Italic.otf",
-            "/themes/basic/fonts/BCSans/BCSans-Italic.ttf",
-            "/themes/basic/fonts/BCSans/BCSans-Italic.woff",
-            "/themes/basic/fonts/BCSans/BCSans-Italic.woff2",
-            "/themes/basic/fonts/BCSans/BCSans-Light.otf",
-            "/themes/basic/fonts/BCSans/BCSans-Light.ttf",
-            "/themes/basic/fonts/BCSans/BCSans-Light.woff",
-            "/themes/basic/fonts/BCSans/BCSans-Light.woff2",
-            "/themes/basic/fonts/BCSans/BCSans-LightItalic.otf",
-            "/themes/basic/fonts/BCSans/BCSans-LightItalic.ttf",
-            "/themes/basic/fonts/BCSans/BCSans-LightItalic.woff",
-            "/themes/basic/fonts/BCSans/BCSans-LightItalic.woff2",
-            "/themes/basic/fonts/BCSans/BCSans-Regular.otf",
-            "/themes/basic/fonts/BCSans/BCSans-Regular.ttf",
-            "/themes/basic/fonts/BCSans/BCSans-Regular.woff",
-            "/themes/basic/fonts/BCSans/BCSans-Regular.woff2"
+            "/themes/standard/fonts/icons/Segoe-Fluent-Icons.ttf",
+            "/themes/standard/fonts/icons/Segoe-MDL2-Assets.ttf",
+            "/themes/standard/fonts/BCSans/BCSans-Bold.otf",
+            "/themes/standard/fonts/BCSans/BCSans-Bold.ttf",
+            "/themes/standard/fonts/BCSans/BCSans-Bold.woff",
+            "/themes/standard/fonts/BCSans/BCSans-Bold.woff2",
+            "/themes/standard/fonts/BCSans/BCSans-BoldItalic.otf",
+            "/themes/standard/fonts/BCSans/BCSans-BoldItalic.ttf",
+            "/themes/standard/fonts/BCSans/BCSans-BoldItalic.woff",
+            "/themes/standard/fonts/BCSans/BCSans-BoldItalic.woff2",
+            "/themes/standard/fonts/BCSans/BCSans-Italic.otf",
+            "/themes/standard/fonts/BCSans/BCSans-Italic.ttf",
+            "/themes/standard/fonts/BCSans/BCSans-Italic.woff",
+            "/themes/standard/fonts/BCSans/BCSans-Italic.woff2",
+            "/themes/standard/fonts/BCSans/BCSans-Light.otf",
+            "/themes/standard/fonts/BCSans/BCSans-Light.ttf",
+            "/themes/standard/fonts/BCSans/BCSans-Light.woff",
+            "/themes/standard/fonts/BCSans/BCSans-Light.woff2",
+            "/themes/standard/fonts/BCSans/BCSans-LightItalic.otf",
+            "/themes/standard/fonts/BCSans/BCSans-LightItalic.ttf",
+            "/themes/standard/fonts/BCSans/BCSans-LightItalic.woff",
+            "/themes/standard/fonts/BCSans/BCSans-LightItalic.woff2",
+            "/themes/standard/fonts/BCSans/BCSans-Regular.otf",
+            "/themes/standard/fonts/BCSans/BCSans-Regular.ttf",
+            "/themes/standard/fonts/BCSans/BCSans-Regular.woff",
+            "/themes/standard/fonts/BCSans/BCSans-Regular.woff2"
         });
     }
 }

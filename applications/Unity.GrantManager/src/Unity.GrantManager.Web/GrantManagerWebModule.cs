@@ -32,6 +32,7 @@ using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Services;
 using Unity.Identity.Web;
 using Unity.TenantManagement.Web;
+using Unity.AspNetCore.Mvc.UI.Themes;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
@@ -57,6 +58,7 @@ using Volo.Abp.Timing;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
+using Unity.AspNetCore.Mvc.UI.Themes.Bundling;
 
 namespace Unity.GrantManager.Web;
 
@@ -66,12 +68,13 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
     typeof(AbpSettingManagementWebModule),
-    typeof(AbpAspNetCoreMvcUiBasicThemeModule),
+    //typeof(AbpAspNetCoreMvcUiBasicThemeModule),
     typeof(UnityTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
-    typeof(UnitydentityWebModule)
+    typeof(UnitydentityWebModule),
+    typeof(AbpAspNetCoreMvcUiUnityThemeModule)
 )]
 [DependsOn(typeof(AbpBlobStoringModule))]
 public class GrantManagerWebModule : AbpModule
@@ -311,7 +314,7 @@ public class GrantManagerWebModule : AbpModule
         {
             options
                 .StyleBundles
-                .Configure(BasicThemeBundles.Styles.Global, bundle =>
+                .Configure(UnityThemeBundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
                 });
