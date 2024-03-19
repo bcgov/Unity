@@ -50,4 +50,7 @@
     <None Remove="Themes\Standard\Components\SubTopbar\" />
     <None Remove="Themes\Standard\Components\SideNavbar\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Unity.Theme\src\Unity.Theme\Unity.AspNetCore.Mvc.UI.Themes.csproj" />
+  </ItemGroup>
 </Project>
