@@ -71,7 +71,7 @@ body {
     --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
     --bs-btn-disabled-bg: var(--bc-colors-grey-hover);
 }
-.btn-secondary {
+
 .btn-secondary {
     --bs-btn-color: var(--bc-colors-blue-primary);
     --bs-btn-bg: var(--bc-colors-white-primary-500);
