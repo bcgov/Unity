@@ -2,14 +2,14 @@
 
 
 @font-face {
-    font-family: 'Segoe-Fluent-Icons';
+    font-family: 'Segoe-Fluent-Icons', sans-serif;
     src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
     font-weight: 100;
     font-style: normal;
 }
 
 .fl {
-    font-family: 'Segoe-Fluent-Icons';
+    font-family: 'Segoe-Fluent-Icons', sans-serif;
     font-weight: 100;
     font-style: normal;
 }
