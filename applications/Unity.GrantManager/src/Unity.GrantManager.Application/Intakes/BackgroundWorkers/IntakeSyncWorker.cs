@@ -39,12 +39,12 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
             Logger.LogInformation("Executing IntakeSyncWorker...");
 
             var tenants = await _tenantRepository.GetListAsync();
-
+            var numberDaysBack = -2;
             foreach (var tenant in tenants)
             {
                 using (_currentTenant.Change(tenant.Id))
                 {
-                    await _applicationFormSynchronizationService.GetMissingSubmissions();
+                    await _applicationFormSynchronizationService.GetMissingSubmissions(numberDaysBack);
                 }
             }
 
