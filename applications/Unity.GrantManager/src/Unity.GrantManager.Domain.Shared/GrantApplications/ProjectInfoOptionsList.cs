@@ -44,4 +44,18 @@ public static class ProjectInfoOptionsList
               new KeyValuePair<string, string>("HISTORICAL", "Historical"),
      });
 
+    public static ImmutableDictionary<string, string> PayGroupList =>
+   ImmutableDictionary.CreateRange(new[]
+     {
+              new KeyValuePair<string, string>("EFT", "EFT"),
+              new KeyValuePair<string, string>("CHEQUE", "Cheque"),
+     });
+
+    public static ImmutableDictionary<string, string> Fin312List =>
+   ImmutableDictionary.CreateRange(new[]
+     {
+              new KeyValuePair<string, string>("YES", "Yes"),
+              new KeyValuePair<string, string>("NO", "No"),
+     });
+
 }

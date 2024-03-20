@@ -81,7 +81,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 SigningAuthorityBusinessPhone = application.SigningAuthorityBusinessPhone,
                 SigningAuthorityCellPhone = application.SigningAuthorityCellPhone,
                 OrganizationSize = application.OrganizationSize,
-
+                SupplierNumber = application.SupplierNumber,
+                Fin312 = application.Fin312,
+                PayGroup = application.PayGroup,
+                SiteNumbers = application.SiteNumbers,
             };
 
             return View(model);
@@ -105,6 +108,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
               .AddIfNotContains("/Views/Shared/Components/ApplicantInfo/Default.js");
             context.Files
               .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
+            context.Files
+              .AddIfNotContains("/Pages/ApplicationTags/ApplicationTags.js");
         }
     }
 }

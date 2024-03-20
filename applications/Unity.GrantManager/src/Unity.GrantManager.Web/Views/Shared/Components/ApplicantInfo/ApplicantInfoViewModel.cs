@@ -22,6 +22,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
       
         public List<SelectListItem> OrganizationTypeList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrganizationTypeList);
         public List<SelectListItem> OrgBookStatusList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrgBookStatusList);
+        public List<SelectListItem> PayGroupList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.PayGroupList);
+        public List<SelectListItem> Fin312List { get; set; } = FormatOptionsList(ProjectInfoOptionsList.Fin312List);
         public List<SelectListItem> ApplicationSectorsList { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ApplicationSubSectorsList { get; set; } = new List<SelectListItem>();
 
@@ -107,6 +109,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
             public string? SigningAuthorityCellPhone { get; set; }
 
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.SupplierNumber")]
+            public string? SupplierNumber { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.SiteNumber")]
+            public string? SiteNumbers { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.PayGroup")]
+            [SelectItems(nameof(PayGroupList))]
+            public string? PayGroup { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Fin312")]
+            [SelectItems(nameof(Fin312List))]
+            public string? Fin312 { get; set; }
 
         }
 

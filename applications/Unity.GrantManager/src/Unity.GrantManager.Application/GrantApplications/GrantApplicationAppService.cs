@@ -254,6 +254,10 @@ public class GrantApplicationAppService :
                 appDto.OrganizationType = appDto.Applicant.OrganizationType;
                 appDto.SubSector = appDto.Applicant.SubSector;
                 appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
+                appDto.SupplierNumber = appDto.Applicant.SupplierNumber;
+                appDto.Fin312 = appDto.Applicant.Fin312 == null ? "YES" : appDto.Applicant.Fin312;
+                appDto.PayGroup = appDto.Applicant.PayGroup;
+                appDto.SiteNumbers = appDto.Applicant.SiteNumbers;
             }
 
             return appDto;
@@ -400,10 +404,10 @@ public class GrantApplicationAppService :
         var application = await _applicationRepository.GetAsync(id);
              if (application != null)
         {
-          
-
             var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
             // This applicant should never be null!
+
+            string[]? siteNumbers = JsonConvert.DeserializeObject<string[]>(input.SiteNumbers == null?"":input.SiteNumbers);
 
             applicant.OrganizationType = input.OrganizationType ?? "";
             applicant.OrgName = input.OrgName ?? "";
@@ -412,6 +416,10 @@ public class GrantApplicationAppService :
             applicant.OrganizationSize = input.OrganizationSize ?? "";
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
+            applicant.SupplierNumber = input.SupplierNumber ?? "";
+            applicant.Fin312 = input.Fin312 ?? "YES";
+            applicant.PayGroup = input.PayGroup ?? "";
+            applicant.SiteNumbers = siteNumbers == null ? "" : string.Join(",", siteNumbers);
           
             _ = await _applicantRepository.UpdateAsync(applicant);
 

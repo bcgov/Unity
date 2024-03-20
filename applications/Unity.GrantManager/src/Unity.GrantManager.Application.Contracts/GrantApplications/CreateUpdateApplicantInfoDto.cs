@@ -21,6 +21,9 @@
         public string? SigningAuthorityEmail { get; set; }
         public string? SigningAuthorityBusinessPhone { get; set; }
         public string? SigningAuthorityCellPhone { get; set; }
-
+        public string? SupplierNumber { get; set; }
+        public string? PayGroup { get; set; }
+        public string? Fin312 { get; set; }
+        public string? SiteNumbers { get; set; }
     }
 }

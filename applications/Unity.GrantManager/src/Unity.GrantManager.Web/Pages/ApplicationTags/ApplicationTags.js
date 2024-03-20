@@ -68,8 +68,12 @@ $(function () {
             let tag = this.parentNode;
 
             for (let i = 0; i < tagInput.wrapper.childNodes.length; i++) {
-                if (tagInput.wrapper.childNodes[i] == tag)
+                if (tagInput.wrapper.childNodes[i] == tag) {
                     tagInput.deleteTag(tag, i);
+                    if (tagInput.callback != null) {
+                        tagInput.callback();
+                    }
+                }  
             }
         })
 
@@ -234,7 +238,10 @@ $(function () {
         tags.input.addEventListener('focusout', function () {
             $('#applicationTagsModelSaveBtn').click(function () {
                 trimAndAddTag(tags);
-            })
+            });
+            $('#saveApplicantInfoBtn').click(function () {
+                trimAndAddTag(tags);
+            });
         });
 
 
@@ -256,6 +263,9 @@ $(function () {
             tags.addTag(str);
         }
         tags.input.value = "";
+        if (tags.callback != null) {
+            tags.callback();
+        }
     }
 
     TagsInput.prototype.getTags = function () {
