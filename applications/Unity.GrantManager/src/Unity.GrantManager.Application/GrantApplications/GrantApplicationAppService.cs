@@ -378,6 +378,8 @@ public class GrantApplicationAppService :
             application.EconomicRegion = input.EconomicRegion;
             application.ElectoralDistrict = input.ElectoralDistrict;
             application.RegionalDistrict = input.RegionalDistrict;
+            application.ContractNumber = input.ContractNumber;
+            application.ContractExecutionDate = input.ContractExecutionDate;
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
 
