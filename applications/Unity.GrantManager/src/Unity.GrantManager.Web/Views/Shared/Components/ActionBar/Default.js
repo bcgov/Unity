@@ -20,6 +20,10 @@ $(function () {
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
     });
 
+    let applicationPaymentRequestModal = new abp.ModalManager({
+        viewUrl: 'Payment/CreatePaymentRequestModal',
+    });
+
     tagApplicationModal.onOpen(function () {
         let tagInput = new TagsInput({
             selector: 'SelectedTags',
@@ -281,5 +285,11 @@ $(function () {
         catch (error) {
             console.log(error);
         }
+    });
+
+    $('#applicationPaymentRequest').click(function () {
+        applicationPaymentRequestModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+        });
     });
 });

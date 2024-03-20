@@ -26,3 +26,21 @@
     display: flex;
     gap: 0.5rem;
 }
+.payment-card {
+    border-radius: 4px;
+    border: 1px solid var(--bc-colors-grey-dividers) !important;
+    padding: 0;
+}
+
+.payment-card-header {
+    background-color: white;
+}
+.single-payment-card {
+    border-bottom: 1px solid var(--bc-colors-grey-dividers);
+}
+.single-payment-card-application-name {
+    font-weight: bold;
+}
+.remove-single-payment{
+    float:right;
+}
