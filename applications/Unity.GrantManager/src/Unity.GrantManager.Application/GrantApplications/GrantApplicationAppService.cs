@@ -255,7 +255,7 @@ public class GrantApplicationAppService :
                 appDto.SubSector = appDto.Applicant.SubSector;
                 appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
                 appDto.SupplierNumber = appDto.Applicant.SupplierNumber;
-                appDto.Fin312 = appDto.Applicant.Fin312 == null ? "YES" : appDto.Applicant.Fin312;
+                appDto.Fin312 = appDto.Applicant.Fin312 ? "YES" : "NO";
                 appDto.PayGroup = appDto.Applicant.PayGroup;
                 appDto.SiteNumbers = appDto.Applicant.SiteNumbers;
             }
@@ -417,7 +417,7 @@ public class GrantApplicationAppService :
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
             applicant.SupplierNumber = input.SupplierNumber ?? "";
-            applicant.Fin312 = input.Fin312 ?? "YES";
+            applicant.Fin312 = input.Fin312 == null || input.Fin312 == "YES";
             applicant.PayGroup = input.PayGroup ?? "";
             applicant.SiteNumbers = siteNumbers == null ? "" : string.Join(",", siteNumbers);
           

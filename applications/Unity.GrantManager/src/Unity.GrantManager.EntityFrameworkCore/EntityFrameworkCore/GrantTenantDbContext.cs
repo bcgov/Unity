@@ -62,7 +62,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.ApplicantName)
                     .IsRequired()
                     .HasMaxLength(600);
-
+                b.Property(x => x.Fin312).HasDefaultValue(true);
                 b.HasIndex(x => x.ApplicantName);
             });
 

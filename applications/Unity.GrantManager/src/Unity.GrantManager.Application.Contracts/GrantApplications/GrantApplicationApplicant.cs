@@ -16,6 +16,6 @@ public class GrantApplicationApplicantDto : AuditedEntityDto<Guid>
     public string SectorSubSectorIndustryDesc { get; set; } = string.Empty;
     public string? SupplierNumber { get; set; }
     public string? PayGroup { get; set; }
-    public string? Fin312 { get; set; }
+    public bool Fin312 { get; set; }
     public string? SiteNumbers { get; set; }
 }
