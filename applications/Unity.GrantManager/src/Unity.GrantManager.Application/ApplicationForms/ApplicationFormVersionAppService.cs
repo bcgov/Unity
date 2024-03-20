@@ -60,7 +60,7 @@ namespace Unity.GrantManager.ApplicationForms
             return dto;
         }
 
-        private JToken? GetFormVersionToken(dynamic chefsForm) {
+        private static JToken? GetFormVersionToken(dynamic chefsForm) {
             if (chefsForm == null) return null;
             JObject formObject = JObject.Parse(chefsForm.ToString());
             if (formObject == null) return null;
@@ -71,7 +71,7 @@ namespace Unity.GrantManager.ApplicationForms
 #pragma warning restore CS8600
         }
 
-        public async Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId, bool initializePublishedOnly = true)
+        public async Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId, bool initializePublishedOnly)
         {
             if (chefsForm == null) return false;
 
@@ -134,7 +134,7 @@ namespace Unity.GrantManager.ApplicationForms
             return null;
         }
 
-        public async Task<ApplicationFormVersionDto?> TryInitializeApplicationFormVersion(string? formId, int version, Guid applicationFormId, string formVersionId, bool published = true)
+        public async Task<ApplicationFormVersionDto?> TryInitializeApplicationFormVersion(string? formId, int version, Guid applicationFormId, string formVersionId, bool published)
         {
             try
             {
