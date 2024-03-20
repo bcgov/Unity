@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240314224647_ProjectInfo_ContractInfo")]
+    partial class ProjectInfoContractInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,11 +128,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<bool>("Fin312")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
                     b.Property<string>("IndigenousOrgInd")
                         .HasColumnType("text");
 
@@ -159,25 +157,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("OrganizationType")
                         .HasColumnType("text");
 
-                    b.Property<string>("PayGroup")
-                        .HasColumnType("text");
-
                     b.Property<string>("Sector")
                         .HasColumnType("text");
 
                     b.Property<string>("SectorSubSectorIndustryDesc")
                         .HasColumnType("text");
 
-                    b.Property<string>("SiteNumbers")
-                        .HasColumnType("text");
-
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
                     b.Property<string>("SubSector")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SupplierNumber")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("TenantId")
@@ -637,73 +626,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicationId");
 
                     b.ToTable("ApplicationChefsFileAttachments", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationContact", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<string>("ContactEmail")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ContactFullName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ContactMobilePhone")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ContactTitle")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ContactType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ContactWorkPhone")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationId");
-
-                    b.ToTable("ApplicationContact", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationForm", b =>
@@ -1505,15 +1427,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationChefsFileAttachment", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.Application", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationContact", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Application", null)
                         .WithMany()

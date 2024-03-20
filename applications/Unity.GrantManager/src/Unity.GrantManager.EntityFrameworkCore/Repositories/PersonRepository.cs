@@ -20,10 +20,13 @@ namespace Unity.GrantManager.Repositories
         {
         }
 
-        public async Task<Person?> FindByOidcSub(string sub)
+        public async Task<Person?> FindByOidcSub(string oidcSub)
         {
             var dbSet = await GetDbSetAsync();
-            return await dbSet.AsQueryable().FirstOrDefaultAsync(s => s.OidcSub == sub);
+            return await dbSet.AsQueryable()
+                .FirstOrDefaultAsync(s => s.OidcSub
+                .ToUpper()
+                .StartsWith(oidcSub.ToSubjectWithoutIdp()));                
         }
     }
 }

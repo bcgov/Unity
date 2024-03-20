@@ -24,6 +24,8 @@
         <div id="ProjectInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
             <h6 class="ps-1 fw-bold">@L["ProjectInfoView:ProjectInfoTitle"].Value</h6>
         </div>
+        <abp-button text="Save" id="saveProjectInfoBtn" class="floating-save-btn" icon-type="Other"
+                                icon="fl fl-save" button-type="Primary" disabled="true" />
     </abp-column>
     <form id="projectInfoForm">
         <abp-row class="m-0 project-info-form">
@@ -141,15 +143,25 @@
                     </abp-select>
                 </abp-column>
             </abp-row>
-          
-            <abp-row class="m-0 p-0">
-                
-                <abp-column size="_12" class="px-1 d-flex justify-content-end mt-2">
-                    <abp-button text="Save" id="saveProjectInfoBtn" class="save-project-btn" icon-type="Other"
-                                icon="fl fl-save" button-type="Light" disabled="true" />
-                </abp-column>
-            </abp-row>
          </abp-row>
+        <abp-row class="m-0 p-0">
+            <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                <div id="ProjectInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                    <h6 class="ps-1 fw-bold">@L["ProjectInfoView:ProjectInfoContract"].Value</h6>
+                </div>
+            </abp-column>
+        </abp-row>
+        <abp-row class="m-0 project-info-location">
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ProjectInfo.ContractNumber" type="number" onchange="enableProjectInfoSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input type="date" asp-for="@Model.ProjectInfo.ContractExecutionDate" onchange="enableProjectInfoSaveBtn(this)" abp-data-datepicker="false">
+                    </abp-input>
+                </abp-column>
+             </abp-row>
+        </abp-row>
     </form>
 </abp-row>
 
