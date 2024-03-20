@@ -12,9 +12,9 @@ namespace Unity.Payments
         public virtual decimal Amount { get; private set; }
         public virtual PaymentMethod Method { get; private set; }
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
-        public virtual string? Comment { get; private set; } = null;
+        public virtual string? Description { get; private set; } = null;
 
-        public virtual PaymentRequestBatch? Batch { get; private set; }
+        public virtual BatchPaymentRequest? Batch { get; private set; }
         public bool IsRecon { get; internal set; }
 
         // Filled on a recon
@@ -34,16 +34,16 @@ namespace Unity.Payments
         }
 
         public PaymentRequest(Guid id,
-            PaymentRequestBatch batch,
+            BatchPaymentRequest batch,
             decimal amount,
             PaymentMethod method,
             Guid correlationId,            
-            string? comment = null)
+            string? description = null)
             : base(id)
         {
             Amount = amount;
             Method = method;
-            Comment = comment;
+            Description = description;
             Batch = batch;
             CorrelationId = correlationId;            
         }
@@ -62,7 +62,7 @@ namespace Unity.Payments
 
         public PaymentRequest SetComment(string comment)
         {
-            Comment = comment;
+            Description = comment;
             return this;
         }
 

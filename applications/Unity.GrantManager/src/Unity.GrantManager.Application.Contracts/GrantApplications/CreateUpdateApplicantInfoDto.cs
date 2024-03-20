@@ -9,7 +9,7 @@
         public string? OrganizationSize { get; set; }
 
         public string? Sector { get; set; }
-        public string? SubSector { get; set; }
+        public string? SubSector { get; set; }        
 
         public string? ContactFullName { get; set; }
         public string? ContactTitle { get; set; }

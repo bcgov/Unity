@@ -23,31 +23,29 @@
             <abp-card>
                 <abp-card-body class="payment-card">
 
-                    @foreach (var item in Model.ApplicationPaymentRequestForm)
+                    @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
-
                         <abp-row class="m-0 p-2">
-                            <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@item.ApplicantName/@item.InvoiceNumber</h6></abp-column>
+                            <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@@Model.ApplicationPaymentRequestForm[i].ApplicantName/@@Model.ApplicationPaymentRequestForm[i].InvoiceNumber</h6></abp-column>
                             <abp-column size="_1" class="px-1"><i class="fa fa-times remove-single-payment" aria-hidden="true"></i></abp-column>
                         </abp-row>
 
-                        <abp-row class="m-0 p-2">
+                        <abp-row class="m-0 p-2">                          
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@item.InvoiceNumber" name="@($"{item.ApplicationId}_InvoiceNumber")" id="@($"{item.ApplicationId}_InvoiceNumber")" />
+                                <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@item.Amount" name="@($"{item.ApplicationId}_Amount")" id="@($"{item.ApplicationId}_Amount")" />
+                                <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" />
                             </abp-column>
                             <abp-column size="_4" class="px-1">
-                                <abp-input asp-for="@item.Description" name="@($"{item.ApplicationId}_Description")" id="@($"{item.ApplicationId}_Description")" />
+                                <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" />
                             </abp-column>
                         </abp-row>
-                        @if (Model.ApplicationPaymentRequestForm.IndexOf(item) != (Model.ApplicationPaymentRequestForm.Count - 1))
+
+                        @if (Model.ApplicationPaymentRequestForm.IndexOf(@Model.ApplicationPaymentRequestForm[i]) != (Model.ApplicationPaymentRequestForm.Count - 1))
                         {
                             <hr />
                         }
-
-
                     }
 
                 </abp-card-body>

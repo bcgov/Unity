@@ -5,10 +5,11 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp;
 using System.Linq;
 using Unity.Payments.Enums;
+using System.Collections;
 
 namespace Unity.Payments
 {
-    public class PaymentRequestBatch : FullAuditedAggregateRoot<Guid>, IMultiTenant
+    public class BatchPaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
         public virtual string BatchNumber { get; private set; } = string.Empty;
@@ -18,7 +19,7 @@ namespace Unity.Payments
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public bool IsApproved { get => Approvals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
         public bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }       
-        public string Comment { get; private set; } = string.Empty;
+        public string? Description { get; private set; }
 
         /// <summary>
         /// The external system / module correlation provider
@@ -28,23 +29,23 @@ namespace Unity.Payments
         public Collection<PaymentRequest> PaymentRequests { get; private set; }
         public Collection<ExpenseApproval> Approvals { get; private set; }
 
-        protected PaymentRequestBatch()
+        protected BatchPaymentRequest()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
             Approvals = new Collection<ExpenseApproval>();
             PaymentRequests = new Collection<PaymentRequest>();
         }
 
-        public PaymentRequestBatch(Guid id,
+        public BatchPaymentRequest(Guid id,
             string batchNumber,
             PaymentMethod paymentMethod,
-            string comment,
+            string? description,
             string correlationProvider)
            : base(id)
         {
             BatchNumber = batchNumber;
             Method = paymentMethod;
-            Comment = comment;
+            Description = description;
             CorrelationProvider = correlationProvider;
             Approvals = GenerateDefaultExpenseApprovals();
             PaymentRequests = new Collection<PaymentRequest>();
@@ -59,7 +60,7 @@ namespace Unity.Payments
             };
         }
 
-        public PaymentRequestBatch GenerateBatchNumber()
+        public BatchPaymentRequest GenerateBatchNumber()
         {
             if (BatchNumber != string.Empty) return this;
 
@@ -67,7 +68,7 @@ namespace Unity.Payments
             return this;
         } 
 
-        public PaymentRequestBatch AddPaymentRequest(PaymentRequest paymentRequest)
+        public BatchPaymentRequest AddPaymentRequest(PaymentRequest paymentRequest)
         {
             decimal paymentThreshold = 500000; // This value will be tenant specific!        
 

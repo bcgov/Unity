@@ -395,7 +395,7 @@ public class GrantApplicationAppService :
             throw new EntityNotFoundException();
         }
     }
-       public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto  input)
+       public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
              if (application != null)
