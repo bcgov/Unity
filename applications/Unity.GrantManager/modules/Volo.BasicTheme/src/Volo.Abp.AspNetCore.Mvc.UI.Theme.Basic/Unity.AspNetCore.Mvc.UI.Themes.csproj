@@ -51,6 +51,6 @@
     <None Remove="Themes\Standard\Components\SideNavbar\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Unity.Theme\src\Unity.Theme\Unity.AspNetCore.Mvc.UI.Themes.csproj" />
+    <ProjectReference Include="..\..\..\Unity.Theme\src\Unity.Theme\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj" />
   </ItemGroup>
 </Project>

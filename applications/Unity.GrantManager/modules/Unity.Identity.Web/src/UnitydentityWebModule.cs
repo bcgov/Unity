@@ -29,7 +29,7 @@ namespace Unity.Identity.Web;
 [DependsOn(typeof(AbpPermissionManagementWebModule))]
 //[DependsOn(typeof(AbpAspNetCoreMvcUiBasicThemeModule))]
 [DependsOn(typeof(UnityAspNetCoreMvcUiThemesModule))]
-[DependsOn(typeof(AbpAspNetCoreMvcUiUnityThemeModule))]
+[DependsOn(typeof(UnityAspNetCoreMvcUIThemeUX2Module))]
 
 public class UnitydentityWebModule : AbpModule
 {

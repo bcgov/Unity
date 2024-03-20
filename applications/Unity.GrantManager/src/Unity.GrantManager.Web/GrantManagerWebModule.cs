@@ -72,13 +72,13 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAutofacModule),
     typeof(AbpSettingManagementWebModule),
     //typeof(AbpAspNetCoreMvcUiBasicThemeModule),
-    typeof(UnityAspNetCoreMvcUiThemesModule),
+    //typeof(UnityAspNetCoreMvcUiThemesModule),
+    typeof(UnityAspNetCoreMvcUIThemeUX2Module),
     typeof(UnityTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
-    typeof(UnitydentityWebModule),
-    typeof(AbpAspNetCoreMvcUiUnityThemeModule)
+    typeof(UnitydentityWebModule)    
 )]
 [DependsOn(typeof(AbpBlobStoringModule))]
 public class GrantManagerWebModule : AbpModule
@@ -332,7 +332,7 @@ public class GrantManagerWebModule : AbpModule
         {
             options
                 .StyleBundles
-                .Configure(UnityThemeBundles.Styles.Global, bundle =>
+                .Configure(UnityThemeUX2Bundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
                 });

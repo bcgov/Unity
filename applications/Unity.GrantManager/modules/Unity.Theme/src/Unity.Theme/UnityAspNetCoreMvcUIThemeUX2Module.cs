@@ -16,13 +16,13 @@ namespace Unity.AspNetCore.Mvc.UI.Themes;
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
     typeof(AbpAspNetCoreMvcUiMultiTenancyModule)
     )]
-public class AbpAspNetCoreMvcUiUnityThemeModule : AbpModule
+public class UnityAspNetCoreMvcUIThemeUX2Module : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         PreConfigure<IMvcBuilder>(mvcBuilder =>
         {
-            mvcBuilder.AddApplicationPartIfNotExists(typeof(AbpAspNetCoreMvcUiUnityThemeModule).Assembly);
+            mvcBuilder.AddApplicationPartIfNotExists(typeof(UnityAspNetCoreMvcUIThemeUX2Module).Assembly);
         });
     }
 
@@ -40,7 +40,7 @@ public class AbpAspNetCoreMvcUiUnityThemeModule : AbpModule
 
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
-            options.FileSets.AddEmbedded<AbpAspNetCoreMvcUiUnityThemeModule>("Unity.AspNetCore.Mvc.UI.Themes");
+            options.FileSets.AddEmbedded<UnityAspNetCoreMvcUIThemeUX2Module>("Unity.AspNetCore.Mvc.UI.Themes");
         });
 
         Configure<AbpToolbarOptions>(options =>
@@ -52,20 +52,20 @@ public class AbpAspNetCoreMvcUiUnityThemeModule : AbpModule
         {
             options
                 .StyleBundles
-                .Add(UnityThemeBundles.Styles.Global, bundle =>
+                .Add(UnityThemeUX2Bundles.Styles.Global, bundle =>
                 {
                     bundle
                         .AddBaseBundles(StandardBundles.Styles.Global)
-                        .AddContributors(typeof(UnityThemeGlobalStyleContributor));
+                        .AddContributors(typeof(UnityThemeUX2GlobalStyleContributor));
                 });
 
             options
                 .ScriptBundles
-                .Add(UnityThemeBundles.Scripts.Global, bundle =>
+                .Add(UnityThemeUX2Bundles.Scripts.Global, bundle =>
                 {
                     bundle
                         .AddBaseBundles(StandardBundles.Scripts.Global)
-                        .AddContributors(typeof(UnityThemeGlobalScriptContributor));
+                        .AddContributors(typeof(UnityThemeUX2GlobalScriptContributor));
                 });
         });
     }

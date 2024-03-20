@@ -3,7 +3,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 
 namespace Unity.AspNetCore.Mvc.UI.Themes.Bundling;
 
-public class UnityThemeGlobalStyleContributor : BundleContributor
+public class UnityThemeUX2GlobalStyleContributor : BundleContributor
 {
     public override void ConfigureBundle(BundleConfigurationContext context)
     {

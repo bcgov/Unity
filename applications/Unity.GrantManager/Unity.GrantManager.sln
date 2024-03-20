@@ -71,11 +71,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.Http
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.HttpApi.Client", "modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi.Client\Unity.TenantManagement.HttpApi.Client.csproj", "{63692EBE-6C14-4E7A-86F8-48D58DA861A6}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity.Theme", "Unity.Theme", "{BDFB951E-1132-4D67-ACA2-34F21788EFEB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity.Theme.UX2", "Unity.Theme.UX2", "{BDFB951E-1132-4D67-ACA2-34F21788EFEB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Theme.Tests", "modules\Unity.Theme\test\Unity.Theme.Tests\Unity.Theme.Tests.csproj", "{750AD4E9-00E1-4D46-9788-23E8D9314989}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Theme.UX2.Tests", "modules\Unity.Theme\test\Unity.Theme.Tests\Unity.Theme.UX2.Tests.csproj", "{750AD4E9-00E1-4D46-9788-23E8D9314989}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AspNetCore.Mvc.UI.Themes", "modules\Unity.Theme\src\Unity.Theme\Unity.AspNetCore.Mvc.UI.Themes.csproj", "{FD7CE8F3-8964-4104-99A8-710220070B1A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AspNetCore.Mvc.UI.Theme.UX2", "modules\Unity.Theme\src\Unity.Theme\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj", "{FD7CE8F3-8964-4104-99A8-710220070B1A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

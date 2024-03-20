@@ -1,6 +1,6 @@
 namespace Unity.Theme.Tests
 {
-    public class ThemeTests
+    public class UnityUX2ThemeTests
     {
         [Fact]
         public void AreTrue()

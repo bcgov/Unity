@@ -44,7 +44,7 @@
     {
         <meta name="description" content="@ViewBag.Description" />
     }
-    <abp-style-bundle name="@UnityThemeBundles.Styles.Global" />
+    <abp-style-bundle name="@UnityThemeUX2Bundles.Styles.Global" />
 
     @await Component.InvokeAsync(typeof(WidgetStylesViewComponent))
 
@@ -62,7 +62,7 @@
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.Last, StandardLayouts.Empty)
     </div>
 
-    <abp-script-bundle name="@UnityThemeBundles.Scripts.Global" />
+    <abp-script-bundle name="@UnityThemeUX2Bundles.Scripts.Global" />
 
     <script src="~/Abp/ApplicationLocalizationScript?cultureName=@CultureInfo.CurrentUICulture.Name"></script>
     <script src="~/Abp/ApplicationConfigurationScript"></script>

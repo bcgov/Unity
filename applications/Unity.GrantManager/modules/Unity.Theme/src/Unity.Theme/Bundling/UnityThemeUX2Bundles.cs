@@ -1,6 +1,6 @@
 ﻿namespace Unity.AspNetCore.Mvc.UI.Themes.Bundling;
 
-public static class UnityThemeBundles
+public static class UnityThemeUX2Bundles
 {
     public static class Styles
     {
