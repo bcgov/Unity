@@ -65,8 +65,8 @@
                     disabled="true"
                     icon="fl fl-open-pane"
                     button-type="Light" />
-
-        @if (User.IsInRole(UnityRoles.SystemAdmin))
+        
+        @* @if (User.IsInRole(UnityRoles.SystemAdmin))
         {
             <abp-dropdown>
                 <abp-dropdown-button button-type="Secondary" link="false" text="Admin" icon="fl fl-settings" icon-type="Other" />
@@ -76,7 +76,7 @@
                     </abp-dropdown-item>
                 </abp-dropdown-menu>
             </abp-dropdown>
-        }
+        } *@
         <abp-row>
             <abp-column class="spinner-loader">
                 <div class="spinner-grow" role="status">

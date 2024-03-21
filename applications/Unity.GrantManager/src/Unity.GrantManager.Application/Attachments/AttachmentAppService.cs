@@ -76,13 +76,12 @@ namespace Unity.GrantManager.GrantApplications
             return await _applicationChefsFileAttachmentRepository.GetListAsync(applicationId);
         }
 
-        [Authorize(Roles = UnityRoles.SystemAdmin)]
         public async Task ResyncSubmissionAttachmentsAsync(Guid applicationId)
         {
             await _intakeFormSubmissionManager.ResyncSubmissionAttachments(applicationId);
         }
 
-        [Authorize(Roles = UnityRoles.SystemAdmin)]
+        [Authorize(Roles = "")]
         public async Task ResyncAllSubmissionAttachmentsAsync()
         {
             await _intakeFormSubmissionManager.ResyncAllSubmissionAttachments();  
