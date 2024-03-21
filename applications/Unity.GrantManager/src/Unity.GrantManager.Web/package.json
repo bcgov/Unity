@@ -19,7 +19,8 @@
     "html2canvas": "^1.4.1",
     "jquery-maskmoney": "^3.0.2",
     "jspdf": "^2.5.1",
-    "pubsub-js": "^1.9.4"
+    "pubsub-js": "^1.9.4",
+    "bootstrap-4": "npm:bootstrap@^4.4.1"
   },
   "devDependencies": {
     "@types/jquery": "^3.5.18"
