@@ -8,6 +8,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.Payment;
 
+#pragma warning disable S125 // Sections of code should not be commented out
 public class CreateApplicationPaymentRequestModal : AbpPageModel
 {
     [BindProperty]
@@ -16,37 +17,42 @@ public class CreateApplicationPaymentRequestModal : AbpPageModel
 
     private readonly GrantApplicationAppService _applicationService;
 
-    //private readonly IApplicationPaymentRequestService _applicationApplicationPaymentRequestService;
+    // private readonly IApplicationPaymentRequestService _applicationApplicationPaymentRequestService;
 
     public CreateApplicationPaymentRequestModal(GrantApplicationAppService applicationService)
     {
-        //_applicationApplicationPaymentRequestService = applicationApplicationPaymentRequestService;
+        // _applicationApplicationPaymentRequestService = applicationApplicationPaymentRequestService;
+        SelectedApplicationIds = new List<Guid>();
         _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
     }
+
     public async void OnGet(string applicationIds)
     {
-
         SelectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(applicationIds) ?? new List<Guid>();
         var applications = await _applicationService.GetApplicationListAsync(SelectedApplicationIds);
 
         foreach (var application in applications)
         {
-            ApplicationPaymentRequestModalViewModel request = new ApplicationPaymentRequestModalViewModel();
-            request.ApplicationId = application.Id;
-            request.ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName;
-            request.Amount = 0;
-            request.Description = "";
-            request.InvoiceNumber = application.ReferenceNo;
-            ApplicationPaymentRequestForm.Add(request);
-        }
+            ApplicationPaymentRequestModalViewModel request = new ApplicationPaymentRequestModalViewModel
+            {
+                ApplicationId = application.Id,
+                ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
+                Amount = 0,
+                Description = "",
+                InvoiceNumber = application.ReferenceNo
+            };
 
+            ApplicationPaymentRequestForm!.Add(request);
+        }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         Console.WriteLine(ApplicationPaymentRequestForm);
-        //ApplicationPaymentRequestDto createDto = ObjectMapper.Map<ApplicationPaymentRequestModalViewModel, ApplicationPaymentRequestDto>(ApplicationPaymentRequestForm!);
-        //await _applicationApplicationPaymentRequestService.CreateAsync(createDto);
+        // ApplicationPaymentRequestDto createDto = ObjectMapper.Map<ApplicationPaymentRequestModalViewModel, ApplicationPaymentRequestDto>(ApplicationPaymentRequestForm!);
+        // await _applicationApplicationPaymentRequestService.CreateAsync(createDto);
+        await Task.CompletedTask;
         return NoContent();
     }
 }
+#pragma warning restore S125 // Sections of code should not be commented out
