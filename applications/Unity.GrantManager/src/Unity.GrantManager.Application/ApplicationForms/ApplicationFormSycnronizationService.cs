@@ -44,7 +44,6 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly ISubmissionsApiService _submissionsApiService;
         private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
         private List<Fact> _facts = new();
-        private HashSet<string> _formVersionsInitializedVersionHash = new HashSet<string>();
         private readonly RestClient _intakeClient;
         public List<ApplicationFormDto>? applicationFormDtoList { get; set; }
         public HashSet<string> FormVersionsInitializedVersionHash { get; set; }
