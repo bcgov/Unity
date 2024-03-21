@@ -65,10 +65,8 @@ namespace Unity.GrantManager.ApplicationForms
             JObject formObject = JObject.Parse(chefsForm.ToString());
             if (formObject == null) return null;
 
-#pragma warning disable CS8600
-            JToken versionsToken = formObject["versions"];
-            return versionsToken; 
-#pragma warning restore CS8600
+            JToken? versionsToken = formObject["versions"];
+            return versionsToken;
         }
 
         public async Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId, bool initializePublishedOnly)
@@ -77,8 +75,9 @@ namespace Unity.GrantManager.ApplicationForms
 
             try
             {
-                JToken versionsToken = GetFormVersionToken(chefsForm);
-
+                JToken? versionsToken = GetFormVersionToken(chefsForm);
+                if (versionsToken == null) return false;
+                
                 foreach (JToken childToken in versionsToken.Children().Where(t => t.Type == JTokenType.Object))
                 {
                     if (TryParsePublished(childToken, out var formVersionId, out var published) 
