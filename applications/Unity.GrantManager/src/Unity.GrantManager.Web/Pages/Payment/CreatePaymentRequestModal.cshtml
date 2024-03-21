@@ -16,7 +16,7 @@
     <abp-style src="/Pages/Payment/CreatePaymentRequestModal.css" />
 }
 
-<form method="post" asp-page-handler="OnPostAsync">
+<form method="post" asp-page-handler="OnPostAsync" id="paymentform">
     <abp-modal size="Large">
         <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentRequest:Title"].Value"></abp-modal-header>
         <abp-modal-body>
@@ -25,9 +25,10 @@
 
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
+                        <div id="@($"{Model.ApplicationPaymentRequestForm[i].ApplicationId}_container")">
                         <abp-row class="m-0 p-2">
-                            <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@@Model.ApplicationPaymentRequestForm[i].ApplicantName/@@Model.ApplicationPaymentRequestForm[i].InvoiceNumber</h6></abp-column>
-                            <abp-column size="_1" class="px-1"><i class="fa fa-times remove-single-payment" aria-hidden="true"></i></abp-column>
+                            <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@Model.ApplicationPaymentRequestForm[i].ApplicantName/@Model.ApplicationPaymentRequestForm[i].InvoiceNumber</h6></abp-column>
+                            <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPayment("@Model.ApplicationPaymentRequestForm[i].ApplicationId")' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@Model.ApplicationPaymentRequestForm[i].ApplicationId" /></abp-column>
                         </abp-row>
 
                         <abp-row class="m-0 p-2">                          
@@ -46,6 +47,7 @@
                         {
                             <hr />
                         }
+                        </div>
                     }
 
                 </abp-card-body>

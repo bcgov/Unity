@@ -54,5 +54,15 @@ public class CreateApplicationPaymentRequestModal : AbpPageModel
         await Task.CompletedTask;
         return NoContent();
     }
+
+
+
+    public IActionResult OnPostRemoveItem(Guid applicationId)
+    {
+        ApplicationPaymentRequestForm.RemoveAll(item => item.ApplicationId == applicationId);
+        
+
+        return new JsonResult(new { success = false });
+    }
 }
 #pragma warning restore S125 // Sections of code should not be commented out

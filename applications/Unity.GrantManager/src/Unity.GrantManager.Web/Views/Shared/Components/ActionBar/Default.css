@@ -41,6 +41,13 @@
 .single-payment-card-application-name {
     font-weight: bold;
 }
-.remove-single-payment{
-    float:right;
+.remove-single-payment {
+    float: right;
+    font-size: medium !important;
+}
+
+.remove-single-payment:hover {
+    color: black !important;
+    text-decoration: none;
+    box-shadow: none;
 }
