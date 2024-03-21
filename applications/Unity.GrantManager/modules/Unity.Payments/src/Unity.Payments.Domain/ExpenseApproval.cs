@@ -8,8 +8,8 @@ namespace Unity.Payments
     public class ExpenseApproval : FullAuditedEntity<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
-        public ExpenseApprovalType Type { get; private set; } = ExpenseApprovalType.Level1;
-        public ExpenseApprovalStatus Status { get; private set; } = ExpenseApprovalStatus.Requested;
+        public virtual ExpenseApprovalType Type { get; private set; } = ExpenseApprovalType.Level1;
+        public virtual ExpenseApprovalStatus Status { get; private set; } = ExpenseApprovalStatus.Requested;
 
         protected ExpenseApproval()
         {

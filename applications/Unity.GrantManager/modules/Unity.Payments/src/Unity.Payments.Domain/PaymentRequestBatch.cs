@@ -5,11 +5,11 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp;
 using System.Linq;
 using Unity.Payments.Enums;
-using System.Collections;
+using Unity.Payments.Correlation;
 
 namespace Unity.Payments
 {
-    public class BatchPaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
+    public class BatchPaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationProviderEntity
     {
         public Guid? TenantId { get; set; }
         public virtual string BatchNumber { get; private set; } = string.Empty;
@@ -17,17 +17,14 @@ namespace Unity.Payments
         public virtual string IssuedByName { get; private set; } = string.Empty;
         public virtual PaymentMethod Method { get; private set; }
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
-        public bool IsApproved { get => Approvals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
-        public bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }       
-        public string? Description { get; private set; }
+        public virtual bool IsApproved { get => Approvals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
+        public virtual bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }       
+        public virtual string? Description { get; private set; }
+        public virtual Collection<PaymentRequest> PaymentRequests { get; private set; }
+        public virtual Collection<ExpenseApproval> Approvals { get; private set; }
 
-        /// <summary>
-        /// The external system / module correlation provider
-        /// </summary>
+        // External Correlation
         public virtual string CorrelationProvider { get; private set; } = string.Empty;
-
-        public Collection<PaymentRequest> PaymentRequests { get; private set; }
-        public Collection<ExpenseApproval> Approvals { get; private set; }
 
         protected BatchPaymentRequest()
         {

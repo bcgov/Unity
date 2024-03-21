@@ -1,11 +1,12 @@
 ﻿using System;
+using Unity.Payments.Correlation;
 using Unity.Payments.Enums;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Payments
 {
-    public class PaymentRequest : FullAuditedEntity<Guid>, IMultiTenant
+    public class PaymentRequest : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationIdEntity
     {
         public Guid? TenantId { get; set; }
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
@@ -13,9 +14,8 @@ namespace Unity.Payments
         public virtual PaymentMethod Method { get; private set; }
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual string? Description { get; private set; } = null;
-
         public virtual BatchPaymentRequest? Batch { get; private set; }
-        public bool IsRecon { get; internal set; }
+        public virtual bool IsRecon { get; internal set; }
 
         // Filled on a recon
         public virtual string? InvoiceStatus { get; private set; }
@@ -23,9 +23,7 @@ namespace Unity.Payments
         public virtual string? PaymentNumber { get; private set; }
         public virtual string? PaymentDate { get; private set; }
 
-        /// <summary>
-        /// The external system / module Id that this relates to
-        /// </summary>
+        // External Correlation
         public virtual Guid CorrelationId { get; private set; }
 
         protected PaymentRequest()
