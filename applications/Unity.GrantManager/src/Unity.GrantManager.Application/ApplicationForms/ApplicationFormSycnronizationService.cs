@@ -46,7 +46,7 @@ namespace Unity.GrantManager.ApplicationForms
         private List<Fact> _facts = new();
         private readonly RestClient _intakeClient;
         public List<ApplicationFormDto>? applicationFormDtoList { get; set; }
-        public HashSet<string> FormVersionsInitializedVersionHash { get; set; }
+        public HashSet<string> FormVersionsInitializedVersionHash { get; set; } = new HashSet<string>();
 
         public ApplicationFormSycnronizationService(
             ICurrentTenant currentTenant,
