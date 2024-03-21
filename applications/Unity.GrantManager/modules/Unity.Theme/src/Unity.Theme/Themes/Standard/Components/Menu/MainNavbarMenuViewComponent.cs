@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.UI.Navigation;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.Menu;
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.Menu;
 
 public class MainNavbarMenuViewComponent : AbpViewComponent
 {

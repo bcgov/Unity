@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.MainNavbar;
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.MainNavbar;
 
 public class MainNavbarViewComponent : AbpViewComponent
 {

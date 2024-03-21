@@ -1,4 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+
+using Unity.AspNetCore.Mvc.UI.Theme.UX2;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Toolbars;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
@@ -7,10 +12,9 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 using Volo.Abp.AspNetCore.Mvc.UI.Theming;
 using Volo.Abp.Modularity;
 using Volo.Abp.VirtualFileSystem;
-using Unity.AspNetCore.Mvc.UI.Themes.Toolbars;
-using Unity.AspNetCore.Mvc.UI.Themes.Bundling;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes;
+
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2;
 
 [DependsOn(
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
@@ -30,17 +34,17 @@ public class UnityAspNetCoreMvcUIThemeUX2Module : AbpModule
     {
         Configure<AbpThemingOptions>(options =>
         {
-            options.Themes.Add<UnityTheme>();
+            options.Themes.Add<UnityUX2Theme>();
 
             if (options.DefaultThemeName == null)
             {
-                options.DefaultThemeName = UnityTheme.Name;
+                options.DefaultThemeName = UnityUX2Theme.Name;
             }
         });
 
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
-            options.FileSets.AddEmbedded<UnityAspNetCoreMvcUIThemeUX2Module>("Unity.AspNetCore.Mvc.UI.Themes");
+            options.FileSets.AddEmbedded<UnityAspNetCoreMvcUIThemeUX2Module>("Unity.AspNetCore.Mvc.UI.Theme.UX2");
         });
 
         Configure<AbpToolbarOptions>(options =>

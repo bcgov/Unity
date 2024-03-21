@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.Toolbar;
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.Toolbar;
 
 public class MainNavbarToolbarViewComponent : AbpViewComponent
 {
@@ -17,6 +17,6 @@ public class MainNavbarToolbarViewComponent : AbpViewComponent
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
         var toolbar = await ToolbarManager.GetAsync(StandardToolbars.Main);
-        return View("~/Themes/Unity/Components/Toolbar/Default.cshtml", toolbar);
+        return View("~/Themes/Standard/Toolbar/Default.cshtml", toolbar);
     }
 }

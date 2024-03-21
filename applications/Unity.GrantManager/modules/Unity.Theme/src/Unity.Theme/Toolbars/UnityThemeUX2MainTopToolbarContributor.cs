@@ -1,12 +1,14 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.Toolbar.LanguageSwitch;
-using Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.Toolbar.UserMenu;
+
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.Toolbar.LanguageSwitch;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.Toolbar.UserMenu;
+
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 using Volo.Abp.Localization;
 using Volo.Abp.Users;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes.Toolbars;
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Toolbars;
 
 public class UnityThemeMainTopToolbarContributor : IToolbarContributor
 {
@@ -17,7 +19,7 @@ public class UnityThemeMainTopToolbarContributor : IToolbarContributor
             return;
         }
 
-        if (!(context.Theme is UnityTheme))
+        if (!(context.Theme is UnityUX2Theme))
         {
             return;
         }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.UI.Navigation;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.MainNavbar;
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.MainNavbar;
 
 public class SideNavbarViewComponent : AbpViewComponent
 {
@@ -18,5 +18,5 @@ public class SideNavbarViewComponent : AbpViewComponent
     {
         var menu = await MenuManager.GetMainMenuAsync();
         return View("~/Themes/Standard/Components/SideNavbar/Default.cshtml", menu);
-    }    
+    }
 }

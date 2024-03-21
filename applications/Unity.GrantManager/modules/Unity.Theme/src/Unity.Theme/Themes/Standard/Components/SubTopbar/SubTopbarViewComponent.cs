@@ -2,7 +2,7 @@
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.MainNavbar;
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.MainNavbar;
 
 public class SubTopbarViewComponent : AbpViewComponent
 {

@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Localization;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.Toolbar.LanguageSwitch;
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.Toolbar.LanguageSwitch;
 
 public class LanguageSwitchViewComponent : AbpViewComponent
 {

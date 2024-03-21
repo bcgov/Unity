@@ -2,12 +2,12 @@
 using Volo.Abp.AspNetCore.Mvc.UI.Theming;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.AspNetCore.Mvc.UI.Themes;
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2;
 
 [ThemeName(Name)]
-public class UnityTheme : ITheme, ITransientDependency
+public class UnityUX2Theme : ITheme, ITransientDependency
 {
-    public const string Name = "Unity";
+    public const string Name = "UX2";
     public virtual string GetLayout(string name, bool fallbackToDefault = true)
     {
 

@@ -53,6 +53,6 @@
     <Folder Include="wwwroot\themes\basic\fonts\" />
     <Folder Include="wwwroot\themes\basic\fonts\icons\" />
     <Folder Include="wwwroot\themes\basic\fonts\BCSans\" />
-    <Folder Include="wwwroot\themes\unity\NewFolder\" />
+    <Folder Include="wwwroot\themes\ux2\NewFolder\" />
   </ItemGroup>
 </Project>
