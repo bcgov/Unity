@@ -164,7 +164,7 @@ namespace Unity.GrantManager.ApplicationForms
                         AddFact("Application Form Name: ", applicationFormDto.ApplicationFormName);
                         AddFact("Missing Submissions Count: ", missingSubmissions.Count.ToString());
 
-                        if (missingSubmissions != null && missingSubmissions.Count > 0)
+                        if (missingSubmissions.Count > 0)
                         {
                             await SynchronizeFormSubmissions(missingSubmissions, applicationFormDto);
                         }
