@@ -67,7 +67,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.TenantManagement.Http
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity.Theme.UX2", "Unity.Theme.UX2", "{BDFB951E-1132-4D67-ACA2-34F21788EFEB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.Theme.UX2.Tests", "modules\Unity.Theme.UX2\test\Unity.Theme.UX2.Tests\Unity.Theme.UX2.Tests.csproj", "{750AD4E9-00E1-4D46-9788-23E8D9314989}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AspNetCore.Mvc.UI.Theme.UX2.Tests", "modules\Unity.Theme.UX2\test\Unity.Theme.UX2.Tests\Unity.AspNetCore.Mvc.UI.Theme.UX2.Tests.csproj", "{750AD4E9-00E1-4D46-9788-23E8D9314989}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity.AspNetCore.Mvc.UI.Theme.UX2", "modules\Unity.Theme.UX2\src\Unity.Theme.UX2\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj", "{FD7CE8F3-8964-4104-99A8-710220070B1A}"
 EndProject

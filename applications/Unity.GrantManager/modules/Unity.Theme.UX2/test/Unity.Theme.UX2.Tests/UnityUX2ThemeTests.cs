@@ -1,4 +1,4 @@
-namespace Unity.Theme.Tests
+namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Tests
 {
     public class UnityUX2ThemeTests
     {
