@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Notifications;
@@ -21,6 +22,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -50,6 +52,8 @@ public class GrantApplicationAppService :
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
     private readonly IEmailNotificationService _emailNotificationService;
+    private readonly ILocalEventBus _localEventBus;
+
 
 #pragma warning disable IDE0290 // Use primary constructor
     public GrantApplicationAppService(IRepository<Application, Guid> repository,
@@ -66,7 +70,8 @@ public class GrantApplicationAppService :
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
         IApplicationTagsRepository applicationTagsRepository,
-        IEmailNotificationService emailNotificationService
+        IEmailNotificationService emailNotificationService,
+        ILocalEventBus localEventBus
         )
          : base(repository)
     {
@@ -83,6 +88,7 @@ public class GrantApplicationAppService :
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
         _emailNotificationService = emailNotificationService;
+        _localEventBus = localEventBus;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -707,19 +713,13 @@ public class GrantApplicationAppService :
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
         var application = await _applicationManager.TriggerAction(applicationId, triggerAction);
-
-        switch (triggerAction)
-        {
-            case GrantApplicationAction.Approve: { 
-                    await _emailNotificationService.SendEmailNotification(applicationId, _emailNotificationService.GetApprovalBody(), "Grant Application Update"); 
-                    break; 
-                }
-            case GrantApplicationAction.Deny: { 
-                    await _emailNotificationService.SendEmailNotification(applicationId, _emailNotificationService.GetDeclineBody(), "Grant Application Update"); 
-                    break; 
-                }
-            default: break;
-        }
+        await _localEventBus.PublishAsync(
+            new ApplicationChangedEvent
+            {
+                Action = triggerAction,
+                ApplicationId = applicationId
+            }
+        );
 
         // TODO: AUTHORIZATION HANDLING
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
