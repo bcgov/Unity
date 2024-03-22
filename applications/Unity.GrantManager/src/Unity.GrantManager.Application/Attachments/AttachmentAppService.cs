@@ -81,10 +81,5 @@ namespace Unity.GrantManager.GrantApplications
             await _intakeFormSubmissionManager.ResyncSubmissionAttachments(applicationId);
         }
 
-        [Authorize(Roles = "")]
-        public async Task ResyncAllSubmissionAttachmentsAsync()
-        {
-            await _intakeFormSubmissionManager.ResyncAllSubmissionAttachments();  
-        }
     }
 }

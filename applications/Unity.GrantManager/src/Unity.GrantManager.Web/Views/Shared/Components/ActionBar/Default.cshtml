@@ -65,17 +65,6 @@
                     icon="fl fl-open-pane"
                     button-type="Light" />
         
-        @* @if (User.IsInRole(UnityRoles.SystemAdmin))
-        {
-            <abp-dropdown>
-                <abp-dropdown-button button-type="Secondary" link="false" text="Admin" icon="fl fl-settings" icon-type="Other" />
-                <abp-dropdown-menu>
-                    <abp-dropdown-item id="resyncAllSubmissionAttachments" class="action-bar__drop-down-icon-link">
-                        <i class="fl fl-synch"></i>  @L["ApplicationList:ResyncAllSubmissionAttachmentsButton"].Value
-                    </abp-dropdown-item>
-                </abp-dropdown-menu>
-            </abp-dropdown>
-        } *@
         <abp-row>
             <abp-column class="spinner-loader">
                 <div class="spinner-grow" role="status">
