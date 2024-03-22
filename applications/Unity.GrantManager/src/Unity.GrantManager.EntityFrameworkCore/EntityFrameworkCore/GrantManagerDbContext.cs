@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
@@ -16,6 +16,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using Notifications.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
 
@@ -156,5 +157,6 @@ public class GrantManagerDbContext :
             var entityBuilder = modelBuilder.Entity(type);
             entityBuilder.TryConfigureExtraProperties();
         }
-    }
+        //builder.ConfigureNotifications();
+        }
 }

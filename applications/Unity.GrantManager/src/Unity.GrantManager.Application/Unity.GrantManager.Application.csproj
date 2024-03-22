@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -12,7 +12,7 @@
     <Compile Remove="Intake\**" />
     <EmbeddedResource Remove="Intake\**" />
     <None Remove="Intake\**" />
-  </ItemGroup>
+  <ProjectReference Include="..\..\modules\Notifications\src\Notifications.Application\Notifications.Application.csproj" /></ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Application\Unity.TenantManagement.Application.csproj" />

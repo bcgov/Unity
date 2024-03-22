@@ -15,6 +15,7 @@ using Volo.Abp.PermissionManagement.OpenIddict;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Caching;
+using Notifications;
 
 namespace Unity.GrantManager;
 
@@ -32,6 +33,7 @@ namespace Unity.GrantManager;
     typeof(AbpEmailingModule)
 )]
 [DependsOn(typeof(AbpCachingModule))]
+    [DependsOn(typeof(NotificationsDomainModule))]
     public class GrantManagerDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

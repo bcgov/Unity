@@ -1,4 +1,4 @@
-﻿using Unity.GrantManager.Localization;
+using Unity.GrantManager.Localization;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.FeatureManagement;
@@ -12,6 +12,7 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
+using Notifications;
 
 namespace Unity.GrantManager;
 
@@ -25,7 +26,8 @@ namespace Unity.GrantManager;
     typeof(AbpSettingManagementDomainSharedModule),
     typeof(AbpTenantManagementDomainSharedModule)    
     )]
-public class GrantManagerDomainSharedModule : AbpModule
+[DependsOn(typeof(NotificationsDomainSharedModule))]
+    public class GrantManagerDomainSharedModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

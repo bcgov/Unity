@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "Notifications": {
+      "path": "Notifications.abpmdl.json"
+    }
+  }
+}
