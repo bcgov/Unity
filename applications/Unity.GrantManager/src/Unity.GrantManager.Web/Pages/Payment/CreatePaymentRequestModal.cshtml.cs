@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
+using Unity.Payments.BatchPaymentRequests;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.Payment;
@@ -16,14 +17,14 @@ public class CreateApplicationPaymentRequestModal : AbpPageModel
     public List<Guid> SelectedApplicationIds { get; set; }
 
     private readonly GrantApplicationAppService _applicationService;
+    private readonly IBatchPaymentRequestAppService _batchPaymentRequestService;
 
-    // private readonly IApplicationPaymentRequestService _applicationApplicationPaymentRequestService;
-
-    public CreateApplicationPaymentRequestModal(GrantApplicationAppService applicationService)
+    public CreateApplicationPaymentRequestModal(GrantApplicationAppService applicationService,
+        IBatchPaymentRequestAppService batchPaymentRequestService)
     {
-        // _applicationApplicationPaymentRequestService = applicationApplicationPaymentRequestService;
         SelectedApplicationIds = new List<Guid>();
         _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
+        _batchPaymentRequestService = batchPaymentRequestService;
     }
 
     public async void OnGet(string applicationIds)
@@ -41,18 +42,43 @@ public class CreateApplicationPaymentRequestModal : AbpPageModel
                 Description = "",
                 InvoiceNumber = application.ReferenceNo,
             };
-            
+
             ApplicationPaymentRequestForm!.Add(request);
         }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        Console.WriteLine(ApplicationPaymentRequestForm);
-        // ApplicationPaymentRequestDto createDto = ObjectMapper.Map<ApplicationPaymentRequestModalViewModel, ApplicationPaymentRequestDto>(ApplicationPaymentRequestForm!);
-        // await _applicationApplicationPaymentRequestService.CreateAsync(createDto);
-        await Task.CompletedTask;
+        if (ApplicationPaymentRequestForm == null) return NoContent();
+
+        await _batchPaymentRequestService.CreateAsync(new CreateBatchPaymentRequestDto()
+        {
+            Description = "Description",
+            PaymentRequests = MapPaymentRequests(),
+            Provider = "A"
+        });
+
         return NoContent();
+    }
+
+    private List<CreatePaymentRequestDto> MapPaymentRequests()
+    {
+        var payments = new List<CreatePaymentRequestDto>();
+
+        if (ApplicationPaymentRequestForm == null) return payments;
+
+        foreach (var payment in ApplicationPaymentRequestForm)
+        {
+            payments.Add(new CreatePaymentRequestDto()
+            {
+                Amount = payment.Amount,
+                CorrelationId = payment.ApplicationId,
+                Description = payment.Description,
+                InvoiceNumber = payment.InvoiceNumber
+            });
+        }
+
+        return payments;
     }
 }
 #pragma warning restore S125 // Sections of code should not be commented out

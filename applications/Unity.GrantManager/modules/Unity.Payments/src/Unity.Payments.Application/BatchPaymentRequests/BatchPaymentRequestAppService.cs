@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
+using Unity.Payments.Settings;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.BatchPaymentRequests
@@ -13,11 +14,13 @@ namespace Unity.Payments.BatchPaymentRequests
 
         public BatchPaymentRequestAppService(IBatchPaymentRequestsRepository batchPaymentRequestsRepository)
         {
-            _batchPaymentRequestsRepository = batchPaymentRequestsRepository;
+            _batchPaymentRequestsRepository = batchPaymentRequestsRepository; 
         }
 
         public async Task<BatchPaymentRequestDto> CreateAsync(CreateBatchPaymentRequestDto batchPaymentRequest)
-        {
+        {                 
+            var paymentThreshold = await SettingProvider.GetOrNullAsync(PaymentsSettings.PaymentThreshold);
+
             var newBatchPaymentRequest = new BatchPaymentRequest(Guid.NewGuid(),
                 Guid.NewGuid().ToString(),
                 Enums.PaymentGroup.EFT,
@@ -33,7 +36,8 @@ namespace Unity.Payments.BatchPaymentRequests
                     payment.Amount,
                     newBatchPaymentRequest.PaymentGroup,
                     payment.CorrelationId,
-                    payment.Description));                
+                    payment.Description), 
+                    paymentThreshold == null ? PaymentConsts.DefaultThresholdAmount : decimal.Parse(paymentThreshold));                
             }
 
             var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);

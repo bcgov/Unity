@@ -62,6 +62,8 @@ using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Unity.Payments.Web;
 using Unity.Payments;
+using Autofac.Core;
+using Volo.Abp.Localization.ExceptionHandling;
 
 namespace Unity.GrantManager.Web;
 
@@ -182,7 +184,7 @@ namespace Unity.GrantManager.Web;
            .AddCheck<ReadyHealthCheck>("ready", tags: new[] { "ready" });
 
         context.Services.AddHealthChecks()
-           .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });        
+           .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
     }
 
     private static void ConfigureUtils(ServiceConfigurationContext context)

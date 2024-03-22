@@ -6,6 +6,7 @@ using Volo.Abp;
 using System.Linq;
 using Unity.Payments.Enums;
 using Unity.Payments.Correlation;
+using Unity.Payments.Exceptions;
 
 namespace Unity.Payments.BatchPaymentRequests
 {
@@ -65,20 +66,18 @@ namespace Unity.Payments.BatchPaymentRequests
             return this;
         }
 
-        public BatchPaymentRequest AddPaymentRequest(PaymentRequest paymentRequest)
-        {
-            decimal paymentThreshold = 500000; // This value will be tenant specific!        
-
+        public BatchPaymentRequest AddPaymentRequest(PaymentRequest paymentRequest, decimal paymentThreshold = 500000m)
+        {              
             if (paymentRequest.Amount >= paymentThreshold
                 && PaymentRequests.Count > 0)
             {
-                throw new BusinessException(message: $"Cannot add a payment to an existing batch with a value equal or above threshold {paymentThreshold}");
+                throw new BusinessException(ErrorConsts.ThesholdExceeded).WithData("Threshold", paymentThreshold.ToString("0.00"));                
             }
 
             if (PaymentRequests.Count == 1
                 && PaymentRequests[0].Amount >= paymentThreshold)
             {
-                throw new BusinessException(message: $"Cannot add a payment to existing batch that already has a payment equal or above the threshold {paymentThreshold}");
+                throw new BusinessException(ErrorConsts.ThesholdExceeded).WithData("Threshold", paymentThreshold.ToString("0.00"));
             }
 
             if (paymentRequest.Amount >= paymentThreshold)

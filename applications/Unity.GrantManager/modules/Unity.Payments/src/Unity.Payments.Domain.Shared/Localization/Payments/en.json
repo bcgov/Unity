@@ -2,6 +2,9 @@
   "culture": "en",
   "texts": {
     "Payments": "Payments",
-    "WelcomeToPayments": "Welcome to Payments Module"
+    "WelcomeToPayments": "Welcome to Payments Module",
+    "Unity.Payments:Errors:ThresholdExceeded": "Cannot add a payment to an existing batch with a value equal or above threshold of {Threshold}",
+    "Setting:Payments.ThresholdAmount.DisplayName": "Payment threshold amount",
+    "Setting:Payments.ThresholdAmount.Description": "Payment threshold that triggers additional approvals and checks" 
   }
 }

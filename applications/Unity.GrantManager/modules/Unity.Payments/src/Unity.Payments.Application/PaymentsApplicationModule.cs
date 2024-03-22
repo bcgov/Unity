@@ -2,6 +2,8 @@
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
+using Volo.Abp.Localization.ExceptionHandling;
+using Unity.Payments.Localization;
 
 namespace Unity.Payments;
 
@@ -9,7 +11,7 @@ namespace Unity.Payments;
     typeof(PaymentsDomainModule),
     typeof(PaymentsApplicationContractsModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpAutoMapperModule)    
     )]
 public class PaymentsApplicationModule : AbpModule
 {
@@ -19,6 +21,11 @@ public class PaymentsApplicationModule : AbpModule
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<PaymentsApplicationModule>(validate: true);
+        });
+
+        context.Services.Configure<AbpExceptionLocalizationOptions>(options =>
+        {
+            options.MapCodeNamespace("Unity.Payments", typeof(PaymentsResource));
         });
     }
 }
