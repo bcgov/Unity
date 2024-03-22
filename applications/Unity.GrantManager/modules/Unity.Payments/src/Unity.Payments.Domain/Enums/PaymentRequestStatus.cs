@@ -2,7 +2,7 @@
 {
     public enum PaymentRequestStatus
     {
-        Created,
-        Submitted
+        Created = 1,
+        Submitted = 2
     }    
 }

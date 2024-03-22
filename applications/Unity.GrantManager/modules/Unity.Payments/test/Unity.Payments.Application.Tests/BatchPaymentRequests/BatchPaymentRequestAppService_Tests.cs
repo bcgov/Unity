@@ -19,6 +19,6 @@ public class BatchPaymentRequestAppService_Tests : PaymentsApplicationTestBase
     {
         _ = await _batchPaymentRequestAppService
             .CreateAsync(new CreateBatchPaymentRequestDto())
-            .ShouldThrowAsync<System.InvalidOperationException>();        
+            .ShouldThrowAsync<Microsoft.EntityFrameworkCore.DbUpdateException>();        
     }
 }

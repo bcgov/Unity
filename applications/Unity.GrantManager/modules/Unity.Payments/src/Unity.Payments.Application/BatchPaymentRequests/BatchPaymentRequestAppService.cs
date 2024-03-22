@@ -24,15 +24,16 @@ namespace Unity.Payments.BatchPaymentRequests
                 batchPaymentRequest.Description,
                 batchPaymentRequest.Provider);
 
-            foreach (var payment in newBatchPaymentRequest.PaymentRequests)
+            foreach (var payment in batchPaymentRequest.PaymentRequests)
             {
                 newBatchPaymentRequest.AddPaymentRequest(new PaymentRequest(
                     Guid.NewGuid(),
                     newBatchPaymentRequest,
+                    payment.InvoiceNumber,
                     payment.Amount,
                     newBatchPaymentRequest.PaymentGroup,
                     payment.CorrelationId,
-                    payment.Description));
+                    payment.Description));                
             }
 
             var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);

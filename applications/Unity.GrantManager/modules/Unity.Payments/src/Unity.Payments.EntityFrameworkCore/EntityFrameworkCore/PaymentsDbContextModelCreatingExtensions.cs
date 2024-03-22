@@ -1,33 +1,68 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Unity.Payments.BatchPaymentRequests;
+using Unity.Payments.Suppliers;
 using Volo.Abp;
+using Volo.Abp.EntityFrameworkCore.Modeling;
 
 namespace Unity.Payments.EntityFrameworkCore;
 
 public static class PaymentsDbContextModelCreatingExtensions
 {
     public static void ConfigurePayments(
-        this ModelBuilder builder)
+        this ModelBuilder modelBuilder)
     {
-        Check.NotNull(builder, nameof(builder));
+        Check.NotNull(modelBuilder, nameof(modelBuilder));
 
-        /* Configure all entities here. Example:
-
-        builder.Entity<Question>(b =>
+        modelBuilder.Entity<BatchPaymentRequest>(b =>
         {
-            //Configure table & schema name
-            b.ToTable(PaymentsDbProperties.DbTablePrefix + "Questions", PaymentsDbProperties.DbSchema);
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "BatchPaymentRequests",
+                PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
 
-            //Properties
-            b.Property(q => q.Title).IsRequired().HasMaxLength(QuestionConsts.MaxTitleLength);
-
-            //Relations
-            b.HasMany(question => question.Tags).WithOne().HasForeignKey(qt => qt.QuestionId);
-
-            //Indexes
-            b.HasIndex(q => q.CreationTime);
+            b.HasMany(e => e.PaymentRequests)
+                .WithOne(e => e.BatchPaymentRequest)
+                .HasForeignKey(x => x.BatchPaymentRequestId);
+            b.HasMany(e => e.ExpenseApprovals)
+                .WithOne(e => e.BatchPaymentRequest)
+                .HasForeignKey(x => x.BatchPaymentRequestId);
         });
-        */
+
+        modelBuilder.Entity<PaymentRequest>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentRequests",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<ExpenseApproval>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "ExpenseApprovals",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        modelBuilder.Entity<Supplier>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "Suppliers",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.HasMany(e => e.Sites)
+                .WithOne(e => e.Supplier)
+                .HasForeignKey(x => x.SupplierId);
+        });
+
+
+        modelBuilder.Entity<Site>(b =>
+        {
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "Sites",
+                PaymentsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+        });
     }
 }

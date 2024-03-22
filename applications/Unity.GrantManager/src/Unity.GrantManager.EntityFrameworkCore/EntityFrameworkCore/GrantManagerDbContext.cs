@@ -16,8 +16,6 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
-using Unity.Payments.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
 
@@ -157,8 +155,6 @@ public class GrantManagerDbContext :
         {
             var entityBuilder = modelBuilder.Entity(type);
             entityBuilder.TryConfigureExtraProperties();
-        }
-
-        modelBuilder.ConfigurePayments();
+        }        
     }
 }

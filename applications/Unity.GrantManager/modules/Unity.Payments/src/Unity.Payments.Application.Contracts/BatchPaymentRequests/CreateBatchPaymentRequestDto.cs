@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Volo.Abp.Application.Dtos;
 
 namespace Unity.Payments.BatchPaymentRequests
 {
@@ -10,7 +9,7 @@ namespace Unity.Payments.BatchPaymentRequests
     {        
         public string? Description { get; set; }  
         public string Provider { get; set; }
-        public List<PaymentRequestDto> Payments { get; set; } 
+        public List<CreatePaymentRequestDto> PaymentRequests { get; set; } 
     }
 #pragma warning restore CS8618
 }

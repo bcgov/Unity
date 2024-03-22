@@ -2,7 +2,7 @@
 {
     public enum PaymentGroupDto
     {
-        EFT,
-        Cheque
+        EFT = 1,
+        Cheque = 2
     }
 }

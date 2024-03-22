@@ -14,7 +14,8 @@ namespace Unity.Payments.BatchPaymentRequests
         public virtual PaymentGroup PaymentGroup { get; private set; } = PaymentGroup.Cheque;
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual string? Description { get; private set; } = null;
-        public virtual BatchPaymentRequest? Batch { get; private set; }
+        public virtual BatchPaymentRequest? BatchPaymentRequest { get; set; }
+        public virtual Guid BatchPaymentRequestId { get; set; }
         public virtual bool IsRecon { get; internal set; }
 
         // Filled on a recon
@@ -33,16 +34,18 @@ namespace Unity.Payments.BatchPaymentRequests
 
         public PaymentRequest(Guid id,
             BatchPaymentRequest batch,
+            string invoiceNumber,
             decimal amount,
             PaymentGroup paymentGroup,
             Guid correlationId,
             string? description = null)
             : base(id)
         {
+            InvoiceNumber = invoiceNumber;
             Amount = amount;
             PaymentGroup = paymentGroup;
             Description = description;
-            Batch = batch;
+            BatchPaymentRequest = batch;
             CorrelationId = correlationId;
         }
 

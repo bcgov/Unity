@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Unity.Payments.BatchPaymentRequests;
+using Unity.Payments.Suppliers;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -6,21 +8,22 @@ namespace Unity.Payments.EntityFrameworkCore;
 
 [ConnectionStringName(PaymentsDbProperties.ConnectionStringName)]
 public class PaymentsDbContext : AbpDbContext<PaymentsDbContext>, IPaymentsDbContext
-{
-    /* Add DbSet for each Aggregate Root here. Example:
-     * public DbSet<Question> Questions { get; set; }
-     */
+{   
+    public DbSet<BatchPaymentRequest> BatchPaymentRequests { get; set; }
+    public DbSet<PaymentRequest> PaymentRequests { get; set; }
+    public DbSet<ExpenseApproval> ExpenseApproval { get; set; }
+    public DbSet<Supplier> Suppliers { get;set; }
+    public DbSet<Site> Sites { get; set; }
 
     public PaymentsDbContext(DbContextOptions<PaymentsDbContext> options)
         : base(options)
     {
-
     }
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(builder);
+        base.OnModelCreating(modelBuilder);
 
-        builder.ConfigurePayments();
+        modelBuilder.ConfigurePayments();
     }
 }

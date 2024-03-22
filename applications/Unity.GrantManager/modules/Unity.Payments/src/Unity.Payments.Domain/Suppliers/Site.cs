@@ -12,6 +12,8 @@ namespace Unity.Payments.Suppliers
         public virtual PaymentGroup PaymentMethod { get; private set; }
         public virtual bool IsFin312 { get; private set; }
         public virtual string PhysicalAddress { get; private set; } = string.Empty;
+        public virtual Supplier? Supplier { get; set; }
+        public virtual Guid SupplierId { get; set; }
 
         protected Site()
         {

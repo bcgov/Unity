@@ -2,8 +2,8 @@
 {
     public enum ExpenseApprovalStatusDto
     {
-        Requested,
-        Approved,
-        Declined
+        Requested = 1,
+        Approved = 2,
+        Declined = 3
     }
 }

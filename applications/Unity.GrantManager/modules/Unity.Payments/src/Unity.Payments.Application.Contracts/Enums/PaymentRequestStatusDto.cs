@@ -2,7 +2,7 @@
 {
     public enum PaymentRequestStatusDto
     {
-        Created,
-        Submitted
+        Created = 1,
+        Submitted = 2
     }
 }

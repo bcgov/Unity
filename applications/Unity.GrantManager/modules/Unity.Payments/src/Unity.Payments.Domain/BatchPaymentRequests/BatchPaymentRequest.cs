@@ -17,11 +17,11 @@ namespace Unity.Payments.BatchPaymentRequests
         public virtual string IssuedByName { get; private set; } = string.Empty;
         public virtual PaymentGroup PaymentGroup { get; private set; } = PaymentGroup.Cheque;
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
-        public virtual bool IsApproved { get => Approvals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
+        public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
         public virtual bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }
         public virtual string? Description { get; private set; }
         public virtual Collection<PaymentRequest> PaymentRequests { get; private set; }
-        public virtual Collection<ExpenseApproval> Approvals { get; private set; }
+        public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
 
         // External Correlation
         public virtual string CorrelationProvider { get; private set; } = string.Empty;
@@ -29,7 +29,7 @@ namespace Unity.Payments.BatchPaymentRequests
         protected BatchPaymentRequest()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
-            Approvals = new Collection<ExpenseApproval>();
+            ExpenseApprovals = new Collection<ExpenseApproval>();
             PaymentRequests = new Collection<PaymentRequest>();
         }
 
@@ -44,7 +44,7 @@ namespace Unity.Payments.BatchPaymentRequests
             PaymentGroup = paymentMethod;
             Description = description;
             CorrelationProvider = correlationProvider;
-            Approvals = GenerateDefaultExpenseApprovals();
+            ExpenseApprovals = GenerateDefaultExpenseApprovals();
             PaymentRequests = new Collection<PaymentRequest>();
         }
 
@@ -83,7 +83,7 @@ namespace Unity.Payments.BatchPaymentRequests
 
             if (paymentRequest.Amount >= paymentThreshold)
             {
-                Approvals.Add(new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level3));
+                ExpenseApprovals.Add(new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level3));
             }
 
             PaymentRequests.Add(paymentRequest);
