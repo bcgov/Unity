@@ -3,14 +3,14 @@ using Unity.Payments.Enums;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
-namespace Unity.Payments
+namespace Unity.Payments.Suppliers
 {
     public class Site : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
         public virtual string SiteNumber { get; private set; } = string.Empty;
-        public virtual PaymentMethod PaymentMethod { get; private set; }
-        public virtual bool IsFin312 { get; private set; }  
+        public virtual PaymentGroup PaymentMethod { get; private set; }
+        public virtual bool IsFin312 { get; private set; }
         public virtual string PhysicalAddress { get; private set; } = string.Empty;
 
         protected Site()
@@ -20,7 +20,7 @@ namespace Unity.Payments
 
         public Site(Guid id,
             string siteNumber,
-            PaymentMethod paymentMethod,
+            PaymentGroup paymentMethod,
             bool isFin312,
             string physicalAddress)
            : base(id)

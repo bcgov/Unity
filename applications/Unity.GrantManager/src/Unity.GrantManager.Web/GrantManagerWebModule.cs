@@ -61,6 +61,7 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Unity.Payments.Web;
+using Unity.Payments;
 
 namespace Unity.GrantManager.Web;
 
@@ -374,6 +375,7 @@ namespace Unity.GrantManager.Web;
         Configure<AbpAspNetCoreMvcOptions>(options =>
         {
             options.ConventionalControllers.Create(typeof(GrantManagerApplicationModule).Assembly);
+            options.ConventionalControllers.Create(typeof(PaymentsApplicationModule).Assembly);
         });
     }
 

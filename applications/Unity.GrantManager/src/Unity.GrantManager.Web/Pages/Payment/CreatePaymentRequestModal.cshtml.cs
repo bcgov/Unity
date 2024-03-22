@@ -33,7 +33,7 @@ public class CreateApplicationPaymentRequestModal : AbpPageModel
 
         foreach (var application in applications)
         {
-            ApplicationPaymentRequestModalViewModel request = new ApplicationPaymentRequestModalViewModel
+            ApplicationPaymentRequestModalViewModel request = new()
             {
                 ApplicationId = application.Id,
                 ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
@@ -53,16 +53,6 @@ public class CreateApplicationPaymentRequestModal : AbpPageModel
         // await _applicationApplicationPaymentRequestService.CreateAsync(createDto);
         await Task.CompletedTask;
         return NoContent();
-    }
-
-
-
-    public IActionResult OnPostRemoveItem(Guid applicationId)
-    {
-        ApplicationPaymentRequestForm.RemoveAll(item => item.ApplicationId == applicationId);
-        
-
-        return new JsonResult(new { success = false });
     }
 }
 #pragma warning restore S125 // Sections of code should not be commented out

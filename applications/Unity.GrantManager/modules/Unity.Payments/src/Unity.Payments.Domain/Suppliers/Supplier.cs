@@ -4,7 +4,7 @@ using Unity.Payments.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
-namespace Unity.Payments
+namespace Unity.Payments.Suppliers
 {
     public class Supplier : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationEntity
     {

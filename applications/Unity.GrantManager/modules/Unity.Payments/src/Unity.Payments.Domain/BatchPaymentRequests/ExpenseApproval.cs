@@ -3,7 +3,7 @@ using Unity.Payments.Enums;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
-namespace Unity.Payments
+namespace Unity.Payments.BatchPaymentRequests
 {
     public class ExpenseApproval : FullAuditedEntity<Guid>, IMultiTenant
     {
@@ -34,6 +34,6 @@ namespace Unity.Payments
 
             Status = ExpenseApprovalStatus.Declined;
             return this;
-        }        
+        }
     }
 }

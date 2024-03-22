@@ -4,14 +4,14 @@ using Unity.Payments.Enums;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
-namespace Unity.Payments
+namespace Unity.Payments.BatchPaymentRequests
 {
     public class PaymentRequest : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationIdEntity
     {
         public Guid? TenantId { get; set; }
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
-        public virtual PaymentMethod Method { get; private set; }
+        public virtual PaymentGroup PaymentGroup { get; private set; } = PaymentGroup.Cheque;
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual string? Description { get; private set; } = null;
         public virtual BatchPaymentRequest? Batch { get; private set; }
@@ -34,16 +34,16 @@ namespace Unity.Payments
         public PaymentRequest(Guid id,
             BatchPaymentRequest batch,
             decimal amount,
-            PaymentMethod method,
-            Guid correlationId,            
+            PaymentGroup paymentGroup,
+            Guid correlationId,
             string? description = null)
             : base(id)
         {
             Amount = amount;
-            Method = method;
+            PaymentGroup = paymentGroup;
             Description = description;
             Batch = batch;
-            CorrelationId = correlationId;            
+            CorrelationId = correlationId;
         }
 
         public PaymentRequest SetAmount(decimal amount)
@@ -52,9 +52,9 @@ namespace Unity.Payments
             return this;
         }
 
-        public PaymentRequest SetPaymentMethod(PaymentMethod method)
+        public PaymentRequest SetPaymentMethod(PaymentGroup method)
         {
-            Method = method;
+            PaymentGroup = method;
             return this;
         }
 
@@ -92,6 +92,6 @@ namespace Unity.Payments
         {
             PaymentDate = paymentDate;
             return this;
-        }     
+        }
     }
 }

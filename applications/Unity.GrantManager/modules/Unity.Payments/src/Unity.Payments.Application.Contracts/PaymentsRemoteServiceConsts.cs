@@ -1,6 +1,6 @@
 ﻿namespace Unity.Payments;
 
-public class PaymentsRemoteServiceConsts
+public static class PaymentsRemoteServiceConsts
 {
     public const string RemoteServiceName = "Payments";
 

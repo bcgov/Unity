@@ -7,7 +7,7 @@ using System.Linq;
 using Unity.Payments.Enums;
 using Unity.Payments.Correlation;
 
-namespace Unity.Payments
+namespace Unity.Payments.BatchPaymentRequests
 {
     public class BatchPaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationProviderEntity
     {
@@ -15,10 +15,10 @@ namespace Unity.Payments
         public virtual string BatchNumber { get; private set; } = string.Empty;
         public virtual string ExpenseAuthorityName { get; private set; } = string.Empty;
         public virtual string IssuedByName { get; private set; } = string.Empty;
-        public virtual PaymentMethod Method { get; private set; }
+        public virtual PaymentGroup PaymentGroup { get; private set; } = PaymentGroup.Cheque;
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual bool IsApproved { get => Approvals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
-        public virtual bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }       
+        public virtual bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }
         public virtual string? Description { get; private set; }
         public virtual Collection<PaymentRequest> PaymentRequests { get; private set; }
         public virtual Collection<ExpenseApproval> Approvals { get; private set; }
@@ -35,18 +35,18 @@ namespace Unity.Payments
 
         public BatchPaymentRequest(Guid id,
             string batchNumber,
-            PaymentMethod paymentMethod,
+            PaymentGroup paymentMethod,
             string? description,
             string correlationProvider)
            : base(id)
         {
             BatchNumber = batchNumber;
-            Method = paymentMethod;
+            PaymentGroup = paymentMethod;
             Description = description;
             CorrelationProvider = correlationProvider;
             Approvals = GenerateDefaultExpenseApprovals();
             PaymentRequests = new Collection<PaymentRequest>();
-        }        
+        }
 
         public static Collection<ExpenseApproval> GenerateDefaultExpenseApprovals()
         {
@@ -63,7 +63,7 @@ namespace Unity.Payments
 
             BatchNumber = Guid.NewGuid().ToString();
             return this;
-        } 
+        }
 
         public BatchPaymentRequest AddPaymentRequest(PaymentRequest paymentRequest)
         {
@@ -79,7 +79,7 @@ namespace Unity.Payments
                 && PaymentRequests[0].Amount >= paymentThreshold)
             {
                 throw new BusinessException(message: $"Cannot add a payment to existing batch that already has a payment equal or above the threshold {paymentThreshold}");
-            }            
+            }
 
             if (paymentRequest.Amount >= paymentThreshold)
             {
@@ -88,6 +88,6 @@ namespace Unity.Payments
 
             PaymentRequests.Add(paymentRequest);
             return this;
-        }       
+        }
     }
 }

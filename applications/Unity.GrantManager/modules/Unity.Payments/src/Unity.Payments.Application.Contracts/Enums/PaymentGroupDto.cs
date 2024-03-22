@@ -1,6 +1,6 @@
 ﻿namespace Unity.Payments.Enums
 {
-    public enum PaymentMethod
+    public enum PaymentGroupDto
     {
         EFT,
         Cheque
