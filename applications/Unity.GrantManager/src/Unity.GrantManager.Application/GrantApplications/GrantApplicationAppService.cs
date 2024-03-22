@@ -331,12 +331,12 @@ public class GrantApplicationAppService :
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.ValidateAndChangeNotificationDate(input.NotificationDate);
                 application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.TotalProjectBudget,
                     input.RecommendedAmount,
-                    input.DeclineRational);
+                    input.DeclineRational,
+                    input.NotificationDate);
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
             }            
