@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
-using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.Toolbar.LanguageSwitch;
-using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.Standard.Components.Toolbar.UserMenu;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Toolbar.LanguageSwitch;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Toolbar.UserMenu;
 
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 using Volo.Abp.Localization;

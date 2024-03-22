@@ -1,0 +1,22 @@
+﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand;
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Menu;
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Toolbar;
+
+<nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="main-navbar">
+    <div class="container-fluid">
+        @(await Component.InvokeAsync<MainNavbarBrandViewComponent>())
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#main-navbar-collapse" aria-controls="main-navbar-collapse"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="main-navbar-collapse">
+            <ul class="navbar-nav mx-auto">
+                @(await Component.InvokeAsync<MainNavbarMenuViewComponent>())
+            </ul> 
+            <ul class="navbar-nav"> 
+                @(await Component.InvokeAsync<MainNavbarToolbarViewComponent>())
+            </ul>
+        </div>
+    </div>
+</nav>

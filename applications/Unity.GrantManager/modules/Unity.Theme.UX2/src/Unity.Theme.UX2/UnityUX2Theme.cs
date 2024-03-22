@@ -14,13 +14,13 @@ public class UnityUX2Theme : ITheme, ITransientDependency
             switch (name)
             {
                 case StandardLayouts.Application:
-                    return "~/Themes/Standard/Layouts/Application.cshtml";
+                    return "~/Themes/UX2/Layouts/Application.cshtml";
                 case StandardLayouts.Account:
-                    return "~/Themes/Standard/Layouts/Account.cshtml";
+                    return "~/Themes/UX2/Layouts/Account.cshtml";
                 case StandardLayouts.Empty:
-                    return "~/Themes/Standard/Layouts/Empty.cshtml";
+                    return "~/Themes/UX2/Layouts/Empty.cshtml";
                 default:
-                    return fallbackToDefault ? "~/Themes/Standard/Layouts/Application.cshtml" : null;
+                    return fallbackToDefault ? "~/Themes/UX2/Layouts/Application.cshtml" : null;
             
         }
     }

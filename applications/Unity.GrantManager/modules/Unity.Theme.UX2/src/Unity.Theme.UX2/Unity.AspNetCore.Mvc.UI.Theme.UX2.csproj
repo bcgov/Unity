@@ -22,17 +22,22 @@
 
   <ItemGroup>
     <Compile Remove="Themes\Basic\**" />
+    <Compile Remove="wwwroot\themes\basic\**" />
+    <Compile Remove="wwwroot\themes\ux2\NewFolder\**" />
     <Content Remove="Themes\Basic\**" />
     <Content Remove="wwwroot\**\*.*" />
+    <Content Remove="wwwroot\themes\basic\**" />
+    <Content Remove="wwwroot\themes\ux2\NewFolder\**" />
     <EmbeddedResource Remove="Themes\Basic\**" />
+    <EmbeddedResource Remove="wwwroot\themes\basic\**" />
+    <EmbeddedResource Remove="wwwroot\themes\ux2\NewFolder\**" />
     <None Remove="Themes\Basic\**" />
+    <None Remove="wwwroot\themes\basic\**" />
+    <None Remove="wwwroot\themes\ux2\NewFolder\**" />
     <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.multitenancy\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy.abppkg.analyze.json" />
     <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.multitenancy\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy.abppkg.json" />
     <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.analyze.json" />
     <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\7.4.0\contentFiles\any\net7.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.json" />
-    <Content Remove="wwwroot\themes\basic\fonts\" />
-    <Content Remove="wwwroot\themes\basic\fonts\icons\" />
-    <Content Remove="wwwroot\themes\basic\fonts\BCSans\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,11 +53,5 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="wwwroot\themes\basic\fonts\" />
-    <Folder Include="wwwroot\themes\basic\fonts\icons\" />
-    <Folder Include="wwwroot\themes\basic\fonts\BCSans\" />
-    <Folder Include="wwwroot\themes\ux2\NewFolder\" />
   </ItemGroup>
 </Project>
