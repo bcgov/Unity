@@ -21,9 +21,6 @@ namespace Unity.GrantManager;
 [DependsOn(typeof(NotificationsHttpApiClientModule))]
     public class GrantManagerHttpApiClientModule : AbpModule
 {
-    public const string RemoteServiceName = "Default";
-
-    public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddHttpClientProxies(
             typeof(GrantManagerApplicationContractsModule).Assembly,
