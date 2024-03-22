@@ -23,7 +23,7 @@ public class StandardThemeGlobalScriptContributor : BundleContributor
 
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder/js/dataTables.colReorder.min.js");
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder-bs5/js/colReorder.bootstrap5.min.js");
-
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader-bs5/js/fixedHeader.bootstrap5.min.js");
+        context.Files.AddIfNotContains("/libs/echarts/echarts.min.js");
     }
 }
