@@ -76,7 +76,8 @@ namespace Unity.GrantManager;
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
-            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";            
+            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";
+            options.IntakeResync.NumDaysToCheck = configuration.GetValue<string>("BackgroundJobs:IntakeResync:NumDaysToCheck") ?? "-2";
         });
 
         context.Services.Configure<CssApiOptions>(

@@ -39,7 +39,12 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
             Logger.LogInformation("Executing IntakeSyncWorker...");
 
             var tenants = await _tenantRepository.GetListAsync();
-            var numberDaysBack = -2;
+
+            if(!int.TryParse(_backgroundJobsOptions.Value.IntakeResync.NumDaysToCheck, out int numberDaysBack)) {
+                Logger.LogInformation("IntakeSyncWorker - Could not parse number of Days...");
+                return;
+            }
+
             foreach (var tenant in tenants)
             {
                 using (_currentTenant.Change(tenant.Id))
