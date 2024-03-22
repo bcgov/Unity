@@ -1,6 +1,6 @@
 ﻿.action-bar {
     width: 100%;
-    justify-content: space-between;
+    /*justify-content: space-between;*/
     align-items: flex-start;
     display: inline-flex;
     margin: 6px 0;
