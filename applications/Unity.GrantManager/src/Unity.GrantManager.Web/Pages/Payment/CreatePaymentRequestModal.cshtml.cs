@@ -39,9 +39,9 @@ public class CreateApplicationPaymentRequestModal : AbpPageModel
                 ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
                 Amount = 0,
                 Description = "",
-                InvoiceNumber = application.ReferenceNo
+                InvoiceNumber = application.ReferenceNo,
             };
-
+            
             ApplicationPaymentRequestForm!.Add(request);
         }
     }
