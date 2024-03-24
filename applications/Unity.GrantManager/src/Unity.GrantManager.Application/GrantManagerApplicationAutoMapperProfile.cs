@@ -56,6 +56,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<RegionalDistrict, RegionalDistrictDto>();
         CreateMap<ApplicationTags, ApplicationTagsDto>();
         CreateMap<Applicant, GrantApplicationApplicantDto>();
+        CreateMap<ApplicationContact, ApplicationContactDto>();
+        CreateMap<ApplicationContactDto, ApplicationContact>();
     }
 }
 

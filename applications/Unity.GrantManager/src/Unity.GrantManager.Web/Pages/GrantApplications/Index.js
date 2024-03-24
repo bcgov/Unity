@@ -292,6 +292,11 @@
             getContactBusinessPhoneColumn(),
             getContactCellPhoneColumn(),
             getSectorSubSectorIndustryDescColumn(),
+            getSigningAuthorityFullNameColumn(),
+            getSigningAuthorityTitleColumn(),
+            getSigningAuthorityEmailColumn(),
+            getSigningAuthorityBusinessPhoneColumn(),
+            getSigningAuthorityCellPhoneColumn(),
         ]
         .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -982,6 +987,67 @@
                 return data ?? '{SectorSubSectorIndustryDesc}';
             },
             index: 48
+        }
+    }
+
+    function getSigningAuthorityFullNameColumn() {
+        return {
+            title: 'Signing Authority Full Name',
+            name: 'signingAuthorityFullName',
+            data: 'signingAuthorityFullName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SigningAuthorityFullName}';
+            },
+            index: 49
+        }
+    }
+    function getSigningAuthorityTitleColumn() {
+        return {
+            title: 'Signing Authority Title',
+            name: 'signingAuthorityTitle',
+            data: 'signingAuthorityTitle',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SigningAuthorityTitle}';
+            },
+            index: 50
+        }
+    }
+    function getSigningAuthorityEmailColumn() {
+        return {
+            title: 'Signing Authority Email',
+            name: 'signingAuthorityEmail',
+            data: 'signingAuthorityEmail',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SigningAuthorityEmail}';
+            },
+            index: 51
+        }
+    }
+    function getSigningAuthorityBusinessPhoneColumn() {
+        return {
+            title: 'Signing Authority Business Phone',
+            name: 'signingAuthorityBusinessPhone',
+            data: 'signingAuthorityBusinessPhone',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SigningAuthorityBusinessPhone}';
+            },
+            index: 52
+        }
+    }
+    function getSigningAuthorityCellPhoneColumn() {
+        return {
+            title: 'Signing Authority Cell Phone',
+            name: 'signingAuthorityCellPhone',
+            data: 'signingAuthorityCellPhone',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? 'S{igningAuthorityCellPhone}';
+            },
+            index: 53
         }
     }
     window.addEventListener('resize', setTableHeighDynamic);

@@ -49,8 +49,8 @@
 
   <ItemGroup>
 	<ProjectReference Include="..\..\modules\Unity.Identity.Web\src\Unity.Identity.Web.csproj" />
-	<ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Web\Unity.TenantManagement.Web.csproj" />
-	<ProjectReference Include="..\..\modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Unity.AspNetCore.Mvc.UI.Themes.csproj" />
+	<ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Web\Unity.TenantManagement.Web.csproj" />    	
+  <ProjectReference Include="..\..\modules\Unity.Theme.UX2\src\Unity.Theme.UX2\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj" />    
 	<ProjectReference Include="..\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
 	<ProjectReference Include="..\Unity.GrantManager.HttpApi.Client\Unity.GrantManager.HttpApi.Client.csproj" />
 	<ProjectReference Include="..\Unity.GrantManager.HttpApi\Unity.GrantManager.HttpApi.csproj" />

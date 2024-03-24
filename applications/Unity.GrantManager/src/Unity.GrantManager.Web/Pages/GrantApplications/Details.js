@@ -226,68 +226,68 @@ $(function () {
     });
 
     $('#printPdf').click(function () {
-
         let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
         unity.grantManager.intakes.submission
             .getSubmission(submissionId)
             .done(function (result) {
-                
+
                 let data = formatChefComponents(result);
-                const formElement = document.createElement('div');
-                Formio.createForm(
-                    formElement,
-                    data.version.schema,
-                    {
-                        readOnly: true,
-                        renderMode: 'form',
-                        flatten: true,
-                    }
-                ).then(function (form) {
-                    form.submission = data.submission.submission;
 
-                }).then(data => {
 
-                    const h4Elements = formElement.querySelectorAll('h4');
+                let newHiddenInput = $('<input>');
 
-                    h4Elements.forEach(element => {
-                        element.style.wordSpacing = '10px';
-                    });
-
-                    printPDF(formElement);
+                // Set attributes for the hidden input
+                newHiddenInput.attr({
+                    'type': 'hidden',
+                    'name': 'ApplicationFormSubmissionId',
+                    'value': submissionId
                 });
 
+                let newDiv = $('<div>');
+
+                // Set the ID for the new div
+                newDiv.attr('id', 'new-rendering');
+
+                // Add some content to the new div if needed
+                newDiv.html('Content for the new div');
+
+                // Store the outer HTML of the new div in divToStore
+                let divToStore = newDiv.prop('outerHTML');
+                let inputToStore = newHiddenInput.prop('outerHTML');
+
+                // Open a new tab
+                let newTab = window.open('', '_blank');
+
+                // Start writing the HTML content to the new tab
+                newTab.document.write('<html><head><title>Print</title>');
+                newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
+                newTab.document.write('<script src="/libs/formiojs/formio.form.js"></script>');
+                newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
+                newTab.document.write('<link rel="stylesheet" href="/libs/formiojs/formio.form.css">');
+                newTab.document.write('</head><body>');
+                newTab.document.write(inputToStore);
+                newTab.document.write(divToStore);
+                newTab.document.write('</body></html>');
+               
+                newTab.onload = function () {
+                    let script = newTab.document.createElement('script');
+                    script.src = '/Pages/GrantApplications/loadPrint.js';
+                    script.onload = function () {
+                        newTab.executeOperations(data);
+                        
+                    };
+
+                    newTab.document.head.appendChild(script);
+
+                };
+
+                newTab.document.close();
             });
+
 
     });
 
-    function printPDF(html) {
-        const { jsPDF } = window.jspdf;
-        let doc = new jsPDF('p', 'pt', 'a4');
-
-        doc.setCharSpace(0.01);
-        doc.setLineHeightFactor(1.5)
-
-        doc.html(html, {
-            x: 15,
-            y: 15,
-            margin: [50, 20, 70, 30],
-            width: 180, // Target width in the PDF document
-            windowWidth: 650, //window width in CSS pixels,
-            autoPaging: 'text',
-            html2canvas: {
-                allowTaint: true,
-                dpi: 300,
-                letterRendering: true,
-                logging: false,
-                scale: 0.8
-            },
-
-            callback: function () {
-                doc.save('Application.pdf');
-              
-            },
-        });
-    }    
+     
     let applicationStatusWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationStatusWidget',
         filterCallback: function () {

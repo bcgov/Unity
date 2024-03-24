@@ -45,8 +45,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
-    <ProjectReference Include="..\..\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Unity.AspNetCore.Mvc.UI.Themes.csproj" />
+    <ProjectReference Include="..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />    
+    <ProjectReference Include="..\..\Unity.Theme.UX2\src\Unity.Theme.UX2\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj" />
   </ItemGroup>
 
 </Project>
