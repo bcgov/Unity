@@ -126,10 +126,10 @@
             abp.libs.datatables.normalizeConfiguration({
                 fixedHeader: {
                     header: true,
-                    footer: false,
+                    footer: true,
                     headerOffset: 0
                 },
-                language: { search: "" },
+
                 serverSide: false,
                 paging: true,
                 order: [[4, 'desc']],
@@ -145,7 +145,6 @@
                 },
                 colReorder: true,
                 orderCellsTop: true,
-                //fixedHeader: true,
                 stateSave: true,
                 stateDuration: 0,
                 dom: 'Bfrtip',
@@ -170,22 +169,27 @@
                     let $api = this.api();
                     let pages = $api.page.info().pages;
                     let rows = $api.data().length;
-
                     // Tailor the settings based on the row count
-                    if (rows <= maxRowsPerPage) {
-                        $('.dataTables_info').css('display', 'none');
-                        $('.dataTables_paginate').css('display', 'none');
-                        $('.dataTables_length').css('display', 'none');
-                    } else if (pages === 1) {
-                        // With this current length setting, not more than 1 page, hide pagination
-                        $('.dataTables_info').css('display', 'none');
-                        $('.dataTables_paginate').css('display', 'none');
-                    } else {
-                        // SHow everything
-                        $('.dataTables_info').css('display', 'block');
-                        $('.dataTables_paginate').css('display', 'block');
-                    }
+                    //if (rows <= maxRowsPerPage) {
+                    //    $('.dataTables_info').css('display', 'block');
+                    //    $('.dataTables_paginate').css('display', 'block');
+                    //    $('.dataTables_length').css('display', 'block');
+                    //} else if (pages === 1) {
+                    //    // With this current length setting, not more than 1 page, hide pagination
+                    //    $('.dataTables_info').css('display', 'block');
+                    //    $('.dataTables_paginate').css('display', 'block');
+                    //} else {
+                    //    // SHow everything
+                    //    $('.dataTables_info').css('display', 'block');
+                    //    $('.dataTables_paginate').css('display', 'block');
+                    //}
                     setTableHeighDynamic();
+
+                    $("#GrantApplicationsTable_previous a").text("<");
+                    $("#GrantApplicationsTable_next a").text(">");
+                    $("#GrantApplicationsTable_info").text(function (index, text) {
+                        return text.replace("Showing ", "").replace(" to ", "-").replace(" entries", "");
+                    });
                 },
                 initComplete: function () {
                     updateFilter();
@@ -1093,7 +1097,7 @@
                         });
 
                         newRow.append(newCell);
-
+    
                     }
                     else {
                         let newCell = $("<td>");

@@ -18,6 +18,11 @@ thead input {
 
 /*New CSS Starts here*/
 
+ul.pagination {
+    justify-content: center !important;
+}
+
+
 div.dataTables_filter > label > input {
     width: 518px !important;
     height: 37px;
