@@ -13,80 +13,82 @@
 
 
     unity.grantManager.dashboard.dashboard.getApplicationStatusCount().then(applicationStatus => {
-        initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count), 
+        initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
             'Application Status Overview', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
     });
 
     unity.grantManager.dashboard.dashboard.getApplicationTagsCount().then(applicationTags => {
-        initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count), 
+        initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count),
             'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
     });
 
     function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
-        // setup 
-        const data = {
-            labels: labelsArray,
-            datasets: [{
-                label: labelDesc,
-                data: dataArray,
-                hoverOffset: 4
-            }]
-        };
 
-        let sum = 0;
+        var myChart = echarts.init(document.getElementById(chartId), null, {
+            width: 450,
+            height: 250
+        });
+
+        var sum = 0;
         if (chartId === 'applicationTagsChart') {
             sum = labelsArray.length;
         } else {
             sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
         }
 
-        const centerText = {
-            id: 'centerText',
-            beforeDatasetsDraw(chart, args, pluginOptions) {
-                const { ctx } = chart;
-                const text = centerTextLabel + ': ';
-                ctx.save();
-                const x = chart.getDatasetMeta(0).data[0].x;
-                const y = chart.getDatasetMeta(0).data[0].y;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '16px sans-serif';
-                ctx.fillText(text, x, y - 10);
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '16px sans-serif';
-                ctx.fillText(sum, x, y + 15);
-            }
-        }
+        var data = [];
+        dataArray.forEach((value, index) => data.push({ 'value': value, 'name': labelsArray[index] }));
 
-        // config 
-        const config = {
-            type: 'doughnut',
-            data: data,
-            options: {
-                maintainAspectRatio: false,
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: titleText
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                let currentValue = context.raw;
-                                let total = context.chart._metasets[context.datasetIndex].total;
-                                let percentage = parseFloat((currentValue / total * 100).toFixed(1));
-                                return mouseOverText + " : " + currentValue + ' (' + percentage + '%)';
-                            }
-                        }
+        var option = {
+            title: {
+                text: labelDesc,
+                left: 'center',
+                fontFamily: "BCSans",
+            },
+            graphic: [
+                {
+                    type: 'text',
+                    left: 'center',
+                    bottom: '18%',
+                    fontFamily: "BCSans",
+                    style: {
+                        text: sum,
+                        fill: '#000',
+                        fontWeight: 700,
+                        fontSize: 32,
                     }
                 }
-            },
-            plugins: [centerText]
+            ],
+            series: [
+                {
+                    type: 'pie',
+                    radius: ['80%', '90%'],
+                    center: ['50%', '90%'],
+                    padAngle: 3,
+                    startAngle: 180,
+                    endAngle: 360,
+                    labelLine: {
+                        length: 30
+                    },
+                    label: {
+                        formatter: '{a|{c}}\n {b}',
+                        fontFamily: "BCSans",
+                        rich: {
+                            a: {
+                                color: '#4C5058',
+                                fontWeight: 700,
+                                lineHeight: 30.61,
+                                fontSize: 18,
+                            },
+                        }
+                    },
+                    data: data,
+                }
+            ],
         };
 
-        // render init block
-        new Chart(document.getElementById(chartId), config); //NOSONAR
+        if (option && typeof option === 'object') {
+            myChart.setOption(option);
+        }
     }
 });
