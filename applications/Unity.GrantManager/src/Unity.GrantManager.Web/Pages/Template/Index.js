@@ -60,13 +60,50 @@
                     .column(i)
                     .search(this.value)
                     .draw();
+                updateFilterButtonText();
             }
+
         });
     });
     // Toggle search input visibility on filter button click
     $('#filter-btn').click(function () {
         $('#templateList thead tr:eq(1) th').toggle();
+        updateFilterButton();
     });
+    // Function to update filter button based on filter status
+    function updateFilterButton() {
+        var filterEnabled = false;
+        // Check if any filter is applied
+        $('#templateList thead tr:eq(1) th').each(function () {
+            if ($(this).is(":visible")) {
+                filterEnabled = true;
+                return false; // Exit the loop early since we found a visible filter
+            }
+        });
+        // Add background color  to the button if filter is on, otherwise hide it
+        if (filterEnabled) {
+            $('#filter-btn').css('background-color', '#F1F8FE');
+        } else {
+            $('#filter-btn').css('background-color', 'transparent');
+        }
+    }
+    function updateFilterButtonText() {
+        var filterApplied = false;
+
+        // Check if any filter input has non-empty value
+        $('#templateList thead input').each(function () {
+            if ($(this).val().trim() !== "") {
+                filterApplied = true;
+                return false; // Exit the loop early since we found a non-empty filter input
+            }
+        });
+        // Add Text change
+        if (filterApplied) {
+            $('#filter-btn').text("FILTER*");
+        } else {
+            $('#filter-btn').text("FILTER");
+        }
+    }
 });
     $(function () {
         let editTemplateModal = new abp.ModalManager({
