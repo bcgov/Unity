@@ -17,19 +17,20 @@ metadata:
     openshift.io/display-name: Database Backup Cronjob
     template.openshift.io/long-description: |-
       This template defines resources needed to build and deploy a postgresql container application.
-    tags: unity-database,postgresql
+    tags: database,postgresql
 parameters:
 # Project namespace parameters
+- description: The name of the application grouping.
+  displayName: Application Group
+  name: APPLICATION_GROUP
+  required: true
+  value: unity-grantmanager
 - description: The name of the backup application.
   displayName: Application Name
   name: BACKUP_APPLICATION_NAME
   required: true
   value: unity-backup
-- description: The name of the application grouping.
-  displayName: Application Group
-  name: APPLICATION_GROUP
-  value: Triggers
-# Additional parameters for project application provisioning.
+# Additional parameters for project database provisioning
 - description: The name of the OpenShift Service exposed for the database.
   displayName: Database Service Name
   name: DATABASE_SERVICE_NAME
@@ -43,6 +44,7 @@ parameters:
 - description: Password for the PostgreSQL connection user.
   displayName: PostgreSQL Connection Password
   name: POSTGRESQL_PASSWORD
+  required: true
   from: '[a-zA-Z0-9]{26}'
   generate: expression
 - name: DATABASE_BACKUP_KEEP
@@ -50,18 +52,26 @@ parameters:
   value: '28'
 - name: DATABASE_BACKUP_SCHEDULE
   description: 'Cron-like schedule expression m h D M DayOfWeek add +7/8 hours for UTC conversions'
+  required: true
   value: '0 0,14 * * *'
 - name: DATABASE_BACKUP_VOLUME_CLAIM
   description: 'Name of the volume claim to be used as storage'
   required: true
   value: unity-data-backup
+- description: Volume space available for data, e.g. 512Mi, 2Gi.
+  displayName: Volume Capacity
+  name: VOLUME_CAPACITY
+  required: true
+  value: 256Mi
 - description: The Namespace where the database container image resides default=redhat cluster=openshift, project=tools
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
+  required: true
   value: redhat
-- description: The Openshift ImageStreams Name
+- description: The Openshift ImageStream Name
   displayName: Registry imagestream name
   name: IMAGESTREAM_NAME
+  required: true
   value: postgresql-15  
 - description: The version of the postgresql container image to use.
   displayName: Registry container image  to pull
@@ -71,8 +81,30 @@ parameters:
 - description: The registry path of the postgresql container image to use.
   displayName: Registry container image to pull
   name: IMAGEPULL_REGISTRY
+  required: true
   value: registry.redhat.io/rhel9/
-# Template objects to instantiate the project.
+# Resource limits control how much CPU and memory a container will consume
+- description: The minimum amount of CPU the Container is guaranteed.
+  displayName: CPU Request
+  name: CPU_REQUEST
+  required: true
+  value: 50m
+- description: The maximum amount of CPU the Container is allowed to use when running.
+  displayName: CPU Limit
+  name: CPU_LIMIT
+  required: true
+  value: 250m
+- description: The minimum amount of Memory the Container is guaranteed.
+  displayName: Memory Request
+  name: MEMORY_REQUEST
+  required: true
+  value: 256Mi
+- description: The maximum amount of Memory the Container is allowed to use when running.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 512Mi
+# Template objects to instantiate the project database.
 objects:
 # Recurring cronjob for Database Backups
 - apiVersion: batch/v1
