@@ -21,8 +21,12 @@ namespace Unity.Payments.BatchPaymentRequests
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
         public virtual bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }
         public virtual string? Description { get; private set; }
+
+        // Optional for now, still to be enforced in upcoming work        
+        public virtual Guid? SiteId { get; set; }
+
         public virtual Collection<PaymentRequest> PaymentRequests { get; private set; }
-        public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
+        public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }        
 
         // External Correlation
         public virtual string CorrelationProvider { get; private set; } = string.Empty;

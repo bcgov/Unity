@@ -8,7 +8,7 @@ namespace Unity.Payments.Suppliers
     public class Site : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
-        public virtual string SiteNumber { get; private set; } = string.Empty;
+        public virtual uint Number { get; private set; }
         public virtual PaymentGroup PaymentMethod { get; private set; }
         public virtual bool IsFin312 { get; private set; }
         public virtual string PhysicalAddress { get; private set; } = string.Empty;
@@ -21,13 +21,13 @@ namespace Unity.Payments.Suppliers
         }
 
         public Site(Guid id,
-            string siteNumber,
+            uint number,
             PaymentGroup paymentMethod,
             bool isFin312,
             string physicalAddress)
            : base(id)
         {
-            SiteNumber = siteNumber;
+            Number = number;
             PaymentMethod = paymentMethod;
             IsFin312 = isFin312;
             PhysicalAddress = physicalAddress;

@@ -13,8 +13,7 @@
       "launchBrowser": true,
       "launchUrl": "https://localhost:44342/",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://localhost:5001;https://localhost:44342"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
     "Unity.GrantManager.Web": {
@@ -22,8 +21,7 @@
       "launchBrowser": true,
       "applicationUrl": "https://localhost:44342/",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://localhost:5001;https://localhost:44342"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
   }

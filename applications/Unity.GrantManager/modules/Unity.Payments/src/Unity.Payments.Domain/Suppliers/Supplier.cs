@@ -9,7 +9,8 @@ namespace Unity.Payments.Suppliers
     public class Supplier : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationEntity
     {
         public Guid? TenantId { get; set; }
-        public virtual Collection<Site> Sites { get; private set; }
+        public uint Number { get; set; }
+        public virtual Collection<Site> Sites { get; private set; }        
 
         // External Correlation
         public virtual string CorrelationProvider { get; private set; } = string.Empty;
@@ -22,10 +23,12 @@ namespace Unity.Payments.Suppliers
         }
 
         public Supplier(Guid id,
+            uint number,
             Guid correlationId,
             string correlationProvider)
            : base(id)
         {
+            Number = number;
             CorrelationId = correlationId;
             CorrelationProvider = correlationProvider;
             Sites = new Collection<Site>();
