@@ -5,6 +5,10 @@
     "WelcomeToPayments": "Welcome to Payments Module",
     "Unity.Payments:Errors:ThresholdExceeded": "Cannot add a payment to an existing batch with a value equal or above threshold of {Threshold}",
     "Setting:Payments.ThresholdAmount.DisplayName": "Payment threshold amount",
-    "Setting:Payments.ThresholdAmount.Description": "Payment threshold that triggers additional approvals and checks" 
+    "Setting:Payments.ThresholdAmount.Description": "Payment threshold that triggers additional approvals and checks",
+    "ApplicationPaymentRequest:Title": "Request Payment",
+    "ApplicationPaymentRequest:Amount": "Requested Amount",
+    "ApplicationPaymentRequest:Description": "Description",
+    "ApplicationPaymentRequest:InvoiceNumber": "Invoice Number"
   }
 }
