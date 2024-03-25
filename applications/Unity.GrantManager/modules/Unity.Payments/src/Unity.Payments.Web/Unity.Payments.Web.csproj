@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
     <ProjectReference Include="..\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
   </ItemGroup>
 
