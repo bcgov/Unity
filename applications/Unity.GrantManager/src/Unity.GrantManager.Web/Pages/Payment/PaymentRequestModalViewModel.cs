@@ -7,7 +7,7 @@ namespace Unity.GrantManager.Web.Pages.Payment
     public class ApplicationPaymentRequestModalViewModel
     {
         [DisplayName("ApplicationPaymentRequest:Amount")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Please enter a value greater than $0.01")]
+        [RegularExpression(@"^\d*\.?\d+$", ErrorMessage = "Please enter a value greater than $0.00.")]
         [Required]
         public decimal Amount { get; set; }
         [DisplayName("ApplicationPaymentRequest:Description")]
