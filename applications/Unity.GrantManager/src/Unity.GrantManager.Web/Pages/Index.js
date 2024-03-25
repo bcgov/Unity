@@ -17,7 +17,7 @@ $(function () {
 
     function setTimezoneCookie() {
         let timezone_cookie = "timezoneoffset";
-        setCookie(timezone_cookie, new Date().getTimezoneOffset(),1);
+        setCookie(timezone_cookie, new Date().getTimezoneOffset(), 5);
     }
 
     function setCookie(cname, cvalue, exdays) {
