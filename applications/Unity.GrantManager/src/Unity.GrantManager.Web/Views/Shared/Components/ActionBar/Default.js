@@ -292,4 +292,12 @@ $(function () {
             applicationIds: JSON.stringify(selectedApplicationIds),
         });
     });
+
+    applicationPaymentRequestModal.onResult(function () {
+        abp.notify.success(
+            'The application/s payment request has been successfully submitted.',
+            'Payment'
+        );
+        PubSub.publish("refresh_application_list");
+    });
 });

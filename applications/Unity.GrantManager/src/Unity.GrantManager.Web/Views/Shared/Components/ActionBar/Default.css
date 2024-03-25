@@ -51,3 +51,6 @@
     text-decoration: none;
     box-shadow: none;
 }
+.no-payment-msg{
+    display:none;
+}

@@ -3,9 +3,11 @@
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Permissions;
 @using Unity.GrantManager.Identity;
+@using Volo.Abp.Features;
 
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
+@inject IFeatureChecker FeatureChecker
 
 <div class="action-bar p-2">
     <div class="d-flex align-items-start justify-content-start gap-2">
@@ -34,15 +36,17 @@
                     icon="fl fl-tag"
                     button-type="Light" />
 
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+        {
         <abp-button id="applicationPaymentRequest"
                     data-selector="applications-table-actions"
                     text="Payment"
                     disabled="true"
                     icon-type="Other"
-                    icon="fl fl-tag"
+                    icon="fl fl-card"
                     button-type="Light" />
 
-
+        }
         @* <abp-button id="copyLink"
                     text="@L["ApplicationList:CopyLinkButton"].Value"
                     disabled="true"
