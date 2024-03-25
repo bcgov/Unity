@@ -11,27 +11,28 @@
     <abp-script src="/Pages/Dashboard/Index.js" />
 }
 
-<div class="application-dashboard">
-    <table class="chartBox" aria-describedby="chartBox">
-        <tr>
-            <th></th>
-            <th></th>
-        </tr>
-        <tr>
-            <td class="chartCanvas">
-                <canvas id="economicRegionChart"></canvas>
-            </td>
-            <td class="chartCanvas">
-                <canvas id="sectorChart"></canvas>
-            </td>
-        </tr>
-        <tr>
-            <td class="chartCanvas">
+
+<div class="row col-md-12 application-dashboard">
+    <div class="col-md-4 col-lg-4 col-sm-12 p-2 card-border-radius">
+        <abp-card>
+            
+            <abp-card-body>
                 <canvas id="applicationStatusChart"></canvas>
-            </td>
-            <td class="chartCanvas">
-                <canvas id="applicationTagsChart"></canvas>
-            </td>
-        </tr>
-    </table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+    <div class="col-md-4 col-lg-4 col-sm-12 p-2 card-border-radius">
+        <abp-card>
+            <abp-card-body>
+                <canvas id="sectorChart"></canvas>
+            </abp-card-body>
+        </abp-card>
+    </div>
+    <div class="col-md-4 col-lg-4 col-sm-12 p-2 card-border-radius">
+        <abp-card>
+            <abp-card-body>
+                <canvas id="economicRegionChart"></canvas>
+            </abp-card-body>
+        </abp-card>
+    </div> 
 </div>
