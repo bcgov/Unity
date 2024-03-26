@@ -108,11 +108,12 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         LikelihoodOfFunding = likelihoodOfFunding;
     }
 
-    public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore)
+    public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore, DateTime? notificationDate)
     {
         ApprovedAmount = approvedAmount ?? 0;
         RequestedAmount = requestedAmount ?? 0;
         TotalScore = totalScore ?? 0;
+        NotificationDate = notificationDate;
     }
 
     public void UpdateAssessmentResultStatus(string? assessmentResultStatus)
@@ -125,13 +126,12 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         AssessmentResultStatus = assessmentResultStatus;
     }
 
-    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational, DateTime? notificationDate)
+    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
     {        
         DueDiligenceStatus = dueDiligenceStatus;
         TotalProjectBudget = totalProjectBudget ?? 0;
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
-        NotificationDate = notificationDate;
     }
 
     public void ValidateAndChangeDueDate(DateTime? dueDate)
