@@ -35,11 +35,6 @@ parameters:
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
-- description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
-  displayName: Application Version
-  name: IMAGE_STREAM_TAG
-  required: true
-  value: latest
 - description: Git source URI for application
   displayName: Git Repository URL
   name: SOURCE_REPOSITORY_URL
@@ -49,6 +44,25 @@ parameters:
   displayName: PostgreSQL Tenant Database Name
   name: UNITY_TENANT_DB
   value: UnityGrantTenant 
+# Base image location
+- description: The Namespace where the container image resides
+  displayName: Registry Namespace
+  name: IMAGEPULL_NAMESPACE
+  from: '[a-zA-Z0-9]{5}-tools'
+  generate: expression
+- description: The ImageStream Name 
+  displayName: Registry imagestream name
+  name: IMAGESTREAM_NAME
+  value: unity-dbmigrator-build 
+- description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
+  displayName: Application Version
+  name: IMAGESTREAM_TAG
+  required: true
+  value: latest
+- description: The registry path of the container image used.
+  displayName: Registry location to pull from
+  name: IMAGEPULL_REGISTRY
+  value: image-registry.openshift-image-registry.svc:5000/
 # Template objects to instantiate the project.
 objects:
 # RunOnce Job for Database Migrator
@@ -80,8 +94,7 @@ objects:
       spec:
         containers:
           - name: ${APPLICATION_NAME}
-            image: >-
-              ${APPLICATION_NAME}:${IMAGE_STREAM_TAG}
+            image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
             env:
               - name: UNITY_DB_PORT
                 valueFrom:

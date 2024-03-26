@@ -40,11 +40,16 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
 
             var tenants = await _tenantRepository.GetListAsync();
 
+            if(!int.TryParse(_backgroundJobsOptions.Value.IntakeResync.NumDaysToCheck, out int numberDaysBack)) {
+                Logger.LogInformation("IntakeSyncWorker - Could not parse number of Days...");
+                return;
+            }
+
             foreach (var tenant in tenants)
             {
                 using (_currentTenant.Change(tenant.Id))
                 {
-                    await _applicationFormSynchronizationService.GetMissingSubmissions();
+                    await _applicationFormSynchronizationService.GetMissingSubmissions(numberDaysBack);
                 }
             }
 

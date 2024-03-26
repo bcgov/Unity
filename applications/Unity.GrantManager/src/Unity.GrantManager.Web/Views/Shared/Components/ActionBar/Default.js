@@ -262,24 +262,5 @@ $(function () {
 
     $('.spinner-grow').hide();
 
-    $('#resyncAllSubmissionAttachments').click(function () {
-        try {
-            $('#resyncAllSubmissionAttachments').prop('disabled', true);
-            $('.spinner-grow').show();
-            unity.grantManager.grantApplications.attachment
-                .resyncAllSubmissionAttachments()
-                .done(function () {
-                    $('#resyncAllSubmissionAttachments').prop('disabled', false);
-                    $('.spinner-grow').hide();
-                    abp.notify.success(
-                        "All Submission Attachments are now resynced."
-                    );
-                    dataTable.ajax.reload();
-                    dataTable.columns.adjust();
-                });
-        }
-        catch (error) {
-            console.log(error);
-        }
-    });
+    
 });

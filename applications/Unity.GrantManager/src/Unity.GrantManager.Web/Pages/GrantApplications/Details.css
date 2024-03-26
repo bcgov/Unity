@@ -296,3 +296,15 @@ select.selected{
     color: black;
 }
 
+.floating-save-btn {
+    position: absolute;
+    right: 24px;
+    top: 76px;
+}
+
+#detailsTab .nav-item .nav-link {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
