@@ -17,6 +17,6 @@ class Program
             .AddAppSettingsSecretsJson()
             .ConfigureServices((hostContext, services) =>
             {
-                services.AddHostedService<ConsoleTestAppHostedService>();
+                //services.AddHostedService<ConsoleTestAppHostedService>();
             });
 }
