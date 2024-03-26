@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Notifications.HttpApi.Client.ConsoleTestApp;
+namespace Unity.Notifications.HttpApi.Client.ConsoleTestApp;
 
 class Program
 {

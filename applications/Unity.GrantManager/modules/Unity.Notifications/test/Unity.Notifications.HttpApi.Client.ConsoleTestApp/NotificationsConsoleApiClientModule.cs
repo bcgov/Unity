@@ -2,7 +2,7 @@
 using Volo.Abp.Http.Client.IdentityModel;
 using Volo.Abp.Modularity;
 
-namespace Notifications;
+namespace Unity.Notifications;
 
 [DependsOn(
     typeof(AbpAutofacModule),

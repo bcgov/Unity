@@ -4,13 +4,13 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <RootNamespace>Notifications</RootNamespace>
+    <RootNamespace>Unity.Notifications</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Http.Client.IdentityModel" Version="7.4.0" />
     <PackageReference Include="Volo.Abp.Autofac" Version="7.4.0" />
-    <ProjectReference Include="..\..\src\Notifications.HttpApi.Client\Notifications.HttpApi.Client.csproj" />
+    <ProjectReference Include="..\..\src\Unity.Notifications.HttpApi.Client\Unity.Notifications.HttpApi.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>
