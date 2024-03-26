@@ -22,11 +22,21 @@
             'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
     });
 
+    var colorPalette;
+
+    fetch('./colorsPalette.json')
+        .then(response => response.json())
+        .then(data => {
+            colorPalette = data.colors;
+        });
+
     function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
 
         var myChart = echarts.init(document.getElementById(chartId), null, {
-            width: 450,
-            height: 250
+            width: 465,
+            height: 250,
+            renderer: 'svg',
+            useDirtyRect: false
         });
 
         var sum = 0;
@@ -42,47 +52,66 @@
         var option = {
             title: {
                 text: labelDesc,
-                left: 'center',
-                fontFamily: "BCSans",
+                left: 'left',
+                textStyle: {
+                    fontFamily: 'BCSans'
+                },
+                top:'16px'
             },
             graphic: [
                 {
                     type: 'text',
                     left: 'center',
                     bottom: '18%',
-                    fontFamily: "BCSans",
+                    textStyle: {
+                        fontFamily: 'BCSans'
+                    },
+                    cursor: "auto",
                     style: {
                         text: sum,
-                        fill: '#000',
+                        color: '#474543',
                         fontWeight: 700,
                         fontSize: 32,
+                        fontFamily: 'BCSans'
                     }
                 }
             ],
             series: [
                 {
                     type: 'pie',
-                    radius: ['80%', '90%'],
+                    radius: ['80%', '86%'],
                     center: ['50%', '90%'],
                     padAngle: 3,
+                    itemStyle: {
+                        borderRadius: 10
+                    },
                     startAngle: 180,
                     endAngle: 360,
                     labelLine: {
-                        length: 30
+                        length: 30,
                     },
                     label: {
-                        formatter: '{a|{c}}\n {b}',
-                        fontFamily: "BCSans",
+                        formatter: '{a| {c}}\n {b| {b}}',
+                        fontFamily: 'BCSans',
+                        overflow: 'break',
                         rich: {
                             a: {
-                                color: '#4C5058',
+                                color: '#474543',
                                 fontWeight: 700,
-                                lineHeight: 30.61,
                                 fontSize: 18,
+                                align: 'left',
+                                padding: 5,
                             },
+                            b: {
+                                align: 'left',
+                            }
                         }
                     },
                     data: data,
+                    colorBy: "data",
+                    color: colorPalette, //['#F8BA47', '#3470B1', '#7E5D21', '#A5792B'],
+                    silent: true,
+                    avoidLabelOverlap: true
                 }
             ],
         };
@@ -90,5 +119,7 @@
         if (option && typeof option === 'object') {
             myChart.setOption(option);
         }
+
+        window.addEventListener('resize', myChart.resize);
     }
 });
