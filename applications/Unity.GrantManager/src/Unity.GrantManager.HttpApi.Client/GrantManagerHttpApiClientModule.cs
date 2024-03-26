@@ -6,7 +6,7 @@ using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.VirtualFileSystem;
 using Unity.TenantManagement;
-using Notifications;
+using Unity.Notifications;
 
 namespace Unity.GrantManager;
 

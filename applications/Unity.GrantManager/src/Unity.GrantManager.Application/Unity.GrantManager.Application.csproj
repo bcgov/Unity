@@ -12,7 +12,8 @@
     <Compile Remove="Intake\**" />
     <EmbeddedResource Remove="Intake\**" />
     <None Remove="Intake\**" />
-  <ProjectReference Include="..\..\modules\Notifications\src\Notifications.Application\Notifications.Application.csproj" /></ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Application\Unity.Notifications.Application.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Application\Unity.TenantManagement.Application.csproj" />

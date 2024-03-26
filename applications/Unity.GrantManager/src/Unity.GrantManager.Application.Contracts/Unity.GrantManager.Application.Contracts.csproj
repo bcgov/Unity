@@ -11,7 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Application.Contracts\Unity.TenantManagement.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
-  <ProjectReference Include="..\..\modules\Notifications\src\Notifications.Application.Contracts\Notifications.Application.Contracts.csproj" /></ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Application.Contracts\Unity.Notifications.Application.Contracts.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
 	<PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />

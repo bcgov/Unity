@@ -11,7 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi.Client\Unity.TenantManagement.HttpApi.Client.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
-  <ProjectReference Include="..\..\modules\Notifications\src\Notifications.HttpApi.Client\Notifications.HttpApi.Client.csproj" /></ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.HttpApi.Client\Unity.Notifications.HttpApi.Client.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Identity.HttpApi.Client" Version="7.4.0" />

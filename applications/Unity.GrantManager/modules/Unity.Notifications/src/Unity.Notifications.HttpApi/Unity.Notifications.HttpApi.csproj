@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Unity.Notifications</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="7.4.0" />
+    <ProjectReference Include="..\Unity.Notifications.Application.Contracts\Unity.Notifications.Application.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

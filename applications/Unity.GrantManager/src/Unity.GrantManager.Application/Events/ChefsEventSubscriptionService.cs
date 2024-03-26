@@ -78,7 +78,7 @@ namespace Unity.GrantManager.Events
                 await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
                 string teamsChannel = _configuration["Notifications:TeamsNotificationsChannelWebhook"] ?? "";
-                TeamsNotificationService.PostChefsEventToTeamsAsync(teamsChannel, eventSubscriptionDto, form, formVersion);
+                TeamsNotificationService.PostChefsEventToTeamsAsync(teamsChannel, eventSubscriptionDto.SubscriptionEvent, form, formVersion);
             }
             else if(applicationForm == null)
             {

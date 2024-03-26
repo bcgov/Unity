@@ -12,7 +12,8 @@
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi\Unity.TenantManagement.HttpApi.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
-  <ProjectReference Include="..\..\modules\Notifications\src\Notifications.HttpApi\Notifications.HttpApi.csproj" /></ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.HttpApi\Unity.Notifications.HttpApi.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

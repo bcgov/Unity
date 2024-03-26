@@ -22,7 +22,8 @@
     <EmbeddedResource Remove="Logs\**" />
     <None Remove="Logs\**" />
     <None Remove="Views\Shared\Components\AssessmentResults\" />
-  <ProjectReference Include="..\..\modules\Notifications\src\Notifications.Web\Notifications.Web.csproj" /></ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Web\Unity.Notifications.Web.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Update="Pages\**\*.js">

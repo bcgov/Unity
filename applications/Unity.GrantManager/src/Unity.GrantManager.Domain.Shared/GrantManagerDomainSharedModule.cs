@@ -12,7 +12,7 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
-using Notifications;
+using Unity.Notifications;
 
 namespace Unity.GrantManager;
 

@@ -15,7 +15,7 @@ using Volo.Abp.PermissionManagement.OpenIddict;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Caching;
-using Notifications;
+using Unity.Notifications;
 
 namespace Unity.GrantManager;
 

@@ -7,7 +7,7 @@ using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
 using Volo.Abp.SettingManagement;
-using Notifications;
+using Unity.Notifications;
 
 namespace Unity.GrantManager;
 

@@ -57,7 +57,7 @@ using Volo.Abp.Timing;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
-using Notifications.Web;
+using Unity.Notifications.Web;
 
 namespace Unity.GrantManager.Web;
 

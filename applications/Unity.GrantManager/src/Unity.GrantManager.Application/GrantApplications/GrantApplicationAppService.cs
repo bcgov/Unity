@@ -15,7 +15,7 @@ using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Identity;
-using Unity.GrantManager.Notifications;
+using Unity.Notifications.EmailNotifications;
 using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;

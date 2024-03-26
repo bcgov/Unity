@@ -10,7 +10,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
-  <ProjectReference Include="..\..\modules\Notifications\src\Notifications.Domain\Notifications.Domain.csproj" /></ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Domain\Unity.Notifications.Domain.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
