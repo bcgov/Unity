@@ -2,7 +2,7 @@
 
 namespace Unity.Payments.Permissions;
 
-public class PaymentsPermissions
+public static class PaymentsPermissions
 {
     public const string GroupName = "Payments";
 

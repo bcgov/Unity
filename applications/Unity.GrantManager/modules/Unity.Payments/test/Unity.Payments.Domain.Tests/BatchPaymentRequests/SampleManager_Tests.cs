@@ -1,20 +1,21 @@
-﻿using System.Threading.Tasks;
+﻿using Shouldly;
+using Unity.Payments.Services;
 using Xunit;
 
 namespace Unity.Payments.Samples;
 
-public class SampleManager_Tests : PaymentsDomainTestBase
+public class PaymentsManager_Tests : PaymentsDomainTestBase
 {
-    //private readonly SampleManager _sampleManager;
+    private readonly PaymentsManager _paymentsManager;
 
-    public SampleManager_Tests()
+    public PaymentsManager_Tests()
     {
-        //_sampleManager = GetRequiredService<SampleManager>();
+        _paymentsManager = GetRequiredService<PaymentsManager>();
     }
 
     [Fact]
-    public Task Method1Async()
+    public void CanResolvePaymentsManagerService()
     {
-        return Task.CompletedTask;
+        _paymentsManager.ShouldNotBeNull();
     }
 }

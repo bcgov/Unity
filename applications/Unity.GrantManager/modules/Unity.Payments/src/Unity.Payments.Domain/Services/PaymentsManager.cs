@@ -4,6 +4,6 @@ namespace Unity.Payments.Services
 {    
     public class PaymentsManager : DomainService
     {
-        /* To be completd */
+        /* To be implemented */
     }
 }

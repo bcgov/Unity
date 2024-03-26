@@ -1,20 +1,16 @@
 ﻿using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Guids;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Payments;
 
 public class PaymentsDataSeedContributor : IDataSeedContributor, ITransientDependency
-{
-    private readonly IGuidGenerator _guidGenerator;
+{    
     private readonly ICurrentTenant _currentTenant;
 
-    public PaymentsDataSeedContributor(
-        IGuidGenerator guidGenerator, ICurrentTenant currentTenant)
-    {
-        _guidGenerator = guidGenerator;
+    public PaymentsDataSeedContributor(ICurrentTenant currentTenant)
+    {        
         _currentTenant = currentTenant;
     }
 
@@ -22,7 +18,7 @@ public class PaymentsDataSeedContributor : IDataSeedContributor, ITransientDepen
     {
         /* Instead of returning the Task.CompletedTask, you can insert your test data
          * at this point!
-         */
+         */        
 
         using (_currentTenant.Change(context?.TenantId))
         {

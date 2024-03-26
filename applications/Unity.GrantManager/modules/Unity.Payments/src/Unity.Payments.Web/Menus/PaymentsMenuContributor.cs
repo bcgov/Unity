@@ -11,15 +11,13 @@ public class PaymentsMenuContributor : IMenuContributor
     {
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
 
-        if (await featureChecker.IsEnabledAsync("Unity.Payments"))
+        if (await featureChecker.IsEnabledAsync("Unity.Payments") && context.Menu.Name == StandardMenus.Main)
         {
-            if (context.Menu.Name == StandardMenus.Main)
-            {
-                await ConfigureMainMenuAsync(context);
-            }
+            await ConfigureMainMenuAsync(context);
         }
     }
 
+#pragma warning disable CA1822 // Mark members as static
     private Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         //Add main menu items.
@@ -27,4 +25,5 @@ public class PaymentsMenuContributor : IMenuContributor
 
         return Task.CompletedTask;
     }
+#pragma warning restore CA1822 // Mark members as static
 }

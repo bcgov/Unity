@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.Payments.Settings;
 using Volo.Abp.Features;
+using Volo.Abp.Users;
 
 namespace Unity.Payments.BatchPaymentRequests
 {
@@ -11,20 +12,24 @@ namespace Unity.Payments.BatchPaymentRequests
     public class BatchPaymentRequestAppService : PaymentsAppService, IBatchPaymentRequestAppService
     {
         private readonly IBatchPaymentRequestsRepository _batchPaymentRequestsRepository;
+        private readonly ICurrentUser _currentUser;
 
-        public BatchPaymentRequestAppService(IBatchPaymentRequestsRepository batchPaymentRequestsRepository)
+        public BatchPaymentRequestAppService(IBatchPaymentRequestsRepository batchPaymentRequestsRepository,
+            ICurrentUser currentUser)
         {
-            _batchPaymentRequestsRepository = batchPaymentRequestsRepository; 
+            _batchPaymentRequestsRepository = batchPaymentRequestsRepository;
+            _currentUser = currentUser;
         }
 
         public async Task<BatchPaymentRequestDto> CreateAsync(CreateBatchPaymentRequestDto batchPaymentRequest)
-        {                 
+        {
             var paymentThreshold = await SettingProvider.GetOrNullAsync(PaymentsSettings.PaymentThreshold);
 
             var newBatchPaymentRequest = new BatchPaymentRequest(Guid.NewGuid(),
-                Guid.NewGuid().ToString(),
+                Guid.NewGuid().ToString(), // Need to implement batch number generator
                 Enums.PaymentGroup.EFT,
                 batchPaymentRequest.Description,
+                GetCurrentRequesterName(),
                 batchPaymentRequest.Provider);
 
             foreach (var payment in batchPaymentRequest.PaymentRequests)
@@ -36,13 +41,18 @@ namespace Unity.Payments.BatchPaymentRequests
                     payment.Amount,
                     newBatchPaymentRequest.PaymentGroup,
                     payment.CorrelationId,
-                    payment.Description), 
-                    paymentThreshold == null ? PaymentConsts.DefaultThresholdAmount : decimal.Parse(paymentThreshold));                
+                    payment.Description),
+                    paymentThreshold == null ? PaymentConsts.DefaultThresholdAmount : decimal.Parse(paymentThreshold));
             }
 
             var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
 
             return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
+        }
+
+        private string GetCurrentRequesterName()
+        {
+            return $"{_currentUser.Name} {_currentUser.SurName}";
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
 using Unity.Payments.Enums;
 using Volo.Abp.Application.Dtos;
 
@@ -11,8 +10,7 @@ namespace Unity.Payments.BatchPaymentRequests
     public class BatchPaymentRequestDto : ExtensibleFullAuditedEntityDto<Guid>
     {        
         public string BatchNumber { get; set; }
-        public string ExpenseAuthorityName { get; set; }
-        public string IssuedByName { get; set; }                
+        public string RequesterName { get; set; }
         public PaymentGroupDto PaymentGroup { get; set; }        
         public PaymentRequestStatusDto Status { get; set; }
         public bool IsApproved { get; set; }

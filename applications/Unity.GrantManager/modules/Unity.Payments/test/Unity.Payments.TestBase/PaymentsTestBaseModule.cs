@@ -30,12 +30,10 @@ public class PaymentsTestBaseModule : AbpModule
     {
         AsyncHelper.RunSync(async () =>
         {
-            using (var scope = context.ServiceProvider.CreateScope())
-            {
-                await scope.ServiceProvider
-                    .GetRequiredService<IDataSeeder>()
-                    .SeedAsync();
-            }
+            using var scope = context.ServiceProvider.CreateScope();
+            await scope.ServiceProvider
+                .GetRequiredService<IDataSeeder>()
+                .SeedAsync();
         });
     }
 }

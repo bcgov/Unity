@@ -2,8 +2,8 @@
 {
     public enum ExpenseApprovalType
     {
-        Level1 = 1,
-        Level2 = 2,
-        Level3 = 3
+        QRApproval = 1,
+        EAApproval = 2,
+        ADMApproval = 3
     }
 }

@@ -13,9 +13,8 @@ namespace Unity.Payments.BatchPaymentRequests
     public class BatchPaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationProviderEntity
     {
         public Guid? TenantId { get; set; }
-        public virtual string BatchNumber { get; private set; } = string.Empty;
-        public virtual string ExpenseAuthorityName { get; private set; } = string.Empty;
-        public virtual string IssuedByName { get; private set; } = string.Empty;
+        public virtual string BatchNumber { get; private set; } = string.Empty;        
+        public virtual string RequesterName { get; private set; } = string.Empty;
         public virtual PaymentGroup PaymentGroup { get; private set; } = PaymentGroup.Cheque;
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
@@ -42,12 +41,14 @@ namespace Unity.Payments.BatchPaymentRequests
             string batchNumber,
             PaymentGroup paymentMethod,
             string? description,
+            string requesterName,
             string correlationProvider)
            : base(id)
         {
             BatchNumber = batchNumber;
             PaymentGroup = paymentMethod;
             Description = description;
+            RequesterName = requesterName;
             CorrelationProvider = correlationProvider;
             ExpenseApprovals = GenerateDefaultExpenseApprovals();
             PaymentRequests = new Collection<PaymentRequest>();
@@ -57,8 +58,8 @@ namespace Unity.Payments.BatchPaymentRequests
         {
             return new Collection<ExpenseApproval>()
             {
-                new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level1),
-                new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level2)
+                new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.QRApproval),
+                new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.EAApproval)
             };
         }
 
@@ -84,10 +85,16 @@ namespace Unity.Payments.BatchPaymentRequests
                 throw new BusinessException(ErrorConsts.ThesholdExceeded).WithData("Threshold", paymentThreshold.ToString("0.00"));
             }
 
+            if (paymentRequest.Amount <= 0)
+            {
+                throw new BusinessException(ErrorConsts.ZeroPayment);
+            }
+
             if (paymentRequest.Amount >= paymentThreshold)
             {
-                ExpenseApprovals.Add(new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level3));
+                ExpenseApprovals.Add(new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.ADMApproval));
             }
+            
 
             PaymentRequests.Add(paymentRequest);
             return this;

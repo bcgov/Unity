@@ -11,7 +11,14 @@ namespace Unity.Payments.Suppliers
         public virtual uint Number { get; private set; }
         public virtual PaymentGroup PaymentMethod { get; private set; }
         public virtual bool IsFin312 { get; private set; }
-        public virtual string PhysicalAddress { get; private set; } = string.Empty;
+        
+        /* Address */
+        public virtual string? MailingAddress { get; private set; }
+        public virtual string? City { get; private set; }
+        public virtual string? Province { get; private set; }
+        public virtual string? PostalCode { get; private set; }
+
+        /* Supplier */
         public virtual Supplier? Supplier { get; set; }
         public virtual Guid SupplierId { get; set; }
 
@@ -24,13 +31,19 @@ namespace Unity.Payments.Suppliers
             uint number,
             PaymentGroup paymentMethod,
             bool isFin312,
-            string physicalAddress)
+            string? mailingAddress = default,
+            string? city = default,
+            string? province = default,
+            string? postalCode = default)
            : base(id)
         {
             Number = number;
             PaymentMethod = paymentMethod;
             IsFin312 = isFin312;
-            PhysicalAddress = physicalAddress;
+            MailingAddress = mailingAddress;
+            City = city;
+            Province = province;
+            PostalCode = postalCode;
         }
     }
 }

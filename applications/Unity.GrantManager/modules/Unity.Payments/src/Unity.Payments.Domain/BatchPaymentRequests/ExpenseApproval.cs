@@ -8,7 +8,7 @@ namespace Unity.Payments.BatchPaymentRequests
     public class ExpenseApproval : FullAuditedEntity<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
-        public virtual ExpenseApprovalType Type { get; private set; } = ExpenseApprovalType.Level1;
+        public virtual ExpenseApprovalType Type { get; private set; } = ExpenseApprovalType.QRApproval;
         public virtual ExpenseApprovalStatus Status { get; private set; } = ExpenseApprovalStatus.Requested;
         public virtual BatchPaymentRequest? BatchPaymentRequest { get; set; }
         public virtual Guid BatchPaymentRequestId { get; set; }

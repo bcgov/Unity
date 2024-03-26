@@ -4,5 +4,6 @@ public class IndexModel : PaymentsPageModel
 {
     public void OnGet()
     {
+        /* Intentionally Left Blank */
     }
 }
