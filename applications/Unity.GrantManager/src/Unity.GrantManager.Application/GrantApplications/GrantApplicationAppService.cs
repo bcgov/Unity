@@ -327,7 +327,7 @@ public class GrantApplicationAppService :
         {
             if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
             {
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);
             }
         }
         else
@@ -335,12 +335,11 @@ public class GrantApplicationAppService :
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);                
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.TotalProjectBudget,
                     input.RecommendedAmount,
-                    input.DeclineRational,
-                    input.NotificationDate);
+                    input.DeclineRational);
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
             }            
@@ -387,12 +386,6 @@ public class GrantApplicationAppService :
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
 
-            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
-            // This applicant should never be null!
-
-            applicant.SectorSubSectorIndustryDesc= input.SectorSubSectorIndustryDesc ?? "";
-            _ = await _applicantRepository.UpdateAsync(applicant);
-
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
             
         }
@@ -422,7 +415,7 @@ public class GrantApplicationAppService :
             applicant.Fin312 = input.Fin312 == null || input.Fin312 == "YES";
             applicant.PayGroup = input.PayGroup ?? "";
             applicant.SiteNumbers = siteNumbers == null ? "" : string.Join(",", siteNumbers);
-          
+            applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
             _ = await _applicantRepository.UpdateAsync(applicant);
 
            

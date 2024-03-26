@@ -85,6 +85,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 Fin312 = application.Fin312,
                 PayGroup = application.PayGroup,
                 SiteNumbers = application.SiteNumbers,
+                SectorSubSectorIndustryDesc = application.SectorSubSectorIndustryDesc,
             };
 
             return View(model);

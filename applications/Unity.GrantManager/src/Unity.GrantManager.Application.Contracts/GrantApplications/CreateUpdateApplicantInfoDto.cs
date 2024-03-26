@@ -10,6 +10,7 @@
 
         public string? Sector { get; set; }
         public string? SubSector { get; set; }
+        public string? SectorSubSectorIndustryDesc { get; set; } = string.Empty;
 
         public string? ContactFullName { get; set; }
         public string? ContactTitle { get; set; }

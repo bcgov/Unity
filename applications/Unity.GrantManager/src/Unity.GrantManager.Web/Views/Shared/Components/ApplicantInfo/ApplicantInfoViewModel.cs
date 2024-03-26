@@ -123,6 +123,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             [SelectItems(nameof(Fin312List))]
             public string? Fin312 { get; set; }
 
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc")]
+            [TextArea(Rows = 2)]
+            public string? SectorSubSectorIndustryDesc { get; set; }
+            
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

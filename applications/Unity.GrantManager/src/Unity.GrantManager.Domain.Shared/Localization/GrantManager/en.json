@@ -262,7 +262,6 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-    "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
     "ProjectInfoView:ProjectInfoContract": "Contract",
     "ProjectInfoView:ProjectInfo.ContractNumber": "Contract #",
     "ProjectInfoView:ProjectInfo.ContractExecutionDate": "Execution Date",
@@ -294,6 +293,8 @@
     "ApplicantInfoView:ApplicantInfo.SiteNumber": "Site #",
     "ApplicantInfoView:ApplicantInfo.PayGroup": "Pay Group",
     "ApplicantInfoView:ApplicantInfo.Fin312": "FIN 312",
+    "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
+
 
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",
