@@ -135,6 +135,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             public string? ContactCellPhone { get; set; }
 
 
+
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContractNumber")]
+            public string? ContractNumber { get; set; }
+
+            [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
+            public DateTime? ContractExecutionDate { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

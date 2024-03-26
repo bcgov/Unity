@@ -118,13 +118,15 @@
                         @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId })
                     </div>
                 </abp-tab>
+                @*-------- Project Info Section END ---------*@
 
+                @*-------- Applicant Info Section ---------*@
                 <abp-tab name="nav-organization-info" title="Applicant Info">
                     <div class="w-100 px-2" id="ApplicantInfoWidget">
                         @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId })
                      </div>
                  </abp-tab>
-                @*-------- Review & Assessment Section END ---------*@
+                @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Approval Section ---------*@
                 @* <abp-tab name="nav-approval" title="Approval">

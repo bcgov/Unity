@@ -27,13 +27,14 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
         );
 
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
-           IList<UserTenantAccountDto> userTenantAccounts)
+           IList<UserTenantAccountDto> userTenantAccounts,
+           string? idp)
         {
             UserTenantAccountDto userTenantAccount;
             if (!AdminHasUserAccount(userTenantAccounts))
             {
                 // Create Host Account
-                userTenantAccount = await CreateAdminAccountAsync(validatedTokenContext);
+                userTenantAccount = await CreateAdminAccountAsync(validatedTokenContext, idp);
             }
             else
             {
@@ -65,19 +66,19 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             claimsPrincipal.AddPermissions(_adminPermissions);
         }
 
-        private async Task<UserTenantAccountDto> CreateAdminAccountAsync(TokenValidatedContext validatedTokenContext)
+        private async Task<UserTenantAccountDto> CreateAdminAccountAsync(TokenValidatedContext validatedTokenContext, string? idp)
         {
             var token = validatedTokenContext.SecurityToken;
 
-            var userName = GetClaimValue(token, UnityClaimsTypes.IDirUsername);
-            var displayName = GetClaimValue(token, UnityClaimsTypes.DisplayName) ?? "DisplayName";
-            var email = GetClaimValue(token, UnityClaimsTypes.Email);
+            var userName = GetClaimValue(token, UnityClaimsTypes.PreferredUsername, idp);
+            var displayName = GetClaimValue(token, UnityClaimsTypes.DisplayName, idp) ?? "DisplayName";
+            var email = GetClaimValue(token, UnityClaimsTypes.Email, idp);
             var newUserId = Guid.NewGuid();
 
             var user = new IdentityUser(newUserId, userName, email ?? "blank@example.com", CurrentTenant.Id)
             {
-                Name = GetClaimValue(token, UnityClaimsTypes.GivenName),
-                Surname = GetClaimValue(token, UnityClaimsTypes.FamilyName)
+                Name = GetClaimValue(token, UnityClaimsTypes.GivenName, idp),
+                Surname = GetClaimValue(token, UnityClaimsTypes.FamilyName, idp)
             };
 
             user.SetEmailConfirmed(true);

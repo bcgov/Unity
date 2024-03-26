@@ -1,0 +1,53 @@
+@using Unity.GrantManager.Comments;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidget;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Unity.GrantManager.Web.Pages.GrantApplications;
+@model ApplicationContactsWidgetViewModel
+@{
+    Layout = null;
+}
+<div>
+    @if (Model.ApplicationContacts.Count > 0) {
+        <p class="px-2 mb-0 fw-bold text-muted">Info</p>
+        <hr class="my-2"/>
+    }
+    @foreach (var contact in Model.ApplicationContacts)
+    {
+        <div data-id="@contact.Id">
+            <div class="d-flex px-2 justify-content-between align-items-center">
+                <div>
+                    <p>@Model.ContactTypeValue(contact.ContactType)</p>
+                    <p class="fw-bold text-muted">@contact.ContactFullName, @contact.ContactTitle</p>
+                    @if (!contact.ContactEmail.IsNullOrEmpty())
+                    {
+                        <div class="d-flex text-muted">
+                            <i class="fl fl-mail" aria-hidden="true"></i>
+                            <div class="ms-2">@contact.ContactEmail</div>
+                        </div>
+                    }
+                    @if (!contact.ContactMobilePhone.IsNullOrEmpty())
+                    {
+                        <div class="d-flex text-muted">
+                            <i class="fl fl-phone" aria-hidden="true"></i>
+                            <div class="ms-2">@contact.ContactMobilePhone</div>
+                        </div>
+                    }
+                    @if (!contact.ContactWorkPhone.IsNullOrEmpty())
+                    {
+                        <div class="d-flex text-muted">
+                            <i class="fl fl-work" aria-hidden="true"></i>
+                            <div class="ms-2">@contact.ContactWorkPhone</div>
+                        </div>
+                    }
+                </div>
+                @if(!(Model.IsReadOnly)) {
+                    <div class="pe-2">
+                        <abp-button id="@contact.Id" data-id="@contact.Id" class="contact-edit-btn" icon-type="Other" icon="fl fl-edit"
+                            button-type="Light" />
+                    </div>
+                }
+            </div>
+            <hr class="my-3" />
+        </div>
+    }
+</div>

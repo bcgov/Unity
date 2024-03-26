@@ -48,7 +48,7 @@ namespace Unity.GrantManager.Identity
                     userTenantAccounts.Add(new UserTenantAccountDto()
                     {
                         Id = userAccount.Id,
-                        OidcSub = oidcSub,
+                        OidcSub = oidcSub.ToSubjectWithoutIdp(),
                         TenantName = matchingTenant?.Name ?? null,
                         TenantId = userAccount.TenantId,
                         Username = userAccount.UserName,
@@ -70,7 +70,7 @@ namespace Unity.GrantManager.Identity
                 return new List<UserTenantAccountDto>();
             }
 
-            return await GetUserTenantsAsync(oidcSub.Value ?? string.Empty);
+            return await GetUserTenantsAsync(oidcSub.Value.ToSubjectWithoutIdp() ?? string.Empty);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Web.Identity
 
         public virtual Guid? Id => this.FindUserId();
 
-        public virtual string? UserName => this.FindClaimValue(UnityClaimsTypes.IDirUsername);
+        public virtual string? UserName => this.FindClaimValue(UnityClaimsTypes.PreferredUsername);
 
         public virtual string? Name => this.FindClaimValue(ClaimTypes.GivenName);
 

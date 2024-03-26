@@ -134,6 +134,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 EconomicRegion = application.EconomicRegion,
                 ElectoralDistrict = application.ElectoralDistrict,
                 RegionalDistrict = application.RegionalDistrict,
+                ContractNumber = application.ContractNumber,
+                ContractExecutionDate = application.ContractExecutionDate,
             };
 
             return View(model);

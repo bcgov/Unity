@@ -93,6 +93,8 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? SigningAuthorityEmail { get; set; }
     public string? SigningAuthorityBusinessPhone { get; set; }
     public string? SigningAuthorityCellPhone { get; set; }
+    public string? ContractNumber { get; set; }
+    public DateTime? ContractExecutionDate { get; set; }
 
     public bool IsInFinalDecisionState()
     {
@@ -106,11 +108,12 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         LikelihoodOfFunding = likelihoodOfFunding;
     }
 
-    public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore)
+    public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore, DateTime? notificationDate)
     {
         ApprovedAmount = approvedAmount ?? 0;
         RequestedAmount = requestedAmount ?? 0;
         TotalScore = totalScore ?? 0;
+        NotificationDate = notificationDate;
     }
 
     public void UpdateAssessmentResultStatus(string? assessmentResultStatus)
@@ -140,18 +143,6 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         else
         {
             DueDate = dueDate;
-        }
-    }
-
-    public void ValidateAndChangeNotificationDate(DateTime? notificationDate)
-    {
-        if ((NotificationDate != notificationDate) && notificationDate != null && notificationDate.Value < DateTime.Now.AddDays(-1))
-        {
-            throw new BusinessException("Notification Date cannot be a past date.");
-        }
-        else
-        {
-            NotificationDate = notificationDate;
         }
     }
 
