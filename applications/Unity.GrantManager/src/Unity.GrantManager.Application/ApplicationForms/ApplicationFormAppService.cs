@@ -74,8 +74,8 @@ namespace Unity.GrantManager.ApplicationForms
                             input.ApplicationFormName = formName.ToString();
                             applicationFormDto = await base.UpdateAsync(id, input);
                         }
-
-                        await _applicationFormVersionAppService.InitializePublishedFormVersion(form, id);
+                        bool initializePublishedOnly = false;
+                        await _applicationFormVersionAppService.InitializePublishedFormVersion(form, id, initializePublishedOnly);
                     }
                 }
                 return applicationFormDto;

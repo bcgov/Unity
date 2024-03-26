@@ -40,7 +40,7 @@ namespace Unity.GrantManager.Components
                 });
             var httpContext = new DefaultHttpContext();
 
-            applicationContactService.GetListAsync(applicationId).Returns(await Task.FromResult(applicationContactDtos));
+            applicationContactService.GetListByApplicationAsync(applicationId).Returns(await Task.FromResult(applicationContactDtos));
 
             var viewContext = new ViewContext
             {
@@ -63,12 +63,12 @@ namespace Unity.GrantManager.Components
             resultModel = result!.ViewData!.Model! as ApplicationContactsWidgetViewModel;
 
             //Assert
-            resultModel!.ApplicationContacts.First().ContactFullName.ShouldBe(expectedContactFullName);
-            resultModel!.ApplicationContacts.First().ContactType.ShouldBe(expectedContactType);
-            resultModel!.ApplicationContacts.First().ContactTitle.ShouldBe(expectedContactTitle);
-            resultModel!.ApplicationContacts.First().ContactEmail.ShouldBe(expectedContactEmail);
-            resultModel!.ApplicationContacts.First().ContactMobilePhone.ShouldBe(expectedContactMobilePhone);
-            resultModel!.ApplicationContacts.First().ContactWorkPhone.ShouldBe(expectedContactWorkPhone);
+            resultModel!.ApplicationContacts[0].ContactFullName.ShouldBe(expectedContactFullName);
+            resultModel!.ApplicationContacts[0].ContactType.ShouldBe(expectedContactType);
+            resultModel!.ApplicationContacts[0].ContactTitle.ShouldBe(expectedContactTitle);
+            resultModel!.ApplicationContacts[0].ContactEmail.ShouldBe(expectedContactEmail);
+            resultModel!.ApplicationContacts[0].ContactMobilePhone.ShouldBe(expectedContactMobilePhone);
+            resultModel!.ApplicationContacts[0].ContactWorkPhone.ShouldBe(expectedContactWorkPhone);
         }
     }
 }

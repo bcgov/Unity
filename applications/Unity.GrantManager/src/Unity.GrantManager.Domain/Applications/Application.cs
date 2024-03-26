@@ -125,12 +125,13 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         AssessmentResultStatus = assessmentResultStatus;
     }
 
-    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
+    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational, DateTime? notificationDate)
     {        
         DueDiligenceStatus = dueDiligenceStatus;
         TotalProjectBudget = totalProjectBudget ?? 0;
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
+        NotificationDate = notificationDate;
     }
 
     public void ValidateAndChangeDueDate(DateTime? dueDate)
@@ -142,18 +143,6 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         else
         {
             DueDate = dueDate;
-        }
-    }
-
-    public void ValidateAndChangeNotificationDate(DateTime? notificationDate)
-    {
-        if ((NotificationDate != notificationDate) && notificationDate != null && notificationDate.Value < DateTime.Now.AddDays(-1))
-        {
-            throw new BusinessException("Notification Date cannot be a past date.");
-        }
-        else
-        {
-            NotificationDate = notificationDate;
         }
     }
 

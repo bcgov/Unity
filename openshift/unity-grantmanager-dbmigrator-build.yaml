@@ -1,15 +1,15 @@
 apiVersion: template.openshift.io/v1
 kind: Template
 message: |-
-  A build config has been created in your project: unity-grantmanager-dbmigrator.
+  A build config has been created in your project: unity-dbmigrator-build.
   For more information about using this template, including OpenShift considerations, 
   see template usage guide found in the project readme.md and wiki documents.
 metadata:
-  name: unity-grantmanager-dbmigrator
+  name: unity-dbmigrator-build
   # This template uses a separate parameter .env file to override the default values defined in this section. 
-  # oc process -f .\openshift\unity-grantmanager-dbmigrator.yaml --param-file=.env | oc create -f -
+  # oc process -f .\openshift\unity-dbmigrator-build.yaml --param-file=.env | oc create -f -
   labels:
-    template: unity-grantmanager-dbmigrator
+    template: unity-dbmigrator-build
   annotations:
     description: |-
       Template for building a DotNet console application on OpenShift.
@@ -17,22 +17,22 @@ metadata:
     openshift.io/display-name: DotNet console application
     template.openshift.io/long-description: |-
       This template defines resources needed to build and deploy a GitHub DotNet core console application.
-    tags: dotnet,unity-grantmanager-dbmigrator
+    tags: dotnet,unity-dbmigrator-build
 parameters:
 # Project namespace parameters
 - description: The name of the application.
   displayName: Application Name
   name: APPLICATION_NAME
   required: true
-  value: unity-grantmanager-dbmigrator
+  value: unity-grantmanager
 - description: The name of the application grouping.
   displayName: Application Group
   name: APPLICATION_GROUP
-  value: unity-grantmanager
+  value: unity-grantmanager-build
 # Additional parameters for project application provisioning.
 - description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
   displayName: Application Version
-  name: IMAGE_STREAM_TAG
+  name: IMAGESTREAM_TAG
   required: true
   value: latest
 - description: Git source URI for application
@@ -79,7 +79,7 @@ objects:
     output:
       to:
         kind: ImageStreamTag
-        name: ${APPLICATION_NAME}:${IMAGE_STREAM_TAG}
+        name: ${APPLICATION_NAME}:${IMAGESTREAM_TAG}
     postCommit: {}
     resources: 
       limits:

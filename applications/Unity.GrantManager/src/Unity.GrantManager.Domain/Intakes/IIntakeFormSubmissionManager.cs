@@ -8,6 +8,5 @@ namespace Unity.GrantManager.Intakes
     {
         Task<Guid> ProcessFormSubmissionAsync(ApplicationForm applicationForm, dynamic formSubmission);
         Task ResyncSubmissionAttachments(Guid applicationId);
-        Task ResyncAllSubmissionAttachments();
     }
 }

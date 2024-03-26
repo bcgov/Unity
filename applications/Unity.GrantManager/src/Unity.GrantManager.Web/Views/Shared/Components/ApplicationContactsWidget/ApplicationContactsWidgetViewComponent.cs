@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Boolean isReadOnly)
         {
-            List<ApplicationContactDto> applicationContacts = await _applicationContactService.GetListAsync(applicationId);
+            List<ApplicationContactDto> applicationContacts = await _applicationContactService.GetListByApplicationAsync(applicationId);
             ApplicationContactsWidgetViewModel model = new() {
                 ApplicationContacts = applicationContacts,
                 ApplicationId = applicationId,

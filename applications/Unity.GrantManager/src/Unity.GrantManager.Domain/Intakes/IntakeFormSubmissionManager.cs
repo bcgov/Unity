@@ -259,24 +259,5 @@ namespace Unity.GrantManager.Intakes
             await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(applicationId, formSubmission);
         }
 
-        public async Task ResyncAllSubmissionAttachments()
-        {
-            var query = from applicationFormSubmissions in await _applicationFormSubmissionRepository.GetQueryableAsync()
-                        select applicationFormSubmissions;
-            List<ApplicationFormSubmission> formSubmissions = await AsyncExecuter.ToListAsync(query);
-            foreach (ApplicationFormSubmission submission in formSubmissions)
-            {
-                try
-                {
-                    if (submission == null) continue;
-                    var formSubmission = JsonConvert.DeserializeObject<dynamic>(submission.Submission)!;
-                    await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(submission.ApplicationId, formSubmission);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError("Error resyncing submission attachments for {submissionId} - {exception} ", submission.Id, ex);
-                }
-            }
-        }
     }
 }

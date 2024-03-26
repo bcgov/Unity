@@ -24,8 +24,8 @@ public class ApplicationContactAppService : CrudAppService<
     {
         _applicationContactRepository = applicationContactRepository;
     }
-
-    public async Task<List<ApplicationContactDto>> GetListAsync(Guid applicationId)
+    
+    public async Task<List<ApplicationContactDto>> GetListByApplicationAsync(Guid applicationId)
     {
         var contacts = await _applicationContactRepository.GetListAsync(c => c.ApplicationId == applicationId);
 

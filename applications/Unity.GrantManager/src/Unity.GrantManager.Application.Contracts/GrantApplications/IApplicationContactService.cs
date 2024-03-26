@@ -9,6 +9,6 @@ public interface IApplicationContactService : ICrudAppService<
             ApplicationContactDto,
             Guid>
 {
-    Task<List<ApplicationContactDto>> GetListAsync(Guid applicationId);
+    Task<List<ApplicationContactDto>> GetListByApplicationAsync(Guid applicationId);
     
 }

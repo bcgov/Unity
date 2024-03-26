@@ -79,7 +79,6 @@
             let todayDate = year + '-' + month + '-' + day;
             $('#AssessmentResults_FinalDecisionDate').attr({ 'max': todayDate });
             $('#AssessmentResults_DueDate').attr({ 'min': todayDate });
-            $('#AssessmentResults_NotificationDate').attr({ 'min': todayDate });
         }, 500)
     }
     initDatePicker();
