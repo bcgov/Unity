@@ -45,7 +45,7 @@ $(function () {
         e.preventDefault();
 
         var element = document.getElementById('div-use-template');
-        var navBarHeight = 80;//5rem
+        var navBarHeight = 108;//6.75rem
 
         element.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
