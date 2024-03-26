@@ -134,9 +134,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
             public string? ContactCellPhone { get; set; }
 
-            [Display(Name = "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc")]
-            [TextArea(Rows = 2)]
-            public string? SectorSubSectorIndustryDesc { get; set; }
+
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractNumber")]
             public string? ContractNumber { get; set; }
