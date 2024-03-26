@@ -9,3 +9,8 @@ function removeApplicationPayment(applicationId) {
         $('#no-payment-msg').css("display", "none");
     }
 }
+
+function closePaymentModal() {
+
+    $('#payment-modal').modal('hide');
+}

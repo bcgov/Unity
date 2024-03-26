@@ -54,6 +54,7 @@
 .no-payment-msg{
     display:none;
 }
-.remove-single-payment > .fa{
-    font-size:medium;
+.remove-single-payment > .fa {
+    font-size: small;
+    
 }

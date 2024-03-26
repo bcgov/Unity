@@ -8,8 +8,10 @@
     "Setting:Payments.ThresholdAmount.DisplayName": "Payment threshold amount",
     "Setting:Payments.ThresholdAmount.Description": "Payment threshold that triggers additional approvals and checks",
     "ApplicationPaymentRequest:Title": "Request Payment",
-    "ApplicationPaymentRequest:Amount": "Requested Amount",
+    "ApplicationPaymentRequest:Amount": "Amount",
     "ApplicationPaymentRequest:Description": "Description",
-    "ApplicationPaymentRequest:InvoiceNumber": "Invoice Number"
+    "ApplicationPaymentRequest:InvoiceNumber": "Invoice #",
+    "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
+    "ApplicationPaymentRequest:CancelButtonText": "Cancel"
   }
 }

@@ -37,7 +37,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                 {
                     ApplicationId = application.Id,
                     ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
-                    Amount = 0,
+                    Amount = application.ApprovedAmount,
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
                 };

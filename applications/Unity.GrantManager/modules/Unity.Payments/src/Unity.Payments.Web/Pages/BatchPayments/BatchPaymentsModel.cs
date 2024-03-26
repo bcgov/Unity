@@ -12,7 +12,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         public decimal Amount { get; set; }
         [DisplayName("ApplicationPaymentRequest:Description")]
         public string? Description { get; set; }
-        [Required]
+        [Required(ErrorMessage = "This field is required.")]
         [DisplayName("ApplicationPaymentRequest:InvoiceNumber")]
         public string InvoiceNumber { get; set; } = string.Empty;
         public Guid ApplicationId { get; set; }
