@@ -22,7 +22,7 @@
             'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
     });
 
-    var colorPalette;
+    let colorPalette;
 
     fetch('./colorsPalette.json')
         .then(response => response.json())
@@ -32,24 +32,24 @@
 
     function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
 
-        var myChart = echarts.init(document.getElementById(chartId), null, {
+        let myChart = echarts.init(document.getElementById(chartId), null, {
             width: 465,
             height: 250,
             renderer: 'svg',
             useDirtyRect: false
         });
 
-        var sum = 0;
+        let sum = 0;
         if (chartId === 'applicationTagsChart') {
             sum = labelsArray.length;
         } else {
             sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
         }
 
-        var data = [];
+        let data = [];
         dataArray.forEach((value, index) => data.push({ 'value': value, 'name': labelsArray[index] }));
 
-        var option = {
+        let option = {
             title: {
                 text: labelDesc,
                 left: 'left',
