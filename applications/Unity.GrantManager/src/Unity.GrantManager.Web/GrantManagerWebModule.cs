@@ -18,7 +18,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
-using Unity.AspNetCore.Mvc.UI.Themes.Standard;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission;
@@ -35,7 +36,6 @@ using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Services;
 using Unity.Identity.Web;
 using Unity.TenantManagement.Web;
-using Unity.AspNetCore.Mvc.UI.Themes;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Auditing;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
@@ -44,7 +44,6 @@ using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Unity.AspNetCore.Mvc.UI.Themes.Standard.Bundling;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
@@ -61,7 +60,6 @@ using Volo.Abp.Timing;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
-using Unity.AspNetCore.Mvc.UI.Themes.Bundling;
 
 namespace Unity.GrantManager.Web;
 
@@ -70,15 +68,13 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerApplicationModule),
     typeof(GrantManagerEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
-    typeof(AbpSettingManagementWebModule),
-    //typeof(AbpAspNetCoreMvcUiBasicThemeModule),
-    typeof(UnityAspNetCoreMvcUiThemesModule),
+    typeof(AbpSettingManagementWebModule),    
+    typeof(UnityAspNetCoreMvcUIThemeUX2Module),    
     typeof(UnityTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
-    typeof(UnitydentityWebModule),
-    typeof(AbpAspNetCoreMvcUiUnityThemeModule)
+    typeof(UnitydentityWebModule)    
 )]
 [DependsOn(typeof(AbpBlobStoringModule))]
 public class GrantManagerWebModule : AbpModule
@@ -332,7 +328,7 @@ public class GrantManagerWebModule : AbpModule
         {
             options
                 .StyleBundles
-                .Configure(UnityThemeBundles.Styles.Global, bundle =>
+                .Configure(UnityThemeUX2Bundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
                 });

@@ -1,0 +1,29 @@
+<<<<<<< HEAD:applications/Unity.GrantManager/modules/Unity.Theme/src/Unity.Theme/Themes/Standard/Components/HomeTopbar/Default.cshtml
+﻿@using Unity.AspNetCore.Mvc.UI.Themes.Themes.Standard.Components.Brand
+@using Volo.Abp.Users;
+=======
+﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand
+>>>>>>> a2714c1d03c4e1c744bfd3bf5d79c765c5de6f2b:applications/Unity.GrantManager/modules/Unity.Theme.UX2/src/Unity.Theme.UX2/Themes/UX2/Components/HomeTopbar/Default.cshtml
+
+@inject ICurrentUser CurrentUser
+
+<nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="main-navbar">
+    <div class="container-fluid unity-navbar-btns col-8">
+        @(await Component.InvokeAsync<MainNavbarBrandViewComponent>())
+
+        <button type="button" class="btn btn-nav btn-features active" id="btn-features">Features</button>
+
+        <button type="button" class="btn btn-nav btn-forms-templte" id="btn-templates">Template Library</button>
+    </div>
+    <div class="unity-container-fluid col-4">
+        <div class="col-12 d-flex justify-content-end">
+            <div class="d-flex justify-content-start div-btn-form">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href = 'https://submit.digital.gov.bc.ca/app/';">DESIGN YOUR FORM</button>
+            </div>
+            <div class="d-flex justify-content-end div-btn-form">
+                <button type="button" class="btn btn-primary" onclick="window.location.href = '/GrantApplications';">LOGIN</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
