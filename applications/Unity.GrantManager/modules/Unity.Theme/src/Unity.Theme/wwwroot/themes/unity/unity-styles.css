@@ -46,6 +46,8 @@
 
 .unity-navbar {
     height: 6.75rem;
+    max-width: 1920px;
+    margin: auto;
 }
     .unity-navbar .unity-container-fluid {
         display: flex;
@@ -70,7 +72,6 @@
     }
     .unity-navbar .navbar-brand {
         height: 6.75rem;
-        margin-left: 11rem;
     }
 
         .unity-navbar .navbar-brand img {
