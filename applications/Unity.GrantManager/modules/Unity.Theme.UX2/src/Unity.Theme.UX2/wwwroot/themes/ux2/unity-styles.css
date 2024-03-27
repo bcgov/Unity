@@ -42,6 +42,7 @@
 
 .unity-app-container {
     background: var(--bc-colors-white-background);
+    height: 100%; /* confirm this */
 }
 
 .unity-navbar {

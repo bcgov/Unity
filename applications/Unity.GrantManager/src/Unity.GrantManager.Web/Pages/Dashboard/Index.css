@@ -1,14 +1,9 @@
 ﻿.application-dashboard {
-    overflow-y: scroll;
-    height: calc(100vh - 150px);
+    margin-left: 0.25rem;
 }
 
-.chartBox {
-    height: 100%;
-    width: 80vw;
-}
-
-.chartCanvas {
-    width: 40vw;
-    height: 70vh;
+.card-border-radius .card.mb-3{
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+    border-radius: 15px !important;
 }
