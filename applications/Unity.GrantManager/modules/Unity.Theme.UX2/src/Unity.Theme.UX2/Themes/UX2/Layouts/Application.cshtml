@@ -63,15 +63,14 @@
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.Last, StandardLayouts.Application)
 </head>
-<body class="abp-application-layout @rtl">
-    @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Application)
-
-
-
+<body class="abp-application-layout" dir="@rtl">
+    
+    @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Application)    
+        
     @if (!@isHomePage)
-    {
+    {        
         @(await Component.InvokeAsync<TopbarViewComponent>())
-        @* @(await Component.InvokeAsync<SubTopbarViewComponent>()) *@
+        @* @(await Component.InvokeAsync<SubTopbarViewComponent>()) *@        
     }
     else
     {

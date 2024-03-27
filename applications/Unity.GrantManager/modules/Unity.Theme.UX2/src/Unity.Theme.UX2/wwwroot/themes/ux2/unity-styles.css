@@ -45,8 +45,7 @@
 }
 
 .unity-navbar {
-    height: 6.75rem;
-    max-width: 1920px;
+    height: 6.75rem;    
     margin: auto;
 }
     .unity-navbar .unity-container-fluid {
