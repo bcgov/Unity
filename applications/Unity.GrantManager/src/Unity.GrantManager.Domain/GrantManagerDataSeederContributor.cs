@@ -119,6 +119,26 @@ public class GrantManagerDataSeederContributor : IDataSeedContributor, ITransien
                     InternalStatus = "Declined"
                 }
             );
+
+            ApplicationStatus? status11 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.DEFER);
+            status11 ??= await _applicationStatusRepository.InsertAsync(
+                new ApplicationStatus
+                {
+                    StatusCode = GrantApplicationState.DEFER,
+                    ExternalStatus = "Deferred",
+                    InternalStatus = "Deferred"
+                }
+            );
+
+            ApplicationStatus? status12 = await _applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == GrantApplicationState.ON_HOLD);
+            status12 ??= await _applicationStatusRepository.InsertAsync(
+                new ApplicationStatus
+                {
+                    StatusCode = GrantApplicationState.ON_HOLD,
+                    ExternalStatus = "On Hold",
+                    InternalStatus = "On Hold"
+                }
+            );
         }
     }
 }
