@@ -323,7 +323,7 @@ public class GrantApplicationAppService :
         {
             if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
             {
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);
             }
         }
         else
@@ -331,8 +331,7 @@ public class GrantApplicationAppService :
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.ValidateAndChangeNotificationDate(input.NotificationDate);
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);                
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);                
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.TotalProjectBudget,
                     input.RecommendedAmount,
@@ -383,12 +382,6 @@ public class GrantApplicationAppService :
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
 
-            var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
-            // This applicant should never be null!
-
-            applicant.SectorSubSectorIndustryDesc= input.SectorSubSectorIndustryDesc ?? "";
-            _ = await _applicantRepository.UpdateAsync(applicant);
-
                 return ObjectMapper.Map<Application, GrantApplicationDto>(application);
             
         }
@@ -414,7 +407,8 @@ public class GrantApplicationAppService :
             applicant.OrganizationSize = input.OrganizationSize ?? "";
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
-          
+            applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
+
             _ = await _applicantRepository.UpdateAsync(applicant);
 
            

@@ -29,7 +29,7 @@ namespace Unity.GrantManager.GrantApplications
             // Arrange
             var application = (await _applicationsRepository.GetListAsync())[0];
           
-            var applicationTags = (await _applicationContactService.GetListAsync(application.Id)).ToList();
+            var applicationTags = (await _applicationContactService.GetListByApplicationAsync(application.Id)).ToList();
             applicationTags.Count.ShouldBeGreaterThanOrEqualTo(0);
         }
 

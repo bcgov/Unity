@@ -14,5 +14,6 @@
     public class IntakeResyncOptions
     {
         public string Expression { get; set; } = string.Empty;
+        public string NumDaysToCheck { get; set; } = string.Empty;
     }
 }

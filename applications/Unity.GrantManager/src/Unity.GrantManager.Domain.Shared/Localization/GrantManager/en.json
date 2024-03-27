@@ -83,7 +83,6 @@
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
     "ApplicationList:TagButton": "Tags",
     "ApplicationList:ResyncSubmissionAttachmentsButton": "Resync",
-    "ApplicationList:ResyncAllSubmissionAttachmentsButton": "Resync Submission Attachments",
 
     "ReviewerList:AssessorName": "Assessor Name",
     "ReviewerList:StartDate": "Start Date",
@@ -267,7 +266,6 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-    "ProjectInfoView:ProjectInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
     "ProjectInfoView:ProjectInfoContract": "Contract",
     "ProjectInfoView:ProjectInfo.ContractNumber": "Contract #",
     "ProjectInfoView:ProjectInfo.ContractExecutionDate": "Execution Date",
@@ -294,6 +292,7 @@
     "ApplicantInfoView:ApplicantInfo.Sector": "Sector",
     "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
     "ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle": "Applicant Info",
+    "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
 
 
 

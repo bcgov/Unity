@@ -72,7 +72,6 @@ objects:
   stringData:
     Access-Key-ID: ${AccessKeyID}
     Bucket-Display-Name: ${BucketName}
-    Rest-Endpoint: ${Endpoint}
     Secret-Key: ${SecretKey}
   type: Opaque
 # Configmap
@@ -88,6 +87,7 @@ objects:
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   data:
     # Configuration values can be set as key-value properties
+    Rest-Endpoint: ${Endpoint}
     ApplicationFolder: ${ApplicationFolder}
     AssessmentFolder: ${AssessmentFolder}
     DisallowedFileTypes: '[ "exe" , "sh" , "ksh" , "bat" , "cmd" ]'
