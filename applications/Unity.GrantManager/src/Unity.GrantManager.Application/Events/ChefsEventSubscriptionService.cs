@@ -7,7 +7,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integration.Chefs;
-using Unity.GrantManager.TeamsNotifications;
+using Unity.Notifications.TeamsNotifications;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 

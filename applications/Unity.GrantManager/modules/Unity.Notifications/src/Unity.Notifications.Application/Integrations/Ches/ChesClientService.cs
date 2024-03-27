@@ -1,20 +1,20 @@
-using RestSharp;
-using RestSharp.Authenticators;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
-using Unity.GrantManager.Integrations.Http;
 using Volo.Abp.Application.Services;
 using System.Text.Json;
 using System;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
-using Unity.GrantManager.Integration.Css;
 using Volo.Abp.DependencyInjection;
-using Unity.GrantManager.Integration.Ches;
+using RestSharp;
+using Unity.GrantManager.Integration.Css;
+using RestSharp.Authenticators;
+using Unity.Notifications.Integration.Ches;
+using Unity.Notifications.Integrations.Http;
 
-namespace Unity.GrantManager.Integrations.Mail
+namespace Unity.Notifications.Integrations.Ches
 {
     [IntegrationService]
     [ExposeServices(typeof(ChesClientService), typeof(IChesClientService))]

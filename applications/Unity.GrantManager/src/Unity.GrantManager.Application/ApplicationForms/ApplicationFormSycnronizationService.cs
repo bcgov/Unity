@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
-using Unity.GrantManager.TeamsNotifications;
+using Unity.Notifications.TeamsNotifications;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;

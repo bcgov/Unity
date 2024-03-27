@@ -6,10 +6,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using Unity.Notifications.TeamsNotifications;
 
 
-namespace Unity.GrantManager.TeamsNotifications
+namespace Unity.Notifications.TeamsNotifications
 {
     public class TeamsNotificationService
     {

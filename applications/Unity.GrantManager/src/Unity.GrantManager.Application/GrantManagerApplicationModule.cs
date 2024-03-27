@@ -19,9 +19,9 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
-using Unity.GrantManager.Integrations.Mail;
 using Volo.Abp.Application.Dtos;
 using Unity.Notifications;
+using Unity.Notifications.Integrations.Ches;
 
 namespace Unity.GrantManager;
 

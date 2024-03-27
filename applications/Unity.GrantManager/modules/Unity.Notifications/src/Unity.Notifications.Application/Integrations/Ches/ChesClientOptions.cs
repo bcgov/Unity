@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.Integrations.Mail
+﻿namespace Unity.Notifications.Integrations.Ches
 {
     public class ChesClientOptions
     {
