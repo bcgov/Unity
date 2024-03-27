@@ -11,11 +11,23 @@
     dataTable = initializeDataTable();
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
-
     /* Removed for now - to be added/looked at later
     $('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
     $('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
     */
+
+    // Remove search label
+    $('#GrantApplicationsTable_filter').find('label').contents().filter(function () { return this.nodeType === 3; }).remove();
+
+     $("#select-all").on("change", function (e) {
+        if ($(this).is(":checked")) {
+            dataTable.rows().select();
+            $(".chkbox").prop("checked", true);
+        } else {
+            dataTable.rows().deselect();
+            $(".chkbox").prop("checked", false);
+        }
+    });
 
     const UIElements = {
         searchBar: $('#search-bar'),
@@ -28,11 +40,12 @@
         $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
         $('.csv-download').prepend('<i class="fl fl-export"></i>');
         $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
+        $('.dataTables_filter input').attr("placeholder", "Search");
         bindUIEvents();
         /* ClearFilter UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html()); */
         dataTable.search('').columns().search('').draw();
     }
-
+    
     function bindUIEvents() {
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
         /* ClearFilter UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden')); */
@@ -41,10 +54,18 @@
 
     dataTable.on('select', function (e, dt, type, indexes) {
         selectApplication(type, indexes, 'select_application');
+        $("#application_" + indexes).prop("checked", true);
+        if ($(".chkbox:checked").length == $(".chkbox").length) {
+            $("#select-all").prop("checked", true);
+        }
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
         selectApplication(type, indexes, 'deselect_application');
+        $("#application_" + indexes).prop("checked", false);
+        if ($(".chkbox:checked").length != $(".chkbox").length) {
+            $("#select-all").prop("checked", false);
+        }
     });
 
     function selectApplication(type, indexes, action) {
@@ -84,6 +105,9 @@
                     element.classList.toggle('selected');
                 }
             );
+            if (filterValue.length > 2) {
+                $('#select-all').prop('checked', false);
+            }
             PubSub.publish("deselect_application", "reset_data");
         }
     }
@@ -102,9 +126,10 @@
             abp.libs.datatables.normalizeConfiguration({
                 fixedHeader: {
                     header: true,
-                    footer: false,
+                    footer: true,
                     headerOffset: 0
                 },
+
                 serverSide: false,
                 paging: true,
                 order: [[4, 'desc']],
@@ -120,7 +145,6 @@
                 },
                 colReorder: true,
                 orderCellsTop: true,
-                //fixedHeader: true,
                 stateSave: true,
                 stateDuration: 0,
                 dom: 'Bfrtip',
@@ -145,22 +169,27 @@
                     let $api = this.api();
                     let pages = $api.page.info().pages;
                     let rows = $api.data().length;
-
                     // Tailor the settings based on the row count
-                    if (rows <= maxRowsPerPage) {
-                        $('.dataTables_info').css('display', 'none');
-                        $('.dataTables_paginate').css('display', 'none');
-                        $('.dataTables_length').css('display', 'none');
-                    } else if (pages === 1) {
-                        // With this current length setting, not more than 1 page, hide pagination
-                        $('.dataTables_info').css('display', 'none');
-                        $('.dataTables_paginate').css('display', 'none');
-                    } else {
-                        // SHow everything
-                        $('.dataTables_info').css('display', 'block');
-                        $('.dataTables_paginate').css('display', 'block');
-                    }
+                    //if (rows <= maxRowsPerPage) {
+                    //    $('.dataTables_info').css('display', 'block');
+                    //    $('.dataTables_paginate').css('display', 'block');
+                    //    $('.dataTables_length').css('display', 'block');
+                    //} else if (pages === 1) {
+                    //    // With this current length setting, not more than 1 page, hide pagination
+                    //    $('.dataTables_info').css('display', 'block');
+                    //    $('.dataTables_paginate').css('display', 'block');
+                    //} else {
+                    //    // SHow everything
+                    //    $('.dataTables_info').css('display', 'block');
+                    //    $('.dataTables_paginate').css('display', 'block');
+                    //}
                     setTableHeighDynamic();
+
+                    $("#GrantApplicationsTable_previous a").text("<");
+                    $("#GrantApplicationsTable_next a").text(">");
+                    $("#GrantApplicationsTable_info").text(function (index, text) {
+                        return text.replace("Showing ", "").replace(" to ", "-").replace(" entries", "");
+                    });
                 },
                 initComplete: function () {
                     updateFilter();
@@ -278,13 +307,14 @@
 
     function getSelectColumn() {
         return {
-            title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
+            title: '<input class="checkbox-select" type="checkbox" name="cbox1" value="" id="select-all"><span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
             orderable: false,
-            className: 'notexport',
+            className: 'notexport text-center',
             data: 'rowCount',
             name: 'select',
-            render: function (data) {
-                return '<div class="select-checkbox" title="Select Application" ></div>';
+            render: function (data)
+            {
+                return '<input class="checkbox-select chkbox" id = "application_' + data +'" type="checkbox" name="cbox1" value="" title="Select Application">';
             },
             index: 0
         }
@@ -1067,7 +1097,7 @@
                         });
 
                         newRow.append(newCell);
-
+    
                     }
                     else {
                         let newCell = $("<td>");
