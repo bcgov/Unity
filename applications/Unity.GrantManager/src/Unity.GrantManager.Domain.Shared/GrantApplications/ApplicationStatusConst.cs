@@ -15,4 +15,6 @@ public static class ApplicationStatusConsts
     public const string ASSESSMENT_COMPLETED = "ASSESSMENT_COMPLETED";
     public const string GRANT_APPROVED = "GRANT_APPROVED";
     public const string GRANT_NOT_APPROVED = "GRANT_NOT_APPROVED";
+    public const string DEFER = "DEFER";
+    public const string ON_HOLD = "ON_HOLD";
 }
