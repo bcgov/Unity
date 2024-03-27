@@ -46,7 +46,7 @@ namespace Unity.Notifications.Integrations.Ches
    
             var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, emailRequest);
 
-            if (response != null)
+            if (response != null && response.ErrorMessage != null)
             {
                throw new UserFriendlyException("ChesClientService SendAsync Exception: " + response.ErrorMessage);
             }
