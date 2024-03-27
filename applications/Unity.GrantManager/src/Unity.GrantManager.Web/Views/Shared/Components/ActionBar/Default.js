@@ -58,6 +58,7 @@ $(function () {
             }
         }
         tagInput.addData(tagInputArray);
+       
 
     });
 
@@ -96,7 +97,8 @@ $(function () {
             }
         }
         userTagsInput.addData(tagInputArray);
-        $('#user-tags-input').focus();
+     
+        document.getElementById("user-tags-input").setAttribute("data-touched", "false");
 
     });
     tagApplicationModal.onResult(function () {

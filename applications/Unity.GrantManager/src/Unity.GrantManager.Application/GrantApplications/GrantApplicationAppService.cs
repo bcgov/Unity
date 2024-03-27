@@ -602,6 +602,39 @@ public class GrantApplicationAppService :
         return ObjectMapper.Map<List<Application>, List<GrantApplicationDto>>(applications.OrderBy(t => t.Id).ToList());
 
     }
+    public async Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds)
+    {
+        var query = from application in await _applicationRepository.GetQueryableAsync()
+                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    where applicationIds.Contains(application.Id)
+                    select new
+                    {
+                        application,
+                        appStatus,
+                        applicant
+                    };
+
+        var result = query
+
+                .OrderBy(s => s.application.Id)
+                .GroupBy(s => s.application.Id)
+                .AsEnumerable()
+                .ToList();
+
+        var appDtos = new List<GrantApplicationDto>();
+      
+        foreach (var grouping in result)
+        {
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
+            appDto.Status = grouping.First().appStatus.InternalStatus;
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().applicant);
+            appDtos.Add(appDto);
+        }
+
+        return new List<GrantApplicationDto>(appDtos);
+    }
+
     public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)
     {
 

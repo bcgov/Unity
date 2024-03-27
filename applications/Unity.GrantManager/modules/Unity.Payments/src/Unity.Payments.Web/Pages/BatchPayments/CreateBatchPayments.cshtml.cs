@@ -29,7 +29,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         public async void OnGet(string applicationIds)
         {
             SelectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(applicationIds) ?? new List<Guid>();
-            var applications = await _applicationService.GetApplicationListAsync(SelectedApplicationIds);
+            var applications = await _applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
 
             foreach (var application in applications)
             {
