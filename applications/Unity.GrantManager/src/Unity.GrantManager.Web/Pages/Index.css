@@ -6,15 +6,16 @@
     overflow-y: auto;
     height: 100vh;
     background: #FFF;
-    padding-top: 5rem;
+    padding-top: 6rem;
     box-shadow: 0 0 4px 0 rgb(0 0 0 / 25%);
+    max-width: 1920px;
 }
 
 .home-div {
-    padding-bottom: 7rem;
+    padding-bottom: 10.6rem;
 }
 .div-data-table {
-    margin-top: 10.5rem;
+    margin-top: 6rem;
 }
 .div-login-logout {
     position: absolute;
@@ -25,14 +26,14 @@
     margin-top: 1rem;
 }
 .div-contact {
-    padding-top: 8rem;
+    padding-top: 6rem;
 }
 
 .home-bold-display {
     font-weight: 700;
     font-size: 3rem;
     color: var(--bc-type-color-secondary);
-    white-space: nowrap;
+    /*white-space: nowrap;*/
 }
 
 .home-heading {
@@ -42,7 +43,7 @@
 .home-h1 {
     font-weight: 400;
     color: var(--bc-type-color-secondary);
-    white-space: nowrap;
+    /*white-space: nowrap;*/
 }
 
 .home-h2 {
@@ -86,7 +87,8 @@
     }
 
 .max-height-container {
-    max-height: 285px;
+    max-height: 314px;
+    max-width:600px;
     overflow: hidden;
 }
 
@@ -94,7 +96,7 @@
     text-decoration: none;
     font-weight: 700;
     font-size: 1rem;
-    color: var(--bc-colors-blue-background);
+    color: var(--bc-colors-blue-primary);
     cursor: pointer;
 }
 .contact-image-container, .support-image-container {
@@ -161,3 +163,27 @@
     color: var(--bc-colors-blue-primary);
     cursor: pointer;
 }
+.div-features {
+    background-color: var(--bc--surface-color-brand-gray-20);
+}
+.div-common {
+    margin-bottom: 6rem;
+    padding-top: 6rem;
+}
+.mt-8 {
+    margin-top: 8rem;
+}
+.div-unity {
+    padding-left:22.5rem;
+}
+.div-left {
+    margin-right: 3rem;
+}
+
+.mt-6 {
+    margin-top: 6rem;
+}
+.mb-9 {
+    margin-bottom: 9rem;
+}
+
