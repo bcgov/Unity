@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using Unity.Notifications.Integration.Ches;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Features;
 
 namespace Unity.Notifications.EmailNotifications;
 
+[RequiresFeature("Unity.Notifications")]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(EmailNotificationService), typeof(IEmailNotificationService))]
 public class EmailNotificationService : ApplicationService, IEmailNotificationService

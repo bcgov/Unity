@@ -1,3 +1,5 @@
+using System;
+
 namespace Unity.Notifications.Web.Pages.Notifications;
 
 public class IndexModel : NotificationsPageModel
@@ -7,8 +9,5 @@ public class IndexModel : NotificationsPageModel
         // The OnGet method is empty because this page doesn't require any specific logic
         // to be executed when a GET request is made. If necessary, additional functionality
         // can be added here in the future.
-        
-        // Throw a NotSupportedException to indicate that this method is not supported.
-        throw new NotSupportedException("GET requests are not supported for this page.");
     }
 }
