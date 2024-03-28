@@ -1,5 +1,4 @@
-﻿using Unity.GrantManager.Localization;
-using Unity.Notifications.Localization;
+﻿using Unity.Notifications.Localization;
 using Volo.Abp.Features;
 using Volo.Abp.Localization;
 using Volo.Abp.Validation.StringValues;

@@ -1,5 +1,3 @@
-using System;
-
 namespace Unity.Notifications.Web.Pages.Notifications;
 
 public class IndexModel : NotificationsPageModel

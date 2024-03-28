@@ -7,8 +7,7 @@ namespace Unity.Notifications.EntityFrameworkCore;
 [ConnectionStringName(NotificationsDbProperties.ConnectionStringName)]
 public class NotificationsDbContext : AbpDbContext<NotificationsDbContext>, INotificationsDbContext
 {
-    /* Add DbSet for each Aggregate Root here. Example: public DbSet<Question> Questions { get; set; } */
-
+    // Add DbSet for each Aggregate Root here.
     public NotificationsDbContext(DbContextOptions<NotificationsDbContext> options)
         : base(options)
     {

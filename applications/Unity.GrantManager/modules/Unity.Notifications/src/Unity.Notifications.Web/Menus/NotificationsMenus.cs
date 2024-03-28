@@ -4,5 +4,5 @@ public class NotificationsMenus
 {
     public const string Prefix = "Notifications";
 
-    //Add your menu items here... Example: public const string Home = Prefix + ".MyNewMenuItem"
+    //Add your menu items here...
 }

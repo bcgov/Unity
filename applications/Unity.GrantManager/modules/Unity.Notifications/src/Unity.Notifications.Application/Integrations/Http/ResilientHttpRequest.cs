@@ -107,9 +107,5 @@ namespace Unity.Notifications.Integrations.Http
             return await retryPolicy.WrapAsync(circuitBreakerPolicy).ExecuteAsync(async () => await _restClient.ExecuteAsync(restRequest));
         }
 
-        private static JsonSerializerOptions GetJsonSerializerOptions() => new()
-        {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
     }
 }
