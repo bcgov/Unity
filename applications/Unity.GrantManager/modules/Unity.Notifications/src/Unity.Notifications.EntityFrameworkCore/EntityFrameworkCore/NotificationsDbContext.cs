@@ -15,10 +15,10 @@ public class NotificationsDbContext : AbpDbContext<NotificationsDbContext>, INot
 
     }
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(builder);
 
-        builder.ConfigureNotifications();
+        modelBuilder.ConfigureNotifications();
     }
 }
