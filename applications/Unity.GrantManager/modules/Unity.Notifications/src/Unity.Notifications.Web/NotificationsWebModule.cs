@@ -8,7 +8,6 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
-using Unity.Notifications.Permissions;
 
 namespace Unity.Notifications.Web;
 

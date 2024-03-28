@@ -1,6 +1,6 @@
 ﻿namespace Unity.Notifications;
 
-public class NotificationsRemoteServiceConsts
+public static class NotificationsRemoteServiceConsts
 {
     public const string RemoteServiceName = "Notifications";
 

@@ -14,9 +14,7 @@ public class NotificationsEntityFrameworkCoreModule : AbpModule
     {
         context.Services.AddAbpDbContext<NotificationsDbContext>(options =>
         {
-                /* Add custom repositories here. Example:
-                 * options.AddRepository<Question, EfCoreQuestionRepository>();
-                 */
+                /* Add custom repositories here. Example: options.AddRepository<Question, EfCoreQuestionRepository>(); */
         });
     }
 }

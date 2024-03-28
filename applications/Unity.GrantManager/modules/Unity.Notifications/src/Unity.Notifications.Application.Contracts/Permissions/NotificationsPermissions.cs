@@ -2,7 +2,7 @@
 
 namespace Unity.Notifications.Permissions;
 
-public class NotificationsPermissions
+public static class NotificationsPermissions
 {
     public const string GroupName = "Notifications";
 

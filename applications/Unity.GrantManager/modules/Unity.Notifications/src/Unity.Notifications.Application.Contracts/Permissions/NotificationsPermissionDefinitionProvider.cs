@@ -8,7 +8,7 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        var myGroup = context.AddGroup(NotificationsPermissions.GroupName, L("Permission:Notifications"));
+        context.AddGroup(NotificationsPermissions.GroupName, L("Permission:Notifications"));
     }
 
     private static LocalizableString L(string name)

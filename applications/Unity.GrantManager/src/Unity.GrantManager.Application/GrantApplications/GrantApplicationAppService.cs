@@ -52,7 +52,6 @@ public class GrantApplicationAppService :
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
-    private readonly IEmailNotificationService _emailNotificationService;
     private readonly ILocalEventBus _localEventBus;
 
 
@@ -71,7 +70,6 @@ public class GrantApplicationAppService :
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
         IApplicationTagsRepository applicationTagsRepository,
-        IEmailNotificationService emailNotificationService,
         ILocalEventBus localEventBus
         )
          : base(repository)
@@ -88,7 +86,6 @@ public class GrantApplicationAppService :
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
-        _emailNotificationService = emailNotificationService;
         _localEventBus = localEventBus;
     }
 
