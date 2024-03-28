@@ -2,10 +2,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Unity.Payments.Localization;
 using Unity.Payments.Web.Menus;
+using Unity.Payments.Web.Settings;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
+using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 
@@ -52,6 +54,11 @@ public class PaymentsWebModule : AbpModule
         Configure<RazorPagesOptions>(options =>
         {
             options.Conventions.AllowAnonymousToPage("/Payments/Index");            
+        });
+
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new PaymentsSettingsPageContribtor());
         });
     }
 }

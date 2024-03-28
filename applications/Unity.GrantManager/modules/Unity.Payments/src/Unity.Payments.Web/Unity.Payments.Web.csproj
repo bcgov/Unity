@@ -15,6 +15,7 @@
   <ItemGroup>
     <PackageReference Include="Volo.Abp.AutoMapper" Version="7.4.0" />
     <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared" Version="7.4.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="7.4.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,14 +30,20 @@
   <ItemGroup>
     <EmbeddedResource Include="Pages\**\*.css" />
     <EmbeddedResource Include="Pages\**\*.js" />
-    <EmbeddedResource Include="Components\**\*.js" />
-    <EmbeddedResource Include="Components\**\*.css" />
     <EmbeddedResource Include="wwwroot\**\*.*" />
     <Content Remove="Pages\**\*.css" />
     <Content Remove="Pages\**\*.js" />
-    <Content Remove="Components\**\*.js" />
-    <Content Remove="Components\**\*.css" />
     <Content Remove="wwwroot\**\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Views\Shared\Components\PaymentsSettingsGroup\Default.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Views\Shared\Components\PaymentsSettingsGroup\Default.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

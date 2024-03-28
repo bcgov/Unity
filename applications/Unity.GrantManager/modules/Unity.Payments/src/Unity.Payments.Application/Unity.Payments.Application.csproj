@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Volo.Abp.AutoMapper" Version="7.4.0" />
     <PackageReference Include="Volo.Abp.Ddd.Application" Version="7.4.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Domain" Version="7.4.0" />
     <ProjectReference Include="..\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.Payments.Domain\Unity.Payments.Domain.csproj" />
   </ItemGroup>

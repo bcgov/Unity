@@ -62,8 +62,8 @@ using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Unity.Payments.Web;
 using Unity.Payments;
-using Autofac.Core;
-using Volo.Abp.Localization.ExceptionHandling;
+using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
+using Unity.Payments.Web.Settings;
 
 namespace Unity.GrantManager.Web;
 
@@ -166,7 +166,7 @@ namespace Unity.GrantManager.Web;
                 )
             );
         });
-
+        
         Configure<AbpSecurityLogOptions>(x =>
         {
             x.ApplicationName = "GrantManager";

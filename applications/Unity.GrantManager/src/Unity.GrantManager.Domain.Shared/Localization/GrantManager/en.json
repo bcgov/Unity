@@ -309,12 +309,7 @@
     "ApplicationContact:Email": "Email",
     "ApplicationContact:MobilePhone": "Mobile Phone Number",
     "ApplicationContact:WorkPhone": "Work Phone Number",
-    "ApplicationContact:Delete": "Delete This Contact",
-    "ApplicationPaymentRequest:Title": "Request Payment",
-    "ApplicationPaymentRequest:Amount": "Requested Amount",
-    "ApplicationPaymentRequest:Description": "Description",
-    "ApplicationPaymentRequest:InvoiceNumber": "Invoice Number"
-
+    "ApplicationContact:Delete": "Delete This Contact"
   }
 }
 

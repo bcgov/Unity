@@ -12,8 +12,8 @@ public class PaymentsSettingDefinitionProvider : SettingDefinitionProvider
        context.Add(
            new SettingDefinition(PaymentsSettings.PaymentThreshold,
             PaymentConsts.DefaultThresholdAmount.ToString("0.00"), 
-            L("Setting:Payments.ThresholdAmount.DisplayName"),
-            L("Setting:Payments.ThresholdAmount.Description"),
+            L(PaymentsSettings.Localization.PaymentThresholdDisplayName),
+            L(PaymentsSettings.Localization.PaymentThresholdDescription),
             isVisibleToClients: true, 
             isInherited: false, 
             isEncrypted: false)

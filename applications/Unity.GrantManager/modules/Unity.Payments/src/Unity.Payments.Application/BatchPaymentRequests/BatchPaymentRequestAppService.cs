@@ -23,7 +23,7 @@ namespace Unity.Payments.BatchPaymentRequests
 
         public async Task<BatchPaymentRequestDto> CreateAsync(CreateBatchPaymentRequestDto batchPaymentRequest)
         {
-            var paymentThreshold = await SettingProvider.GetOrNullAsync(PaymentsSettings.PaymentThreshold);
+            var paymentThreshold = await GetPaymentThresholdSettingValueAsync();
 
             var newBatchPaymentRequest = new BatchPaymentRequest(Guid.NewGuid(),
                 Guid.NewGuid().ToString(), // Need to implement batch number generator
@@ -42,12 +42,22 @@ namespace Unity.Payments.BatchPaymentRequests
                     newBatchPaymentRequest.PaymentGroup,
                     payment.CorrelationId,
                     payment.Description),
-                    paymentThreshold == null ? PaymentConsts.DefaultThresholdAmount : decimal.Parse(paymentThreshold));
+                    ConvertPaymentThresholdAmount(paymentThreshold));
             }
 
             var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
 
             return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
+        }
+
+        private async Task<string?> GetPaymentThresholdSettingValueAsync()
+        {
+            return await SettingProvider.GetOrNullAsync(PaymentsSettings.PaymentThreshold);
+        }
+
+        private static decimal ConvertPaymentThresholdAmount(string? paymentThreshold)
+        {
+            return paymentThreshold == null ? PaymentConsts.DefaultThresholdAmount : decimal.Parse(paymentThreshold);
         }
 
         private string GetCurrentRequesterName()
