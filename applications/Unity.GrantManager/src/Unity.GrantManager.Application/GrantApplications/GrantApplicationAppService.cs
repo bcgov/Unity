@@ -753,7 +753,7 @@ public class GrantApplicationAppService :
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
 
-        // TODO: AUTHORIZATION HANDLING
+        // AUTHORIZATION HANDLING
         var application = await _applicationRepository.GetAsync(applicationId, true);
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
         {
