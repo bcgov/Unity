@@ -1,4 +1,6 @@
 ﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Menu
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Toolbar
 @using Volo.Abp.Users;
 
 @inject ICurrentUser CurrentUser
@@ -14,9 +16,9 @@
         <button type="button" class="btn btn-nav" data-url="/GrantApplications" onclick="window.location.href = '/GrantApplications';">Applications</button>
 
         <button type="button" class="btn btn-nav" data-url="/Applicant" onclick="window.location.href = '';">Applicant</button>
-    </div>
+    </div>    
 
-    <div class="unity-container-fluid">
+   <div class="unity-container-fluid">
         <div class="image-with-text">
             <img src="/themes/ux2/images/union.png" alt="notifications">
             <span class="text-inside-image">5</span>

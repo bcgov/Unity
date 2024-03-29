@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
         userDropdown.classList.toggle('show');
 
         // Open the dropdown items
-        dropdownMenu.classList.add('show');
+        //dropdownMenu.classList.add('show'); //not defined error in console
     });
 
     // Close the dropdown when clicking outside of it
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!userInitials.contains(event.target) && !userDropdown.contains(event.target)) {
             userDropdown.classList.remove('show');
             userInitials.classList.remove('active'); // Remove the highlight class when dropdown is hidden
-            dropdownMenu.classList.remove('show');
+            //dropdownMenu.classList.remove('show'); //not defined error in console
         }
     });
 });
