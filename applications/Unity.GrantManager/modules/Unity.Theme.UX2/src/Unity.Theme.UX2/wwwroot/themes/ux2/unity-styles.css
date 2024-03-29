@@ -6,7 +6,7 @@
     --bc-colors-grey-text-500: #313131;
     --bc-colors-grey-text-300: #666;
     --bc-colors-grey-text-200: #918F8F;
-    --bc-colors-grey-text-100: #C7C7C7;
+    --bc-colors-grey-text-100: #9F9D9C;
     --bc-colors-blue-text-links: #1A5A96;
     --bc-colors-blue-background: #013366;
     --bc-colors-white-background: #F2F2F2;
@@ -19,24 +19,35 @@
     --bc-colors-blue-primary: #2E5DD7;
     --bc--surface-color-brand-gray-20: #F3F2F1;
     --bc--surface-color-brand-gray-30: #ECEAE8;
+    --bc-colors-disabled: #9F9D9C;
+    --bc-colors-primary-hover: #1E5189;
+    --bc-type-color-primary: #2D2D2D;
+    --bc-type-color-secondary: #474543;
     /* bc style variables */
     --bc-font-size: 1rem;
     --bc-font-size-sm: 0.833rem;
     --bc-font-size-xs: 0.694rem;
     --bc-font-size-xxs: 0.57875rem;
+    --bc-font-size-btn: 1.125rem;
     --bc-input-field-height: 34px;
     /*boostrap overrides*/
     --bs-primary: var(--bc-colors-blue-primary-500);
     --bs-body-font-family: 'BCSans';
+    /* bc style margin */
+    --bc-layout-margin-xsmall: 4px;
+    --bc-layout-margin-small: 8px;
+    --bc-layout-margin-large: 24px;
 }
 
 
 .unity-app-container {
     background: var(--bc-colors-white-background);
+    height: 100%; /* confirm this */
 }
 
 .unity-navbar {
-    height: 5rem;
+    height: 6.75rem;    
+    margin: auto;
 }
     .unity-navbar .unity-container-fluid {
         display: flex;
@@ -60,7 +71,7 @@
         justify-content: flex-start;
     }
     .unity-navbar .navbar-brand {
-        height: 5rem;
+        height: 6.75rem;
     }
 
         .unity-navbar .navbar-brand img {

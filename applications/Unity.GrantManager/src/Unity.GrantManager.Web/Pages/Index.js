@@ -40,12 +40,22 @@ $(function () {
     $('.btn-forms-templte').click(function (e) {
         document.getElementById("formsTemplateLibrary").style.display = "block";
         document.getElementById("welcomeContent").style.display = "none";
+        document.getElementById("btn-templates").classList.add('active');
+        document.getElementById("btn-features").classList.remove('active'); 
     });
+
+    $('.btn-features').click(function (e) {
+        document.getElementById("formsTemplateLibrary").style.display = "none";
+        document.getElementById("welcomeContent").style.display = "block";
+        document.getElementById("btn-templates").classList.remove('active');
+        document.getElementById("btn-features").classList.add('active');
+    });
+
     $('.scrol-to-steps').click(function (e) {
         e.preventDefault();
 
         var element = document.getElementById('div-use-template');
-        var navBarHeight = 80;//5rem
+        var navBarHeight = 108;//6.75rem
 
         element.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
