@@ -8,68 +8,67 @@
 @inject IAuthorizationService AuthorizationService
 
 <div class="action-bar p-2">
-    <div class="d-flex align-items-start justify-content-end gap-2">
+    <div id="dynamicButtonContainerId" class="row">
+        <div class="col-md-8">
+            <input type="text" id="search" placeholder="Search">
+        </div>
+        <div class="btn-group col-md-4" id="app_custom_buttons" style="flex-direction: row-reverse;">
+            <abp-button id="btn-toggle-filter"
+                        text="Filter"
+                        class="custom-table-btn flex-none"
+                        style="order:1"
+                        button-type="Secondary" />
 
-        <abp-button id="externalLink"
-                    text="@L["ApplicationList:OpenButton"].Value"
-                    disabled="true"
-                    icon-type="Other"
-                    icon="fl fl-mini-contract-2-mirrored"
-                    button-type="Primary" />
+            <abp-button id="assignApplication"
+                        data-selector="applications-table-actions"
+                        class="custom-table-btn flex-none"
+                        style="order:3"
+                        text="@L["ApplicationList:AssignButton"].Value"
+                        button-type="Secondary" />
 
-        <abp-button id="assignApplication"
-                    data-selector="applications-table-actions"
-                    text="@L["ApplicationList:AssignButton"].Value"
-                    disabled="true"
-                    icon-type="Other"
-                    icon="fl fl-add-friend"
-                    button-type="Light" />
+            <abp-button id="tagApplication"
+                        data-selector="applications-table-actions"
+                        class="custom-table-btn flex-none"
+                        style="order:4"
+                        text="@L["ApplicationList:TagButton"].Value"
+                        button-type="Secondary" />
 
-
-        <abp-button id="tagApplication"
-                    data-selector="applications-table-actions"
-                    text="@L["ApplicationList:TagButton"].Value"
-                    disabled="true"
-                    icon-type="Other"
-                    icon="fl fl-tag"
-                    button-type="Light" />
+            <abp-button id="externalLink"
+                        text="@L["ApplicationList:OpenButton"].Value"
+                        style="order:5"
+                        class="custom-table-btn flex-none"
+                        button-type="Secondary" />
 
 
-        @* <abp-button id="copyLink"
-                    text="@L["ApplicationList:CopyLinkButton"].Value"
-                    disabled="true"
-                    icon-type="Other"
-                    icon="fl fl-link"
-                    button-type="Light" />
+            @* <abp-button id="copyLink"
+            text="@L["ApplicationList:CopyLinkButton"].Value"
+            disabled="true"
+            icon-type="Other"
+            icon="fl fl-link"
+            button-type="Light" />
 
-        <abp-button id="downloadApplication"
-                   
-                    text="@L["ApplicationList:DownloadButton"].Value"
-                    disabled="true"
-                    icon-type="Other"
-                    icon="fl fl-download"
-                    button-type="Light" /> *@
+            <abp-button id="downloadApplication"
+
+            text="@L["ApplicationList:DownloadButton"].Value"
+            disabled="true"
+            icon-type="Other"
+            icon="fl fl-download"
+            button-type="Light" /> *@
+        </div>
     </div>
 
-    <div id="dynamicButtonContainerId" class="d-flex align-items-end justify-content-end gap-2">
-        <abp-button id="btn-toggle-filter"
-                    text="Filter"
-                    disabled="false"                    
-                    icon-type="Other"
-                    icon=""
-                    button-type="Light" />
+    <div class="d-flex align-items-end justify-content-end gap-2">
 
-        <abp-button id="applicationLink"                  
-                    text="@L["ApplicationList:InfoButton"].Value"
-                    icon-type="Other"
-                    disabled="true"
-                    icon="fl fl-open-pane"
-                    button-type="Light" />
-
+        @*         <abp-button id="applicationLink"
+        text="@L["ApplicationList:InfoButton"].Value"
+        class="custom-table-btn"
+        disabled="true"
+        button-type="Secondary" />
+        *@
         @if (User.IsInRole(UnityRoles.SystemAdmin))
         {
             <abp-dropdown>
-                <abp-dropdown-button button-type="Secondary" link="false" text="Admin" icon="fl fl-settings" icon-type="Other" />
+                <abp-dropdown-button button-type="Secondary" link="false" text="Admin" />
                 <abp-dropdown-menu>
                     <abp-dropdown-item id="resyncAllSubmissionAttachments" class="action-bar__drop-down-icon-link">
                         <i class="fl fl-synch"></i>  @L["ApplicationList:ResyncAllSubmissionAttachmentsButton"].Value

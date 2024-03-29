@@ -49,6 +49,7 @@ body {
 
     .btn:hover {
         box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.18);
+        border-color: var(--bc-colors-blue-primary);
     }
 
 .btn-light {
@@ -243,7 +244,7 @@ ul.pagination .page-item .page-link {
 }
 
 .page-link.active, .active > .page-link {
-    background-color: var(--bc-colors-blue-primary-500) !important;
+    background-color: var(--bc-colors-blue-primary) !important;
     border-radius: 50%;
 }
 

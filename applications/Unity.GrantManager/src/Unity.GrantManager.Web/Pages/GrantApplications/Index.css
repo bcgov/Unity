@@ -18,21 +18,53 @@ thead input {
 
 /*New CSS Starts here*/
 
+.dataTables_filter {
+    display: none;
+}
+
 ul.pagination {
     justify-content: center !important;
+    margin-top: -20px !important;
+}
+
+.custom-table-btn {
+    background-color: transparent;
+}
+
+#dynamicButtonContainerId {
+    margin-top: 32px;
+    flex-direction: row !important;
+    display: flex !important;
+    margin-bottom: 10px;
+}
+
+.flex-none{
+    flex:none !important;
 }
 
 
 div.dataTables_filter > label > input {
     width: 518px !important;
     height: 37px;
-    top: -1365px;
-    left: -296px;
     padding: 2px 24px 0px 24px;
     gap: 10px;
     border-radius: 100px !important;
     border: solid 2px;
-    border-color: #2E5DD7;
+    border-color: var(--bc-colors-blue-primary);
+}
+
+#search {
+    width: 518px !important;
+    height: 37px;
+    padding: 2px 24px 0px 24px;
+    gap: 10px;
+    border-radius: 100px !important;
+    border: solid 2px;
+    border-color: var(--bc-colors-blue-primary);
+}
+
+#search:focus-visible, :focus-within {
+    outline: var(--bc-colors-blue-primary) !important;
 }
 
 div.dataTables_wrapper div.dataTables_filter {
@@ -43,9 +75,19 @@ div.dataTables_wrapper div.dataTables_filter {
     width: 20px;
     height: 20px;
     border: solid 2px;
-    border-color: #2E5DD7;
+    border-color: var(--bc-colors-blue-primary);
+    outline: 1px solid var(--bc-colors-blue-primary);
+    outline-style: auto;
 }
 
+.dt-select-assignees > span.flex-fill {
+    color: var(--bc-colors-blue-primary);
+    font-weight: bold;
+}
+
+.data-table-header > span {
+    color: var(--bc-colors-blue-text-links);
+}
 
 /*New CSS ends here*/
 .filter-input {
@@ -184,9 +226,10 @@ td.dt-editable {
     padding-left: 20px;
 }
 
-#btn-toggle-filter {
+/*#btn-toggle-filter {
     margin: auto;
-}
+    background-color: transparent;
+}*/
 
 th .fl-filter {
     width: 45px;
@@ -255,20 +298,22 @@ th #btn-toggle-filter {
 
 #GrantApplicationsTable_filter input {
     margin: 0.25rem;
+    margin-bottom: 10px;
 }
 
 .dt-select-assignees {
     min-width: 145px;
 }
 
-.custom-filter-input{
-    font-size :0.8rem!important;
+.table .custom-filter-input {
+    font-size: 0.8rem !important;
+    border: 2px solid var(--bc-colors-blue-primary) !important;
+    border-radius: 0.50rem !important;
 }
 .tr-toggle-filter {
     display: none;
-    background: white;
+    background: var(--bc--surface-color-brand-gray-30);
 }
-
 
 div.dt-buttons div.dropdown-menu {
     max-height: 35rem !important;
