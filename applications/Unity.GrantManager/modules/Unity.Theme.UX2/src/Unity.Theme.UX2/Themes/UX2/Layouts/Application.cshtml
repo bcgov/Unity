@@ -69,11 +69,9 @@
 
 
 
-    @if (!@isHomePage)
+    @if (@isHomePage)
     {
-        @(await Component.InvokeAsync<TopbarViewComponent>())
-        @* @(await Component.InvokeAsync<SubTopbarViewComponent>()) *@
-        @* @(await Component.InvokeAsync<SubTopbarViewComponent>()) *@
+        @(await Component.InvokeAsync<HomeTopbarViewComponent>())        
     }
     else
     {
