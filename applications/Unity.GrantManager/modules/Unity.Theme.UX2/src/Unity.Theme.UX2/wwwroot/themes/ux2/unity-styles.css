@@ -72,6 +72,8 @@
     }
     .unity-navbar .navbar-brand {
         height: 6.75rem;
+        /*margin-left: 11rem;*/
+        margin-left: 1rem;
     }
 
         .unity-navbar .navbar-brand img {
@@ -81,12 +83,14 @@
 #user-dropdown {
     display: none;
     position: absolute;
+    right: 0; /*now showing properly*/
     z-index: 9999;
 }
 
     #user-dropdown.show {
         display: block;
-        left: 71rem !important;
+        /*left: 71rem !important;*/  /*Must not use this*/
+        right: 0;
         top: 5.5rem;
     }
 .user-dropdown-items
