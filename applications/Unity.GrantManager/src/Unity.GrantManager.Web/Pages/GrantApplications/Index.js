@@ -16,6 +16,8 @@
     $('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
     */
     $(".dt-buttons").appendTo("#app_custom_buttons");
+    $('#hdnDot').appendTo('#btn-toggle-filter');
+    $('.dt-buttons').removeClass('flex-wrap');
 
     // Remove search label
     $('#GrantApplicationsTable_filter').find('label').contents().filter(function () { return this.nodeType === 3; }).remove();
@@ -27,6 +29,23 @@
         } else {
             dataTable.rows().deselect();
             $(".chkbox").prop("checked", false);
+        }
+     });
+
+    $('#GrantApplicationsTable').on('keyup', ".custom-filter-input", function () {
+        var anyValuePresent = false;
+        $('.custom-filter-input').each(function () {
+            if ($(this).val().trim() !== '') {
+                anyValuePresent = true;
+                // If any textbox has a value, you can break the loop
+                return false;
+            }
+        });
+
+        if (anyValuePresent) {
+            $("#hdnDot").show();
+        } else {
+            $("#hdnDot").hide();
         }
     });
 

@@ -18,6 +18,14 @@ thead input {
 
 /*New CSS Starts here*/
 
+.dot {
+    height: 6px;
+    width: 6px;
+    background-color: var(--bc-colors-blue-primary);
+    border-radius: 50%;
+    margin-left: 5px;
+}
+
 .dataTables_filter {
     display: none;
 }
