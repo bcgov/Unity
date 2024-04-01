@@ -36,7 +36,7 @@
             width: 465,
             height: 250,
             renderer: 'svg',
-            useDirtyRect: false
+            useDirtyRect: false,            
         });
 
         let sum = 0;
@@ -47,25 +47,25 @@
         }
 
         let data = [];
-        dataArray.forEach((value, index) => data.push({ 'value': value, 'name': labelsArray[index] }));
+        dataArray.forEach((value, index) => data.push({
+            'value': value, 'name': labelsArray[index] }));
 
         let option = {
+            textStyle: {
+                fontFamily: 'BCSans'
+            },
+            responsive: true,
             title: {
                 text: labelDesc,
                 left: 'left',
-                textStyle: {
-                    fontFamily: 'BCSans'
-                },
-                top:'16px'
+                top: '16px',
+                
             },
             graphic: [
                 {
                     type: 'text',
                     left: 'center',
                     bottom: '18%',
-                    textStyle: {
-                        fontFamily: 'BCSans'
-                    },
                     cursor: "auto",
                     style: {
                         text: sum,
@@ -79,7 +79,7 @@
             series: [
                 {
                     type: 'pie',
-                    radius: ['80%', '86%'],
+                    radius: ['65%', '71%'],
                     center: ['50%', '90%'],
                     padAngle: 3,
                     itemStyle: {
@@ -92,7 +92,6 @@
                     },
                     label: {
                         formatter: '{a| {c}}\n {b| {b}}',
-                        fontFamily: 'BCSans',
                         overflow: 'break',
                         rich: {
                             a: {
@@ -101,17 +100,20 @@
                                 fontSize: 18,
                                 align: 'left',
                                 padding: 5,
-                            },
+                             },
                             b: {
+                                color:'#2D2D2D',
+                                fontWeight: 400,
+                                fontSize: 14,
                                 align: 'left',
                             }
                         }
                     },
                     data: data,
                     colorBy: "data",
-                    color: colorPalette, //['#F8BA47', '#3470B1', '#7E5D21', '#A5792B'],
+                    color: colorPalette,
                     silent: true,
-                    avoidLabelOverlap: true
+                    avoidLabelOverlap: true,
                 }
             ],
         };
