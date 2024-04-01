@@ -18,6 +18,20 @@ thead input {
 
 /*New CSS Starts here*/
 
+.dt-button-active {
+    background-color: #ccdef9 !important;
+}
+.dt-button-collection.dropdown-menu {
+    right: 0;
+    left: auto !important;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.mr-10{
+    margin-right: 10px;
+}
+
 .dot {
     height: 6px;
     width: 6px;
@@ -37,6 +51,7 @@ ul.pagination {
 
 .custom-table-btn {
     background-color: transparent;
+    border-radius: 5px !important;
 }
 
 #dynamicButtonContainerId {
@@ -326,6 +341,7 @@ th #btn-toggle-filter {
 div.dt-buttons div.dropdown-menu {
     max-height: 35rem !important;
     overflow-y: auto !important;
+    border-radius: 20px;
 }
 .cln-visible{
     margin-left:0.7rem;

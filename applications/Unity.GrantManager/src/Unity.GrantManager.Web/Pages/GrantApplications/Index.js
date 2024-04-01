@@ -22,7 +22,7 @@
     // Remove search label
     $('#GrantApplicationsTable_filter').find('label').contents().filter(function () { return this.nodeType === 3; }).remove();
 
-     $("#select-all").on("change", function (e) {
+    $("#select-all").on("change", function (e) {
         if ($(this).is(":checked")) {
             dataTable.rows().select();
             $(".chkbox").prop("checked", true);
@@ -30,7 +30,7 @@
             dataTable.rows().deselect();
             $(".chkbox").prop("checked", false);
         }
-     });
+    });
 
     $('#GrantApplicationsTable').on('keyup', ".custom-filter-input", function () {
         var anyValuePresent = false;
@@ -54,7 +54,7 @@
         btnToggleFilter: $('#btn-toggle-filter'),
         /* ClearFilter filterIcon: $("i.fl.fl-filter"), */
         /* ClearFilter clearFilter: $('#btn-clear-filter') */
-    };    
+    };
     init();
     function init() {
         $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
@@ -68,7 +68,7 @@
         /* ClearFilter UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html()); */
         dataTable.search('').columns().search('').draw();
     }
-    
+
     function bindUIEvents() {
         UIElements.btnToggleFilter.on('click', toggleFilterRow);
         /* ClearFilter UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden')); */
@@ -181,6 +181,22 @@
                 dom: 'Bfrtip',
                 buttons: [
                     {
+                        extend: 'colvis',
+                        text: 'Columns',
+                        style: 'order:7',
+                        columns: getColumnsForManageList(),
+                        className: 'btn btn-light custom-table-btn',
+                        columnText: function (dt, idx, title) {
+                            var columns = dt.columns().visible();
+                            var isVisible = columns[idx];
+                            if (isVisible) {
+                                return '<input type= "checkbox" class="checkbox-select chkbox mr-10" checked id="chk_' + idx +'" />' + title;
+                            } else {
+                                return '<input type= "checkbox" class="checkbox-select chkbox mr-10" id="chk_' + idx +'" />' + title;
+                            }
+                        }
+                    },
+                    {
                         extend: 'csv',
                         text: 'Export',
                         style: 'order:6',
@@ -189,13 +205,6 @@
                             columns: ':visible:not(.notexport)',
                             orthogonal: 'fullName',
                         }
-                    },
-                    {
-                        extend: 'colvis',
-                        text: 'Columns',
-                        style: 'order:2',
-                        columns: getColumnsForManageList(),
-                        className: 'btn btn-light custom-table-btn',
                     }
                 ],
                 drawCallback: function () {
@@ -264,20 +273,20 @@
             'orgBookStatus'
         ];
         return columnNames
-            .map((name) => getColumnByName(name).index);        
+            .map((name) => getColumnByName(name).index);
     }
 
-    function getColumnByName(name) {        
+    function getColumnByName(name) {
         return listColumns.find(obj => obj.name === name);
     }
 
-    function getColumnsForManageList() {        
+    function getColumnsForManageList() {
         let exludeIndxs = [0];
         return listColumns
             .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
             .filter(obj => !exludeIndxs.includes(obj.index))
             .sort((a, b) => a.title.localeCompare(b.title))
-            .map(a => a.index);        
+            .map(a => a.index);
     }
 
     function getColumns() {
@@ -299,7 +308,7 @@
             getRegionalDistrictColumn(),
             getCommunityColumn(),
             getOrganizationNumberColumn(),
-            getOrgBookStatusColumn(),    
+            getOrgBookStatusColumn(),
             getProjectStartDateColumn(),
             getProjectEndDateColumn(),
             getProjectedFundingTotalColumn(),
@@ -309,7 +318,7 @@
             getForestryOrNonForestryColumn(),
             getForestryFocusColumn(),
             getAcquisitionColumn(),
-            getCityColumn(),   
+            getCityColumn(),
             getCommunityPopulationColumn(),
             getLikelihoodOfFundingColumn(),
             getSubStatusColumn(),
@@ -324,7 +333,7 @@
             getOrganizationTypeColumn(),
             getOrganizationNameColumn(),
             getDueDiligenceStatusColumn(),
-            getDeclineRationaleColumn(),         
+            getDeclineRationaleColumn(),
             getContactFullNameColumn(),
             getContactTitleColumn(),
             getContactEmailColumn(),
@@ -337,7 +346,7 @@
             getSigningAuthorityBusinessPhoneColumn(),
             getSigningAuthorityCellPhoneColumn(),
         ]
-        .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
+            .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
 
     function getSelectColumn() {
@@ -347,9 +356,8 @@
             className: 'notexport text-center',
             data: 'rowCount',
             name: 'select',
-            render: function (data)
-            {
-                return '<input class="checkbox-select chkbox" id = "application_' + data +'" type="checkbox" name="cbox1" value="" title="Select Application">';
+            render: function (data) {
+                return '<input class="checkbox-select chkbox" id = "application_' + data + '" type="checkbox" name="cbox1" value="" title="Select Application">';
             },
             index: 0
         }
@@ -450,7 +458,7 @@
     }
 
     function getAssigneesColumn() {
-        return { 
+        return {
             title: l('Assignee'),
             data: 'assignees',
             name: 'assignees',
@@ -458,7 +466,7 @@
             render: function (data, type, row) {
                 let displayText = ' ';
 
-                if (data != null && data.length == 1) {                    
+                if (data != null && data.length == 1) {
                     displayText = type === 'fullName' ? getNames(data) : (data[0].fullName + getDutyText(data[0]));
                 } else if (data.length > 1) {
                     displayText = getNames(data);
@@ -493,7 +501,7 @@
     }
 
     function getRequestedAmountColumn() {
-        return { 
+        return {
             title: l('RequestedAmount'),
             data: 'requestedAmount',
             name: 'requestedAmount',
@@ -519,7 +527,7 @@
     }
 
     function getEconomicRegionColumn() {
-        return { 
+        return {
             title: 'Economic Region',
             name: 'economicRegion',
             data: 'economicRegion',
@@ -532,7 +540,7 @@
     }
 
     function getRegionalDistrictColumn() {
-        return { 
+        return {
             title: 'Regional District',
             name: 'regionalDistrict',
             data: 'regionalDistrict',
@@ -943,7 +951,7 @@
     }
 
     function getDeclineRationaleColumn() {
-        return { 
+        return {
             title: 'Decline Rationale',
             name: 'declineRationale',
             data: 'declineRational',
@@ -1105,6 +1113,7 @@
         updateFilter();
     });
     dataTable.on('column-visibility.dt', function (e, settings, deselectedcolumn, state) {
+        $("#chk_" + deselectedcolumn).prop("checked", state);
         updateFilter();
     });
 
@@ -1124,7 +1133,7 @@
                 if (column.visible()) {
                     let title = column.header().textContent;
                     if (title) {
-                        let newCell = $("<td>").append("<input type='text' class='form-control input-sm custom-filter-input' placeholder='" + title + "'>");
+                        let newCell = $("<td>").append("<input type='text' class='form-control input-sm custom-filter-input'>");
                         newCell.find("input").on("keyup", function () {
                             if (column.search() !== this.value) {
                                 column.search(this.value).draw();
@@ -1132,7 +1141,7 @@
                         });
 
                         newRow.append(newCell);
-    
+
                     }
                     else {
                         let newCell = $("<td>");
@@ -1158,7 +1167,7 @@
 
     function getNames(data) {
         let name = '';
-        data.forEach((d, index) => {            
+        data.forEach((d, index) => {
             name = name + (' ' + d.fullName + getDutyText(d));
             if (index != (data.length - 1)) {
                 name = name + ',';
