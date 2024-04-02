@@ -33,8 +33,12 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         Thank you for your grant application. We are pleased to inform you that your project has been approved for funding.<br>
         A representative from our Program Area will be reaching out to you shortly with more information on next steps.<br>
         <br>
-        Kind regards.<br>";
+        Kind regards.<br>
+        <br>
+        *ATTENTION - Please do not reply to this email as it is an automated notification which is unable to receive replies.<br>";
 
+
+ 
     private const string declineBody =
         @"Hello,<br>
         <br>
@@ -44,7 +48,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         <br>
         Program area staff are available to provide further details regarding the funding decision.<br>
         <br>
-        Thank you again for your application.<br>";
+        Thank you again for your application.<br>
+        <br>
+        *ATTENTION - Please do not reply to this email as it is an automated notification which is unable to receive replies.<br>";
 
     public string GetApprovalBody()
     {
