@@ -1,6 +1,6 @@
 ﻿namespace Unity.Notifications.Web.Menus;
 
-public class NotificationsMenus
+public static class NotificationsMenus
 {
     public const string Prefix = "Notifications";
 

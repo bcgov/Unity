@@ -15,9 +15,7 @@ public class NotificationsMenuContributor : IMenuContributor
 
     private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
-        //Add main menu items.
-        context.Menu.AddItem(new ApplicationMenuItem(NotificationsMenus.Prefix, displayName: "Notifications", "~/Notifications", icon: "fa fa-globe"));
-
+        // Add main menu items.
         return Task.CompletedTask;
     }
 }
