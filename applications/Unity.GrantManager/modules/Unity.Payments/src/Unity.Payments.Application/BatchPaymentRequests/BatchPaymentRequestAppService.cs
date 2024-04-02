@@ -11,10 +11,10 @@ namespace Unity.Payments.BatchPaymentRequests
     [Authorize]
     public class BatchPaymentRequestAppService : PaymentsAppService, IBatchPaymentRequestAppService
     {
-        private readonly IBatchPaymentRequestsRepository _batchPaymentRequestsRepository;
+        private readonly IBatchPaymentRequestRepository _batchPaymentRequestsRepository;
         private readonly ICurrentUser _currentUser;
 
-        public BatchPaymentRequestAppService(IBatchPaymentRequestsRepository batchPaymentRequestsRepository,
+        public BatchPaymentRequestAppService(IBatchPaymentRequestRepository batchPaymentRequestsRepository,
             ICurrentUser currentUser)
         {
             _batchPaymentRequestsRepository = batchPaymentRequestsRepository;

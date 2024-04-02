@@ -3,7 +3,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Payments.BatchPaymentRequests
 {
-    public interface IBatchPaymentRequestsRepository : IBasicRepository<BatchPaymentRequest, Guid>
+    public interface IBatchPaymentRequestRepository : IBasicRepository<BatchPaymentRequest, Guid>
     {
     }
 }
