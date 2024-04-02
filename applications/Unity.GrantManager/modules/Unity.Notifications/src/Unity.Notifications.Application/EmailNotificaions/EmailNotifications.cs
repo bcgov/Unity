@@ -38,7 +38,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         *ATTENTION - Please do not reply to this email as it is an automated notification which is unable to receive replies.<br>";
 
 
- 
+
     private const string declineBody =
         @"Hello,<br>
         <br>
@@ -56,8 +56,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     {
         return approvalBody;
     }
-    public string GetDeclineBody() 
-    { 
+    public string GetDeclineBody()
+    {
         return declineBody;
     }
 
@@ -69,29 +69,32 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="subject">Subject Message</param>
     public async Task SendEmailNotification(string email, string body, string subject)
     {
-
-        try {
-            if(!string.IsNullOrEmpty(email))
+        try
+        {
+            if (!string.IsNullOrEmpty(email))
             {
-                List<string> toList = [email];
+                List<string> toList = new() { email };
                 var emailObject = new
                 {
-                    body = body,
+                    body,
                     bodyType = "html",
                     encoding = "utf-8",
                     from = _configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca",
                     priority = "normal",
-                    subject = subject,
+                    subject,
                     tag = "tag",
                     to = toList
                 };
 
                 await _chesClientService.SendAsync(emailObject);
-            } else
+            }
+            else
             {
                 Logger.LogError("EmailNotificationService->SendEmailNotification: No Applicant Agent Email Found.");
             }
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             Logger.LogError("EmailNotificationService->SendEmailNotification Exception: {message}", ex.Message);
         }
     }
