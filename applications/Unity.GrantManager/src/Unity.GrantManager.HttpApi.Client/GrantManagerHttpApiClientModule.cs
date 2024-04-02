@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -6,6 +6,7 @@ using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.VirtualFileSystem;
 using Unity.TenantManagement;
+using Unity.Notifications;
 
 namespace Unity.GrantManager;
 
@@ -17,7 +18,8 @@ namespace Unity.GrantManager;
     typeof(AbpFeatureManagementHttpApiClientModule),
     typeof(AbpSettingManagementHttpApiClientModule)
 )]
-public class GrantManagerHttpApiClientModule : AbpModule
+[DependsOn(typeof(NotificationsHttpApiClientModule))]
+    public class GrantManagerHttpApiClientModule : AbpModule
 {
     public const string RemoteServiceName = "Default";
 

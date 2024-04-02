@@ -1,10 +1,11 @@
-﻿using Unity.TenantManagement;
+using Unity.TenantManagement;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
 using Volo.Abp.ObjectExtending;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
+using Unity.Notifications;
 
 namespace Unity.GrantManager;
 
@@ -17,7 +18,8 @@ namespace Unity.GrantManager;
     typeof(UnityTenantManagementApplicationContractsModule),
     typeof(AbpObjectExtendingModule)
 )]
-public class GrantManagerApplicationContractsModule : AbpModule
+[DependsOn(typeof(NotificationsApplicationContractsModule))]
+    public class GrantManagerApplicationContractsModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

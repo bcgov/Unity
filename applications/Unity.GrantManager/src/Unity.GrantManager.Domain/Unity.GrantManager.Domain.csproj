@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Domain\Unity.Notifications.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

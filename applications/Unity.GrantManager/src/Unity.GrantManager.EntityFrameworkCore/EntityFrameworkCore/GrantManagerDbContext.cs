@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
@@ -156,5 +156,6 @@ public class GrantManagerDbContext :
             var entityBuilder = modelBuilder.Entity(type);
             entityBuilder.TryConfigureExtraProperties();
         }
+        
     }
 }

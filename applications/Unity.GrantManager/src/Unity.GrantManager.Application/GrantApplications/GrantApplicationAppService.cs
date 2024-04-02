@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
@@ -21,6 +22,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -49,6 +51,8 @@ public class GrantApplicationAppService :
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
+    private readonly ILocalEventBus _localEventBus;
+
 
 #pragma warning disable IDE0290 // Use primary constructor
     public GrantApplicationAppService(IRepository<Application, Guid> repository,
@@ -64,7 +68,8 @@ public class GrantApplicationAppService :
         IAssessmentRepository assessmentRepository,
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
-        IApplicationTagsRepository applicationTagsRepository
+        IApplicationTagsRepository applicationTagsRepository,
+        ILocalEventBus localEventBus
         )
          : base(repository)
     {
@@ -80,6 +85,7 @@ public class GrantApplicationAppService :
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
+        _localEventBus = localEventBus;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -745,6 +751,8 @@ public class GrantApplicationAppService :
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
+
+        // AUTHORIZATION HANDLING
         var application = await _applicationRepository.GetAsync(applicationId, true);
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
         {
@@ -753,6 +761,14 @@ public class GrantApplicationAppService :
 
         application = await _applicationManager.TriggerAction(applicationId, triggerAction);
         
+        await _localEventBus.PublishAsync(
+            new ApplicationChangedEvent
+            {
+                Action = triggerAction,
+                ApplicationId = applicationId
+            }
+        );
+
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
     #endregion APPLICATION WORKFLOW

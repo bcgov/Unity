@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.TeamsNotifications
+namespace Unity.Notifications.TeamsNotifications
 {
     public class Fact
     {

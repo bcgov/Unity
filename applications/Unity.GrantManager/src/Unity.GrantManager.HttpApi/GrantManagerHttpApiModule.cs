@@ -1,4 +1,4 @@
-﻿using Localization.Resources.AbpUi;
+using Localization.Resources.AbpUi;
 using Unity.GrantManager.Localization;
 using Unity.TenantManagement;
 using Volo.Abp.FeatureManagement;
@@ -7,6 +7,7 @@ using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
 using Volo.Abp.SettingManagement;
+using Unity.Notifications;
 
 namespace Unity.GrantManager;
 
@@ -18,7 +19,8 @@ namespace Unity.GrantManager;
     typeof(AbpFeatureManagementHttpApiModule),
     typeof(AbpSettingManagementHttpApiModule)
     )]
-public class GrantManagerHttpApiModule : AbpModule
+[DependsOn(typeof(NotificationsHttpApiModule))]
+    public class GrantManagerHttpApiModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

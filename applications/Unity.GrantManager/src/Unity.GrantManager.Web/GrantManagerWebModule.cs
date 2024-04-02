@@ -60,6 +60,7 @@ using Volo.Abp.Timing;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
+using Unity.Notifications.Web;
 
 namespace Unity.GrantManager.Web;
 
@@ -77,7 +78,8 @@ namespace Unity.GrantManager.Web;
     typeof(UnitydentityWebModule)
 )]
 [DependsOn(typeof(AbpBlobStoringModule))]
-public class GrantManagerWebModule : AbpModule
+[DependsOn(typeof(NotificationsWebModule))]
+    public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

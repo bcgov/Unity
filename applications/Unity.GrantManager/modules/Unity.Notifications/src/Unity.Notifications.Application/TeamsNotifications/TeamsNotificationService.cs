@@ -6,10 +6,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using Unity.GrantManager.Events;
-using Unity.GrantManager.GrantApplications;
 
-namespace Unity.GrantManager.TeamsNotifications
+
+namespace Unity.Notifications.TeamsNotifications
 {
     public class TeamsNotificationService
     {
@@ -21,6 +20,13 @@ namespace Unity.GrantManager.TeamsNotifications
                 string messageCard = InitializeMessageCard(activityTitle, activitySubtitle, facts);
                 await PostToTeamsChannelAsync(teamsChannel, messageCard);
             }
+        }
+
+        private static class ChefsEventTypesConsts
+        {
+            public const string FORM_PUBLISHED = "eventFormPublished";
+            public const string FORM_UN_PUBLISHED = "eventFormUnPublished";
+            public const string FORM_DRAFT_PUBLISHED = "eventFormDraftPublished";
         }
 
         private static string InitializeMessageCard(string activityTitle, string activitySubtitle, List<Fact> facts)
@@ -57,14 +63,14 @@ namespace Unity.GrantManager.TeamsNotifications
             return messageCardString;
         }
 
-        public static async Task PostChefsEventToTeamsAsync(string teamsChannel, EventSubscriptionDto eventSubscriptionDto, dynamic form, dynamic chefsFormVersion)
+        public static async Task PostChefsEventToTeamsAsync(string teamsChannel, string subscriptionEvent, dynamic form, dynamic chefsFormVersion)
         {
-            string eventDescription = eventSubscriptionDto.SubscriptionEvent switch
+            string eventDescription = subscriptionEvent switch
             {
                 ChefsEventTypesConsts.FORM_DRAFT_PUBLISHED => "A Draft CHEFS form was published",
                 ChefsEventTypesConsts.FORM_PUBLISHED => "A CHEFS form was published",
                 ChefsEventTypesConsts.FORM_UN_PUBLISHED => "A CHEFS form was un-published",
-                _ => "An Unknown CHEFS event " + eventSubscriptionDto.SubscriptionEvent + " was fired "
+                _ => "An Unknown CHEFS event " + subscriptionEvent + " was fired "
             };
 
             JObject formObject = JObject.Parse(form.ToString());

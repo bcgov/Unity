@@ -21,6 +21,8 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
+using Unity.Notifications;
+using Unity.Notifications.Integrations.Ches;
 using Unity.GrantManager.Intakes.BackgroundWorkers;
 
 namespace Unity.GrantManager;
@@ -36,6 +38,7 @@ namespace Unity.GrantManager;
     typeof(AbpBackgroundWorkersQuartzModule)
     )]
 [DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
+    [DependsOn(typeof(NotificationsApplicationModule))]
     public class GrantManagerApplicationModule : AbpModule
 {
     //Set some defaults 
@@ -68,12 +71,16 @@ namespace Unity.GrantManager;
 
         Configure<IntakeClientOptions>(options =>
         {
-            options.BaseUri = configuration["Intake:BaseUri"] ?? "";
+            // This fails unit tests unless set to a non empty string
+            // RestClient will throw an error - baseUrl can not be empty
+            options.BaseUri = configuration["Intake:BaseUri"] ?? "https://submit.digital.gov.bc.ca/app/api/v1";
             options.BearerTokenPlaceholder = configuration["Intake:BearerTokenPlaceholder"] ?? "";
             options.UseBearerToken = configuration.GetValue<bool>("Intake:UseBearerToken");
             options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
 
+        context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
+        context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
         Configure<BackgroundJobsOptions>(options =>
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
@@ -82,11 +89,7 @@ namespace Unity.GrantManager;
             options.IntakeResync.NumDaysToCheck = configuration.GetValue<string>("BackgroundJobs:IntakeResync:NumDaysToCheck") ?? "-2";
         });
 
-        context.Services.Configure<CssApiOptions>(
-            configuration.GetSection(
-                key: "CssApi"));
-
-        context.Services.AddSingleton<RestClient>(provider =>
+        _ = context.Services.AddSingleton(provider =>
         {
             var options = provider.GetService<IOptions<IntakeClientOptions>>()?.Value;
             if (null != options)

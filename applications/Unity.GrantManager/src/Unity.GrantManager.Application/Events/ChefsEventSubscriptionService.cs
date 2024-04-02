@@ -7,7 +7,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integration.Chefs;
-using Unity.GrantManager.TeamsNotifications;
+using Unity.Notifications.TeamsNotifications;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
@@ -78,7 +78,7 @@ namespace Unity.GrantManager.Events
                 await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, formVersion);
                 applicationForm = await _applicationFormRepository.UpdateAsync(applicationForm);
                 string teamsChannel = _configuration["Notifications:TeamsNotificationsWebhook"] ?? "";
-                TeamsNotificationService.PostChefsEventToTeamsAsync(teamsChannel, eventSubscriptionDto, form, formVersion);
+                TeamsNotificationService.PostChefsEventToTeamsAsync(teamsChannel, eventSubscriptionDto.SubscriptionEvent, form, formVersion);
             }
             else if(applicationForm == null)
             {
