@@ -13,6 +13,7 @@
     <EmbeddedResource Remove="Intake\**" />
     <None Remove="Intake\**" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Application\Unity.Notifications.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Application\Unity.Payments.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

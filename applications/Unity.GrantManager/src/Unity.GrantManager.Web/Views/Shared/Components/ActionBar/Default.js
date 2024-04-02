@@ -20,6 +20,10 @@ $(function () {
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
     });
 
+    let applicationPaymentRequestModal = new abp.ModalManager({
+        viewUrl: 'BatchPayments/CreateBatchPayments',
+    });
+
     tagApplicationModal.onOpen(function () {
         let tagInput = new TagsInput({
             selector: 'SelectedTags',
@@ -54,6 +58,7 @@ $(function () {
             }
         }
         tagInput.addData(tagInputArray);
+       
 
     });
 
@@ -92,7 +97,8 @@ $(function () {
             }
         }
         userTagsInput.addData(tagInputArray);
-        $('#user-tags-input').focus();
+     
+        document.getElementById("user-tags-input").setAttribute("data-touched", "false");
 
     });
     tagApplicationModal.onResult(function () {
@@ -263,4 +269,18 @@ $(function () {
     $('.spinner-grow').hide();
 
     
+    });
+
+    $('#applicationPaymentRequest').click(function () {
+        applicationPaymentRequestModal.open({
+            applicationIds: JSON.stringify(selectedApplicationIds),
+        });
+    });
+
+    applicationPaymentRequestModal.onResult(function () {
+        abp.notify.success(
+            'The application/s payment request has been successfully submitted.',
+            'Payment'
+        );
+        PubSub.publish("refresh_application_list");
 });

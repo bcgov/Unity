@@ -17,7 +17,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Web;
 using Unity.Identity.Web.Navigation;
-using Unity.GrantManager.Localization;
 using Volo.Abp.TenantManagement.Localization;
 
 namespace Unity.Identity.Web;
