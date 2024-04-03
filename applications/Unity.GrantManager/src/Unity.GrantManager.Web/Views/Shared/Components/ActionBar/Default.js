@@ -5,7 +5,7 @@ $(function () {
     });
     let unAssignApplicationModal = new abp.ModalManager({
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
-    });    
+    });
     let statusUpdateModal = new abp.ModalManager({
         viewUrl: 'StatusUpdate/StatusUpdateModal'
     });
@@ -40,10 +40,10 @@ $(function () {
         tagInput.setSuggestions(suggestionsArray);
 
         let tagInputArray = [];
-       
+
         if (uncommonTags && uncommonTags != null) {
             tagInputArray.push({ text: 'Uncommon Tags', class: 'tags-uncommon', id: 0 })
-            
+
         }
         const commonTagsArray = commonTags.split(',');
         if (commonTags && commonTagsArray.length) {
@@ -54,11 +54,11 @@ $(function () {
 
                     tagInputArray.push({ text: item, class: 'tags-common', id: index + 1 })
                 });
-               
+
             }
         }
         tagInput.addData(tagInputArray);
-       
+
 
     });
 
@@ -78,13 +78,13 @@ $(function () {
         }
         userTagsInput.setSuggestions(suggestionsArray);
 
-         let tagInputArray = [];
-       
-        if (uncommonTags && uncommonTags != null && uncommonTags !="[]") {
-            tagInputArray.push({ FullName: 'Uncommon Assignees', class: 'tags-uncommon', Id: 'uncommonAssignees' , Role: 'Various Roles' })
-            
+        let tagInputArray = [];
+
+        if (uncommonTags && uncommonTags != null && uncommonTags != "[]") {
+            tagInputArray.push({ FullName: 'Uncommon Assignees', class: 'tags-uncommon', Id: 'uncommonAssignees', Role: 'Various Roles' })
+
         }
-        
+
         if (commonTags && commonTags != null && commonTags != "[]") {
             const commonTagsArray = JSON.parse(commonTags);
             if (commonTagsArray.length) {
@@ -93,11 +93,11 @@ $(function () {
 
                     tagInputArray.push(item)
                 });
-               
+
             }
         }
         userTagsInput.addData(tagInputArray);
-     
+
         document.getElementById("user-tags-input").setAttribute("data-touched", "false");
 
     });
@@ -151,7 +151,7 @@ $(function () {
     dontApproveApplicationsModal.onClose(function () {
         PubSub.publish("refresh_application_list");
     });
-    
+
     PubSub.subscribe("select_application", (msg, data) => {
         selectedApplicationIds.push(data.id);
         manageActionButtons();
@@ -202,7 +202,7 @@ $(function () {
         dontApproveApplicationsModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
             operation: 'GRANT_NOT_APPROVED',
-            message: 'Are you sure you want to disapprove the selected application/s?', 
+            message: 'Are you sure you want to disapprove the selected application/s?',
             title: 'Not Approve Applications',
         });
     });
@@ -268,9 +268,6 @@ $(function () {
 
     $('.spinner-grow').hide();
 
-    
-    });
-
     $('#applicationPaymentRequest').click(function () {
         applicationPaymentRequestModal.open({
             applicationIds: JSON.stringify(selectedApplicationIds),
@@ -283,4 +280,6 @@ $(function () {
             'Payment'
         );
         PubSub.publish("refresh_application_list");
+    });
 });
+
