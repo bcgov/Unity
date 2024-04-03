@@ -2,19 +2,19 @@
 
     unity.grantManager.dashboard.dashboard.getEconomicRegionCount().then(economicRegion => {
         initializeChart(economicRegion.map(obj => obj.economicRegion), economicRegion.map(obj => obj.count),
-            'Submission Breakdown By Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
+            'Submissions by Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
             'Number of Submissions', 'economicRegionChart');
     });
 
     unity.grantManager.dashboard.dashboard.getSectorCount().then(sector => {
-        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submission Breakdown By Sector',
+        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
             'Total Submissions', 'SUBMISSION BREAKDOWN BY SECTOR', "Number of Submissions", 'sectorChart');
     });
 
 
     unity.grantManager.dashboard.dashboard.getApplicationStatusCount().then(applicationStatus => {
         initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
-            'Application Status Overview', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
+            'Submissions by Status', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
     });
 
     unity.grantManager.dashboard.dashboard.getApplicationTagsCount().then(applicationTags => {
