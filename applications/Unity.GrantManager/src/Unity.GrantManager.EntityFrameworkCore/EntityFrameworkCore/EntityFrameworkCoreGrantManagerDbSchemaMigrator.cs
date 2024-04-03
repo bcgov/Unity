@@ -37,6 +37,11 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
 
                 tenantDb.SetConnectionString(connectionString.Value);
                 await tenantDb.MigrateAsync();
+
+                /* The payments module is also migrated.
+                   Currently the payments module also reference the tenant connection string.
+                   Changes to that, may require an inspection in the connections string here and resolve the correct one.
+                */
             }
         }
         else

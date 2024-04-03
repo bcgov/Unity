@@ -12,6 +12,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Unity.Notifications.EntityFrameworkCore;
+using Unity.Payments.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
 
@@ -28,6 +29,7 @@ namespace Unity.GrantManager.EntityFrameworkCore;
     typeof(AbpFeatureManagementEntityFrameworkCoreModule)
     )]
 [DependsOn(typeof(NotificationsEntityFrameworkCoreModule))]
+[DependsOn(typeof(PaymentsEntityFrameworkCoreModule))]
     public class GrantManagerEntityFrameworkCoreModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)

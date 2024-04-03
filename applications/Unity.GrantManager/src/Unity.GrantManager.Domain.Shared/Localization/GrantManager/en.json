@@ -304,8 +304,8 @@
     "ApplicationDetails:Comments.Modified": "Modified:",
     "ApplicationDetails:Comments.Created": "Created:",
 
-    "ApplicationContact:AddTitle" : "Add New Contact",
-    "ApplicationContact:EditTitle" : "Edit Contact",
+    "ApplicationContact:AddTitle": "Add New Contact",
+    "ApplicationContact:EditTitle": "Edit Contact",
     "ApplicationContact:Type": "Type",
     "ApplicationContact:FullName": "Full Name",
     "ApplicationContact:Title": "Title",

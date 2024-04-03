@@ -6,7 +6,6 @@ using System;
 using Volo.Abp.Domain.Repositories;
 using Unity.GrantManager.Applications;
 using Xunit.Abstractions;
-using System.Collections.Generic;
 
 namespace Unity.GrantManager.GrantApplications
 {

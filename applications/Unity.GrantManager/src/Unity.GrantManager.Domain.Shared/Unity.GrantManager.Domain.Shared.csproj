@@ -20,6 +20,7 @@
     <PackageReference Include="Volo.Abp.SettingManagement.Domain.Shared" Version="7.4.0" />
     <PackageReference Include="Volo.Abp.OpenIddict.Domain.Shared" Version="7.4.0" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Domain.Shared\Unity.Notifications.Domain.Shared.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Domain.Shared\Unity.Payments.Domain.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

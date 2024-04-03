@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "Unity.Payments": {
+      "path": "Unity.Payments.abpmdl.json"
+    }
+  }
+}

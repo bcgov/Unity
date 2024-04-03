@@ -8,6 +8,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications;
+using Unity.Payments;
 
 namespace Unity.GrantManager;
 
@@ -20,6 +21,7 @@ namespace Unity.GrantManager;
     typeof(AbpSettingManagementHttpApiModule)
     )]
 [DependsOn(typeof(NotificationsHttpApiModule))]
+[DependsOn(typeof(PaymentsHttpApiModule))]
     public class GrantManagerHttpApiModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
