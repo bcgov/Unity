@@ -1,7 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
-@using Unity.GrantManager.Localization
-@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
+@using Unity.Payments.Web.Views.Shared.Components.SupplierInfo;
+@using Unity.Payments;
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
@@ -148,7 +150,7 @@
                 </abp-column>
             </abp-row>
         </abp-row>
-     
+        @await Component.InvokeAsync("SupplierInfo")
      </form>
 </abp-row>
 

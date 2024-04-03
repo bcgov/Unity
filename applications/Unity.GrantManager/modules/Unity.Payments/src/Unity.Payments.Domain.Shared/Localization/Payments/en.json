@@ -13,6 +13,12 @@
     "ApplicationPaymentRequest:InvoiceNumber": "Invoice #",
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
-    "ApplicationPaymentRequest:Validations:ThresholdExceeded": "There are payments in this batch that require a third level of approval. Please remove them from this batch and add to another for the appropriate level of approval"
+    "ApplicationPaymentRequest:Validations:ThresholdExceeded": "There are payments in this batch that require a third level of approval. Please remove them from this batch and add to another for the appropriate level of approval",
+
+    "ApplicantInfoView:SupplierInfoTitle": "Payments",
+    "ApplicantInfoView:ApplicantInfo.SupplierNumber": "Supplier #",
+    "ApplicantInfoView:ApplicantInfo.SiteNumber": "Site #",
+    "ApplicantInfoView:ApplicantInfo.PayGroup": "Pay Group",
+    "ApplicantInfoView:ApplicantInfo.Fin312": "FIN 312"
   }
 }

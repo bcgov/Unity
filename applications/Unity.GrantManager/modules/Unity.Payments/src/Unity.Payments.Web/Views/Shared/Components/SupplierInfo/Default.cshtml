@@ -1,0 +1,32 @@
+﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Payments.Localization;
+@using Unity.Payments.Web.Views.Shared.Components.SupplierInfo;
+@using Volo.Abp.Authorization.Permissions
+@inject IHtmlLocalizer<PaymentsResource> L
+@inject IPermissionChecker PermissionChecker
+@model Unity.Payments.Web.Views.Shared.Components.SupplierInfo.SupplierInfoViewModel
+
+
+<abp-style src="/Views/Shared/Components/SupplierInfo/SupplierInfo.css" />
+
+<abp-script src="/Views/Shared/Components/SupplierInfo/SupplierInfo.js" />
+
+
+
+<abp-row class="m-0 project-info-location">
+    <abp-row class="m-0 p-0">
+        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+            <div id="SupplierInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:SupplierInfoTitle"].Value</h6>
+            </div>
+        </abp-column>
+    </abp-row>
+    <abp-row class="m-0 p-0">
+        <abp-column size="_12" class="px-1">
+            <abp-input asp-for="@Model.SupplierNumber" type="number" onchange="enableSaveBtn(this)" />
+        </abp-column>
+    </abp-row>
+    <abp-row>
+        <abp-table id="SiteInfoTable" hoverable-rows="true" class="attachments-table"></abp-table>
+    </abp-row>
+</abp-row>
