@@ -1,4 +1,4 @@
-﻿using Unity.GrantManager.Localization;
+﻿using Unity.Notifications.Localization;
 using Unity.Payments.Localization;
 using Volo.Abp.Features;
 using Volo.Abp.Localization;
@@ -15,8 +15,14 @@ namespace Unity.GrantManager
             myGroup.AddFeature("Unity.Payments", 
                 defaultValue: "false",
                 displayName: LocalizableString
-                                 .Create<PaymentsResource>("Payments"),
-                valueType: new ToggleStringValueType());            
+                                .Create<PaymentsResource>("Payments"),
+                valueType: new ToggleStringValueType());
+
+            myGroup.AddFeature("Unity.Notifications",
+                defaultValue: "false",
+                displayName: LocalizableString
+                                .Create<NotificationsResource>("Allow Notifications"),
+                valueType: new ToggleStringValueType());
         }
     }
 }
