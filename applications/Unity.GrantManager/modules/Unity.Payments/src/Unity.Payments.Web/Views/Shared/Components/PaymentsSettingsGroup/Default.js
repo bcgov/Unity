@@ -1,4 +1,4 @@
-﻿$(function () {    
+﻿$(function () {        
     $("#PaymentsSettingsForm").on('submit', function (event) {
         event.preventDefault();
 
@@ -7,8 +7,7 @@
         }
 
         let form = $(this).serializeFormToObject();
-
-        debugger;
+        
         unity.payments.settings.paymentsSettings.update(form).then(function (result) {
             $(document).trigger("AbpSettingSaved");
         });

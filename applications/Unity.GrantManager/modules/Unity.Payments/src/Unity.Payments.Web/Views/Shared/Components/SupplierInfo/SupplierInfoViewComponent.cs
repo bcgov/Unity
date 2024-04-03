@@ -3,18 +3,15 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using System;
-using Unity.GrantManager.GrantApplications;
-using System.Linq;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Unity.GrantManager.Locality;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
-
     [Widget(
         RefreshUrl = "Widget/SupplierInfo/Refresh",
+        ScriptTypes = new[] { typeof(SupplierInfoWidgetScriptBundleContributor) },
+        StyleTypes = new[] { typeof(SupplierInfosWidgetStyleBundleContributor) },        
         AutoInitialize = true)]
     public class SupplierInfoViewComponent : AbpViewComponent
     {
@@ -26,16 +23,33 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
+            await Task.CompletedTask; // remove
 
             SupplierInfoViewModel model = new()
             {
                 SupplierNumber = "12345"
             };
 
-            return View("~/Views/Shared/Components/SupplierInfo/Default.cshtml", model);
+            return View(model);
             
         }
     }
 
-    
+    public class SupplierInfosWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/SupplierInfo/SupplierInfo.css");
+        }
+    }
+
+    public class SupplierInfoWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/SupplierInfo/SupplierInfo.js");
+        }
+    }
 }
