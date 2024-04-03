@@ -17,6 +17,28 @@ thead input {
 }
 
 /*New CSS Starts here*/
+.custom-table-btn {
+    text-transform: uppercase;
+}
+
+    .custom-table-btn:hover {
+        box-shadow: none;
+        border-color: var(--bc-colors-blue-primary);
+        border: 2px solid;
+    }
+
+.dataTables_scrollHeadInner {
+    padding-right: 0 !important;
+}
+
+.dataTables_scrollHead {
+    width: 99.7% !important;
+    border-radius: 10px 10px 0px 0px !important;
+}
+
+.dataTables_scrollBody {
+    border-radius: 0px 20px 20px !important;
+}
 
 .dt-button-active {
     background-color: #ccdef9 !important;
