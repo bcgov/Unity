@@ -24,7 +24,7 @@
 
 @{
     Layout = null;
-    var containerClass = ViewBag.FluidLayout == true ? "container-fluid" : "container"; //TODO: Better and type-safe options
+    var containerClass = ViewBag.FluidLayout? "container-fluid" : "container";
     var rtl = CultureHelper.IsRtl ? "rtl" : string.Empty;
 }
 
