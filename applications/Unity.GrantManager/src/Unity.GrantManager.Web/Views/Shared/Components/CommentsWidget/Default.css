@@ -12,15 +12,11 @@
 }
 
 .comment-input {
-    border: 0 !important;
     outline: 0;
-    border-bottom: 0.5px solid #D6D6D6 !important;
-    border-radius: 0px;
 }
 
     .comment-input:hover {
         box-shadow: none !important;
-        border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
     }
 
     .comment-input.selected {
@@ -101,6 +97,7 @@
     overflow-y: scroll;
     overflow-x: hidden;
     position: relative;
+    font-size: var(--bc-font-size);
 }
 
 .comment-edit-btn-wrapper {
@@ -118,7 +115,7 @@
 }
 
 .unity-comment-block {
-    background: var(--bc-colors-grey-hover);
+    background: var(--bc-surface--color--brand--gold--20);
     padding: 0.75rem 0.5rem 0.5rem 1rem;
     border-radius: 0.25rem;
     font-size: var(--bc-font-size-xs);
@@ -128,7 +125,7 @@
 }
 
     .unity-comment-block .commented-time {
-        font-size: var(--bc-font-size-xxs);
+        font-size: 0.875rem;
     }
 
 .comment-read-mode{
@@ -142,6 +139,6 @@
     height:22px;
     font-size:0.45rem;
 }
-.commenter-name{
-    font-size:0.75rem;
+.commenter-name {
+    font-size: var(--bc-font-size);
 }

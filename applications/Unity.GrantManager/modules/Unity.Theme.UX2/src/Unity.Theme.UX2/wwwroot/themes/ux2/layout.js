@@ -19,9 +19,9 @@ window.addEventListener('DOMContentLoaded', (event) => {
     const dashboardButton = document.querySelector('button[data-url="/Dashboard"]');
     const applicationsButton = document.querySelector('button[data-url="/GrantApplications"]');
 
-    if (currentUrl === '/Dashboard') {
+    if (currentUrl.includes('/Dashboard')) {
         dashboardButton.classList.add('active');
-    } else if (currentUrl === '/GrantApplications') {
+    } else if (currentUrl.includes('/GrantApplications')) {
         applicationsButton.classList.add('active');
     }
 });
