@@ -217,10 +217,6 @@
     content: '\E81B';
 }
 
-.fl-link:before {
-    content: '\E71B';
-}
-
 .fl-player-settings:before {
     content: '\EF58';
 }
