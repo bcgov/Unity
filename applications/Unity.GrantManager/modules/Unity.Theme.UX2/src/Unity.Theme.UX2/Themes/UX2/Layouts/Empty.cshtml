@@ -14,9 +14,9 @@
 @inject IPageLayout PageLayout
 @{
     Layout = null;
-    var containerClass = ViewBag.FluidLayout == true ? "container-fluid" : "container"; //TODO: Better and type-safe options
+    var containerClass = ViewBag.FluidLayout? "container-fluid" : "container";
 
-    var pageTitle = ViewBag.Title == null ? BrandingProvider.AppName : ViewBag.Title; //TODO: Discard to get from Title
+    var pageTitle = ViewBag.Title == null ? BrandingProvider.AppName : ViewBag.Title;
 
     if (PageLayout.Content.Title != null)
     {

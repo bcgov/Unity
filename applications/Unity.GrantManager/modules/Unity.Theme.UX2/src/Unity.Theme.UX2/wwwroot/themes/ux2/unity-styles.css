@@ -71,8 +71,7 @@
         justify-content: flex-start;
     }
     .unity-navbar .navbar-brand {
-        height: 6.75rem;
-        /*margin-left: 11rem;*/
+        height: 6.75rem;       
         margin-left: 1rem;
     }
 
@@ -83,13 +82,12 @@
 #user-dropdown {
     display: none;
     position: absolute;
-    right: 0; /*now showing properly*/
+    right: 0;
     z-index: 9999;
 }
 
     #user-dropdown.show {
-        display: block;
-        /*left: 71rem !important;*/  /*Must not use this*/
+        display: block;        
         right: 0;
         top: 5.5rem;
     }

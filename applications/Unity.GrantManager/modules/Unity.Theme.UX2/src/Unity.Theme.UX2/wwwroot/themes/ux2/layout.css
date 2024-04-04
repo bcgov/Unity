@@ -468,15 +468,6 @@ input.form-control, textarea.form-control, .form-select {
         border: none !important;
     }
 
-/*.form-select {
-    background-color: var(--bc-colors-grey-pressed);
-    border: none;
-}*/
-
-/*    .form-select:focus, .form-select:active {
-        background-color: var(--bc-colors-grey-pressed);
-    }*/
-
 abp-date-picker .btn {
     position: absolute !important;
     right: 1px;

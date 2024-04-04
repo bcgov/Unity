@@ -1,23 +1,35 @@
 ﻿@using Volo.Abp.UI.Navigation
 @model ApplicationMenu
+
 @foreach (var menuItem in Model.Items)
 {
-    var elementId = string.IsNullOrEmpty(menuItem.ElementId) ? string.Empty : $"id=\"{menuItem.ElementId}\"";
-    var cssClass = string.IsNullOrEmpty(menuItem.CssClass) ? string.Empty : menuItem.CssClass;
-    var disabled = menuItem.IsDisabled ? "disabled" : string.Empty;
-    var url = string.IsNullOrEmpty(menuItem.Url) ? "#" : Url.IsLocalUrl(menuItem.Url) ? Url.Content(menuItem.Url.EnsureStartsWith('~')) : menuItem.Url;
+    // Construct the element ID if present.
+    var elementId = !string.IsNullOrEmpty(menuItem.ElementId) ? $"id=\"{menuItem.ElementId}\"" : "";
+
+    // Assign CSS class if present.
+    var cssClass = !string.IsNullOrEmpty(menuItem.CssClass) ? menuItem.CssClass : "";
+
+    // Mark as disabled if the menu item is not active.
+    var disabled = menuItem.IsDisabled ? "disabled" : "";
+
+    // Determine the URL to use for the menu item.
+    var url = "#";
+    if (!string.IsNullOrEmpty(menuItem.Url))
+    {
+        // If it's a local URL, ensure it starts with a '~'.
+        url = Url.IsLocalUrl(menuItem.Url) ? Url.Content(menuItem.Url.EnsureStartsWith('~')) : menuItem.Url;
+    }
+
+    // Render the menu item depending on whether it's a leaf or has children.
     if (menuItem.IsLeaf)
     {
-        if (menuItem.Url != null)
+        if (!string.IsNullOrEmpty(menuItem.Url))
         {
             <li class="nav-item @cssClass @disabled" @elementId>
                 <a class="nav-link" href="@url" target="@menuItem.Target">
-                    @if (menuItem.Icon != null)
+                    @if (!string.IsNullOrEmpty(menuItem.Icon) && menuItem.Icon.StartsWith("fa"))
                     {
-                        if (menuItem.Icon.StartsWith("fa"))
-                        {
-                            <i class="@menuItem.Icon"></i>
-                        }
+                        <i class="@menuItem.Icon"></i> <!-- Render icon if it starts with 'fa' -->
                     }
                     @menuItem.DisplayName
                 </a>
@@ -29,12 +41,9 @@
         <li class="nav-item">
             <div class="dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="Menu_@(menuItem.Name)" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    @if (menuItem.Icon != null)
+                    @if (!string.IsNullOrEmpty(menuItem.Icon) && menuItem.Icon.StartsWith("fa"))
                     {
-                        if (menuItem.Icon.StartsWith("fa"))
-                        {
-                            <i class="@menuItem.Icon"></i>
-                        }
+                        <i class="@menuItem.Icon"></i> <!-- Render icon if it starts with 'fa' -->
                     }
                     @menuItem.DisplayName
                 </a>

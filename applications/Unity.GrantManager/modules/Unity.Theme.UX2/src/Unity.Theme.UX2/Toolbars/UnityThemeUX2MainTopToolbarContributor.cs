@@ -1,9 +1,7 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Toolbar.LanguageSwitch;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Toolbar.UserMenu;
-
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 using Volo.Abp.Localization;
 using Volo.Abp.Users;
@@ -26,7 +24,6 @@ public class UnityThemeMainTopToolbarContributor : IToolbarContributor
 
         var languageProvider = context.ServiceProvider.GetService<ILanguageProvider>();
 
-        //TODO: This duplicates GetLanguages() usage. Can we eleminate this?
         var languages = await languageProvider.GetLanguagesAsync();
         if (languages.Count > 1)
         {
