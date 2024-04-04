@@ -75,3 +75,7 @@ inner-menu-item .lpx-menu-item-link:hover {
 .lpx-content-container {
     background-color: #F2F2F2;
 }
+
+.modal-footer .btn-primary .fa-check {
+    display: none;
+}
