@@ -18,12 +18,12 @@
 @inject IPageLayout PageLayout
 @inject IAbpAntiForgeryManager AbpAntiForgeryManager
 @{
-    Layout = null;
-    //var containerClass = ViewBag.FluidLayout == true ? "container-fluid" : "container"; //TODO: Better and type-safe options
+    Layout = null;    
     var containerClass = "container-fluid";
 
     AbpAntiForgeryManager.SetCookie();
-    var pageTitle = ViewBag.Title == null ? BrandingProvider.AppName : ViewBag.Title; //TODO: Discard to get from Title
+    
+    var pageTitle = ViewBag.Title == null ? BrandingProvider.AppName : ViewBag.Title;
 
     if (PageLayout.Content.Title != null)
     {
