@@ -26,24 +26,20 @@ window.addEventListener('DOMContentLoaded', (event) => {
     }
 });
 document.addEventListener('DOMContentLoaded', function () {
-    var userInitials = document.querySelector('.unity-user-initials');
-    var userDropdown = document.getElementById('user-dropdown');
+    let userInitials = document.querySelector('.unity-user-initials');
+    let userDropdown = document.getElementById('user-dropdown');
 
     userInitials.addEventListener('click', function (event) {
 
         // Toggle the visibility of the dropdown
-        userDropdown.classList.toggle('show');
-
-        // Open the dropdown items
-        //dropdownMenu.classList.add('show'); //not defined error in console
+        userDropdown.classList.toggle('show');        
     });
 
     // Close the dropdown when clicking outside of it
     window.addEventListener('click', function (event) {
         if (!userInitials.contains(event.target) && !userDropdown.contains(event.target)) {
             userDropdown.classList.remove('show');
-            userInitials.classList.remove('active'); // Remove the highlight class when dropdown is hidden
-            //dropdownMenu.classList.remove('show'); //not defined error in console
+            userInitials.classList.remove('active'); // Remove the highlight class when dropdown is hidden            
         }
     });
 });
