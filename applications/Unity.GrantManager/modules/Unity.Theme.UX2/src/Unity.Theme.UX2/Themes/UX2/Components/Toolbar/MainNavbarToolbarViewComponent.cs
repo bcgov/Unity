@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 
@@ -16,7 +16,7 @@ public class MainNavbarToolbarViewComponent : AbpViewComponent
 
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
-        var toolbar = await ToolbarManager.GetAsync(StandardToolbars.Main);        
+        var toolbar = await ToolbarManager.GetAsync(StandardToolbars.Main);
         return View("~/Themes/UX2/Components/Toolbar/Default.cshtml", toolbar);
     }
 }
