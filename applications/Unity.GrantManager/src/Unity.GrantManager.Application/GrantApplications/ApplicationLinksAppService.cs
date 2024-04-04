@@ -19,16 +19,38 @@ public class ApplicationLinksAppService : CrudAppService<
             Guid>, IApplicationLinksService
 {
     private readonly IApplicationLinksRepository _applicationLinksRepository;
+    private readonly IApplicationRepository _applicationRepository;
+    private readonly IApplicationFormRepository _applicationFormRepository;
+    private readonly IApplicantRepository _applicantRepository;
+
     public ApplicationLinksAppService(IRepository<ApplicationLinks, Guid> repository,
-        IApplicationLinksRepository applicationLinksRepository) : base(repository)
+        IApplicationLinksRepository applicationLinksRepository,
+        IApplicationFormRepository applicationFormRepository,
+        IApplicantRepository applicantRepository,
+        IApplicationRepository applicationRepository) : base(repository)
     {
         _applicationLinksRepository = applicationLinksRepository;
+        _applicationRepository = applicationRepository;
+        _applicationFormRepository = applicationFormRepository;
+        _applicantRepository = applicantRepository;
     }
     
-    public async Task<List<ApplicationLinksDto>> GetListByApplicationAsync(Guid applicationId)
+    public async Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId)
     {
-        var links = await _applicationLinksRepository.GetListAsync(c => c.ApplicationId == applicationId);
+        var query = from applicationLinks in await _applicationLinksRepository.GetQueryableAsync()
+                    join application in await _applicationRepository.GetQueryableAsync() on applicationLinks.LinkedApplicationId equals application.Id
+                    join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
+                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    where applicationLinks.ApplicationId == applicationId
+                    select new ApplicationLinksInfoDto{
+                        Id = applicationLinks.Id,
+                        ApplicationId = application.Id,
+                        ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                        ReferenceNumber = application.ReferenceNo,
+                        Category = appForm.Category!,
+                        ApplicantName = applicant.ApplicantName
+                    };
 
-        return ObjectMapper.Map<List<ApplicationLinks>, List<ApplicationLinksDto>>(links.ToList());
+        return query.ToList();
     }
 }
