@@ -263,6 +263,16 @@ namespace Unity.GrantManager.EntityFrameworkCore
                
             });
 
+            modelBuilder.Entity<ApplicationLinks>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationLinks",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+               
+            });
+
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();
             foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
             {
