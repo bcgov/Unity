@@ -25,8 +25,7 @@ public class UnityThemeMainTopToolbarContributor : IToolbarContributor
         }
 
         var languageProvider = context.ServiceProvider.GetService<ILanguageProvider>();
-
-        //TODO: This duplicates GetLanguages() usage. Can we eleminate this?
+        
         var languages = await languageProvider.GetLanguagesAsync();
         if (languages.Count > 1)
         {
