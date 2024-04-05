@@ -16,6 +16,8 @@
         <abp-modal-body>
             <abp-card>
                 <abp-card-body class="payment-card">
+                    <abp-input id="PaymentThreshold" type="hidden" asp-for="Settings.PaymentThreshold"/>
+                    <abp-input id="ApplicationCount" type="hidden" asp-for="ApplicationPaymentRequestForm.Count" />
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
                         <div id="@($"{Model.ApplicationPaymentRequestForm[i].ApplicationId}_container")" class="single-payment">
@@ -31,16 +33,21 @@
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" />
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" class="amount" onchange='checkMaxValue("@Model.ApplicationPaymentRequestForm[i].ApplicationId",this)' />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" />
                                 </abp-column>
+                                <abp-column size="_12" class="text-center">
+                                    <span id="@($"{Model.ApplicationPaymentRequestForm[i].ApplicationId}_maxerror")" class="max-error text-danger field-validation-error"> @L["ApplicationPaymentRequest:Validations:ThresholdExceeded"] @Model.Settings.PaymentThreshold</span>
+
+                                </abp-column>
+
                             </abp-row>
 
                             @if (Model.ApplicationPaymentRequestForm.IndexOf(@Model.ApplicationPaymentRequestForm[i]) != (Model.ApplicationPaymentRequestForm.Count - 1))
                             {
-                                <hr />
+                                <hr class="payment-divider" />
                             }
                         </div>
                     }

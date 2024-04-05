@@ -3,7 +3,7 @@
   "texts": {
     "Payments": "Payments",
     "WelcomeToPayments": "Welcome to Payments Module",
-    "Unity.Payments:Errors:ThresholdExceeded": "Cannot add a payment to an existing batch with a value equal or above threshold of {Threshold}",
+    "Unity.Payments:Errors:ThresholdExceeded": "There are payments in this batch that require a third level of approval. Please remove them from this batch and add to another for the appropriate level of approval",
     "Unity.Payments:Errors:ZeroPayment": "Cannot submit a payment request for $0.00",
     "Setting:Payments.ThresholdAmount.DisplayName": "Payment threshold amount",
     "Setting:Payments.ThresholdAmount.Description": "Payment threshold that triggers additional approvals and checks",
@@ -13,6 +13,7 @@
     "ApplicationPaymentRequest:InvoiceNumber": "Invoice #",
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
-    "ApplicationPaymentRequest:Validations:ThresholdExceeded": "There are payments in this batch that require a third level of approval. Please remove them from this batch and add to another for the appropriate level of approval"
+    "ApplicationPaymentRequest:Validations:ThresholdExceeded": "Cannot add a payment to an existing batch with a value above threshold of",
+ 
   }
 }
