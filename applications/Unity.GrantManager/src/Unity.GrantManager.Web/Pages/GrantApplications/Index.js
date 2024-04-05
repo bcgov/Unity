@@ -9,6 +9,15 @@
 
     const listColumns = getColumns(); //init columns before table init
     dataTable = initializeDataTable();
+
+    // Add custom manage columns button that remains sorted alphabetically
+    dataTable.button().add(1, {
+        text: 'Manage Columns',
+        extend: 'collection',
+        buttons: getColumnToggleButtonsSorted(),
+        className: 'btn btn-light custom-table-btn cln-visible'
+    });
+
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
 
@@ -133,12 +142,6 @@
                             columns: ':visible:not(.notexport)',
                             orthogonal: 'fullName',
                         }
-                    },
-                    {
-                        extend: 'colvis',
-                        text: 'Manage Columns',
-                        columns: getColumnsForManageList(),
-                        className: 'btn btn-light custom-table-btn cln-visible',
                     }
                 ],
                 drawCallback: function () {
@@ -207,13 +210,48 @@
         return listColumns.find(obj => obj.name === name);
     }
 
-    function getColumnsForManageList() {        
+    function getColumnToggleButtonsSorted() {          
         let exludeIndxs = [0];
         return listColumns
             .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
             .filter(obj => !exludeIndxs.includes(obj.index))
             .sort((a, b) => a.title.localeCompare(b.title))
-            .map(a => a.index);        
+            .map(a => ({
+                text: a.title,
+                id: 'managecols-' + a.index,
+                action: function (e, dt, node, config) {                      
+                    toggleManageColumnButton(config);
+                    if (isColumnVisToggled(a.title)) {
+                        node.addClass('dt-button-active');
+                    } else {
+                        node.removeClass('dt-button-active');
+                    }
+                    
+                },
+                className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title)
+            }));        
+    }
+
+    function isColumnVisToggled(title) {        
+        let column = findColumnByTitle(title);
+        if (column.visible())
+            return ' dt-button-active';
+        else
+            return null;
+    }
+
+    function toggleManageColumnButton(config) {        
+        let column = findColumnByTitle(config.text);
+        column.visible(!column.visible());
+    }
+
+    function findColumnByTitle(title) {
+        let columnIndex = dataTable
+            .columns()
+            .header()
+            .map(c => $(c).text())
+            .indexOf(title);
+        return dataTable.column(columnIndex);
     }
 
     function getColumns() {
