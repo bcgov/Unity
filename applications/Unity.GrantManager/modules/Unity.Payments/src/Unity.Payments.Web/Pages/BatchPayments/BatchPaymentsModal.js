@@ -25,7 +25,7 @@ function checkMaxValue(applicationId,input) {
 
     let maxValue = $('#PaymentThreshold').val();
     let applicationCount = $('#ApplicationCount').val();
-    let enteredValue = parseFloat(input.value);
+    let enteredValue = parseFloat(input.value.replace(/,/g, ""));
     if (applicationCount > 1 && maxValue) {
         let errorId = "#" + applicationId + "_maxerror";
         if (enteredValue > maxValue) {
@@ -36,3 +36,5 @@ function checkMaxValue(applicationId,input) {
     }
    
 }
+
+

@@ -33,7 +33,7 @@
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" class="amount" onchange='checkMaxValue("@Model.ApplicationPaymentRequestForm[i].ApplicationId",this)' />
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" class="amount unity-currency-input" onchange='checkMaxValue("@Model.ApplicationPaymentRequestForm[i].ApplicationId",this)' />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" />
@@ -64,3 +64,11 @@
         </abp-modal-footer>
     </abp-modal>
 </form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney();
+        }
+    })();
+</script>
