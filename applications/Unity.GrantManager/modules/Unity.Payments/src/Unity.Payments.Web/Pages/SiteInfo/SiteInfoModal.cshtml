@@ -1,0 +1,22 @@
+﻿@page
+@using Unity.GrantManager.Localization
+@using Microsoft.Extensions.Localization
+@using Unity.Payments.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@model Unity.Payments.Web.SiteInfo.SiteInfoModal.SiteInfoModalModel
+
+@inject IStringLocalizer<PaymentsResource> L
+
+@{
+    Layout = null;
+}
+<form method="post" asp-page-handler="OnPostAsync" id="siteInfo">
+    <abp-modal size="Large" id="site-info-modal">
+        <abp-modal-header class="site-info-modal-header" title="@Model.ActionType"></abp-modal-header>
+        <abp-modal-body>
+              
+        </abp-modal-body>
+        <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
+    </abp-modal>
+</form>

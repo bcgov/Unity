@@ -10,10 +10,11 @@ namespace Unity.Payments.Suppliers
         public Guid? TenantId { get; set; }
         public virtual uint Number { get; private set; }
         public virtual PaymentGroup PaymentMethod { get; private set; }
-        public virtual bool IsFin312 { get; private set; }
         
         /* Address */
-        public virtual string? MailingAddress { get; private set; }
+        public virtual string? AddressLine1 { get; private set; }
+        public virtual string? AddressLine2 { get; private set; }
+        public virtual string? AddressLine3 { get; private set; }
         public virtual string? City { get; private set; }
         public virtual string? Province { get; private set; }
         public virtual string? PostalCode { get; private set; }
@@ -30,8 +31,9 @@ namespace Unity.Payments.Suppliers
         public Site(Guid id,
             uint number,
             PaymentGroup paymentMethod,
-            bool isFin312,
-            string? mailingAddress = default,
+            string? addressLine1 = default,
+            string? addressLine2 = default,
+            string? addressLine3 = default,
             string? city = default,
             string? province = default,
             string? postalCode = default)
@@ -39,8 +41,9 @@ namespace Unity.Payments.Suppliers
         {
             Number = number;
             PaymentMethod = paymentMethod;
-            IsFin312 = isFin312;
-            MailingAddress = mailingAddress;
+            AddressLine1 = addressLine1;
+            AddressLine2 = addressLine2;
+            AddressLine3 = addressLine3;
             City = city;
             Province = province;
             PostalCode = postalCode;

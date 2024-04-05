@@ -16,9 +16,9 @@
     "ApplicationPaymentRequest:Validations:ThresholdExceeded": "There are payments in this batch that require a third level of approval. Please remove them from this batch and add to another for the appropriate level of approval",
 
     "ApplicantInfoView:SupplierInfoTitle": "Payments",
-    "ApplicantInfoView:ApplicantInfo.SupplierNumber": "Supplier #",
-    "ApplicantInfoView:ApplicantInfo.SiteNumber": "Site #",
-    "ApplicantInfoView:ApplicantInfo.PayGroup": "Pay Group",
-    "ApplicantInfoView:ApplicantInfo.Fin312": "FIN 312"
+    "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber": "Site #",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup": "Pay Group",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:MailingAddress": "Mailing Address"
   }
 }
