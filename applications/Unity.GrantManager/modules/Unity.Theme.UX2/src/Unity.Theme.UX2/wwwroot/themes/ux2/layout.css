@@ -9,10 +9,6 @@ html, body {
     font-family: 'BCSans', var(--bs-font-sans-serif) !important;
 }
 
-body {
-    overflow: hidden;
-}
-
 
 .btn {
     --bs-btn-border-radius: 0.1875rem;
@@ -655,4 +651,9 @@ input[type=number]::-webkit-outer-spin-button {
 .div-btn-form
 {
     margin-right:2rem;
+}
+
+footer {
+    padding: 0.3rem 0; 
+    font-size: 0.65rem; 
 }

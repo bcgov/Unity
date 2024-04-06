@@ -1,0 +1,12 @@
+﻿@using System.Reflection
+
+<footer class="bg-light text-center mt-auto">
+    <div class="text-muted container">
+        <p class="mb-0">
+            UGM @(Assembly
+             .GetEntryAssembly()
+             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+             .InformationalVersion)
+        </p>
+    </div>
+</footer>

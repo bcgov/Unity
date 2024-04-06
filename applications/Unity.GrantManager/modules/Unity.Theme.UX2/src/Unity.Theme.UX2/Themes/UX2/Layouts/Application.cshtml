@@ -1,5 +1,7 @@
-﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+﻿@using System.Reflection
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.ContentTitle;
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Footer
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.MainNavbar;
 
 @using Volo.Abp.AspNetCore.Mvc.AntiForgery;
@@ -65,8 +67,6 @@
 <body class="abp-application-layout @rtl">
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Application)
 
-
-
     @if (@isHomePage)
     {
         @(await Component.InvokeAsync<HomeTopbarViewComponent>())        
@@ -92,11 +92,14 @@
                     </div>
                 </div>
 
-                @RenderBody()
+                @RenderBody()               
+
             </div>
         </div>
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.Last, StandardLayouts.Application)
     </div>
+
+    @(await Component.InvokeAsync<FooterViewComponent>())
 
     <abp-script-bundle name="@UnityThemeUX2Bundles.Scripts.Global" />
 
@@ -109,5 +112,6 @@
     @await RenderSectionAsync("scripts", false)
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Application)
+   
 </body>
 </html>
