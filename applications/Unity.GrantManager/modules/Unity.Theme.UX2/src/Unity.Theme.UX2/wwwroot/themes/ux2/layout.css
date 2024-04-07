@@ -9,6 +9,12 @@ html, body {
     font-family: 'BCSans', var(--bs-font-sans-serif) !important;
 }
 
+/*This is the usual setting where page will have its own scrollbar when content overflows
+    If we set it to hidden, scrollbar goes away and so does the footer!
+*/
+body{
+    overflow:auto
+}
 
 .btn {
     --bs-btn-border-radius: 0.1875rem;
