@@ -79,3 +79,7 @@ inner-menu-item .lpx-menu-item-link:hover {
 .modal-footer .btn-primary .fa-check {
     display: none;
 }
+
+.fl-save {
+    display: none;
+}
