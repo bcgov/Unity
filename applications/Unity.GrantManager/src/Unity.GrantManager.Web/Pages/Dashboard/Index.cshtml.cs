@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.Dashboard
@@ -7,6 +6,7 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
     {
         public void OnGet()
         {
+            /* Intentionally left blank */
         }
     }
 }

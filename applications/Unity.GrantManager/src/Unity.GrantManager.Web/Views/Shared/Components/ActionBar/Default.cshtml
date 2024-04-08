@@ -2,10 +2,11 @@
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Permissions;
-@using Unity.GrantManager.Identity;
+@using Volo.Abp.Features;
 
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
+@inject IFeatureChecker FeatureChecker
 
 <div class="action-bar p-2">
     <div class="d-flex align-items-start justify-content-start gap-2">
@@ -34,7 +35,17 @@
                     icon="fl fl-tag"
                     button-type="Light" />
 
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+        {
+        <abp-button id="applicationPaymentRequest"
+                    data-selector="applications-table-actions"
+                    text="Payment"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-card"
+                    button-type="Light" />
 
+        }
         @* <abp-button id="copyLink"
                     text="@L["ApplicationList:CopyLinkButton"].Value"
                     disabled="true"
@@ -65,18 +76,7 @@
                     disabled="true"
                     icon="fl fl-open-pane"
                     button-type="Light" />
-
-        @if (User.IsInRole(UnityRoles.SystemAdmin))
-        {
-            <abp-dropdown>
-                <abp-dropdown-button button-type="Secondary" link="false" text="Admin" icon="fl fl-settings" icon-type="Other" />
-                <abp-dropdown-menu>
-                    <abp-dropdown-item id="resyncAllSubmissionAttachments" class="action-bar__drop-down-icon-link">
-                        <i class="fl fl-synch"></i>  @L["ApplicationList:ResyncAllSubmissionAttachmentsButton"].Value
-                    </abp-dropdown-item>
-                </abp-dropdown-menu>
-            </abp-dropdown>
-        }
+        
         <abp-row>
             <abp-column class="spinner-loader">
                 <div class="spinner-grow" role="status">

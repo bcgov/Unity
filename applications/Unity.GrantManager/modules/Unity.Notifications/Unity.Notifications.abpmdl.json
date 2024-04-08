@@ -1,0 +1,111 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {},
+      "host": {}
+    }
+  },
+  "packages": {
+    "Unity.Notifications.Domain.Shared": {
+      "path": "src/Unity.Notifications.Domain.Shared/Unity.Notifications.Domain.Shared.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.Domain": {
+      "path": "src/Unity.Notifications.Domain/Unity.Notifications.Domain.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.Application.Contracts": {
+      "path": "src/Unity.Notifications.Application.Contracts/Unity.Notifications.Application.Contracts.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.Application": {
+      "path": "src/Unity.Notifications.Application/Unity.Notifications.Application.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.EntityFrameworkCore": {
+      "path": "src/Unity.Notifications.EntityFrameworkCore/Unity.Notifications.EntityFrameworkCore.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.MongoDB": {
+      "path": "src/Unity.Notifications.MongoDB/Unity.Notifications.MongoDB.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.HttpApi": {
+      "path": "src/Unity.Notifications.HttpApi/Unity.Notifications.HttpApi.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.HttpApi.Client": {
+      "path": "src/Unity.Notifications.HttpApi.Client/Unity.Notifications.HttpApi.Client.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.TestBase": {
+      "path": "test/Unity.Notifications.TestBase/Unity.Notifications.TestBase.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Notifications.EntityFrameworkCore.Tests": {
+      "path": "test/Unity.Notifications.EntityFrameworkCore.Tests/Unity.Notifications.EntityFrameworkCore.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Notifications.MongoDB.Tests": {
+      "path": "test/Unity.Notifications.MongoDB.Tests/Unity.Notifications.MongoDB.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Notifications.Domain.Tests": {
+      "path": "test/Unity.Notifications.Domain.Tests/Unity.Notifications.Domain.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Notifications.Application.Tests": {
+      "path": "test/Unity.Notifications.Application.Tests/Unity.Notifications.Application.Tests.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Notifications.HttpApi.Host": {
+      "path": "host/Unity.Notifications.HttpApi.Host/Unity.Notifications.HttpApi.Host.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Notifications.Web": {
+      "path": "src/Unity.Notifications.Web/Unity.Notifications.Web.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/Unity.Notifications.HttpApi.Client.ConsoleTestApp/Unity.Notifications.HttpApi.Client.ConsoleTestApp.abppkg.json",
+      "folder": "test"
+    },
+    "Unity.Notifications.Web.Host": {
+      "path": "host/Unity.Notifications.Web.Host/Unity.Notifications.Web.Host.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Notifications.AuthServer": {
+      "path": "host/Unity.Notifications.AuthServer/Unity.Notifications.AuthServer.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Notifications.Host.Shared": {
+      "path": "host/Unity.Notifications.Host.Shared/Unity.Notifications.Host.Shared.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Notifications.Web.Unified": {
+      "path": "host/Unity.Notifications.Web.Unified/Unity.Notifications.Web.Unified.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Notifications.Blazor": {
+      "path": "src/Unity.Notifications.Blazor/Unity.Notifications.Blazor.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.Blazor.Host": {
+      "path": "host/Unity.Notifications.Blazor.Host/Unity.Notifications.Blazor.Host.abppkg.json",
+      "folder": "host"
+    },
+    "Unity.Notifications.Blazor.Server": {
+      "path": "src/Unity.Notifications.Blazor.Server/Unity.Notifications.Blazor.Server.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.Blazor.WebAssembly": {
+      "path": "src/Unity.Notifications.Blazor.WebAssembly/Unity.Notifications.Blazor.WebAssembly.abppkg.json",
+      "folder": "src"
+    },
+    "Unity.Notifications.Blazor.Server.Host": {
+      "path": "host/Unity.Notifications.Blazor.Server.Host/Unity.Notifications.Blazor.Server.Host.abppkg.json",
+      "folder": "host"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Unity.GrantManager.Assessments;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
@@ -6,9 +7,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
     public class AssessmentScoresWidgetViewModel
     {
         public Guid AssessmentId { get; set; }
+        
+        [Range(0, 99)]
         public int? FinancialAnalysis { get; set; }
+
+        [Range(0, 99)]
         public int? EconomicImpact { get; set; }
+
+        [Range(0, 99)]
         public int? InclusiveGrowth { get; set; } 
+        
+        [Range(0, 99)]
         public int? CleanGrowth { get; set; }
         public AssessmentState? Status { get; set; }
 

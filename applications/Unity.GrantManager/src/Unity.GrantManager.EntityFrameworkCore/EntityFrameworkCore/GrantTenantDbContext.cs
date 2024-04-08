@@ -10,6 +10,7 @@ using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
+using Unity.Payments.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -35,6 +36,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
+        public DbSet<ApplicationContact> ApplicationContacts { get; set; }    
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -252,12 +254,24 @@ namespace Unity.GrantManager.EntityFrameworkCore
                
             });
 
+            modelBuilder.Entity<ApplicationContact>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationContact",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+               
+            });
+
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();
             foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
             {
                 var entityBuilder = modelBuilder.Entity(type);
                 entityBuilder.TryConfigureExtraProperties();
             }
+
+            modelBuilder.ConfigurePayments();
         }
     }
 }

@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission.FormIdResolvers;
 using Unity.GrantManager.EntityFrameworkCore;
+using Unity.GrantManager.HealthChecks;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Web.Exceptions;
@@ -33,6 +35,7 @@ using Unity.GrantManager.Web.Services;
 using Unity.Identity.Web;
 using Unity.TenantManagement.Web;
 using Volo.Abp;
+using Volo.Abp.AspNetCore.Auditing;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
@@ -57,6 +60,11 @@ using Volo.Abp.Timing;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
+using Unity.Notifications.Web;
+using Unity.Payments.Web;
+using Unity.Payments;
+using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
+using Unity.Payments.Web.Settings;
 
 namespace Unity.GrantManager.Web;
 
@@ -71,10 +79,13 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
-    typeof(UnitydentityWebModule)
+    typeof(UnitydentityWebModule),
+    typeof(AbpBlobStoringModule),
+    typeof(PaymentsWebModule)
 )]
 [DependsOn(typeof(AbpBlobStoringModule))]
-public class GrantManagerWebModule : AbpModule
+[DependsOn(typeof(NotificationsWebModule))]
+    public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -116,12 +127,12 @@ public class GrantManagerWebModule : AbpModule
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");            
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
         });
 
-        Configure<AbpBackgroundWorkerQuartzOptions>(options => 
-        { 
-            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled"); 
+        Configure<AbpBackgroundWorkerQuartzOptions>(options =>
+        {
+            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
         });
 
         Configure<AbpAntiForgeryOptions>(options =>
@@ -158,11 +169,25 @@ public class GrantManagerWebModule : AbpModule
                 )
             );
         });
-
+        
         Configure<AbpSecurityLogOptions>(x =>
         {
             x.ApplicationName = "GrantManager";
         });
+
+        Configure<AbpAspNetCoreAuditingOptions>(options =>
+        {
+            options.IgnoredUrls.AddIfNotContains("/healthz");
+        });
+
+        context.Services.AddHealthChecks()
+            .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
+
+        context.Services.AddHealthChecks()
+           .AddCheck<ReadyHealthCheck>("ready", tags: new[] { "ready" });
+
+        context.Services.AddHealthChecks()
+           .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
     }
 
     private static void ConfigureUtils(ServiceConfigurationContext context)
@@ -355,6 +380,7 @@ public class GrantManagerWebModule : AbpModule
         Configure<AbpAspNetCoreMvcOptions>(options =>
         {
             options.ConventionalControllers.Create(typeof(GrantManagerApplicationModule).Assembly);
+            options.ConventionalControllers.Create(typeof(PaymentsApplicationModule).Assembly);
         });
     }
 

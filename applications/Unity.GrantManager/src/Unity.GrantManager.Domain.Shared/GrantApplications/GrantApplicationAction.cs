@@ -23,5 +23,8 @@ public enum GrantApplicationAction
     Deny,
 
     Close,
-    Withdraw
+    Withdraw,
+
+    Defer,
+    OnHold
 }

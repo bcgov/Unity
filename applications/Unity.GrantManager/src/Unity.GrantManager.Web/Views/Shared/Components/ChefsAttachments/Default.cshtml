@@ -1,5 +1,4 @@
-﻿@using Unity.GrantManager.Identity;
-@using Microsoft.Extensions.Localization
+﻿@using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Localization
 
 @inject IStringLocalizer<GrantManagerResource> L
@@ -8,15 +7,12 @@
         <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Submission Attachments</h6>
     </div>
     <div style="display:inline-block">
-        @if (User.IsInRole(UnityRoles.SystemAdmin))
-        {
             <abp-button id="resyncSubmissionAttachments"
                         icon-type="Other"
                         size="Large"
                         icon="fl fl-synch"
                         abp-tooltip="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value"
                         button-type="Light" />
-        }
     </div>
 </div>
 <abp-table id="ChefsAttachmentsTable" hoverable-rows="true" class="attachments-table"></abp-table>

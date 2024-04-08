@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
@@ -33,7 +33,7 @@ public class GrantManagerDbContext :
     public DbSet<SubSector> SubSectors { get; set; }
     public DbSet<EconomicRegion> EconomicRegion { get; set; }
     public DbSet<ElectoralDistrict> ElectoralDistricts { get; set; }
-    public DbSet<RegionalDistrict> RegionalDistricts { get; set; }    
+    public DbSet<RegionalDistrict> RegionalDistricts { get; set; }
     public DbSet<TenantToken> TenantTokens { get; set; }
     public DbSet<Community> Communities { get; set; }
     public DbSet<ChefsMissedSubmission> ChefsMissedSubmissions { get; set; }
@@ -155,6 +155,7 @@ public class GrantManagerDbContext :
         {
             var entityBuilder = modelBuilder.Entity(type);
             entityBuilder.TryConfigureExtraProperties();
-        }
+        }        
+        
     }
 }

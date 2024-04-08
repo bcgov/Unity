@@ -9,6 +9,15 @@
 
     const listColumns = getColumns(); //init columns before table init
     dataTable = initializeDataTable();
+
+    // Add custom manage columns button that remains sorted alphabetically
+    dataTable.button().add(1, {
+        text: 'Manage Columns',
+        extend: 'collection',
+        buttons: getColumnToggleButtonsSorted(),
+        className: 'btn btn-light custom-table-btn cln-visible'
+    });
+
     dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
 
@@ -133,12 +142,6 @@
                             columns: ':visible:not(.notexport)',
                             orthogonal: 'fullName',
                         }
-                    },
-                    {
-                        extend: 'colvis',
-                        text: 'Manage Columns',
-                        columns: getColumnsForManageList(),
-                        className: 'btn btn-light custom-table-btn cln-visible',
                     }
                 ],
                 drawCallback: function () {
@@ -207,13 +210,48 @@
         return listColumns.find(obj => obj.name === name);
     }
 
-    function getColumnsForManageList() {        
+    function getColumnToggleButtonsSorted() {          
         let exludeIndxs = [0];
         return listColumns
             .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
             .filter(obj => !exludeIndxs.includes(obj.index))
             .sort((a, b) => a.title.localeCompare(b.title))
-            .map(a => a.index);        
+            .map(a => ({
+                text: a.title,
+                id: 'managecols-' + a.index,
+                action: function (e, dt, node, config) {                      
+                    toggleManageColumnButton(config);
+                    if (isColumnVisToggled(a.title)) {
+                        node.addClass('dt-button-active');
+                    } else {
+                        node.removeClass('dt-button-active');
+                    }
+                    
+                },
+                className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title)
+            }));        
+    }
+
+    function isColumnVisToggled(title) {        
+        let column = findColumnByTitle(title);
+        if (column.visible())
+            return ' dt-button-active';
+        else
+            return null;
+    }
+
+    function toggleManageColumnButton(config) {        
+        let column = findColumnByTitle(config.text);
+        column.visible(!column.visible());
+    }
+
+    function findColumnByTitle(title) {
+        let columnIndex = dataTable
+            .columns()
+            .header()
+            .map(c => $(c).text())
+            .indexOf(title);
+        return dataTable.column(columnIndex);
     }
 
     function getColumns() {
@@ -267,6 +305,11 @@
             getContactBusinessPhoneColumn(),
             getContactCellPhoneColumn(),
             getSectorSubSectorIndustryDescColumn(),
+            getSigningAuthorityFullNameColumn(),
+            getSigningAuthorityTitleColumn(),
+            getSigningAuthorityEmailColumn(),
+            getSigningAuthorityBusinessPhoneColumn(),
+            getSigningAuthorityCellPhoneColumn(),
         ]
         .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -956,6 +999,67 @@
                 return data ?? '{SectorSubSectorIndustryDesc}';
             },
             index: 48
+        }
+    }
+
+    function getSigningAuthorityFullNameColumn() {
+        return {
+            title: 'Signing Authority Full Name',
+            name: 'signingAuthorityFullName',
+            data: 'signingAuthorityFullName',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SigningAuthorityFullName}';
+            },
+            index: 49
+        }
+    }
+    function getSigningAuthorityTitleColumn() {
+        return {
+            title: 'Signing Authority Title',
+            name: 'signingAuthorityTitle',
+            data: 'signingAuthorityTitle',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SigningAuthorityTitle}';
+            },
+            index: 50
+        }
+    }
+    function getSigningAuthorityEmailColumn() {
+        return {
+            title: 'Signing Authority Email',
+            name: 'signingAuthorityEmail',
+            data: 'signingAuthorityEmail',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SigningAuthorityEmail}';
+            },
+            index: 51
+        }
+    }
+    function getSigningAuthorityBusinessPhoneColumn() {
+        return {
+            title: 'Signing Authority Business Phone',
+            name: 'signingAuthorityBusinessPhone',
+            data: 'signingAuthorityBusinessPhone',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '{SigningAuthorityBusinessPhone}';
+            },
+            index: 52
+        }
+    }
+    function getSigningAuthorityCellPhoneColumn() {
+        return {
+            title: 'Signing Authority Cell Phone',
+            name: 'signingAuthorityCellPhone',
+            data: 'signingAuthorityCellPhone',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? 'S{igningAuthorityCellPhone}';
+            },
+            index: 53
         }
     }
     window.addEventListener('resize', setTableHeighDynamic);

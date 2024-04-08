@@ -17,27 +17,34 @@ metadata:
     openshift.io/display-name: Database Backup Cronjob
     template.openshift.io/long-description: |-
       This template defines resources needed to build and deploy a postgresql container application.
-    tags: unity-database,postgresql
+    tags: database,postgresql
 parameters:
 # Project namespace parameters
-- description: The name of the application.
-  displayName: Application Name
-  name: APPLICATION_NAME
-  required: true
-  value: unity-backup
 - description: The name of the application grouping.
   displayName: Application Group
   name: APPLICATION_GROUP
-  value: Triggers
-# Additional parameters for project application provisioning.
+  required: true
+  value: unity-grantmanager
+- description: The name of the backup application.
+  displayName: Application Name
+  name: BACKUP_APPLICATION_NAME
+  required: true
+  value: unity-backup
+# Additional parameters for project database provisioning
 - description: The name of the OpenShift Service exposed for the database.
   displayName: Database Service Name
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
+- description: The port exposed for the database.
+  displayName: Database Service Port
+  name: DATABASE_PORT
+  required: true
+  value: "5432"
 - description: Password for the PostgreSQL connection user.
   displayName: PostgreSQL Connection Password
   name: POSTGRESQL_PASSWORD
+  required: true
   from: '[a-zA-Z0-9]{26}'
   generate: expression
 - name: DATABASE_BACKUP_KEEP
@@ -45,18 +52,26 @@ parameters:
   value: '28'
 - name: DATABASE_BACKUP_SCHEDULE
   description: 'Cron-like schedule expression m h D M DayOfWeek add +7/8 hours for UTC conversions'
+  required: true
   value: '0 0,14 * * *'
 - name: DATABASE_BACKUP_VOLUME_CLAIM
   description: 'Name of the volume claim to be used as storage'
   required: true
   value: unity-data-backup
+- description: Volume space available for data, e.g. 512Mi, 2Gi.
+  displayName: Volume Capacity
+  name: VOLUME_CAPACITY
+  required: true
+  value: 256Mi
 - description: The Namespace where the database container image resides default=redhat cluster=openshift, project=tools
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
+  required: true
   value: redhat
-- description: The Openshift ImageStreams Name
+- description: The Openshift ImageStream Name
   displayName: Registry imagestream name
   name: IMAGESTREAM_NAME
+  required: true
   value: postgresql-15  
 - description: The version of the postgresql container image to use.
   displayName: Registry container image  to pull
@@ -66,22 +81,44 @@ parameters:
 - description: The registry path of the postgresql container image to use.
   displayName: Registry container image to pull
   name: IMAGEPULL_REGISTRY
+  required: true
   value: registry.redhat.io/rhel9/
-# Template objects to instantiate the project.
+# Resource limits control how much CPU and memory a container will consume
+- description: The minimum amount of CPU the Container is guaranteed.
+  displayName: CPU Request
+  name: CPU_REQUEST
+  required: true
+  value: 50m
+- description: The maximum amount of CPU the Container is allowed to use when running.
+  displayName: CPU Limit
+  name: CPU_LIMIT
+  required: true
+  value: 250m
+- description: The minimum amount of Memory the Container is guaranteed.
+  displayName: Memory Request
+  name: MEMORY_REQUEST
+  required: true
+  value: 256Mi
+- description: The maximum amount of Memory the Container is allowed to use when running.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 512Mi
+# Template objects to instantiate the project database.
 objects:
 # Recurring cronjob for Database Backups
 - apiVersion: batch/v1
   kind: CronJob
   metadata:
-    name: ${APPLICATION_NAME}
+    name: ${BACKUP_APPLICATION_NAME}
     labels:
-      job-name: ${APPLICATION_NAME}
+      job-name: ${BACKUP_APPLICATION_NAME}
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
-      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/name: ${BACKUP_APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   # Cronjob script works with both database or instance backup commands
-  # pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_NAME} 
+  # pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_SERVICE_NAME} 
   # pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean
   spec:
     schedule: ${DATABASE_BACKUP_SCHEDULE}
@@ -93,12 +130,12 @@ objects:
         template:
           spec:
             volumes:
-              - name: ${APPLICATION_NAME}
+              - name: ${BACKUP_APPLICATION_NAME}
                 persistentVolumeClaim:
                   claimName: ${DATABASE_BACKUP_VOLUME_CLAIM}
             containers:
-              - name: ${APPLICATION_NAME}
-                image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+              - name: ${BACKUP_APPLICATION_NAME}
+                image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
                 command:
                   - 'bash'
                   - '-eo'
@@ -106,8 +143,8 @@ objects:
                   - '-c'
                   - > 
                     trap "echo Backup failed; exit 0" ERR; date;
-                    FILENAME=dumpall-${DATABASE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
-                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
+                    FILENAME=dumpall-${DATABASE_SERVICE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
+                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_SERVICE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
                     PGPASSWORD="$DATABASE_PASSWORD" pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME); 
                     echo "";
                     echo "Backup successful"; du -h /var/lib/pgsql/backups/$FILENAME; 
@@ -121,7 +158,7 @@ objects:
                         key: UNITY_DB_PORT
                   - name: DATABASE_HOST
                     value: ${DATABASE_SERVICE_NAME}
-                  - name: DATABASE_NAME
+                  - name: DATABASE_SERVICE_NAME
                     valueFrom:
                       secretKeyRef:
                         name: ${DATABASE_SERVICE_NAME}
@@ -141,6 +178,6 @@ objects:
                   - name: TZ
                     value: Canada/Pacific
                 volumeMounts:
-                  - name: ${APPLICATION_NAME}
+                  - name: ${BACKUP_APPLICATION_NAME}
                     mountPath: /var/lib/pgsql/backups
             restartPolicy: Never
