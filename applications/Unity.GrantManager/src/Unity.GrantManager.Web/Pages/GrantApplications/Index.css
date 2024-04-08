@@ -109,7 +109,17 @@ div.dataTables_filter > label > input {
 }
 
 #search:focus-visible, :focus-within {
-    outline: var(--bc-colors-blue-primary) !important;
+    outline: var(--bc-colors-blue-primary);
+}
+
+  .checkbox-select:not(:checked) {
+    outline: 1px solid var(--bc-colors-blue-primary);
+    outline-style: auto;
+}
+
+.checkbox-select:checked {
+    outline: 1px solid var(--bc-colors-blue-primary);
+    outline-style: auto;
 }
 
 div.dataTables_wrapper div.dataTables_filter {
