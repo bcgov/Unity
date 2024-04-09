@@ -23,6 +23,7 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Unity.Payments.SupplierInfo
 {
@@ -44,7 +45,7 @@ namespace Unity.Payments.SupplierInfo
             return queryResult;
         }
 
-        public async Task<List<SiteDto>> GetSitesAsync(GetSitesRequestDto requestDto)
+        public async Task<List<SiteDto>> GetSiteListAsync(GetSitesRequestDto requestDto)
         {
             var query = from supplier in await _supplierRepository.GetQueryableAsync()
                         where supplier.Number.ToString() == requestDto.SupplierNumber && supplier.CorrelationId == requestDto.ApplicantId
@@ -58,8 +59,23 @@ namespace Unity.Payments.SupplierInfo
             {
                 return new List<SiteDto>();
             }
-            
-            
+        }
+
+        public async Task<SiteDto> GetSiteAsync(Guid applicantId, string supplierNumber, Guid siteId)
+        {
+            var query = from supplier in await _supplierRepository.GetQueryableAsync()
+                        where supplier.Number.ToString() == supplierNumber && supplier.CorrelationId == applicantId
+                        select supplier.Sites.ToList();
+            var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
+            if (queryResult != null)
+            {
+                Site site = queryResult.First(s=>s.Id == siteId);
+                return ObjectMapper.Map<Site, SiteDto>(site);
+            }
+            else
+            {
+                throw new UserFriendlyException("Site not found!");
+            }
         }
 
         public async Task InsertSiteAsync(Guid applicantId, string supplierNumber, string siteNumber, int payGroup, string? addressLine1, string? addressLine2, string? addressLine3, string? city, string? province, string? postalCode)
@@ -74,6 +90,7 @@ namespace Unity.Payments.SupplierInfo
                 {
                     SupplierId = queryResult.Id,
                     Number = uint.Parse(siteNumber),
+                    PaymentMethod = (PaymentGroup)payGroup,
                     AddressLine1 = addressLine1,
                     AddressLine2 = addressLine2,
                     AddressLine3 = addressLine3,
@@ -89,6 +106,32 @@ namespace Unity.Payments.SupplierInfo
             }
             
 
+        }
+
+        public async Task UpdateSiteAsync(Guid siteId, Guid applicantId, string supplierNumber, string siteNumber, int payGroup, string? addressLine1, string? addressLine2, string? addressLine3, string? city, string? province, string? postalCode)
+        {
+            var query = from supplier in await _supplierRepository.GetQueryableAsync()
+                        where supplier.Number.ToString() == supplierNumber && supplier.CorrelationId == applicantId
+                        select supplier;
+            var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
+            if (queryResult != null)
+            {
+                await _supplierRepository.EnsureCollectionLoadedAsync(queryResult, e => e.Sites);
+                Site site = queryResult.Sites.AsEnumerable().First(s => s.Id == siteId);
+                site.Number = uint.Parse(siteNumber);
+                site.PaymentMethod = (PaymentGroup)payGroup;
+                site.AddressLine1 = addressLine1;
+                site.AddressLine2 = addressLine2;
+                site.AddressLine3 = addressLine3;
+                site.City = city;
+                site.Province = province;
+                site.PostalCode = postalCode;
+                await _supplierRepository.UpdateAsync(queryResult);
+            }
+            else
+            {
+                throw new UserFriendlyException("Site not found!");
+            }
         }
 
         public async Task InsertSupplierAsync(string? supplierNumber, Guid applicantId)
@@ -119,5 +162,7 @@ namespace Unity.Payments.SupplierInfo
             }
             
         }
+
+        
     }
 }

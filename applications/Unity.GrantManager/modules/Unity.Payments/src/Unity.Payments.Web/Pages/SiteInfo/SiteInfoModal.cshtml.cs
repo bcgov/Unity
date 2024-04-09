@@ -15,6 +15,7 @@ using Volo.Abp.Validation;
 using Unity.Payments.SupplierInfo;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Unity.Payments.Enums;
 
 namespace Unity.Payments.Web.SiteInfo.SiteInfoModal;
 
@@ -70,7 +71,15 @@ public class SiteInfoModalModel : AbpPageModel
         SiteInfo.ApplicantId = applicantId;
         if (SiteInfo.ActionType.Contains("Edit"))
         {
-
+            SiteDto site = await _supplierService.GetSiteAsync(applicantId, supplierNumber, siteId);
+            SiteInfo.SiteNumber = site.Number ?? "";
+            SiteInfo.PayGroup = ((int)Enum.Parse(typeof(PaymentGroup), site.PayGroup??"")).ToString()??"";
+            SiteInfo.AddressLine1 = site.AddressLine1 ?? "";
+            SiteInfo.AddressLine2 = site.AddressLine2 ?? "";
+            SiteInfo.AddressLine3 = site.AddressLine3 ?? "";
+            SiteInfo.City = site.City ?? "";
+            SiteInfo.Province = site.Province ?? "";
+            SiteInfo.PostalCode = site.PostalCode ?? "";
         }
         else if (SiteInfo.ActionType.Contains("Add"))
         {
@@ -86,7 +95,10 @@ public class SiteInfoModalModel : AbpPageModel
     {
         if (SiteInfo.ActionType.StartsWith("Edit"))
         {
-            throw new NotSupportedException();
+            int payGroup;
+            int.TryParse(SiteInfo.PayGroup, out payGroup);
+            await _supplierService.UpdateSiteAsync(SiteInfo.SiteId, SiteInfo.ApplicantId, SiteInfo.SupplierNumber, SiteInfo.SiteNumber, payGroup, SiteInfo.AddressLine1, SiteInfo.AddressLine2, SiteInfo.AddressLine3, SiteInfo.City, SiteInfo.Province, SiteInfo.PostalCode);
+            return NoContent();
         }
         else if (SiteInfo.ActionType.StartsWith("Add"))
         {

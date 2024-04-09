@@ -24,7 +24,7 @@ $(function () {
                 info: false,
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
-                    unity.payments.supplierInfo.supplierInfo.getSites, inputAction, responseCallback
+                    unity.payments.supplierInfo.supplierInfo.getSiteList, inputAction, responseCallback
                 ),
                 columnDefs: [
                     {
@@ -35,7 +35,7 @@ $(function () {
                     {
                         title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup'),
                         data: 'payGroup',
-                        className: 'data-table-header',
+                        className: 'data-table-header'
                     },
                     {
                         title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:MailingAddress'),
@@ -99,7 +99,7 @@ function openSiteInfoModal(siteId, actionType) {
     const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
     siteInfoModal.open({
         applicantId: applicantId,
-        siteId: JSON.stringify(siteId),
+        siteId: siteId,
         actionType: actionType,
         supplierNumber: supplierNumber
     });
