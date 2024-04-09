@@ -2,7 +2,7 @@ $(function () {
     const l = abp.localization.getResource('Payments');    
 
     let dataTable;
-    setTimeout(function () {
+    function loadSiteInfoTable() {
         let inputAction = function (requestData, dataTableSettings) {
             const applicantId = $("#ApplicantInfoViewApplicantId").val();
             const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
@@ -56,9 +56,9 @@ $(function () {
                 ],
             })
         );
-    }, 1000);
-    
-  
+    }
+
+    setTimeout(function () { loadSiteInfoTable(); },1000);
     $('#nav-organization-info-tab').one('click', function () {
         dataTable.columns.adjust();
     });
@@ -68,6 +68,13 @@ $(function () {
         (msg, data) => {
             dataTable.ajax.reload();
             dataTable.columns.adjust();
+        }
+    );
+
+    PubSub.subscribe(
+        'reload_sites_list',
+        (msg, data) => {
+            loadSiteInfoTable();
         }
     );
 

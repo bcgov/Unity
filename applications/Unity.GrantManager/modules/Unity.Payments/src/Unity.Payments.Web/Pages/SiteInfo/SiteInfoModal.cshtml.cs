@@ -78,7 +78,7 @@ public class SiteInfoModalModel : AbpPageModel
         }
         else
         {
-            throw new AbpValidationException("Invalid ActionType!");
+            throw new UserFriendlyException("Invalid ActionType!");
         }
     }
 

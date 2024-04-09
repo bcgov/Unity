@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Payments.Enums;
-using Unity.Payments.Repositories;
 using Unity.Payments.Settings;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Features;
@@ -98,7 +97,7 @@ namespace Unity.Payments.SupplierInfo
             {
                 return;
             }
-            string correlationProvider = "Applicant"; //TODO check this value with Andre/Maryam
+            string correlationProvider = "Applicant"; //TODO check if this is correct
             var query = from supplier in await _supplierRepository.GetQueryableAsync()
                         where supplier.CorrelationId == applicantId && supplier.CorrelationProvider == correlationProvider
                         select supplier;
@@ -107,7 +106,7 @@ namespace Unity.Payments.SupplierInfo
             {
                 await _supplierRepository.InsertAsync(new Supplier() 
                 { 
-                    Name = "", //TODO check with Maryam/Andre where to get name
+                    Name = "", //TODO check where to get name
                     Number = uint.Parse(supplierNumber),
                     CorrelationId = applicantId,
                     CorrelationProvider = correlationProvider
