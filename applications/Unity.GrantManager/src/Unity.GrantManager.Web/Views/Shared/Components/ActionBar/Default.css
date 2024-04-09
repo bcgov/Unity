@@ -58,3 +58,7 @@
     font-size: small;
     
 }
+
+.max-error {
+    display: none;
+}
