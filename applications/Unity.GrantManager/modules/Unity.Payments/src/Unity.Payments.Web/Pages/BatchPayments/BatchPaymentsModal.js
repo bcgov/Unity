@@ -17,12 +17,10 @@ function removeApplicationPayment(applicationId) {
 }
 
 function closePaymentModal() {
-
     $('#payment-modal').modal('hide');
 }
 
-function checkMaxValue(applicationId,input) {
-
+function checkMaxValue(applicationId, input) {
     let maxValue = $('#PaymentThreshold').val();
     let applicationCount = $('#ApplicationCount').val();
     let enteredValue = parseFloat(input.value.replace(/,/g, ""));
@@ -34,7 +32,6 @@ function checkMaxValue(applicationId,input) {
             $(errorId).css("display", "none");
         }
     }
-   
 }
 
 
