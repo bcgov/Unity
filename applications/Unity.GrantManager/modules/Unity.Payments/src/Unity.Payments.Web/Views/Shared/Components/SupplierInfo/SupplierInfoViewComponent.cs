@@ -5,6 +5,11 @@ using System.Threading.Tasks;
 using System;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
+using Unity.Payments.Suppliers;
+using System.Linq;
+using System.Linq.Dynamic.Core;
+using Volo.Abp.Application.Services;
+using Unity.Payments.SupplierInfo;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
@@ -15,23 +20,16 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
         AutoInitialize = true)]
     public class SupplierInfoViewComponent : AbpViewComponent
     {
-
-        public SupplierInfoViewComponent()
+        private readonly SupplierInfoAppService _supplierService;
+        public SupplierInfoViewComponent(SupplierInfoAppService supplierService)
         {
-           
+            _supplierService = supplierService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
         {
-            await Task.CompletedTask; // remove
-
-            SupplierInfoViewModel model = new()
-            {
-                SupplierNumber = "12345"
-            };
-
-            return View(model);
-            
+            Task<Supplier?> supplier = _supplierService.GetSupplierAsync(applicantId);
+            return View(new SupplierInfoViewModel() { SupplierNumber = supplier.Result?.Number.ToString()});
         }
     }
 

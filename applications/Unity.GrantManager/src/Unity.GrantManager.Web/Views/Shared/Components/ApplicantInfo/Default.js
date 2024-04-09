@@ -14,6 +14,10 @@
                 if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
                     ApplicantInfoObj[input.name.split(".")[1]] = null;
                 }
+
+            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber') {
+                ApplicantInfoObj[input.name] = input.value;
+            }
             
         });
         try {

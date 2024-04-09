@@ -1,60 +1,63 @@
 $(function () {
-    const l = abp.localization.getResource('Payments');
-    let inputAction = function (requestData, dataTableSettings) {
-        const urlParams = new URL(window.location.toLocaleString()).searchParams;
-        const applicationId = urlParams.get('ApplicationId');
-        return applicationId;
-    }
-    let responseCallback = function (result) {
-        
+    const l = abp.localization.getResource('Payments');    
 
-        return {
-            data: result
+    let dataTable;
+    setTimeout(function () {
+        let inputAction = function (requestData, dataTableSettings) {
+            const applicantId = $("#ApplicantInfoViewApplicantId").val();
+            const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
+            return { applicantId, supplierNumber };
+        }
+        let responseCallback = function (result) {
+            return {
+                data: result
+            };
         };
-    };
 
-    const dataTable = $('#SiteInfoTable').DataTable(
-        abp.libs.datatables.normalizeConfiguration({
-            serverSide: false,
-            order: [[2, 'asc']],
-            searching: false,
-            paging: false,
-            select: false,
-            info: false,
-            scrollX: true,
-            ajax: abp.libs.datatables.createAjax(
-                unity.payments.supplierInfo.supplierInfo.getSites, inputAction, responseCallback
-            ),
-            columnDefs: [
-                {
-                    title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber'),
-                    data: 'number',
-                    className: 'data-table-header',
-                },
-                {
-                    title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup'),
-                    data: 'payGroup',
-                    className: 'data-table-header',
-                },
-                {
-                    title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:MailingAddress'),
-                    data: 'addressLine1',
-                    className: 'data-table-header',
-                    render: function (data, type, full, meta) {
-                        return nullToEmpty(full.addressLine1) + ' ' + nullToEmpty(full.addressLine2) + " " + nullToEmpty(full.addressLine3) + " " + nullToEmpty(full.city) + " " + nullToEmpty(full.province) + " " + nullToEmpty(full.postalCode);
+        dataTable = $('#SiteInfoTable').DataTable(
+            abp.libs.datatables.normalizeConfiguration({
+                serverSide: false,
+                order: [[2, 'asc']],
+                searching: false,
+                paging: false,
+                select: false,
+                info: false,
+                scrollX: true,
+                ajax: abp.libs.datatables.createAjax(
+                    unity.payments.supplierInfo.supplierInfo.getSites, inputAction, responseCallback
+                ),
+                columnDefs: [
+                    {
+                        title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber'),
+                        data: 'number',
+                        className: 'data-table-header',
                     },
-                },
-                {
-                    title: '',
-                    data: 'id',
-                    render: function (data) {
-                        return '<button class="btn site-info-btn" type="button" onclick="openSiteInfoModal(\''+data+'\',\'Edit Site\');"><i class="fl fl-edit"></i></button>';
+                    {
+                        title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup'),
+                        data: 'payGroup',
+                        className: 'data-table-header',
                     },
-                    orderable: false
-                }
-            ],
-        })
-    );
+                    {
+                        title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:MailingAddress'),
+                        data: 'addressLine1',
+                        className: 'data-table-header',
+                        render: function (data, type, full, meta) {
+                            return nullToEmpty(full.addressLine1) + ' ' + nullToEmpty(full.addressLine2) + " " + nullToEmpty(full.addressLine3) + " " + nullToEmpty(full.city) + " " + nullToEmpty(full.province) + " " + nullToEmpty(full.postalCode);
+                        },
+                    },
+                    {
+                        title: '',
+                        data: 'id',
+                        render: function (data) {
+                            return '<button class="btn site-info-btn" type="button" onclick="openSiteInfoModal(\'' + data + '\',\'Edit Site\');"><i class="fl fl-edit"></i></button>';
+                        },
+                        orderable: false
+                    }
+                ],
+            })
+        );
+    }, 1000);
+    
   
     $('#nav-organization-info-tab').one('click', function () {
         dataTable.columns.adjust();
@@ -76,9 +79,21 @@ $(function () {
 let siteInfoModal = new abp.ModalManager({
     viewUrl: '../SiteInfo/SiteInfoModal'
 });
+
+siteInfoModal.onResult(function () {
+    PubSub.publish('refresh_sites_list');
+    abp.notify.success(
+        'Site Information is successfully saved.',
+        'Site Information'
+    );
+});
 function openSiteInfoModal(siteId, actionType) {
+    const applicantId = $("#ApplicantInfoViewApplicantId").val(); 
+    const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
     siteInfoModal.open({
+        applicantId: applicantId,
         siteId: JSON.stringify(siteId),
-        actionType: actionType
+        actionType: actionType,
+        supplierNumber: supplierNumber
     });
 }

@@ -8,22 +8,22 @@ namespace Unity.Payments.Suppliers
     public class Site : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
-        public virtual uint Number { get; private set; }
-        public virtual PaymentGroup PaymentMethod { get; private set; }
+        public virtual uint Number { get; set; }
+        public virtual PaymentGroup PaymentMethod { get; set; }
         
         /* Address */
-        public virtual string? AddressLine1 { get; private set; }
-        public virtual string? AddressLine2 { get; private set; }
-        public virtual string? AddressLine3 { get; private set; }
-        public virtual string? City { get; private set; }
-        public virtual string? Province { get; private set; }
-        public virtual string? PostalCode { get; private set; }
+        public virtual string? AddressLine1 { get; set; }
+        public virtual string? AddressLine2 { get; set; }
+        public virtual string? AddressLine3 { get; set; }
+        public virtual string? City { get; set; }
+        public virtual string? Province { get; set; }
+        public virtual string? PostalCode { get; set; }
 
         /* Supplier */
         public virtual Supplier? Supplier { get; set; }
         public virtual Guid SupplierId { get; set; }
 
-        protected Site()
+        public Site()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }

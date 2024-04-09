@@ -6,13 +6,13 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("Payments/Widget/SupplierInfo")]
-    public class ApplicantInfoController: AbpController
+    public class SupplierInfoController: AbpController
 	{
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult ApplicantInfo(Guid applicationId)
+        public IActionResult SupplierInfo(Guid applicantId)
         {
-            return ViewComponent("SupplierInfo", new { applicationId });
+            return ViewComponent("SupplierInfo", new { applicantId });
         }
     }
 }

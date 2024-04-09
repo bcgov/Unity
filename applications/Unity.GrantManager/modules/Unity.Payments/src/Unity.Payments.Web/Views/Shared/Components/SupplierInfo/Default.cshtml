@@ -16,10 +16,21 @@
     </abp-row>
     <abp-row class="m-0 p-0">
         <abp-column size="_12" class="px-1">
-            <abp-input asp-for="@Model.SupplierNumber" type="number" onchange="enableSaveBtn(this)" />
+            <abp-input asp-for="@Model.SupplierNumber" id="SupplierNumber" type="number" onchange="enableSaveBtn(this)" />
         </abp-column>
     </abp-row>
     <abp-row>
         <abp-table id="SiteInfoTable" hoverable-rows="true" class="attachments-table"></abp-table>
+    </abp-row>
+    <abp-row class="m-3 p-0 d-flex">
+        <abp-column>
+            <abp-button text="@L["ApplicantInfoView:ApplicantInfo.SiteInfo:AddSiteButtonText"].Value"
+                        id="add_site_btn"
+                        icon-type="Other"
+                        icon="fl fl-plus"
+                        onclick="openSiteInfoModal(null,'Add Site');"
+                        button-type="Light" 
+                        disabled="@string.IsNullOrEmpty(Model.SupplierNumber)"/>
+        </abp-column>
     </abp-row>
 </abp-row>

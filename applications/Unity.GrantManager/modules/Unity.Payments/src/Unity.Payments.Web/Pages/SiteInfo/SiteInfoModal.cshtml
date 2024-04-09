@@ -12,10 +12,51 @@
     Layout = null;
 }
 <form method="post" asp-page-handler="OnPostAsync" id="siteInfo">
+    <abp-input type="hidden" id="SiteId" asp-for="@Model.SiteInfo.SiteId" />
+    <abp-input type="hidden" id="ActionType" asp-for="@Model.SiteInfo.ActionType" />
+    <abp-input type="hidden" id="SupplierNumber" asp-for="@Model.SiteInfo.SupplierNumber" />
+    <abp-input type="hidden" id="ApplicantId" asp-for="@Model.SiteInfo.ApplicantId" />
     <abp-modal size="Large" id="site-info-modal">
-        <abp-modal-header class="site-info-modal-header" title="@Model.ActionType"></abp-modal-header>
+        <abp-modal-header class="site-info-modal-header" title="@Model.SiteInfo.ActionType"></abp-modal-header>
         <abp-modal-body>
-              
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.SiteInfo.SiteNumber" type="number" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_6" class="px-1">
+                    <abp-select asp-for="@Model.SiteInfo.PayGroup" asp-items="@Model.PayGroupOptionsList" id="payGroup"
+                                onchange="enableProjectInfoSaveBtn(this)">
+                    </abp-select>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.SiteInfo.AddressLine1" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.SiteInfo.AddressLine2" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.SiteInfo.AddressLine3" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.SiteInfo.City" onchange="enableSaveBtn(this)" />
+                </abp-column>            
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.SiteInfo.Province" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_6" class="px-1">
+                    <abp-input asp-for="@Model.SiteInfo.PostalCode" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
         </abp-modal-body>
         <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
     </abp-modal>

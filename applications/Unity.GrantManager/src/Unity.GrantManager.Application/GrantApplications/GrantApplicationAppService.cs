@@ -17,6 +17,7 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
+using Unity.Payments.SupplierInfo;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -52,6 +53,7 @@ public class GrantApplicationAppService :
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
     private readonly ILocalEventBus _localEventBus;
+    private readonly SupplierInfoAppService _supplierInfoAppService;
 
 
 #pragma warning disable IDE0290 // Use primary constructor
@@ -69,7 +71,8 @@ public class GrantApplicationAppService :
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
         IApplicationTagsRepository applicationTagsRepository,
-        ILocalEventBus localEventBus
+        ILocalEventBus localEventBus,
+        SupplierInfoAppService supplierInfoAppService
         )
          : base(repository)
     {
@@ -86,6 +89,7 @@ public class GrantApplicationAppService :
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
         _localEventBus = localEventBus;
+        _supplierInfoAppService = supplierInfoAppService;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -416,7 +420,7 @@ public class GrantApplicationAppService :
             applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
           
             _ = await _applicantRepository.UpdateAsync(applicant);
-
+            await _supplierInfoAppService.InsertSupplierAsync(input.SupplierNumber, input.ApplicantId);
            
                 var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
                 if (applicantAgent == null)

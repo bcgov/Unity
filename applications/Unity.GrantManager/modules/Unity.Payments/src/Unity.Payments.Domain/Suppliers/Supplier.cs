@@ -20,10 +20,10 @@ namespace Unity.Payments.Suppliers
         public virtual string? PostalCode { get; private set; }
 
         // External Correlation
-        public virtual string CorrelationProvider { get; private set; } = string.Empty;
+        public virtual string CorrelationProvider { get; set; } = string.Empty;
         public virtual Guid CorrelationId { get; set; }
 
-        protected Supplier()
+        public Supplier()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
             Sites = new Collection<Site>();
