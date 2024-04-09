@@ -1,20 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
-using Unity.GrantManager.GrantApplications;
-using Unity.Payments.BatchPaymentRequests;
-using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
-using System.Reflection;
-using Volo.Abp;
 using Volo.Abp.Validation;
 using Unity.Payments.SupplierInfo;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Unity.Payments.Enums;
 
 namespace Unity.Payments.Web.SiteInfo.SiteInfoModal;
@@ -81,14 +74,7 @@ public class SiteInfoModalModel : AbpPageModel
             SiteInfo.Province = site.Province ?? "";
             SiteInfo.PostalCode = site.PostalCode ?? "";
         }
-        else if (SiteInfo.ActionType.Contains("Add"))
-        {
-
-        }
-        else
-        {
-            throw new UserFriendlyException("Invalid ActionType!");
-        }
+        
     }
 
     public async Task<IActionResult> OnPostAsync()
