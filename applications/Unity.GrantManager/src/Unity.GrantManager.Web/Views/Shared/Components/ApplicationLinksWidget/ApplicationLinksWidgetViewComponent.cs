@@ -51,6 +51,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget
             context.Files
               .AddIfNotContains("/Views/Shared/Components/ApplicationLinksWidget/Default.js");
             context.Files
+              .AddIfNotContains("/Pages/ApplicationLinks/ApplicationLinks.js");
+            context.Files
               .AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
         }
     }

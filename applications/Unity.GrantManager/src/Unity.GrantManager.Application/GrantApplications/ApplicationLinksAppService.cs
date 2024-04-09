@@ -48,7 +48,8 @@ public class ApplicationLinksAppService : CrudAppService<
                         ApplicationStatus = application.ApplicationStatus.InternalStatus,
                         ReferenceNumber = application.ReferenceNo,
                         Category = appForm.Category!,
-                        ApplicantName = applicant.ApplicantName
+                        ApplicantName = applicant.ApplicantName,
+                        ProjectName = application.ProjectName
                     };
 
         return query.ToList();

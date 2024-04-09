@@ -1,58 +1,41 @@
 ﻿$(function () {
+    let selectedApplicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
 
-    let contactModal = new abp.ModalManager({
-        viewUrl: abp.appPath + 'ApplicationContact/EditContactModal',
-        modalClass: "editContactModal"
+    let applicationLinksModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'ApplicationLinks/ApplicationLinksModal',
     });
 
-    abp.modals.editContactModal = function () {
-        let initModal = function (publicApi, args) {
-            setupContactModal(args);
-        };
-        return { initModal: initModal };
-    }
-
-    $('body').on('click','.contact-edit-btn',function(e){
-        e.preventDefault();
-        let itemId = $(this).data('id');
-        contactModal.open({
-            id: itemId
+    $('#addLinksRecordsBtn').click(function () {
+        applicationLinksModal.open({
+            applicationId: selectedApplicationId,
         });
     });
 
-    contactModal.onResult(function () {
+    applicationLinksModal.onOpen(function () {
+        let linkInput = new LinksInput({
+            selector: 'SelectedApplications',
+            duplicate: false,
+            max: 50
+        });
+        let suggestionsArray = [];
+        let selectedApplications = $('#SelectedApplications').val();
+        let allApplications = $('#AllApplications').val();
+        if (allApplications) {
+            suggestionsArray = allApplications.split(',');
+        }
+        linkInput.setSuggestions(suggestionsArray);
+
+        if(selectedApplications.length) {
+            linkInput.addData(selectedApplications.split(','));
+        }
+    });
+
+    applicationLinksModal.onResult(function () {
         abp.notify.success(
-            'The application contact have been successfully updated.',
-            'Application Contacts'
+            'The application links have been successfully updated.',
+            'Application Links'
         );
-        PubSub.publish("refresh_application_contacts");
-    });
+        // PubSub.publish("ApplicationTags_refresh");
 
-    let setupContactModal = function (args) {
-        $('#DeleteContactButton').click(function (e) {
-            e.preventDefault();
-            abp.message.confirm('Are you sure to delete this contact?')
-                .then(function(confirmed){
-                    if(confirmed){
-                        try {
-                            unity.grantManager.grantApplications.applicationContact
-                            .delete(args.id)
-                            .done(function () {
-                                PubSub.publish("refresh_application_contacts");
-                                contactModal.close();
-                                abp.notify.success(
-                                    'The contact has been deleted.'
-                                );
-                            });
-                        } catch (error) {
-                            abp.notify.error(
-                                'Contact deletion failed.'
-                            );
-                            console.log(error);
-                        }
-                        
-                    }
-            });
-        });
-    }
+    });
 });

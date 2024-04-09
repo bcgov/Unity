@@ -29,10 +29,10 @@
         </div>
     }
     <div>
-        <abp-button text="Add Records List"
-            id="add_records_list_btn"
+        <abp-button text="@(Model.ApplicationLinks.Count > 0 ? "Edit Records List" : "Add Records List")"
+            id="addLinksRecordsBtn"
             icon-type="Other"
-            icon="fl fl-plus"
+            icon="fl @(Model.ApplicationLinks.Count > 0 ? "fl-edit" : "fl-plus")"
             button-type="Light" />
     </div>
 </div>
