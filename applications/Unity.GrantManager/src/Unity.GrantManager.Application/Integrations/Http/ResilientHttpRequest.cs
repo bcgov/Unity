@@ -106,12 +106,5 @@ namespace Unity.GrantManager.Integrations.Http
 
             return await retryPolicy.WrapAsync(circuitBreakerPolicy).ExecuteAsync(async () => await _restClient.ExecuteAsync(restRequest));
         }
-
-        private static string JsonSerialize(object obj) => JsonSerializer.Serialize(obj, GetJsonSerializerOptions());
-
-        private static JsonSerializerOptions GetJsonSerializerOptions() => new()
-        {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
     }
 }

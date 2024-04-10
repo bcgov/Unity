@@ -8,7 +8,8 @@
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
     <IsPackable>true</IsPackable>
     <OutputType>Library</OutputType>
-    <RootNamespace>Unity.Notifications.Web</RootNamespace>    
+    <RootNamespace>Unity.Notifications.Web</RootNamespace>
+	<GenerateEmbeddedFilesManifest>false</GenerateEmbeddedFilesManifest>
   </PropertyGroup>
 
   <ItemGroup>
