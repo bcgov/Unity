@@ -5,7 +5,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.Payments.Suppliers
 {
-    public class Site : FullAuditedAggregateRoot<Guid>, IMultiTenant
+    public class Site : FullAuditedEntity<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
         public virtual uint Number { get; set; }
