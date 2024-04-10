@@ -193,6 +193,8 @@
     "Enum:GrantApplicationAction.Withdraw": "Withdraw",
     "Enum:GrantApplicationAction.Approve": "Approve",
     "Enum:GrantApplicationAction.Deny": "Decline",
+    "Enum:GrantApplicationAction.Defer": "Defer",
+    "Enum:GrantApplicationAction.OnHold": "On Hold",
     "Enum:GrantApplicationAction.Message.Open": "Open",
     "Enum:GrantApplicationAction.Message.Submit": "Submitted",
     "Enum:GrantApplicationAction.Message.Internal_Assign": "Assigned",
@@ -204,6 +206,8 @@
     "Enum:GrantApplicationAction.Message.Withdraw": "The Application is withdrawn!",
     "Enum:GrantApplicationAction.Message.Approve": "Approved",
     "Enum:GrantApplicationAction.Message.Deny": "Declined",
+    "Enum:GrantApplicationAction.Message.Defer": "Deferred",
+    "Enum:GrantApplicationAction.Message.OnHold": "On-Hold",
 
     "Setting:GrantManager.Locality.SectorFilter.DisplayName": "SectorFilter",
     "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
@@ -300,8 +304,8 @@
     "ApplicationDetails:Comments.Modified": "Modified:",
     "ApplicationDetails:Comments.Created": "Created:",
 
-    "ApplicationContact:AddTitle" : "Add New Contact",
-    "ApplicationContact:EditTitle" : "Edit Contact",
+    "ApplicationContact:AddTitle": "Add New Contact",
+    "ApplicationContact:EditTitle": "Edit Contact",
     "ApplicationContact:Type": "Type",
     "ApplicationContact:FullName": "Full Name",
     "ApplicationContact:Title": "Title",

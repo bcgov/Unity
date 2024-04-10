@@ -18,7 +18,9 @@ public enum GrantApplicationState
     UNDER_ASSESSMENT = 9,
     ASSESSMENT_COMPLETED = 10,
     GRANT_APPROVED = 11,
-    GRANT_NOT_APPROVED = 12
+    GRANT_NOT_APPROVED = 12,
+    DEFER = 13,
+    ON_HOLD = 14,
 }
 
 

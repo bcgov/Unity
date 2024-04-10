@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
@@ -21,6 +22,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -49,6 +51,8 @@ public class GrantApplicationAppService :
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
+    private readonly ILocalEventBus _localEventBus;
+
 
 #pragma warning disable IDE0290 // Use primary constructor
     public GrantApplicationAppService(IRepository<Application, Guid> repository,
@@ -64,7 +68,8 @@ public class GrantApplicationAppService :
         IAssessmentRepository assessmentRepository,
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
-        IApplicationTagsRepository applicationTagsRepository
+        IApplicationTagsRepository applicationTagsRepository,
+        ILocalEventBus localEventBus
         )
          : base(repository)
     {
@@ -80,10 +85,11 @@ public class GrantApplicationAppService :
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
+        _localEventBus = localEventBus;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
-    {        
+    {
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
@@ -101,7 +107,7 @@ public class GrantApplicationAppService :
                     join owner in await _personRepository.GetQueryableAsync() on application.OwnerId equals owner.Id into owners
                     from applicationOwner in owners.DefaultIfEmpty()
 
-                    join contact in await  _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
+                    join contact in await _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
                     from applicantAgent in contacts.DefaultIfEmpty()
 
                     select new
@@ -145,7 +151,7 @@ public class GrantApplicationAppService :
             appDto.OrganizationName = grouping.First().applicant?.OrgName ?? string.Empty;
             appDto.OrganizationType = grouping.First().applicant?.OrganizationType ?? string.Empty;
             appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
-            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);            
+            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
             appDto.ContactFullName = grouping.First().applicantAgent?.Name;
             appDto.ContactEmail = grouping.First().applicantAgent?.Email;
@@ -153,7 +159,7 @@ public class GrantApplicationAppService :
             appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone;
             appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2;
             appDto.RowCount = rowCounter;
-            appDtos.Add(appDto);            
+            appDtos.Add(appDto);
             rowCounter++;
         }
 
@@ -171,7 +177,7 @@ public class GrantApplicationAppService :
             return subStatusValue ?? string.Empty;
         else
             return string.Empty;
-    }  
+    }
     private static string MapDeclineRationalDisplayValue(string value)
     {
         if (value == null) { return string.Empty; }
@@ -195,8 +201,8 @@ public class GrantApplicationAppService :
                 Duty = assignment.Duty
             };
         }
-    }   
- 
+    }
+
     private static GrantApplicationAssigneeDto BuildApplicationOwner(Person applicationOwner)
     {
         if (applicationOwner != null)
@@ -338,7 +344,7 @@ public class GrantApplicationAppService :
                     input.DeclineRational);
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
-            }            
+            }
         }
 
         await _applicationRepository.UpdateAsync(application);
@@ -390,7 +396,7 @@ public class GrantApplicationAppService :
             throw new EntityNotFoundException();
         }
     }
-       public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto  input)
+       public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
              if (application != null)
@@ -408,7 +414,7 @@ public class GrantApplicationAppService :
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
             applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
-
+          
             _ = await _applicantRepository.UpdateAsync(applicant);
 
            
@@ -596,6 +602,39 @@ public class GrantApplicationAppService :
         return ObjectMapper.Map<List<Application>, List<GrantApplicationDto>>(applications.OrderBy(t => t.Id).ToList());
 
     }
+    public async Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds)
+    {
+        var query = from application in await _applicationRepository.GetQueryableAsync()
+                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    where applicationIds.Contains(application.Id)
+                    select new
+                    {
+                        application,
+                        appStatus,
+                        applicant
+                    };
+
+        var result = query
+
+                .OrderBy(s => s.application.Id)
+                .GroupBy(s => s.application.Id)
+                .AsEnumerable()
+                .ToList();
+
+        var appDtos = new List<GrantApplicationDto>();
+      
+        foreach (var grouping in result)
+        {
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
+            appDto.Status = grouping.First().appStatus.InternalStatus;
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().applicant);
+            appDtos.Add(appDto);
+        }
+
+        return new List<GrantApplicationDto>(appDtos);
+    }
+
     public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)
     {
 
@@ -744,7 +783,9 @@ public class GrantApplicationAppService :
     /// <param name="applicationId">The application</param>
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
-    {
+    {     
+
+        // AUTHORIZATION HANDLING
         var application = await _applicationRepository.GetAsync(applicationId, true);
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
         {
@@ -753,7 +794,15 @@ public class GrantApplicationAppService :
 
         application = await _applicationManager.TriggerAction(applicationId, triggerAction);
         
+        await _localEventBus.PublishAsync(
+            new ApplicationChangedEvent
+            {
+                Action = triggerAction,
+                ApplicationId = applicationId
+            }
+        );
+
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
-    #endregion APPLICATION WORKFLOW
+    #endregion APPLICATION WORKFLOW    
 }

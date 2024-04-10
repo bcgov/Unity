@@ -44,28 +44,58 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         stateMachine.Configure(GrantApplicationState.SUBMITTED)
             .SubstateOf(GrantApplicationState.OPEN)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED);                      // 2.1 - Internal_Assign;            Role: Team Lead
 
         stateMachine.Configure(GrantApplicationState.ASSIGNED)
             .SubstateOf(GrantApplicationState.OPEN)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW);              // 2.3 - Start Review;      Role: Reviewer 
 
         stateMachine.Configure(GrantApplicationState.UNDER_INITIAL_REVIEW)
             .SubstateOf(GrantApplicationState.OPEN)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED);
 
         stateMachine.Configure(GrantApplicationState.INITITAL_REVIEW_COMPLETED)
             .SubstateOf(GrantApplicationState.OPEN)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.UNDER_ASSESSMENT)
             .SubstateOf(GrantApplicationState.OPEN)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.CompleteAssessment, GrantApplicationState.ASSESSMENT_COMPLETED);
 
         stateMachine.Configure(GrantApplicationState.ASSESSMENT_COMPLETED)
             .SubstateOf(GrantApplicationState.OPEN)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED)
             .Permit(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED);
+        
+        stateMachine.Configure(GrantApplicationState.DEFER)
+            .SubstateOf(GrantApplicationState.OPEN)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
+            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW)
+            .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED)
+            .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
+            .Permit(GrantApplicationAction.CompleteAssessment, GrantApplicationState.ASSESSMENT_COMPLETED)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD);
+
+        stateMachine.Configure(GrantApplicationState.ON_HOLD)
+            .SubstateOf(GrantApplicationState.OPEN)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
+            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW)
+            .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED)
+            .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
+            .Permit(GrantApplicationAction.CompleteAssessment, GrantApplicationState.ASSESSMENT_COMPLETED)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER);
 
         // CLOSED STATES
 
