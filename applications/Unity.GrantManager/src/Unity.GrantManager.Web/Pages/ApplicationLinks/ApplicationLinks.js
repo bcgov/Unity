@@ -143,7 +143,6 @@ $(function () {
 
     // Private function to initialize the link input plugin
     function init(links) {
-        console.log(links);
         links.wrapper.append(links.input);
         links.wrapper.classList.add(links.options.wrapperClass);
         links.orignal_input.setAttribute('hidden', 'true');

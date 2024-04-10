@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,12 +11,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationLinks
 {
-    class NewLinkItem
-    {
-        public string? ApplicationId { get; set; }
-        public string? CommonText { get; set; }
-        public string? UncommonText { get; set; }
-    }
     public class ApplicationLinksModalModel : AbpPageModel
     {
         [BindProperty]
@@ -24,6 +19,12 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
 
         [BindProperty]
         public string? AllApplications { get; set; } = string.Empty;
+
+        [BindProperty]
+        public string? GrantApplicationsList { get; set; } = string.Empty;
+
+        [BindProperty]
+        public string? LinkedApplicationsList { get; set; } = string.Empty;
 
         [BindProperty]
         public string? SelectedApplicationId { get; set; } = string.Empty;
@@ -45,6 +46,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
         [BindProperty]
         public string? Tags { get; set; } = string.Empty;
 
+        [BindProperty]
+        public Guid? CurrentApplicationId { get; set; }
+
 
         public ApplicationLinksModalModel(IApplicationLinksService applicationLinksService, IGrantApplicationAppService grantApplicationAppService)
         {
@@ -56,16 +60,20 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
         {
             try
             {
-                var allApplications = await _grantApplicationAppService.GetAllApplicationsAsync();
-
+                CurrentApplicationId = applicationId;
+                var grantApplications = await _grantApplicationAppService.GetAllApplicationsAsync();
                 var linkedApplications = await _applicationLinksService.GetListByApplicationAsync(applicationId);
 
-                var formattedAllApplications = allApplications.Select(item => item.ReferenceNo + " - " + item.ProjectName).ToList();
+                // remove current application id from ths suggestion list
+                grantApplications.Remove(grantApplications.Single(item => item.Id == applicationId));
 
+                var formattedAllApplications = grantApplications.Select(item => item.ReferenceNo + " - " + item.ProjectName).ToList();
                 var formattedLinkedApplications = linkedApplications.Select(item => item.ReferenceNumber + " - " + item.ProjectName).ToList();
 
                 AllApplications = string.Join(",", formattedAllApplications);
                 SelectedApplications = string.Join(",", formattedLinkedApplications);
+                GrantApplicationsList = JsonConvert.SerializeObject(grantApplications);
+                LinkedApplicationsList = JsonConvert.SerializeObject(linkedApplications);
             }
             catch (Exception ex)
             {
@@ -73,79 +81,48 @@ namespace Unity.GrantManager.Web.Pages.ApplicationLinks
             }
         }
 
-        // public async Task<IActionResult> OnPostAsync()
-        // {
-        //     const string uncommonTags = "Uncommon Tags"; // Move to constants?
-        //     if (SelectedApplicationIds == null) return NoContent();
-
-        //     try
-        //     {
-        //         var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-        //         if (SelectedTags != null)
-        //         {
-        //             string[]? stringArray = JsonConvert.DeserializeObject<string[]>(SelectedTags);
-
-        //             if (null != applicationIds)
-        //             {
-        //                 var selectedApplicationIds = applicationIds.ToArray();
-
-        //                 if (Tags != null)
-        //                 {
-        //                     var tags = JsonConvert.DeserializeObject<NewTagItem[]>(Tags)?.ToList();
-
-        //                     await ProcessTagsAsync(uncommonTags, stringArray, selectedApplicationIds, tags);
-        //                 }
-        //             }
-
-        //         }
-
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Logger.LogError(ex, message: "Error updating application tags");
-        //     }
-
-        //     return NoContent();
-        // }
-
-        // private async Task ProcessTagsAsync(string uncommonTags, string[]? stringArray, Guid[] selectedApplicationIds, List<NewTagItem>? tags)
-        // {
-        //     foreach (var item in selectedApplicationIds)
-        //     {
-        //         var applicationTagString = "";
-
-        //         if (tags != null
-        //             && tags.Count > 0
-        //             && stringArray != null
-        //             && stringArray.Length > 0
-        //             && stringArray.Contains(uncommonTags))
-        //         {
-        //             NewTagItem? applicationTag = tags.Find(tagItem => tagItem.ApplicationId == item.ToString());
-
-        //             if (applicationTag != null)
-        //             {
-        //                 applicationTagString += applicationTag.UncommonText;
-        //             }
-        //         }
-        //         if (stringArray != null && stringArray.Length > 0)
-        //         {
-        //             var applicationCommonTagArray = stringArray.Where(item => item != uncommonTags).ToArray();
-        //             if (applicationCommonTagArray.Length > 0)
-        //             {
-        //                 applicationTagString += (applicationTagString == "" ? string.Join(",", applicationCommonTagArray) : (',' + string.Join(",", applicationCommonTagArray)));
-
-        //             }
-        //         }
-
-        //         await _applicationTagsService.CreateorUpdateTagsAsync(item, new ApplicationTagsDto { ApplicationId = item, Text = RemoveDuplicates(applicationTagString) });
-        //     }
-        // }
-
-        private string RemoveDuplicates(string applicationTagString)
+        public async Task<IActionResult> OnPostAsync()
         {
-            var tagArray = applicationTagString.Split(",");
-            var noDuplicates = tagArray.Distinct().ToArray();
-            return string.Join(",", noDuplicates);
+            try
+            {
+                if (SelectedApplications != null) {
+                    string[]? selectedApplicationsArray = JsonConvert.DeserializeObject<string[]>(SelectedApplications);
+                    List<GrantApplicationLiteDto>? grantApplications = JsonConvert.DeserializeObject<List<GrantApplicationLiteDto>>(GrantApplicationsList!);
+                    List<ApplicationLinksInfoDto>? linkedApplications = JsonConvert.DeserializeObject<List<ApplicationLinksInfoDto>>(LinkedApplicationsList!);
+
+                    foreach (var item in selectedApplicationsArray!)
+                    {
+                        var itemArr = item.Split('-');
+                        var referenceNo = itemArr[0].Trim();
+                        ApplicationLinksInfoDto applicationLinksInfoDto = linkedApplications!.Find(application => application.ReferenceNumber == referenceNo)!;
+                        
+                        // Add new link only if its not already existing
+                        if (applicationLinksInfoDto == null) {
+                            Guid linkedApplicationId = grantApplications!.Find(application => application.ReferenceNo == referenceNo)!.Id;
+
+                            await _applicationLinksService.CreateAsync(new ApplicationLinksDto{
+                                ApplicationId = CurrentApplicationId ?? Guid.Empty,
+                                LinkedApplicationId = linkedApplicationId
+                            });
+                        }
+                    }
+
+                    // For removing the deleted links
+                    foreach (ApplicationLinksInfoDto linked in linkedApplications!)
+                    {
+                        var selectedIndex = selectedApplicationsArray!.FindIndex(selected => selected.Split('-')[0].Trim() == linked.ReferenceNumber);
+                        if(selectedIndex < 0) {
+                            await _applicationLinksService.DeleteAsync(linked.Id);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, message: "Error updating application tags");
+            }
+
+            return NoContent();
         }
     }
 }
