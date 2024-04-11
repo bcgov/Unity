@@ -6,7 +6,7 @@ using Unity.Payments.BatchPaymentRequests;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Unity.Payments.Settings;
+using Unity.Payments.PaymentSettings;
 
 namespace Unity.Payments.Web.Pages.BatchPayments
 {
@@ -15,15 +15,15 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         [BindProperty]
         public List<BatchPaymentsModel> ApplicationPaymentRequestForm { get; set; } = new();
         public List<Guid> SelectedApplicationIds { get; set; }
-        public PaymentsSettingsDto Settings { get; set; } = new PaymentsSettingsDto();
+        public PaymentSettingsDto PaymentSettings { get; set; } = new PaymentSettingsDto();
 
         private readonly GrantApplicationAppService _applicationService;
         private readonly IBatchPaymentRequestAppService _batchPaymentRequestService;
-        private readonly IPaymentsSettingsAppService _paymentsSettingsAppService;
+        private readonly IPaymentSettingsAppService _paymentsSettingsAppService;
 
         public CreateBatchPaymentsModel(GrantApplicationAppService applicationService,
            IBatchPaymentRequestAppService batchPaymentRequestService,
-           IPaymentsSettingsAppService paymentsSettingsAppService)
+           IPaymentSettingsAppService paymentsSettingsAppService)
         {
             SelectedApplicationIds = new();
             _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
@@ -35,7 +35,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         {
             SelectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(applicationIds) ?? new List<Guid>();
             var applications = await _applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
-            Settings = await _paymentsSettingsAppService.GetAsync();
+            PaymentSettings = _paymentsSettingsAppService.Get();
             foreach (var application in applications)
             {
                 BatchPaymentsModel request = new()

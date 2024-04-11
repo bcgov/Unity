@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240405210216_PaymentSettings")]
+    partial class AddPaymentsSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1707,6 +1710,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("PaymentSettings", "Payments");
                 });
 
+
             modelBuilder.Entity("Unity.Payments.Suppliers.Site", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2082,11 +2086,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.Payments.Suppliers.Supplier", b =>
                 {
                     b.Navigation("Sites");
-                });
-
-            modelBuilder.Entity("Unity.Payments.PaymentSettings.PaymentSetting", b =>
-                {
-                    b.Navigation("PaymentSettings");
                 });
 #pragma warning restore 612, 618
         }

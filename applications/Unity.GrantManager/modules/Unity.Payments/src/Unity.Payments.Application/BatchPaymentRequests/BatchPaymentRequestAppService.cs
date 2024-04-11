@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
-using Unity.Payments.Settings;
+using Unity.Payments.PaymentSettings;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
 
@@ -13,17 +13,21 @@ namespace Unity.Payments.BatchPaymentRequests
     {
         private readonly IBatchPaymentRequestRepository _batchPaymentRequestsRepository;
         private readonly ICurrentUser _currentUser;
+        private IPaymentSettingsAppService PaymentSettingsAppService { get; set; }
 
-        public BatchPaymentRequestAppService(IBatchPaymentRequestRepository batchPaymentRequestsRepository,
-            ICurrentUser currentUser)
+        public BatchPaymentRequestAppService(
+            IBatchPaymentRequestRepository batchPaymentRequestsRepository,
+            ICurrentUser currentUser,
+            IPaymentSettingsAppService paymentSettingsAppService)
         {
             _batchPaymentRequestsRepository = batchPaymentRequestsRepository;
             _currentUser = currentUser;
+            PaymentSettingsAppService = paymentSettingsAppService;
         }
 
         public async Task<BatchPaymentRequestDto> CreateAsync(CreateBatchPaymentRequestDto batchPaymentRequest)
         {
-            var paymentThreshold = await GetPaymentThresholdSettingValueAsync();
+            var paymentThreshold = GetPaymentThresholdSettingValueAsync();
 
             var newBatchPaymentRequest = new BatchPaymentRequest(Guid.NewGuid(),
                 Guid.NewGuid().ToString(), // Need to implement batch number generator
@@ -50,9 +54,15 @@ namespace Unity.Payments.BatchPaymentRequests
             return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
         }
 
-        private async Task<string?> GetPaymentThresholdSettingValueAsync()
+        private string GetPaymentThresholdSettingValueAsync()
         {
-            return await SettingProvider.GetOrNullAsync(PaymentsSettings.PaymentThreshold);
+            PaymentSettingsDto paymentSettingsDto = PaymentSettingsAppService.Get();
+            string? thresholdAmount = "";
+            if (paymentSettingsDto != null && paymentSettingsDto.PaymentThreshold.HasValue)
+            {
+                thresholdAmount = paymentSettingsDto.PaymentThreshold.ToString();
+            }
+            return thresholdAmount != null ? thresholdAmount : "";
         }
 
         private static decimal ConvertPaymentThresholdAmount(string? paymentThreshold)

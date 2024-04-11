@@ -65,11 +65,11 @@
                                 }
                                 <span class="ms-2 d-none d-sm-inline menu-text"> @menuItem.DisplayName</span>
                             </a>
-                            <ul class="collapse show nav flex-column ms-1" id="submenu1" data-bs-parent="#menu" aria-labelledby="Menu_@(menuItem.Name)">
+                            <ul class="collapse nav dropdown-menu flex-column ms-1" id="submenu1" data-bs-parent="#menu" aria-labelledby="Menu_@(menuItem.Name)">
                                 @foreach (var childMenuItem in menuItem.Items)
                                 {
                                     <li class="w-100">
-                                        <a class="nav-link px-0 @cssClass @disabled" href="@url" target="@childMenuItem.Target" @Html.Raw(childMenuItem.ElementId)>
+                                        <a class="nav-link px-0 @cssClass @disabled" href="@childMenuItem.Url" target="@childMenuItem.Target" @Html.Raw(childMenuItem.ElementId)>
                                             @if (childMenuItem.Icon != null)
                                             {
                                                 if (childMenuItem.Icon.StartsWith("fa"))
@@ -78,7 +78,7 @@
                                                 }
                                             }
 
-                                            <span class="ms-2 d-none d-sm-inline">@Model.DisplayName</span>
+                                            <span class="ms-2 d-none d-sm-inline">@childMenuItem.DisplayName</span>
                                         </a>
                                     </li>
                                 }
