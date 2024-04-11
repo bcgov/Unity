@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Reflection.Metadata.Ecma335;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailNotifications;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus;
 
@@ -31,9 +31,12 @@ namespace Unity.GrantManager.Events
 
         private async Task EmailNotificationEventAsync(ApplicationChangedEvent eventData)
         {
-            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == eventData.ApplicationId) ?? throw new EntityNotFoundException();
+            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == eventData.ApplicationId);
+            if (applicantAgent == null) return;
+
             string email = applicantAgent.Email;
             string subject = "Grant Application Update";
+
             if (!string.IsNullOrEmpty(email))
             {
                 switch (eventData.Action)
