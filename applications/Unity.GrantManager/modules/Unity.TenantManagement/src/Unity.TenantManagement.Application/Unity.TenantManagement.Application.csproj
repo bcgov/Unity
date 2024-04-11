@@ -1,6 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><LangVersion>latest</LangVersion>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Unity.TenantManagement.Application</AssemblyName>
     <PackageId>Unity.TenantManagement.Application</PackageId>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
@@ -10,10 +10,10 @@
     <RootNamespace />
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="7.0.14" />
-    <PackageReference Include="Volo.Abp.Ddd.Application" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Domain" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Domain.Shared" Version="7.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.3" />
+    <PackageReference Include="Volo.Abp.Ddd.Application" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Domain" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Domain.Shared" Version="8.1.0" />
   </ItemGroup>
 
   <ItemGroup>

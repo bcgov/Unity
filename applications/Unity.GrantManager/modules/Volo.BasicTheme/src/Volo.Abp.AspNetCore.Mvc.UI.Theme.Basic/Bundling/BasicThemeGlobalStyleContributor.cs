@@ -20,7 +20,7 @@ public class BasicThemeGlobalStyleContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.css");
 
         // Add assets for "/themes/basic/fonts/**/*"
-        context.Files.AddRange(new[] {
+        context.Files.AddRange(new List<BundleFile> {
             "/themes/basic/fonts/icons/Segoe-Fluent-Icons.ttf",
             "/themes/basic/fonts/icons/Segoe-MDL2-Assets.ttf",
             "/themes/basic/fonts/BCSans/BCSans-Bold.otf",

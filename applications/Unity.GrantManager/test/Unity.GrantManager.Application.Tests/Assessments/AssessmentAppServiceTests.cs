@@ -11,7 +11,6 @@ using Unity.GrantManager.Exceptions;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 using Xunit;
 using Xunit.Abstractions;
 

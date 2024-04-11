@@ -3,8 +3,8 @@
   "name": "my-app",
   "private": true,
   "dependencies": {
-    "@abp/aspnetcore.mvc.ui.theme.basic": "~7.4.0",
-    "@abp/font-awesome": "~7.4.0",
+    "@abp/aspnetcore.mvc.ui.theme.basic": "^8.1.0",
+    "@abp/font-awesome": "^8.1.0",
     "axios": "^1.4.0",
     "chart.js": "^4.4.1",
     "datatables.net-bs5": "^1.13.6",

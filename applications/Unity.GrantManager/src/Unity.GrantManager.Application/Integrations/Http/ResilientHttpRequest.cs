@@ -7,8 +7,6 @@ using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Volo.Abp;
 
@@ -106,12 +104,5 @@ namespace Unity.GrantManager.Integrations.Http
 
             return await retryPolicy.WrapAsync(circuitBreakerPolicy).ExecuteAsync(async () => await _restClient.ExecuteAsync(restRequest));
         }
-
-        private static string JsonSerialize(object obj) => JsonSerializer.Serialize(obj, GetJsonSerializerOptions());
-
-        private static JsonSerializerOptions GetJsonSerializerOptions() => new()
-        {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
     }
 }
