@@ -7,6 +7,7 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.VirtualFileSystem;
 using Unity.TenantManagement;
 using Unity.Notifications;
+using Unity.Payments;
 
 namespace Unity.GrantManager;
 
@@ -19,6 +20,7 @@ namespace Unity.GrantManager;
     typeof(AbpSettingManagementHttpApiClientModule)
 )]
 [DependsOn(typeof(NotificationsHttpApiClientModule))]
+[DependsOn(typeof(PaymentsHttpApiClientModule))]
     public class GrantManagerHttpApiClientModule : AbpModule
 {
     public const string RemoteServiceName = "Default";

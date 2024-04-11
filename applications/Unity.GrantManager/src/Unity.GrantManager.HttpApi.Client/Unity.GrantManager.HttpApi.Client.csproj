@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi.Client\Unity.TenantManagement.HttpApi.Client.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.HttpApi.Client\Unity.Notifications.HttpApi.Client.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.HttpApi.Client\Unity.Payments.HttpApi.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>

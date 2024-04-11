@@ -1,16 +1,46 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
 {
-    [Widget(ScriptFiles = new[] { "/Views/Shared/Components/ActionBar/Default.js", "/Pages/ApplicationTags/ApplicationTags.js", "/Pages/AssigneeSelection/AssigneeSelection.js" },
-        StyleFiles = new[] { "/Views/Shared/Components/ActionBar/Default.css" })]
-      public class ActionBar : AbpViewComponent
+    [Widget(        
+        ScriptTypes = new[] { typeof(ActionBarWidgetScriptBundleContributor) },
+        StyleTypes = new[] { typeof(ActionBarWidgetStyleBundleContributor) },
+        AutoInitialize = true)]
+    public class ActionBar : AbpViewComponent
     {
         public IViewComponentResult Invoke()
         {
             return View();
+        }
+    }
+
+    public class ActionBarWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/ActionBar/Default.css");
+        }
+    }
+
+    public class ActionBarWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/ActionBar/Default.js");
+            context.Files
+              .AddIfNotContains("/Pages/ApplicationTags/ApplicationTags.js");
+            context.Files
+              .AddIfNotContains("/Pages/AssigneeSelection/AssigneeSelection.js");
+            context.Files
+              .AddIfNotContains("/Pages/BatchPayments/BatchPaymentsModal.js");
+            context.Files
+              .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
         }
     }
 }

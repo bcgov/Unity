@@ -171,12 +171,17 @@ namespace Unity.GrantManager.Identity
 
         private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, string? username, string? firstName, string? lastName, string? emailAddress)
         {
-            IdentityUser? identityUser = new(newUserId, username, emailAddress ?? $"{username}@{username}.com", _currentTenant.Id)
+            if (string.IsNullOrWhiteSpace(emailAddress)) emailAddress = null;
+            IdentityUser? identityUser = new(newUserId, username, emailAddress ?? $"{Guid.Empty}@{username}", _currentTenant.Id)
             {
                 Name = firstName,
                 Surname = lastName,
             };
-            identityUser.SetEmailConfirmed(true);
+
+            if (emailAddress != null)
+            {
+                identityUser.SetEmailConfirmed(true);
+            }            
 
             // Use identity user manager to create the user
             var createUserResult = await _userManager.CreateAsync(identityUser) ?? throw new AbpException("Unxpected error importing user");

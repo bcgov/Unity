@@ -23,6 +23,7 @@
     <None Remove="Logs\**" />
     <None Remove="Views\Shared\Components\AssessmentResults\" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Web\Unity.Notifications.Web.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Web\Unity.Payments.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

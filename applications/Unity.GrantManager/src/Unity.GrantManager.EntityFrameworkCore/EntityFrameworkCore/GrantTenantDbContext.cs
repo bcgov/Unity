@@ -10,6 +10,7 @@ using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
+using Unity.Payments.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -280,6 +281,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 var entityBuilder = modelBuilder.Entity(type);
                 entityBuilder.TryConfigureExtraProperties();
             }
+
+            modelBuilder.ConfigurePayments();
         }
     }
 }

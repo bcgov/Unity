@@ -9,7 +9,7 @@
         public string? OrganizationSize { get; set; }
 
         public string? Sector { get; set; }
-        public string? SubSector { get; set; }
+        public string? SubSector { get; set; }        
         public string? SectorSubSectorIndustryDesc { get; set; } = string.Empty;
 
         public string? ContactFullName { get; set; }
@@ -21,7 +21,6 @@
         public string? SigningAuthorityTitle { get; set; }
         public string? SigningAuthorityEmail { get; set; }
         public string? SigningAuthorityBusinessPhone { get; set; }
-        public string? SigningAuthorityCellPhone { get; set; }
-
+        public string? SigningAuthorityCellPhone { get; set; }        
     }
 }

@@ -346,6 +346,9 @@
 .fl-clear:before {
     content: '\E894';
 }
+.fl-card:before {
+    content: '\E8C7';
+}
 
 .fl-arrow-right:before {
     content: '\F0AF';
