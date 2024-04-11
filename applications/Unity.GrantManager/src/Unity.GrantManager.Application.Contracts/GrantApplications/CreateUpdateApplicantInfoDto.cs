@@ -1,4 +1,6 @@
-﻿namespace Unity.GrantManager.GrantApplications
+﻿using System;
+
+namespace Unity.GrantManager.GrantApplications
 {
     public class CreateUpdateApplicantInfoDto
     {
@@ -21,6 +23,8 @@
         public string? SigningAuthorityTitle { get; set; }
         public string? SigningAuthorityEmail { get; set; }
         public string? SigningAuthorityBusinessPhone { get; set; }
-        public string? SigningAuthorityCellPhone { get; set; }        
+        public string? SigningAuthorityCellPhone { get; set; }
+        public string? SupplierNumber { get; set; }
+        public Guid ApplicantId {  get; set; }
     }
 }

@@ -13,6 +13,20 @@
     "ApplicationPaymentRequest:InvoiceNumber": "Invoice #",
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
-    "ApplicationPaymentRequest:Validations:ThresholdExceeded": "Cannot add a payment to an existing batch with a value above threshold of"
+    "ApplicationPaymentRequest:Validations:ThresholdExceeded": "Cannot add a payment to an existing batch with a value above threshold of",
+    
+    "ApplicantInfoView:SupplierInfoTitle": "Payments",
+    "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber": "Site #",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup": "Pay Group",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:MailingAddress": "Mailing Address",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:AddSiteButtonText": "ADD SITE",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:AddressLine1": "Address Line 1",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:AddressLine2": "Address Line 2",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:AddressLine3": "Address Line 3",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:City": "City",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:Province": "Province",
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:PostalCode": "Postal Code"
+
   }
 }

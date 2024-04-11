@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240410180416_Update_Site_Supplier")]
+    partial class UpdateSiteSupplier
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1691,11 +1694,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("Number")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<long>("Number")
+                        .HasColumnType("bigint");
 
-                    b.Property<int>("PaymentGroup")
+                    b.Property<int>("PaymentMethod")
                         .HasColumnType("integer");
 
                     b.Property<string>("PostalCode")
@@ -1780,10 +1782,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Number")
-                        .HasColumnType("text");
+                    b.Property<long>("Number")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("PostalCode")
                         .HasColumnType("text");

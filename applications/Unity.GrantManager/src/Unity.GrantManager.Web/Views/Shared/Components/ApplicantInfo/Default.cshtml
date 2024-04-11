@@ -1,6 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
-@using Unity.GrantManager.Localization
-@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
 
 @inject IAuthorizationService AuthorizationService
@@ -25,6 +25,7 @@
                                 icon="fl fl-save" button-type="Primary" disabled="true" />
     </abp-column>
     <form id="ApplicantInfoForm">
+        <abp-input type="hidden" id="ApplicantInfoViewApplicantId" asp-for="@Model.ApplicantId" />
         <abp-row class="m-0 project-info-form">
             <abp-row class="m-0 p-0">
                 <abp-column size="_6" class="px-1">
@@ -118,7 +119,7 @@
             </abp-row>
            
          </abp-row>
-        <abp-row class="m-0 project-info-location">
+        <abp-row class="m-0 project-info-form">
 
 
             <abp-row class="m-0 p-0">
@@ -148,7 +149,9 @@
                 </abp-column>
             </abp-row>
         </abp-row>
-     
+        <div id="supplier-info-widget">
+            @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
+        </div>
      </form>
 </abp-row>
 
