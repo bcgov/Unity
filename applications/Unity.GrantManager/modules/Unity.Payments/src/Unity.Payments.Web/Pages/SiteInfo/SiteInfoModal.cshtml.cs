@@ -80,7 +80,7 @@ public class SiteInfoModalModel : AbpPageModel
             SiteDto site = await _siteAppService.GetAsync(siteId);
 
             Site.SiteNumber = site.Number ?? "";
-            Site.PayGroup = site.PaymentGroup.ToString();
+            Site.PayGroup = ((int)site.PaymentGroup).ToString();
             Site.AddressLine1 = site.AddressLine1 ?? "";
             Site.AddressLine2 = site.AddressLine2 ?? "";
             Site.AddressLine3 = site.AddressLine3 ?? "";

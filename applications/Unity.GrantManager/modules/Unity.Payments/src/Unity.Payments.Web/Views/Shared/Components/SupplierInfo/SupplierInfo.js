@@ -36,7 +36,17 @@ $(function () {
                     {
                         title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup'),
                         data: 'paymentGroup',
-                        className: 'data-table-header'
+                        className: 'data-table-header',
+                        render: function (data) {
+                            switch (data) {
+                                case 1:
+                                    return 'EFT';
+                                case 2:
+                                    return 'Cheque';
+                                default:
+                                    return 'Unknown PaymentGroup';
+                            }
+                        },
                     },
                     {
                         title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:MailingAddress'),
