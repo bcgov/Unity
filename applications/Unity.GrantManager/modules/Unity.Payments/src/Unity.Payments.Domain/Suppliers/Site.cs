@@ -8,9 +8,9 @@ namespace Unity.Payments.Suppliers
     public class Site : FullAuditedEntity<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
-        public virtual uint Number { get; set; }
-        public virtual PaymentGroup PaymentMethod { get; set; }
-        
+        public virtual string Number { get; set; } = string.Empty;
+        public virtual PaymentGroup PaymentGroup { get; set; }
+
         /* Address */
         public virtual string? AddressLine1 { get; set; }
         public virtual string? AddressLine2 { get; set; }
@@ -23,13 +23,13 @@ namespace Unity.Payments.Suppliers
         public virtual Supplier? Supplier { get; set; }
         public virtual Guid SupplierId { get; set; }
 
-        public Site()
+        protected Site()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
         public Site(Guid id,
-            uint number,
+            string number,
             PaymentGroup paymentMethod,
             string? addressLine1 = default,
             string? addressLine2 = default,
@@ -40,7 +40,32 @@ namespace Unity.Payments.Suppliers
            : base(id)
         {
             Number = number;
-            PaymentMethod = paymentMethod;
+            PaymentGroup = paymentMethod;
+            AddressLine1 = addressLine1;
+            AddressLine2 = addressLine2;
+            AddressLine3 = addressLine3;
+            City = city;
+            Province = province;
+            PostalCode = postalCode;
+        }
+
+        public void SetNumber(string number)
+        {
+            Number = number;
+        }
+
+        public void SetPaymentGroup(PaymentGroup paymentGroup)
+        {
+            PaymentGroup = paymentGroup;
+        }
+
+        public void SetAddress(string? addressLine1,
+            string? addressLine2,
+            string? addressLine3,
+            string? city,
+            string? province,
+            string? postalCode)
+        {
             AddressLine1 = addressLine1;
             AddressLine2 = addressLine2;
             AddressLine3 = addressLine3;

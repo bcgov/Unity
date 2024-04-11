@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.Validation;
-using Unity.Payments.SupplierInfo;
+using Unity.Payments.Suppliers;
 using Unity.Payments.Enums;
 
 namespace Unity.Payments.Web.SiteInfo.SiteInfoModal;
@@ -16,24 +16,30 @@ public class SiteInfoModalModel : AbpPageModel
 {
     public List<SelectListItem> PayGroupOptionsList { get; set; }
     [BindProperty]
-    public SiteInfoModalModelModel SiteInfo { get; set; } = new();
+    public SiteInfoModalModelModel Site { get; set; } = new();
 
-    private readonly SupplierInfoAppService _supplierService;
+    private readonly SupplierAppService _supplierService;
+    private readonly SiteAppService _siteAppService;
 
-    public SiteInfoModalModel(SupplierInfoAppService supplierService)
+    public SiteInfoModalModel(SupplierAppService supplierService, SiteAppService siteAppService)
     {
         _supplierService = supplierService;
-        PayGroupOptionsList = new();
-        PayGroupOptionsList.Add(new SelectListItem { Value = ((int)Enums.PaymentGroup.Cheque).ToString(), Text = Enums.PaymentGroup.Cheque.ToString() });
-        PayGroupOptionsList.Add(new SelectListItem { Value = ((int)Enums.PaymentGroup.EFT).ToString(), Text = Enums.PaymentGroup.EFT.ToString() });
+        _siteAppService = siteAppService;
+
+        PayGroupOptionsList =
+        [
+            new SelectListItem { Value = ((int)PaymentGroup.Cheque).ToString(), Text = PaymentGroup.Cheque.ToString() },
+            new SelectListItem { Value = ((int)PaymentGroup.EFT).ToString(), Text = PaymentGroup.EFT.ToString() },
+        ];
     }
 
-    public class SiteInfoModalModelModel 
+    public class SiteInfoModalModelModel
     {
-        public Guid SiteId { get; set; }
+        public Guid Id { get; set; }
         public string ActionType { get; set; } = string.Empty;
-        public string SupplierNumber {  get; set; } = string.Empty;
-        public Guid ApplicantId {  get; set; }
+        public string SupplierNumber { get; set; } = string.Empty;
+        public Guid ApplicantId { get; set; }
+        public Guid SupplierId { get; set; }
 
         [Display(Name = "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber")]
         [MaxLength(21, ErrorMessage = "Must be a maximum of 21 characters")]
@@ -56,46 +62,82 @@ public class SiteInfoModalModel : AbpPageModel
     }
 
 
-    public async Task OnGetAsync(Guid siteId, string actionType, string supplierNumber, Guid applicantId)
+    public async Task OnGetAsync(Guid siteId,
+        string actionType,
+        string supplierNumber,
+        Guid applicantId,
+        Guid supplierId)
     {
-        SiteInfo.SiteId = siteId;
-        SiteInfo.ActionType = actionType;
-        SiteInfo.SupplierNumber = supplierNumber;
-        SiteInfo.ApplicantId = applicantId;
-        if (SiteInfo.ActionType.Contains("Edit"))
+        Site.Id = siteId;
+        Site.ActionType = actionType;
+        Site.SupplierNumber = supplierNumber;
+        Site.ApplicantId = applicantId;
+        Site.SupplierId = supplierId;
+
+        if (Site.ActionType.Contains("Edit"))
         {
-            SiteDto site = await _supplierService.GetSiteAsync(applicantId, supplierNumber, siteId);
-            SiteInfo.SiteNumber = site.Number ?? "";
-            SiteInfo.PayGroup = ((int)Enum.Parse(typeof(PaymentGroup), site.PayGroup??"")).ToString()??"";
-            SiteInfo.AddressLine1 = site.AddressLine1 ?? "";
-            SiteInfo.AddressLine2 = site.AddressLine2 ?? "";
-            SiteInfo.AddressLine3 = site.AddressLine3 ?? "";
-            SiteInfo.City = site.City ?? "";
-            SiteInfo.Province = site.Province ?? "";
-            SiteInfo.PostalCode = site.PostalCode ?? "";
+            SiteDto site = await _siteAppService.GetAsync(siteId);
+
+            Site.SiteNumber = site.Number ?? "";
+            Site.PayGroup = site.PaymentGroup.ToString();
+            Site.AddressLine1 = site.AddressLine1 ?? "";
+            Site.AddressLine2 = site.AddressLine2 ?? "";
+            Site.AddressLine3 = site.AddressLine3 ?? "";
+            Site.City = site.City ?? "";
+            Site.Province = site.Province ?? "";
+            Site.PostalCode = site.PostalCode ?? "";
         }
-        
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (SiteInfo.ActionType.StartsWith("Edit"))
+        if (Site.ActionType.StartsWith("Edit"))
         {
-            int payGroup;
-            int.TryParse(SiteInfo.PayGroup, out payGroup);
-            await _supplierService.UpdateSiteAsync(SiteInfo.SiteId, SiteInfo.ApplicantId, SiteInfo.SupplierNumber, SiteInfo.SiteNumber, payGroup, SiteInfo.AddressLine1, SiteInfo.AddressLine2, SiteInfo.AddressLine3, SiteInfo.City, SiteInfo.Province, SiteInfo.PostalCode);
+            await EditSite();
+
             return NoContent();
         }
-        else if (SiteInfo.ActionType.StartsWith("Add"))
+        else if (Site.ActionType.StartsWith("Add"))
         {
-            int payGroup;
-            int.TryParse(SiteInfo.PayGroup, out payGroup);
-            await _supplierService.InsertSiteAsync(SiteInfo.ApplicantId, SiteInfo.SupplierNumber, SiteInfo.SiteNumber, payGroup, SiteInfo.AddressLine1, SiteInfo.AddressLine2, SiteInfo.AddressLine3, SiteInfo.City, SiteInfo.Province, SiteInfo.PostalCode);
+            await CreateSite();
+
             return NoContent();
         }
         else
         {
             throw new AbpValidationException("Invalid ActionType!");
         }
+    }
+
+    private async Task CreateSite()
+    {
+        _ = int.TryParse(Site.PayGroup, out int payGroup);
+        _ = await _supplierService.CreateSiteAsync(Site.SupplierId, new CreateSiteDto()  // how to get guid
+        {
+            AddressLine1 = Site.AddressLine1,
+            AddressLine2 = Site.AddressLine2,
+            AddressLine3 = Site.AddressLine3,
+            City = Site.City,
+            Number = Site.SiteNumber,
+            PaymentGroup = (PaymentGroupDto)payGroup,
+            PostalCode = Site.PostalCode,
+            Province = Site.Province
+        });
+    }
+
+    private async Task EditSite()
+    {
+        _ = int.TryParse(Site.PayGroup, out int payGroup);
+        _ = await _supplierService.UpdateSiteAsync(Site.SupplierId, Site.Id, new UpdateSiteDto()
+        {
+            AddressLine1 = Site.AddressLine1,
+            AddressLine2 = Site.AddressLine2,
+            AddressLine3 = Site.AddressLine3,
+            City = Site.City,
+            Number = Site.SiteNumber,
+            PaymentGroup = (PaymentGroupDto)payGroup,
+            PostalCode = Site.PostalCode,
+            Province = Site.Province
+        });
     }
 }

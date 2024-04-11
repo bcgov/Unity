@@ -6,30 +6,38 @@ using System;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Unity.Payments.Suppliers;
-using System.Linq;
-using System.Linq.Dynamic.Core;
-using Volo.Abp.Application.Services;
-using Unity.Payments.SupplierInfo;
+using Unity.GrantManager.Payments;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
     [Widget(
         RefreshUrl = "Widget/SupplierInfo/Refresh",
         ScriptTypes = new[] { typeof(SupplierInfoWidgetScriptBundleContributor) },
-        StyleTypes = new[] { typeof(SupplierInfosWidgetStyleBundleContributor) },        
+        StyleTypes = new[] { typeof(SupplierInfosWidgetStyleBundleContributor) },
         AutoInitialize = true)]
     public class SupplierInfoViewComponent : AbpViewComponent
     {
-        private readonly SupplierInfoAppService _supplierService;
-        public SupplierInfoViewComponent(SupplierInfoAppService supplierService)
+        private readonly SupplierAppService _supplierService;
+        public SupplierInfoViewComponent(SupplierAppService supplierService)
         {
             _supplierService = supplierService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
         {
-            Task<Supplier?> supplier = _supplierService.GetSupplierAsync(applicantId);
-            return View(new SupplierInfoViewModel() { SupplierNumber = supplier.Result?.Number.ToString()});
+            var supplier = await _supplierService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+            {
+                CorrelationId = applicantId,
+                CorrelationProvider = PaymentConsts.ApplicantCorrelationProvider
+            });
+
+            return View(new SupplierInfoViewModel()
+            {
+                SupplierCorrelationId = applicantId,
+                SupplierCorrelationProvider = PaymentConsts.ApplicantCorrelationProvider,
+                SupplierId = supplier?.Id ?? Guid.Empty,
+                SupplierNumber = supplier?.Number?.ToString()
+            });
         }
     }
 

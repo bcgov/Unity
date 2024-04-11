@@ -16,7 +16,10 @@
     </abp-row>
     <abp-row class="m-0 p-0">
         <abp-column size="_12" class="px-1">
-            <abp-input asp-for="@Model.SupplierNumber" id="SupplierNumber" type="number" onchange="enableSaveBtn(this)" />
+            <abp-input asp-for="@Model.SupplierCorrelationId" id="SupplierCorrelationId" type="hidden" />
+            <abp-input asp-for="@Model.SupplierCorrelationProvider" id="SupplierCorrelationProvider" type="hidden" />
+            <abp-input asp-for="@Model.SupplierId" id="SupplierId" type="hidden" />
+            <abp-input asp-for="@Model.SupplierNumber" id="SupplierNumber" onchange="enableSaveBtn(this)" />
         </abp-column>
     </abp-row>
     <abp-row>
@@ -29,8 +32,8 @@
                         icon-type="Other"
                         icon="fl fl-plus"
                         onclick="openSiteInfoModal(null,'Add Site');"
-                        button-type="Light" 
-                        disabled="@string.IsNullOrEmpty(Model.SupplierNumber)"/>
+                        button-type="Light"
+                        disabled="@string.IsNullOrEmpty(Model.SupplierNumber)" />
         </abp-column>
     </abp-row>
 </abp-row>

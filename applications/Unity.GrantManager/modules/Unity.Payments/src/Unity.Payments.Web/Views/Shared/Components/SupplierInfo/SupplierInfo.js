@@ -4,16 +4,17 @@ $(function () {
     let dataTable;
     function loadSiteInfoTable() {
         let inputAction = function (requestData, dataTableSettings) {
-            const applicantId = $("#ApplicantInfoViewApplicantId").val();
-            const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
-            return { applicantId, supplierNumber };
+            const correlationId = $("#SupplierCorrelationId").val();
+            const correlationProvider = $("#SupplierCorrelationProvider").val();
+            const includeDetails = true;
+            return { correlationId, correlationProvider, includeDetails };
         }
-        let responseCallback = function (result) {
+        let responseCallback = function (result) {               
             return {
-                data: result
+                data: result.sites
             };
         };
-
+                
         dataTable = $('#SiteInfoTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: false,
@@ -24,7 +25,7 @@ $(function () {
                 info: false,
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
-                    unity.payments.supplierInfo.supplierInfo.getSiteList, inputAction, responseCallback
+                    unity.payments.suppliers.supplier.getByCorrelation, inputAction, responseCallback
                 ),
                 columnDefs: [
                     {
@@ -34,7 +35,7 @@ $(function () {
                     },
                     {
                         title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup'),
-                        data: 'payGroup',
+                        data: 'paymentGroup',
                         className: 'data-table-header'
                     },
                     {
@@ -94,13 +95,17 @@ siteInfoModal.onResult(function () {
         'Site Information'
     );
 });
-function openSiteInfoModal(siteId, actionType) {
+
+function openSiteInfoModal(siteId, actionType) {    
     const applicantId = $("#ApplicantInfoViewApplicantId").val(); 
     const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
+    const supplierId = $("#SupplierId").val();
+
     siteInfoModal.open({
         applicantId: applicantId,
         siteId: siteId,
         actionType: actionType,
-        supplierNumber: supplierNumber
+        supplierNumber: supplierNumber,
+        supplierId: supplierId
     });
 }

@@ -17,13 +17,14 @@ using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
-using Unity.Payments.SupplierInfo;
+using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
+using Unity.GrantManager.Payments;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -53,7 +54,7 @@ public class GrantApplicationAppService :
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
     private readonly ILocalEventBus _localEventBus;
-    private readonly SupplierInfoAppService _supplierInfoAppService;
+    private readonly ISupplierAppService _supplierAppService;
 
 
 #pragma warning disable IDE0290 // Use primary constructor
@@ -72,7 +73,7 @@ public class GrantApplicationAppService :
         IApplicantAgentRepository applicantAgentRepository,
         IApplicationTagsRepository applicationTagsRepository,
         ILocalEventBus localEventBus,
-        SupplierInfoAppService supplierInfoAppService
+        SupplierAppService supplierInfoAppService
         )
          : base(repository)
     {
@@ -89,7 +90,7 @@ public class GrantApplicationAppService :
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
         _localEventBus = localEventBus;
-        _supplierInfoAppService = supplierInfoAppService;
+        _supplierAppService = supplierInfoAppService;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -341,7 +342,7 @@ public class GrantApplicationAppService :
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);                
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.TotalProjectBudget,
                     input.RecommendedAmount,
@@ -392,21 +393,20 @@ public class GrantApplicationAppService :
 
             await _applicationRepository.UpdateAsync(application, autoSave: true);
 
-                return ObjectMapper.Map<Application, GrantApplicationDto>(application);
-            
+            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
         }
         else
         {
             throw new EntityNotFoundException();
         }
     }
-       public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
+    public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
-             if (application != null)
-        {
-          
 
+        if (application != null)
+        {
             var applicant = await _applicantRepository.FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
             // This applicant should never be null!
 
@@ -418,36 +418,35 @@ public class GrantApplicationAppService :
             applicant.Sector = input.Sector ?? "";
             applicant.SubSector = input.SubSector ?? "";
             applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
-          
+
             _ = await _applicantRepository.UpdateAsync(applicant);
-            await _supplierInfoAppService.InsertSupplierAsync(input.SupplierNumber, input.ApplicantId);
-           
-                var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
-                if (applicantAgent == null)
-                {
-                    applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
-                    {
-                        ApplicantId = application.ApplicantId,
-                        ApplicationId = application.Id,
-                        Name = input.ContactFullName ?? "",
-                        Phone = input.ContactBusinessPhone ?? "",
-                        Phone2 = input.ContactCellPhone ?? "",
-                        Email = input.ContactEmail ?? "",
-       
-                        Title = input.ContactTitle ?? ""
-                    });
-                }
-                else
-                {
-                    applicantAgent.Name = input.ContactFullName ?? "";
-                    applicantAgent.Phone = input.ContactBusinessPhone ?? "";
-                    applicantAgent.Phone2 = input.ContactCellPhone ?? "";
-                    applicantAgent.Email = input.ContactEmail ?? "";
-                    applicantAgent.Title = input.ContactTitle ?? "";
-                    applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
-                }
 
+            // Integrate with payments module
+            await UpsertSupplierAsync(input.SupplierNumber, input.ApplicantId);
 
+            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
+            if (applicantAgent == null)
+            {
+                applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
+                {
+                    ApplicantId = application.ApplicantId,
+                    ApplicationId = application.Id,
+                    Name = input.ContactFullName ?? "",
+                    Phone = input.ContactBusinessPhone ?? "",
+                    Phone2 = input.ContactCellPhone ?? "",
+                    Email = input.ContactEmail ?? "",
+                    Title = input.ContactTitle ?? ""
+                });
+            }
+            else
+            {
+                applicantAgent.Name = input.ContactFullName ?? "";
+                applicantAgent.Phone = input.ContactBusinessPhone ?? "";
+                applicantAgent.Phone2 = input.ContactCellPhone ?? "";
+                applicantAgent.Email = input.ContactEmail ?? "";
+                applicantAgent.Title = input.ContactTitle ?? "";
+                applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
+            }
 
             application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
             application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
@@ -459,19 +458,50 @@ public class GrantApplicationAppService :
 
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
 
-                appDto.ContactFullName = applicantAgent.Name;
-                appDto.ContactEmail = applicantAgent.Email;
-                appDto.ContactTitle = applicantAgent.Title;
-                appDto.ContactBusinessPhone = applicantAgent.Phone;
-                appDto.ContactCellPhone = applicantAgent.Phone2;
+            appDto.ContactFullName = applicantAgent.Name;
+            appDto.ContactEmail = applicantAgent.Email;
+            appDto.ContactTitle = applicantAgent.Title;
+            appDto.ContactBusinessPhone = applicantAgent.Phone;
+            appDto.ContactCellPhone = applicantAgent.Phone2;
 
-                return appDto;
-
-          
+            return appDto;
         }
         else
         {
             throw new EntityNotFoundException();
+        }
+    }
+
+    private async Task UpsertSupplierAsync(string? supplierNumber, Guid applicantId)
+    {
+        var existing = await _supplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+        {
+            CorrelationId = applicantId,
+            CorrelationProvider = PaymentConsts.ApplicantCorrelationProvider
+        });
+
+        // This is subject to some business rules and a domain implmentation
+        if (existing != null)
+        {
+            existing.Number = supplierNumber;
+            await _supplierAppService.UpdateAsync(existing.Id, new UpdateSupplierDto()
+            {
+                Number = supplierNumber,
+                MailingAddress = existing.MailingAddress,
+                Name = existing.Name,
+                PostalCode = existing.PostalCode,
+                Province = existing.Province,
+                City = existing.City
+            });
+        }
+        else
+        {
+            await _supplierAppService.CreateAsync(new CreateSupplierDto()
+            {
+                Number = supplierNumber,
+                CorrelationId = applicantId,
+                CorrelationProvider = PaymentConsts.ApplicantCorrelationProvider,
+            });
         }
     }
 
@@ -627,7 +657,7 @@ public class GrantApplicationAppService :
                 .ToList();
 
         var appDtos = new List<GrantApplicationDto>();
-      
+
         foreach (var grouping in result)
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
@@ -767,10 +797,10 @@ public class GrantApplicationAppService :
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // TODO: Replace placeholder loop with authorization handler mapped to permissions
         // AUTHORIZATION HANDLING
-        actionDtos.ForEach(async item => 
+        actionDtos.ForEach(async item =>
         {
             item.IsPermitted = item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
-            item.IsAuthorized = true; 
+            item.IsAuthorized = true;
         });
 
         return new ListResultDto<ApplicationActionDto>(actionDtos);
@@ -787,7 +817,7 @@ public class GrantApplicationAppService :
     /// <param name="applicationId">The application</param>
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
-    {     
+    {
 
         // AUTHORIZATION HANDLING
         var application = await _applicationRepository.GetAsync(applicationId, true);
@@ -797,7 +827,7 @@ public class GrantApplicationAppService :
         }
 
         application = await _applicationManager.TriggerAction(applicationId, triggerAction);
-        
+
         await _localEventBus.PublishAsync(
             new ApplicationChangedEvent
             {
