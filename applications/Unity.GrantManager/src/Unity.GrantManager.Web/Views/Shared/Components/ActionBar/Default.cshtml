@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Permissions;
+@using Unity.GrantManager.Payments;
 @using Volo.Abp.Features;
 
 @inject IStringLocalizer<GrantManagerResource> L
@@ -35,7 +36,7 @@
                     icon="fl fl-tag"
                     button-type="Light" />
 
-        @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+        @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
         {
         <abp-button id="applicationPaymentRequest"
                     data-selector="applications-table-actions"
