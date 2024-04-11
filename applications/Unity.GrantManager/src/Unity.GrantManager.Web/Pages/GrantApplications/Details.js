@@ -357,6 +357,21 @@ $(function () {
         }
     );
 
+    let applicationRecordsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationRecordsWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val(),
+            }
+        }
+    });
+
+    PubSub.subscribe('ApplicationLinks_refresh',
+        (msg, data) => {
+            applicationRecordsWidgetManager.refresh();
+        }
+    );
+
 });
 
 function uploadApplicationFiles(inputId) {    

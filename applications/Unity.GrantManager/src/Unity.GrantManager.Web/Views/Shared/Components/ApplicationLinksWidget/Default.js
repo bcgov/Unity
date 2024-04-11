@@ -5,7 +5,8 @@
         viewUrl: abp.appPath + 'ApplicationLinks/ApplicationLinksModal',
     });
 
-    $('#addLinksRecordsBtn').click(function () {
+    $('body').on('click','#addLinksRecordsBtn',function(e){
+        e.preventDefault();
         applicationLinksModal.open({
             applicationId: selectedApplicationId,
         });
@@ -35,7 +36,6 @@
             'The application links have been successfully updated.',
             'Application Links'
         );
-        // PubSub.publish("ApplicationTags_refresh");
-
+        PubSub.publish("ApplicationLinks_refresh");
     });
 });
