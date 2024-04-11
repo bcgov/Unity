@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -36,10 +35,9 @@ namespace Unity.Payments.PaymentSettings
         public async Task CreateOrUpdatePaymentSettingsAsync(PaymentSettingsDto paymentSettingsDto)
         {
             var paymentSetting = await PaymentSettingsRepository.FirstOrDefaultAsync(e => e.TenantId == CurrentTenant.GetId());
-            var newPaymentSettingDto = new PaymentSettingsDto();
             if (paymentSetting == null && paymentSettingsDto != null)
             {
-                var newPaymentSetting = await PaymentSettingsRepository.InsertAsync(new PaymentSetting
+                await PaymentSettingsRepository.InsertAsync(new PaymentSetting
                 {
                     PaymentThreshold = paymentSettingsDto.PaymentThreshold,
                     MinistryClient = paymentSettingsDto.MinistryClient,
@@ -47,7 +45,7 @@ namespace Unity.Payments.PaymentSettings
                     Stob = paymentSettingsDto.Stob,
                     ServiceLine = paymentSettingsDto.ServiceLine,
                     ProjectNumber = paymentSettingsDto.ProjectNumber
-                }, autoSave: true);               
+                }, autoSave: true);
             }
             else if (paymentSetting != null && paymentSettingsDto != null)
             {

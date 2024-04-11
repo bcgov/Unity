@@ -7,12 +7,12 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace Unity.Payments.Repositories
 {
-
-    public class PaymentSettingsRepository : EfCoreRepository<PaymentsDbContext, PaymentSetting, Guid>, IPaymentSettingsRepository
+#pragma warning disable CS8613
+	public class PaymentSettingsRepository : EfCoreRepository<PaymentsDbContext, PaymentSetting, Guid>, IPaymentSettingsRepository
     {
         public PaymentSettingsRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
         {
         }
     }
-
+#pragma warning restore CS8613
 }

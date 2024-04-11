@@ -58,7 +58,6 @@ namespace Unity.Payments.Web.Pages.PaymentSettings
                     paymentSettingsDto.ServiceLine = PaymentSettings.ServiceLine;
                     paymentSettingsDto.Stob = PaymentSettings.Stob;
                     paymentSettingsDto.ProjectNumber = PaymentSettings.ProjectNumber;
-                    paymentSettingsDto.ServiceLine = paymentSettingsDto.ServiceLine;
 
                     await PaymentsAppService.CreateOrUpdatePaymentSettingsAsync(paymentSettingsDto);
                     StatusMessage = "Successfully Saved Payment Settings.";
