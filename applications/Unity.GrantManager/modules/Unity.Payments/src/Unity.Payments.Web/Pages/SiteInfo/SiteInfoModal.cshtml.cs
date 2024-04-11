@@ -27,10 +27,11 @@ public class SiteInfoModalModel : AbpPageModel
         _siteAppService = siteAppService;
 
         PayGroupOptionsList =
-        [
+        new List<SelectListItem>()
+        {
             new SelectListItem { Value = ((int)PaymentGroup.Cheque).ToString(), Text = PaymentGroup.Cheque.ToString() },
             new SelectListItem { Value = ((int)PaymentGroup.EFT).ToString(), Text = PaymentGroup.EFT.ToString() },
-        ];
+        };
     }
 
     public class SiteInfoModalModelModel
