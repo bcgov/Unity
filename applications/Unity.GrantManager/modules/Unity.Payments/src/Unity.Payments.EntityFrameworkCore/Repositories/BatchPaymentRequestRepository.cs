@@ -8,7 +8,6 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace Unity.Payments.Repositories
 {
-#pragma warning disable CS8613
     public class BatchPaymentRequestRepository : EfCoreRepository<PaymentsDbContext, BatchPaymentRequest, Guid>, IBatchPaymentRequestRepository
     {
         public BatchPaymentRequestRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
@@ -21,5 +20,4 @@ namespace Unity.Payments.Repositories
             return (await GetQueryableAsync()).IncludeDetails();
         }
     }
-#pragma warning restore CS8613
 }
