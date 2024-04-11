@@ -1,8 +1,12 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Threading.Tasks;
+using Volo.Abp.Features;
 
 namespace Unity.Payments.Suppliers
 {
+    [RequiresFeature("Unity.Payments")]
+    [Authorize]
     public class SiteAppService : PaymentsAppService, ISiteAppService
     {
         private readonly ISiteRepository _siteRepository;
