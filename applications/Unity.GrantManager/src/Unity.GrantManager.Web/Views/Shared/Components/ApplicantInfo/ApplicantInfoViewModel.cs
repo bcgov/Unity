@@ -27,6 +27,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
         
         public Guid ApplicationId { get; set; }
+        public Guid ApplicantId { get; set; }
         public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
         public bool IsFinalDecisionMade { get; set; }
         public ApplicantInfoViewModelModel ApplicantInfo { get; set; } = new();
