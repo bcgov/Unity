@@ -38,12 +38,20 @@
 
   <ItemGroup>
     <None Remove="Views\Shared\Components\PaymentsSettingsGroup\Default.js" />
+	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.js" />
+	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.css" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Views\Shared\Components\PaymentsSettingsGroup\Default.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+	<EmbeddedResource Include="Views\Shared\Components\SupplierInfo\SupplierInfo.js">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
+	<EmbeddedResource Include="Views\Shared\Components\SupplierInfo\SupplierInfo.css">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
