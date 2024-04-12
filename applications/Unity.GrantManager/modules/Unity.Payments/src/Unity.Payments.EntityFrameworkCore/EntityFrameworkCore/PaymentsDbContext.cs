@@ -12,7 +12,7 @@ public class PaymentsDbContext : AbpDbContext<PaymentsDbContext>, IPaymentsDbCon
     public DbSet<BatchPaymentRequest> BatchPaymentRequests { get; set; }
     public DbSet<PaymentRequest> PaymentRequests { get; set; }
     public DbSet<ExpenseApproval> ExpenseApproval { get; set; }
-    public DbSet<Site> Suppliers { get;set; }
+    public DbSet<Supplier> Suppliers { get;set; }
     public DbSet<Site> Sites { get; set; }
 
     public PaymentsDbContext(DbContextOptions<PaymentsDbContext> options)

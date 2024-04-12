@@ -12,6 +12,6 @@ public interface IPaymentsDbContext : IEfCoreDbContext
     public DbSet<BatchPaymentRequest> BatchPaymentRequests { get; }
     public DbSet<PaymentRequest> PaymentRequests { get;  }
     public DbSet<ExpenseApproval> ExpenseApproval { get;  }
-    public DbSet<Site> Suppliers { get;  }
+    public DbSet<Supplier> Suppliers { get;  }
     public DbSet<Site> Sites { get; }
 }
