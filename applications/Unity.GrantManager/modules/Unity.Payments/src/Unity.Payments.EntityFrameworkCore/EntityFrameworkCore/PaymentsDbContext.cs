@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.Payments.BatchPaymentRequests;
-using Unity.Payments.PaymentSettings;
+using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
@@ -14,7 +14,7 @@ public class PaymentsDbContext : AbpDbContext<PaymentsDbContext>, IPaymentsDbCon
     public DbSet<PaymentRequest> PaymentRequests { get; set; }
     public DbSet<ExpenseApproval> ExpenseApproval { get; set; }
     public DbSet<Supplier> Suppliers { get;set; }
-    public DbSet<PaymentSetting> PaymentSettings { get;set; }
+    public DbSet<PaymentConfiguration> PaymentConfigurations { get;set; }
     public DbSet<Site> Sites { get; set; }
 
     public PaymentsDbContext(DbContextOptions<PaymentsDbContext> options)

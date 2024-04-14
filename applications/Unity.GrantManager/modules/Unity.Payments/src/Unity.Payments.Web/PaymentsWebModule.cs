@@ -52,7 +52,8 @@ public class PaymentsWebModule : AbpModule
 
         Configure<RazorPagesOptions>(options =>
         {
-            options.Conventions.AllowAnonymousToPage("/Payments/Index");            
+            options.Conventions.AllowAnonymousToPage("/Payments/Index");
+            options.Conventions.AllowAnonymousToPage("/PaymentConfigurations/Index");
         });
     }
 }

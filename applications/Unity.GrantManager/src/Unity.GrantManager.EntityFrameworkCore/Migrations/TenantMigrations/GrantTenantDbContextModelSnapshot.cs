@@ -1643,7 +1643,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("PaymentRequests", "Payments");
                 });
 
-            modelBuilder.Entity("Unity.Payments.PaymentSettings.PaymentSetting", b =>
+            modelBuilder.Entity("Unity.Payments.PaymentConfigurations.PaymentConfiguration", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1704,7 +1704,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PaymentSettings", "Payments");
+                    b.ToTable("PaymentConfigurations", "Payments");
                 });
 
             modelBuilder.Entity("Unity.Payments.Suppliers.Site", b =>
@@ -2087,9 +2087,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("Sites");
                 });
 
-            modelBuilder.Entity("Unity.Payments.PaymentSettings.PaymentSetting", b =>
+            modelBuilder.Entity("Unity.Payments.PaymentConfigurations.PaymentConfigurations", b =>
                 {
-                    b.Navigation("PaymentSettings");
+                    b.Navigation("PaymentConfigurations");
                 });
 #pragma warning restore 612, 618
         }

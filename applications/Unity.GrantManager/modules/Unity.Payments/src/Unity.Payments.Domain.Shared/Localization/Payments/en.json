@@ -3,8 +3,13 @@
   "texts": {
     "Payments": "Payments",
     "WelcomeToPayments": "Welcome to Payments Module",
+
     "Unity.Payments:Errors:ThresholdExceeded": "There are payments in this batch that require a third level of approval. Please remove them from this batch and add to another for the appropriate level of approval",
     "Unity.Payments:Errors:ZeroPayment": "Cannot submit a payment request for $0.00",
+    "Unity.Payments:Errors:ConfigurationExists": "Configuration already exitst",
+    "Unity.Payments:Errors:ConfigurationDoesNotExist": "Configuration does not exits",
+    "Unity.Payments:Errors:InvalidAccountCodingFiled": "Invalid account coding field {field} : {length}",
+
     "Setting:Payments.ThresholdAmount.DisplayName": "Payment threshold amount",
     "Setting:Payments.ThresholdAmount.Description": "Payment threshold that triggers additional approvals and checks",
     "ApplicationPaymentRequest:Title": "Request Payment",
@@ -14,7 +19,7 @@
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
     "ApplicationPaymentRequest:Validations:ThresholdExceeded": "Cannot add a payment to an existing batch with a value above threshold of",
-    
+
     "ApplicantInfoView:SupplierInfoTitle": "Payments",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber": "Site #",

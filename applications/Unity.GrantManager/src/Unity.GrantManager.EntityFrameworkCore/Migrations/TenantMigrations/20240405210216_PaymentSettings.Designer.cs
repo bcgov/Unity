@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    [Migration("20240405210216_PaymentSettings")]
+    [Migration("20240405210216_PaymentConfigurations")]
     partial class AddPaymentsSettings
     {
         /// <inheritdoc />
@@ -1646,7 +1646,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("PaymentRequests", "Payments");
                 });
 
-            modelBuilder.Entity("Unity.Payments.PaymentSettings.PaymentSetting", b =>
+            modelBuilder.Entity("Unity.Payments.PaymentConfigurations.PaymentConfiguration", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1707,7 +1707,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PaymentSettings", "Payments");
+                    b.ToTable("PaymentConfigurations", "Payments");
                 });
 
 

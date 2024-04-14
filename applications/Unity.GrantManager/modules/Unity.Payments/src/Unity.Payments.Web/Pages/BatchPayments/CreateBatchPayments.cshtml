@@ -16,7 +16,7 @@
         <abp-modal-body>
             <abp-card>
                 <abp-card-body class="payment-card">
-                    <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentSettings.PaymentThreshold"/>
+                    <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
                     <abp-input id="ApplicationCount" type="hidden" asp-for="ApplicationPaymentRequestForm.Count" />
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
@@ -39,8 +39,7 @@
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" />
                                 </abp-column>
                                 <abp-column size="_12" class="text-center">
-                                    <span id="@($"{Model.ApplicationPaymentRequestForm[i].ApplicationId}_maxerror")" class="max-error text-danger field-validation-error"> @L["ApplicationPaymentRequest:Validations:ThresholdExceeded"] @Model.PaymentSettings.PaymentThreshold</span>
-
+                                    <span id="@($"{Model.ApplicationPaymentRequestForm[i].ApplicationId}_maxerror")" class="max-error text-danger field-validation-error"> @L["ApplicationPaymentRequest:Validations:ThresholdExceeded"] @Model.PaymentThreshold</span>
                                 </abp-column>
 
                             </abp-row>
@@ -57,10 +56,10 @@
                 </abp-card-body>
             </abp-card>
         </abp-modal-body>
-        <abp-modal-footer >
+        <abp-modal-footer>
             <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
             <abp-button class="btn btn-primary" text="@L["ApplicationPaymentRequest:SubmitButtonText"].Value" type="submit"></abp-button>
-           
+
         </abp-modal-footer>
     </abp-modal>
 </form>

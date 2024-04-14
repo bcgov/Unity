@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
-using Unity.Payments.PaymentSettings;
+using Unity.Payments.PaymentConfigurations;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
 
@@ -12,23 +12,20 @@ namespace Unity.Payments.BatchPaymentRequests
     public class BatchPaymentRequestAppService : PaymentsAppService, IBatchPaymentRequestAppService
     {
         private readonly IBatchPaymentRequestRepository _batchPaymentRequestsRepository;
+        private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
         private readonly ICurrentUser _currentUser;
-        private IPaymentSettingsAppService PaymentSettingsAppService { get; set; }
 
-        public BatchPaymentRequestAppService(
+        public BatchPaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
             IBatchPaymentRequestRepository batchPaymentRequestsRepository,
-            ICurrentUser currentUser,
-            IPaymentSettingsAppService paymentSettingsAppService)
+            ICurrentUser currentUser)
         {
+            _paymentConfigurationRepository = paymentConfigurationRepository;
             _batchPaymentRequestsRepository = batchPaymentRequestsRepository;
             _currentUser = currentUser;
-            PaymentSettingsAppService = paymentSettingsAppService;
         }
 
-        public async Task<BatchPaymentRequestDto> CreateAsync(CreateBatchPaymentRequestDto batchPaymentRequest)
+        public virtual async Task<BatchPaymentRequestDto> CreateAsync(CreateBatchPaymentRequestDto batchPaymentRequest)
         {
-            var paymentThreshold = GetPaymentThresholdSettingValueAsync();
-
             var newBatchPaymentRequest = new BatchPaymentRequest(Guid.NewGuid(),
                 Guid.NewGuid().ToString(), // Need to implement batch number generator
                 Enums.PaymentGroup.EFT,
@@ -46,7 +43,7 @@ namespace Unity.Payments.BatchPaymentRequests
                     newBatchPaymentRequest.PaymentGroup,
                     payment.CorrelationId,
                     payment.Description),
-                    ConvertPaymentThresholdAmount(paymentThreshold));
+                    await GetPaymentThresholdAsync());
             }
 
             var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
@@ -54,23 +51,19 @@ namespace Unity.Payments.BatchPaymentRequests
             return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
         }
 
-        private string GetPaymentThresholdSettingValueAsync()
+        protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
-            PaymentSettingsDto paymentSettingsDto = PaymentSettingsAppService.Get();
-            string? thresholdAmount = "";
-            if (paymentSettingsDto != null && paymentSettingsDto.PaymentThreshold.HasValue)
+            var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
+
+            if (paymentConfigs.Count > 0)
             {
-                thresholdAmount = paymentSettingsDto.PaymentThreshold.ToString();
+                var paymentConfig = paymentConfigs[0];
+                return paymentConfig.PaymentThreshold ?? PaymentConsts.DefaultThresholdAmount;
             }
-            return thresholdAmount != null ? thresholdAmount : "";
+            return PaymentConsts.DefaultThresholdAmount;
         }
 
-        private static decimal ConvertPaymentThresholdAmount(string? paymentThreshold)
-        {
-            return paymentThreshold == null ? PaymentConsts.DefaultThresholdAmount : decimal.Parse(paymentThreshold);
-        }
-
-        private string GetCurrentRequesterName()
+        protected virtual string GetCurrentRequesterName()
         {
             return $"{_currentUser.Name} {_currentUser.SurName}";
         }

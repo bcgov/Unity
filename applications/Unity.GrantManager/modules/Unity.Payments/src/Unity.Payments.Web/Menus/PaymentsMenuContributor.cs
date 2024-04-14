@@ -32,14 +32,14 @@ public class PaymentsMenuContributor : IMenuContributor
                     new ApplicationMenuItem(
                             PaymentsMenus.Prefix,
                             displayName: "Payments",
-                            url: "Payments"
+                            url: "/Payments"
                             )
                 )                
                 .AddItem(
                     new ApplicationMenuItem(
                             PaymentsMenus.PaymentService,
-                            "Payment Settings",
-                            url: "PaymentSettings"
+                            "Payment Configuration",
+                            url: "/PaymentConfigurations"
                             )
                 )
         );

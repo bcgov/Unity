@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.Payments.BatchPaymentRequests;
 using Unity.Payments.Suppliers;
-using Unity.Payments.PaymentSettings;
+using Unity.Payments.PaymentConfigurations;
 using Volo.Abp;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 
@@ -66,9 +66,9 @@ public static class PaymentsDbContextModelCreatingExtensions
             b.ConfigureByConvention();
         });
 
-        modelBuilder.Entity<PaymentSetting>(b =>
+        modelBuilder.Entity<PaymentConfiguration>(b =>
         {
-            b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentSettings",
+            b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentConfigurations",
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();

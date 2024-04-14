@@ -15,7 +15,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 name: "Payments");
 
             migrationBuilder.CreateTable(
-                name: "PaymentSettings",
+                name: "PaymentConfigurations",
                 schema: "Payments",
                 columns: table => new
                 {
@@ -39,7 +39,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PaymentSettings", x => x.Id);
+                    table.PrimaryKey("PK_PaymentConfigurations", x => x.Id);
                 });
 
         }
@@ -48,7 +48,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "PaymentSettings",
+                name: "PaymentConfigurations",
                 schema: "Payments");
         }
     }
