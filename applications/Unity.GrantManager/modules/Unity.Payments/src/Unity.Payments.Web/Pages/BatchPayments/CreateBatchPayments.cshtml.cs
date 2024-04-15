@@ -6,36 +6,39 @@ using Unity.Payments.BatchPaymentRequests;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Unity.Payments.Settings;
+using Unity.Payments.PaymentConfigurations;
 
 namespace Unity.Payments.Web.Pages.BatchPayments
 {
     public class CreateBatchPaymentsModel : AbpPageModel
     {
         [BindProperty]
-        public List<BatchPaymentsModel> ApplicationPaymentRequestForm { get; set; } = new();
+        public List<BatchPaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
+
+        [BindProperty]
+        public decimal PaymentThreshold { get; set; }
+
         public List<Guid> SelectedApplicationIds { get; set; }
-        public PaymentsSettingsDto Settings { get; set; } = new PaymentsSettingsDto();
 
         private readonly GrantApplicationAppService _applicationService;
         private readonly IBatchPaymentRequestAppService _batchPaymentRequestService;
-        private readonly IPaymentsSettingsAppService _paymentsSettingsAppService;
+        private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
 
         public CreateBatchPaymentsModel(GrantApplicationAppService applicationService,
            IBatchPaymentRequestAppService batchPaymentRequestService,
-           IPaymentsSettingsAppService paymentsSettingsAppService)
+           IPaymentConfigurationAppService paymentConfigurationAppService)
         {
-            SelectedApplicationIds = new();
+            SelectedApplicationIds = [];
             _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
             _batchPaymentRequestService = batchPaymentRequestService;
-            _paymentsSettingsAppService = paymentsSettingsAppService;
+            _paymentConfigurationAppService = paymentConfigurationAppService;
         }
 
-        public async void OnGet(string applicationIds)
+        public async Task OnGetAsync(string applicationIds)
         {
             SelectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(applicationIds) ?? new List<Guid>();
             var applications = await _applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
-            Settings = await _paymentsSettingsAppService.GetAsync();
+
             foreach (var application in applications)
             {
                 BatchPaymentsModel request = new()
@@ -49,6 +52,9 @@ namespace Unity.Payments.Web.Pages.BatchPayments
 
                 ApplicationPaymentRequestForm!.Add(request);
             }
+
+            var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
+            PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentConsts.DefaultThresholdAmount;
         }
 
         public async Task<IActionResult> OnPostAsync()

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Payments.Integration.Cas;
 using Unity.Payments.Integrations.Cas;
-using Unity.Payments.Settings;
+using Unity.Payments.PaymentConfigurations;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
 
@@ -17,21 +17,21 @@ namespace Unity.Payments.BatchPaymentRequests
         private readonly IBatchPaymentRequestRepository _batchPaymentRequestsRepository;
         private readonly InvoiceService _invoiceService;
         private readonly ICurrentUser _currentUser;
-
+        private IPaymentConfigurationAppService _paymentConfigurationAppService;
         public BatchPaymentRequestAppService(
-            IBatchPaymentRequestRepository batchPaymentRequestsRepository,
+			IPaymentConfigurationAppService paymentConfigurationAppService,
+			IBatchPaymentRequestRepository batchPaymentRequestsRepository,
             InvoiceService invoiceService,
             ICurrentUser currentUser)
         {
+            _paymentConfigurationAppService = paymentConfigurationAppService;
             _batchPaymentRequestsRepository = batchPaymentRequestsRepository;
             _currentUser = currentUser;
             _invoiceService = invoiceService;
         }
 
-        public async Task<BatchPaymentRequestDto> CreateAsync(CreateBatchPaymentRequestDto batchPaymentRequest)
+        public virtual async Task<BatchPaymentRequestDto> CreateAsync(CreateBatchPaymentRequestDto batchPaymentRequest)
         {
-            var paymentThreshold = await GetPaymentThresholdSettingValueAsync();
-
             var newBatchPaymentRequest = new BatchPaymentRequest(Guid.NewGuid(),
                 Guid.NewGuid().ToString(), // Need to implement batch number generator
                 Enums.PaymentGroup.EFT,
@@ -41,8 +41,8 @@ namespace Unity.Payments.BatchPaymentRequests
 
             foreach (var payment in batchPaymentRequest.PaymentRequests)
             {
-                decimal paymentThresholdAmount = ConvertPaymentThresholdAmount(paymentThreshold);
-                PaymentRequest paymentRequest = new PaymentRequest(
+                PaymentConfigurationDto? paymentConfigurationDto = await _paymentConfigurationAppService.GetAsync();
+				PaymentRequest paymentRequest = new PaymentRequest(
                     Guid.NewGuid(),
                     newBatchPaymentRequest,
                     payment.InvoiceNumber,
@@ -51,9 +51,15 @@ namespace Unity.Payments.BatchPaymentRequests
                     payment.CorrelationId,
                     payment.Description);
 
-                ExampleCASIntegration(paymentRequest);
-
-                newBatchPaymentRequest.AddPaymentRequest(paymentRequest, paymentThresholdAmount);
+				if(paymentConfigurationDto != null)
+                {
+					newBatchPaymentRequest.AddPaymentRequest(paymentRequest, paymentConfigurationDto.PaymentThreshold);			
+				}
+                
+                string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
+                if(accountDistributionCode != null) {
+				    ExampleCASIntegrationAsync(paymentRequest, accountDistributionCode);
+                }
             }
 
             var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
@@ -61,13 +67,15 @@ namespace Unity.Payments.BatchPaymentRequests
             return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
         }
 
-        private void ExampleCASIntegration(PaymentRequest paymentRequest) {
+        private async Task ExampleCASIntegrationAsync(PaymentRequest paymentRequest, string accountDistributionCode) {
             var currentMonth = DateTime.Now.ToString("MMM").Trim('.');
             var currentDay = DateTime.Now.ToString("dd");
             var currentYear = DateTime.Now.ToString("yyyy");
             var dateStringDayMonYear =  $"{currentDay}-{currentMonth}-{currentYear}";
 
             Invoice invoice = new Invoice();
+
+            // Pull from Payment request
             invoice.supplierNumber = "004696"; // This is from each Applicant
             invoice.supplierSiteNumber = "002";
             invoice.payGroup= "GEN EFT"; // GEN CHQ - other options
@@ -83,22 +91,17 @@ namespace Unity.Payments.BatchPaymentRequests
             InvoiceLineDetail invoiceLineDetail = new InvoiceLineDetail();
             invoiceLineDetail.invoiceLineNumber = 1;
             invoiceLineDetail.invoiceLineAmount = paymentRequest.Amount;
-            invoiceLineDetail.defaultDistributionAccount =  "043.80001.01090.6001.8000000.000000.0000"; // This will be at the tenant level
+            invoiceLineDetail.defaultDistributionAccount =  accountDistributionCode; // This will be at the tenant level
             invoice.invoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };
             _invoiceService.CreateInvoiceAsync(invoice);
         }
 
         private async Task<string?> GetPaymentThresholdSettingValueAsync()
         {
-            return await SettingProvider.GetOrNullAsync(PaymentsSettings.PaymentThreshold);
+            return "FIX";//await SettingProvider.GetOrNullAsync(PaymentConfiguration.PaymentThreshold);
         }
 
-        private static decimal ConvertPaymentThresholdAmount(string? paymentThreshold)
-        {
-            return paymentThreshold == null ? PaymentConsts.DefaultThresholdAmount : decimal.Parse(paymentThreshold);
-        }
-
-        private string GetCurrentRequesterName()
+        protected virtual string GetCurrentRequesterName()
         {
             return $"{_currentUser.Name} {_currentUser.SurName}";
         }
