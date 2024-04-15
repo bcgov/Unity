@@ -22,7 +22,7 @@ public class ReadyHealthCheck : IHealthCheck
     {
         try
         {
-            var tenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
+            var tenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
             if (tenant == null)
             {
                 return HealthCheckResult.Degraded();

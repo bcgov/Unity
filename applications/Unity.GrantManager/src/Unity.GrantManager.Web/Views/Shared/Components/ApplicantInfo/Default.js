@@ -14,6 +14,10 @@
                 if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
                     ApplicantInfoObj[input.name.split(".")[1]] = null;
                 }
+
+            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber') {
+                ApplicantInfoObj[input.name] = input.value;
+            }
             
         });
         try {
@@ -26,6 +30,7 @@
                     $('#saveApplicantInfoBtn').prop('disabled', true);
                     PubSub.publish("refresh_detail_panel_summary");
                     PubSub.publish('project_info_saved');
+                    refreshSupplierInfoWidget();
                 });
         }
         catch (error) {
@@ -34,7 +39,19 @@
         }
     });
 
-
+    function refreshSupplierInfoWidget() {
+        const applicantId = $("#ApplicantInfoViewApplicantId").val();
+        const url = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}`;
+        fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('supplier-info-widget').innerHTML = data;
+                PubSub.publish('reload_sites_list');
+            })
+            .catch(error => {
+                console.error('Error refreshing supplier-info-widget:', error);
+            });
+    }
 
  
 
