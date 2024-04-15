@@ -9,10 +9,12 @@ $(function () {
             const includeDetails = true;
             return { correlationId, correlationProvider, includeDetails };
         }
-        let responseCallback = function (result) {               
-            return {
-                data: result.sites
-            };
+        let responseCallback = function (result) {
+            let response = { data: [] };
+            if(result != null && result.sites != null) {
+                response.data = result.sites
+            } 
+            return response;
         };
                 
         dataTable = $('#SiteInfoTable').DataTable(
