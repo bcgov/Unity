@@ -31,21 +31,19 @@
     <EmbeddedResource Include="Pages\**\*.css" />
     <EmbeddedResource Include="Pages\**\*.js" />
     <EmbeddedResource Include="wwwroot\**\*.*" />
+    <Compile Remove="Views\Shared\Components\PaymentsSettingsGroup\**" />
     <Content Remove="Pages\**\*.css" />
     <Content Remove="Pages\**\*.js" />
+    <Content Remove="Views\Shared\Components\PaymentsSettingsGroup\**" />
     <Content Remove="wwwroot\**\*.*" />
+    <EmbeddedResource Remove="Views\Shared\Components\PaymentsSettingsGroup\**" />
+    <None Remove="Views\Shared\Components\PaymentsSettingsGroup\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Views\Shared\Components\PaymentsSettingsGroup\Default.js" />
+    <Folder Include="Views\Shared\Components\" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.css" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Views\Shared\Components\PaymentsSettingsGroup\Default.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
 	<EmbeddedResource Include="Views\Shared\Components\SupplierInfo\SupplierInfo.js">
 		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</EmbeddedResource>
