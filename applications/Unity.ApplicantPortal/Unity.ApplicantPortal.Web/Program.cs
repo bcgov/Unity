@@ -4,9 +4,15 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using Unity.ApplicantPortal.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((hostingContext, loggerConfiguration) =>
+    loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration));
+
+Log.Information("Starting web host.");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -23,37 +29,37 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
 })
-    .AddCookie(cookie =>
+.AddCookie(cookie =>
+{
+    cookie.AccessDeniedPath = "/";
+    cookie.LogoutPath = "/";
+    //Sets the cookie name and maxage, so the cookie is invalidated.
+    cookie.Cookie.Name = "keycloak.cookie";
+    cookie.Cookie.MaxAge = TimeSpan.FromMinutes(600);
+    cookie.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    cookie.SlidingExpiration = true;
+})
+.AddOpenIdConnect(options =>
+{
+    options.Authority = $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}";
+    options.ClientId = builder.Configuration.GetSection("Keycloak")["resource"];
+    options.ClientSecret = builder.Configuration.GetSection("Keycloak").GetSection("credentials")["secret"];
+    options.MetadataAddress= $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}/.well-known/openid-configuration";
+    options.RequireHttpsMetadata = true;
+    options.GetClaimsFromUserInfoEndpoint = true;
+    options.ResponseType = OpenIdConnectResponseType.Code;
+    options.NonceCookie.SameSite = SameSiteMode.Unspecified;
+    options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
+    options.SaveTokens = true;
+    options.Scope.Add("openid");
+    options.Scope.Add("profile");
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        cookie.AccessDeniedPath = "/";
-        cookie.LogoutPath = "/";
-        //Sets the cookie name and maxage, so the cookie is invalidated.
-        cookie.Cookie.Name = "keycloak.cookie";
-        cookie.Cookie.MaxAge = TimeSpan.FromMinutes(600);
-        cookie.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-        cookie.SlidingExpiration = true;
-    })
-    .AddOpenIdConnect(options =>
-    {
-        options.Authority = $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}";
-        options.ClientId = builder.Configuration.GetSection("Keycloak")["resource"];
-        options.ClientSecret = builder.Configuration.GetSection("Keycloak").GetSection("credentials")["secret"];
-        options.MetadataAddress= $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}/.well-known/openid-configuration";
-        options.RequireHttpsMetadata = true;
-        options.GetClaimsFromUserInfoEndpoint = true;
-        options.ResponseType = OpenIdConnectResponseType.Code;
-        options.NonceCookie.SameSite = SameSiteMode.Unspecified;
-        options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
-        options.SaveTokens = true;
-        options.Scope.Add("openid");
-        options.Scope.Add("profile");
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            NameClaimType = "name",
-            RoleClaimType = ClaimTypes.Role,
-            ValidateIssuer = true,
-        };
-    });
+        NameClaimType = "name",
+        RoleClaimType = ClaimTypes.Role,
+        ValidateIssuer = true,
+    };
+});
 
 var app = builder.Build();
 
@@ -67,6 +73,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+app.UseSerilogRequestLogging();
 
 app.UseRouting();
 
