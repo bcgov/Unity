@@ -6,16 +6,12 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.Application.Services;
-using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Dashboard;
 
 [Authorize]
-[Dependency(ReplaceServices = true)]
-[ExposeServices(typeof(DashboardAppService), typeof(IDashboardAppService))]
 public class DashboardAppService : ApplicationService, IDashboardAppService
 {
-
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicantRepository _applicantRepository;
@@ -40,7 +36,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         _intakeRepository = intakeRepository;
     }
 
-    public async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(Guid intakeId, string? category)
+    public virtual async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(Guid intakeId, string? category)
     {
         if (category == "None")
         {
@@ -53,13 +49,18 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                     where intake.Id == intakeId && form.Category == category
                     select application;
 
-        var result = query?.GroupBy(app => app.EconomicRegion).Select(group => new GetEconomicRegionDto { EconomicRegion = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.EconomicRegion);
+        var result = query?.GroupBy(app => app.EconomicRegion)
+            .Select(group => new GetEconomicRegionDto { EconomicRegion = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() })
+            .OrderBy(o => o.EconomicRegion);
+
         if (result == null) return [];
-        var queryResult = await AsyncExecuter.ToListAsync(result);
+
+        var queryResult = result.ToList();
+
         return queryResult;
     }
 
-    public async Task<List<GetSectorDto>> GetSectorCountAsync(Guid intakeId, string? category)
+    public virtual async Task<List<GetSectorDto>> GetSectorCountAsync(Guid intakeId, string? category)
     {
         if (category == "None")
         {
@@ -73,13 +74,18 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                     where intake.Id == intakeId && form.Category == category
                     select new { application, applicant };
 
-        var result = query?.GroupBy(app => app.applicant.Sector).Select(group => new GetSectorDto { Sector = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.Sector);
-        if (result == null) return new List<GetSectorDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
+        var result = query?.GroupBy(app => app.applicant.Sector)
+            .Select(group => new GetSectorDto { Sector = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() })
+            .OrderBy(o => o.Sector);
+
+        if (result == null) return [];
+
+        var queryResult = result.ToList();
+
         return queryResult;
     }
 
-    public async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(Guid intakeId, string? category)
+    public virtual async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(Guid intakeId, string? category)
     {
         if (category == "None")
         {
@@ -92,14 +98,19 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     where intake.Id == intakeId && form.Category == category
                     select new { application, appStatus };
-    
-        var result = query?.GroupBy(app => app.appStatus.InternalStatus).Select(group => new GetApplicationStatusDto { ApplicationStatus = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.ApplicationStatus);
-        if (result == null) return new List<GetApplicationStatusDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
+
+        var result = query?.GroupBy(app => app.appStatus.InternalStatus)
+            .Select(group => new GetApplicationStatusDto { ApplicationStatus = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() })
+            .OrderBy(o => o.ApplicationStatus);
+
+        if (result == null) return [];
+
+        var queryResult = result.ToList();
+
         return queryResult;
     }
 
-    public async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(Guid intakeId, string? category)
+    public virtual async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(Guid intakeId, string? category)
     {
         if (category == "None")
         {
@@ -114,12 +125,12 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                     select tag;
 
         var applicationTags = query.ToList();
-        List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList(); 
-        List<string> tags = new List<string>();
-        concatenatedTags.ForEach(txt => tags.AddRange(txt.Split(',').ToList()));
+        List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList();
+        List<string> tags = [];
+        concatenatedTags.ForEach(txt => tags.AddRange([.. txt.Split(',')]));
         tags = tags.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
         var uniqueTags = new HashSet<string>(tags);
-        var result = uniqueTags.Select(tag => new GetApplicationTagDto { ApplicationTag = tag, Count= tags.Count(tg => tg==tag)}).ToList();
+        var result = uniqueTags.Select(tag => new GetApplicationTagDto { ApplicationTag = tag, Count = tags.Count(tg => tg == tag) }).ToList();
         return result;
     }
 }
