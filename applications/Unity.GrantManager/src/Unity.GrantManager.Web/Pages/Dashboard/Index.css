@@ -7,3 +7,10 @@
     margin-bottom: 0.25rem !important;
     border-radius: 15px !important;
 }
+
+
+.application-dashboard-dropdown {
+    min-width: 200px;
+    margin-top: 10px;
+}
+
