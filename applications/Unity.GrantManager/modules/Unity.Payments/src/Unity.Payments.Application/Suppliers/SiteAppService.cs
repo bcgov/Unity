@@ -16,7 +16,7 @@ namespace Unity.Payments.Suppliers
             _siteRepository = siteRepository;
         }
 
-        public async Task<SiteDto> GetAsync(Guid id)
+        public virtual async Task<SiteDto> GetAsync(Guid id)
         {
             return ObjectMapper.Map<Site, SiteDto>(await _siteRepository.GetAsync(id));
         }

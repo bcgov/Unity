@@ -4,7 +4,6 @@ using System;
 using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Suppliers;
 using Unity.Payments.BatchPaymentRequests;
-using Unity.GrantManager.Payments;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -86,7 +85,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
             }
 
 			var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
-            PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? BatchPaymentRequests.PaymentConsts.DefaultThresholdAmount;
+            PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentConsts.DefaultThresholdAmount;
         }
 
         public async Task<IActionResult> OnPostAsync()
