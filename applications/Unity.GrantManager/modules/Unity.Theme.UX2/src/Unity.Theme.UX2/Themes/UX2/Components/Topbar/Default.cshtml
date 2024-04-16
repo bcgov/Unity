@@ -1,4 +1,5 @@
 ﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Menu
 @using Volo.Abp.Users;
 
 @inject ICurrentUser CurrentUser
@@ -9,11 +10,8 @@
 
         @(await Component.InvokeAsync<MainNavbarBrandViewComponent>())
 
-        <button type="button" class="btn btn-nav" data-url="/Dashboard" onclick="window.location.href = '/Dashboard';">Dashboard</button>
-
-        <button type="button" class="btn btn-nav" data-url="/GrantApplications" onclick="window.location.href = '/GrantApplications';">Applications</button>
-
-        <button type="button" class="btn btn-nav" data-url="/Applicant" onclick="window.location.href = '';">Applicant</button>
+        @(await Component.InvokeAsync<MainNavbarMenuViewComponent>())
+        
     </div>    
 
    <div class="unity-container-fluid">

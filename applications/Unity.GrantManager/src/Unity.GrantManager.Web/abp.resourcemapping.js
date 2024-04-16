@@ -21,8 +21,7 @@ module.exports = {
         '@node_modules/html2canvas/dist/': '@libs/html2canvas/dist',
         '@node_modules/sweetalert2/src/': '@libs/sweetalert2/src',
         '@node_modules/jquery-maskmoney/': '@libs/jquery-maskmoney',
-        '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',
-        '@node_modules/chart.js/dist': '@libs/chart.js/dist/',
+        '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',        
         "@node_modules/echarts/dist/echarts.min.js": "@libs/echarts/",
         '@node_modules/bootstrap-4/dist': '@libs/bootstrap-4/dist/'
     },

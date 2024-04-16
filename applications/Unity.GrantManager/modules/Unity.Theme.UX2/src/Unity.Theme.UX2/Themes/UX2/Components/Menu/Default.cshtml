@@ -25,7 +25,7 @@
     {
         if (!string.IsNullOrEmpty(menuItem.Url))
         {
-            <li class="nav-item @cssClass @disabled" @elementId>
+            <li class="nav-item btn btn-nav @cssClass @disabled" @elementId>
                 <a class="nav-link" href="@url" target="@menuItem.Target">
                     @if (!string.IsNullOrEmpty(menuItem.Icon) && menuItem.Icon.StartsWith("fa"))
                     {
@@ -38,7 +38,7 @@
     }
     else
     {
-        <li class="nav-item">
+        <li class="nav-item nav-btn-dropdown">
             <div class="dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="Menu_@(menuItem.Name)" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     @if (!string.IsNullOrEmpty(menuItem.Icon) && menuItem.Icon.StartsWith("fa"))

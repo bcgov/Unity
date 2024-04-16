@@ -7,7 +7,7 @@
   },
   "packages": {   
     "Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic": {
-      "path": "src/Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic/Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.abppkg.json",
+      "path": "src/Unity.Theme.UX2/Unity.AspNetCore.Mvc.UI.Theme.UX2.abppkg.json",
       "folder": "src"
     }
   }

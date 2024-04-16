@@ -87,6 +87,7 @@ body {
     --bs-btn-border-radius: var(--bc-layout-margin-xsmall);
     --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
 }
+
 .btn-nav {
     --bs-btn-color: var(--bc-colors-blue-background);
     --bs-btn-bg: var(--bc-colors-white-primary-500);
@@ -164,7 +165,7 @@ body {
     border-right: 1px solid #D1CFCD;
     height: 40px;
     vertical-align: middle;
-    border-bottom:none;
+    border-bottom: none;
 }
 
 .dataTables_wrapper table {
@@ -196,6 +197,7 @@ table.dataTable thead .sorting_desc_disabled::after {
     color: var(--bc-colors-blue-primary) !important;
     opacity: 0.9 !important;
 }
+
 .table.dataTable tbody {
     vertical-align: middle;
 }
@@ -237,11 +239,11 @@ ul.pagination {
     justify-content: center !important;
 }
 
-ul.pagination .page-item .page-link {
-    background-color: transparent;
-    border: none;
-    border-radius: 50%;
-}
+    ul.pagination .page-item .page-link {
+        background-color: transparent;
+        border: none;
+        border-radius: 50%;
+    }
 
 .page-link.active, .active > .page-link {
     background-color: var(--bc-colors-blue-primary) !important;
@@ -318,7 +320,7 @@ ul.pagination .page-item .page-link {
 }
 
     .navbar .dropdown-menu a {
-        font-size: .9em;
+        font-size: 1rem;
         padding: 10px 15px;
         display: block;
         min-width: 210px;
@@ -508,8 +510,8 @@ abp-date-picker .btn {
 }
 
 .dropdown-toggle {
-    background-color: var(--bc-colors-blue-primary) !important;
-    color: var(--bc-colors-white-primary-500) !important;
+    /*background-color: var(--bc-colors-blue-primary) !important;
+    color: var(--bc-colors-white-primary-500) !important;*/
     border-radius: 16px 16px 0px 0px !important;
     height: 50px
 }
@@ -652,7 +654,20 @@ input[type=number]::-webkit-outer-spin-button {
 .tags-common .user-tags-close {
     color: black;
 }
-.div-btn-form
-{
-    margin-right:2rem;
+
+.div-btn-form {
+    margin-right: 2rem;
+}
+
+.nav-btn-dropdown {
+    list-style-type: none;
+    vertical-align: middle;    
+    align-items: center;
+    color: var(--bc-colors-blue-background);
+    min-height: 2.13rem;
+    font-weight: 700;
+    font-size: var(--bc-font-size-btn);
+    line-height: 1;
+    display: flex;
+    padding: 0.875rem;
 }
