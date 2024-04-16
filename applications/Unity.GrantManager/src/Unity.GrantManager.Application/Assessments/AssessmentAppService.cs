@@ -12,7 +12,7 @@ using Unity.GrantManager.Workflow;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.Identity;
+using Volo.Abp.Identity.Integration;
 using Volo.Abp.Users;
 using Volo.Abp.Validation;
 
@@ -26,14 +26,14 @@ namespace Unity.GrantManager.Assessments
         private readonly IAssessmentRepository _assessmentRepository;
         private readonly AssessmentManager _assessmentManager;
         private readonly IApplicationRepository _applicationRepository;
-        private readonly IIdentityUserLookupAppService _userLookupProvider;
+        private readonly IIdentityUserIntegrationService _userLookupProvider;
         private readonly ICommentsManager _commentsManager;
 
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
             AssessmentManager assessmentManager,
             IApplicationRepository applicationRepository,
-            IIdentityUserLookupAppService userLookupProvider,
+            IIdentityUserIntegrationService userLookupProvider,
             ICommentsManager commentsManager)
         {
             _assessmentRepository = assessmentRepository;

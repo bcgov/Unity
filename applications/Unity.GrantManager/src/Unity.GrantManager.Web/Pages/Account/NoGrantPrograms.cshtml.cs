@@ -1,13 +1,16 @@
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Web.Pages.Errors
 {
     public class IndexModel : PageModel
     {
-        public void OnGet()
+        public async Task OnGetAsync()
         {
-            // Intentionally left blank
+            // Clear out cookies so we dont get stuck here once access is granted
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);            
         }
     }
 }

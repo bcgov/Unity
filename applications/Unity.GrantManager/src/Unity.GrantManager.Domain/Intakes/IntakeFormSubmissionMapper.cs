@@ -125,7 +125,6 @@ namespace Unity.GrantManager.Intakes
                     if (childToken != null && childToken.Type == JTokenType.Object)
                     {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                        dynamic? tokenInput = childToken["input"];
                         dynamic? tokenType = childToken["type"];
                         addComponent(childToken);
 

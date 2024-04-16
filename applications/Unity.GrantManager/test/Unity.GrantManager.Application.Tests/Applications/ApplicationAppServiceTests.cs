@@ -7,6 +7,7 @@ using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
+using Volo.Abp.Identity.Integration;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 using Xunit;
@@ -21,7 +22,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
     private readonly IRepository<Application, Guid> _applicationsRepository;
     private readonly IRepository<ApplicationComment, Guid> _applicationCommentsRepository;
     private readonly IApplicationAssignmentRepository _userAssignmentRepository;
-    private readonly IIdentityUserLookupAppService _identityUserLookupAppService;
+    private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public ApplicationAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
@@ -31,7 +32,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         _grantApplicationAppService = GetRequiredService<IGrantApplicationAppService>();
         _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
         _applicationCommentsRepository = GetRequiredService<IRepository<ApplicationComment, Guid>>();
-        _identityUserLookupAppService = GetRequiredService<IIdentityUserLookupAppService>();
+        _identityUserLookupAppService = GetRequiredService<IIdentityUserIntegrationService>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
         _userAssignmentRepository = GetRequiredService<IApplicationAssignmentRepository>();
     }
@@ -43,8 +44,6 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationsRepository.GetListAsync())[0];        
 
-        //Guid applicationIds = new Guid[1];
-        //applicationIds application.Id, 0);
         var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
         if (users != null && users.Items.Count > 0)
         {

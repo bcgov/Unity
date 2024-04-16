@@ -27,10 +27,11 @@ public class SiteInfoModalModel : AbpPageModel
         _siteAppService = siteAppService;
 
         PayGroupOptionsList =
-        [
+        new List<SelectListItem>()
+        {
             new SelectListItem { Value = ((int)PaymentGroup.Cheque).ToString(), Text = PaymentGroup.Cheque.ToString() },
             new SelectListItem { Value = ((int)PaymentGroup.EFT).ToString(), Text = PaymentGroup.EFT.ToString() },
-        ];
+        };
     }
 
     public class SiteInfoModalModelModel
@@ -79,7 +80,7 @@ public class SiteInfoModalModel : AbpPageModel
             SiteDto site = await _siteAppService.GetAsync(siteId);
 
             Site.SiteNumber = site.Number ?? "";
-            Site.PayGroup = site.PaymentGroup.ToString();
+            Site.PayGroup = ((int)site.PaymentGroup).ToString();
             Site.AddressLine1 = site.AddressLine1 ?? "";
             Site.AddressLine2 = site.AddressLine2 ?? "";
             Site.AddressLine3 = site.AddressLine3 ?? "";
