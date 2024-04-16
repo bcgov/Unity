@@ -340,7 +340,7 @@
 
     function getApplicationNumberColumn() {
         return {
-            title: 'Application #',
+            title: 'Submission #',
             data: 'referenceNo',
             name: 'referenceNo',
             className: 'data-table-header',
