@@ -8,13 +8,13 @@ function reloadDashboard() {
             'Number of Submissions', 'economicRegionChart');
     });
 
-    unity.grantManager.dashboard.dashboard.getSectorCount().then(sector => {
+    unity.grantManager.dashboard.dashboard.getSectorCount(intakeId, category).then(sector => {
         initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
             'Total Submissions', 'SUBMISSION BREAKDOWN BY SECTOR', "Number of Submissions", 'sectorChart');
     });
 
 
-    unity.grantManager.dashboard.dashboard.getApplicationStatusCount().then(applicationStatus => {
+    unity.grantManager.dashboard.dashboard.getApplicationStatusCount(intakeId, category).then(applicationStatus => {
         initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
             'Submissions by Status', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
     });

@@ -8,6 +8,6 @@ namespace Unity.GrantManager.Dashboard;
 public interface IDashboardAppService : IApplicationService
 {
     Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(Guid intakeId, string category);
-    Task<List<GetSectorDto>> GetSectorCountAsync();
-    Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync();
+    Task<List<GetSectorDto>> GetSectorCountAsync(Guid intakeId, string category);
+    Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(Guid intakeId, string category);
 }

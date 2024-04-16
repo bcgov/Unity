@@ -59,10 +59,18 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return queryResult;
     }
 
-    public async Task<List<GetSectorDto>> GetSectorCountAsync()
+    public async Task<List<GetSectorDto>> GetSectorCountAsync(Guid intakeId, string? category)
     {
-        var query = from application in await _applicationRepository.GetQueryableAsync()
+        if (category == "None")
+        {
+            category = null;
+        }
+
+        var query = from intake in await _intakeRepository.GetQueryableAsync()
+                    join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                    join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    where intake.Id == intakeId && form.Category == category
                     select new { application, applicant };
 
         var result = query?.GroupBy(app => app.applicant.Sector).Select(group => new GetSectorDto { Sector = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.Sector);
@@ -71,11 +79,20 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return queryResult;
     }
 
-    public async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync()
+    public async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(Guid intakeId, string? category)
     {
-        var query = from application in await _applicationRepository.GetQueryableAsync()
+        if (category == "None")
+        {
+            category = null;
+        }
+
+        var query = from intake in await _intakeRepository.GetQueryableAsync()
+                    join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                    join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                    where intake.Id == intakeId && form.Category == category
                     select new { application, appStatus };
+    
         var result = query?.GroupBy(app => app.appStatus.InternalStatus).Select(group => new GetApplicationStatusDto { ApplicationStatus = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.ApplicationStatus);
         if (result == null) return new List<GetApplicationStatusDto>();
         var queryResult = await AsyncExecuter.ToListAsync(result);
