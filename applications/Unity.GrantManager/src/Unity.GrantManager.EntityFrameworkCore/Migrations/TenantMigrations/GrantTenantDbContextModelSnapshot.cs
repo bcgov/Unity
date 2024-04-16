@@ -2087,10 +2087,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("Sites");
                 });
 
-            modelBuilder.Entity("Unity.Payments.PaymentConfigurations.PaymentConfigurations", b =>
-                {
-                    b.Navigation("PaymentConfigurations");
-                });
 #pragma warning restore 612, 618
         }
     }

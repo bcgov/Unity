@@ -16,11 +16,14 @@ namespace Unity.Payments.BatchPaymentRequests
     {
         private readonly IBatchPaymentRequestRepository _batchPaymentRequestsRepository;
         private readonly InvoiceService _invoiceService;
-        private readonly ICurrentUser _currentUser;
         private IPaymentConfigurationAppService _paymentConfigurationAppService;
+        private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
+        private readonly ICurrentUser _currentUser;
+
         public BatchPaymentRequestAppService(
-			IPaymentConfigurationAppService paymentConfigurationAppService,
-			IBatchPaymentRequestRepository batchPaymentRequestsRepository,
+            IPaymentConfigurationAppService paymentConfigurationAppService,
+            IPaymentConfigurationRepository paymentConfigurationRepository,
+            IBatchPaymentRequestRepository batchPaymentRequestsRepository,
             InvoiceService invoiceService,
             ICurrentUser currentUser)
         {
@@ -34,7 +37,6 @@ namespace Unity.Payments.BatchPaymentRequests
         {
             var newBatchPaymentRequest = new BatchPaymentRequest(Guid.NewGuid(),
                 Guid.NewGuid().ToString(), // Need to implement batch number generator
-                Enums.PaymentGroup.EFT,
                 batchPaymentRequest.Description,
                 GetCurrentRequesterName(),
                 batchPaymentRequest.Provider);
@@ -47,19 +49,10 @@ namespace Unity.Payments.BatchPaymentRequests
                     newBatchPaymentRequest,
                     payment.InvoiceNumber,
                     payment.Amount,
-                    newBatchPaymentRequest.PaymentGroup,
+                    payment.SiteId,
                     payment.CorrelationId,
-                    payment.Description);
-
-				if(paymentConfigurationDto != null)
-                {
-					newBatchPaymentRequest.AddPaymentRequest(paymentRequest, paymentConfigurationDto.PaymentThreshold);			
-				}
-                
-                string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
-                if(accountDistributionCode != null) {
-				    ExampleCASIntegrationAsync(paymentRequest, accountDistributionCode);
-                }
+                    payment.Description),
+                    await GetPaymentThresholdAsync());
             }
 
             var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
@@ -96,9 +89,16 @@ namespace Unity.Payments.BatchPaymentRequests
             _invoiceService.CreateInvoiceAsync(invoice);
         }
 
-        private async Task<string?> GetPaymentThresholdSettingValueAsync()
+        protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
-            return "FIX";//await SettingProvider.GetOrNullAsync(PaymentConfiguration.PaymentThreshold);
+            var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
+
+            if (paymentConfigs.Count > 0)
+            {
+                var paymentConfig = paymentConfigs[0];
+                return paymentConfig.PaymentThreshold ?? PaymentConsts.DefaultThresholdAmount;
+            }
+            return PaymentConsts.DefaultThresholdAmount;
         }
 
         protected virtual string GetCurrentRequesterName()
