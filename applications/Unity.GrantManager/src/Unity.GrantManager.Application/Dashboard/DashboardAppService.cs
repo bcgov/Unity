@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Intakes;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 
@@ -18,11 +20,15 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicantRepository _applicantRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
+    private readonly IApplicationFormRepository _applicationFormRepository;
+    private readonly IIntakeRepository _intakeRepository;
 
     public DashboardAppService(IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
         IApplicantRepository applicantRepository,
-        IApplicationTagsRepository applicationTagsRepository
+        IApplicationTagsRepository applicationTagsRepository,
+        IApplicationFormRepository applicationFormRepository,
+        IIntakeRepository intakeRepository
         )
          : base()
     {
@@ -30,14 +36,25 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         _applicationStatusRepository = applicationStatusRepository;
         _applicantRepository = applicantRepository;
         _applicationTagsRepository = applicationTagsRepository;
+        _applicationFormRepository = applicationFormRepository;
+        _intakeRepository = intakeRepository;
     }
 
-    public async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync()
+    public async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(Guid intakeId, string? category)
     {
-        var query = await _applicationRepository.GetQueryableAsync();
+        if (category == "None")
+        {
+            category = null;
+        }
+
+        var query = from intake in await _intakeRepository.GetQueryableAsync()
+                    join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                    join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                    where intake.Id == intakeId && form.Category == category
+                    select application;
 
         var result = query?.GroupBy(app => app.EconomicRegion).Select(group => new GetEconomicRegionDto { EconomicRegion = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.EconomicRegion);
-        if (result == null) return new List<GetEconomicRegionDto>();
+        if (result == null) return [];
         var queryResult = await AsyncExecuter.ToListAsync(result);
         return queryResult;
     }
