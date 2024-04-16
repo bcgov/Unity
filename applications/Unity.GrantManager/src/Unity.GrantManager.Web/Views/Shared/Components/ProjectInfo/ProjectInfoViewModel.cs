@@ -137,6 +137,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractNumber")]
+            [RegularExpression(@"^[a-zA-Z0-9]*$", ErrorMessage = "Invalid Contract Number.")]
             public string? ContractNumber { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
