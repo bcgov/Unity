@@ -510,8 +510,6 @@ abp-date-picker .btn {
 }
 
 .dropdown-toggle {
-    /*background-color: var(--bc-colors-blue-primary) !important;
-    color: var(--bc-colors-white-primary-500) !important;*/
     border-radius: 16px 16px 0px 0px !important;
     height: 50px
 }

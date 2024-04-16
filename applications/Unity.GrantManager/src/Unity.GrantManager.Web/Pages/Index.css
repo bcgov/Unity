@@ -36,7 +36,6 @@
     font-weight: 700;
     font-size: 3rem;
     color: var(--bc-type-color-secondary);
-    /*white-space: nowrap;*/
 }
 
 .home-heading {
@@ -46,7 +45,6 @@
 .home-h1 {
     font-weight: 400;
     color: var(--bc-type-color-secondary);
-    /*white-space: nowrap;*/
 }
 
 .home-h2 {
@@ -70,10 +68,6 @@
 .pl-3 {
     padding-left: 3rem;
 }
-
-/*.labels-container {
-    white-space: nowrap;
-}*/
 
 .labels-container .description {
     font-size: 1rem;
