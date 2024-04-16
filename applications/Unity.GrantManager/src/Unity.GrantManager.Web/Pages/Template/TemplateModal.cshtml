@@ -1,0 +1,36 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.Template.TemplateModalModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@{
+    Layout = null;
+}
+@section scripts {
+    <abp-script src="/Pages/Template/Template.js" />
+}
+<form method="post" asp-page-handler="OnPostAsync">
+<abp-modal>
+        <abp-modal-header title="Add New Template"></abp-modal-header>
+    <abp-modal-body>
+        <div>
+                <label for="file-upload" class="custom-file-upload">
+                    <img src="./images/icons/upload.svg" alt="Upload Icon">
+                    UPLOAD FILE
+                </label>
+                <input asp-for="@Model.fileUpload" type="file" id="file-upload">
+            <abp-select  asp-for="@Model.CategoryId" asp-items="@Model.categoryList" label="Category">
+            </abp-select>
+            
+                <abp-input type="text" asp-for="@Model.name" />
+
+                <abp-input type="textarea" asp-for="@Model.description" />
+
+                <abp-input type="text" asp-for="@Model.previewLink" />
+
+            </div>       
+    </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button type="button" class="btn btn-primary btn-save">ADD THIS TEMPLATE</abp-button>
+            <abp-button type="button" class="btn btn-secondary btn-cancel" data-bs-dismiss="modal">CANCEL</abp-button>
+        </abp-modal-footer>
+</abp-modal>
+</form>

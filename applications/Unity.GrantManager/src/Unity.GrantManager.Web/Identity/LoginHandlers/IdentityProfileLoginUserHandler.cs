@@ -101,7 +101,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             string oidcSub,
             string displayName)
         {
-            var tenant = await TenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
+            var tenant = await TenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
 
             using (CurrentTenant.Change(tenant.Id))
             {
@@ -109,7 +109,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
                 {
                     Directory = "IDIR",
                     Guid = userIdentifier,
-                    Roles = new string[] { UnityRoles.ProgramManager }
+                    Roles = [UnityRoles.ProgramManager]
                 }, username, firstName, lastName, emailAddress, oidcSub, displayName);
 
                 // Re-read tenant accounts and return

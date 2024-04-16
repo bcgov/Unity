@@ -43,6 +43,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             {
                 ApplicationId = applicationId,
                 ApplicationSectors = Sectors,
+                ApplicantId = application.Applicant.Id
             };
 
             model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>

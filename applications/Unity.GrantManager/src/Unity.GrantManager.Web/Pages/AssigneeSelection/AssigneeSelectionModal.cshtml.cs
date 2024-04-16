@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Identity;
+using Volo.Abp.Identity.Integration;
 using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace Unity.GrantManager.Web.Pages.AssigneeSelection
@@ -54,20 +55,14 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             public string? Duty { get; set; }
         }
 
-        
-
-
-        private readonly IApplicationStatusService _statusService;
         private readonly GrantApplicationAppService _applicationService;
-        private readonly IIdentityUserLookupAppService _identityUserLookupAppService;
+        private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
         private readonly IApplicationAssignmentsService _applicationAssigneeService;
 
-        public AssigneeSelectionModalModel(IApplicationStatusService statusService,
-            GrantApplicationAppService applicationService,
-            IIdentityUserLookupAppService identityUserLookupAppService,
+        public AssigneeSelectionModalModel(GrantApplicationAppService applicationService,
+            IIdentityUserIntegrationService identityUserLookupAppService,
             IApplicationAssignmentsService applicationAssigneeService)
         {
-            _statusService = statusService ?? throw new ArgumentNullException(nameof(statusService));
             _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
             _identityUserLookupAppService = identityUserLookupAppService ?? throw new ArgumentNullException(nameof(identityUserLookupAppService));
             _applicationAssigneeService = applicationAssigneeService;
@@ -96,8 +91,6 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             {
                 var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
                 var selectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-
-
 
                 foreach (var user in users.Items.OrderBy(s => s.UserName))
                 {
@@ -238,8 +231,8 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                 Logger.LogError(ex, message: "Error loading users select list");
             }
 
+            await Task.CompletedTask;
         }
-
 
 
         public async Task<IActionResult> OnPostAsync()
@@ -402,6 +395,8 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             {
                 Logger.LogError(ex, message: "Error updating application status");
             }
+
+            await Task.CompletedTask;
 
             return NoContent();
         }

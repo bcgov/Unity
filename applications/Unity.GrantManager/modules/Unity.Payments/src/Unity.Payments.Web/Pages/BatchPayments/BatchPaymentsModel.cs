@@ -7,7 +7,6 @@ namespace Unity.Payments.Web.Pages.BatchPayments
     public class BatchPaymentsModel
     {
         [DisplayName("ApplicationPaymentRequest:Amount")]
-        [RegularExpression(@"^\d*\.?\d+$", ErrorMessage = "Please enter a value greater than $0.00.")]
         [Required]
         public decimal Amount { get; set; }
         [DisplayName("ApplicationPaymentRequest:Description")]
@@ -18,5 +17,6 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         public Guid ApplicationId { get; set; }
         public bool? Payable { get; set; }
         public string? ApplicantName { get; set; }
+        public decimal PaymentThreshold { get; set; }
     }
 }

@@ -1,0 +1,47 @@
+﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Menu
+@using Volo.Abp.Users;
+
+@inject ICurrentUser CurrentUser
+
+<nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="main-navbar">
+
+    <div class="container-fluid unity-navbar-btns">
+
+        @(await Component.InvokeAsync<MainNavbarBrandViewComponent>())
+
+        @(await Component.InvokeAsync<MainNavbarMenuViewComponent>())
+        
+    </div>    
+
+   <div class="unity-container-fluid">
+        <div class="image-with-text">
+            <img src="/themes/ux2/images/union.png" alt="notifications">
+            <span class="text-inside-image">5</span>
+        </div>
+        <div class="px-3 d-flex align-items-center">
+            <div class="unity-user-initials">
+                @Html.Raw(CurrentUser.FindClaimValue("Badge"))
+            </div>
+        </div>
+    </div>
+
+    @{
+        bool isAuthorizedForTenantSwitch = false;
+        if (CurrentUser.IsAuthenticated && CurrentUser.FindClaims("tenant").Length > 1)
+            isAuthorizedForTenantSwitch = true;
+    }
+    <abp-dropdown id="user-dropdown">
+        <abp-dropdown-button class="btn-dropdown" text="Ministry of Silly Walks - Universal Grant P..." />
+        <abp-dropdown-menu class="user-dropdown-items">
+            <abp-dropdown-item href="#">My account</abp-dropdown-item>
+            <abp-dropdown-item href="#">Grant Program Settings</abp-dropdown-item>
+            @if (isAuthorizedForTenantSwitch)
+            {
+                <abp-dropdown-item href="/GrantPrograms">Switch Grant Programs</abp-dropdown-item>
+            }
+            <abp-dropdown-item href="/Account/Logout">Logout</abp-dropdown-item>
+        </abp-dropdown-menu>
+    </abp-dropdown>
+</nav>
+

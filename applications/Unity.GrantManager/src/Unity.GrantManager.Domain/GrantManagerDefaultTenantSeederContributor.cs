@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -28,7 +29,18 @@ namespace Unity.GrantManager
             if (context.TenantId == null)
             {
                 // Read the configuration and populate any default tenants
-                var tenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
+                var tenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
+
+                // Legacy check for pre v8 upgrade - we dont want migrations to fail because of this breaking changed
+                if (tenant == null)
+                {
+                    var list = await _tenantRepository.GetListAsync();
+                    tenant = list.Find(s => s.Name ==  GrantManagerConsts.DefaultTenantName);
+                    if (tenant != null)
+                    {
+                        await _tenantManager.ChangeNameAsync(tenant, tenant.Name);
+                    }
+                }
 
                 if (tenant == null)
                 {

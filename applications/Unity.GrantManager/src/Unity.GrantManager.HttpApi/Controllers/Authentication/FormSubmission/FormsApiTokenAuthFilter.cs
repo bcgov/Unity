@@ -59,7 +59,7 @@ namespace Unity.GrantManager.Controllers.Auth.FormSubmission
 
             if (_currentTenant.Id == null)
             {
-                var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
+                var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
                 using (_currentTenant.Change(defaultTenant.Id, defaultTenant.Name))
                 {
                     apiToken = await _formTokenAppService.GetFormApiTokenAsync();

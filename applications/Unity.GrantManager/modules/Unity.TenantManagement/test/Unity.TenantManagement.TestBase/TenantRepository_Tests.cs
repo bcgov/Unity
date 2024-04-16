@@ -21,13 +21,13 @@ public abstract class TenantRepository_Tests<TStartupModule> : TenantManagementT
     [Fact]
     public async Task FindByNameAsync()
     {
-        var tenant = await TenantRepository.FindByNameAsync("acme");
+        var tenant = await TenantRepository.FindByNameAsync("ACME");
         tenant.ShouldNotBeNull();
 
         tenant = await TenantRepository.FindByNameAsync("undefined-tenant");
         tenant.ShouldBeNull();
 
-        tenant = await TenantRepository.FindByNameAsync("acme", includeDetails: true);
+        tenant = await TenantRepository.FindByNameAsync("ACME", includeDetails: true);
         tenant.ShouldNotBeNull();
         tenant.ConnectionStrings.Count.ShouldBeGreaterThanOrEqualTo(2);
     }
@@ -35,7 +35,7 @@ public abstract class TenantRepository_Tests<TStartupModule> : TenantManagementT
     [Fact]
     public async Task FindAsync()
     {
-        var tenantId = (await TenantRepository.FindByNameAsync("acme")).Id;
+        var tenantId = (await TenantRepository.FindByNameAsync("ACME")).Id;
 
         var tenant = await TenantRepository.FindAsync(tenantId);
         tenant.ShouldNotBeNull();
@@ -59,7 +59,7 @@ public abstract class TenantRepository_Tests<TStartupModule> : TenantManagementT
     [Fact]
     public async Task Should_Eager_Load_Tenant_Collections()
     {
-        var role = await TenantRepository.FindByNameAsync("acme");
+        var role = await TenantRepository.FindByNameAsync("ACME");
         role.ConnectionStrings.ShouldNotBeNull();
         role.ConnectionStrings.Any().ShouldBeTrue();
     }

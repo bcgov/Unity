@@ -14,7 +14,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
     [Migration("20240205194201_owner-and-user-selection")]
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
     partial class owneranduserselection
+#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
