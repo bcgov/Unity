@@ -43,7 +43,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
-    <ProjectReference Include="..\..\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.csproj" />
+    <ProjectReference Include="..\..\Unity.Theme.UX2\src\Unity.Theme.UX2\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj" />    
   </ItemGroup>
 
 </Project>

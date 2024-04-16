@@ -1,0 +1,14 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {   
+    "Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic": {
+      "path": "src/Unity.Theme.UX2/Unity.AspNetCore.Mvc.UI.Theme.UX2.abppkg.json",
+      "folder": "src"
+    }
+  }
+}
