@@ -15,13 +15,12 @@ namespace Unity.Payments.BatchPaymentRequests
         public Guid? TenantId { get; set; }
         public virtual string BatchNumber { get; private set; } = string.Empty;        
         public virtual string RequesterName { get; private set; } = string.Empty;
-        public virtual PaymentGroup PaymentGroup { get; private set; } = PaymentGroup.Cheque;
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
         public virtual bool IsRecon { get => PaymentRequests.All(s => s.IsRecon); }
         public virtual string? Description { get; private set; }
 
-        // Optional for now, still to be enforced in upcoming work        
+        // Optional for now, still to be enforced in upcoming work
         public virtual Guid? SiteId { get; set; }
 
         public virtual Collection<PaymentRequest> PaymentRequests { get; private set; }
@@ -39,14 +38,12 @@ namespace Unity.Payments.BatchPaymentRequests
 
         public BatchPaymentRequest(Guid id,
             string batchNumber,
-            PaymentGroup paymentMethod,
             string? description,
             string requesterName,
             string correlationProvider)
            : base(id)
         {
             BatchNumber = batchNumber;
-            PaymentGroup = paymentMethod;
             Description = description;
             RequesterName = requesterName;
             CorrelationProvider = correlationProvider;
