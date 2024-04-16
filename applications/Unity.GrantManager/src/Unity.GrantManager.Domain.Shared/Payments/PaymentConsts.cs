@@ -3,5 +3,6 @@
     public static class PaymentConsts
     {
         public const string ApplicantCorrelationProvider = "Applicant";
+        public const string UnityPaymentsFeature = "Unity.Payments";
     }
 }

@@ -1643,6 +1643,70 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("PaymentRequests", "Payments");
                 });
 
+            modelBuilder.Entity("Unity.Payments.PaymentConfigurations.PaymentConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("MinistryClient")
+                        .HasColumnType("text");
+                        
+                    b.Property<string>("Responsibility")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ServiceLine")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Stob")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProjectNumber")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("PaymentThreshold")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PaymentConfigurations", "Payments");
+                });
+
             modelBuilder.Entity("Unity.Payments.Suppliers.Site", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2021,6 +2085,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.Payments.Suppliers.Supplier", b =>
                 {
                     b.Navigation("Sites");
+                });
+
+            modelBuilder.Entity("Unity.Payments.PaymentConfigurations.PaymentConfigurations", b =>
+                {
+                    b.Navigation("PaymentConfigurations");
                 });
 #pragma warning restore 612, 618
         }

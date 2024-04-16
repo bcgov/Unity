@@ -2,9 +2,12 @@
 @using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
+@using Unity.GrantManager.Payments;
+@using Volo.Abp.Features;
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
+@inject IFeatureChecker FeatureChecker
 @model ApplicantInfoViewModel
 @{
     Layout = null;
@@ -149,9 +152,12 @@
                 </abp-column>
             </abp-row>
         </abp-row>
-        <div id="supplier-info-widget">
-            @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
-        </div>
+        @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
+        {
+            <div id="supplier-info-widget">
+                @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
+            </div>
+        }
      </form>
 </abp-row>
 

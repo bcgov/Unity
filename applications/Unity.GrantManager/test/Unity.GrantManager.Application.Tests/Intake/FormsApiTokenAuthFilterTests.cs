@@ -200,7 +200,7 @@ namespace Unity.GrantManager.Intake
             {
                 foreach (var kvp in headers)
                 {
-                    httpContext.Request.Headers.Add(kvp.Key, kvp.Value);
+                    httpContext.Request.Headers.Append(kvp.Key, kvp.Value);
                 }
             }
 

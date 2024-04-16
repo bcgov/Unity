@@ -9,10 +9,12 @@ $(function () {
             const includeDetails = true;
             return { correlationId, correlationProvider, includeDetails };
         }
-        let responseCallback = function (result) {               
-            return {
-                data: result.sites
-            };
+        let responseCallback = function (result) {
+            let response = { data: [] };
+            if(result != null && result.sites != null) {
+                response.data = result.sites
+            } 
+            return response;
         };
                 
         dataTable = $('#SiteInfoTable').DataTable(
@@ -36,7 +38,17 @@ $(function () {
                     {
                         title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup'),
                         data: 'paymentGroup',
-                        className: 'data-table-header'
+                        className: 'data-table-header',
+                        render: function (data) {
+                            switch (data) {
+                                case 1:
+                                    return 'EFT';
+                                case 2:
+                                    return 'Cheque';
+                                default:
+                                    return 'Unknown PaymentGroup';
+                            }
+                        },
                     },
                     {
                         title: l('ApplicantInfoView:ApplicantInfo.SiteInfo:MailingAddress'),

@@ -128,6 +128,7 @@ table.dataTable thead th {
 table.dataTable td {
     word-wrap: break-word;
     max-width: 250px;
+    font-size: 15px;
 }
 
 .odd {
@@ -210,9 +211,7 @@ table.dataTable thead td {
     font-size: 14px;
 }
 
-table.dataTable td {
-    font-size: 15px;
-}
+
 
 #intake-map-available-fields-column {
     margin-top: 55px;

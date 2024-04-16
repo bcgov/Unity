@@ -1,12 +1,12 @@
 ﻿using System;
 using Unity.Payments.Enums;
+using Volo.Abp.Application.Dtos;
 
 namespace Unity.Payments.Suppliers;
 
 [Serializable]
-public class SiteDto
+public class SiteDto : AuditedEntityDto<Guid>
 {
-    public Guid Id { get; set; }
     public string Number { get; set; } = null!;
     public PaymentGroupDto PaymentGroup { get; set; }
     public string? AddressLine1 { get; set; }
