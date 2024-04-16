@@ -1,4 +1,5 @@
 ﻿@page
+@using Unity.GrantManager.ApplicationForms
 @using Unity.GrantManager.Localization;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
@@ -50,12 +51,12 @@
                     </abp-column>
                     <abp-column size="_2" class="px-1">
                         <select class="form-select form-control" id="applicationFormVersion" name="Version">
-                            @foreach (var applicationFormVersionDto in Model.ApplicationFormVersionDtoList ?? [])
+                            @foreach (var applicationFormVersionDto in Model?.ApplicationFormVersionDtoList ?? new List<ApplicationFormVersionDto> { })
                             {
                                 @if (@applicationFormVersionDto.ChefsFormVersionGuid+"" != "")
                                 {
                                     var selected = false;
-                                    @if (Model.ChefsFormVersionGuid+"" == applicationFormVersionDto.ChefsFormVersionGuid)
+                                    @if (Model?.ChefsFormVersionGuid+"" == applicationFormVersionDto.ChefsFormVersionGuid)
                                     {
                                         selected = true;
                                     }
