@@ -14,8 +14,7 @@
 <div class="d-flex align-items-stretch justify-content-end gap-2">
     <abp-row class="m-0 p-0">
         <abp-column size="_6" class="px-1 application-dashboard-dropdown">
-            <abp-select asp-for="@Model.IntakeId" asp-items="@Model.IntakeOptionsList" id="dashboardIntakeId"
-                        onchange="enableProjectInfoSaveBtn(this)">
+            <abp-select asp-for="@Model.IntakeId" asp-items="@Model.IntakeOptionsList" id="dashboardIntakeId">
             </abp-select>
         </abp-column>
         <abp-column size="_6" class="px-1 application-dashboard-dropdown">
