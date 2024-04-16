@@ -43,7 +43,7 @@ public class SiteInfoModalModel : AbpPageModel
         public Guid SupplierId { get; set; }
 
         [Display(Name = "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber")]
-        [MaxLength(21, ErrorMessage = "Must be a maximum of 21 characters")]
+        [MaxLength(15, ErrorMessage = "Must be a maximum of 15 characters")]
         public string SiteNumber { get; set; } = string.Empty;
         [Display(Name = "ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup")]
         [SelectItems(nameof(PayGroupOptionsList))]
