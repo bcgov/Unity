@@ -19,7 +19,7 @@ function reloadDashboard() {
             'Submissions by Status', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
     });
 
-    unity.grantManager.dashboard.dashboard.getApplicationTagsCount().then(applicationTags => {
+    unity.grantManager.dashboard.dashboard.getApplicationTagsCount(intakeId, category).then(applicationTags => {
         initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count),
             'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
     });

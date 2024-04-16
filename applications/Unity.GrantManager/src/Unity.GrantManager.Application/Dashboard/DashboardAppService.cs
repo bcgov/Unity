@@ -99,10 +99,22 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return queryResult;
     }
 
-    public async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync()
+    public async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(Guid intakeId, string? category)
     {
-        var applicationTags = await _applicationTagsRepository.GetListAsync();
-        List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList();
+        if (category == "None")
+        {
+            category = null;
+        }
+
+        var query = from intake in await _intakeRepository.GetQueryableAsync()
+                    join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                    join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                    join tag in await _applicationTagsRepository.GetQueryableAsync() on application.Id equals tag.ApplicationId
+                    where intake.Id == intakeId && form.Category == category
+                    select tag;
+
+        var applicationTags = query.ToList();
+        List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList(); 
         List<string> tags = new List<string>();
         concatenatedTags.ForEach(txt => tags.AddRange(txt.Split(',').ToList()));
         tags = tags.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
