@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "Unity.Theme.UX2": {
+      "path": "Unity.Theme.UX2.abpmdl.json"
+    }
+  }
+}

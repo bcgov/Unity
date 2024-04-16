@@ -1,0 +1,37 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.Template.TemplateModalModel
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@{
+    Layout = null;
+}
+@section scripts {
+    <abp-script src="/Pages/Template/Template.js" />
+}
+<form method="post" asp-page-handler="OnPostAsync">
+<abp-modal>
+        <abp-modal-header title="Edit Template"></abp-modal-header>
+    <abp-modal-body>
+        <div>
+            <abp-select  asp-for="@Model.CategoryId" asp-items="@Model.categoryList" label="Category">
+            </abp-select>
+            
+                <abp-input type="text" asp-for="@Model.name" />
+
+                <abp-input type="textarea" asp-for="@Model.description" />
+
+                <abp-input type="text" asp-for="@Model.previewLink" />
+                <div class="div-button-wrapper">
+                <label for="delete-file" class="custom-file-upload">
+                    <img src="./images/icons/delete.svg" alt="Delete Icon">
+                    DELETE THIS TEMPLATE
+                </label>
+                </div>
+
+            </div>       
+    </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button type="button" class="btn btn-primary">SAVE CHANGES</abp-button>
+            <abp-button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</abp-button>
+        </abp-modal-footer>
+</abp-modal>
+</form>

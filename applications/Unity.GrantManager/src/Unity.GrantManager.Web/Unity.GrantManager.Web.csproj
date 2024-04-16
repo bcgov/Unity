@@ -24,6 +24,7 @@
     <None Remove="Views\Shared\Components\AssessmentResults\" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Web\Unity.Notifications.Web.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Web\Unity.Payments.Web.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Theme.UX2\src\Unity.Theme.UX2\Unity.AspNetCore.Mvc.UI.Theme.UX2.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,8 +52,7 @@
 
   <ItemGroup>
 	<ProjectReference Include="..\..\modules\Unity.Identity.Web\src\Unity.Identity.Web.csproj" />
-	<ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Web\Unity.TenantManagement.Web.csproj" />
-	<ProjectReference Include="..\..\modules\Volo.BasicTheme\src\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic\Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.csproj" />
+	<ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Web\Unity.TenantManagement.Web.csproj" />	
 	<ProjectReference Include="..\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
 	<ProjectReference Include="..\Unity.GrantManager.HttpApi.Client\Unity.GrantManager.HttpApi.Client.csproj" />
 	<ProjectReference Include="..\Unity.GrantManager.HttpApi\Unity.GrantManager.HttpApi.csproj" />
@@ -69,5 +69,10 @@
 
   <ItemGroup>
     <Folder Include="Views\Shared\Components\AssessmentResults\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Pages\Template\TemplateEditModal.cshtml" />
+    <None Include="Pages\Template\TemplateModal.cshtml" />
   </ItemGroup>
 </Project>
