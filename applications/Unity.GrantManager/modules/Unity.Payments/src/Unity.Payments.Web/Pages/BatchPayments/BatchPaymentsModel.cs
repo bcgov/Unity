@@ -20,7 +20,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         [Required(ErrorMessage = "This field is required.")]
         [DisplayName("ApplicationPaymentRequest:SiteNumber")]
         public Guid SiteId { get; set; }
-		public bool? Payable { get; set; }
+        public bool? Payable { get; set; }
         public string? ApplicantName { get; set; }
         public decimal PaymentThreshold { get; set; }
         public List<SelectListItem> SiteList { get; set; } = new List<SelectListItem>{};

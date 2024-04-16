@@ -65,13 +65,18 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                 });
 
                 // If there are sites then add them
-                if(supplier != null && supplier.Sites != null && supplier.Sites.Count > 0) {
+                if (supplier != null
+                    && supplier.Sites != null
+                    && supplier.Sites.Count > 0
+                    && supplier.Number != null)
+                {
                     string supplierNumber = supplier.Number;
-                    foreach(var site in supplier.Sites) {
+                    foreach (var site in supplier.Sites)
+                    {
                         SelectListItem item = new SelectListItem
                         {
                             Value = site.Id.ToString(),
-                            Text = $"{site.Number} ({supplierNumber}, {site.City})", 
+                            Text = $"{site.Number} ({supplierNumber}, {site.City})",
                         };
                         request.SiteList.Add(item);
                     }
