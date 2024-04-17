@@ -8,12 +8,11 @@
     background-color: white;
 }
 
-.action-bar.active {
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
-        
-}
+    .action-bar.active {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+    }
 
 .spinner-loader {
     display: flex;
@@ -26,6 +25,7 @@
     display: flex;
     gap: 0.5rem;
 }
+
 .payment-card {
     border-radius: 4px;
     border: 1px solid var(--bc-colors-grey-dividers) !important;
@@ -35,28 +35,32 @@
 .payment-card-header {
     background-color: white;
 }
+
 .single-payment-card {
     border-bottom: 1px solid var(--bc-colors-grey-dividers);
 }
+
 .single-payment-card-application-name {
     font-weight: bold;
 }
+
 .remove-single-payment {
     float: right;
     font-size: medium !important;
 }
 
-.remove-single-payment:hover {
-    color: black !important;
-    text-decoration: none;
-    box-shadow: none;
+    .remove-single-payment:hover {
+        color: black !important;
+        text-decoration: none;
+        box-shadow: none;
+    }
+
+.no-payment-msg {
+    display: none;
 }
-.no-payment-msg{
-    display:none;
-}
+
 .remove-single-payment > .fa {
     font-size: small;
-    
 }
 
 .max-error {

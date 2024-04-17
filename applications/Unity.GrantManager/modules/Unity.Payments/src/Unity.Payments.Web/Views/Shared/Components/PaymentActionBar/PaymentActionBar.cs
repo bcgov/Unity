@@ -8,8 +8,8 @@ namespace Unity.Payments.Web.Views.Shared.Components.ActionBar
 {
     [Widget(
         RefreshUrl = "Widget/PaymentActionBar/Refresh",
-        ScriptTypes = new[] { typeof(PaymentActionBarWidgetScriptBundleContributor) },
-        StyleTypes = new[] { typeof(PaymentActionBarWidgetStyleBundleContributor) },
+        ScriptTypes = [typeof(PaymentActionBarWidgetScriptBundleContributor)],
+        StyleTypes = [typeof(PaymentActionBarWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class PaymentActionBar : AbpViewComponent
     {
@@ -24,7 +24,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.ActionBar
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
             context.Files
-              .AddIfNotContains("/Views/Shared/Components/PaymentActionBar/PaymentActionBar.css");
+              .AddIfNotContains("/Views/Shared/Components/PaymentActionBar/Default.css");
         }
     }
 
@@ -33,7 +33,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.ActionBar
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
             context.Files
-              .AddIfNotContains("/Views/Shared/Components/PaymentActionBar/PaymentActionBar.js");
+              .AddIfNotContains("/Views/Shared/Components/PaymentActionBar/Default.js");
         }
     }
 }

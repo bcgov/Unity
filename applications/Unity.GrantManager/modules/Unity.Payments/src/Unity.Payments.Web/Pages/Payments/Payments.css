@@ -255,6 +255,7 @@ div.dt-buttons div.dropdown-menu {
 .currency-display {
     text-align: right;
 }
-.dataTables_filter{
-    margin-bottom:.5rem;
+
+.dataTables_filter {
+    margin-bottom: .5rem;
 }
