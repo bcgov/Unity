@@ -10,28 +10,50 @@
 {
     <abp-script src="/Pages/Dashboard/Index.js" />
 }
+<div id="dashboardIntakeList" style="display: none;">@Html.Raw(Json.Serialize(Model.DashboardIntakes))</div>
+<div class="d-flex align-items-stretch justify-content-end gap-2">
+    <abp-row class="m-0 p-0">
+        <abp-column size="_6" class="px-1 application-dashboard-dropdown">
+            <abp-select asp-for="@Model.IntakeId" asp-items="@Model.IntakeOptionsList" id="dashboardIntakeId">
+            </abp-select>
+        </abp-column>
+        <abp-column size="_6" class="px-1 application-dashboard-dropdown">
+            <abp-select asp-for="@Model.CategoryName" asp-items="@Model.CategoryOptionsList" id="dashboardCategoryName"
+                        onchange="reloadDashboard()">
+            </abp-select>
+        </abp-column>
+    </abp-row>
+    
+</div>
 
-<div class="application-dashboard">
-    <table class="chartBox" aria-describedby="chartBox">
-        <tr>
-            <th></th>
-            <th></th>
-        </tr>
-        <tr>
-            <td class="chartCanvas">
-                <canvas id="economicRegionChart"></canvas>
-            </td>
-            <td class="chartCanvas">
-                <canvas id="sectorChart"></canvas>
-            </td>
-        </tr>
-        <tr>
-            <td class="chartCanvas">
-                <canvas id="applicationStatusChart"></canvas>
-            </td>
-            <td class="chartCanvas">
-                <canvas id="applicationTagsChart"></canvas>
-            </td>
-        </tr>
-    </table>
+
+<div class="row col-md-12 application-dashboard">
+    <div class="col-md-6 col-lg-4 col-sm-12 p-2 card-border-radius">
+        <abp-card>
+            <abp-card-body>
+                <div id="applicationStatusChart"></div>
+            </abp-card-body>
+        </abp-card>
+    </div>
+    <div class="col-md-6 col-lg-4 col-sm-12 p-2 card-border-radius">
+        <abp-card>
+            <abp-card-body>
+                <div id="sectorChart"></div>
+            </abp-card-body>
+        </abp-card>
+    </div>
+    <div class="col-md-6 col-lg-4 col-sm-12 p-2 card-border-radius">
+        <abp-card>
+            <abp-card-body>
+                <div id="economicRegionChart"></div>
+            </abp-card-body>
+        </abp-card>
+    </div>
+    <div class="col-md-6 col-lg-4 col-sm-12 p-2 card-border-radius">
+        <abp-card>
+            <abp-card-body>
+                <div id="applicationTagsChart"></div>
+            </abp-card-body>
+        </abp-card>
+    </div>
 </div>

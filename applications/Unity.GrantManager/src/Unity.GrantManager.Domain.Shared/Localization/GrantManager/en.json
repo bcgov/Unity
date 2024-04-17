@@ -37,6 +37,9 @@
     "Common:Command:Import": "Import",
     "Common:Command:Select": "Select",
 
+    "Dashboard:IntakeId": "Intake",
+    "Dashboard:CategoryName": "Category",
+
     "GrantPrograms": "Grant Programs",
     "GrantProgram": "Grant Program",
     "GrantProgramType": "Sector",

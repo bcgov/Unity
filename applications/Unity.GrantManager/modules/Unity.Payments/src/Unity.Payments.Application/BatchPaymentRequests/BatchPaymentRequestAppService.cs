@@ -28,7 +28,6 @@ namespace Unity.Payments.BatchPaymentRequests
         {
             var newBatchPaymentRequest = new BatchPaymentRequest(Guid.NewGuid(),
                 Guid.NewGuid().ToString(), // Need to implement batch number generator
-                Enums.PaymentGroup.EFT,
                 batchPaymentRequest.Description,
                 GetCurrentRequesterName(),
                 batchPaymentRequest.Provider);
@@ -40,7 +39,7 @@ namespace Unity.Payments.BatchPaymentRequests
                     newBatchPaymentRequest,
                     payment.InvoiceNumber,
                     payment.Amount,
-                    newBatchPaymentRequest.PaymentGroup,
+                    payment.SiteId,
                     payment.CorrelationId,
                     payment.Description),
                     await GetPaymentThresholdAsync());

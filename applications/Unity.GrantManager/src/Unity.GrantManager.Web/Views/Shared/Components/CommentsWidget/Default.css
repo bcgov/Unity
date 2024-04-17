@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 .single-comment {
     position: relative;
     border-radius: 4px;
@@ -11,16 +11,16 @@
     flex: 1;
 }
 
+.single-comment.edit-mode {    
+    width: 100%;
+}
+
 .comment-input {
-    border: 0 !important;
     outline: 0;
-    border-bottom: 0.5px solid #D6D6D6 !important;
-    border-radius: 0px;
 }
 
     .comment-input:hover {
         box-shadow: none !important;
-        border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
     }
 
     .comment-input.selected {
@@ -48,24 +48,19 @@
     font-size: 0.938rem;
 }
 
-.comment-input-mutliple {
-    border: 0 !important;
-    outline: 0;
-    border-bottom: 0.5px solid #D6D6D6;
-    border-radius: 0px;
+.comment-input-multiple:hover {
+    box-shadow: none !important;
+    border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
 }
 
-    .comment-input-multiple:hover {
-        box-shadow: none !important;
-        border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
-    }
-
-    .comment-input-mutliple.selected {
-        border: 0 !important;
-        outline: 0 !important;
-        border-bottom: 0.5px solid #D6D6D6 !important;
-        border-radius: 0px !important;
-    }
+.comment-input-mutliple {
+    border-left: 0.50px #D6D6D6 solid;
+    border-top: 0.50px #D6D6D6 solid;
+    border-right: 0.50px #D6D6D6 solid;
+    border-bottom: 1px #D6D6D6 solid;
+    padding: 10px 5px 5px 5px;
+    flex: 1;
+}
 
 .comment-time {
     padding-top: 0.1rem;
@@ -101,6 +96,7 @@
     overflow-y: scroll;
     overflow-x: hidden;
     position: relative;
+    font-size: var(--bc-font-size);
 }
 
 .comment-edit-btn-wrapper {
@@ -118,7 +114,7 @@
 }
 
 .unity-comment-block {
-    background: var(--bc-colors-grey-hover);
+    background: var(--bc-surface--color--brand--gold--20);
     padding: 0.75rem 0.5rem 0.5rem 1rem;
     border-radius: 0.25rem;
     font-size: var(--bc-font-size-xs);
@@ -128,20 +124,21 @@
 }
 
     .unity-comment-block .commented-time {
-        font-size: var(--bc-font-size-xxs);
+        font-size: 0.875rem;
     }
 
-.comment-read-mode{
-    display : flex;
+.comment-read-mode {
+    display: flex;
 }
 
-.comment-read-mode > .unity-user-initials {
-    margin-top: 0.5rem;
-    padding:5px;
-    width:22px;
-    height:22px;
-    font-size:0.45rem;
-}
-.commenter-name{
-    font-size:0.75rem;
+    .comment-read-mode > .unity-user-initials {
+        margin-top: 0.5rem;
+        padding: 5px;
+        width: 22px;
+        height: 22px;
+        font-size: 0.45rem;
+    }
+
+.commenter-name {
+    font-size: var(--bc-font-size);
 }

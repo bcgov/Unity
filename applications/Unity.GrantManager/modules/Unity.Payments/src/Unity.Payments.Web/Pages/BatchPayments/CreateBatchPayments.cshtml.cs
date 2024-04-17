@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
 using Unity.GrantManager.GrantApplications;
+using Unity.Payments.Suppliers;
 using Unity.Payments.BatchPaymentRequests;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Unity.Payments.PaymentConfigurations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Unity.Payments.Web.Pages.BatchPayments
 {
@@ -23,8 +25,10 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         private readonly GrantApplicationAppService _applicationService;
         private readonly IBatchPaymentRequestAppService _batchPaymentRequestService;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
+        private readonly ISupplierAppService _iSupplierAppService;
 
         public CreateBatchPaymentsModel(GrantApplicationAppService applicationService,
+           ISupplierAppService iSupplierAppService,
            IBatchPaymentRequestAppService batchPaymentRequestService,
            IPaymentConfigurationAppService paymentConfigurationAppService)
         {
@@ -32,6 +36,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
             _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
             _batchPaymentRequestService = batchPaymentRequestService;
             _paymentConfigurationAppService = paymentConfigurationAppService;
+            _iSupplierAppService = iSupplierAppService;
         }
 
         public async Task OnGetAsync(string applicationIds)
@@ -50,10 +55,36 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                     InvoiceNumber = application.ReferenceNo,
                 };
 
+                // Massage Site list
+                var supplier = await _iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+                {
+                    CorrelationId = application.Applicant.Id,
+                    CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicantCorrelationProvider,
+                    IncludeDetails = true
+                });
+
+                // If there are sites then add them
+                if (supplier != null
+                    && supplier.Sites != null
+                    && supplier.Sites.Count > 0
+                    && supplier.Number != null)
+                {
+                    string supplierNumber = supplier.Number;
+                    foreach (var site in supplier.Sites)
+                    {
+                        SelectListItem item = new SelectListItem
+                        {
+                            Value = site.Id.ToString(),
+                            Text = $"{site.Number} ({supplierNumber}, {site.City})",
+                        };
+                        request.SiteList.Add(item);
+                    }
+                }
+
                 ApplicationPaymentRequestForm!.Add(request);
             }
 
-            var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
+			var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
             PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentConsts.DefaultThresholdAmount;
         }
 
@@ -83,6 +114,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                 {
                     Amount = payment.Amount,
                     CorrelationId = payment.ApplicationId,
+                    SiteId = payment.SiteId,
                     Description = payment.Description,
                     InvoiceNumber = payment.InvoiceNumber
                 });

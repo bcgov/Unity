@@ -25,8 +25,7 @@ public class PaymentsMenuContributor : IMenuContributor
             new ApplicationMenuItem(
                     PaymentsMenus.Prefix, 
                     displayName: "Payments",
-                    "~/Payments", 
-                    icon: "fa fa-money"
+                    "~/Payments"                    
                 )
                 .AddItem(
                     new ApplicationMenuItem(

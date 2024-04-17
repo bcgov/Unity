@@ -9,9 +9,9 @@ namespace Unity.Payments.BatchPaymentRequests
     public class PaymentRequest : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationIdEntity
     {
         public Guid? TenantId { get; set; }
+        public Guid? SiteId { get; set; }
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
-        public virtual PaymentGroup PaymentGroup { get; private set; } = PaymentGroup.Cheque;
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual string? Description { get; private set; } = null;
         public virtual BatchPaymentRequest? BatchPaymentRequest { get; set; }
@@ -36,14 +36,14 @@ namespace Unity.Payments.BatchPaymentRequests
             BatchPaymentRequest batch,
             string invoiceNumber,
             decimal amount,
-            PaymentGroup paymentGroup,
+            Guid siteId,
             Guid correlationId,
             string? description = null)
             : base(id)
         {
             InvoiceNumber = invoiceNumber;
             Amount = amount;
-            PaymentGroup = paymentGroup;
+            SiteId = siteId;
             Description = description;
             BatchPaymentRequest = batch;
             CorrelationId = correlationId;
@@ -52,12 +52,6 @@ namespace Unity.Payments.BatchPaymentRequests
         public PaymentRequest SetAmount(decimal amount)
         {
             Amount = amount;
-            return this;
-        }
-
-        public PaymentRequest SetPaymentMethod(PaymentGroup method)
-        {
-            PaymentGroup = method;
             return this;
         }
 
