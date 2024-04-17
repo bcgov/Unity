@@ -15,7 +15,7 @@ public partial class AppDbContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer("Name=ConnectionStrings:DefaultConnection");
+            optionsBuilder.UseSqlServer("Name=ConnectionStrings:Default");
         }
         base.OnConfiguring(optionsBuilder);
     }

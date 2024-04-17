@@ -12,13 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((hostingContext, loggerConfiguration) =>
     loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration));
 
-Log.Information("Starting web host.");
+builder.Services.AddHealthChecks();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), x => x.MigrationsAssembly("Unity.ApplicantPortal.Data"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"), x => x.MigrationsAssembly("Unity.ApplicantPortal.Data"));
 });
 
 //Authentication Schems
@@ -45,7 +45,7 @@ builder.Services.AddAuthentication(options =>
     options.ClientId = builder.Configuration.GetSection("Keycloak")["resource"];
     options.ClientSecret = builder.Configuration.GetSection("Keycloak").GetSection("credentials")["secret"];
     options.MetadataAddress= $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}/.well-known/openid-configuration";
-    options.RequireHttpsMetadata = true;
+    options.RequireHttpsMetadata = false;
     options.GetClaimsFromUserInfoEndpoint = true;
     options.ResponseType = OpenIdConnectResponseType.Code;
     options.NonceCookie.SameSite = SameSiteMode.Unspecified;
@@ -81,6 +81,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/healthz");
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
@@ -92,5 +94,7 @@ if (app.Environment.IsDevelopment())
     using var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.Migrate();
 }
+
+Log.Information("Starting web host.");
 
 app.Run();
