@@ -9,7 +9,7 @@ namespace Unity.Payments.BatchPaymentRequests
     public class PaymentRequest : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationIdEntity
     {
         public Guid? TenantId { get; set; }
-        public Guid? SiteId { get; set; }
+        public Guid SiteId { get; set; }
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
