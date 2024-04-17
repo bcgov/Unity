@@ -10,7 +10,6 @@ public class ApplicationLinksInfoDto : EntityDto<Guid>
     public String ReferenceNumber { get; set; } = String.Empty;
     public String ApplicationStatus { get; set; } = String.Empty;
     public String Category { get; set; } = String.Empty;
-    public String ApplicantName { get; set; } = String.Empty;
     public string ProjectName { get; set; } = string.Empty;
 
 }
