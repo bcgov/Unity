@@ -429,8 +429,24 @@ div.dataTables_wrapper div.dataTables_length label {
     --bs-nav-link-hover-color: var(--bc-colors-grey-text-500);
 }
 
-.nav-item a {
-    padding: 1rem;
+.nav-item.btn.btn-nav {
+    padding: 0;
+}
+
+.nav-item > a {
+    padding: 1.2rem;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.nav-link.dropdown-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .fs-5 {

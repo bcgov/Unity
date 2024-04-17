@@ -1,8 +1,10 @@
 ﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Menu
+@using Volo.Abp.MultiTenancy
 @using Volo.Abp.Users;
 
 @inject ICurrentUser CurrentUser
+@inject ICurrentTenant CurrentTenant
 
 <nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="main-navbar">
 
@@ -32,9 +34,9 @@
             isAuthorizedForTenantSwitch = true;
     }
     <abp-dropdown id="user-dropdown">
-        <abp-dropdown-button class="btn-dropdown" text="Ministry of Silly Walks - Universal Grant P..." />
+        <abp-dropdown-button class="btn-dropdown" text="@CurrentTenant.Name" />
         <abp-dropdown-menu class="user-dropdown-items">
-            <abp-dropdown-item href="#">My account</abp-dropdown-item>
+            <abp-dropdown-item href="#">My Account</abp-dropdown-item>
             <abp-dropdown-item href="#">Grant Program Settings</abp-dropdown-item>
             @if (isAuthorizedForTenantSwitch)
             {
