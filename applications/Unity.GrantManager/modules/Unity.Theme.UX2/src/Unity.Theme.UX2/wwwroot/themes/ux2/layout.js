@@ -14,16 +14,13 @@ $(function () {
         return false;
     });
 });
-window.addEventListener('DOMContentLoaded', (event) => {
-    const currentUrl = window.location.pathname;
-    const dashboardButton = document.querySelector('button[data-url="/Dashboard"]');
-    const applicationsButton = document.querySelector('button[data-url="/GrantApplications"]');
 
-    if (currentUrl.includes('/Dashboard')) {
-        dashboardButton.classList.add('active');
-    } else if (currentUrl.includes('/GrantApplications')) {
-        applicationsButton.classList.add('active');
-    }
+window.addEventListener('DOMContentLoaded', (event) => {
+    const currentUrl = window.location.pathname;        
+    const currentNav = document.querySelector(`a[href="${currentUrl}"]`);
+    if (currentNav) {
+        currentNav.parentElement.classList.add('active');
+    }    
 });
 
 document.addEventListener('DOMContentLoaded', function () {
