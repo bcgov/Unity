@@ -37,7 +37,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
         public DbSet<ApplicationContact> ApplicationContacts { get; set; }    
-        public DbSet<ApplicationLinks> ApplicationLinks { get; set; }    
+        public DbSet<ApplicationLink> ApplicationLinks { get; set; }    
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -265,7 +265,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                
             });
 
-            modelBuilder.Entity<ApplicationLinks>(b =>
+            modelBuilder.Entity<ApplicationLink>(b =>
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationLinks",
                     GrantManagerConsts.DbSchema);

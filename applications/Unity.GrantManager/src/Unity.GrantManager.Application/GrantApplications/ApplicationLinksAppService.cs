@@ -11,10 +11,9 @@ using Volo.Abp.Domain.Repositories;
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize]
-[Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(ApplicationLinksAppService), typeof(IApplicationLinksService))]
 public class ApplicationLinksAppService : CrudAppService<
-            ApplicationLinks,
+            ApplicationLink,
             ApplicationLinksDto,
             Guid>, IApplicationLinksService
 {
@@ -22,7 +21,7 @@ public class ApplicationLinksAppService : CrudAppService<
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationFormRepository _applicationFormRepository;
 
-    public ApplicationLinksAppService(IRepository<ApplicationLinks, Guid> repository,
+    public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository,
         IApplicationLinksRepository applicationLinksRepository,
         IApplicationFormRepository applicationFormRepository,
         IApplicationRepository applicationRepository) : base(repository)

@@ -4,7 +4,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Applications;
 
-public class ApplicationLinks : AuditedAggregateRoot<Guid>, IMultiTenant
+public class ApplicationLink : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid ApplicationId { get; set; }
     public Guid LinkedApplicationId { get; set; }
