@@ -21,6 +21,15 @@
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
     "ApplicationPaymentRequest:Validations:ThresholdExceeded": "Cannot add a payment to an existing batch with a value above threshold of",
 
+
+    "ApplicationPaymentTable:BatchNumber": "Batch Number",
+    "ApplicationPaymentTable:TotalAmount": "Total Amount",
+    "ApplicationPaymentTable:Status": "Status",
+    "ApplicationPaymentTable:RequestedOn": "Requested On",
+    "ApplicationPaymentTable:L1ApprovalDate": "L1 Approval Date",
+    "ApplicationPaymentTable:L2ApprovalDate": "L2 Approval Date",
+    "ApplicationPaymentTable:L3ApprovalDate": "L3 Approval Date",
+
     "ApplicantInfoView:SupplierInfoTitle": "Payments",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber": "Site #",

@@ -424,7 +424,7 @@
 
     function getAssigneesColumn() {
         return { 
-            title: l('Assignee'),
+            title: l('ApplicationPaymentTableAssignee'),
             data: 'assignees',
             name: 'assignees',
             className: 'dt-editable',

@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Payments.PaymentConfigurations;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
 
@@ -49,7 +51,13 @@ namespace Unity.Payments.BatchPaymentRequests
 
             return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
         }
+        public async Task<PagedResultDto<BatchPaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        {
+            var batchPayments = await _batchPaymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
+            var totalCount = await _batchPaymentRequestsRepository.GetCountAsync();
 
+            return new PagedResultDto<BatchPaymentRequestDto>(totalCount, ObjectMapper.Map<List<BatchPaymentRequest>, List<BatchPaymentRequestDto>>(batchPayments));
+        }
         protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
             var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();

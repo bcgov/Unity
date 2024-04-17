@@ -11,7 +11,7 @@ namespace Unity.Payments.BatchPaymentRequests
     {        
         public string BatchNumber { get; set; }
         public string RequesterName { get; set; }
-        public PaymentRequestStatusDto Status { get; set; }
+        public BatchPaymentRequestStatusDto Status { get; set; }
         public bool IsApproved { get; set; }
         public bool IsRecon { get; set; }
         public string? Description { get; set; }
