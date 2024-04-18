@@ -171,7 +171,6 @@ $(function () {
         ];
         return columnNames
             .map((name) => {
-                console.log(name, getColumnByName(name))
                 return getColumnByName(name).index;
             });
     }
