@@ -4,3 +4,4 @@
 - [Unity.Orchestrator](Unity.Orchestrator/README.md)
 - [Unity.Metabase](Unity.Metabase/README.md)
 - [Unity.RabbitMQ](Unity.RabbitMQ/README.md)
+- [Unity.RabbitMQ](Unity.Tools/README.md)
