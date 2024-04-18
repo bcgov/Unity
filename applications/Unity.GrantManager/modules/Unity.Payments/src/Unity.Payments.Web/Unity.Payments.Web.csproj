@@ -63,4 +63,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Pages\Payments\" />
+  </ItemGroup>
+
 </Project>
