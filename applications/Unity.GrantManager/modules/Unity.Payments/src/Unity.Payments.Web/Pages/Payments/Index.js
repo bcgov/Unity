@@ -19,7 +19,6 @@ $(function () {
 
     dataTable.buttons().container().prependTo('#dynamicButtonContainerForPayment');
     dataTable.on('search.dt', () => handleSearch());
-
    
 
     const UIElements = {
@@ -60,9 +59,7 @@ $(function () {
     function toggleFilterRow() {
         $('#dtFilterRow').toggleClass('hidden');
     }
-
  
-
     function handleSearch() {
         let filterValue = $('.dataTables_filter input').val();
         if (filterValue.length > 0) {
