@@ -32,8 +32,9 @@
       "spec": {
         "ports": [
           {
-            "name": "8080-tcp",
-            "port": 8080,
+            "name": "80-tcp",
+            "protocol": "TCP",
+            "port": 80,
             "targetPort": 8080
           }
         ],
