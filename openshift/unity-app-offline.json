@@ -2,11 +2,11 @@
   "kind": "Template",
   "apiVersion": "template.openshift.io/v1",
   "metadata": {
-    "name": "app-offline",
+    "name": "unity-app-offline",
     "annotations": {
       "openshift.io/display-name": "Nginx HTTP server and a reverse proxy",
       "description": "An example Nginx HTTP server and a reverse proxy (nginx) application that serves static content.",
-      "tags": "app-offline",
+      "tags": "unity-app-offline",
       "iconClass": "icon-nginx",
       "openshift.io/long-description": "This template defines resources needed to develop a static application served by Nginx HTTP server and a reverse proxy (nginx), including a build configuration and application deployment configuration."
     }
@@ -22,6 +22,9 @@
       "apiVersion": "v1",
       "metadata": {
         "name": "${NAME}",
+        "labels": {
+          "app.kubernetes.io/part-of": "unity-maintenance-tools"
+        },
         "annotations": {
           "description": "Exposes and load balances the application pods"
         }
@@ -44,6 +47,9 @@
       "apiVersion": "route.openshift.io/v1",
       "metadata": {
         "name": "${NAME}",
+        "labels": {
+          "app.kubernetes.io/part-of": "unity-maintenance-tools"
+        },
         "annotations": {
           "template.openshift.io/expose-uri": "http://{.spec.host}{.spec.path}"
         }
@@ -65,6 +71,9 @@
       "apiVersion": "image.openshift.io/v1",
       "metadata": {
         "name": "${NAME}",
+        "labels": {
+          "app.kubernetes.io/part-of": "unity-maintenance-tools"
+        },
         "annotations": {
           "description": "Keeps track of changes in the application image"
         }
@@ -75,6 +84,9 @@
       "apiVersion": "build.openshift.io/v1",
       "metadata": {
         "name": "${NAME}",
+        "labels": {
+          "app.kubernetes.io/part-of": "unity-maintenance-tools"
+        },
         "annotations": {
           "description": "Defines how to build the application",
           "template.alpha.openshift.io/wait-for-ready": "true"
@@ -151,7 +163,7 @@
           "spec": {
             "containers": [
               {
-                "name": "app-offline",
+                "name": "${NAME}",
                 "image": " ",
                 "ports": [
                   {
@@ -194,7 +206,7 @@
       "displayName": "Name",
       "description": "The name assigned to all of the frontend objects defined in this template.",
       "required": true,
-      "value": "app-offline"
+      "value": "unity-app-offline"
     },
     {
       "name": "NAMESPACE",
