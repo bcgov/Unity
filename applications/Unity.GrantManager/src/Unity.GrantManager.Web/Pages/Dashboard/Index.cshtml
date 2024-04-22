@@ -14,11 +14,11 @@
 <div class="d-flex align-items-stretch justify-content-end gap-2">
     <abp-row class="m-0 p-0">
         <abp-column size="_6" class="px-1 application-dashboard-dropdown">
-            <abp-select asp-for="@Model.IntakeId" asp-items="@Model.IntakeOptionsList" id="dashboardIntakeId">
+            <abp-select asp-for="@Model.IntakeIds" asp-items="@Model.IntakeOptionsList" id="dashboardIntakeId" multiple>
             </abp-select>
         </abp-column>
         <abp-column size="_6" class="px-1 application-dashboard-dropdown">
-            <abp-select asp-for="@Model.CategoryName" asp-items="@Model.CategoryOptionsList" id="dashboardCategoryName"
+            <abp-select asp-for="@Model.CategoryNames" asp-items="@Model.CategoryOptionsList" id="dashboardCategoryName" multiple
                         onchange="reloadDashboard()">
             </abp-select>
         </abp-column>
@@ -53,6 +53,13 @@
         <abp-card>
             <abp-card-body>
                 <div id="applicationTagsChart"></div>
+            </abp-card-body>
+        </abp-card>
+    </div>
+    <div class="col-md-6 col-lg-4 col-sm-12 p-2 card-border-radius">
+        <abp-card>
+            <abp-card-body>
+                <div id="subsectorRequestedAmountChart"></div>
             </abp-card-body>
         </abp-card>
     </div>

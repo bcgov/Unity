@@ -19,10 +19,10 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
         [BindProperty]
         [Display(Name = "Dashboard:IntakeId")]
-        public Guid IntakeId { get; set; }
+        public Guid[] IntakeIds { get; set; }
         [BindProperty]
         [Display(Name = "Dashboard:CategoryName")]
-        public string? CategoryName { get; set; }
+        public string[]? CategoryNames { get; set; }
         public List<DashboardIntakeDto> DashboardIntakes { get; set; } = [];
 
         public IndexModel(IIntakeRepository intakeRepository, IApplicationFormRepository applicationFormRepository)
@@ -36,7 +36,7 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
             List<GrantManager.Intakes.Intake> intakes = _intakeRepository.GetListAsync().Result;
             IntakeOptionsList = intakes.Select(intake => new SelectListItem { Value = intake.Id.ToString(), Text = intake.IntakeName }).ToList();
             GrantManager.Intakes.Intake? latestIntake = intakes.OrderByDescending(intake => intake.CreationTime).FirstOrDefault();
-            IntakeId = latestIntake?.Id ?? Guid.Empty;
+            IntakeIds = [latestIntake?.Id ?? Guid.Empty];
 
             foreach (var intake in intakes)
             {
@@ -50,6 +50,7 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
                 if (intake.Id == latestIntake?.Id)
                 {
                     CategoryOptionsList = categoryList.Select(category => new SelectListItem { Value = category, Text = category }).ToList();
+                    CategoryNames = categoryList.ToArray();
                 }
             }
         }
