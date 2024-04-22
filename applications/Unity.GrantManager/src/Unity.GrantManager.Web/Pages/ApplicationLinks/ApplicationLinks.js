@@ -151,7 +151,7 @@ $(function () {
             const inputValue = links.input.value.trim().toLowerCase();
 
             // Show suggestions only after the first character entry
-            if (inputValue.length > 1) {
+            if (inputValue.length > 0) {
                 const suggestions = suggestionsArray.filter(link => link.toLowerCase().includes(inputValue));
 
                 // Display suggestions below the input element
@@ -175,9 +175,9 @@ $(function () {
 
         // Create suggestion container
         const suggestionContainer = document.createElement('div');
-        suggestionContainer.classList.add('tags-suggestion-container');
+        suggestionContainer.classList.add('links-suggestion-container');
         const suggestionTitleElement = document.createElement('div');
-        suggestionTitleElement.className = 'tags-suggestion-title';
+        suggestionTitleElement.className = 'links-suggestion-title';
         suggestionTitleElement.innerText = 'ALL APPLICATIONS';
         suggestionContainer.appendChild(suggestionTitleElement);
 
@@ -203,7 +203,7 @@ $(function () {
 
     // Function to remove auto-completion suggestions
     function removeSuggestions(links) {
-        const suggestionContainer = links.wrapper.querySelector('.tags-suggestion-container');
+        const suggestionContainer = links.wrapper.querySelector('.links-suggestion-container');
         if (suggestionContainer) {
             suggestionContainer.remove();
         }
@@ -214,33 +214,6 @@ $(function () {
         links.wrapper.addEventListener('click', function () {
             links.input.focus();
         });
-
-        // for saving links that are typed, but not added as a chip/pill
-        links.input.addEventListener('focusout', function () {
-            $('#applicationLinksModelSaveBtn').click(function () {
-                trimAndAddLink(links);
-            })
-        });
-
-
-        links.input.addEventListener('keydown', function (e) {
-
-            if (~[9, 13, 188, 32].indexOf(e.keyCode)) {
-                e.preventDefault();
-                trimAndAddLink(links);
-                removeSuggestions(links);
-
-            }
-
-        });
-    }
-
-    function trimAndAddLink(links) {
-        let str = links.input.value.trim();
-        if (str != "") {
-            links.addLink(str);
-        }
-        links.input.value = "";
     }
 
     // Set All the Default Values
