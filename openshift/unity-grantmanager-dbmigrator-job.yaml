@@ -65,6 +65,20 @@ parameters:
   value: image-registry.openshift-image-registry.svc:5000/
 # Template objects to instantiate the project.
 objects:
+# Imagestream
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${IMAGESTREAM_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    lookupPolicy:
+      local: true
 # RunOnce Job for Database Migrator
 - apiVersion: batch/v1
   kind: Job
