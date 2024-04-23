@@ -3,9 +3,9 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailNotifications;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Events
 {
@@ -14,24 +14,31 @@ namespace Unity.GrantManager.Events
 
         private readonly IEmailNotificationService _emailNotificationService;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
+        private readonly IFeatureChecker _featureChecker;
 
         public ApplicationChangedHandler(
             IEmailNotificationService emailNotificationService,
-            IApplicantAgentRepository applicantAgentRepository
-            )
+            IApplicantAgentRepository applicantAgentRepository,
+            IFeatureChecker featureChecker)
         {
             _emailNotificationService = emailNotificationService;
             _applicantAgentRepository = applicantAgentRepository;
+            _featureChecker = featureChecker;
         }
 
         public async Task HandleEventAsync(ApplicationChangedEvent eventData)
         {
-            await EmailNotificationEventAsync(eventData);
+            if (await _featureChecker.IsEnabledAsync("Unity.Notifications"))
+            {
+                await EmailNotificationEventAsync(eventData);
+            }
         }
 
         private async Task EmailNotificationEventAsync(ApplicationChangedEvent eventData)
         {
-            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == eventData.ApplicationId) ?? throw new EntityNotFoundException();
+            var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == eventData.ApplicationId);
+            if (applicantAgent == null) return;
+
             string email = applicantAgent.Email;
             string subject = "Grant Application Update";
             if (!string.IsNullOrEmpty(email))
