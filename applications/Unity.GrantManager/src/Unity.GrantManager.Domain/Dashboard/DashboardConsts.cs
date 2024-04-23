@@ -2,6 +2,6 @@
 {
     public static class DashboardConsts
     {
-        public const string EmptyCategory = "None";
+        public const string EmptyValue = "None";
     }
 }

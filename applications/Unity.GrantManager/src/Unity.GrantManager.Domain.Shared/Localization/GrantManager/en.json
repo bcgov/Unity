@@ -39,6 +39,8 @@
 
     "Dashboard:IntakeId": "Intake",
     "Dashboard:CategoryName": "Category",
+    "Dashboard:Status": "Status",
+    "Dashboard:SubStatus": "Sub-Status",
 
     "GrantPrograms": "Grant Programs",
     "GrantProgram": "Grant Program",

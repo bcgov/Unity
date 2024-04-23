@@ -2,29 +2,31 @@
 function reloadDashboard() {
     const intakeIds = $('#dashboardIntakeId').val();
     const categories = $('#dashboardCategoryName').val();
-    unity.grantManager.dashboard.dashboard.getEconomicRegionCount(intakeIds, categories).then(economicRegion => {
+    const statusCodes = $('#dashboardStatuses').val();
+    const substatus = $('#dashboardSubStatus').val();
+    unity.grantManager.dashboard.dashboard.getEconomicRegionCount(intakeIds, categories, statusCodes, substatus).then(economicRegion => {
         initializeChart(economicRegion.map(obj => obj.economicRegion), economicRegion.map(obj => obj.count),
             'Submissions by Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
             'Number of Submissions', 'economicRegionChart');
     });
 
-    unity.grantManager.dashboard.dashboard.getSectorCount(intakeIds, categories).then(sector => {
+    unity.grantManager.dashboard.dashboard.getSectorCount(intakeIds, categories, statusCodes, substatus).then(sector => {
         initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
             'Total Submissions', 'SUBMISSION BREAKDOWN BY SECTOR', "Number of Submissions", 'sectorChart');
     });
 
 
-    unity.grantManager.dashboard.dashboard.getApplicationStatusCount(intakeIds, categories).then(applicationStatus => {
+    unity.grantManager.dashboard.dashboard.getApplicationStatusCount(intakeIds, categories, statusCodes, substatus).then(applicationStatus => {
         initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
             'Submissions by Status', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
     });
 
-    unity.grantManager.dashboard.dashboard.getApplicationTagsCount(intakeIds, categories).then(applicationTags => {
+    unity.grantManager.dashboard.dashboard.getApplicationTagsCount(intakeIds, categories, statusCodes, substatus).then(applicationTags => {
         initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count),
             'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
     });
 
-    unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector(intakeIds, categories).then(subSector => {
+    unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector(intakeIds, categories, statusCodes, substatus).then(subSector => {
         initializeChart(subSector.map(obj => obj.subsector), subSector.map(obj => obj.totalRequestedAmount),
             'Total Funding Requested Per Sub-Sector', 'Total Funding Requested', 'Total Funding Requested Per Sub-Sector', "Total Funding Requested", 'subsectorRequestedAmountChart')
     });
