@@ -1,23 +1,23 @@
-﻿@using Unity.GrantManager.Localization;
-@using Microsoft.AspNetCore.Authorization;
-@using Microsoft.Extensions.Localization;
-@using Volo.Abp.Features;
-
-@inject IStringLocalizer<GrantManagerResource> L
-@inject IAuthorizationService AuthorizationService
-@inject IFeatureChecker FeatureChecker
-
-<div class="action-bar p-2">
-    <div class="d-flex align-items-start justify-content-start gap-2">
-   
+﻿<div class="action-bar p-2 search-action-bar">
+    <div class="search-action-bar_search-wrapper">
+        <input type="text" id="search" placeholder="Search" class="tbl-search">
     </div>
 
-    <div id="dynamicButtonContainerForPayment" class="d-flex align-items-end justify-content-end gap-2">
+    <div class="btn-group" id="app_custom_buttons">
         <abp-button id="btn-toggle-filter"
                     text="Filter"
-                    disabled="false"
-                    icon-type="Other"
-                    icon="fl fl-filter"
-                    button-type="Light" />
+                    class="custom-table-btn flex-none btn btn-secondary"
+                    button-type="Secondary" />
+    </div>
+
+    <div id="dynamicButtonContainerId">
+
+        <abp-row>
+            <abp-column class="spinner-loader">
+                <div class="spinner-grow" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </abp-column>
+        </abp-row>
     </div>
 </div>
