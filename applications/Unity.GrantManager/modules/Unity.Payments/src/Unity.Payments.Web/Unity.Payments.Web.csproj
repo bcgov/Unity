@@ -41,9 +41,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Views\Shared\Components\" />
+	<None Remove="Views\Shared\Components\PaymentActionBar\Default.css" />
+	<None Remove="Views\Shared\Components\PaymentActionBar\Default.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.css" />
+	<EmbeddedResource Include="Views\Shared\Components\PaymentActionBar\Default.css" />
+	<EmbeddedResource Include="Views\Shared\Components\PaymentActionBar\Default.js" />
 	<EmbeddedResource Include="Views\Shared\Components\SupplierInfo\SupplierInfo.js">
 		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</EmbeddedResource>
@@ -58,6 +61,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Pages\Payments\" />
   </ItemGroup>
 
 </Project>

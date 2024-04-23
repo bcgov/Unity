@@ -25,13 +25,13 @@ public class PaymentsMenuContributor : IMenuContributor
             new ApplicationMenuItem(
                     PaymentsMenus.Prefix, 
                     displayName: "Payments",
-                    "~/Payments"                    
+                    "~/BatchPayments"                    
                 )
                 .AddItem(
                     new ApplicationMenuItem(
                             PaymentsMenus.Prefix,
                             displayName: "Payments",
-                            url: "/Payments"
+                            url: "/BatchPayments"
                             )
                 )                
                 .AddItem(
