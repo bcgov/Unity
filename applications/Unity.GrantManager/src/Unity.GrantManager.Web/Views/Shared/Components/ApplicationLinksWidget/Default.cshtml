@@ -1,0 +1,38 @@
+@using Unity.GrantManager.Comments;
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationLinksWidget;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Unity.GrantManager.Web.Pages.GrantApplications;
+@model ApplicationLinksWidgetViewModel
+@{
+    Layout = null;
+}
+<div class="links-container" data-count="@Model.ApplicationLinks.Count" data-linkscounttag="application_links_count">
+    @if (Model.ApplicationLinks.Count > 0) {
+        <div class="mx-2 mb-4">
+            <div class="row">
+                <div class="col-3 links-table-row header">Category</div>
+                <div class="col-4 links-table-row header">Submission #</div>
+                <div class="col-4 links-table-row header">Status</div>
+                <div class="col-1 links-table-row header"></div>
+            </div>
+            @foreach (var link in Model.ApplicationLinks)
+            {
+                <div class="row links-table-record">
+                    <div class="col-3 links-table-row">@link.Category</div>
+                    <div class="col-4 links-table-row">@link.ReferenceNumber</div>
+                    <div class="col-4 links-table-row">@link.ApplicationStatus</div>
+                    <div class="col-1 d-flex align-items-center">
+                        <a href="/GrantApplications/Details?ApplicationId=@link.ApplicationId" target="_self" style="text-decoration: none;"> <i class="fl fl-arrow-right"></i></a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    <div>
+        <abp-button text="@(Model.ApplicationLinks.Count > 0 ? "Edit Records List" : "Add Records List")"
+            id="addLinksRecordsBtn"
+            icon-type="Other"
+            icon="fl @(Model.ApplicationLinks.Count > 0 ? "fl-edit" : "fl-plus")"
+            button-type="Light" />
+    </div>
+</div>

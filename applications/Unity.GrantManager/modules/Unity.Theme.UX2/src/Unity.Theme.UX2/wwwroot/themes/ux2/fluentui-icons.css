@@ -342,3 +342,7 @@
 .fl-clear:before {
     content: '\E894';
 }
+
+.fl-arrow-right:before {
+    content: '\F0AF';
+}
