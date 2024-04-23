@@ -12,6 +12,10 @@
     margin: 0.25rem;
 }
 
+table.dataTable tbody tr {
+    cursor: pointer;
+}
+
 .dt-select-assignees {
     min-width: 145px;
 }
