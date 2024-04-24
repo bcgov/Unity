@@ -125,7 +125,7 @@ namespace Unity.GrantManager.Web;
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+            options.IsJobExecutionEnabled = true;
         });
 
         Configure<AbpBackgroundWorkerQuartzOptions>(options =>

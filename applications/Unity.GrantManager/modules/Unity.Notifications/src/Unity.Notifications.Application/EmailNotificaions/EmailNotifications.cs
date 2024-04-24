@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Notifications.Integration.Ches;
+using Unity.Notifications.Integrations.Ches;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
@@ -17,14 +17,17 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
 {
     private readonly IChesClientService _chesClientService;
     private readonly IConfiguration _configuration;
+    private RegistrationService _registrationService;
 
     public EmailNotificationService(
         IConfiguration configuration,
-        IChesClientService chesClientService
+        IChesClientService chesClientService,
+        RegistrationService registrationService
         )
     {
         _configuration = configuration;
         _chesClientService = chesClientService;
+        _registrationService = registrationService;
     }
 
     private const string approvalBody =
@@ -71,6 +74,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     {
         try
         {
+            // If the CHES service is not available - q it
+            //var chesHealthResponse = await _chesClientService.HealthCheckAsync();
+            //if( chesHealthResponse != null )
+            //{
+                _registrationService.RegisterAsync(email, subject, body);
+            //}
+
+
             if (!string.IsNullOrEmpty(email))
             {
                 List<string> toList = new() { email };
