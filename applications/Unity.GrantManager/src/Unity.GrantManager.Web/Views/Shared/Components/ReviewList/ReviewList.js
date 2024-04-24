@@ -3,11 +3,11 @@ const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsVie
 const nullPlaceholder = '—';
 
 const actionButtonConfigMap = {
-    Create: { buttonType: 'createButton', order: 1, icon: 'fl-review' },
-    SendToTeamLead: { buttonType: 'unityWorkflow', order: 2, icon: 'fl-send' },
-    SendBack: { buttonType: 'unityWorkflow', order: 3, icon: 'fl-send-mirrored' },
-    Confirm: { buttonType: 'unityWorkflow', order: 4, icon: 'fl-checkbox-checked' },
-    _Fallback: { buttonType: 'unityWorkflow', order: 100, icon: 'fl-endpoint' }
+    Create: { buttonType: 'createButton', order: 1 },
+    SendToTeamLead: { buttonType: 'unityWorkflow', order: 2 },
+    SendBack: { buttonType: 'unityWorkflow', order: 3 },
+    Confirm: { buttonType: 'unityWorkflow', order: 4 },
+    _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }
 
 const finalApplicationStates = [
@@ -45,8 +45,7 @@ $(function () {
 
     $.extend(DataTable.ext.buttons, {
         unityWorkflow: {
-            className: 'btn btn-light',
-            buttonIcon: 'fl-review',
+            className: 'btn btn-light',            
             enabled: false,
             text: unityWorkflowButtonText,
             action: unityWorkflowButtonAction

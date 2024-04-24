@@ -16,7 +16,7 @@ $(function () {
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 4, unity.payments.batchPaymentRequests.batchPaymentRequest.getList, 'dynamicButtonContainerForPayment');
+        listColumns, 15, 4, unity.payments.batchPaymentRequests.batchPaymentRequest.getList, 'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -36,16 +36,8 @@ $(function () {
     }
 
     function handleSearch() {
-        let filterValue = $('.dataTables_filter input').val();
-        if (filterValue.length > 0) {
-
-            Array.from(document.getElementsByClassName('selected')).forEach(
-                function (element, index, array) {
-                    element.classList.toggle('selected');
-                }
-            );
-            PubSub.publish("deselect_payment_application", "reset_data");
-        }
+        let filter = $('.dataTables_filter input').val();
+        console.info(filter);
     }
 
     function getColumns() {
@@ -179,7 +171,8 @@ $(function () {
         }).toUTC().toLocaleString() : '{Not Available}';
     }
 
-    window.addEventListener('resize', setTableHeighDynamic(dt.id));
+    window.addEventListener('resize', () => {
+    });
 
     PubSub.subscribe(
         'refresh_application_list',

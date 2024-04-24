@@ -38,7 +38,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                 {
                     extend: 'csv',
                     text: 'Export',
-                    className: 'btn btn-light custom-table-btn csv-download',
+                    className: 'custom-table-btn flex-none btn btn-secondary',
                     exportOptions: {
                         columns: ':visible:not(.notexport)',
                         orthogonal: 'fullName',
@@ -46,28 +46,13 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                 }
             ],
             drawCallback: function () {
-                let $api = this.api();
-                let pages = $api.page.info().pages;
-                let rows = $api.data().length;
-
-                // Tailor the settings based on the row count
-                if (rows <= maxRowsPerPage) {
-                    $('.dataTables_info').css('display', 'none');
-                    $('.dataTables_paginate').css('display', 'none');
-                    $('.dataTables_length').css('display', 'none');
-                } else if (pages === 1) {
-                    // With this current length setting, not more than 1 page, hide pagination
-                    $('.dataTables_info').css('display', 'none');
-                    $('.dataTables_paginate').css('display', 'none');
-                } else {
-                    // SHow everything
-                    $('.dataTables_info').css('display', 'block');
-                    $('.dataTables_paginate').css('display', 'block');
-                }
-                setTableHeighDynamic(dt[0].id);
+                $(`#${dt[0].id}_previous a`).text("<");
+                $(`#${dt[0].id}_next a`).text(">");
+                $(`#${dt[0].id}_info`).text(function (index, text) {
+                    return text.replace("Showing ", "").replace(" to ", "-").replace(" entries", "");
+                });
             },
             initComplete: function () {
-                
             },
             columns: listColumns,
             columnDefs: [
@@ -84,11 +69,11 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
     );
 
     // Add custom manage columns button that remains sorted alphabetically
-    iDt.button().add(1, {
-        text: 'Manage Columns',
+    iDt.button().add(0, {
+        text: 'Columns',
         extend: 'collection',
         buttons: getColumnToggleButtonsSorted(listColumns, iDt),
-        className: 'btn btn-light custom-table-btn cln-visible'
+        className: 'custom-table-btn flex-none btn btn-secondary'
     });
 
     iDt.buttons().container().prependTo(`#${dynamicButtonContainerId}`);
@@ -107,8 +92,8 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
     return iDt;
 }
 
-function setTableHeighDynamic(tableName) {    
-    let tableHeight = $(`#${tableName}`).clientHeight;
+function setTableHeighDynamic(tableName) {        
+    let tableHeight = $(`#${tableName}_wrapper`)[0].clientHeight;    
     let docHeight = document.body.clientHeight;
     let tableOffset = 425;
 
@@ -123,20 +108,18 @@ function getSelectColumn(title) {
     return {
         title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
         orderable: false,
-        className: 'notexport',
+        className: 'notexport text-center',
         data: 'rowCount',
         name: 'select',
-        render: function (data) {
-            return `<div class="select-checkbox" title="${title}" ></div>`;
+        render: function (data) {           
+            return `<input class="checkbox-select chkbox" id="row_${data}" type="checkbox" value="" title="${title}">`
         },
         index: 0
     }
 }
 
 function init(iDt) {
-    $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
-    $('.csv-download').prepend('<i class="fl fl-export"></i>');
-    $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
+    $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');    
     bindUIEvents();
     iDt.search('').columns().search('').draw();
 }
