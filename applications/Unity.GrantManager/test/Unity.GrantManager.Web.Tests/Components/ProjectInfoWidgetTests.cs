@@ -10,6 +10,7 @@ using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
 using Unity.GrantManager.Locality;
 using Volo.Abp.DependencyInjection;
 using Xunit;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Unity.GrantManager.Components
 {
@@ -19,7 +20,7 @@ namespace Unity.GrantManager.Components
 
         public ProjectInfoWidgetTests()
         {
-            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();                
         }
 
         [Fact]
@@ -36,11 +37,13 @@ namespace Unity.GrantManager.Components
             // Arrange
             var appService = Substitute.For<IGrantApplicationAppService>();
             appService.GetAsync(Arg.Any<Guid>()).Returns(applicationDto);
-            var sectorService = Substitute.For<ISectorService>();
             var economicRegionService = Substitute.For<IEconomicRegionService>();
             var electoralDistrictService = Substitute.For<IElectoralDistrictService>();
             var regionalDistrictService = Substitute.For<IRegionalDistrictService>();
             var communitiesService = Substitute.For<ICommunityService>();
+            var authorizationService = GetRequiredService<IAuthorizationService>();
+            
+
             var viewContext = new ViewContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -50,7 +53,7 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new ProjectInfoViewComponent(appService, sectorService, economicRegionService, electoralDistrictService, regionalDistrictService, communitiesService)
+            var viewComponent = new ProjectInfoViewComponent(appService, economicRegionService, electoralDistrictService, regionalDistrictService, communitiesService, authorizationService)
             {
                 ViewComponentContext = viewComponentContext,
                 LazyServiceProvider = lazyServiceProvider
