@@ -330,7 +330,7 @@ thead input {
 }
 
 .abp-widget-wrapper {
-    position: sticky;
+    /* position: sticky; */
     top: 0;
     z-index: 2;
 }
