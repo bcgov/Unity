@@ -4,29 +4,41 @@ function reloadDashboard() {
     const categories = $('#dashboardCategoryName').val();
     const statusCodes = $('#dashboardStatuses').val();
     const substatus = $('#dashboardSubStatus').val();
-    unity.grantManager.dashboard.dashboard.getEconomicRegionCount(intakeIds, categories, statusCodes, substatus).then(economicRegion => {
+    const params = {};
+    if (intakeIds.length > 0) {
+        params.intakeIds = intakeIds;
+    }
+    if (categories.length > 0) {
+        params.categories = categories;
+    }
+    if (statusCodes.length > 0) {
+        params.statusCodes = statusCodes;
+    }
+    if (substatus.length > 0) {
+        params.substatus = substatus;
+    }
+    unity.grantManager.dashboard.dashboard.getEconomicRegionCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(economicRegion => {
         initializeChart(economicRegion.map(obj => obj.economicRegion), economicRegion.map(obj => obj.count),
             'Submissions by Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
             'Number of Submissions', 'economicRegionChart');
     });
 
-    unity.grantManager.dashboard.dashboard.getSectorCount(intakeIds, categories, statusCodes, substatus).then(sector => {
+    unity.grantManager.dashboard.dashboard.getSectorCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(sector => {
         initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
             'Total Submissions', 'SUBMISSION BREAKDOWN BY SECTOR', "Number of Submissions", 'sectorChart');
     });
 
-
-    unity.grantManager.dashboard.dashboard.getApplicationStatusCount(intakeIds, categories, statusCodes, substatus).then(applicationStatus => {
+    unity.grantManager.dashboard.dashboard.getApplicationStatusCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(applicationStatus => {
         initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
             'Submissions by Status', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
     });
 
-    unity.grantManager.dashboard.dashboard.getApplicationTagsCount(intakeIds, categories, statusCodes, substatus).then(applicationTags => {
+    unity.grantManager.dashboard.dashboard.getApplicationTagsCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(applicationTags => {
         initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count),
             'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
     });
 
-    unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector(intakeIds, categories, statusCodes, substatus).then(subSector => {
+    unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(subSector => {
         initializeChart(subSector.map(obj => obj.subsector), subSector.map(obj => obj.totalRequestedAmount),
             'Total Funding Requested Per Sub-Sector', 'Total Funding Requested', 'Total Funding Requested Per Sub-Sector', "Total Funding Requested", 'subsectorRequestedAmountChart')
     });
