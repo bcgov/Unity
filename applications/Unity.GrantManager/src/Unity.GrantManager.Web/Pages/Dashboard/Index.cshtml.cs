@@ -23,16 +23,16 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
         public List<SelectListItem> SubStatusActionList { get; set; } = [];
 
         [BindProperty]
-        [Display(Name = "Dashboard:IntakeId")]
+        [Display(Name = "")]
         public Guid[] IntakeIds { get; set; }
         [BindProperty]
-        [Display(Name = "Dashboard:CategoryName")]
+        [Display(Name = "")]
         public string[]? CategoryNames { get; set; }
         [BindProperty]
-        [Display(Name = "Dashboard:Status")]
+        [Display(Name = "")]
         public string[]? Statuses { get; set; }
         [BindProperty]
-        [Display(Name = "Dashboard:SubStatus")]
+        [Display(Name = "")]
         public string[]? SubStatuses { get; set; }
         public List<DashboardIntakeDto> DashboardIntakes { get; set; } = [];
 

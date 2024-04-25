@@ -104,7 +104,7 @@ function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, tit
                 fontWeight: 700,
                 fontSize: 14,
                 align: 'left',
-             },
+                },
             b: {
                 color: '#2D2D2D',
                 fontWeight: 400,
@@ -189,5 +189,49 @@ $('#dashboardIntakeId').change(function () {
             selected: 'selected'
         }));
     });
+    childDropdown.multiselect('rebuild');
+    highlightSelected(); 
     reloadDashboard();
+});
+
+function highlightSelected() {
+    $('.multiselect-container li.active a').addClass('dt-button-active');
+    $('.multiselect-container li:not(.active) a').removeClass('dt-button-active');
+}
+
+$(function () {
+
+    let intakeOptions = generateMultiSelectOptions('INTAKES');
+    $('#dashboardIntakeId').multiselect(intakeOptions);
+
+    let categoryOptions = generateMultiSelectOptions('CATEGORIES');
+    $('#dashboardCategoryName').multiselect(categoryOptions);
+
+    let statusOptions = generateMultiSelectOptions('STATUS');
+    $('#dashboardStatuses').multiselect(statusOptions);
+
+    let subStatusOptions = generateMultiSelectOptions('SUB-STATUS');
+    $('#dashboardSubStatus').multiselect(subStatusOptions);
+
+    $('#dashboardIntakeId, #dashboardCategoryName, #dashboardStatuses, #dashboardSubStatus').on('change', function () {
+        highlightSelected();
+    });
+
+    function generateMultiSelectOptions(buttonLabel) {
+        return {
+            includeSelectAllOption: false,
+            buttonClass: 'btn btn-group dt-buttons btn-secondary buttons-collection dropdown-toggle custom-table-btn flex-none',
+            buttonWidth: '100%',
+            templates: {
+                button: `<button type="button" style="font-weight:700;font-size:18px;text-align:center;display:flex;justify-content:center;align-items:center;" data-toggle="dropdown"><span>${buttonLabel}</span></button>`,
+                ul: '<ul class="multiselect-container dropdown-menu"></ul>', // Right-aligned dropdown menu
+
+                li: '<li><a class="dt-button dropdown-item buttons-columnVisibility" href="#"><label></label></a></li>'
+            }
+        };
+    }
+
+    
+
+    highlightSelected();
 });
