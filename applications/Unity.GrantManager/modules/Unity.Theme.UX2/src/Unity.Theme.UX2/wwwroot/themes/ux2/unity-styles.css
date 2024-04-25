@@ -330,7 +330,7 @@ thead input {
 }
 
 .abp-widget-wrapper {
-    position: sticky;
+    /* position: sticky; */
     top: 0;
     z-index: 2;
 }
@@ -487,8 +487,7 @@ th #btn-toggle-filter {
 }
 
 .tr-toggle-filter {
-    display: none;
-    background: white;
+    display: none;    
 }
 
 div.dt-buttons div.dropdown-menu {
@@ -510,4 +509,124 @@ div.dt-buttons div.dropdown-menu {
 
 .dataTables_filter {
     margin-bottom: .5rem;
+}
+
+.custom-table-btn {
+    text-transform: uppercase;
+    background-color: transparent;
+    border-radius: 5px !important;
+}
+
+    .custom-table-btn:hover {
+        box-shadow: none;
+        border-color: var(--bc-colors-blue-primary);
+        border: 2px solid;
+    }
+
+.dataTables_scrollHeadInner {
+    padding-right: 0 !important;
+}
+
+.dataTables_scrollHead {
+    border-radius: 10px 10px 0px 0px;
+}
+
+.dataTables_scrollBody {
+    border-radius: 0px 0px 20px;
+}
+
+.dt-button-active {
+    background-color: #ccdef9 !important;
+}
+
+.dt-button-collection.dropdown-menu {
+    right: 0;
+    left: auto !important;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.mr-10 {
+    margin-right: 10px;
+}
+
+.dot {
+    height: 6px;
+    width: 6px;
+    background-color: var(--bc-colors-blue-primary);
+    border-radius: 50%;
+    margin-left: 5px;
+}
+
+.dataTables_filter {
+    display: none;
+}
+
+ul.pagination {
+    justify-content: center !important;
+    margin-top: -20px !important;
+}
+
+.flex-none {
+    flex: none !important;
+}
+
+
+div.dataTables_filter > label > input {
+    width: 518px !important;
+    height: 37px;
+    padding: 2px 24px 0px 24px;
+    gap: 10px;
+    border-radius: 100px !important;
+    border: solid 2px;
+    border-color: var(--bc-colors-blue-primary);
+}
+
+.tbl-search {
+    width: 50%;
+    min-width: 250px;
+    max-width: 450px;
+    height: 37px;
+    padding: 2px 24px 0px 24px;
+    gap: 10px;
+    border-radius: 100px !important;
+    border: solid 2px;
+    border-color: var(--bc-colors-blue-primary);
+}
+
+    .tbl-search:focus-visible, :focus-within {
+        outline: var(--bc-colors-blue-primary);
+    }
+
+.checkbox-select:not(:checked) {
+    outline: 1px solid var(--bc-colors-blue-primary);
+    outline-style: auto;
+}
+
+.checkbox-select:checked {
+    outline: 1px solid var(--bc-colors-blue-primary);
+    outline-style: auto;
+}
+
+div.dataTables_wrapper div.dataTables_filter {
+    text-align: left;
+}
+
+.checkbox-select {
+    width: 20px;
+    height: 20px;
+    border: solid 2px;
+    border-color: var(--bc-colors-blue-primary);
+    outline: 1px solid var(--bc-colors-blue-primary);
+    outline-style: auto;
+    cursor: pointer;
+}
+
+.dt-select-assignees > span.flex-fill {
+    color: var(--bc-colors-blue-primary);
+    font-weight: bold;
+}
+
+.data-table-header > span {
+    color: var(--bc-colors-blue-text-links);
 }

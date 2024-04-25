@@ -33,11 +33,24 @@
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
+        $("#row_" + indexes).prop("checked", true);
+        if ($(".chkbox:checked").length == $(".chkbox").length) {
+            $("#select-all").prop("checked", true);
+        }
         selectApplication(type, indexes, 'select_application');
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
         selectApplication(type, indexes, 'deselect_application');
+        $("#row_" + indexes).prop("checked", false);
+        if ($(".chkbox:checked").length != $(".chkbox").length) {
+            $("#select-all").prop("checked", false);
+        }
+    });
+
+    $('#search').keyup(function () {
+        let table = $('#GrantApplicationsTable').DataTable();
+        table.search($(this).val()).draw();
     });
 
     function selectApplication(type, indexes, action) {
@@ -48,19 +61,8 @@
     }
 
     function handleSearch() {
-        let filterValue = $('.dataTables_filter input').val();
-
-        if (filterValue.length > 0) {
-            $('#externalLink').prop('disabled', true);
-            $('#applicationLink').prop('disabled', true);
-
-            Array.from(document.getElementsByClassName('selected')).forEach(
-                function (element, index, array) {
-                    element.classList.toggle('selected');
-                }
-            );
-            PubSub.publish("deselect_application", "reset_data");
-        }
+        let filter = $('.dataTables_filter input').val();
+        console.info(filter);
     }
 
     function getColumns() {
@@ -858,7 +860,8 @@
         }
     }
 
-    window.addEventListener('resize', setTableHeighDynamic(dt.id));
+    window.addEventListener('resize', () => {                 
+    }); 
 
     PubSub.subscribe(
         'refresh_application_list',

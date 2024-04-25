@@ -274,6 +274,8 @@ select.selected{
     overflow-y: scroll;
     overflow-x: hidden;
     height: calc(100vh - 256px);
+    position: relative;
+    z-index: 1;
 }
 
 .formio-component-submit{
@@ -299,7 +301,7 @@ select.selected{
 .floating-save-btn {
     position: absolute;
     right: 24px;
-    top: 76px;
+    top: 80px;
 }
 
 #detailsTab .nav-item .nav-link {
@@ -308,3 +310,10 @@ select.selected{
     text-overflow: ellipsis;
 }
 
+.action-bar {
+    display: flex !important;
+}
+
+#DetailsActionBarStart {
+    margin-right: 0.5rem;
+}

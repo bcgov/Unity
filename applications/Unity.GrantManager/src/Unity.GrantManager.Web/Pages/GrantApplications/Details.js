@@ -335,6 +335,7 @@ $(function () {
     function initializeDetailsPage() {
         getSubmission();
         initCommentsWidget();
+        updateLinksCounters();
     }
 
     initializeDetailsPage();
@@ -354,6 +355,22 @@ $(function () {
                 attachCounters.chefs = data.chefs;
             } 
             $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
+        }
+    );
+
+    let applicationRecordsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationRecordsWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val(),
+            }
+        }
+    });
+
+    PubSub.subscribe('ApplicationLinks_refresh',
+        (msg, data) => {
+            applicationRecordsWidgetManager.refresh();
+            updateLinksCounters();
         }
     );
 
@@ -462,6 +479,14 @@ function updateCommentsCounters() {
     setTimeout(() => {
         $('.comments-container').map(function () {
             $('#' + $(this).data('counttag')).html($(this).data('count'));
+        }).get();
+    }, 100);
+}
+
+function updateLinksCounters() {
+    setTimeout(() => {
+        $('.links-container').map(function () {
+            $('#' + $(this).data('linkscounttag')).html($(this).data('count'));
         }).get();
     }, 100);
 }

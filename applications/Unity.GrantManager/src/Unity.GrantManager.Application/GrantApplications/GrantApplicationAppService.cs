@@ -839,4 +839,12 @@ public class GrantApplicationAppService :
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
     #endregion APPLICATION WORKFLOW    
+
+
+    public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
+    {
+        var applications = await _applicationRepository.GetListAsync();
+
+        return ObjectMapper.Map<List<Application>, List<GrantApplicationLiteDto>>(applications.ToList());
+    }
 }

@@ -23,27 +23,10 @@ public class PaymentsMenuContributor : IMenuContributor
         //Add main menu items.
         context.Menu.AddItem(
             new ApplicationMenuItem(
-                    PaymentsMenus.Prefix, 
+                    PaymentsMenus.Prefix,
                     displayName: "Payments",
-                    "~/BatchPayments"                    
-                )
-                .AddItem(
-                    new ApplicationMenuItem(
-                            PaymentsMenus.Prefix,
-                            displayName: "Payments",
-                            url: "/BatchPayments"
-                            )
-                )                
-                .AddItem(
-                    new ApplicationMenuItem(
-                            PaymentsMenus.PaymentService,
-                            "Payment Configuration",
-                            url: "/PaymentConfigurations"
-                            )
-                )
-        );
-        
-
+                    "~/BatchPayments"
+        ));
         return Task.CompletedTask;
     }
 #pragma warning restore CA1822 // Mark members as static
