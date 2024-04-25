@@ -16,6 +16,7 @@
     <abp-script src="/libs/bootstrap-multiselect/dist/js/bootstrap-multiselect.js"></abp-script>
    
 }
+<div class="dashboard-scrollable-content">
 
 <div id="dashboardIntakeList" style="display: none;">@Html.Raw(Json.Serialize(Model.DashboardIntakes))</div>
 <div class="d-flex align-items-stretch gap-2">
@@ -77,4 +78,6 @@
             </abp-card-body>
         </abp-card>
     </div>
+</div>
+
 </div>
