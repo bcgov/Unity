@@ -11,6 +11,7 @@ using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
 using Unity.Payments.EntityFrameworkCore;
+using Unity.Flex.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -283,6 +284,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
             }
 
             modelBuilder.ConfigurePayments();
+            modelBuilder.ConfigureFlex();
         }
     }
 }

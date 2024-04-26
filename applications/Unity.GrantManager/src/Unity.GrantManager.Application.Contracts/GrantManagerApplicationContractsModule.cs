@@ -17,11 +17,11 @@ namespace Unity.GrantManager;
     typeof(AbpPermissionManagementApplicationContractsModule),
     typeof(AbpSettingManagementApplicationContractsModule),
     typeof(UnityTenantManagementApplicationContractsModule),
-    typeof(AbpObjectExtendingModule)
+    typeof(AbpObjectExtendingModule),
+    typeof(NotificationsApplicationContractsModule),
+    typeof(PaymentsApplicationContractsModule)    
 )]
-[DependsOn(typeof(NotificationsApplicationContractsModule))]
-[DependsOn(typeof(PaymentsApplicationContractsModule))]
-    public class GrantManagerApplicationContractsModule : AbpModule
+public class GrantManagerApplicationContractsModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
