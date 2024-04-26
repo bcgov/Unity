@@ -19,30 +19,28 @@ function reloadDashboard() {
     }
     unity.grantManager.dashboard.dashboard.getEconomicRegionCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(economicRegion => {
         initializeChart(economicRegion.map(obj => obj.economicRegion), economicRegion.map(obj => obj.count),
-            'Submissions by Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
-            'Number of Submissions', 'economicRegionChart');
-    });
-
-    unity.grantManager.dashboard.dashboard.getSectorCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(sector => {
-        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
-            'Total Submissions', 'SUBMISSION BREAKDOWN BY SECTOR', "Number of Submissions", 'sectorChart');
+            'Submissions by Economic Region', 'economicRegionChart', 465, 280);
     });
 
     unity.grantManager.dashboard.dashboard.getApplicationStatusCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(applicationStatus => {
         initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
-            'Submissions by Status', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
+            'Submissions by Status', 'applicationStatusChart', 465, 280)
     });
 
     unity.grantManager.dashboard.dashboard.getApplicationTagsCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(applicationTags => {
         initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count),
-            'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
+            'Application Tags Overview', 'applicationTagsChart', 465, 280)
     });
 
     unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(subSector => {
         initializeChart(subSector.map(obj => obj.subsector), subSector.map(obj => obj.totalRequestedAmount),
-            'Total Funding Requested Per Sub-Sector', 'Total Funding Requested', 'Total Funding Requested Per Sub-Sector', "Total Funding Requested", 'subsectorRequestedAmountChart')
+            'Total Funding Requested Per Sub-Sector', 'subsectorRequestedAmountChart', 698, 420)
     });
 
+    unity.grantManager.dashboard.dashboard.getSectorCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(sector => {
+        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
+            'sectorChart', 698, 420);
+    });
 }
 
 let colorPalette;
@@ -55,11 +53,11 @@ fetch('./colorsPalette.json')
 
 reloadDashboard();
 
-function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
+function initializeChart(labelsArray, dataArray, labelDesc, chartId, width, height) {
 
     let myChart = echarts.init(document.getElementById(chartId), null, {
-        width: 465,
-        height: 280,
+        width: width,
+        height: height,
         renderer: 'svg',
         useDirtyRect: false,
     });
