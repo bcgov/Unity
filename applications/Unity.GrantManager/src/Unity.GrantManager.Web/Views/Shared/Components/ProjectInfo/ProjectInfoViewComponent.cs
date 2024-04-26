@@ -31,7 +31,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
         public ProjectInfoViewComponent(
             IGrantApplicationAppService grantApplicationAppService,
-            ISectorService applicationSectorAppService,
             IEconomicRegionService applicationEconomicRegionAppService,
             IElectoralDistrictService applicationElectoralDistrictAppService,
             IRegionalDistrictService applicationRegionalDistrictAppService,
@@ -56,7 +55,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);            
             bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
             bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
-
 
 
             List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
