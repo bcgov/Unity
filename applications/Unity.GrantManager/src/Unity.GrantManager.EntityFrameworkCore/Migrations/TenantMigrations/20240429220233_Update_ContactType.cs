@@ -5,7 +5,7 @@
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     /// <inheritdoc />
-    public partial class Update_AdditionalContact_ContactType : Migration
+    public partial class Update_ContactType : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,7 +19,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 UPDATE public.""ApplicationContact""
                 SET ""ContactType""='ADDITIONAL_CONTACT'
                 WHERE ""ContactType""='PRIMARY_CONTACT';");
-            
         }
 
         /// <inheritdoc />
