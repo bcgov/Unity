@@ -257,6 +257,7 @@
     "ProjectInfoView:ProjectInfo.EconomicRegion": "Economic Region",
     "ProjectInfoView:ProjectInfo.ElectoralDistrict": "Electoral District",
     "ProjectInfoView:ProjectInfo.CommunityPopulation": "Community Population",
+    "ProjectInfoView:ProjectInfo.Place": "Place",
     "ProjectInfoView:ProjectInfo.Acquisition": "Acquisition",
     "ProjectInfoView:ProjectInfo.Forestry": "Forestry/Non-Forestry",
     "ProjectInfoView:ProjectInfo.ForestryFocus": "Forestry Focus",

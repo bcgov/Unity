@@ -390,7 +390,7 @@ public class GrantApplicationAppService :
             application.RegionalDistrict = input.RegionalDistrict;
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
-
+            application.Place = input.Place;
             await _applicationRepository.UpdateAsync(application, autoSave: true);
 
             return ObjectMapper.Map<Application, GrantApplicationDto>(application);
