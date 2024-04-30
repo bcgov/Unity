@@ -276,6 +276,8 @@
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
+    "ApplicantInfoView:PhysicalAddress": "Physical Address",
+    "ApplicantInfoView:MailingAddress": "Mailing Address",
     "ApplicantInfoView:ApplicantInfo.ContactFullName": "Full Name",
     "ApplicantInfoView:ApplicantInfo.ContactTitle": "Title",
     "ApplicantInfoView:ApplicantInfo.ContactEmail": "Email",
@@ -296,6 +298,11 @@
     "ApplicantInfoView:ApplicantInfo.SubSector": "Sub-sector",
     "ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle": "Applicant Info",
     "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
+    "ApplicantInfoView:ApplicantInfo.Street": "Street",
+    "ApplicantInfoView:ApplicantInfo.Unit": "Unit",
+    "ApplicantInfoView:ApplicantInfo.City": "City",
+    "ApplicantInfoView:ApplicantInfo.Province": "Province",
+    "ApplicantInfoView:ApplicantInfo.PostalCode": "Postal Code",
 
 
 

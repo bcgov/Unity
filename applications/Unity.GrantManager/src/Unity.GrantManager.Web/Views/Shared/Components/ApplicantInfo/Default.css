@@ -23,6 +23,10 @@
     margin-top : 1rem;
 }
 
-.project-info-form {
+.contact-info-form, .mailing-address-form, .physical-address-form {
     border-bottom: 0.25rem solid var(--bc-colors-white-background);
+}
+
+.physical-address-form {
+    border-right: 0.25rem solid var(--bc-colors-white-background);
 }
