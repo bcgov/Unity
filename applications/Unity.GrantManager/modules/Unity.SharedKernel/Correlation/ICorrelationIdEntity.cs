@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Unity.Payments.Correlation
+namespace Unity.Modules.Shared.Correlation
 {
     public interface ICorrelationIdEntity
     {

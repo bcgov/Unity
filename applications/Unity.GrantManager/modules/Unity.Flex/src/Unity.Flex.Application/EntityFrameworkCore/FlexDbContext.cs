@@ -1,25 +1,28 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.Flex.Domain;
+using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.Worksheets;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 
 namespace Unity.Flex.EntityFrameworkCore;
 
 [ConnectionStringName(FlexDbProperties.ConnectionStringName)]
-public class FlexDbContext : AbpDbContext<FlexDbContext>, IFlexDbContext
+public class FlexDbContext(DbContextOptions<FlexDbContext> options) : AbpDbContext<FlexDbContext>(options), IFlexDbContext
 {
+    // Worksheets
+    public DbSet<Worksheet> Worksheets { get; set; }
+    public DbSet<WorksheetInstance> WorksheetsInstances { get; set; }
+    public DbSet<WorksheetSection> WorksheetsSections { get; set; }
+    public DbSet<CustomField> CustomFields { get; set; }
+    public DbSet<CustomFieldValue> CustomFieldValues { get; set; }
 
-#pragma warning disable S125 // Sections of code should not be commented out
-    /* Add DbSet for each Aggregate Root here. Example:
-         * public DbSet<Question> Questions { get; set; }
-         */
-
-    public FlexDbContext(DbContextOptions<FlexDbContext> options)
-#pragma warning restore S125 // Sections of code should not be commented out
-        : base(options)
-    {
-
-    }
+    // Scoresheets
+    public DbSet<Scoresheet> Scoresheets { get; set; }
+    public DbSet<ScoresheetInstance> ScoresheetInstances { get; set; }
+    public DbSet<ScoresheetSection> ScoresheetSections { get; set; }
+    public DbSet<ScoreField> ScoreFields { get; set; }
+    public DbSet<ScoreFieldValue> ScoreFieldsValues { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
