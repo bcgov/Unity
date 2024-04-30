@@ -1,4 +1,4 @@
-﻿namespace Unity.Payments.Correlation
+﻿namespace Unity.Modules.Shared.Correlation
 {
     public interface ICorrelationProviderEntity
     {
