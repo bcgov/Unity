@@ -4,6 +4,9 @@
     let dt = $('#GrantApplicationsTable');
     let dataTable;
 
+    debugger;
+    let x = unity;
+
     const listColumns = getColumns();
     const defaultVisibleColumns = ['select',
         'applicantName',

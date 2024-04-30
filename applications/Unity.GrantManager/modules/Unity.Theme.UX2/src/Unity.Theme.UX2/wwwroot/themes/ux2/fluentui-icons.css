@@ -346,3 +346,7 @@
 .fl-arrow-right:before {
     content: '\F0AF';
 }
+
+.fl-arrow-left:before {
+    content: '\F0B0';
+}

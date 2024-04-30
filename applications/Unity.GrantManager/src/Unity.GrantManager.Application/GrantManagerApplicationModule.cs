@@ -25,6 +25,7 @@ using Volo.Abp.Application.Dtos;
 using Unity.Notifications;
 using Unity.Notifications.Integrations.Ches;
 using Unity.GrantManager.Intakes.BackgroundWorkers;
+using Unity.Flex;
 
 namespace Unity.GrantManager;
 
@@ -41,6 +42,7 @@ namespace Unity.GrantManager;
 [DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
     [DependsOn(typeof(NotificationsApplicationModule))]
     [DependsOn(typeof(PaymentsApplicationModule))]
+    [DependsOn(typeof(FlexApplicationModule))]
     public class GrantManagerApplicationModule : AbpModule
 {
     //Set some defaults 

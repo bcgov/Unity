@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Ddd.Domain" Version="8.1.0" />
+    <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
     <ProjectReference Include="..\Unity.Payments.Domain.Shared\Unity.Payments.Domain.Shared.csproj" />
   </ItemGroup>
 

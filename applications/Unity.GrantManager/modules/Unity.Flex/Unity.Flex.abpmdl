@@ -1,0 +1,111 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {},
+      "host": {}
+    }
+  },
+  "packages": {
+    "Unity.Flex.Domain.Shared": {
+      "path": "src/Unity.Flex.Domain.Shared/Unity.Flex.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.Domain": {
+      "path": "src/Unity.Flex.Domain/Unity.Flex.Domain.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.Application.Contracts": {
+      "path": "src/Unity.Flex.Application.Contracts/Unity.Flex.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.Application": {
+      "path": "src/Unity.Flex.Application/Unity.Flex.Application.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.EntityFrameworkCore": {
+      "path": "src/Unity.Flex.EntityFrameworkCore/Unity.Flex.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.MongoDB": {
+      "path": "src/Unity.Flex.MongoDB/Unity.Flex.MongoDB.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.HttpApi": {
+      "path": "src/Unity.Flex.HttpApi/Unity.Flex.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.HttpApi.Client": {
+      "path": "src/Unity.Flex.HttpApi.Client/Unity.Flex.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.TestBase": {
+      "path": "test/Unity.Flex.TestBase/Unity.Flex.TestBase.abppkg",
+      "folder": "test"
+    },
+    "Unity.Flex.EntityFrameworkCore.Tests": {
+      "path": "test/Unity.Flex.EntityFrameworkCore.Tests/Unity.Flex.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.Flex.MongoDB.Tests": {
+      "path": "test/Unity.Flex.MongoDB.Tests/Unity.Flex.MongoDB.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.Flex.Domain.Tests": {
+      "path": "test/Unity.Flex.Domain.Tests/Unity.Flex.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.Flex.Application.Tests": {
+      "path": "test/Unity.Flex.Application.Tests/Unity.Flex.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "Unity.Flex.HttpApi.Host": {
+      "path": "host/Unity.Flex.HttpApi.Host/Unity.Flex.HttpApi.Host.abppkg",
+      "folder": "host"
+    },
+    "Unity.Flex.Web": {
+      "path": "src/Unity.Flex.Web/Unity.Flex.Web.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/Unity.Flex.HttpApi.Client.ConsoleTestApp/Unity.Flex.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "Unity.Flex.Web.Host": {
+      "path": "host/Unity.Flex.Web.Host/Unity.Flex.Web.Host.abppkg",
+      "folder": "host"
+    },
+    "Unity.Flex.AuthServer": {
+      "path": "host/Unity.Flex.AuthServer/Unity.Flex.AuthServer.abppkg",
+      "folder": "host"
+    },
+    "Unity.Flex.Host.Shared": {
+      "path": "host/Unity.Flex.Host.Shared/Unity.Flex.Host.Shared.abppkg",
+      "folder": "host"
+    },
+    "Unity.Flex.Web.Unified": {
+      "path": "host/Unity.Flex.Web.Unified/Unity.Flex.Web.Unified.abppkg",
+      "folder": "host"
+    },
+    "Unity.Flex.Blazor": {
+      "path": "src/Unity.Flex.Blazor/Unity.Flex.Blazor.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.Blazor.Host": {
+      "path": "host/Unity.Flex.Blazor.Host/Unity.Flex.Blazor.Host.abppkg",
+      "folder": "host"
+    },
+    "Unity.Flex.Blazor.Server": {
+      "path": "src/Unity.Flex.Blazor.Server/Unity.Flex.Blazor.Server.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.Blazor.WebAssembly": {
+      "path": "src/Unity.Flex.Blazor.WebAssembly/Unity.Flex.Blazor.WebAssembly.abppkg",
+      "folder": "src"
+    },
+    "Unity.Flex.Blazor.Server.Host": {
+      "path": "host/Unity.Flex.Blazor.Server.Host/Unity.Flex.Blazor.Server.Host.abppkg",
+      "folder": "host"
+    }
+  }
+}

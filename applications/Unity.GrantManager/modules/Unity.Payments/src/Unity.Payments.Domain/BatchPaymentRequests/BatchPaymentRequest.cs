@@ -5,7 +5,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp;
 using System.Linq;
 using Unity.Payments.Enums;
-using Unity.Payments.Correlation;
+using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Exceptions;
 
 namespace Unity.Payments.BatchPaymentRequests
