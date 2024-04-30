@@ -41,6 +41,8 @@
   </ItemGroup>
 
   <ItemGroup>
+	<None Remove="Pages\Payments\Index.css" />
+	<None Remove="pages\payments\Index.js" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.css" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.js" />
@@ -61,10 +63,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Pages\Payments\" />
   </ItemGroup>
 
 </Project>
