@@ -1,0 +1,9 @@
+{
+  "culture": "en",
+  "texts": {
+    "MyAccount": "My account",
+    "SamplePageMessage": "A sample page for the Flex module",
+    "Unity.Flex:Errors:DuplicateSectionName": "A section with this name already exists: {duplicateName}",
+    "Unity.Flex:Errors:DuplicateFieldName": "A section with this name already exists: {duplicateName}"
+  }
+}
