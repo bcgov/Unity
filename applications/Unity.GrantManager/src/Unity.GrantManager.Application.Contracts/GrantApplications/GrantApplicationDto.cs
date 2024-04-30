@@ -76,4 +76,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? SigningAuthorityCellPhone { get; set; }
     public string? ContractNumber { get; set; }
     public DateTime? ContractExecutionDate { get; set; }
+    public string? Place {  get; set; }
 }
