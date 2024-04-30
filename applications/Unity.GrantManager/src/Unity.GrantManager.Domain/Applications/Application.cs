@@ -81,6 +81,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? ForestryFocus { get; set; }
 
     public string? ElectoralDistrict { get; set; }
+    public string? Place { get; set; }
 
     public string? RegionalDistrict { get; set; }
 

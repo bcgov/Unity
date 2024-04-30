@@ -145,6 +145,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
             public DateTime? ContractExecutionDate { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.Place")]
+            public string? Place { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

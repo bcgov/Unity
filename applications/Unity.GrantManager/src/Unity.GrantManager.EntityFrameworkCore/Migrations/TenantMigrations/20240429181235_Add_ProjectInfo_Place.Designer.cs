@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240429181235_Add_ProjectInfo_Place")]
+    partial class Add_ProjectInfo_Place
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1621,10 +1624,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("BatchPaymentRequestId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ContractNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Guid>("CorrelationId")
                         .HasColumnType("uuid");
 
@@ -1671,10 +1670,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("PayeeName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("PaymentDate")
                         .HasColumnType("text");
 
@@ -1697,8 +1692,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("BatchPaymentRequestId");
-
-                    b.HasIndex("SiteId");
 
                     b.ToTable("PaymentRequests", "Payments");
                 });
@@ -2136,13 +2129,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.Payments.Suppliers.Site", "Site")
-                        .WithMany()
-                        .HasForeignKey("SiteId");
-
                     b.Navigation("BatchPaymentRequest");
-
-                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("Unity.Payments.Suppliers.Site", b =>
