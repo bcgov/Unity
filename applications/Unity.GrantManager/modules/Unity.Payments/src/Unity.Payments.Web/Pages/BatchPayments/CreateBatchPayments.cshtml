@@ -28,6 +28,8 @@
 
                             <input name="ApplicationPaymentRequestForm.Index" type="hidden" value="@i" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ApplicationId" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ContractNumber" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ApplicantName" />
                             <abp-row class="m-0 p-3">
                                 <abp-column size="_3" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" />

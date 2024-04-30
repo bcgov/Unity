@@ -29,6 +29,22 @@
     "ApplicationPaymentTable:L1ApprovalDate": "L1 Approval Date",
     "ApplicationPaymentTable:L2ApprovalDate": "L2 Approval Date",
     "ApplicationPaymentTable:L3ApprovalDate": "L3 Approval Date",
+    "ApplicationPaymentListTable:PaymentID": "Payment ID",
+    "ApplicationPaymentListTable:ApplicantName": "Applicant Name",
+    "ApplicationPaymentListTable:SupplierNumber": "Supplier Number",
+    "ApplicationPaymentListTable:SiteNumber": "Site Number",
+    "ApplicationPaymentListTable:ContactNumber": "Contact Number",
+    "ApplicationPaymentListTable:InvoiceNumber": "Invoice Number",
+    "ApplicationPaymentListTable:PayGroup": "Pay Group",
+    "ApplicationPaymentListTable:Amount": "Amount",
+    "ApplicationPaymentListTable:Status": "Status",
+    "ApplicationPaymentListTable:Description": "Description",
+    "ApplicationPaymentListTable:RequestedOn": "Requested On",
+    "ApplicationPaymentListTable:UpdatedOn": "Updated On",
+    "ApplicationPaymentListTable:PaidOn": "Paid On",
+    "ApplicationPaymentListTable:CASComments": "CAS Comments",
+
+
 
     "ApplicantInfoView:SupplierInfoTitle": "Payments",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",

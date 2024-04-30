@@ -1,0 +1,30 @@
+﻿@using Unity.GrantManager.Localization;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.Extensions.Localization;
+@using Volo.Abp.Features;
+
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IAuthorizationService AuthorizationService
+@inject IFeatureChecker FeatureChecker
+
+<div class="action-bar p-2">
+    <div class="d-flex align-items-start justify-content-start gap-2">
+        <abp-button id="viewBatchPaymentDetails"
+                    class="action-button"
+                    text="Open"
+                    data-selector="batch-payment-table-actions"
+                    disabled="true"
+                    icon-type="Other"
+                    icon="fl fl-mini-contract-2-mirrored"
+                    button-type="Primary" />
+    </div>
+
+    <div id="dynamicButtonContainerForPayment" class="d-flex align-items-end justify-content-end gap-2">
+        <abp-button id="btn-toggle-filter"
+                    text="Filter"
+                    disabled="false"
+                    icon-type="Other"
+                    icon="fl fl-filter"
+                    button-type="Light" />
+    </div>
+</div>

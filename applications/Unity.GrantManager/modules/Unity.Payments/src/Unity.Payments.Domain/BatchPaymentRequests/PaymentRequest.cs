@@ -1,6 +1,7 @@
 ﻿using System;
 using Unity.Payments.Correlation;
 using Unity.Payments.Enums;
+using Unity.Payments.Suppliers;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -9,7 +10,8 @@ namespace Unity.Payments.BatchPaymentRequests
     public class PaymentRequest : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationIdEntity
     {
         public Guid? TenantId { get; set; }
-        public Guid? SiteId { get; set; }
+        public virtual Guid? SiteId { get; set; }
+        public virtual Site? Site { get; set; }
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
@@ -27,6 +29,11 @@ namespace Unity.Payments.BatchPaymentRequests
         // External Correlation
         public virtual Guid CorrelationId { get; private set; }
 
+        // Payee Info
+        public virtual string PayeeName { get; private set; } = string.Empty;
+        public virtual string ContractNumber { get; private set; } = string.Empty;
+        public virtual string SupplierNumber  { get; private set; } = string.Empty;
+
         protected PaymentRequest()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
@@ -36,6 +43,9 @@ namespace Unity.Payments.BatchPaymentRequests
             BatchPaymentRequest batch,
             string invoiceNumber,
             decimal amount,
+            string payeeName,
+            string contractNumber,
+            string supplierNumber,
             Guid siteId,
             Guid correlationId,
             string? description = null)
@@ -43,6 +53,9 @@ namespace Unity.Payments.BatchPaymentRequests
         {
             InvoiceNumber = invoiceNumber;
             Amount = amount;
+            PayeeName = payeeName;
+            ContractNumber = contractNumber;
+            SupplierNumber = supplierNumber;
             SiteId = siteId;
             Description = description;
             BatchPaymentRequest = batch;

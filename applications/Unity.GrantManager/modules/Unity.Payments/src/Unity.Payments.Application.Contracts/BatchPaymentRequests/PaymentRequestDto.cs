@@ -1,5 +1,6 @@
 ﻿using System;
 using Unity.Payments.Enums;
+using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.Payments.BatchPaymentRequests
@@ -18,7 +19,11 @@ namespace Unity.Payments.BatchPaymentRequests
         public string? PaymentNumber { get; set; }
         public string? PaymentDate { get; set; }
         public Guid CorrelationId { get; set; }
-        public Guid SiteId { get; set; }
+        public SiteDto? Site { get; set; }
+        public string PayeeName { get; set; }
+        public string ContractNumber { get; set; }
+        public string SupplierNumber { get; set; }
+
     }
 #pragma warning restore CS8618
 }

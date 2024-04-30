@@ -22,18 +22,18 @@ namespace Unity.Payments.Web.Pages.BatchPayments
 
         public List<Guid> SelectedApplicationIds { get; set; }
 
-        private readonly GrantApplicationAppService _applicationService;
+        private readonly IGrantApplicationAppService _applicationService;
         private readonly IBatchPaymentRequestAppService _batchPaymentRequestService;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
         private readonly ISupplierAppService _iSupplierAppService;
 
-        public CreateBatchPaymentsModel(GrantApplicationAppService applicationService,
+        public CreateBatchPaymentsModel(IGrantApplicationAppService applicationService,
            ISupplierAppService iSupplierAppService,
            IBatchPaymentRequestAppService batchPaymentRequestService,
            IPaymentConfigurationAppService paymentConfigurationAppService)
         {
             SelectedApplicationIds = [];
-            _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
+            _applicationService = applicationService;
             _batchPaymentRequestService = batchPaymentRequestService;
             _paymentConfigurationAppService = paymentConfigurationAppService;
             _iSupplierAppService = iSupplierAppService;
@@ -53,6 +53,8 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                     Amount = application.ApprovedAmount,
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
+                    ContractNumber = application.ContractNumber,
+                    SupplierNumber = application.ContractNumber,
                 };
 
                 // Massage Site list
@@ -116,7 +118,11 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                     CorrelationId = payment.ApplicationId,
                     SiteId = payment.SiteId,
                     Description = payment.Description,
-                    InvoiceNumber = payment.InvoiceNumber
+                    InvoiceNumber = payment.InvoiceNumber,
+                    ContractNumber = payment.ContractNumber ?? string.Empty,
+                    SupplierNumber = payment.ContractNumber ?? string.Empty,
+                    PayeeName = payment.ApplicantName ?? string.Empty,
+
                 });
             }
 

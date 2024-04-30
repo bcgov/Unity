@@ -11,7 +11,9 @@ namespace Unity.Payments.EntityFrameworkCore
         {
             return !include ? queryable : queryable
                 .Include(x => x.PaymentRequests)
+                    .ThenInclude(s => s.Site)
                 .Include(y => y.ExpenseApprovals);
+                
         }
 
         public static IQueryable<Supplier> IncludeDetails(this IQueryable<Supplier> queryable, bool include = true)

@@ -25,27 +25,12 @@ $(function () {
     });
 
     function manageActionButtons() {
-        if (selectedBatchPaymentIds.length == 0) {
-            $('*[data-selector="batch-payment-table-actions"]').prop('disabled', true);
-            $('*[data-selector="batch-payment-table-actions"]').addClass('action-bar-btn-unavailable');
-            $('.action-bar').removeClass('active');
-
-
+        if (selectedBatchPaymentIds.length == 1) {
+            $('#viewBatchPaymentDetails').prop('disabled', false);
         }
         else {
-            $('*[data-selector="batch-payment-table-actions"]').prop('disabled', false);
-            $('*[data-selector="batch-payment-table-actions"]').removeClass('action-bar-btn-unavailable');
-            $('.action-bar').addClass('active');
+            $('#viewBatchPaymentDetails').prop('disabled', true);
 
-            $('#viewBatchPaymentDetails').addClass('action-bar-btn-unavailable');
-
-
-            if (selectedBatchPaymentIds.length == 1) {
-                $('#viewBatchPaymentDetails').removeClass('action-bar-btn-unavailable');
-
-
-
-            }
         }
     }
 

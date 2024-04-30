@@ -11,6 +11,9 @@ namespace Unity.Payments.BatchPaymentRequests
         public string? Description { get; set; }
         public Guid CorrelationId { get; set; }
         public Guid SiteId { get; set; }
+        public string PayeeName { get; set; }
+        public string ContractNumber { get; set; }
+        public string SupplierNumber { get; set; }
     }
 #pragma warning restore CS8618
 }
