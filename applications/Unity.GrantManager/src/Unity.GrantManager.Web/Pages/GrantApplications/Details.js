@@ -288,6 +288,14 @@ $(function () {
     });
 
      
+    let applicationBreadcrumbWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationBreadcrumbWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val()
+            };
+        }
+    });
     let applicationStatusWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationStatusWidget',
         filterCallback: function () {
@@ -308,6 +316,7 @@ $(function () {
         'application_status_changed',
         (msg, data) => {
             console.log(msg, data);
+            applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
             assessmentResultWidgetManager.refresh();
         }
