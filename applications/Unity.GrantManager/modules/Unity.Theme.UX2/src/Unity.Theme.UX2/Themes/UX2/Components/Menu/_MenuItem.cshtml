@@ -1,0 +1,58 @@
+﻿@using Volo.Abp.UI.Navigation
+@model ApplicationMenuItem
+
+@{
+    // Set defaults for IDs, classes, and URL.
+    var elementId = !string.IsNullOrEmpty(Model.ElementId) ? $"id=\"{Model.ElementId}\"" : "";
+    var cssClass = !string.IsNullOrEmpty(Model.CssClass) ? Model.CssClass : "";
+    var disabled = Model.IsDisabled ? "disabled" : "";
+    var url = "#";
+    if (!string.IsNullOrEmpty(Model.Url))
+    {
+        if (Url.IsLocalUrl(Model.Url))
+            url = Url.Content(Model.Url.EnsureStartsWith('~'));
+        else
+            url = Model.Url;
+    }
+}
+
+@if (Model.IsLeaf)
+{
+    // Only render if there is a URL.
+    if (!string.IsNullOrEmpty(Model.Url))
+    {
+        <a class="dropdown-item @cssClass @disabled" href="@url" target="@Model.Target" @Html.Raw(elementId)>
+            @if (!string.IsNullOrEmpty(Model.Icon) && Model.Icon.StartsWith("fa"))
+            {
+                // Render icon if available and starts with "fa".
+                <i class="@Model.Icon"></i>
+            }
+            @Model.DisplayName
+        </a>
+    }
+}
+else
+{
+    <div class="dropdown-submenu">
+        <a role="button" class="btn dropdown-toggle" data-bs-toggle="dropdown"
+           aria-haspopup="true" aria-expanded="false">
+            @if (!string.IsNullOrEmpty(Model.Icon))
+            {
+                // Render icon span only if an icon is set.
+                <span class="lp-icon">
+                    <i class="@Model.Icon"></i>
+                </span>
+            }
+            <span class="lp-text">
+                @Model.DisplayName
+            </span>
+        </a>
+        <div class="dropdown-menu border-0 shadow-sm">
+            @foreach (var childMenuItem in Model.Items)
+            {
+                // Render child menu items.
+                @await Html.PartialAsync("~/Themes/ux2/Components/Menu/_MenuItem.cshtml", childMenuItem)
+            }
+        </div>
+    </div>
+}

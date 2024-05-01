@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Identity;
+using Volo.Abp.Identity.Integration;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -23,9 +24,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         public IReadOnlyList<IdentityUserDto> Users { get; set; } = new List<IdentityUserDto>();
 
-        private readonly IIdentityUserLookupAppService _identityUserLookupAppService;
+        private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
 
-        public IndexModel(IIdentityUserLookupAppService identityUserLookupAppService)
+        public IndexModel(IIdentityUserIntegrationService identityUserLookupAppService)
         {
             _identityUserLookupAppService = identityUserLookupAppService ?? throw new ArgumentNullException(nameof(identityUserLookupAppService));
         }

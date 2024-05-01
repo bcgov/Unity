@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net7.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <RootNamespace>Unity.GrantManager</RootNamespace>
   </PropertyGroup>
@@ -12,15 +12,14 @@
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.HttpApi.Client\Unity.TenantManagement.HttpApi.Client.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.HttpApi.Client\Unity.Notifications.HttpApi.Client.csproj" />
-    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.HttpApi.Client\Unity.Payments.HttpApi.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Volo.Abp.Identity.HttpApi.Client" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.PermissionManagement.HttpApi.Client" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.TenantManagement.HttpApi.Client" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.FeatureManagement.HttpApi.Client" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.SettingManagement.HttpApi.Client" Version="7.4.0" />
+    <PackageReference Include="Volo.Abp.Identity.HttpApi.Client" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.HttpApi.Client" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.TenantManagement.HttpApi.Client" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.HttpApi.Client" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.HttpApi.Client" Version="8.1.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -6,11 +6,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     /// <inheritdoc />
+#pragma warning disable IDE1006 // Naming Styles
     public partial class addTenantToTags : Migration
+#pragma warning restore IDE1006 // Naming Styles
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+#pragma warning disable S4581 // "new Guid()" should not be used
             migrationBuilder.AlterColumn<Guid>(
                 name: "ApplicationId",
                 table: "ApplicationTags",
@@ -20,6 +23,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 oldClrType: typeof(Guid),
                 oldType: "uuid",
                 oldNullable: true);
+#pragma warning restore S4581 // "new Guid()" should not be used
 
             migrationBuilder.AddColumn<Guid>(
                 name: "TenantId",

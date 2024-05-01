@@ -17,13 +17,15 @@ public class PaymentsMenuContributor : IMenuContributor
         }
     }
 
-#pragma warning disable CA1822 // Mark members as static
-    private Task ConfigureMainMenuAsync(MenuConfigurationContext context)
+    private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         //Add main menu items.
-        context.Menu.AddItem(new ApplicationMenuItem(PaymentsMenus.Prefix, displayName: "Payments", "~/Payments", icon: "fa fa-globe"));
-
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                    PaymentsMenus.Prefix,
+                    displayName: "Payments",
+                    "~/BatchPayments"
+        ));
         return Task.CompletedTask;
     }
-#pragma warning restore CA1822 // Mark members as static
 }

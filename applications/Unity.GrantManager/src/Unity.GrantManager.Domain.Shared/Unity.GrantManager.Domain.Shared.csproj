@@ -1,26 +1,28 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net7.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <RootNamespace>Unity.GrantManager</RootNamespace>
     <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Stateless" Version="5.13.0" />
-    <PackageReference Include="Volo.Abp.Identity.Domain.Shared" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.BackgroundJobs.Domain.Shared" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.AuditLogging.Domain.Shared" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Domain.Shared" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.FeatureManagement.Domain.Shared" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Shared" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Domain.Shared" Version="7.4.0" />
-    <PackageReference Include="Volo.Abp.OpenIddict.Domain.Shared" Version="7.4.0" />
+    <PackageReference Include="Stateless" Version="5.15.0" />
+    <PackageReference Include="Volo.Abp.Identity.Domain.Shared" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.BackgroundJobs.Domain.Shared" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.AuditLogging.Domain.Shared" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Domain.Shared" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.Domain.Shared" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Shared" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Domain.Shared" Version="8.1.0" />
+    <PackageReference Include="Volo.Abp.OpenIddict.Domain.Shared" Version="8.1.0" />
+    <ProjectReference Include="..\..\modules\Unity.Flex\src\Unity.Flex.Shared\Unity.Flex.Shared.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Domain.Shared\Unity.Notifications.Domain.Shared.csproj" />
-    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Domain.Shared\Unity.Payments.Domain.Shared.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Shared\Unity.Payments.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="7.0.10" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.3" />
   </ItemGroup>
 
 </Project>

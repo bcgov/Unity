@@ -1,4 +1,5 @@
 ﻿@page
+@using Unity.GrantManager.ApplicationForms
 @using Unity.GrantManager.Localization;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
@@ -26,17 +27,17 @@
 
 <input type="hidden" id="intakeProperties" value="@Model.IntakeProperties">
 <input type="hidden" id="applicationFormVersionDtoString" value="@Model.ApplicationFormVersionDtoString">
-<input type="hidden" id="availableChefsFields" value="@Model.ApplicationFormVersionDto.AvailableChefsFields">
-<input type="hidden" id="existingMapping" value="@Model.ApplicationFormVersionDto.SubmissionHeaderMapping">
-<input type="hidden" id="formVersionId" value="@Model.ApplicationFormVersionDto.Id">
-<input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto.Id">
-<input type="hidden" id="chefsFormId" value="@Model.ApplicationFormDto.ChefsApplicationFormGuid">
+<input type="hidden" id="availableChefsFields" value="@Model.ApplicationFormVersionDto?.AvailableChefsFields">
+<input type="hidden" id="existingMapping" value="@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping">
+<input type="hidden" id="formVersionId" value="@Model.ApplicationFormVersionDto?.Id">
+<input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto?.Id">
+<input type="hidden" id="chefsFormId" value="@Model.ApplicationFormDto?.ChefsApplicationFormGuid">
 
 <div class="container-fluid px-2">
     <div class="d-flex my-1 p-2">
         <abp-row class="m-0 assessment-result-form" >
             <abp-column size="_12" class="px-1">
-             <abp-card-title class="label">@Model.ApplicationFormDto.ApplicationFormName </abp-card-title>
+             <abp-card-title class="label">@Model.ApplicationFormDto?.ApplicationFormName </abp-card-title>
              </abp-column>
         </abp-row>
     </div>
@@ -50,12 +51,12 @@
                     </abp-column>
                     <abp-column size="_2" class="px-1">
                         <select class="form-select form-control" id="applicationFormVersion" name="Version">
-                            @foreach (var applicationFormVersionDto in Model.ApplicationFormVersionDtoList)
+                            @foreach (var applicationFormVersionDto in Model?.ApplicationFormVersionDtoList ?? new List<ApplicationFormVersionDto> { })
                             {
                                 @if (@applicationFormVersionDto.ChefsFormVersionGuid+"" != "")
                                 {
                                     var selected = false;
-                                    @if (Model.ChefsFormVersionGuid+"" == applicationFormVersionDto.ChefsFormVersionGuid)
+                                    @if (Model?.ChefsFormVersionGuid+"" == applicationFormVersionDto.ChefsFormVersionGuid)
                                     {
                                         selected = true;
                                     }
@@ -73,7 +74,7 @@
                         <abp-card-title class="label">Published</abp-card-title>
                     </abp-column>
                     <abp-column size="_2" class="px-1">
-                    <abp-card-title class="label">@Model.ApplicationFormVersionDto.Published</abp-card-title>
+                    <abp-card-title class="label">@Model.ApplicationFormVersionDto?.Published</abp-card-title>
                     </abp-column>
                 </abp-row>
             </div>
@@ -140,7 +141,7 @@
     <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">
         <abp-modal-header title="Edit Mapping JSON"></abp-modal-header>
         <abp-modal-body>
-            <textarea id="jsonText" rows="15" cols="80">@Model.ApplicationFormVersionDto.SubmissionHeaderMapping</textarea>
+            <textarea id="jsonText" rows="15" cols="80">@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
         </abp-modal-body>
         <abp-modal-footer>
            

@@ -3,4 +3,5 @@
 public static class PaymentsMenus
 {
     public const string Prefix = "Payments";
+    public const string PaymentService = "Payment Service";
 }

@@ -9,6 +9,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Unity.GrantManager.Locality;
+using Unity.GrantManager.Permissions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 {
@@ -25,14 +27,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
         private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
         private readonly ICommunityService _applicationCommunityAppService;
+        private readonly IAuthorizationService _authorizationService;  
 
         public ProjectInfoViewComponent(
             IGrantApplicationAppService grantApplicationAppService,
-            ISectorService applicationSectorAppService,
             IEconomicRegionService applicationEconomicRegionAppService,
             IElectoralDistrictService applicationElectoralDistrictAppService,
             IRegionalDistrictService applicationRegionalDistrictAppService,
-            ICommunityService applicationCommunityAppService
+            ICommunityService applicationCommunityAppService,
+            IAuthorizationService authorizationService
             )
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -40,6 +43,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
             _applicationRegionalDistrictAppService = applicationRegionalDistrictAppService;
             _applicationCommunityAppService = applicationCommunityAppService;
+            _authorizationService = authorizationService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -48,6 +52,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             const decimal ProjectFundingMultiply = 0.2M;
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
+            bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);            
+            bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
+            bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
 
 
             List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
@@ -64,6 +71,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 RegionalDistricts = RegionalDistricts,
                 Communities = Communities,
                 EconomicRegions = EconomicRegions,
+                IsFinalDecisionMade = finalDecisionState,
+                IsEditGranted = isEditGranted,
+                IsPostEditFieldsAllowed = isPostEditFieldsAllowed
             };
 
            
@@ -114,8 +124,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             percentageTotalProjectBudget = application.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(application.RequestedAmount, application.TotalProjectBudget),100).To<double>();
 
-            model.IsFinalDecisionMade = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-
             model.ProjectInfo = new()
             {
                 ProjectName = application.ProjectName,
@@ -136,6 +144,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 RegionalDistrict = application.RegionalDistrict,
                 ContractNumber = application.ContractNumber,
                 ContractExecutionDate = application.ContractExecutionDate,
+                Place = application.Place,
             };
 
             return View(model);

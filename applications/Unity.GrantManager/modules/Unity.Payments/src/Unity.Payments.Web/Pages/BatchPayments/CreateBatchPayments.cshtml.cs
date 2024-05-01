@@ -1,41 +1,51 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
-using Unity.GrantManager.GrantApplications;
+using Unity.Payments.Suppliers;
 using Unity.Payments.BatchPaymentRequests;
-using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Unity.Payments.Settings;
+using Unity.Payments.PaymentConfigurations;
+using Unity.GrantManager.GrantApplications;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Unity.Payment.Shared;
+using System.Text.Json;
 
 namespace Unity.Payments.Web.Pages.BatchPayments
 {
     public class CreateBatchPaymentsModel : AbpPageModel
     {
         [BindProperty]
-        public List<BatchPaymentsModel> ApplicationPaymentRequestForm { get; set; } = new();
+        public List<BatchPaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
+
+        [BindProperty]
+        public decimal PaymentThreshold { get; set; }
+
         public List<Guid> SelectedApplicationIds { get; set; }
-        public PaymentsSettingsDto Settings { get; set; } = new PaymentsSettingsDto();
 
-        private readonly GrantApplicationAppService _applicationService;
+        private readonly IGrantApplicationAppService _applicationService;
+
         private readonly IBatchPaymentRequestAppService _batchPaymentRequestService;
-        private readonly IPaymentsSettingsAppService _paymentsSettingsAppService;
+        private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
+        private readonly ISupplierAppService _iSupplierAppService;
 
-        public CreateBatchPaymentsModel(GrantApplicationAppService applicationService,
+        public CreateBatchPaymentsModel(IGrantApplicationAppService applicationService,
+           ISupplierAppService iSupplierAppService,
            IBatchPaymentRequestAppService batchPaymentRequestService,
-           IPaymentsSettingsAppService paymentsSettingsAppService)
+           IPaymentConfigurationAppService paymentConfigurationAppService)
         {
-            SelectedApplicationIds = new();
-            _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
+            SelectedApplicationIds = [];
+            _applicationService = applicationService;
             _batchPaymentRequestService = batchPaymentRequestService;
-            _paymentsSettingsAppService = paymentsSettingsAppService;
+            _paymentConfigurationAppService = paymentConfigurationAppService;
+            _iSupplierAppService = iSupplierAppService;
         }
 
-        public async void OnGet(string applicationIds)
+        public async Task OnGetAsync(string applicationIds)
         {
-            SelectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(applicationIds) ?? new List<Guid>();
+            SelectedApplicationIds = JsonSerializer.Deserialize<List<Guid>>(applicationIds) ?? [];
             var applications = await _applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
-            Settings = await _paymentsSettingsAppService.GetAsync();
+
             foreach (var application in applications)
             {
                 BatchPaymentsModel request = new()
@@ -45,10 +55,41 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                     Amount = application.ApprovedAmount,
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
+                    ContractNumber = application.ContractNumber,
+                    SupplierNumber = application.ContractNumber,
                 };
+
+                // Massage Site list
+                var supplier = await _iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+                {
+                    CorrelationId = application.Applicant.Id,
+                    CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicantCorrelationProvider,
+                    IncludeDetails = true
+                });
+
+                // If there are sites then add them
+                if (supplier != null
+                    && supplier.Sites != null
+                    && supplier.Sites.Count > 0
+                    && supplier.Number != null)
+                {
+                    string supplierNumber = supplier.Number;
+                    foreach (var site in supplier.Sites)
+                    {
+                        SelectListItem item = new SelectListItem
+                        {
+                            Value = site.Id.ToString(),
+                            Text = $"{site.Number} ({supplierNumber}, {site.City})",
+                        };
+                        request.SiteList.Add(item);
+                    }
+                }
 
                 ApplicationPaymentRequestForm!.Add(request);
             }
+
+            var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
+            PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -77,8 +118,13 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                 {
                     Amount = payment.Amount,
                     CorrelationId = payment.ApplicationId,
+                    SiteId = payment.SiteId,
                     Description = payment.Description,
-                    InvoiceNumber = payment.InvoiceNumber
+                    InvoiceNumber = payment.InvoiceNumber,
+                    ContractNumber = payment.ContractNumber ?? string.Empty,
+                    SupplierNumber = payment.ContractNumber ?? string.Empty,
+                    PayeeName = payment.ApplicantName ?? string.Empty,
+
                 });
             }
 

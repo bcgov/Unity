@@ -34,7 +34,7 @@ namespace Unity.GrantManager.Controllers
         {
             if (CurrentTenant.Id == null)
             {
-                var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.DefaultTenantName);
+                var defaultTenant = await _tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
                 using (CurrentTenant.Change(defaultTenant.Id, defaultTenant.Name))
                 {
                     return await HandleIntakeEventAsync(eventSubscription);

@@ -41,8 +41,6 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
@@ -63,8 +61,9 @@ using Volo.Abp.VirtualFileSystem;
 using Unity.Notifications.Web;
 using Unity.Payments.Web;
 using Unity.Payments;
-using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
-using Unity.Payments.Web.Settings;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+using Unity.Flex.Web;
 
 namespace Unity.GrantManager.Web;
 
@@ -74,18 +73,19 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
     typeof(AbpSettingManagementWebModule),
-    typeof(AbpAspNetCoreMvcUiBasicThemeModule),
+    typeof(UnityAspNetCoreMvcUIThemeUX2Module),
     typeof(UnityTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
     typeof(UnitydentityWebModule),
     typeof(AbpBlobStoringModule),
-    typeof(PaymentsWebModule)
+    typeof(PaymentsWebModule),
+    typeof(AbpBlobStoringModule),
+    typeof(NotificationsWebModule),
+    typeof(FlexWebModule)
 )]
-[DependsOn(typeof(AbpBlobStoringModule))]
-[DependsOn(typeof(NotificationsWebModule))]
-    public class GrantManagerWebModule : AbpModule
+public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -169,7 +169,7 @@ namespace Unity.GrantManager.Web;
                 )
             );
         });
-        
+
         Configure<AbpSecurityLogOptions>(x =>
         {
             x.ApplicationName = "GrantManager";
@@ -336,7 +336,7 @@ namespace Unity.GrantManager.Web;
         {
             options
                 .StyleBundles
-                .Configure(BasicThemeBundles.Styles.Global, bundle =>
+                .Configure(UnityThemeUX2Bundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
                 });

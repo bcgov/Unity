@@ -1,27 +1,20 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Volo.Abp.AspNetCore.TestBase;
 
 namespace Unity.GrantManager;
 
-public abstract class GrantManagerWebTestBase : AbpAspNetCoreIntegratedTestBase<GrantManagerWebTestStartup>
+public abstract class GrantManagerWebTestBase : AbpWebApplicationFactoryIntegratedTest<Program>
 {
-    protected override IHostBuilder CreateHostBuilder()
-    {
-        return base
-            .CreateHostBuilder()
-            .UseContentRoot(WebContentDirectoryFinder.CalculateContentRootFolder() ?? throw new InvalidOperationException());
-    }
-
     protected virtual async Task<T?> GetResponseAsObjectAsync<T>(string url, HttpStatusCode expectedStatusCode = HttpStatusCode.OK)
     {
         var strResponse = await GetResponseAsStringAsync(url, expectedStatusCode);
-        return JsonSerializer.Deserialize<T>(strResponse, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        JsonSerializerOptions jsonSerializerOptions = new(JsonSerializerDefaults.Web);
+        JsonSerializerOptions options = jsonSerializerOptions;
+        return JsonSerializer.Deserialize<T>(strResponse, options);
     }
 
     protected virtual async Task<string> GetResponseAsStringAsync(string url, HttpStatusCode expectedStatusCode = HttpStatusCode.OK)

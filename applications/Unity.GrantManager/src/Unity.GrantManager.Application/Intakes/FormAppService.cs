@@ -10,12 +10,10 @@ namespace Unity.GrantManager.Intakes
     [Authorize]
     public class FormAppService : GrantManagerAppService, IFormAppService
     {
-        private readonly IConfiguration _configuration;
         private readonly RestClient _intakeClient;
 
-        public FormAppService(IConfiguration configuration, RestClient restClient)
+        public FormAppService(RestClient restClient)
         {
-            _configuration = configuration;
             _intakeClient = restClient;
         }
 

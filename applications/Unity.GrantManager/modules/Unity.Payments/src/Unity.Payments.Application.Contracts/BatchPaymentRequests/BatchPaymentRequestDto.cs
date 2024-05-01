@@ -11,11 +11,10 @@ namespace Unity.Payments.BatchPaymentRequests
     {        
         public string BatchNumber { get; set; }
         public string RequesterName { get; set; }
-        public PaymentGroupDto PaymentGroup { get; set; }        
-        public PaymentRequestStatusDto Status { get; set; }
+        public BatchPaymentRequestStatus Status { get; set; }
         public bool IsApproved { get; set; }
         public bool IsRecon { get; set; }
-        public string? Description { get; set; }                
+        public string? Description { get; set; }
         public string CorrelationProvider { get; set; }
         public Collection<PaymentRequestDto> PaymentRequests { get; set; }
         public Collection<ExpenseApprovalDto> ExpenseApprovals { get; private set; }

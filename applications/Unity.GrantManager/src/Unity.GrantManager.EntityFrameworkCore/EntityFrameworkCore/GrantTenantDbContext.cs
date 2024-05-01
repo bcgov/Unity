@@ -11,6 +11,7 @@ using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
 using Unity.Payments.EntityFrameworkCore;
+using Unity.Flex.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -37,6 +38,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
         public DbSet<ApplicationContact> ApplicationContacts { get; set; }    
+        public DbSet<ApplicationLink> ApplicationLinks { get; set; }    
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -264,6 +266,16 @@ namespace Unity.GrantManager.EntityFrameworkCore
                
             });
 
+            modelBuilder.Entity<ApplicationLink>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationLinks",
+                    GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
+               
+            });
+
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();
             foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
             {
@@ -272,6 +284,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
             }
 
             modelBuilder.ConfigurePayments();
+#pragma warning disable S125 // Sections of code should not be commented out
+            // modelBuilder.ConfigureFlex();
+#pragma warning restore S125 // Sections of code should not be commented out
         }
     }
 }

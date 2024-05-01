@@ -1,0 +1,15 @@
+﻿
+.links-table-row {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: var(--bc-font-size-sm);
+}
+
+.links-table-row.header {
+    background: var(--bc-colors-grey-pressed);
+    font-weight: bold;
+}
+
+.links-table-record {
+    border-bottom: 1px solid var(--bc-colors-grey-dividers);
+}

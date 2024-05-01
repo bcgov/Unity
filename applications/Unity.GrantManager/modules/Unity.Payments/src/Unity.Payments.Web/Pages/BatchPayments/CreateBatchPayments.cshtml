@@ -1,5 +1,4 @@
 ﻿@page
-@using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
 @using Unity.Payments.Localization;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
@@ -11,12 +10,12 @@
     Layout = null;
 }
 <form method="post" asp-page-handler="OnPostAsync" id="paymentform">
-    <abp-modal size="Large" id="payment-modal">
+    <abp-modal size="ExtraLarge" id="payment-modal">
         <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentRequest:Title"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-card>
                 <abp-card-body class="payment-card">
-                    <abp-input id="PaymentThreshold" type="hidden" asp-for="Settings.PaymentThreshold"/>
+                    <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
                     <abp-input id="ApplicationCount" type="hidden" asp-for="ApplicationPaymentRequestForm.Count" />
                     @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
                     {
@@ -28,19 +27,25 @@
 
                             <input name="ApplicationPaymentRequestForm.Index" type="hidden" value="@i" />
                             <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ApplicationId" />
-                            <abp-row class="m-0 p-2">
-                                <abp-column size="_4" class="px-1">
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ContractNumber" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ApplicantName" />
+                            <abp-row class="m-0 p-3">
+                                <abp-column size="_3" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" />
                                 </abp-column>
-                                <abp-column size="_4" class="px-1">
+                                <abp-column size="_3" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" class="amount unity-currency-input" onchange='checkMaxValue("@Model.ApplicationPaymentRequestForm[i].ApplicationId",this)' />
                                 </abp-column>
-                                <abp-column size="_4" class="px-1">
+                                <abp-column size="_3" class="px-1">
+                                    <abp-select id="site_select" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId" asp-items="@Model.ApplicationPaymentRequestForm[i].SiteList">
+                                        <option value="null" disabled>Please choose...</option>
+                                    </abp-select>
+                                </abp-column>
+                                <abp-column size="_3" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" />
                                 </abp-column>
                                 <abp-column size="_12" class="text-center">
-                                    <span id="@($"{Model.ApplicationPaymentRequestForm[i].ApplicationId}_maxerror")" class="max-error text-danger field-validation-error"> @L["ApplicationPaymentRequest:Validations:ThresholdExceeded"] @Model.Settings.PaymentThreshold</span>
-
+                                    <span id="@($"{Model.ApplicationPaymentRequestForm[i].ApplicationId}_maxerror")" class="max-error text-danger field-validation-error"> @L["ApplicationPaymentRequest:Validations:ThresholdExceeded"] @Model.PaymentThreshold</span>
                                 </abp-column>
 
                             </abp-row>
@@ -57,10 +62,10 @@
                 </abp-card-body>
             </abp-card>
         </abp-modal-body>
-        <abp-modal-footer >
+        <abp-modal-footer>
             <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
             <abp-button class="btn btn-primary" text="@L["ApplicationPaymentRequest:SubmitButtonText"].Value" type="submit"></abp-button>
-           
+
         </abp-modal-footer>
     </abp-modal>
 </form>

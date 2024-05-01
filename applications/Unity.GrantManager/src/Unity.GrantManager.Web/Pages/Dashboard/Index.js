@@ -1,92 +1,149 @@
-﻿$(function () {
-
-    unity.grantManager.dashboard.dashboard.getEconomicRegionCount().then(economicRegion => {
+﻿
+function reloadDashboard() {
+    const intakeId = $('#dashboardIntakeId').val();
+    const category = $('#dashboardCategoryName').val();
+    unity.grantManager.dashboard.dashboard.getEconomicRegionCount(intakeId, category).then(economicRegion => {
         initializeChart(economicRegion.map(obj => obj.economicRegion), economicRegion.map(obj => obj.count),
-            'Submission Breakdown By Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
+            'Submissions by Economic Region', 'Total Submissions', 'SUBMISSION BREAKDOWN BY ECONOMIC REGION',
             'Number of Submissions', 'economicRegionChart');
     });
 
-    unity.grantManager.dashboard.dashboard.getSectorCount().then(sector => {
-        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submission Breakdown By Sector',
+    unity.grantManager.dashboard.dashboard.getSectorCount(intakeId, category).then(sector => {
+        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
             'Total Submissions', 'SUBMISSION BREAKDOWN BY SECTOR', "Number of Submissions", 'sectorChart');
     });
 
 
-    unity.grantManager.dashboard.dashboard.getApplicationStatusCount().then(applicationStatus => {
-        initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count), 
-            'Application Status Overview', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
+    unity.grantManager.dashboard.dashboard.getApplicationStatusCount(intakeId, category).then(applicationStatus => {
+        initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
+            'Submissions by Status', 'Total Submissions', 'APPLICATION STATUS OVERVIEW', "Count", 'applicationStatusChart')
     });
 
-    unity.grantManager.dashboard.dashboard.getApplicationTagsCount().then(applicationTags => {
-        initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count), 
+    unity.grantManager.dashboard.dashboard.getApplicationTagsCount(intakeId, category).then(applicationTags => {
+        initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count),
             'Application Tags Overview', 'Total Number of Tags', 'APPLICATION TAGS OVERVIEW', "Count", 'applicationTagsChart')
     });
+}
 
-    function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
-        // setup 
-        const data = {
-            labels: labelsArray,
-            datasets: [{
-                label: labelDesc,
-                data: dataArray,
-                hoverOffset: 4
-            }]
-        };
+let colorPalette;
 
-        let sum = 0;
-        if (chartId === 'applicationTagsChart') {
-            sum = labelsArray.length;
-        } else {
-            sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
-        }
+fetch('./colorsPalette.json')
+    .then(response => response.json())
+    .then(data => {
+        colorPalette = data.colors;
+    });
 
-        const centerText = {
-            id: 'centerText',
-            beforeDatasetsDraw(chart, args, pluginOptions) {
-                const { ctx } = chart;
-                const text = centerTextLabel + ': ';
-                ctx.save();
-                const x = chart.getDatasetMeta(0).data[0].x;
-                const y = chart.getDatasetMeta(0).data[0].y;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '16px sans-serif';
-                ctx.fillText(text, x, y - 10);
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '16px sans-serif';
-                ctx.fillText(sum, x, y + 15);
+reloadDashboard();
+
+function initializeChart(labelsArray, dataArray, labelDesc, centerTextLabel, titleText, mouseOverText, chartId) {
+
+    let myChart = echarts.init(document.getElementById(chartId), null, {
+        width: 465,
+        height: 250,
+        renderer: 'svg',
+        useDirtyRect: false,
+    });
+
+    let sum = 0;
+    if (chartId === 'applicationTagsChart') {
+        sum = labelsArray.length;
+    } else {
+        sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
+    }
+
+    let data = [];
+    dataArray.forEach((value, index) => data.push({
+        'value': value, 'name': labelsArray[index]
+    }));
+
+    let option = {
+        textStyle: {
+            fontFamily: 'BCSans'
+        },
+        responsive: true,
+        title: {
+            text: labelDesc,
+            left: 'left',
+            top: '16px',
+
+        },
+        graphic: [
+            {
+                type: 'text',
+                left: 'center',
+                bottom: '18%',
+                cursor: "auto",
+                style: {
+                    text: sum,
+                    color: '#474543',
+                    fontWeight: 700,
+                    fontSize: 32,
+                    fontFamily: 'BCSans'
+                }
             }
-        }
-
-        // config 
-        const config = {
-            type: 'doughnut',
-            data: data,
-            options: {
-                maintainAspectRatio: false,
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: titleText
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                let currentValue = context.raw;
-                                let total = context.chart._metasets[context.datasetIndex].total;
-                                let percentage = parseFloat((currentValue / total * 100).toFixed(1));
-                                return mouseOverText + " : " + currentValue + ' (' + percentage + '%)';
-                            }
+        ],
+        series: [
+            {
+                type: 'pie',
+                radius: ['65%', '71%'],
+                center: ['50%', '90%'],
+                padAngle: 3,
+                itemStyle: {
+                    borderRadius: 10
+                },
+                startAngle: 180,
+                endAngle: 360,
+                labelLine: {
+                    length: 30,
+                },
+                label: {
+                    formatter: '{a| {c}}\n {b| {b}}',
+                    overflow: 'break',
+                    rich: {
+                        a: {
+                            color: '#474543',
+                            fontWeight: 700,
+                            fontSize: 18,
+                            align: 'left',
+                            padding: 5,
+                        },
+                        b: {
+                            color: '#2D2D2D',
+                            fontWeight: 400,
+                            fontSize: 14,
+                            align: 'left',
                         }
                     }
-                }
-            },
-            plugins: [centerText]
-        };
+                },
+                data: data,
+                colorBy: "data",
+                color: colorPalette,
+                silent: true,
+                avoidLabelOverlap: true,
+            }
+        ],
+    };
 
-        // render init block
-        new Chart(document.getElementById(chartId), config); //NOSONAR
+    if (option && typeof option === 'object') {
+        myChart.setOption(option);
     }
+
+    window.addEventListener('resize', myChart.resize);
+}
+
+$('#dashboardIntakeId').change(function () {
+    const selectedValue = $(this).val();
+    let intakeList = JSON.parse($('#dashboardIntakeList').text());
+
+    let childDropdown = $('#dashboardCategoryName');
+    childDropdown.empty();
+
+    let categories = intakeList.find(intake => (intake.intakeId === selectedValue))?.categories;
+    $.each(categories, function (index, item) {
+        childDropdown.append($('<option>', {
+            value: item,
+            text: item
+        }));
+    });
+    reloadDashboard();
 });

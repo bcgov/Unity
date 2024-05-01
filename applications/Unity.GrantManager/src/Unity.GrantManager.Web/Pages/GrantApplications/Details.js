@@ -288,6 +288,14 @@ $(function () {
     });
 
      
+    let applicationBreadcrumbWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationBreadcrumbWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val()
+            };
+        }
+    });
     let applicationStatusWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationStatusWidget',
         filterCallback: function () {
@@ -308,6 +316,7 @@ $(function () {
         'application_status_changed',
         (msg, data) => {
             console.log(msg, data);
+            applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
             assessmentResultWidgetManager.refresh();
         }
@@ -335,6 +344,7 @@ $(function () {
     function initializeDetailsPage() {
         getSubmission();
         initCommentsWidget();
+        updateLinksCounters();
     }
 
     initializeDetailsPage();
@@ -354,6 +364,22 @@ $(function () {
                 attachCounters.chefs = data.chefs;
             } 
             $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
+        }
+    );
+
+    let applicationRecordsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationRecordsWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val(),
+            }
+        }
+    });
+
+    PubSub.subscribe('ApplicationLinks_refresh',
+        (msg, data) => {
+            applicationRecordsWidgetManager.refresh();
+            updateLinksCounters();
         }
     );
 
@@ -462,6 +488,14 @@ function updateCommentsCounters() {
     setTimeout(() => {
         $('.comments-container').map(function () {
             $('#' + $(this).data('counttag')).html($(this).data('count'));
+        }).get();
+    }, 100);
+}
+
+function updateLinksCounters() {
+    setTimeout(() => {
+        $('.links-container').map(function () {
+            $('#' + $(this).data('linkscounttag')).html($(this).data('count'));
         }).get();
     }, 100);
 }

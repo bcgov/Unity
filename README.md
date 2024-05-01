@@ -1,6 +1,6 @@
 # Unity Portal
-[![Lifecycle:Experimental](https://img.shields.io/badge/Lifecycle-Experimental-339999)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
-The project is in the very early stages of development. The codebase will be changing frequently.
+[![Lifecycle:Maturing](https://img.shields.io/badge/Lifecycle-Maturing-007EC6)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
+The codebase is being roughed out, but finer details are likely to change.
 
 ## Directory Structure
 
@@ -9,6 +9,8 @@ The project is in the very early stages of development. The codebase will be cha
     ├── Unity.GrantManager/    - Grant manager and adjudication solution
     ├── Unity.Orchestrator/    - Workflow orchestrator solution
     ├── Unity.Metabase/        - Grant reporting solution
+    ├── Unity.RabbitMQ/        - Messaging and streaming broker
+    ├── Unity.Tools/           - Maintenance tools
     database/                  - Database configuration files
     documentation/             - Solution documentation and assets
     openshift/                 - OpenShift deployment files
