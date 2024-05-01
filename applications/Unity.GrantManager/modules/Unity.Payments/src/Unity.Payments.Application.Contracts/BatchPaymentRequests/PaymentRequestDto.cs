@@ -11,7 +11,7 @@ namespace Unity.Payments.BatchPaymentRequests
     {
         public string InvoiceNumber { get; set; }
         public decimal Amount { get; set; }
-        public PaymentRequestStatusDto Status { get; set; }
+        public PaymentRequestStatus Status { get; set; }
         public string? Description { get; set; }
         public bool IsRecon { get; set; }
         public string? InvoiceStatus { get; set; }

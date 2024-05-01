@@ -1,5 +1,6 @@
 ﻿using Shouldly;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.PaymentConfigurations;
 using Xunit;
 
 namespace Unity.Payments.PaymentConfigurations

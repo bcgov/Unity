@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Unity.Flex.Controllers;
 using Unity.Flex.Samples;
 using Volo.Abp;
 

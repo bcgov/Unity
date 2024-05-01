@@ -1,30 +1,36 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Shouldly;
-using Unity.Payments.BatchPaymentRequests;
-using Unity.Payments.Suppliers;
+
+using Unity.Payments.Domain.BatchPaymentRequests;
+using Unity.Payments.Domain.Suppliers;
+using Unity.Payments.Enums;
+using Volo.Abp.Uow;
 using Xunit;
 
-namespace Unity.Payments.Samples;
+namespace Unity.Payments.BatchPaymentRequests;
 
 public class BatchPaymentRequestAppService_Tests : PaymentsApplicationTestBase
 {
     private readonly IBatchPaymentRequestAppService _batchPaymentRequestAppService;
     private readonly IBatchPaymentRequestRepository _batchPaymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
+    private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public BatchPaymentRequestAppService_Tests()
     {
         _batchPaymentRequestAppService = GetRequiredService<IBatchPaymentRequestAppService>();
         _batchPaymentRequestRepository = GetRequiredService<IBatchPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
+        _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
     }
 
     [Fact]
-    [Trait("Category", "Integration")]
+    [Trait("Category", "Integration")]    
     public async Task CreateAsync_CreatesBatchPaymentRequest()
     {
         // Arrange        
+        using var uow = _unitOfWorkManager.Begin();
         var siteId = Guid.NewGuid();
         var newSupplier = new Supplier(Guid.NewGuid(),
             "Supplier",
@@ -38,7 +44,7 @@ public class BatchPaymentRequestAppService_Tests : PaymentsApplicationTestBase
 
         newSupplier.AddSite(new Site(siteId,
             "123",
-            Enums.PaymentGroup.EFT,
+            PaymentGroup.EFT,
             "123",
             "456",
             "789",
@@ -49,7 +55,7 @@ public class BatchPaymentRequestAppService_Tests : PaymentsApplicationTestBase
         _ = await _supplierRepository.InsertAsync(newSupplier, true);
 
 
-        // Act
+        // Act        
         var insertedBatchPaymentRequest = await _batchPaymentRequestAppService
             .CreateAsync(new CreateBatchPaymentRequestDto()
             {

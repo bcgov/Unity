@@ -6,7 +6,6 @@ using Volo.Abp.ObjectExtending;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications;
-using Unity.Payments;
 
 namespace Unity.GrantManager;
 
@@ -18,8 +17,7 @@ namespace Unity.GrantManager;
     typeof(AbpSettingManagementApplicationContractsModule),
     typeof(UnityTenantManagementApplicationContractsModule),
     typeof(AbpObjectExtendingModule),
-    typeof(NotificationsApplicationContractsModule),
-    typeof(PaymentsApplicationContractsModule)    
+    typeof(NotificationsApplicationContractsModule)    
 )]
 public class GrantManagerApplicationContractsModule : AbpModule
 {

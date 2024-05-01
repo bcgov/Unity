@@ -3,10 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Payments.PaymentConfigurations;
+using Unity.Payment.Shared;
+using Unity.Payments.Domain.BatchPaymentRequests;
+using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Users;
 
 namespace Unity.Payments.BatchPaymentRequests
@@ -51,20 +52,10 @@ namespace Unity.Payments.BatchPaymentRequests
                     payment.Description),
                     await GetPaymentThresholdAsync());
             }
-            try
-            {
-                var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
 
-                return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
-            }
-            catch (Exception ex)
-            {
-                var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
+            var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
 
-                return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
-            }
-
-          
+            return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);                     
         }
 
         public async Task<PagedResultDto<BatchPaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -102,9 +93,9 @@ namespace Unity.Payments.BatchPaymentRequests
             if (paymentConfigs.Count > 0)
             {
                 var paymentConfig = paymentConfigs[0];
-                return paymentConfig.PaymentThreshold ?? PaymentConsts.DefaultThresholdAmount;
+                return paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
             }
-            return PaymentConsts.DefaultThresholdAmount;
+            return PaymentSharedConsts.DefaultThresholdAmount;
         }
 
         protected virtual string GetCurrentRequesterName()

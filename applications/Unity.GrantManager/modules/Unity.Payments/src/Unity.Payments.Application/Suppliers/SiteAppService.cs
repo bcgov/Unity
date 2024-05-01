@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.Suppliers;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.Suppliers

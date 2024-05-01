@@ -1,9 +1,9 @@
-﻿@using Unity.GrantManager.Localization;
-@using Microsoft.AspNetCore.Authorization;
+﻿@using Microsoft.AspNetCore.Authorization;
 @using Microsoft.Extensions.Localization;
+@using Unity.Payments.Localization
 @using Volo.Abp.Features;
 
-@inject IStringLocalizer<GrantManagerResource> L
+@inject IStringLocalizer<PaymentsResource> L
 @inject IAuthorizationService AuthorizationService
 @inject IFeatureChecker FeatureChecker
 

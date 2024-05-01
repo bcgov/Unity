@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
-using Unity.GrantManager.GrantApplications;
 using Unity.Payments.Suppliers;
 using Unity.Payments.BatchPaymentRequests;
-using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Unity.Payments.PaymentConfigurations;
+using Unity.GrantManager.GrantApplications;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Unity.Payment.Shared;
+using System.Text.Json;
 
 namespace Unity.Payments.Web.Pages.BatchPayments
 {
@@ -23,6 +24,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         public List<Guid> SelectedApplicationIds { get; set; }
 
         private readonly IGrantApplicationAppService _applicationService;
+
         private readonly IBatchPaymentRequestAppService _batchPaymentRequestService;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
         private readonly ISupplierAppService _iSupplierAppService;
@@ -41,7 +43,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
 
         public async Task OnGetAsync(string applicationIds)
         {
-            SelectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(applicationIds) ?? new List<Guid>();
+            SelectedApplicationIds = JsonSerializer.Deserialize<List<Guid>>(applicationIds) ?? [];
             var applications = await _applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
 
             foreach (var application in applications)
@@ -86,8 +88,8 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                 ApplicationPaymentRequestForm!.Add(request);
             }
 
-			var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
-            PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentConsts.DefaultThresholdAmount;
+            var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
+            PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
         }
 
         public async Task<IActionResult> OnPostAsync()

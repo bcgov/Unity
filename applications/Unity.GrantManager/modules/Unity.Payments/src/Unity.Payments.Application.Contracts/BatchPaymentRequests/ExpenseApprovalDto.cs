@@ -7,7 +7,7 @@ namespace Unity.Payments.BatchPaymentRequests
     [Serializable]
     public class ExpenseApprovalDto : AuditedEntityDto<Guid>
     {
-        public ExpenseApprovalTypeDto Type { get; set; }
-        public ExpenseApprovalStatusDto Status { get; set; }
+        public ExpenseApprovalType Type { get; set; }
+        public ExpenseApprovalStatus Status { get; set; }
     }
 }
