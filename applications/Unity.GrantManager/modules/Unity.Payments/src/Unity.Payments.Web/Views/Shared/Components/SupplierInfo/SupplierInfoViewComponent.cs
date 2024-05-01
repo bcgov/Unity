@@ -6,6 +6,7 @@ using System;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Unity.Payments.Suppliers;
+using Unity.Modules.Shared.Correlation;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
@@ -27,13 +28,13 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
             var supplier = await _supplierService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
             {
                 CorrelationId = applicantId,
-                CorrelationProvider = "Applicant", // PaymentConsts.ApplicantCorrelationProvider
+                CorrelationProvider = CorrelationConsts.Applicant
             });
 
             return View(new SupplierInfoViewModel()
             {
                 SupplierCorrelationId = applicantId,
-                SupplierCorrelationProvider = "Applicant", // PaymentConsts.ApplicantCorrelationProvider,
+                SupplierCorrelationProvider = CorrelationConsts.Applicant,
                 SupplierId = supplier?.Id ?? Guid.Empty,
                 SupplierNumber = supplier?.Number?.ToString()
             });

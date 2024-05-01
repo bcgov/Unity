@@ -55,35 +55,23 @@ namespace Unity.Payments.BatchPaymentRequests
 
             var result = await _batchPaymentRequestsRepository.InsertAsync(newBatchPaymentRequest);
 
-            return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);                     
+            return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
         }
 
         public async Task<PagedResultDto<BatchPaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
-        {  try
-            {
-                var batchPayments = await _batchPaymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
-                var totalCount = await _batchPaymentRequestsRepository.GetCountAsync();
+        {
+            var batchPayments = await _batchPaymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
+            var totalCount = await _batchPaymentRequestsRepository.GetCountAsync();
 
-                return new PagedResultDto<BatchPaymentRequestDto>(totalCount, ObjectMapper.Map<List<BatchPaymentRequest>, List<BatchPaymentRequestDto>>(batchPayments));
-
-            }
-            catch (Exception ex)
-            {
-                var batchPayments = await _batchPaymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
-                var totalCount = await _batchPaymentRequestsRepository.GetCountAsync();
-
-                return new PagedResultDto<BatchPaymentRequestDto>(totalCount, ObjectMapper.Map<List<BatchPaymentRequest>, List<BatchPaymentRequestDto>>(batchPayments));
-
-            }
+            return new PagedResultDto<BatchPaymentRequestDto>(totalCount, ObjectMapper.Map<List<BatchPaymentRequest>, List<BatchPaymentRequestDto>>(batchPayments));
         }
 
-        public  async Task<PagedResultDto<PaymentRequestDto>> GetBatchPaymentListAsync(Guid Id)
+        public async Task<PagedResultDto<PaymentRequestDto>> GetBatchPaymentListAsync(Guid Id)
         {
             var batchPayments = await _batchPaymentRequestsRepository.GetAsync(Id);
             var totalCount = batchPayments.PaymentRequests.Count;
-              
-            return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(batchPayments.PaymentRequests.ToList()));
 
+            return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(batchPayments.PaymentRequests.ToList()));
         }
 
         protected virtual async Task<decimal> GetPaymentThresholdAsync()

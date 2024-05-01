@@ -1,6 +1,4 @@
 ﻿using AutoMapper;
-// using Unity.Payments.Domain.PaymentConfigurations;
-using Unity.Payments.PaymentConfigurations;
 
 namespace Unity.Payments.Web;
 
@@ -8,6 +6,6 @@ public class PaymentsWebAutoMapperProfile : Profile
 {
     public PaymentsWebAutoMapperProfile()
     {
-        // CreateMap<PaymentConfiguration, PaymentConfigurationDto>();
+        // Intentionally left blank
     }
 }
