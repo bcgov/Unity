@@ -17,8 +17,7 @@ public class PaymentsMenuContributor : IMenuContributor
         }
     }
 
-#pragma warning disable CA1822 // Mark members as static
-    private Task ConfigureMainMenuAsync(MenuConfigurationContext context)
+    private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         //Add main menu items.
         context.Menu.AddItem(
@@ -29,5 +28,4 @@ public class PaymentsMenuContributor : IMenuContributor
         ));
         return Task.CompletedTask;
     }
-#pragma warning restore CA1822 // Mark members as static
 }

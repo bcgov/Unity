@@ -25,13 +25,23 @@
         'community',
         'orgNumber',
         'orgBookStatus'];
-
+    let actionButtons = [
+        {
+            extend: 'csv',
+            text: 'Export',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            exportOptions: {
+                columns: ':visible:not(.notexport)',
+                orthogonal: 'fullName',
+            }
+        }
+    ];
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
         15,
         4,
-        unity.grantManager.grantApplications.grantApplication.getList, 'dynamicButtonContainerId');
+        unity.grantManager.grantApplications.grantApplication.getList, {}, actionButtons,'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 

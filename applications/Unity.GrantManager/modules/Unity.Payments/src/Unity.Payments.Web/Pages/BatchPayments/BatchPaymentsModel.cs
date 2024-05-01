@@ -24,5 +24,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         public string? ApplicantName { get; set; }
         public decimal PaymentThreshold { get; set; }
         public List<SelectListItem> SiteList { get; set; } = new List<SelectListItem>{};
+        public string? ContractNumber { get; set; }
+        public string? SupplierNumber { get; set; }
     }
 }

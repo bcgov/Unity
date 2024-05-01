@@ -25,6 +25,7 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Unity.GrantManager.Payments;
+using Unity.Payments.Domain.Suppliers;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -55,6 +56,7 @@ public class GrantApplicationAppService :
     private readonly IApplicationTagsRepository _applicationTagsRepository;
     private readonly ILocalEventBus _localEventBus;
     private readonly ISupplierAppService _supplierAppService;
+    private readonly ISupplierRepository _supplierRepository;
 
 
 #pragma warning disable IDE0290 // Use primary constructor
@@ -73,7 +75,8 @@ public class GrantApplicationAppService :
         IApplicantAgentRepository applicantAgentRepository,
         IApplicationTagsRepository applicationTagsRepository,
         ILocalEventBus localEventBus,
-        SupplierAppService supplierInfoAppService
+        SupplierAppService supplierInfoAppService,
+        ISupplierRepository supplierRepository
         )
          : base(repository)
     {
@@ -91,6 +94,7 @@ public class GrantApplicationAppService :
         _applicationTagsRepository = applicationTagsRepository;
         _localEventBus = localEventBus;
         _supplierAppService = supplierInfoAppService;
+        _supplierRepository = supplierRepository;
     }
 
     public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -114,6 +118,9 @@ public class GrantApplicationAppService :
 
                     join contact in await _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
                     from applicantAgent in contacts.DefaultIfEmpty()
+
+                    //join supplier in await _supplierRepository.GetQueryableAsync() on application.ApplicantId equals supplier.ApplicantId into su
+                    //from applicantAgent in contacts.DefaultIfEmpty()
 
                     select new
                     {

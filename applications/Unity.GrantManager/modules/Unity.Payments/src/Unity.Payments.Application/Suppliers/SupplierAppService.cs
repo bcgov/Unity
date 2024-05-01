@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Unity.Payments.Enums;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Features;
+using Unity.Payments.Domain.Suppliers;
 
 namespace Unity.Payments.Suppliers
 {
@@ -71,7 +71,7 @@ namespace Unity.Payments.Suppliers
             var updateSupplier = supplier.AddSite(new Site(
                 newId,
                 createSiteDto.Number,
-                (PaymentGroup)createSiteDto.PaymentGroup,
+                createSiteDto.PaymentGroup,
                 createSiteDto.AddressLine1,
                 createSiteDto.AddressLine2,
                 createSiteDto.AddressLine3,
@@ -88,7 +88,7 @@ namespace Unity.Payments.Suppliers
 
             var updateSupplier = supplier.UpdateSite(siteId,
                 updateSiteDto.Number,
-                (PaymentGroup)updateSiteDto.PaymentGroup,
+                updateSiteDto.PaymentGroup,
                 updateSiteDto.AddressLine1,
                 updateSiteDto.AddressLine2,
                 updateSiteDto.AddressLine3,

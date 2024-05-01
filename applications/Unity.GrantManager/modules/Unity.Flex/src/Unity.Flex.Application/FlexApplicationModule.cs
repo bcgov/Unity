@@ -4,23 +4,20 @@ using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Volo.Abp.Domain;
 using Volo.Abp.Validation;
-using Volo.Abp.Localization.ExceptionHandling;
-using Volo.Abp.Localization;
-using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
-using Localization.Resources.AbpUi;
 using Unity.Flex.EntityFrameworkCore;
-using Unity.Flex.Localization;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex;
 
-[DependsOn(
-    typeof(FlexApplicationContractsModule),
+[DependsOn(    
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
     typeof(AbpValidationModule),
-    typeof(AbpDddDomainSharedModule)
+    typeof(AbpDddDomainSharedModule),
+    typeof(AbpVirtualFileSystemModule),
+    typeof(FlexApplicationContractsModule)
     )]
 public class FlexApplicationModule : AbpModule
 {
@@ -34,30 +31,15 @@ public class FlexApplicationModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        Configure<AbpMultiTenancyOptions>(options =>
+        {
+            options.IsEnabled = true;
+        });
+
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
             options.FileSets.AddEmbedded<FlexApplicationModule>();
-        });
-
-        Configure<AbpLocalizationOptions>(options =>
-        {
-            options.Resources
-                .Add<FlexResource>("en")
-                .AddBaseTypes(typeof(AbpValidationResource))
-                .AddVirtualJson("/Localization/Flex");
-        });
-
-        Configure<AbpLocalizationOptions>(options =>
-        {
-            options.Resources
-                .Get<FlexResource>()
-                .AddBaseTypes(typeof(AbpUiResource));
-        });
-
-        Configure<AbpExceptionLocalizationOptions>(options =>
-        {
-            options.MapCodeNamespace("Flex", typeof(FlexResource));
-        });
+        });       
 
         context.Services.AddAutoMapperObjectMapper<FlexApplicationModule>();
         Configure<AbpAutoMapperOptions>(options =>
@@ -78,13 +60,8 @@ public class FlexApplicationModule : AbpModule
         context.Services.AddAssemblyOf<FlexApplicationModule>();
 
         context.Services.AddAbpDbContext<FlexDbContext>(options =>
-#pragma warning disable S125 // Sections of code should not be commented out
         {
-            /* Add custom repositories here. Example:
-             * options.AddRepository<Question, EfCoreQuestionRepository>();
-             */
-        }
-#pragma warning restore S125 // Sections of code should not be commented out
-);
+            /* Add custom repositories here. */
+        });
     }
 }

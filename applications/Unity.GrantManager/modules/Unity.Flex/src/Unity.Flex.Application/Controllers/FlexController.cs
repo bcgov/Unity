@@ -1,7 +1,7 @@
 ﻿using Unity.Flex.Localization;
 using Volo.Abp.AspNetCore.Mvc;
 
-namespace Unity.Flex.HttpApi;
+namespace Unity.Flex.Controllers;
 
 public abstract class FlexController : AbpControllerBase
 {

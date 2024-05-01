@@ -7,7 +7,7 @@ namespace Unity.Payments.Suppliers
     public class UpsertSiteDtoBase
     {
         public string Number { get; set; } = null!;
-        public PaymentGroupDto PaymentGroup { get; set; }
+        public PaymentGroup PaymentGroup { get; set; }
         public string? AddressLine1 { get; set; }
         public string? AddressLine2 { get; set; }
         public string? AddressLine3 { get; set; }

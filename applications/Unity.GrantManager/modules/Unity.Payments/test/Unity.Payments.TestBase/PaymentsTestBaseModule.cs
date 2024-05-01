@@ -11,8 +11,7 @@ namespace Unity.Payments;
 [DependsOn(
     typeof(AbpAutofacModule),
     typeof(AbpTestBaseModule),
-    typeof(AbpAuthorizationModule),
-    typeof(PaymentsDomainModule)
+    typeof(AbpAuthorizationModule)    
     )]
 public class PaymentsTestBaseModule : AbpModule
 {
