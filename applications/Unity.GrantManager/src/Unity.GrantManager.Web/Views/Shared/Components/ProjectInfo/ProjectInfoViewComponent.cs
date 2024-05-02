@@ -144,6 +144,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 RegionalDistrict = application.RegionalDistrict,
                 ContractNumber = application.ContractNumber,
                 ContractExecutionDate = application.ContractExecutionDate,
+                Place = application.Place,
             };
 
             return View(model);

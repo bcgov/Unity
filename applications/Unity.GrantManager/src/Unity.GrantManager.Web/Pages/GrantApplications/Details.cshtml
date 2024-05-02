@@ -31,6 +31,9 @@
     <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
 }
 
+<div id="applicationBreadcrumbWidget">
+    @await Component.InvokeAsync("ApplicationBreadcrumbWidget", new { applicationId = @Model.ApplicationId })
+</div>
 @await Component.InvokeAsync(typeof(DetailsActionBar), new { applicationId = @Model.ApplicationId })
 
 <input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />

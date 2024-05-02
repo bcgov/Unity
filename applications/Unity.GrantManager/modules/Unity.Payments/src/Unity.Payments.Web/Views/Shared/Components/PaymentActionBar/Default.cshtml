@@ -4,20 +4,21 @@
     </div>
 
     <div class="btn-group" id="app_custom_buttons">
+  
+
+        <abp-button id="viewBatchPaymentDetails"
+                    text="Open"
+                    data-selector="batch-payment-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                    button-type="Secondary" />
         <abp-button id="btn-toggle-filter"
                     text="Filter"
                     class="custom-table-btn flex-none btn btn-secondary"
                     button-type="Secondary" />
     </div>
 
-    <div id="dynamicButtonContainerId">
+    <div id="dynamicButtonContainerId" class="dynamic-buttons-div">
 
-        <abp-row>
-            <abp-column class="spinner-loader">
-                <div class="spinner-grow" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-            </abp-column>
-        </abp-row>
+       
     </div>
 </div>

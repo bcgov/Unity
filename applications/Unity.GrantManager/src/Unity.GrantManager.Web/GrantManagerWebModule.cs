@@ -63,6 +63,7 @@ using Unity.Payments.Web;
 using Unity.Payments;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+using Unity.Flex.Web;
 
 namespace Unity.GrantManager.Web;
 
@@ -79,11 +80,12 @@ namespace Unity.GrantManager.Web;
     typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
     typeof(UnitydentityWebModule),
     typeof(AbpBlobStoringModule),
-    typeof(PaymentsWebModule)
+    typeof(PaymentsWebModule),
+    typeof(AbpBlobStoringModule),
+    typeof(NotificationsWebModule),
+    typeof(FlexWebModule)
 )]
-[DependsOn(typeof(AbpBlobStoringModule))]
-[DependsOn(typeof(NotificationsWebModule))]
-    public class GrantManagerWebModule : AbpModule
+public class GrantManagerWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -167,7 +169,7 @@ namespace Unity.GrantManager.Web;
                 )
             );
         });
-        
+
         Configure<AbpSecurityLogOptions>(x =>
         {
             x.ApplicationName = "GrantManager";

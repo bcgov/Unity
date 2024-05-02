@@ -13,19 +13,30 @@ $(function () {
         'l1ApprovalDate',
         'l2ApprovalDate',
         'paidOn'];
-
+    let actionButtons = [
+        {
+            extend: 'csv',
+            text: 'Export',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            exportOptions: {
+                columns: ':visible:not(.notexport)',
+                orthogonal: 'fullName',
+            }
+        }
+    ];
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 4, unity.payments.batchPaymentRequests.batchPaymentRequest.getList, 'dynamicButtonContainerId');
+        listColumns, 15, 4, unity.payments.batchPaymentRequests.batchPaymentRequest.getList, {}, actionButtons, 'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'select_payment_application');
+        selectApplication(type, indexes, 'select_batchpayment_application');
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'deselect_payment_application');
+        selectApplication(type, indexes, 'deselect_batchpayment_application');
+    
     });
 
     function selectApplication(type, indexes, action) {
@@ -181,4 +192,5 @@ $(function () {
             PubSub.publish('clear_payment_application');
         }
     );
+
 });

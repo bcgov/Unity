@@ -1,5 +1,5 @@
 ﻿using System;
-using Unity.Payments.Shared;
+using Unity.Modules.Shared.Correlation;
 
 namespace Unity.Payments.Suppliers
 {
