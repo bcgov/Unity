@@ -10,7 +10,19 @@
 
 
 .application-dashboard-dropdown {
-    min-width: 200px;
+    min-width: 250px;
     margin-top: 10px;
 }
 
+.dashboard-scrollable-content {
+    overflow-y: scroll;
+    height: calc(100vh - 120px);
+}
+
+.button-align-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+    
