@@ -102,42 +102,44 @@ $(function () {
     function addEventListeners() {
         // Get all the card headers
         const cardHeaders = document.querySelectorAll('.card-header:not(.card-body .card-header)');
+        if (cardHeaders.length) {
+            cardHeaders.forEach((header) => {
+                header.addEventListener('click', function () {
+                    // Toggle the display of the corresponding card body
 
-        // Add click event listeners to each card header
-        cardHeaders.forEach((header) => {
-            header.addEventListener('click', function () {
-                // Toggle the display of the corresponding card body
+                    const cardBody = this.nextElementSibling;
+                    if (
+                        cardBody.style.display === 'none' ||
+                        cardBody.style.display === ''
+                    ) {
+                        cardBody.style.display = 'block';
+                        header.classList.add('custom-active');
 
-                const cardBody = this.nextElementSibling;
-                if (
-                    cardBody.style.display === 'none' ||
-                    cardBody.style.display === ''
-                ) {
-                    cardBody.style.display = 'block';
-                    header.classList.add('custom-active');
 
-                  
-                } else {
-                    cardBody.style.display = 'none';
-                    header.classList.remove('custom-active');
-                }
-
-                // Hide all other card bodies except the one that is being clicked
-                cardHeaders.forEach((otherHeader) => {
-                    if (otherHeader !== header) {
-                        const otherCardBody = otherHeader.nextElementSibling;
-                        otherCardBody.style.display = 'none';
-                        otherHeader.classList.remove('custom-active');
+                    } else {
+                        cardBody.style.display = 'none';
+                        header.classList.remove('custom-active');
                     }
+
+                    // Hide all other card bodies except the one that is being clicked
+                    cardHeaders.forEach((otherHeader) => {
+                        if (otherHeader !== header) {
+                            const otherCardBody = otherHeader.nextElementSibling;
+                            otherCardBody.style.display = 'none';
+                            otherHeader.classList.remove('custom-active');
+                        }
+                    });
                 });
             });
-        });
 
-        // Collapse all card bodies initially
-        const cardBodies = document.querySelectorAll('.card-body:not(.card-body .card-body)');
-        cardBodies.forEach((body) => {
-            body.style.display = 'none';
-        });
+            // Collapse all card bodies initially
+            const cardBodies = document.querySelectorAll('.card-body:not(.card-body .card-body)');
+            cardBodies.forEach((body) => {
+                body.style.display = 'none';
+            });
+        }
+        // Add click event listeners to each card header
+       
     }
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
