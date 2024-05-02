@@ -357,10 +357,16 @@
         return {
             title: 'Org Book Status',
             name: 'orgBookStatus',
-            data: 'orgBookStatus',
+            data: 'applicant.orgStatus',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Org Book Status}';
+                if (data != null && data == 'ACTIVE') {
+                    return 'Active';
+                } else if (data != null && data == 'HISTORICAL') {
+                    return 'Historical';
+                } else {
+                    return data ?? '{Org Book Status}';
+                }  
             },
             index: 17
         }
