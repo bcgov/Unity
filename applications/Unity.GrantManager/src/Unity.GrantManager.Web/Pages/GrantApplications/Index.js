@@ -356,7 +356,7 @@
     function getOrgBookStatusColumn() {
         return {
             title: 'Org Book Status',
-            name: 'orgStatus',
+            name: 'orgBookStatus',
             data: 'applicant.orgStatus',
             className: 'data-table-header',
             render: function (data) {
