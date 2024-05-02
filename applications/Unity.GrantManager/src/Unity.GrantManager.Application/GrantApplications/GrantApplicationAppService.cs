@@ -53,6 +53,7 @@ public class GrantApplicationAppService :
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
+    private readonly IApplicationAddressRepository _applicationAddressRepository;
     private readonly ILocalEventBus _localEventBus;
     private readonly ISupplierAppService _supplierAppService;
 
@@ -72,6 +73,7 @@ public class GrantApplicationAppService :
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
         IApplicationTagsRepository applicationTagsRepository,
+        IApplicationAddressRepository applicationAddressRepository,
         ILocalEventBus localEventBus,
         SupplierAppService supplierInfoAppService
         )
@@ -89,6 +91,7 @@ public class GrantApplicationAppService :
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
+        _applicationAddressRepository = applicationAddressRepository;
         _localEventBus = localEventBus;
         _supplierAppService = supplierInfoAppService;
     }
@@ -226,12 +229,14 @@ public class GrantApplicationAppService :
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    join address in await _applicationAddressRepository.GetQueryableAsync() on id equals address.ApplicationId into addresses
                     where application.Id == id
                     select new
                     {
                         application,
                         applicant,
-                        appStatus
+                        appStatus,
+                        addresses
                     };
 
         var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
@@ -265,6 +270,11 @@ public class GrantApplicationAppService :
                 appDto.OrganizationType = appDto.Applicant.OrganizationType;
                 appDto.SubSector = appDto.Applicant.SubSector;
                 appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
+            }
+
+            foreach (ApplicationAddress item in queryResult.addresses)
+            {
+                appDto.ApplicationAddresses.Add(ObjectMapper.Map<ApplicationAddress, ApplicationAddressDto>(item));
             }
 
             return appDto;
@@ -446,6 +456,60 @@ public class GrantApplicationAppService :
                 applicantAgent.Email = input.ContactEmail ?? "";
                 applicantAgent.Title = input.ContactTitle ?? "";
                 applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
+            }
+
+            ApplicationAddressDto physicalAddress = new ApplicationAddressDto
+            {
+                ApplicationId = application.Id,
+                AddressType = ApplicationAddressType.PHYSICAL_ADDRESS,
+                Street = input.PhysicalAddressStreet ?? "",
+                Unit = input.PhysicalAddressUnit ?? "",
+                City = input.PhysicalAddressCity ?? "",
+                Province = input.PhysicalAddressProvince ?? "",
+                Postal = input.PhysicalAddressPostalCode ?? ""
+            };
+            ApplicationAddressDto mailingAddress = new ApplicationAddressDto
+            {
+                ApplicationId = application.Id,
+                AddressType = ApplicationAddressType.MAILING_ADDRESS,
+                Street = input.MailingAddressStreet ?? "",
+                Unit = input.MailingAddressUnit ?? "",
+                City = input.MailingAddressCity ?? "",
+                Province = input.MailingAddressProvince ?? "",
+                Postal = input.MailingAddressPostalCode ?? ""
+            };
+
+            List<ApplicationAddress> applicationAddresses = await _applicationAddressRepository.GetListAsync(address => address.ApplicationId == application.Id);
+
+            if (applicationAddresses.Count > 0)
+            {
+                ApplicationAddress physicalAddressDb = applicationAddresses.First(address => address.AddressType == ApplicationAddressType.PHYSICAL_ADDRESS);
+                if (physicalAddressDb != null)
+                {
+                    physicalAddress.Id = physicalAddressDb.Id;
+                    physicalAddressDb = ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(physicalAddress);
+                    await _applicationAddressRepository.UpdateAsync(physicalAddressDb);
+                }
+                else
+                {
+                    await _applicationAddressRepository.InsertAsync(ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(physicalAddress));
+                }
+                ApplicationAddress mailingAddressDb = applicationAddresses.First(address => address.AddressType == ApplicationAddressType.MAILING_ADDRESS);
+                if (mailingAddressDb != null)
+                {
+                    mailingAddress.Id = mailingAddressDb.Id;
+                    mailingAddressDb = ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(mailingAddress);
+                    await _applicationAddressRepository.UpdateAsync(mailingAddressDb);
+                }
+                else
+                {
+                    await _applicationAddressRepository.InsertAsync(ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(mailingAddress));
+                }
+            }
+            else
+            {
+                await _applicationAddressRepository.InsertAsync(ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(physicalAddress));
+                await _applicationAddressRepository.InsertAsync(ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(mailingAddress));
             }
 
             application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";

@@ -76,4 +76,15 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? SigningAuthorityCellPhone { get; set; }
     public string? ContractNumber { get; set; }
     public DateTime? ContractExecutionDate { get; set; }
+    public string? PhysicalAddressStreet { get; set; }
+    public string? PhysicalAddressUnit { get; set; }
+    public string? PhysicalAddressCity { get; set; }
+    public string? PhysicalAddressProvince { get; set; }
+    public string? PhysicalAddressPostalCode { get; set; }
+    public string? MailingAddressStreet { get; set; }
+    public string? MailingAddressUnit { get; set; }
+    public string? MailingAddressCity { get; set; }
+    public string? MailingAddressProvince { get; set; }
+    public string? MailingAddressPostalCode { get; set; }
+    public List<ApplicationAddressDto> ApplicationAddresses { get; set; } = new List<ApplicationAddressDto>();
 }
