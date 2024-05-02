@@ -187,49 +187,47 @@ $('#dashboardIntakeId').change(function () {
             selected: 'selected'
         }));
     });
-    childDropdown.multiselect('rebuild');
-    highlightSelected(); 
+    highlightSelected('dashboardCategoryName', 'CATEGORIES');
     reloadDashboard();
 });
 
-function highlightSelected() {
-    $('.multiselect-container li.active a').addClass('dt-button-active');
-    $('.multiselect-container li:not(.active) a').removeClass('dt-button-active');
+function highlightSelected(dropdownId,title) {
+    $('#' + dropdownId + ' option:selected').addClass('dt-button-active');
+    $('#' + dropdownId + ' option:not(:selected)').removeClass('dt-button-active');
+    $('#' + dropdownId).selectpicker('refresh');
+    $('#' + dropdownId).closest('.bootstrap-select').find('.btn .filter-option-inner-inner').html(title);
+    $('#' + dropdownId).closest('.bootstrap-select').find('.btn').removeClass('bs-placeholder');
+}
+
+function initDropdown(dropdownId, title) {
+    $('#' + dropdownId).selectpicker();
+    $('#' + dropdownId).closest('.bootstrap-select').find('.btn .filter-option-inner-inner').html(title);
+    $('#' + dropdownId).closest('.bootstrap-select').find('.btn .filter-option').addClass('button-align-center');
 }
 
 $(function () {
 
-    let intakeOptions = generateMultiSelectOptions('INTAKES');
-    $('#dashboardIntakeId').multiselect(intakeOptions);
+    initDropdown('dashboardIntakeId', 'INTAKES');
+    initDropdown('dashboardCategoryName', 'CATEGORIES');
+    initDropdown('dashboardStatuses', 'STATUS');
+    initDropdown('dashboardSubStatus', 'SUB-STATUS');
 
-    let categoryOptions = generateMultiSelectOptions('CATEGORIES');
-    $('#dashboardCategoryName').multiselect(categoryOptions);
-
-    let statusOptions = generateMultiSelectOptions('STATUS');
-    $('#dashboardStatuses').multiselect(statusOptions);
-
-    let subStatusOptions = generateMultiSelectOptions('SUB-STATUS');
-    $('#dashboardSubStatus').multiselect(subStatusOptions);
-
-    $('#dashboardIntakeId, #dashboardCategoryName, #dashboardStatuses, #dashboardSubStatus').on('change', function () {
-        highlightSelected();
+    highlightSelected('dashboardIntakeId', 'INTAKES');
+    highlightSelected('dashboardCategoryName', 'CATEGORIES');
+    highlightSelected('dashboardStatuses', 'STATUS');
+    highlightSelected('dashboardSubStatus', 'SUB-STATUS');
+    
+    $('#dashboardIntakeId').change(function () {
+        highlightSelected('dashboardIntakeId', 'INTAKES');
+    });
+    $('#dashboardCategoryName').change(function () {
+        highlightSelected('dashboardCategoryName', 'CATEGORIES');
+    });
+    $('#dashboardStatuses').change(function () {
+        highlightSelected('dashboardStatuses', 'STATUS');
+    });
+    $('#dashboardSubStatus').change(function () {
+        highlightSelected('dashboardSubStatus', 'SUB-STATUS');
     });
 
-    function generateMultiSelectOptions(buttonLabel) {
-        return {
-            includeSelectAllOption: false,
-            buttonClass: 'btn btn-group dt-buttons btn-secondary buttons-collection dropdown-toggle custom-table-btn flex-none',
-            buttonWidth: '100%',
-            templates: {
-                button: `<button type="button" style="font-weight:700;font-size:18px;text-align:center;display:flex;justify-content:center;align-items:center;" data-toggle="dropdown"><span>${buttonLabel}</span></button>`,
-                ul: '<ul class="multiselect-container dropdown-menu"></ul>', // Right-aligned dropdown menu
-
-                li: '<li><a class="dt-button dropdown-item buttons-columnVisibility" href="#"><label></label></a></li>'
-            }
-        };
-    }
-
-    
-
-    highlightSelected();
 });

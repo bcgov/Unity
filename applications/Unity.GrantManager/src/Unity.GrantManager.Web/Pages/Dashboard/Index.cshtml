@@ -4,17 +4,16 @@
 
 @section styles {
     <abp-style src="/Pages/Dashboard/Index.css" />
-    <abp-style src="/libs/bootstrap-multiselect/dist/css/bootstrap-multiselect.css" />
     <abp-style src="/libs/bootstrap/css/bootstrap.css" />
+    <abp-style src="/libs/bootstrap-select/dist/css/bootstrap-select.css" />
 }
 @section scripts
 {
+    <abp-script src="/Pages/Dashboard/Index.js" />
     <abp-script src="/libs/jquery/jquery.js" />
     <abp-script src="/libs/popper.js/dist/umd/popper.js"></abp-script>
-    <abp-script src="/Pages/Dashboard/Index.js" />
     <abp-script src="/libs/bootstrap-4/dist/js/bootstrap.js"></abp-script>
-    <abp-script src="/libs/bootstrap-multiselect/dist/js/bootstrap-multiselect.js"></abp-script>
-   
+    <abp-script src="/libs/bootstrap-select/dist/js/bootstrap-select.js"></abp-script>
 }
 <div class="dashboard-scrollable-content">
 
@@ -22,21 +21,21 @@
 <div class="d-flex align-items-stretch gap-2">
     <abp-row class="m-0 p-0">
         <abp-column size="_3" class="px-1 application-dashboard-dropdown">
-            <abp-select asp-for="@Model.IntakeIds" asp-items="@Model.IntakeOptionsList" id="dashboardIntakeId" multiple>
+                <abp-select asp-for="@Model.IntakeIds" asp-items="@Model.IntakeOptionsList" id="dashboardIntakeId" multiple title="INTAKES" data-original-text="INTAKES" data-checkbox="false" data-live-search="true" data-style="btn btn-group dt-buttons btn-secondary buttons-collection dropdown-toggle custom-table-btn flex-none">
             </abp-select>
         </abp-column>
         <abp-column size="_3" class="px-1 application-dashboard-dropdown">
-            <abp-select asp-for="@Model.CategoryNames" asp-items="@Model.CategoryOptionsList" id="dashboardCategoryName" multiple
+                <abp-select asp-for="@Model.CategoryNames" asp-items="@Model.CategoryOptionsList" id="dashboardCategoryName" multiple title="CATEGORIES" data-original-text="CATEGORIES" data-live-search="true" data-style="btn btn-group dt-buttons btn-secondary buttons-collection dropdown-toggle custom-table-btn flex-none"
                         onchange="reloadDashboard()">
             </abp-select>
         </abp-column>
         <abp-column size="_3" class="px-1 application-dashboard-dropdown">
-            <abp-select asp-for="@Model.Statuses" asp-items="@Model.StatusOptionsList" id="dashboardStatuses" multiple
+                <abp-select asp-for="@Model.Statuses" asp-items="@Model.StatusOptionsList" id="dashboardStatuses" multiple title="STATUS" data-original-text="STATUS" data-live-search="true" data-style="btn btn-group dt-buttons btn-secondary buttons-collection dropdown-toggle custom-table-btn flex-none"
                         onchange="reloadDashboard()">
             </abp-select>
         </abp-column>
         <abp-column size="_3" class="px-1 application-dashboard-dropdown">
-            <abp-select asp-for="@Model.SubStatuses" asp-items="@Model.SubStatusActionList" id="dashboardSubStatus" multiple
+                <abp-select asp-for="@Model.SubStatuses" asp-items="@Model.SubStatusActionList" id="dashboardSubStatus" multiple title="SUB-STATUS" data-original-text="SUB-STATUS" data-live-search="true" data-style="btn btn-group dt-buttons btn-secondary buttons-collection dropdown-toggle custom-table-btn flex-none"
                         onchange="reloadDashboard()">
             </abp-select>
         </abp-column>

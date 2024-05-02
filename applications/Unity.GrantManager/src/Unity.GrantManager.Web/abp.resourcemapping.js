@@ -24,7 +24,7 @@ module.exports = {
         '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',        
         "@node_modules/echarts/dist/echarts.min.js": "@libs/echarts/",
         '@node_modules/bootstrap-4/dist': '@libs/bootstrap-4/dist/',
-        '@node_modules/bootstrap-multiselect/dist': '@libs/bootstrap-multiselect/dist',
-        '@node_modules/popper.js/dist': '@libs/popper.js/dist/'
+        '@node_modules/popper.js/dist': '@libs/popper.js/dist/',
+        '@node_modules/bootstrap-select/dist': '@libs/bootstrap-select/dist'
     },
 };

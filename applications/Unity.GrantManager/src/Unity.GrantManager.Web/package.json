@@ -7,7 +7,7 @@
     "@abp/font-awesome": "^8.1.0",
     "axios": "^1.4.0",
     "bootstrap-4": "npm:bootstrap@^4.4.1",
-    "bootstrap-multiselect": "^0.9.13",
+    "bootstrap-select": "^1.13.18",
     "datatables.net-bs5": "^1.13.6",
     "datatables.net-buttons-bs5": "^2.4.2",
     "datatables.net-colreorder": "^1.7.0",
@@ -20,6 +20,7 @@
     "html2canvas": "^1.4.1",
     "jquery-maskmoney": "^3.0.2",
     "jspdf": "^2.5.1",
+    "popper.js": "^1.16.1",
     "pubsub-js": "^1.9.4"
   },
   "devDependencies": {

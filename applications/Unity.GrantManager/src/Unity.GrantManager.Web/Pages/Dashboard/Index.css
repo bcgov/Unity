@@ -14,54 +14,15 @@
     margin-top: 10px;
 }
 
-.multiselect-container label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center; 
-}
- 
-.multiselect-container input[type="checkbox"] {
-    display: none;
-}
-
-.multiselect-container label::before {
-    content: '';
-    display: inline-block;
-    width: 16px; 
-    height: 16px; 
-    background-color: transparent; 
-    border: none; 
-    cursor: pointer;
-}
-
-.multiselect-container label::after {
-    content: '\2714'; 
-    font-size: 12px; 
-    color: #000; 
-    opacity: 0; 
-}
-
-.multiselect-container li.active label::after {
-    opacity: 1;
-}
-
-.multiselect-container li.active a {
-    color: black !important; 
-}
-
-.multiselect-container li {
-    list-style: none; 
-}
-
-.multiselect-container li span {
-    display: inline-block; 
-    margin-right: 10px; 
-    text-align: left; 
-}
-
 .dashboard-scrollable-content {
     overflow-y: scroll;
     height: calc(100vh - 120px);
+}
+
+.button-align-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
     
