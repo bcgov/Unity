@@ -429,7 +429,7 @@
             data: 'totalPaidAmount',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return '$0.00';
+                return '';
             },
             index: 22
         }
