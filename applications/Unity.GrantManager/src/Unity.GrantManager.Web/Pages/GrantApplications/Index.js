@@ -4,7 +4,6 @@
     let dt = $('#GrantApplicationsTable');
     let dataTable;
 
-    debugger;
     let x = unity;
 
     const listColumns = getColumns();
@@ -426,11 +425,11 @@
     function getTotalPaidAmountColumn() {
         return {
             title: 'Total Paid Amount $',
-            name: 'projectFundingTotal',
-            data: 'projectFundingTotal',
+            name: 'totalPaidAmount',
+            data: 'totalPaidAmount',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return formatter.format(data) ?? '{Total Paid Amount $}';
+                return '';
             },
             index: 22
         }
