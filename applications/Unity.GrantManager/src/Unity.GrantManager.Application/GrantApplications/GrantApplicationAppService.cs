@@ -57,7 +57,6 @@ public class GrantApplicationAppService :
     private readonly ILocalEventBus _localEventBus;
     private readonly ISupplierAppService _supplierAppService;
 
-
 #pragma warning disable IDE0290 // Use primary constructor
     public GrantApplicationAppService(IRepository<Application, Guid> repository,
 #pragma warning restore IDE0290 // Use primary constructor
@@ -435,6 +434,7 @@ public class GrantApplicationAppService :
             await UpsertSupplierAsync(input.SupplierNumber, input.ApplicantId);
 
             var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
+
             if (applicantAgent == null)
             {
                 applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
@@ -458,59 +458,7 @@ public class GrantApplicationAppService :
                 applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
             }
 
-            ApplicationAddressDto physicalAddress = new ApplicationAddressDto
-            {
-                ApplicationId = application.Id,
-                AddressType = ApplicationAddressType.PHYSICAL_ADDRESS,
-                Street = input.PhysicalAddressStreet ?? "",
-                Unit = input.PhysicalAddressUnit ?? "",
-                City = input.PhysicalAddressCity ?? "",
-                Province = input.PhysicalAddressProvince ?? "",
-                Postal = input.PhysicalAddressPostalCode ?? ""
-            };
-            ApplicationAddressDto mailingAddress = new ApplicationAddressDto
-            {
-                ApplicationId = application.Id,
-                AddressType = ApplicationAddressType.MAILING_ADDRESS,
-                Street = input.MailingAddressStreet ?? "",
-                Unit = input.MailingAddressUnit ?? "",
-                City = input.MailingAddressCity ?? "",
-                Province = input.MailingAddressProvince ?? "",
-                Postal = input.MailingAddressPostalCode ?? ""
-            };
-
-            List<ApplicationAddress> applicationAddresses = await _applicationAddressRepository.GetListAsync(address => address.ApplicationId == application.Id);
-
-            if (applicationAddresses.Count > 0)
-            {
-                ApplicationAddress physicalAddressDb = applicationAddresses.First(address => address.AddressType == ApplicationAddressType.PHYSICAL_ADDRESS);
-                if (physicalAddressDb != null)
-                {
-                    physicalAddress.Id = physicalAddressDb.Id;
-                    physicalAddressDb = ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(physicalAddress);
-                    await _applicationAddressRepository.UpdateAsync(physicalAddressDb);
-                }
-                else
-                {
-                    await _applicationAddressRepository.InsertAsync(ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(physicalAddress));
-                }
-                ApplicationAddress mailingAddressDb = applicationAddresses.First(address => address.AddressType == ApplicationAddressType.MAILING_ADDRESS);
-                if (mailingAddressDb != null)
-                {
-                    mailingAddress.Id = mailingAddressDb.Id;
-                    mailingAddressDb = ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(mailingAddress);
-                    await _applicationAddressRepository.UpdateAsync(mailingAddressDb);
-                }
-                else
-                {
-                    await _applicationAddressRepository.InsertAsync(ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(mailingAddress));
-                }
-            }
-            else
-            {
-                await _applicationAddressRepository.InsertAsync(ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(physicalAddress));
-                await _applicationAddressRepository.InsertAsync(ObjectMapper.Map<ApplicationAddressDto, ApplicationAddress>(mailingAddress));
-            }
+            await UpdateApplicationAddresses(input, application);
 
             application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
             application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
@@ -534,6 +482,62 @@ public class GrantApplicationAppService :
         {
             throw new EntityNotFoundException();
         }
+    }
+
+    protected virtual async Task UpdateApplicationAddresses(CreateUpdateApplicantInfoDto input, Application application)
+    {
+        var applicationAddresses = await _applicationAddressRepository.GetListAsync(address => address.ApplicationId == application.Id);
+        await UpsertAddress(input, applicationAddresses, ApplicationAddressType.MAILING_ADDRESS, application.Id);
+        await UpsertAddress(input, applicationAddresses, ApplicationAddressType.PHYSICAL_ADDRESS, application.Id);
+    }
+
+    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicationAddress> applicationAddresses, string addressType, Guid applicationId)
+    {
+        ApplicationAddress? dbAddress = applicationAddresses.Find(address => address.AddressType == addressType);
+
+        if (dbAddress != null)
+        {
+            MapApplicationAddress(input, addressType, dbAddress);
+            await _applicationAddressRepository.UpdateAsync(dbAddress);
+        }
+        else
+        {
+            var newAddress = new ApplicationAddress() { AddressType = addressType, ApplicationId = applicationId };
+            MapApplicationAddress(input, addressType, newAddress);
+            await _applicationAddressRepository.InsertAsync(newAddress);
+        }
+    }
+
+    private static void MapApplicationAddress(CreateUpdateApplicantInfoDto input, string addressType, ApplicationAddress address)
+    {
+        switch (addressType)
+        {
+            case ApplicationAddressType.MAILING_ADDRESS:
+                MapApplicationMailingAddress(input, address);
+                break;
+            case ApplicationAddressType.PHYSICAL_ADDRESS:
+                MapApplicationPhysicalAddress(input, address);
+                break;
+        }
+    }
+
+
+    private static void MapApplicationMailingAddress(CreateUpdateApplicantInfoDto input, ApplicationAddress mailingAddress)
+    {
+        mailingAddress.Street = input.MailingAddressStreet ?? "";
+        mailingAddress.Unit = input.MailingAddressUnit ?? "";
+        mailingAddress.City = input.MailingAddressCity ?? "";
+        mailingAddress.Province = input.MailingAddressProvince ?? "";
+        mailingAddress.Postal = input.MailingAddressPostalCode ?? "";
+    }
+
+    private static void MapApplicationPhysicalAddress(CreateUpdateApplicantInfoDto input, ApplicationAddress physicalAddress)
+    {
+        physicalAddress.Street = input.PhysicalAddressStreet ?? "";
+        physicalAddress.Unit = input.PhysicalAddressUnit ?? "";
+        physicalAddress.City = input.PhysicalAddressCity ?? "";
+        physicalAddress.Province = input.PhysicalAddressProvince ?? "";
+        physicalAddress.Postal = input.PhysicalAddressPostalCode ?? "";
     }
 
     private async Task UpsertSupplierAsync(string? supplierNumber, Guid applicantId)
