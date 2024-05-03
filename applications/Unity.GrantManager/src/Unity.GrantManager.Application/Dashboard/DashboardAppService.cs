@@ -19,6 +19,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     private readonly IApplicationTagsRepository _applicationTagsRepository;
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IIntakeRepository _intakeRepository;
+    private static readonly string[] emptySubStatus = [""];
 
     public DashboardAppService(IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
@@ -44,7 +45,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         // some SubStatus is either null or empty string
         if (substatus.Contains(DashboardConsts.EmptyValue))
         {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(new[] { "" }).ToArray();
+            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
         }
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
@@ -73,7 +74,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         // some SubStatus is either null or empty string
         if (substatus.Contains(DashboardConsts.EmptyValue))
         {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(new[] { "" }).ToArray();
+            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
         }
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
@@ -103,7 +104,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         // some SubStatus is either null or empty string
         if (substatus.Contains(DashboardConsts.EmptyValue))
         {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(new[] { "" }).ToArray();
+            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
         }
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
@@ -132,7 +133,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         // some SubStatus is either null or empty string
         if (substatus.Contains(DashboardConsts.EmptyValue))
         {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(new[] { "" }).ToArray();
+            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
         }
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
@@ -159,7 +160,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         // some SubStatus is either null or empty string
         if (substatus.Contains(DashboardConsts.EmptyValue))
         {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(new[] { "" }).ToArray();
+            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
         }
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
