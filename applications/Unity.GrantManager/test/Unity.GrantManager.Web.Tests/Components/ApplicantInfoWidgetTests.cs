@@ -37,6 +37,16 @@ namespace Unity.GrantManager.Components
                 SigningAuthorityEmail = "sam.d@email.com",
                 SigningAuthorityBusinessPhone = "+12501234566",
                 SigningAuthorityCellPhone = "+12501234566",
+                PhysicalAddressStreet = "some street",
+                PhysicalAddressUnit = "some unit",
+                PhysicalAddressCity = "some city",
+                PhysicalAddressProvince = "some province",
+                PhysicalAddressPostalCode = "some postal",
+                MailingAddressStreet = "some street",
+                MailingAddressUnit = "some unit",
+                MailingAddressCity = "some city",
+                MailingAddressProvince = "some province",
+                MailingAddressPostalCode = "some postal",
 
             };
 
@@ -77,6 +87,16 @@ namespace Unity.GrantManager.Components
             var expectedSigningAuthorityEmail = "sam.d@email.com";
             var expectedSigningAuthorityBusinessPhone = "+12501234566";
             var expectedSigningAuthorityCellPhone = "+12501234566";
+            var expectedPhysicalAddressStreet = "some street";
+            var expectedPhysicalAddressUnit = "some unit";
+            var expectedPhysicalAddressCity = "some city";
+            var expectedPhysicalAddressProvince = "some province";
+            var expectedPhysicalAddressPostalCode = "some postal";
+            var expectedMailingAddressStreet = "some street";
+            var expectedMailingAddressUnit = "some unit";
+            var expectedMailingAddressCity = "some city";
+            var expectedMailingAddressProvince = "some province";
+            var expectedMailingAddressPostalCode = "some postal";
 
             resultModel!.ApplicantInfo!.ContactFullName.ShouldBe(expectedFullName);
             resultModel!.ApplicantInfo!.ContactTitle.ShouldBe(expectedTitle);
@@ -88,6 +108,16 @@ namespace Unity.GrantManager.Components
             resultModel!.ApplicantInfo!.SigningAuthorityEmail.ShouldBe(expectedSigningAuthorityEmail);
             resultModel!.ApplicantInfo!.SigningAuthorityBusinessPhone.ShouldBe(expectedSigningAuthorityBusinessPhone);
             resultModel!.ApplicantInfo!.SigningAuthorityCellPhone.ShouldBe(expectedSigningAuthorityCellPhone);
+            resultModel!.ApplicantInfo!.PhysicalAddressStreet.ShouldBe(expectedPhysicalAddressStreet);
+            resultModel!.ApplicantInfo!.PhysicalAddressCity.ShouldBe(expectedPhysicalAddressCity);
+            resultModel!.ApplicantInfo!.PhysicalAddressUnit.ShouldBe(expectedPhysicalAddressUnit);
+            resultModel!.ApplicantInfo!.PhysicalAddressProvince.ShouldBe(expectedPhysicalAddressProvince);
+            resultModel!.ApplicantInfo!.PhysicalAddressPostalCode.ShouldBe(expectedPhysicalAddressPostalCode);
+            resultModel!.ApplicantInfo!.MailingAddressStreet.ShouldBe(expectedMailingAddressStreet);
+            resultModel!.ApplicantInfo!.MailingAddressCity.ShouldBe(expectedMailingAddressCity);
+            resultModel!.ApplicantInfo!.MailingAddressUnit.ShouldBe(expectedMailingAddressUnit);
+            resultModel!.ApplicantInfo!.MailingAddressProvince.ShouldBe(expectedMailingAddressProvince);
+            resultModel!.ApplicantInfo!.MailingAddressPostalCode.ShouldBe(expectedMailingAddressPostalCode);
         }
     }
 }
