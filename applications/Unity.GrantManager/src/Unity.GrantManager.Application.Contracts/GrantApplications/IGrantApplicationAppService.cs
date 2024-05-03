@@ -3,15 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Comments;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.GrantApplications
 {
-    public interface IGrantApplicationAppService : ICrudAppService<
-            GrantApplicationDto,
-            Guid,
-            PagedAndSortedResultRequestDto,
-            CreateUpdateGrantApplicationDto>, ICommentsService
+    public interface IGrantApplicationAppService : ICommentsService
     {
         Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id);
         Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false);
@@ -22,5 +17,7 @@ namespace Unity.GrantManager.GrantApplications
         Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input);
         Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync();
         Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds);
+        Task<GrantApplicationDto> GetAsync(Guid id);
+        Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input);
     }
 }
