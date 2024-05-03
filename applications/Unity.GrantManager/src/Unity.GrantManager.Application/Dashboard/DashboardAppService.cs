@@ -19,7 +19,6 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     private readonly IApplicationTagsRepository _applicationTagsRepository;
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IIntakeRepository _intakeRepository;
-    private static readonly string[] emptySubStatus = [""];
 
     public DashboardAppService(IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
@@ -40,18 +39,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     public virtual async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var categoryList = categories.Select(category => category == DashboardConsts.EmptyValue ? null : category).ToArray();
-        var statusCodesEnum = statusCodes.Select(s => Enum.Parse<GrantApplicationState>(s));
-        // some SubStatus is either null or empty string
-        if (substatus.Contains(DashboardConsts.EmptyValue))
-        {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
-        }
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                     join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    where intakeIds.Contains(intake.Id) && categoryList.Contains(form.Category) && statusCodesEnum.Contains(appStatus.StatusCode) && substatus.Contains(application.SubStatus)
+                    where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
                     select application;
 
         var result = query?.GroupBy(app => app.EconomicRegion)
@@ -69,19 +63,14 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     public virtual async Task<List<GetSectorDto>> GetSectorCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var categoryList = categories.Select(category => category == DashboardConsts.EmptyValue ? null : category).ToArray();
-        var statusCodesEnum = statusCodes.Select(s => Enum.Parse<GrantApplicationState>(s));
-        // some SubStatus is either null or empty string
-        if (substatus.Contains(DashboardConsts.EmptyValue))
-        {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
-        }
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                     join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    where intakeIds.Contains(intake.Id) && categoryList.Contains(form.Category) && statusCodesEnum.Contains(appStatus.StatusCode) && substatus.Contains(application.SubStatus)
+                    where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
                     select new { application, applicant };
 
         var result = query?.GroupBy(app => app.applicant.Sector)
@@ -99,18 +88,13 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     public virtual async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var categoryList = categories.Select(category => category == DashboardConsts.EmptyValue ? null : category).ToArray();
-        var statusCodesEnum = statusCodes.Select(s => Enum.Parse<GrantApplicationState>(s));
-        // some SubStatus is either null or empty string
-        if (substatus.Contains(DashboardConsts.EmptyValue))
-        {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
-        }
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                     join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    where intakeIds.Contains(intake.Id) && categoryList.Contains(form.Category) && statusCodesEnum.Contains(appStatus.StatusCode) && substatus.Contains(application.SubStatus)
+                    where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
                     select new { application, appStatus };
 
         var result = query?.GroupBy(app => app.appStatus.InternalStatus)
@@ -128,19 +112,14 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     public virtual async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var categoryList = categories.Select(category => category == DashboardConsts.EmptyValue ? null : category).ToArray();
-        var statusCodesEnum = statusCodes.Select(s => Enum.Parse<GrantApplicationState>(s));
-        // some SubStatus is either null or empty string
-        if (substatus.Contains(DashboardConsts.EmptyValue))
-        {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
-        }
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                     join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
                     join tag in await _applicationTagsRepository.GetQueryableAsync() on application.Id equals tag.ApplicationId
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    where intakeIds.Contains(intake.Id) && categoryList.Contains(form.Category) && statusCodesEnum.Contains(appStatus.StatusCode) && substatus.Contains(application.SubStatus)
+                    where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
                     select tag;
 
         var applicationTags = query.ToList();
@@ -155,19 +134,14 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     public virtual async Task<List<GetSubsectorRequestedAmtDto>> GetRequestedAmountPerSubsectorAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var categoryList = categories.Select(category => category == DashboardConsts.EmptyValue ? null : category).ToArray();
-        var statusCodesEnum = statusCodes.Select(s => Enum.Parse<GrantApplicationState>(s));
-        // some SubStatus is either null or empty string
-        if (substatus.Contains(DashboardConsts.EmptyValue))
-        {
-            substatus = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
-        }
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+        
         var query = from intake in await _intakeRepository.GetQueryableAsync()
                     join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                     join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    where intakeIds.Contains(intake.Id) && categoryList.Contains(form.Category) && statusCodesEnum.Contains(appStatus.StatusCode) && substatus.Contains(application.SubStatus)
+                    where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
                     select new { application, applicant };
 
         var result = query?.GroupBy(app => app.applicant.SubSector)
@@ -181,5 +155,28 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         var queryResult = result.ToList();
         queryResult.RemoveAll(item => item.TotalRequestedAmount == 0);
         return queryResult;
+    }
+
+    private DashboardParameters PrepareParameters(string[] categories, string[] statusCodes, string?[] substatus)
+    {
+        var parameters = new DashboardParameters
+        {
+            Categories = categories.Select(category => category == DashboardConsts.EmptyValue ? null : category).ToArray(),
+            StatusCodes = statusCodes.Select(s => Enum.Parse<GrantApplicationState>(s))
+        };
+        // some SubStatus is either null or empty string
+        if (substatus.Contains(DashboardConsts.EmptyValue))
+        {
+            string[] emptySubStatus = [""];
+            parameters.SubStatuses = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
+        }
+        return parameters;
+    }
+
+    internal class DashboardParameters
+    {
+        public string?[] Categories { get; set; } = [];
+        public IEnumerable<GrantApplicationState> StatusCodes {  get; set; } = Enumerable.Empty<GrantApplicationState>();
+        public string?[] SubStatuses { get; set; } = [];
     }
 }
