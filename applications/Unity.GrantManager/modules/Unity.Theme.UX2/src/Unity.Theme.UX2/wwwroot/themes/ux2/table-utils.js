@@ -8,6 +8,9 @@ function createNumberFormatter() {
 }
 
 function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, actionButtons, dynamicButtonContainerId) {
+
+    let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name).index);
+
     let iDt = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
             fixedHeader: {
@@ -48,7 +51,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             columns: listColumns,
             columnDefs: [
                 {
-                    targets: defaultVisibleColumns,
+                    targets: visibleColumnsIndex,
                     visible: true
                 },
                 {
