@@ -24,7 +24,7 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
         [BindProperty]
         [Display(Name = "")]
-        public Guid[] IntakeIds { get; set; }
+        public Guid[] IntakeIds { get; set; } = [];
         [BindProperty]
         [Display(Name = "")]
         public string[]? CategoryNames { get; set; }
