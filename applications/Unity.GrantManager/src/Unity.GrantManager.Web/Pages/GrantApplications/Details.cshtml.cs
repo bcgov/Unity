@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
     [Authorize]
     public class DetailsModel : AbpPageModel
-    {        
+    {
         private readonly GrantApplicationAppService _grantApplicationAppService;
 
         [BindProperty(SupportsGet = true)]
@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public string ApplicationFormSubmissionId { get; set; }
-        
+
         [BindProperty(SupportsGet = true)]
         public Guid? CurrentUserId { get; set; }
 
@@ -47,33 +47,21 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
-        public string ApplicantName { get; set; } = "";
-        public string ApplicationStatus { get; set; } = "";
-        public string ApplicationNumber { get; set; } = "";
-
-
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public DetailsModel(GrantApplicationAppService grantApplicationAppService, IFileAppService fileAppService, ICurrentUser currentUser, IConfiguration configuration)
-        {            
+        {
             _grantApplicationAppService = grantApplicationAppService;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
-            Extensions =  configuration["S3:DisallowedFileTypes"] ?? "";
+            Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
         }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        
+
         public async Task OnGetAsync()
         {
             var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
-            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(ApplicationId);
 
-            if(application != null) {
-                ApplicantName = application.Applicant.ApplicantName;
-                ApplicationStatus = application.Status.ToString();
-                ApplicationNumber = application.ReferenceNo.ToString();
-            }
-            
             if (applicationFormSubmission != null)
             {
                 ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
@@ -84,6 +72,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {
             await Task.CompletedTask;
             return Page();
-        }        
-    }    
+        }
+    }
 }

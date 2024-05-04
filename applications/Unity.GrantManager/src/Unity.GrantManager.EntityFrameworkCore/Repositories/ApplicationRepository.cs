@@ -50,6 +50,16 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         return groupBy;
     }
 
+    public async Task<Application> WithBasicDetailsAsync(Guid id)
+    {
+        return await (await GetQueryableAsync())
+          .AsNoTracking()
+          .Include(s => s.Applicant)
+          .Include(s => s.ApplicantAgent)
+          .Include(s => s.ApplicationStatus)
+          .FirstAsync(s => s.Id == id);                   
+    }
+
     /// <summary>
     /// Include defined sub-collections
     /// </summary>

@@ -15,8 +15,7 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @{
-    PageLayout.Content.Title = L["Grants"].Value;
-    ViewBag.PageTitle = $"Applications / {Model.ApplicantName}({Model.ApplicationNumber}) - {Model.ApplicationStatus}";
+    PageLayout.Content.Title = L["Grants"].Value;    
 }
 @section styles
     {
