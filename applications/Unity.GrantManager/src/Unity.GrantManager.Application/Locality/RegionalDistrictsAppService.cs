@@ -2,7 +2,10 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Unity.GrantManager.Caching;
+using Unity.GrantManager.Settings;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Locality
@@ -13,16 +16,29 @@ namespace Unity.GrantManager.Locality
     public class RegionalDistrictAppService : ApplicationService, IRegionalDistrictService
     {
         private readonly IRegionalDistrictRepository _regionalDistrictRepository;
-        public RegionalDistrictAppService(IRegionalDistrictRepository  regionalDistricRepository)
+        private readonly IDistributedCache<IList<RegionalDistrictDto>, LocalityCacheKey> _cache;
+
+        public RegionalDistrictAppService(IRegionalDistrictRepository regionalDistricRepository,
+            IDistributedCache<IList<RegionalDistrictDto>, LocalityCacheKey> cache)
         {
             _regionalDistrictRepository = regionalDistricRepository;
+            _cache = cache;
         }
 
-        public async Task<IList<RegionalDistrictDto>> GetListAsync()
+        public virtual async Task<IList<RegionalDistrictDto>> GetListAsync()
+        {
+            var cacheKey = new LocalityCacheKey(SettingsConstants.RegionalDistrictsCacheKey, null);
+            return await _cache.GetOrAddAsync(
+                cacheKey,
+                GetRegionalDistricts
+            ) ?? [];
+        }
+
+        protected virtual async Task<IList<RegionalDistrictDto>> GetRegionalDistricts()
         {
             var regionalDistrict = await _regionalDistrictRepository.GetListAsync();
 
-            return ObjectMapper.Map<List<RegionalDistrict>, List<RegionalDistrictDto>>(regionalDistrict.OrderBy(r => r.RegionalDistrictName).ToList());
+            return ObjectMapper.Map<List<RegionalDistrict>, List<RegionalDistrictDto>>([.. regionalDistrict.OrderBy(r => r.RegionalDistrictName)]);
         }
     }
 }
