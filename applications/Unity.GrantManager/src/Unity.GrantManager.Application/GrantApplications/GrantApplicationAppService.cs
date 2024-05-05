@@ -469,7 +469,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var application = await _applicationRepository.GetAsync(applicationId, false);
         if (application != null)
         {
-            IQueryable<ApplicationFormSubmission> queryableFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationFormSubmission> queryableFormSubmissions = await _applicationFormSubmissionRepository.GetQueryableAsync();
             if (queryableFormSubmissions != null)
             {
                 var dbResult = queryableFormSubmissions
@@ -678,13 +678,13 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
     }
 
-    #region APPLICATION WORKFLOW
     public async Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id)
     {
         var application = await _applicationRepository.GetAsync(id, true);
         return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
     }
 
+    #region APPLICATION WORKFLOW
     /// <summary>
     /// Fetches the list of actions and their status context for a given application.
     /// </summary>
