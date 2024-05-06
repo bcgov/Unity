@@ -15,8 +15,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
     [Widget(
         RefreshUrl = "Widget/AssessmentResults/Refresh",
-        ScriptTypes = new[] { typeof(AssessmentResultsScriptBundleContributor) },
-        StyleTypes = new[] { typeof(AssessmentResultsStyleBundleContributor) },
+        ScriptTypes = [typeof(AssessmentResultsScriptBundleContributor)],
+        StyleTypes = [typeof(AssessmentResultsStyleBundleContributor)],
         AutoInitialize = true)]
     public class AssessmentResults : AbpViewComponent
     {
