@@ -1,5 +1,8 @@
 ﻿using AutoMapper;
 using Unity.Payments.BatchPaymentRequests;
+using Unity.Payments.Domain.BatchPaymentRequests;
+using Unity.Payments.Domain.PaymentConfigurations;
+using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Suppliers;
 

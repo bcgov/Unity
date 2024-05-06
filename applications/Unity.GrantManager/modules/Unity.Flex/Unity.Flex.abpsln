@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "Unity.Flex": {
+      "path": "Unity.Flex.abpmdl"
+    }
+  }
+}

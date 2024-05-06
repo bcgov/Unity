@@ -6,7 +6,6 @@ using Volo.Abp.ObjectExtending;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications;
-using Unity.Payments;
 
 namespace Unity.GrantManager;
 
@@ -17,11 +16,10 @@ namespace Unity.GrantManager;
     typeof(AbpPermissionManagementApplicationContractsModule),
     typeof(AbpSettingManagementApplicationContractsModule),
     typeof(UnityTenantManagementApplicationContractsModule),
-    typeof(AbpObjectExtendingModule)
+    typeof(AbpObjectExtendingModule),
+    typeof(NotificationsApplicationContractsModule)    
 )]
-[DependsOn(typeof(NotificationsApplicationContractsModule))]
-[DependsOn(typeof(PaymentsApplicationContractsModule))]
-    public class GrantManagerApplicationContractsModule : AbpModule
+public class GrantManagerApplicationContractsModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

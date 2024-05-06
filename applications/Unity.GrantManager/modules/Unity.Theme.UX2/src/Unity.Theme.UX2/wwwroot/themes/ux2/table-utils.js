@@ -7,7 +7,10 @@ function createNumberFormatter() {
     });
 }
 
-function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, dynamicButtonContainerId) {
+function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, actionButtons, dynamicButtonContainerId) {
+
+    let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name).index);
+
     let iDt = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
             fixedHeader: {
@@ -22,7 +25,8 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             pageLength: maxRowsPerPage,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
-                dataEndpoint
+                dataEndpoint,
+                data
             ),
             select: {
                 style: 'multiple',
@@ -34,17 +38,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             stateSave: true,
             stateDuration: 0,
             dom: 'Bfrtip',
-            buttons: [
-                {
-                    extend: 'csv',
-                    text: 'Export',
-                    className: 'custom-table-btn flex-none btn btn-secondary',
-                    exportOptions: {
-                        columns: ':visible:not(.notexport)',
-                        orthogonal: 'fullName',
-                    }
-                }
-            ],
+            buttons: actionButtons,
             drawCallback: function () {
                 $(`#${dt[0].id}_previous a`).text("<");
                 $(`#${dt[0].id}_next a`).text(">");
@@ -57,7 +51,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             columns: listColumns,
             columnDefs: [
                 {
-                    targets: defaultVisibleColumns,
+                    targets: visibleColumnsIndex,
                     visible: true
                 },
                 {

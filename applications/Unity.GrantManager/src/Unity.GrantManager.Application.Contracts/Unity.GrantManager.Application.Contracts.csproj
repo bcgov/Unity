@@ -9,10 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Flex\src\Unity.Flex.Application.Contracts\Unity.Flex.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Application.Contracts\Unity.TenantManagement.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Application.Contracts\Unity.Notifications.Application.Contracts.csproj" />
-    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

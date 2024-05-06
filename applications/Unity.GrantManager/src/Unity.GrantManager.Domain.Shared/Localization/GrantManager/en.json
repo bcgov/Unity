@@ -37,9 +37,6 @@
     "Common:Command:Import": "Import",
     "Common:Command:Select": "Select",
 
-    "Dashboard:IntakeId": "Intake",
-    "Dashboard:CategoryName": "Category",
-
     "GrantPrograms": "Grant Programs",
     "GrantProgram": "Grant Program",
     "GrantProgramType": "Sector",
@@ -217,7 +214,7 @@
 
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
-    "Summary:ContactsTitle": "Contacts",
+    "Summary:ContactsTitle": "Additional Contact(s)",
     "Summary:Application.Category": "Category",
     "Summary:Application.EconomicRegion": "Economic Region",
     "Summary:Application.RegionalDistrict": "Regional District",
@@ -257,6 +254,7 @@
     "ProjectInfoView:ProjectInfo.EconomicRegion": "Economic Region",
     "ProjectInfoView:ProjectInfo.ElectoralDistrict": "Electoral District",
     "ProjectInfoView:ProjectInfo.CommunityPopulation": "Community Population",
+    "ProjectInfoView:ProjectInfo.Place": "Place",
     "ProjectInfoView:ProjectInfo.Acquisition": "Acquisition",
     "ProjectInfoView:ProjectInfo.Forestry": "Forestry/Non-Forestry",
     "ProjectInfoView:ProjectInfo.ForestryFocus": "Forestry Focus",

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Amazon.S3.Model;
+using AutoMapper;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -6,6 +7,7 @@ using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Locality;
 
@@ -21,6 +23,11 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
 
         CreateMap<Application, GrantApplicationDto>();
         CreateMap<ApplicationAssignment, GrantApplicationAssigneeDto>();
+        CreateMap<Person, GrantApplicationAssigneeDto>()
+            .ForMember(d => d.AssigneeId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(d => d.FullName, opt => opt.MapFrom(src => src.FullName))
+            .ForMember(d => d.ApplicationId, opt => opt.Ignore())
+            .ForMember(d => d.Duty, opt => opt.Ignore());
         CreateMap<ApplicationStatus, ApplicationStatusDto>();
         CreateMap<AssessmentComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.AssessmentId));

@@ -16,7 +16,6 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Caching;
 using Unity.Notifications;
-using Unity.Payments;
 
 namespace Unity.GrantManager;
 
@@ -33,9 +32,8 @@ namespace Unity.GrantManager;
     typeof(AbpTenantManagementDomainModule),
     typeof(AbpEmailingModule)
 )]
-[DependsOn(typeof(AbpCachingModule))]
-    [DependsOn(typeof(NotificationsDomainModule))]
-    [DependsOn(typeof(PaymentsDomainModule))]
+    [DependsOn(typeof(AbpCachingModule))]
+    [DependsOn(typeof(NotificationsDomainModule))]    
     public class GrantManagerDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

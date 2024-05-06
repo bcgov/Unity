@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Components
         [Fact]
         public async Task ContactInfoReturnsStatus()
         {
-            var applicationDto = new GrantApplicationDto()
+            var applicationDto = new ApplicationApplicantInfoDto()
             {
                 ContactFullName = "John Doe",
                 ContactTitle = "Doctor",
@@ -47,12 +47,11 @@ namespace Unity.GrantManager.Components
                 MailingAddressCity = "some city",
                 MailingAddressProvince = "some province",
                 MailingAddressPostalCode = "some postal",
-
             };
 
             // Arrange
-            var appService = Substitute.For<IGrantApplicationAppService>();
-            appService.GetAsync(Arg.Any<Guid>()).Returns(applicationDto);
+            var appService = Substitute.For<IApplicationApplicantAppService>();
+            appService.GetByApplicationIdAsync(Arg.Any<Guid>()).Returns(applicationDto);
             var sectorService = Substitute.For<ISectorService>();
             var viewContext = new ViewContext
             {

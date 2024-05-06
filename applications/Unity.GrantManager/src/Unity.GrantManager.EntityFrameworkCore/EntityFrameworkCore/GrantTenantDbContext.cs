@@ -11,6 +11,7 @@ using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
 using Unity.Payments.EntityFrameworkCore;
+using Unity.Flex.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -118,8 +119,13 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.Property(x => x.ProjectName).IsRequired().HasMaxLength(255);
                 b.Property(x => x.Payload).HasColumnType("jsonb");
-                b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
-                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+                b.HasOne(a => a.ApplicationForm).WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired().OnDelete(DeleteBehavior.NoAction);
+                b.HasOne(a => a.Applicant).WithMany().HasForeignKey(x => x.ApplicantId).IsRequired().OnDelete(DeleteBehavior.NoAction);
+                b.HasOne(a => a.Owner).WithMany().HasForeignKey(x => x.OwnerId).OnDelete(DeleteBehavior.NoAction);
+                b.HasMany(a => a.ApplicationAssignments).WithOne(s => s.Application).HasForeignKey(x => x.ApplicationId).IsRequired().OnDelete(DeleteBehavior.NoAction);
+                b.HasMany(a => a.ApplicationTags).WithOne(s => s.Application).HasForeignKey(x => x.ApplicationId).IsRequired().OnDelete(DeleteBehavior.NoAction);
+                b.HasMany(a => a.Assessments).WithOne(s => s.Application).HasForeignKey(x => x.ApplicationId).OnDelete(DeleteBehavior.NoAction);
+                b.HasOne(a => a.ApplicantAgent).WithOne(s => s.Application);
 
                 b.HasOne(a => a.ApplicationStatus)
                     .WithMany(s => s.Applications)
@@ -188,12 +194,6 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "Assessments", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
 
-                b.HasOne<Application>()
-                    .WithMany()
-                    .HasForeignKey(x => x.ApplicationId)
-                    .IsRequired()
-                    .OnDelete(DeleteBehavior.NoAction);
-
                 b.HasOne<Person>()
                     .WithMany()
                     .HasPrincipalKey(x => x.Id)
@@ -231,15 +231,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationAssignments",
                     GrantManagerConsts.DbSchema);
 
-                b.ConfigureByConvention(); //auto configure for the base class props
-                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
-
-                b.HasOne<Person>()
-                    .WithMany()
-                    .HasPrincipalKey(x => x.Id)
-                    .HasForeignKey(x => x.AssigneeId)
-                    .IsRequired()
-                    .OnDelete(DeleteBehavior.NoAction);
+                b.ConfigureByConvention();
             });
 
             modelBuilder.Entity<ApplicationTags>(b =>
@@ -250,9 +242,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ConfigureByConvention();
                 b.Property(x => x.Text)
                     .IsRequired()
-                    .HasMaxLength(250);
-
-               
+                    .HasMaxLength(250);               
             });
 
             modelBuilder.Entity<ApplicationContact>(b =>
@@ -283,6 +273,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
             }
 
             modelBuilder.ConfigurePayments();
+#pragma warning disable S125 // Sections of code should not be commented out
+            // modelBuilder.ConfigureFlex();
+#pragma warning restore S125 // Sections of code should not be commented out
         }
     }
 }

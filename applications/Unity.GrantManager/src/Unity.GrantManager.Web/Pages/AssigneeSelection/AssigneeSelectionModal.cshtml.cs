@@ -11,7 +11,6 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Integration;
-using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 {
@@ -114,6 +113,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                 {
                     var assignees = await _applicationAssigneeService.GetListWithApplicationIdsAsync(selectedApplicationIds);
                     var applications = await _applicationService.GetApplicationListAsync(selectedApplicationIds);
+
                     foreach (var assignee in assignees)
                     {
                         var user = users.Items.FirstOrDefault(s => s.Id == assignee.AssigneeId);
@@ -129,10 +129,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                                 ApplicationId = assignee.ApplicationId,
                             });
                         }
-                    }
-
-
-                   
+                    }                   
 
                     // Step 2: Iterate through the second list and categorize Assignees
                     var commonArray = assignees
