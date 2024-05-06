@@ -30,15 +30,14 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<AssessmentComment> AssessmentComments { get; set; }
         public DbSet<Person> Persons { get; set; }
-        public DbSet<Address> Addresses { get; set; }
+        public DbSet<ApplicantAddress> ApplicantAddresses { get; set; }
         public DbSet<ApplicationTags> ApplicationTags  { get; set; }
         public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
         public DbSet<ApplicationContact> ApplicationContacts { get; set; }    
-        public DbSet<ApplicationLink> ApplicationLinks { get; set; }    
-        public DbSet<ApplicationAddress> ApplicationAddresses { get; set; }    
+        public DbSet<ApplicationLink> ApplicationLinks { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -128,9 +127,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .IsRequired();
             });
 
-            modelBuilder.Entity<Address>(b =>
+            modelBuilder.Entity<ApplicantAddress>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Addresses", GrantManagerConsts.DbSchema);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAddresses", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId);
             });
@@ -269,16 +268,6 @@ namespace Unity.GrantManager.EntityFrameworkCore
             modelBuilder.Entity<ApplicationLink>(b =>
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationLinks",
-                    GrantManagerConsts.DbSchema);
-
-                b.ConfigureByConvention();
-                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
-               
-            });
-
-            modelBuilder.Entity<ApplicationAddress>(b =>
-            {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationAddresses",
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention();

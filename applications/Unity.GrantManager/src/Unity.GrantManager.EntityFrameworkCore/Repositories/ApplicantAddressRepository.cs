@@ -8,12 +8,12 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Repositories
 {
     [Dependency(ReplaceServices = true)]
-    [ExposeServices(typeof(IAddressRepository))]
+    [ExposeServices(typeof(IApplicantAddressRepository))]
     #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
-    public class AddressRepository : EfCoreRepository<GrantTenantDbContext, Address, Guid>, IAddressRepository
+    public class ApplicantAddressRepository : EfCoreRepository<GrantTenantDbContext, ApplicantAddress, Guid>, IApplicantAddressRepository
     #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
-        public AddressRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
+        public ApplicantAddressRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
         {
         }
     }

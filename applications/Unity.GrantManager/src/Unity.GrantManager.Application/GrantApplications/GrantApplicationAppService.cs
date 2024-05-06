@@ -53,7 +53,7 @@ public class GrantApplicationAppService :
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
-    private readonly IApplicationAddressRepository _applicationAddressRepository;
+    private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
     private readonly ISupplierAppService _supplierAppService;
 
@@ -72,7 +72,7 @@ public class GrantApplicationAppService :
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
         IApplicationTagsRepository applicationTagsRepository,
-        IApplicationAddressRepository applicationAddressRepository,
+        IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus,
         SupplierAppService supplierInfoAppService
         )
@@ -90,7 +90,7 @@ public class GrantApplicationAppService :
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicationTagsRepository = applicationTagsRepository;
-        _applicationAddressRepository = applicationAddressRepository;
+        _applicantAddressRepository = applicantAddressRepository;
         _localEventBus = localEventBus;
         _supplierAppService = supplierInfoAppService;
     }
@@ -228,7 +228,7 @@ public class GrantApplicationAppService :
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                    join address in await _applicationAddressRepository.GetQueryableAsync() on id equals address.ApplicationId into addresses
+                    join address in await _applicantAddressRepository.GetQueryableAsync() on applicant.Id equals address.ApplicantId into addresses
                     where application.Id == id
                     select new
                     {
@@ -271,9 +271,9 @@ public class GrantApplicationAppService :
                 appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
             }
 
-            foreach (ApplicationAddress item in queryResult.addresses)
+            foreach (ApplicantAddress item in queryResult.addresses)
             {
-                appDto.ApplicationAddresses.Add(ObjectMapper.Map<ApplicationAddress, ApplicationAddressDto>(item));
+                appDto.ApplicantAddresses.Add(ObjectMapper.Map<ApplicantAddress, ApplicantAddressDto>(item));
             }
 
             return appDto;
@@ -458,7 +458,7 @@ public class GrantApplicationAppService :
                 applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
             }
 
-            await UpdateApplicationAddresses(input, application);
+            await UpdateApplicationAddresses(input);
 
             application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
             application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
@@ -484,60 +484,49 @@ public class GrantApplicationAppService :
         }
     }
 
-    protected virtual async Task UpdateApplicationAddresses(CreateUpdateApplicantInfoDto input, Application application)
+    protected virtual async Task UpdateApplicationAddresses(CreateUpdateApplicantInfoDto input)
     {
-        var applicationAddresses = await _applicationAddressRepository.GetListAsync(address => address.ApplicationId == application.Id);
-        await UpsertAddress(input, applicationAddresses, ApplicationAddressType.MAILING_ADDRESS, application.Id);
-        await UpsertAddress(input, applicationAddresses, ApplicationAddressType.PHYSICAL_ADDRESS, application.Id);
+        var applicantAddresses = await _applicantAddressRepository.GetListAsync(address => address.ApplicantId == input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, ApplicationAddressType.MAILING_ADDRESS, input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, ApplicationAddressType.PHYSICAL_ADDRESS, input.ApplicantId);
     }
 
-    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicationAddress> applicationAddresses, string addressType, Guid applicationId)
+    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, string addressType, Guid applicantId)
     {
-        ApplicationAddress? dbAddress = applicationAddresses.Find(address => address.AddressType == addressType);
+        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == addressType);
 
         if (dbAddress != null)
         {
             MapApplicationAddress(input, addressType, dbAddress);
-            await _applicationAddressRepository.UpdateAsync(dbAddress);
+            await _applicantAddressRepository.UpdateAsync(dbAddress);
         }
         else
         {
-            var newAddress = new ApplicationAddress() { AddressType = addressType, ApplicationId = applicationId };
+            var newAddress = new ApplicantAddress() { AddressType = addressType, ApplicantId = applicantId };
             MapApplicationAddress(input, addressType, newAddress);
-            await _applicationAddressRepository.InsertAsync(newAddress);
+            await _applicantAddressRepository.InsertAsync(newAddress);
         }
     }
 
-    private static void MapApplicationAddress(CreateUpdateApplicantInfoDto input, string addressType, ApplicationAddress address)
+    private static void MapApplicationAddress(CreateUpdateApplicantInfoDto input, string addressType, ApplicantAddress address)
     {
         switch (addressType)
         {
             case ApplicationAddressType.MAILING_ADDRESS:
-                MapApplicationMailingAddress(input, address);
+                address.Street = input.MailingAddressStreet ?? "";
+                address.Unit = input.MailingAddressUnit ?? "";
+                address.City = input.MailingAddressCity ?? "";
+                address.Province = input.MailingAddressProvince ?? "";
+                address.Postal = input.MailingAddressPostalCode ?? "";
                 break;
             case ApplicationAddressType.PHYSICAL_ADDRESS:
-                MapApplicationPhysicalAddress(input, address);
+                address.Street = input.PhysicalAddressStreet ?? "";
+                address.Unit = input.PhysicalAddressUnit ?? "";
+                address.City = input.PhysicalAddressCity ?? "";
+                address.Province = input.PhysicalAddressProvince ?? "";
+                address.Postal = input.PhysicalAddressPostalCode ?? "";
                 break;
         }
-    }
-
-
-    private static void MapApplicationMailingAddress(CreateUpdateApplicantInfoDto input, ApplicationAddress mailingAddress)
-    {
-        mailingAddress.Street = input.MailingAddressStreet ?? "";
-        mailingAddress.Unit = input.MailingAddressUnit ?? "";
-        mailingAddress.City = input.MailingAddressCity ?? "";
-        mailingAddress.Province = input.MailingAddressProvince ?? "";
-        mailingAddress.Postal = input.MailingAddressPostalCode ?? "";
-    }
-
-    private static void MapApplicationPhysicalAddress(CreateUpdateApplicantInfoDto input, ApplicationAddress physicalAddress)
-    {
-        physicalAddress.Street = input.PhysicalAddressStreet ?? "";
-        physicalAddress.Unit = input.PhysicalAddressUnit ?? "";
-        physicalAddress.City = input.PhysicalAddressCity ?? "";
-        physicalAddress.Province = input.PhysicalAddressProvince ?? "";
-        physicalAddress.Postal = input.PhysicalAddressPostalCode ?? "";
     }
 
     private async Task UpsertSupplierAsync(string? supplierNumber, Guid applicantId)

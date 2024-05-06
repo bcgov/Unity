@@ -61,8 +61,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationLink, ApplicationLinksDto>();
         CreateMap<ApplicationLinksDto, ApplicationLink>();
         CreateMap<Application, GrantApplicationLiteDto>();
-        CreateMap<ApplicationAddress, ApplicationAddressDto>();
-        CreateMap<ApplicationAddressDto, ApplicationAddress>();
+        CreateMap<ApplicantAddress, ApplicantAddressDto>();
     }
 }
 

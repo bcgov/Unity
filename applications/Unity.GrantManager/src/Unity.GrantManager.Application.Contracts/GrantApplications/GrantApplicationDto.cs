@@ -86,5 +86,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? MailingAddressCity { get; set; }
     public string? MailingAddressProvince { get; set; }
     public string? MailingAddressPostalCode { get; set; }
-    public List<ApplicationAddressDto> ApplicationAddresses { get; set; } = new List<ApplicationAddressDto>();
+    public List<ApplicantAddressDto> ApplicantAddresses { get; set; } = new List<ApplicantAddressDto>();
 }

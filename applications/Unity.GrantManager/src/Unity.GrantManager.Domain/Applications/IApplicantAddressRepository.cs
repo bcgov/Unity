@@ -3,6 +3,6 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Applications;
 
-public interface IApplicationAddressRepository : IRepository<ApplicationAddress, Guid>
+public interface IApplicantAddressRepository : IRepository<ApplicantAddress, Guid>
 {
 }
