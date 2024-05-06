@@ -167,56 +167,38 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<GrantApplicationDto> GetAsync(Guid id)
     {
-        var query = from application in await _applicationRepository.GetQueryableAsync()
-                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                    where application.Id == id
-                    select new
-                    {
-                        application,
-                        applicant,
-                        appStatus
-                    };
+        var application = await _applicationRepository.GetAsync(id, true);
 
-        var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
+        if (application == null) return new GrantApplicationDto();
 
-        if (queryResult != null)
+        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+        appDto.StatusCode = application.ApplicationStatus.StatusCode;
+        appDto.Status = application.ApplicationStatus.InternalStatus;
+
+        if (application.ApplicantAgent != null)
         {
-            var dto = queryResult.application;
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
-            appDto.StatusCode = queryResult.appStatus.StatusCode;
-            appDto.Status = queryResult.appStatus.InternalStatus;
-            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(queryResult.applicant);
-            var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId == dto.ApplicantId && s.ApplicationId == dto.Id);
-            if (contactInfo != null)
-            {
-                appDto.ContactFullName = contactInfo.Name;
-                appDto.ContactEmail = contactInfo.Email;
-                appDto.ContactTitle = contactInfo.Title;
-                appDto.ContactBusinessPhone = contactInfo.Phone;
-                appDto.ContactCellPhone = contactInfo.Phone2;
-
-            }
-
-            if (appDto.Applicant != null)
-            {
-                appDto.OrganizationName = appDto.Applicant.OrgName;
-                appDto.OrgNumber = appDto.Applicant.OrgNumber;
-                appDto.OrganizationSize = appDto.Applicant.OrganizationSize;
-                appDto.OrgStatus = appDto.Applicant.OrgStatus;
-                appDto.OrganizationName = appDto.Applicant.OrgName;
-                appDto.Sector = appDto.Applicant.Sector;
-                appDto.OrganizationType = appDto.Applicant.OrganizationType;
-                appDto.SubSector = appDto.Applicant.SubSector;
-                appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
-            }
-
-            return appDto;
+            appDto.ContactFullName = application.ApplicantAgent.Name;
+            appDto.ContactEmail = application.ApplicantAgent.Email;
+            appDto.ContactTitle = application.ApplicantAgent.Title;
+            appDto.ContactBusinessPhone = application.ApplicantAgent.Phone;
+            appDto.ContactCellPhone = application.ApplicantAgent.Phone2;
         }
-        else
+
+        if (application.Applicant != null)
         {
-            return await Task.FromResult(new GrantApplicationDto());
+            appDto.OrganizationName = application.Applicant.OrgName;
+            appDto.OrgNumber = application.Applicant.OrgNumber;
+            appDto.OrganizationSize = application.Applicant.OrganizationSize;
+            appDto.OrgStatus = application.Applicant.OrgStatus;
+            appDto.OrganizationName = application.Applicant.OrgName;
+            appDto.Sector = application.Applicant.Sector;
+            appDto.OrganizationType = application.Applicant.OrganizationType;
+            appDto.SubSector = application.Applicant.SubSector;
+            appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
+
+        return appDto;
     }
 
     public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
@@ -487,7 +469,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var application = await _applicationRepository.GetAsync(applicationId, false);
         if (application != null)
         {
-            IQueryable<ApplicationFormSubmission> queryableFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationFormSubmission> queryableFormSubmissions = await _applicationFormSubmissionRepository.GetQueryableAsync();
             if (queryableFormSubmissions != null)
             {
                 var dbResult = queryableFormSubmissions
@@ -696,13 +678,13 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
     }
 
-    #region APPLICATION WORKFLOW
     public async Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id)
     {
         var application = await _applicationRepository.GetAsync(id, true);
         return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
     }
 
+    #region APPLICATION WORKFLOW
     /// <summary>
     /// Fetches the list of actions and their status context for a given application.
     /// </summary>
@@ -770,5 +752,5 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var applications = await _applicationRepository.GetListAsync();
 
         return ObjectMapper.Map<List<Application>, List<GrantApplicationLiteDto>>(applications.ToList());
-    }
+    }    
 }
