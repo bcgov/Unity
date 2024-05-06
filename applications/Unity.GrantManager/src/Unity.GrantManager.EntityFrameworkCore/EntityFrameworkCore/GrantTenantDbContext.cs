@@ -67,6 +67,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .HasMaxLength(600);
 
                 b.HasIndex(x => x.ApplicantName);
+                b.HasMany(a => a.ApplicantAddresses).WithOne(s => s.Applicant).HasForeignKey(x => x.ApplicantId).IsRequired().OnDelete(DeleteBehavior.NoAction);
             });
 
             modelBuilder.Entity<Intake>(b =>
@@ -137,7 +138,6 @@ namespace Unity.GrantManager.EntityFrameworkCore
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAddresses", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention(); //auto configure for the base class props
-                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId);
             });
 
             modelBuilder.Entity<ApplicantAgent>(b =>

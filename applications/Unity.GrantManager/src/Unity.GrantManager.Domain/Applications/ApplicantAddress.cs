@@ -6,7 +6,15 @@ namespace Unity.GrantManager.Applications;
 
 public class ApplicantAddress : AuditedAggregateRoot<Guid>, IMultiTenant
 {
-    public Guid? ApplicantId { get; set; }
+    public Guid ApplicantId { get; set; }
+
+    public virtual Applicant Applicant
+    {
+        set => _applicant = value;
+        get => _applicant
+               ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Applicant));
+    }
+    private Applicant? _applicant;
     public string? City { get; set; } = string.Empty;
     public string? Country { get; set; } = string.Empty;
     public string? Province { get; set; } = string.Empty;

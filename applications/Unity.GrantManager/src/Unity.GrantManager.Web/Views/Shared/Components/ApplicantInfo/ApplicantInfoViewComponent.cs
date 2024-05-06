@@ -82,16 +82,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 SectorSubSectorIndustryDesc = applicatInfoDto.SectorSubSectorIndustryDesc,
             };
 
-            if (application.ApplicantAddresses.Any())
+            if (applicatInfoDto.ApplicantAddresses.Any())
             {
-                ApplicantAddressDto physicalAddress = application.ApplicantAddresses.First(address => address.AddressType == ApplicantAddressType.PHYSICAL_ADDRESS);
+                ApplicantAddressDto physicalAddress = applicatInfoDto.ApplicantAddresses.First(address => address.AddressType == ApplicantAddressType.PHYSICAL_ADDRESS);
                 model.ApplicantInfo.PhysicalAddressStreet = physicalAddress.Street;
                 model.ApplicantInfo.PhysicalAddressUnit = physicalAddress.Unit;
                 model.ApplicantInfo.PhysicalAddressCity = physicalAddress.City;
                 model.ApplicantInfo.PhysicalAddressProvince = physicalAddress.Province;
                 model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
 
-                ApplicantAddressDto mailingAddress = application.ApplicantAddresses.First(address => address.AddressType == ApplicantAddressType.MAILING_ADDRESS);
+                ApplicantAddressDto mailingAddress = applicatInfoDto.ApplicantAddresses.First(address => address.AddressType == ApplicantAddressType.MAILING_ADDRESS);
                 model.ApplicantInfo.MailingAddressStreet = mailingAddress.Street;
                 model.ApplicantInfo.MailingAddressUnit = mailingAddress.Unit;
                 model.ApplicantInfo.MailingAddressCity = mailingAddress.City;

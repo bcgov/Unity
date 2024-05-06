@@ -20,7 +20,7 @@ namespace Unity.GrantManager.GrantApplications
             var applicantInfo =  await _applicationRepository.WithBasicDetailsAsync(applicationId);
             if (applicantInfo == null) return new ApplicationApplicantInfoDto();
 
-            return new ApplicationApplicantInfoDto()
+            ApplicationApplicantInfoDto applicationApplicantInfoDto = new ApplicationApplicantInfoDto()
             {
                 ApplicantId = applicationId,
                 ApplicantName = applicantInfo.Applicant.ApplicantName,
@@ -50,6 +50,13 @@ namespace Unity.GrantManager.GrantApplications
                 ContactBusinessPhone = applicantInfo.ApplicantAgent?.Phone ?? string.Empty,
                 ContactCellPhone = applicantInfo.ApplicantAgent?.Phone2 ?? string.Empty
             };
+
+            foreach (ApplicantAddress item in applicantInfo.Applicant?.ApplicantAddresses ?? [])
+            {
+                applicationApplicantInfoDto.ApplicantAddresses.Add(ObjectMapper.Map<ApplicantAddress, ApplicantAddressDto>(item));
+            }
+
+            return applicationApplicantInfoDto;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -20,4 +21,6 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string IndigenousOrgInd { get; set; } = string.Empty;
     public string SectorSubSectorIndustryDesc { get; set; } = string.Empty;
     public Guid? TenantId { get; set; }
+
+    public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
 }

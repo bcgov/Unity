@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -19,5 +20,6 @@ namespace Unity.GrantManager.GrantApplications
         public string ApplicationReferenceNo { get; set; } = string.Empty;
         public string ApplicationStatus { get; set; } = string.Empty;
         public GrantApplicationState ApplicationStatusCode { get; set; }
+        public List<ApplicantAddressDto> ApplicantAddresses { get; set; } = new List<ApplicantAddressDto>();
     }
 }

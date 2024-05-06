@@ -264,9 +264,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantId");
 
-                    b.HasIndex("ApplicationId")
-                        .IsUnique();
-
                     b.HasIndex("OidcSubUser");
 
                     b.ToTable("ApplicantAgents", (string)null);
@@ -386,9 +383,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<double?>("PercentageTotalProjectBudget")
                         .HasColumnType("double precision");
 
-                    b.Property<string>("Place")
-                        .HasColumnType("text");
-
                     b.Property<DateTime?>("ProjectEndDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -460,8 +454,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicationFormId");
 
                     b.HasIndex("ApplicationStatusId");
-
-                    b.HasIndex("OwnerId");
 
                     b.ToTable("Applications", (string)null);
                 });
@@ -1101,8 +1093,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApplicationId");
-
                     b.ToTable("ApplicationTags", (string)null);
                 });
 
@@ -1486,7 +1476,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("Intakes", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.BatchPaymentRequests.BatchPaymentRequest", b =>
+            modelBuilder.Entity("Unity.Payments.BatchPaymentRequests.BatchPaymentRequest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1564,7 +1554,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("BatchPaymentRequests", "Payments");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.BatchPaymentRequests.ExpenseApproval", b =>
+            modelBuilder.Entity("Unity.Payments.BatchPaymentRequests.ExpenseApproval", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1620,7 +1610,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("ExpenseApprovals", "Payments");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.BatchPaymentRequests.PaymentRequest", b =>
+            modelBuilder.Entity("Unity.Payments.BatchPaymentRequests.PaymentRequest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1631,10 +1621,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<Guid>("BatchPaymentRequestId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ContractNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<Guid>("CorrelationId")
                         .HasColumnType("uuid");
@@ -1682,10 +1668,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("PayeeName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("PaymentDate")
                         .HasColumnType("text");
 
@@ -1701,10 +1683,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SupplierNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -1713,12 +1691,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("BatchPaymentRequestId");
 
-                    b.HasIndex("SiteId");
-
                     b.ToTable("PaymentRequests", "Payments");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.PaymentConfigurations.PaymentConfiguration", b =>
+            modelBuilder.Entity("Unity.Payments.PaymentConfigurations.PaymentConfiguration", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1793,7 +1769,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("PaymentConfigurations", "Payments");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Site", b =>
+            modelBuilder.Entity("Unity.Payments.Suppliers.Site", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1868,7 +1844,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("Sites", "Payments");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Supplier", b =>
+            modelBuilder.Entity("Unity.Payments.Suppliers.Supplier", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1965,32 +1941,24 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithOne("ApplicantAgent")
-                        .HasForeignKey("Unity.GrantManager.Applications.ApplicantAgent", "ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("OidcSubUser")
                         .HasPrincipalKey("OidcSub");
-
-                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.Applicant", "Applicant")
+                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
                         .WithMany()
                         .HasForeignKey("ApplicantId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", "ApplicationForm")
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
                         .WithMany()
                         .HasForeignKey("ApplicationFormId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Unity.GrantManager.Applications.ApplicationStatus", "ApplicationStatus")
@@ -1999,37 +1967,22 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Identity.Person", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Applicant");
-
-                    b.Navigation("ApplicationForm");
-
                     b.Navigation("ApplicationStatus");
-
-                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAssignment", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithMany("ApplicationAssignments")
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.Identity.Person", "Assignee")
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
                         .WithMany()
-                        .HasForeignKey("AssigneeId")
+                        .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Application");
-
-                    b.Navigation("Assignee");
+                    b.HasOne("Unity.GrantManager.Identity.Person", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
@@ -2101,17 +2054,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationTags", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithMany("ApplicationTags")
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Application");
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentAttachment", b =>
                 {
                     b.HasOne("Unity.GrantManager.Assessments.Assessment", null)
@@ -2123,8 +2065,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             modelBuilder.Entity("Unity.GrantManager.Assessments.Assessment", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithMany("Assessments")
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -2134,8 +2076,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasForeignKey("AssessorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Comments.ApplicationComment", b =>
@@ -2168,9 +2108,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.BatchPaymentRequests.ExpenseApproval", b =>
+            modelBuilder.Entity("Unity.Payments.BatchPaymentRequests.ExpenseApproval", b =>
                 {
-                    b.HasOne("Unity.Payments.Domain.BatchPaymentRequests.BatchPaymentRequest", "BatchPaymentRequest")
+                    b.HasOne("Unity.Payments.BatchPaymentRequests.BatchPaymentRequest", "BatchPaymentRequest")
                         .WithMany("ExpenseApprovals")
                         .HasForeignKey("BatchPaymentRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2179,26 +2119,20 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("BatchPaymentRequest");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.BatchPaymentRequests.PaymentRequest", b =>
+            modelBuilder.Entity("Unity.Payments.BatchPaymentRequests.PaymentRequest", b =>
                 {
-                    b.HasOne("Unity.Payments.Domain.BatchPaymentRequests.BatchPaymentRequest", "BatchPaymentRequest")
+                    b.HasOne("Unity.Payments.BatchPaymentRequests.BatchPaymentRequest", "BatchPaymentRequest")
                         .WithMany("PaymentRequests")
                         .HasForeignKey("BatchPaymentRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.Payments.Domain.Suppliers.Site", "Site")
-                        .WithMany()
-                        .HasForeignKey("SiteId");
-
                     b.Navigation("BatchPaymentRequest");
-
-                    b.Navigation("Site");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Site", b =>
+            modelBuilder.Entity("Unity.Payments.Suppliers.Site", b =>
                 {
-                    b.HasOne("Unity.Payments.Domain.Suppliers.Supplier", "Supplier")
+                    b.HasOne("Unity.Payments.Suppliers.Supplier", "Supplier")
                         .WithMany("Sites")
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2207,30 +2141,19 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("Supplier");
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
-                {
-                    b.Navigation("ApplicantAgent");
-
-                    b.Navigation("ApplicationAssignments");
-
-                    b.Navigation("ApplicationTags");
-
-                    b.Navigation("Assessments");
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>
                 {
                     b.Navigation("Applications");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.BatchPaymentRequests.BatchPaymentRequest", b =>
+            modelBuilder.Entity("Unity.Payments.BatchPaymentRequests.BatchPaymentRequest", b =>
                 {
                     b.Navigation("ExpenseApprovals");
 
                     b.Navigation("PaymentRequests");
                 });
 
-            modelBuilder.Entity("Unity.Payments.Domain.Suppliers.Supplier", b =>
+            modelBuilder.Entity("Unity.Payments.Suppliers.Supplier", b =>
                 {
                     b.Navigation("Sites");
                 });

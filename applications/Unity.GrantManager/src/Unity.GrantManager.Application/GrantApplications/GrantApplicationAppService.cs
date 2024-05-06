@@ -171,9 +171,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     public async Task<GrantApplicationDto> GetAsync(Guid id)
     {
         var application = await _applicationRepository.GetAsync(id, true);
-                    join address in await _applicantAddressRepository.GetQueryableAsync() on applicant.Id equals address.ApplicantId into addresses
-                        appStatus,
-                        addresses
 
         if (application == null) return new GrantApplicationDto();
 
@@ -192,11 +189,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
 
         if (application.Applicant != null)
-            foreach (ApplicantAddress item in queryResult.addresses)
-            {
-                appDto.ApplicantAddresses.Add(ObjectMapper.Map<ApplicantAddress, ApplicantAddressDto>(item));
-            }
-
         {
             appDto.OrganizationName = application.Applicant.OrgName;
             appDto.OrgNumber = application.Applicant.OrgNumber;
@@ -358,7 +350,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             _ = await _applicantRepository.UpdateAsync(applicant);
 
             // Integrate with payments module
-            await UpsertSupplierAsync(input.SupplierNumber, input.ApplicantId);
+            // await UpsertSupplierAsync(input.SupplierNumber, input.ApplicantId);
 
             var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
 
