@@ -9,6 +9,7 @@ using Unity.GrantManager.Applications;
 using System.ComponentModel.DataAnnotations;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Dashboard;
+using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Web.Pages.Dashboard
 {
@@ -43,7 +44,7 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
             _applicationStatusRepository = applicationStatusRepository;
         }
 
-        public async void OnGet()
+        public async Task OnGetAsync()
         {
             List<GrantManager.Intakes.Intake> intakes = _intakeRepository.GetListAsync().Result;
             IntakeOptionsList = intakes.Select(intake => new SelectListItem { Value = intake.Id.ToString(), Text = intake.IntakeName }).ToList();
