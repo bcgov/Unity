@@ -170,6 +170,10 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             string[] emptySubStatus = [""];
             parameters.SubStatuses = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
         }
+        else
+        {
+            parameters.SubStatuses = substatus;
+        }
         return parameters;
     }
 
