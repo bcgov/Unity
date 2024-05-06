@@ -487,8 +487,8 @@ public class GrantApplicationAppService :
     protected virtual async Task UpdateApplicationAddresses(CreateUpdateApplicantInfoDto input)
     {
         var applicantAddresses = await _applicantAddressRepository.GetListAsync(address => address.ApplicantId == input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, ApplicationAddressType.MAILING_ADDRESS, input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, ApplicationAddressType.PHYSICAL_ADDRESS, input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, ApplicantAddressType.MAILING_ADDRESS, input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, ApplicantAddressType.PHYSICAL_ADDRESS, input.ApplicantId);
     }
 
     protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, string addressType, Guid applicantId)
@@ -512,14 +512,14 @@ public class GrantApplicationAppService :
     {
         switch (addressType)
         {
-            case ApplicationAddressType.MAILING_ADDRESS:
+            case ApplicantAddressType.MAILING_ADDRESS:
                 address.Street = input.MailingAddressStreet ?? "";
                 address.Unit = input.MailingAddressUnit ?? "";
                 address.City = input.MailingAddressCity ?? "";
                 address.Province = input.MailingAddressProvince ?? "";
                 address.Postal = input.MailingAddressPostalCode ?? "";
                 break;
-            case ApplicationAddressType.PHYSICAL_ADDRESS:
+            case ApplicantAddressType.PHYSICAL_ADDRESS:
                 address.Street = input.PhysicalAddressStreet ?? "";
                 address.Unit = input.PhysicalAddressUnit ?? "";
                 address.City = input.PhysicalAddressCity ?? "";

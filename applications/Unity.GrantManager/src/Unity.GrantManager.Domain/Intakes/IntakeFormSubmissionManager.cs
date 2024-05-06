@@ -242,6 +242,7 @@ namespace Unity.GrantManager.Intakes
                     Street = intakeMap.PhysicalStreet ?? "{PhysicalStreet}",
                     Street2 = intakeMap.PhysicalStreet2 ?? "{PhysicalStreet2}",
                     Unit = intakeMap.PhysicalUnit ?? "{PhysicalUnit}",
+                    AddressType = ApplicantAddressType.PHYSICAL_ADDRESS,
                 });
 
             }

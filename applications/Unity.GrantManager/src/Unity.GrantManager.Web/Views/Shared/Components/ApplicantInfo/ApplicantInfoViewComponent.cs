@@ -87,14 +87,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             if (application.ApplicantAddresses.Any())
             {
-                ApplicantAddressDto physicalAddress = application.ApplicantAddresses.First(address => address.AddressType == ApplicationAddressType.PHYSICAL_ADDRESS);
+                ApplicantAddressDto physicalAddress = application.ApplicantAddresses.First(address => address.AddressType == ApplicantAddressType.PHYSICAL_ADDRESS);
                 model.ApplicantInfo.PhysicalAddressStreet = physicalAddress.Street;
                 model.ApplicantInfo.PhysicalAddressUnit = physicalAddress.Unit;
                 model.ApplicantInfo.PhysicalAddressCity = physicalAddress.City;
                 model.ApplicantInfo.PhysicalAddressProvince = physicalAddress.Province;
                 model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
 
-                ApplicantAddressDto mailingAddress = application.ApplicantAddresses.First(address => address.AddressType == ApplicationAddressType.MAILING_ADDRESS);
+                ApplicantAddressDto mailingAddress = application.ApplicantAddresses.First(address => address.AddressType == ApplicantAddressType.MAILING_ADDRESS);
                 model.ApplicantInfo.MailingAddressStreet = mailingAddress.Street;
                 model.ApplicantInfo.MailingAddressUnit = mailingAddress.Unit;
                 model.ApplicantInfo.MailingAddressCity = mailingAddress.City;
