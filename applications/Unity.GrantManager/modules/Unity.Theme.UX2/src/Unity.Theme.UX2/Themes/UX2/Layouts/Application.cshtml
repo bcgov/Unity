@@ -1,4 +1,5 @@
-﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+﻿@using System.Reflection
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.ContentTitle;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.MainNavbar;
 
@@ -63,9 +64,16 @@
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.Last, StandardLayouts.Application)
 </head>
 <body class="abp-application-layout @rtl">
+    <div id="app-version-id">
+        <div>
+            UGM @(Assembly
+             .GetEntryAssembly()
+             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+             .InformationalVersion)
+        </div>
+    </div>
+
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Application)
-
-
 
     @if (@isHomePage)
     {
