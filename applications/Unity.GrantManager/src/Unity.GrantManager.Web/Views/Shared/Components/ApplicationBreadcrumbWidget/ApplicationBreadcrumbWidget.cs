@@ -11,22 +11,27 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
 {
     [Widget(
         RefreshUrl = "Widgets/ApplicationBreadcrumb/RefreshApplicationBreadcrumb",        
-        ScriptTypes = new[] { typeof(ApplicationBreadcrumbWidgetScriptBundleContributor) },
-        StyleTypes = new[] { typeof(ApplicationBreadcrumbWidgetStyleBundleContributor) },
+        ScriptTypes = [typeof(ApplicationBreadcrumbWidgetScriptBundleContributor)],
+        StyleTypes = [typeof(ApplicationBreadcrumbWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class ApplicationBreadcrumbWidgetViewComponent : AbpViewComponent
     {
-        private readonly IGrantApplicationAppService _applicationAppService;
+        private readonly IApplicationApplicantAppService _applicationApplicantAppService;
 
-         public ApplicationBreadcrumbWidgetViewComponent(IGrantApplicationAppService applicationAppService)
+         public ApplicationBreadcrumbWidgetViewComponent(IApplicationApplicantAppService applicationApplicantAppService)
         {
-            _applicationAppService = applicationAppService;
+            _applicationApplicantAppService = applicationApplicantAppService;
         }
         
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-            GrantApplicationDto application = await _applicationAppService.GetAsync(applicationId);
-            return View(new ApplicationBreadcrumbWidgetViewModel() { GrantApplication = application });
+            var applicationApplicant = await _applicationApplicantAppService.GetByApplicationIdAsync(applicationId);
+            return View(new ApplicationBreadcrumbWidgetViewModel() 
+            { 
+                ApplicantName = applicationApplicant.ApplicantName,
+                ApplicationStatus = applicationApplicant.ApplicationStatus,
+                ReferenceNo = applicationApplicant.ApplicationReferenceNo
+            });
         }
     }
 

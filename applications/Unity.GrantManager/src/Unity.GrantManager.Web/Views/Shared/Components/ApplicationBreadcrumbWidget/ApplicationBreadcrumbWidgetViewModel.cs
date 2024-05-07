@@ -3,7 +3,9 @@
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget
 {
     public class ApplicationBreadcrumbWidgetViewModel
-    {
-        public GrantApplicationDto GrantApplication { get; set; } = new GrantApplicationDto();
+    {        
+        public string ReferenceNo { get; set; } = string.Empty;
+        public string ApplicantName { get; set; } = string.Empty;
+        public string ApplicationStatus { get; set; } = string.Empty;
     }
 }

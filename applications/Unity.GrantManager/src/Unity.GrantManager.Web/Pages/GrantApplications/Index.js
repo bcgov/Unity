@@ -4,7 +4,6 @@
     let dt = $('#GrantApplicationsTable');
     let dataTable;
 
-    debugger;
     let x = unity;
 
     const listColumns = getColumns();
@@ -358,10 +357,16 @@
         return {
             title: 'Org Book Status',
             name: 'orgBookStatus',
-            data: 'orgBookStatus',
+            data: 'applicant.orgStatus',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Org Book Status}';
+                if (data != null && data == 'ACTIVE') {
+                    return 'Active';
+                } else if (data != null && data == 'HISTORICAL') {
+                    return 'Historical';
+                } else {
+                    return data ?? '{Org Book Status}';
+                }  
             },
             index: 17
         }
@@ -426,11 +431,11 @@
     function getTotalPaidAmountColumn() {
         return {
             title: 'Total Paid Amount $',
-            name: 'projectFundingTotal',
-            data: 'projectFundingTotal',
+            name: 'totalPaidAmount',
+            data: 'totalPaidAmount',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return formatter.format(data) ?? '{Total Paid Amount $}';
+                return '';
             },
             index: 22
         }
