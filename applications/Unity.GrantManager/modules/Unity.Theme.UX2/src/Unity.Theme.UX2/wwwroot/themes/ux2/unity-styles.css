@@ -630,3 +630,10 @@ div.dataTables_wrapper div.dataTables_filter {
 .data-table-header > span {
     color: var(--bc-colors-blue-text-links);
 }
+
+#app-version-id {
+    position: absolute;
+    right: 0;
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
