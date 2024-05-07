@@ -21,7 +21,7 @@ $(function () {
     });
 
     let applicationPaymentRequestModal = new abp.ModalManager({
-        viewUrl: 'BatchPayments/CreateBatchPayments',
+        viewUrl: 'Payments/CreatePayments',
     });
 
     tagApplicationModal.onOpen(function () {

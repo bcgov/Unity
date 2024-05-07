@@ -2,7 +2,7 @@
 using Unity.Payments.Enums;
 using Volo.Abp.Application.Dtos;
 
-namespace Unity.Payments.BatchPaymentRequests
+namespace Unity.Payments.PaymentRequests
 {
     [Serializable]
     public class ExpenseApprovalDto : AuditedEntityDto<Guid>

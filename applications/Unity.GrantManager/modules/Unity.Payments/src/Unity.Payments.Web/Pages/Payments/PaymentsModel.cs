@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace Unity.Payments.Web.Pages.BatchPayments
+namespace Unity.Payments.Web.Pages.Payments
 {
-    public class BatchPaymentsModel
+    public class PaymentsModel
     {
         [DisplayName("ApplicationPaymentRequest:Amount")]
         [Required]

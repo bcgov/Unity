@@ -1,9 +1,8 @@
 $(function () {
     const formatter = createNumberFormatter();
     const l = abp.localization.getResource('Payments');
-    let dt = $('#BatchPaymentDetailsListTable');
+    let dt = $('#PaymentDetailsListTable');
     let dataTable;
-    const batchPaymentId = document.querySelector("#BatchPaymentId").value;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'id',
@@ -11,10 +10,7 @@ $(function () {
     ];
 
 
-    let inputAction = function (requestData, dataTableSettings) {
-        const id = batchPaymentId
-        return id;
-    }
+  
 
     let actionButtons = [
         {
@@ -51,7 +47,7 @@ $(function () {
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 4, unity.payments.batchPaymentRequests.batchPaymentRequest.getBatchPaymentList, inputAction, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, actionButtons, 'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 

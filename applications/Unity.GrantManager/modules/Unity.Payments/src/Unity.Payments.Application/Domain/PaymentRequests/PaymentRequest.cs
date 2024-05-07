@@ -4,10 +4,14 @@ using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
+using System.Collections.ObjectModel;
+using System.Linq;
+using Volo.Abp;
+using Unity.Payments.Domain.Exceptions;
 
-namespace Unity.Payments.Domain.BatchPaymentRequests
+namespace Unity.Payments.Domain.PaymentRequests
 {
-    public class PaymentRequest : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationIdEntity
+    public class PaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         public Guid? TenantId { get; set; }
         public virtual Guid? SiteId { get; set; }
@@ -16,8 +20,7 @@ namespace Unity.Payments.Domain.BatchPaymentRequests
         public virtual decimal Amount { get; private set; }
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
         public virtual string? Description { get; private set; } = null;
-        public virtual BatchPaymentRequest? BatchPaymentRequest { get; set; }
-        public virtual Guid BatchPaymentRequestId { get; set; }
+
         public virtual bool IsRecon { get; internal set; }
 
         // Filled on a recon
@@ -28,19 +31,44 @@ namespace Unity.Payments.Domain.BatchPaymentRequests
 
         // External Correlation
         public virtual Guid CorrelationId { get; private set; }
+        public virtual string CorrelationProvider { get; private set; } = string.Empty;
 
         // Payee Info
         public virtual string PayeeName { get; private set; } = string.Empty;
         public virtual string ContractNumber { get; private set; } = string.Empty;
-        public virtual string SupplierNumber  { get; private set; } = string.Empty;
+        public virtual string SupplierNumber { get; private set; } = string.Empty;
+
+        public virtual string RequesterName { get; private set; } = string.Empty;
+
+        public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
+        public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
+
+
 
         protected PaymentRequest()
         {
+            ExpenseApprovals = [];
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
+
+        private static Collection<ExpenseApproval> GenerateExpenseApprovals(decimal amount, decimal? paymentThreshold = 500000m)
+        {
+            var expenseApprovals = new Collection<ExpenseApproval>()
+            {
+                new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level1),
+                new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level2)
+            };
+
+            if (amount >= paymentThreshold)
+            {
+                expenseApprovals.Add(new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level3));
+            }
+
+            return expenseApprovals;
+        }
+
         public PaymentRequest(Guid id,
-            BatchPaymentRequest batch,
             string invoiceNumber,
             decimal amount,
             string payeeName,
@@ -48,7 +76,10 @@ namespace Unity.Payments.Domain.BatchPaymentRequests
             string supplierNumber,
             Guid siteId,
             Guid correlationId,
-            string? description = null)
+            string correlationProvider,
+            string? description = null,
+            decimal? paymentThreshold = 500000m
+            )
             : base(id)
         {
             InvoiceNumber = invoiceNumber;
@@ -58,8 +89,10 @@ namespace Unity.Payments.Domain.BatchPaymentRequests
             SupplierNumber = supplierNumber;
             SiteId = siteId;
             Description = description;
-            BatchPaymentRequest = batch;
             CorrelationId = correlationId;
+            CorrelationProvider = correlationProvider;
+            ExpenseApprovals = GenerateExpenseApprovals(amount, paymentThreshold);
+            ValidatePaymentRequest();
         }
 
         public PaymentRequest SetAmount(decimal amount)
@@ -101,6 +134,16 @@ namespace Unity.Payments.Domain.BatchPaymentRequests
         public PaymentRequest SetPaymentDate(string paymentDate)
         {
             PaymentDate = paymentDate;
+            return this;
+        }
+        public PaymentRequest ValidatePaymentRequest()
+        {
+            if (Amount <= 0)
+            {
+                throw new BusinessException(ErrorConsts.ZeroPayment);
+            }
+
+
             return this;
         }
     }

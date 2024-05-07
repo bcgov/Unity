@@ -36,8 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-	<None Remove="Pages\Payments\Index.css" />
-	<None Remove="pages\payments\Index.js" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.css" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.js" />

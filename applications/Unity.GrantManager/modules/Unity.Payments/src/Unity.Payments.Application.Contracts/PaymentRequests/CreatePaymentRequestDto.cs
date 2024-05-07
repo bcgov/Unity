@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Unity.Payments.BatchPaymentRequests
+namespace Unity.Payments.PaymentRequests
 {
 #pragma warning disable CS8618
     [Serializable]
@@ -14,6 +14,8 @@ namespace Unity.Payments.BatchPaymentRequests
         public string PayeeName { get; set; }
         public string ContractNumber { get; set; }
         public string SupplierNumber { get; set; }
+
+        public string CorrelationProvider { get; set; } = string.Empty;
     }
 #pragma warning restore CS8618
 }

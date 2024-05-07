@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
 using Unity.Payments.Suppliers;
-using Unity.Payments.BatchPaymentRequests;
+using Unity.Payments.PaymentRequests;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Unity.Payments.PaymentConfigurations;
@@ -11,12 +11,12 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Unity.Payment.Shared;
 using System.Text.Json;
 
-namespace Unity.Payments.Web.Pages.BatchPayments
+namespace Unity.Payments.Web.Pages.Payments
 {
-    public class CreateBatchPaymentsModel : AbpPageModel
+    public class CreatePaymentsModel : AbpPageModel
     {
         [BindProperty]
-        public List<BatchPaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
+        public List<PaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
 
         [BindProperty]
         public decimal PaymentThreshold { get; set; }
@@ -25,18 +25,18 @@ namespace Unity.Payments.Web.Pages.BatchPayments
 
         private readonly IGrantApplicationAppService _applicationService;
 
-        private readonly IBatchPaymentRequestAppService _batchPaymentRequestService;
+        private readonly IPaymentRequestAppService _paymentRequestService;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
         private readonly ISupplierAppService _iSupplierAppService;
 
-        public CreateBatchPaymentsModel(IGrantApplicationAppService applicationService,
+        public CreatePaymentsModel(IGrantApplicationAppService applicationService,
            ISupplierAppService iSupplierAppService,
-           IBatchPaymentRequestAppService batchPaymentRequestService,
+           IPaymentRequestAppService batchPaymentRequestService,
            IPaymentConfigurationAppService paymentConfigurationAppService)
         {
             SelectedApplicationIds = [];
             _applicationService = applicationService;
-            _batchPaymentRequestService = batchPaymentRequestService;
+            _paymentRequestService = batchPaymentRequestService;
             _paymentConfigurationAppService = paymentConfigurationAppService;
             _iSupplierAppService = iSupplierAppService;
         }
@@ -48,7 +48,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
 
             foreach (var application in applications)
             {
-                BatchPaymentsModel request = new()
+                PaymentsModel request = new()
                 {
                     ApplicationId = application.Id,
                     ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
@@ -57,6 +57,7 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                     InvoiceNumber = application.ReferenceNo,
                     ContractNumber = application.ContractNumber,
                     SupplierNumber = application.ContractNumber,
+                    
                 };
 
                 // Massage Site list
@@ -96,12 +97,9 @@ namespace Unity.Payments.Web.Pages.BatchPayments
         {
             if (ApplicationPaymentRequestForm == null) return NoContent();
 
-            await _batchPaymentRequestService.CreateAsync(new CreateBatchPaymentRequestDto()
-            {
-                Description = "Description",
-                PaymentRequests = MapPaymentRequests(),
-                Provider = "A"
-            });
+            var payments = MapPaymentRequests();
+
+            await _paymentRequestService.CreateAsync(payments);
 
             return NoContent();
         }
@@ -124,11 +122,14 @@ namespace Unity.Payments.Web.Pages.BatchPayments
                     ContractNumber = payment.ContractNumber ?? string.Empty,
                     SupplierNumber = payment.ContractNumber ?? string.Empty,
                     PayeeName = payment.ApplicantName ?? string.Empty,
+                    CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicationCorrelationProvider,
 
                 });
             }
 
             return payments;
         }
+
+
     }
 }

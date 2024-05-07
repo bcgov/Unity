@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
             context.Files
               .AddIfNotContains("/Pages/AssigneeSelection/AssigneeSelection.js");
             context.Files
-              .AddIfNotContains("/Pages/BatchPayments/BatchPaymentsModal.js");
+              .AddIfNotContains("/Pages/BatchPayments/PaymentsModal.js");
             context.Files
               .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
         }

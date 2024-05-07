@@ -2,7 +2,7 @@
 @using Microsoft.Extensions.Localization
 @using Unity.Payments.Localization
 @using Unity.Payments.Web.Pages.Payments
-@model Unity.Payments.Web.Pages.Payments.PaymentsModel
+@model Unity.Payments.Web.Pages.Payments.PaymentsPageModel
 @inject IStringLocalizer<PaymentsResource> L
 
 @{
@@ -15,7 +15,7 @@
 @section styles {
     <abp-style src="/Pages/Payments/Index.css" />
 }
-<input type="hidden" id="BatchPaymentId" value="@Model.BatchPaymentId" />
+
 <div class="container-fluid px-2">
     @await Component.InvokeAsync("PaymentActionBar")
     <div class="d-flex my-1 p-2">
@@ -23,5 +23,5 @@
             <abp-card-title></abp-card-title>
         </abp-column>
     </div>
-    <abp-table id="BatchPaymentDetailsListTable"></abp-table>
+    <abp-table id="PaymentDetailsListTable"></abp-table>
 </div>
