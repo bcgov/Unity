@@ -27,15 +27,6 @@ public class GrantManagerMenuContributor : IMenuContributor
         var l = context.GetLocalizer<GrantManagerResource>();
 
         context.Menu.AddItem(
-        new ApplicationMenuItem(
-            GrantManagerMenus.Welcome,
-            l["Menu:Welcome"],
-            "~/",
-            icon: "fl fl-street",
-            order: 0
-        ));
-
-        context.Menu.AddItem(
             new ApplicationMenuItem(
                 GrantManagerMenus.Applications,
                 l["Menu:Applications"],

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
-using Unity.Payments.Exceptions;
+using Unity.Payments.Domain.Exceptions;
+using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.PaymentConfigurations

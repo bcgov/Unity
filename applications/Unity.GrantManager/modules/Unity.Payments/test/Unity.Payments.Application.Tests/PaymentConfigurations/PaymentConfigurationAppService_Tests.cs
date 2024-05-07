@@ -1,5 +1,6 @@
 ﻿using Shouldly;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.PaymentConfigurations;
 using Xunit;
 
 namespace Unity.Payments.PaymentConfigurations
@@ -16,6 +17,7 @@ namespace Unity.Payments.PaymentConfigurations
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public async Task GetAsync_GetsConfiguration()
         {
             // Arrange
@@ -38,6 +40,7 @@ namespace Unity.Payments.PaymentConfigurations
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public async Task CreateAsync_AddsConfiguration()
         {
             // Arrange
@@ -66,6 +69,7 @@ namespace Unity.Payments.PaymentConfigurations
         }
 
         [Fact]
+        [Trait("Category", "Integration")]
         public async Task UpdateAsync_UpdatesConfiguration()
         {
             // Arrange

@@ -19,8 +19,10 @@
     <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Shared" Version="8.1.0" />
     <PackageReference Include="Volo.Abp.SettingManagement.Domain.Shared" Version="8.1.0" />
     <PackageReference Include="Volo.Abp.OpenIddict.Domain.Shared" Version="8.1.0" />
+    <ProjectReference Include="..\..\modules\Unity.Flex\src\Unity.Flex.Shared\Unity.Flex.Shared.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Domain.Shared\Unity.Notifications.Domain.Shared.csproj" />
-    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Domain.Shared\Unity.Payments.Domain.Shared.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Shared\Unity.Payments.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

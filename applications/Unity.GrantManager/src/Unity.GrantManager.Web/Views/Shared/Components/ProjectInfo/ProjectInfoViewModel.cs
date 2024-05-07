@@ -40,6 +40,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public List<SelectListItem> CommunityList { get; set; } = new List<SelectListItem>();
         public List<CommunityDto> Communities { get; set; } = new List<CommunityDto>();
         public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
+        public bool IsEditGranted { get; set; }
+        public bool IsPostEditFieldsAllowed { get; set; }
+
 
 
         public class ProjectInfoViewModelModel
@@ -137,10 +140,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractNumber")]
+            [RegularExpression(@"^[a-zA-Z0-9]*$", ErrorMessage = "Invalid Contract Number.")]
             public string? ContractNumber { get; set; }
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
             public DateTime? ContractExecutionDate { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.Place")]
+            public string? Place { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

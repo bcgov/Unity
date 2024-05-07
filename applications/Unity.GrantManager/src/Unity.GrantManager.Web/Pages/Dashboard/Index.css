@@ -1,14 +1,30 @@
-﻿.application-dashboard {
+﻿﻿.application-dashboard {
+    margin-left: 0.25rem;
+}
+
+.card-border-radius .card.mb-3 {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+    border-radius: 15px !important;
+}
+
+
+.application-dashboard-dropdown {
+    min-width: 250px;
+    margin-top: 10px;
+}
+
+.dashboard-scrollable-content {
     overflow-y: scroll;
-    height: calc(100vh - 150px);
+    height: calc(100vh - 120px);
 }
 
-.chartBox {
-    height: 100%;
-    width: 80vw;
+.button-align-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.chartCanvas {
-    width: 40vw;
-    height: 70vh;
+.application-dashboard-dropdown select {
+    display: none !important;
 }

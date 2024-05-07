@@ -6,16 +6,16 @@ namespace Unity.GrantManager.Applications;
 
 public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
 {
-    public string ApplicantName { get; set; } = string.Empty;
-    public string? NonRegisteredBusinessName { get; set; } = string.Empty;
-    public string? OrgName { get; set; } = string.Empty;
-    public string? OrgNumber { get; set; } = string.Empty;
-    public string? OrgStatus { get; set; } = string.Empty;
-    public string? OrganizationType { get; set; } = string.Empty;
-    public string? OrganizationSize { get; set; } = string.Empty;
-    public string? Sector { get; set; } = string.Empty;
-    public string? SubSector { get; set; } = string.Empty;
-    public string? Status { get; set; } = string.Empty;
+    public string? ApplicantName { get; set; }
+    public string? NonRegisteredBusinessName { get; set; }
+    public string? OrgName { get; set; }
+    public string? OrgNumber { get; set; }
+    public string? OrgStatus { get; set; }
+    public string? OrganizationType { get; set; }
+    public string? OrganizationSize { get; set; }
+    public string? Sector { get; set; }
+    public string? SubSector { get; set; }
+    public string? Status { get; set; }
     public string? ApproxNumberOfEmployees { get; set; }
     public string? IndigenousOrgInd { get; set; }
     public string? SectorSubSectorIndustryDesc { get; set; }

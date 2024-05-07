@@ -5,6 +5,7 @@ using Unity.Notifications.EmailNotifications;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Events
 {
@@ -13,19 +14,23 @@ namespace Unity.GrantManager.Events
 
         private readonly IEmailNotificationService _emailNotificationService;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
+        private readonly IFeatureChecker _featureChecker;
 
-        public ApplicationChangedHandler(
-            IEmailNotificationService emailNotificationService,
-            IApplicantAgentRepository applicantAgentRepository
-            )
+        public ApplicationChangedHandler(IEmailNotificationService emailNotificationService,
+            IApplicantAgentRepository applicantAgentRepository,
+            IFeatureChecker featureChecker)
         {
             _emailNotificationService = emailNotificationService;
             _applicantAgentRepository = applicantAgentRepository;
+            _featureChecker = featureChecker;
         }
 
         public async Task HandleEventAsync(ApplicationChangedEvent eventData)
         {
-            await EmailNotificationEventAsync(eventData);
+            if (await _featureChecker.IsEnabledAsync("Unity.Notifications"))
+            {
+                await EmailNotificationEventAsync(eventData);
+            }
         }
 
         private async Task EmailNotificationEventAsync(ApplicationChangedEvent eventData)

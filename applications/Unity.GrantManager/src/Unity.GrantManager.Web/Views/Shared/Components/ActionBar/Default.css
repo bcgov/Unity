@@ -1,21 +1,4 @@
-﻿.action-bar {
-    width: 100%;
-    justify-content: space-between;
-    align-items: flex-start;
-    display: inline-flex;
-    margin: 6px 0;
-    border-radius: 10px;
-    background-color: white;
-}
-
-.action-bar.active {
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
-        
-}
-
-.spinner-loader {
+﻿.spinner-loader {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -26,39 +9,18 @@
     display: flex;
     gap: 0.5rem;
 }
-.payment-card {
-    border-radius: 4px;
-    border: 1px solid var(--bc-colors-grey-dividers) !important;
-    padding: 0;
+
+
+.search-action-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 
-.payment-card-header {
-    background-color: white;
-}
-.single-payment-card {
-    border-bottom: 1px solid var(--bc-colors-grey-dividers);
-}
-.single-payment-card-application-name {
-    font-weight: bold;
-}
-.remove-single-payment {
-    float: right;
-    font-size: medium !important;
+.search-action-bar_search-wrapper {
+    flex: 1;
 }
 
-.remove-single-payment:hover {
-    color: black !important;
-    text-decoration: none;
-    box-shadow: none;
-}
-.no-payment-msg{
-    display:none;
-}
-.remove-single-payment > .fa {
-    font-size: small;
-    
-}
-
-.max-error {
+.action-bar-btn-unavailable {
     display: none;
 }

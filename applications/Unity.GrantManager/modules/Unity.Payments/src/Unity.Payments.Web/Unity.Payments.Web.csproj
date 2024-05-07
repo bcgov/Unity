@@ -19,11 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
-    <ProjectReference Include="..\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.3" />
   </ItemGroup>
 
@@ -41,15 +36,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Views\Shared\Components\" />
+	<None Remove="Pages\Payments\Index.css" />
+	<None Remove="pages\payments\Index.js" />
+	<None Remove="Views\Shared\Components\PaymentActionBar\Default.css" />
+	<None Remove="Views\Shared\Components\PaymentActionBar\Default.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.css" />
+	<EmbeddedResource Include="Views\Shared\Components\PaymentActionBar\Default.css" />
+	<EmbeddedResource Include="Views\Shared\Components\PaymentActionBar\Default.js" />
 	<EmbeddedResource Include="Views\Shared\Components\SupplierInfo\SupplierInfo.js">
 		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</EmbeddedResource>
 	<EmbeddedResource Include="Views\Shared\Components\SupplierInfo\SupplierInfo.css">
 		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
+    <ProjectReference Include="..\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

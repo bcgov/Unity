@@ -1,0 +1,121 @@
+﻿@using System.Reflection
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.ContentTitle;
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.MainNavbar;
+
+@using Volo.Abp.AspNetCore.Mvc.AntiForgery;
+@using Volo.Abp.AspNetCore.Mvc.UI.Components.LayoutHook
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Volo.Abp.AspNetCore.Mvc.UI.Theming
+@using Volo.Abp.AspNetCore.Mvc.UI.Widgets.Components.WidgetScripts
+@using Volo.Abp.AspNetCore.Mvc.UI.Widgets.Components.WidgetStyles
+@using Volo.Abp.Localization
+@using Volo.Abp.Ui.Branding
+@using Volo.Abp.Ui.LayoutHooks
+
+@inject IBrandingProvider BrandingProvider
+@inject IPageLayout PageLayout
+@inject IAbpAntiForgeryManager AbpAntiForgeryManager
+@{
+    Layout = null;    
+    var containerClass = "container-fluid";
+
+    AbpAntiForgeryManager.SetCookie();
+    
+    var pageTitle = ViewBag.Title == null ? BrandingProvider.AppName : ViewBag.Title;
+
+    if (PageLayout.Content.Title != null)
+    {
+        if (!string.IsNullOrWhiteSpace(pageTitle))
+        {
+            pageTitle = " | " + pageTitle;
+        }
+
+        pageTitle = PageLayout.Content.Title + pageTitle;
+    }
+
+    var isHomePage = (PageLayout.Content.Title == "Home");
+
+    var rtl = CultureHelper.IsRtl ? "rtl" : string.Empty;
+
+    var applicationContainerClass = isHomePage ? "" : "unity-app-main-container";
+}
+
+<!DOCTYPE html>
+
+<html lang="@CultureInfo.CurrentCulture.Name" dir="@rtl">
+
+<head>
+
+    @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.First, StandardLayouts.Application)
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>@pageTitle</title>
+
+    <abp-style-bundle name="@UnityThemeUX2Bundles.Styles.Global" />
+
+    @await Component.InvokeAsync(typeof(WidgetStylesViewComponent))
+
+    @await RenderSectionAsync("styles", false)
+
+    @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.Last, StandardLayouts.Application)
+</head>
+<body class="abp-application-layout @rtl">
+    <div id="app-version-id">
+        <div>
+            UGM @(Assembly
+             .GetEntryAssembly()
+             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+             .InformationalVersion)
+        </div>
+    </div>
+
+    @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Application)
+
+    @if (@isHomePage)
+    {
+        @(await Component.InvokeAsync<HomeTopbarViewComponent>())        
+    }
+    else
+    {
+        @(await Component.InvokeAsync<TopbarViewComponent>())
+    }
+
+    <div class="@containerClass unity-app-container p-0">
+        @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.First, StandardLayouts.Application)
+        <div class="d-flex">
+            <div class="flex-fill @applicationContainerClass">
+                <div id="AbpContentToolbar" class="card identity-toolbar" style="display:none">
+                    <!-- Not used in most module, need to fix this, left behind for abp modules but hidden -->
+                    <div>
+                        @(await Component.InvokeAsync<ContentTitleViewComponent>())
+                    </div>
+                    <div>
+                        <div class="text-end">
+                            @await RenderSectionAsync("content_toolbar", false)
+                        </div>
+                    </div>
+                </div>
+
+                @RenderBody()
+            </div>
+        </div>
+        @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.Last, StandardLayouts.Application)
+    </div>
+
+    <abp-script-bundle name="@UnityThemeUX2Bundles.Scripts.Global" />
+
+    <script src="~/Abp/ApplicationLocalizationScript?cultureName=@CultureInfo.CurrentUICulture.Name"></script>
+    <script src="~/Abp/ApplicationConfigurationScript"></script>
+    <script src="~/Abp/ServiceProxyScript"></script>
+
+    @await Component.InvokeAsync(typeof(WidgetScriptsViewComponent))
+
+    @await RenderSectionAsync("scripts", false)
+
+    @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Application)
+</body>
+</html>

@@ -229,28 +229,28 @@ $(function () {
         }
     });
     function manageActionButtons() {
-        if (selectedApplicationIds.length == 1) {
-            $('#externalLink').prop('disabled', false);
-            $('#copyLink').prop('disabled', false);
-            $('#downloadApplication').prop('disabled', false);
-            $('#applicationLink').prop('disabled', false);
-            summaryWidgetManager.refresh();
-        }
-        else {
-            $('#externalLink').prop('disabled', true);
-            $('#copyLink').prop('disabled', true);
-            $('#downloadApplication').prop('disabled', true);
-            $('#applicationLink').prop('disabled', true);
-            const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
-            summaryCanvas.classList.remove('show');
-        }
         if (selectedApplicationIds.length == 0) {
             $('*[data-selector="applications-table-actions"]').prop('disabled', true);
-            $('.action-bar').removeClass('active');
-        }
-        else {
+            $('*[data-selector="applications-table-actions"]').addClass('action-bar-btn-unavailable');
+            $('.action-bar').removeClass('active');            
+
+            const summaryCanvas = document.getElementById('applicationAsssessmentSummary');
+            summaryCanvas.classList.remove('show');
+        }        
+        else { 
             $('*[data-selector="applications-table-actions"]').prop('disabled', false);
+            $('*[data-selector="applications-table-actions"]').removeClass('action-bar-btn-unavailable');
             $('.action-bar').addClass('active');
+
+            $('#externalLink').addClass('action-bar-btn-unavailable');
+            $('#applicationLink').addClass('action-bar-btn-unavailable');
+            
+            if (selectedApplicationIds.length == 1) {
+                $('#externalLink').removeClass('action-bar-btn-unavailable');
+                $('#applicationLink').removeClass('action-bar-btn-unavailable');
+
+                summaryWidgetManager.refresh();          
+            }
         }
     }
 

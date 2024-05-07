@@ -2,7 +2,10 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Unity.GrantManager.Caching;
+using Unity.GrantManager.Settings;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Locality
@@ -13,16 +16,29 @@ namespace Unity.GrantManager.Locality
     public class ElectoralDistrictAppService : ApplicationService, IElectoralDistrictService
     {
         private readonly IElectoralDistrictRepository _electoralDistrictRepository;
-        public ElectoralDistrictAppService(IElectoralDistrictRepository electoralDistrictRepository)
+        private readonly IDistributedCache<IList<ElectoralDistrictDto>, LocalityCacheKey> _cache;
+
+        public ElectoralDistrictAppService(IElectoralDistrictRepository electoralDistrictRepository,
+            IDistributedCache<IList<ElectoralDistrictDto>, LocalityCacheKey> cache)
         {
             _electoralDistrictRepository = electoralDistrictRepository;
+            _cache = cache;
         }
 
-        public async Task<IList<ElectoralDistrictDto>> GetListAsync()
+        public virtual async Task<IList<ElectoralDistrictDto>> GetListAsync()
+        {
+            var cacheKey = new LocalityCacheKey(SettingsConstants.ElectoralDistrictsCacheKey, null);
+            return await _cache.GetOrAddAsync(
+                cacheKey,
+                GetElectoralDistricts
+            ) ?? [];           
+        }
+
+        protected virtual async Task<IList<ElectoralDistrictDto>> GetElectoralDistricts()
         {
             var electoralDistricts = await _electoralDistrictRepository.GetListAsync();
 
-            return ObjectMapper.Map<List<ElectoralDistrict>, List<ElectoralDistrictDto>>(electoralDistricts.OrderBy(s => s.ElectoralDistrictCode).ToList());
+            return ObjectMapper.Map<List<ElectoralDistrict>, List<ElectoralDistrictDto>>([.. electoralDistricts.OrderBy(s => s.ElectoralDistrictCode)]);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.Suppliers;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.Suppliers
@@ -16,7 +17,7 @@ namespace Unity.Payments.Suppliers
             _siteRepository = siteRepository;
         }
 
-        public async Task<SiteDto> GetAsync(Guid id)
+        public virtual async Task<SiteDto> GetAsync(Guid id)
         {
             return ObjectMapper.Map<Site, SiteDto>(await _siteRepository.GetAsync(id));
         }

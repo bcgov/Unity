@@ -18,10 +18,10 @@ public class SiteInfoModalModel : AbpPageModel
     [BindProperty]
     public SiteInfoModalModelModel Site { get; set; } = new();
 
-    private readonly SupplierAppService _supplierService;
-    private readonly SiteAppService _siteAppService;
+    private readonly ISupplierAppService _supplierService;
+    private readonly ISiteAppService _siteAppService;
 
-    public SiteInfoModalModel(SupplierAppService supplierService, SiteAppService siteAppService)
+    public SiteInfoModalModel(ISupplierAppService supplierService, ISiteAppService siteAppService)
     {
         _supplierService = supplierService;
         _siteAppService = siteAppService;
@@ -120,7 +120,7 @@ public class SiteInfoModalModel : AbpPageModel
             AddressLine3 = Site.AddressLine3,
             City = Site.City,
             Number = Site.SiteNumber,
-            PaymentGroup = (PaymentGroupDto)payGroup,
+            PaymentGroup = (PaymentGroup)payGroup,
             PostalCode = Site.PostalCode,
             Province = Site.Province
         });
@@ -136,7 +136,7 @@ public class SiteInfoModalModel : AbpPageModel
             AddressLine3 = Site.AddressLine3,
             City = Site.City,
             Number = Site.SiteNumber,
-            PaymentGroup = (PaymentGroupDto)payGroup,
+            PaymentGroup = (PaymentGroup)payGroup,
             PostalCode = Site.PostalCode,
             Province = Site.Province
         });

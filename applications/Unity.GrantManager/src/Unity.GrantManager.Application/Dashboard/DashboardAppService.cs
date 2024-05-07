@@ -1,28 +1,32 @@
 using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Intakes;
 using Volo.Abp.Application.Services;
-using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Dashboard;
 
 [Authorize]
-[Dependency(ReplaceServices = true)]
-[ExposeServices(typeof(DashboardAppService), typeof(IDashboardAppService))]
 public class DashboardAppService : ApplicationService, IDashboardAppService
 {
-
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicantRepository _applicantRepository;
     private readonly IApplicationTagsRepository _applicationTagsRepository;
+    private readonly IApplicationFormRepository _applicationFormRepository;
+    private readonly IIntakeRepository _intakeRepository;
 
     public DashboardAppService(IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
         IApplicantRepository applicantRepository,
-        IApplicationTagsRepository applicationTagsRepository
+        IApplicationTagsRepository applicationTagsRepository,
+        IApplicationFormRepository applicationFormRepository,
+        IIntakeRepository intakeRepository
         )
          : base()
     {
@@ -30,50 +34,188 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         _applicationStatusRepository = applicationStatusRepository;
         _applicantRepository = applicantRepository;
         _applicationTagsRepository = applicationTagsRepository;
+        _applicationFormRepository = applicationFormRepository;
+        _intakeRepository = intakeRepository;
     }
 
-    public async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync()
+    public virtual async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var query = await _applicationRepository.GetQueryableAsync();
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
 
-        var result = query?.GroupBy(app => app.EconomicRegion).Select(group => new GetEconomicRegionDto { EconomicRegion = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.EconomicRegion);
-        if (result == null) return new List<GetEconomicRegionDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
-        return queryResult;
+        var economicRegionDto = await ExecuteWithDisabledTracking(async () => {
+            var query = from intake in await _intakeRepository.GetQueryableAsync()
+                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                        where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
+                        select application;
+
+            var result = query?.GroupBy(app => app.EconomicRegion)
+                .Select(group => new { EconomicRegion = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, Count = group.Count() })
+                .GroupBy(app => app.EconomicRegion)
+                .Select(group => new GetEconomicRegionDto { EconomicRegion = group.Key, Count = group.Sum(obj => obj.Count) })
+                .OrderBy(o => o.EconomicRegion);
+
+            if (result == null) return [];
+
+            var queryResult = result.ToList();
+
+            return queryResult;
+        });
+
+        return economicRegionDto;
     }
 
-    public async Task<List<GetSectorDto>> GetSectorCountAsync()
+    public virtual async Task<List<GetSectorDto>> GetSectorCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var query = from application in await _applicationRepository.GetQueryableAsync()
-                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                    select new { application, applicant };
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
 
-        var result = query?.GroupBy(app => app.applicant.Sector).Select(group => new GetSectorDto { Sector = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.Sector);
-        if (result == null) return new List<GetSectorDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
-        return queryResult;
+        var sectorCountDto = await ExecuteWithDisabledTracking(async () => {
+            var query = from intake in await _intakeRepository.GetQueryableAsync()
+                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                        join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                        where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
+                        select new { application, applicant };
+
+            var result = query?.GroupBy(app => app.applicant.Sector)
+                .Select(group => new { Sector = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, Count = group.Count() })
+                .GroupBy(group => group.Sector)
+                .Select(group => new GetSectorDto { Sector = group.Key, Count = group.Sum(obj => obj.Count) })
+                .OrderBy(o => o.Sector);
+
+            if (result == null) return [];
+
+            var queryResult = result.ToList();
+
+            return queryResult;
+        });
+
+        return sectorCountDto;
     }
 
-    public async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync()
+    public virtual async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var query = from application in await _applicationRepository.GetQueryableAsync()
-                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    select new { application, appStatus };
-        var result = query?.GroupBy(app => app.appStatus.InternalStatus).Select(group => new GetApplicationStatusDto { ApplicationStatus = string.IsNullOrEmpty(group.Key) ? "None" : group.Key, Count = group.Count() }).OrderBy(o => o.ApplicationStatus);
-        if (result == null) return new List<GetApplicationStatusDto>();
-        var queryResult = await AsyncExecuter.ToListAsync(result);
-        return queryResult;
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+
+        var applicationStatusDto = await ExecuteWithDisabledTracking(async () => {
+            var query = from intake in await _intakeRepository.GetQueryableAsync()
+                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                        where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
+                        select new { application, appStatus };
+
+            var result = query?.GroupBy(app => app.appStatus.InternalStatus)
+                .Select(group => new { ApplicationStatus = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, Count = group.Count() })
+                .GroupBy(app => app.ApplicationStatus)
+                .Select(group => new GetApplicationStatusDto { ApplicationStatus = group.Key, Count = group.Sum(obj => obj.Count) })
+                .OrderBy(o => o.ApplicationStatus);
+
+            if (result == null) return [];
+
+            var queryResult = result.ToList();
+
+            return queryResult;
+        });
+
+        return applicationStatusDto;
     }
 
-    public async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync()
+    public virtual async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
-        var applicationTags = await _applicationTagsRepository.GetListAsync();
-        List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList();
-        List<string> tags = new List<string>();
-        concatenatedTags.ForEach(txt => tags.AddRange(txt.Split(',').ToList()));
-        tags = tags.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-        var uniqueTags = new HashSet<string>(tags);
-        var result = uniqueTags.Select(tag => new GetApplicationTagDto { ApplicationTag = tag, Count= tags.Count(tg => tg==tag)}).ToList();
-        return result;
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+
+        var applicationTagsDto = await ExecuteWithDisabledTracking(async () => {
+            var query = from intake in await _intakeRepository.GetQueryableAsync()
+                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                        join tag in await _applicationTagsRepository.GetQueryableAsync() on application.Id equals tag.ApplicationId
+                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                        where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
+                        select tag;
+
+            var applicationTags = query.ToList();
+            List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList();
+            List<string> tags = [];
+            concatenatedTags.ForEach(txt => tags.AddRange([.. txt.Split(',')]));
+            tags = tags.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+            var uniqueTags = new HashSet<string>(tags);
+            var result = uniqueTags.Select(tag => new GetApplicationTagDto { ApplicationTag = tag, Count = tags.Count(tg => tg == tag) }).ToList();
+            return result;
+        });
+
+        return applicationTagsDto;
+    }
+
+    public virtual async Task<List<GetSubsectorRequestedAmtDto>> GetRequestedAmountPerSubsectorAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
+    {
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+
+        var subSectorRequestedAmtDto = await ExecuteWithDisabledTracking(async () => {
+            var query = from intake in await _intakeRepository.GetQueryableAsync()
+                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                        join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                        where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
+                        select new { application, applicant };
+
+            var result = query?.GroupBy(app => app.applicant.SubSector)
+                .Select(group => new { Subsector = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, TotalRequestedAmount = group.Sum(item => item.application.RequestedAmount) })
+                .GroupBy(app => app.Subsector)
+                .Select(group => new GetSubsectorRequestedAmtDto { Subsector = group.Key, TotalRequestedAmount = group.Sum(obj => obj.TotalRequestedAmount) })
+                .OrderBy(o => o.Subsector);
+
+            if (result == null) return [];
+
+            var queryResult = result.ToList();
+            queryResult.RemoveAll(item => item.TotalRequestedAmount == 0);
+            return queryResult;
+        });
+
+        return subSectorRequestedAmtDto;
+    }
+
+    private async Task<TResult> ExecuteWithDisabledTracking<TResult>(Func<Task<TResult>> logic)
+    {
+        using (_intakeRepository.DisableTracking())
+        using (_applicationFormRepository.DisableTracking())
+        using (_applicationRepository.DisableTracking())
+        using (_applicationTagsRepository.DisableTracking())
+        using (_applicationStatusRepository.DisableTracking())
+        {
+            return await logic();
+        }
+    }
+
+
+
+    internal virtual DashboardParameters PrepareParameters(string[] categories, string[] statusCodes, string?[] substatus)
+    {
+        var parameters = new DashboardParameters
+        {
+            Categories = categories.Select(category => category == DashboardConsts.EmptyValue ? null : category).ToArray(),
+            StatusCodes = statusCodes.Select(s => Enum.Parse<GrantApplicationState>(s))
+        };
+        // some SubStatus is either null or empty string
+        if (substatus.Contains(DashboardConsts.EmptyValue))
+        {
+            string[] emptySubStatus = [""];
+            parameters.SubStatuses = substatus.Select(sb => sb == DashboardConsts.EmptyValue ? null : sb).Concat(emptySubStatus).ToArray();
+        }
+        else
+        {
+            parameters.SubStatuses = substatus;
+        }
+        return parameters;
+    }
+
+    internal sealed class DashboardParameters
+    {
+        public string?[] Categories { get; set; } = [];
+        public IEnumerable<GrantApplicationState> StatusCodes { get; set; } = [];
+        public string?[] SubStatuses { get; set; } = [];
     }
 }

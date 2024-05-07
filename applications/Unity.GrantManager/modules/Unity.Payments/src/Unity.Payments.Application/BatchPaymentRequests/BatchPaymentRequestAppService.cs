@@ -1,8 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Payments.Integration.Cas;
 using Unity.Payments.PaymentConfigurations;
+using Unity.Payment.Shared;
+using Unity.Payments.Domain.BatchPaymentRequests;
+using Unity.Payments.Domain.PaymentConfigurations;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
 
@@ -44,6 +50,9 @@ namespace Unity.Payments.BatchPaymentRequests
                     newBatchPaymentRequest,
                     payment.InvoiceNumber,
                     payment.Amount,
+                    payment.PayeeName,
+                    payment.ContractNumber,
+                    payment.SupplierNumber,
                     payment.SiteId,
                     payment.CorrelationId,
                     payment.Description);
@@ -55,6 +64,22 @@ namespace Unity.Payments.BatchPaymentRequests
             return ObjectMapper.Map<BatchPaymentRequest, BatchPaymentRequestDto>(result);
         }
 
+        public async Task<PagedResultDto<BatchPaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        {
+            var batchPayments = await _batchPaymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
+            var totalCount = await _batchPaymentRequestsRepository.GetCountAsync();
+
+            return new PagedResultDto<BatchPaymentRequestDto>(totalCount, ObjectMapper.Map<List<BatchPaymentRequest>, List<BatchPaymentRequestDto>>(batchPayments));
+        }
+
+        public async Task<PagedResultDto<PaymentRequestDto>> GetBatchPaymentListAsync(Guid Id)
+        {
+            var batchPayments = await _batchPaymentRequestsRepository.GetAsync(Id);
+            var totalCount = batchPayments.PaymentRequests.Count;
+
+            return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(batchPayments.PaymentRequests.ToList()));
+        }
+
         protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
             var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
@@ -62,9 +87,9 @@ namespace Unity.Payments.BatchPaymentRequests
             if (paymentConfigs.Count > 0)
             {
                 var paymentConfig = paymentConfigs[0];
-                return paymentConfig.PaymentThreshold ?? PaymentConsts.DefaultThresholdAmount;
+                return paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
             }
-            return PaymentConsts.DefaultThresholdAmount;
+            return PaymentSharedConsts.DefaultThresholdAmount;
         }
 
         protected virtual string GetCurrentRequesterName()

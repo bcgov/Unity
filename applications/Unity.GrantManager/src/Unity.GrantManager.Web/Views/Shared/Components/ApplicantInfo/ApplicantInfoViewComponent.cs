@@ -15,35 +15,33 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
     [Widget(
         RefreshUrl = "Widget/ApplicantInfo/Refresh",
-        ScriptTypes = new[] { typeof(ApplicantInfoScriptBundleContributor) },
-        StyleTypes = new[] { typeof(ApplicantInfoStyleBundleContributor) },
+        ScriptTypes = [typeof(ApplicantInfoScriptBundleContributor)],
+        StyleTypes = [typeof(ApplicantInfoStyleBundleContributor)],
         AutoInitialize = true)]
     public class ApplicantInfoViewComponent : AbpViewComponent
     {
-        private readonly IGrantApplicationAppService _grantApplicationAppService;
+        private readonly IApplicationApplicantAppService _applicationAppicantService;
         private readonly ISectorService _applicationSectorAppService;
 
         public ApplicantInfoViewComponent(
-            IGrantApplicationAppService grantApplicationAppService,
+            IApplicationApplicantAppService applicationAppicantService,
             ISectorService applicationSectorAppService
             )
         {
-            _grantApplicationAppService = grantApplicationAppService;
+            _applicationAppicantService = applicationAppicantService;
             _applicationSectorAppService = applicationSectorAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-
-            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
-
-            List<SectorDto> Sectors = (await _applicationSectorAppService.GetListAsync()).ToList();
+            var applicatInfoDto = await _applicationAppicantService.GetByApplicationIdAsync(applicationId);
+            List<SectorDto> Sectors = [.. (await _applicationSectorAppService.GetListAsync())];
 
             ApplicantInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationSectors = Sectors,
-                ApplicantId = application.Applicant.Id
+                ApplicantId = applicatInfoDto.ApplicantId
             };
 
             model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
@@ -54,7 +52,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             {
                 List<SubSectorDto> SubSectors = new();
                 
-                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);
+                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == applicatInfoDto.Sector);
                 SubSectors = applicationSector?.SubSectors ?? SubSectors;                
 
                 model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
@@ -64,25 +62,24 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             model.ApplicantInfo = new()
             {
-
-                Sector = application.Sector,
-                SubSector = application.SubSector,
-                ContactFullName = application.ContactFullName,
-                ContactTitle = application.ContactTitle,
-                ContactEmail = application.ContactEmail,
-                ContactBusinessPhone = application.ContactBusinessPhone,
-                ContactCellPhone = application.ContactCellPhone,
-                OrgName = application.OrganizationName,
-                OrgNumber = application.OrgNumber,
-                OrgStatus = application.OrgStatus,
-                OrganizationType = application.OrganizationType,
-                SigningAuthorityFullName = application.SigningAuthorityFullName,
-                SigningAuthorityTitle = application.SigningAuthorityTitle,
-                SigningAuthorityEmail = application.SigningAuthorityEmail,
-                SigningAuthorityBusinessPhone = application.SigningAuthorityBusinessPhone,
-                SigningAuthorityCellPhone = application.SigningAuthorityCellPhone,
-                OrganizationSize = application.OrganizationSize,
-                SectorSubSectorIndustryDesc = application.SectorSubSectorIndustryDesc,
+                Sector = applicatInfoDto.Sector,
+                SubSector = applicatInfoDto.SubSector,
+                ContactFullName = applicatInfoDto.ContactFullName,
+                ContactTitle = applicatInfoDto.ContactTitle,
+                ContactEmail = applicatInfoDto.ContactEmail,
+                ContactBusinessPhone = applicatInfoDto.ContactBusinessPhone,
+                ContactCellPhone = applicatInfoDto.ContactCellPhone,
+                OrgName = applicatInfoDto.OrganizationName,
+                OrgNumber = applicatInfoDto.OrgNumber,
+                OrgStatus = applicatInfoDto.OrgStatus,
+                OrganizationType = applicatInfoDto.OrganizationType,
+                SigningAuthorityFullName = applicatInfoDto.SigningAuthorityFullName,
+                SigningAuthorityTitle = applicatInfoDto.SigningAuthorityTitle,
+                SigningAuthorityEmail = applicatInfoDto.SigningAuthorityEmail,
+                SigningAuthorityBusinessPhone = applicatInfoDto.SigningAuthorityBusinessPhone,
+                SigningAuthorityCellPhone = applicatInfoDto.SigningAuthorityCellPhone,
+                OrganizationSize = applicatInfoDto.OrganizationSize,
+                SectorSubSectorIndustryDesc = applicatInfoDto.SectorSubSectorIndustryDesc,
             };
 
             return View(model);

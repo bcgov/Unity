@@ -6,19 +6,19 @@ using System;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Unity.Payments.Suppliers;
-using Unity.GrantManager.Payments;
+using Unity.Modules.Shared.Correlation;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
     [Widget(
         RefreshUrl = "Widget/SupplierInfo/Refresh",
-        ScriptTypes = new[] { typeof(SupplierInfoWidgetScriptBundleContributor) },
-        StyleTypes = new[] { typeof(SupplierInfosWidgetStyleBundleContributor) },
+        ScriptTypes = [typeof(SupplierInfoWidgetScriptBundleContributor)],
+        StyleTypes = [typeof(SupplierInfosWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class SupplierInfoViewComponent : AbpViewComponent
     {
-        private readonly SupplierAppService _supplierService;
-        public SupplierInfoViewComponent(SupplierAppService supplierService)
+        private readonly ISupplierAppService _supplierService;
+        public SupplierInfoViewComponent(ISupplierAppService supplierService)
         {
             _supplierService = supplierService;
         }
@@ -28,13 +28,13 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
             var supplier = await _supplierService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
             {
                 CorrelationId = applicantId,
-                CorrelationProvider = PaymentConsts.ApplicantCorrelationProvider
+                CorrelationProvider = CorrelationConsts.Applicant
             });
 
             return View(new SupplierInfoViewModel()
             {
                 SupplierCorrelationId = applicantId,
-                SupplierCorrelationProvider = PaymentConsts.ApplicantCorrelationProvider,
+                SupplierCorrelationProvider = CorrelationConsts.Applicant,
                 SupplierId = supplier?.Id ?? Guid.Empty,
                 SupplierNumber = supplier?.Number?.ToString()
             });

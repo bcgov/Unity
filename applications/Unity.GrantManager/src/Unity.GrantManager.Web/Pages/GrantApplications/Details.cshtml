@@ -15,8 +15,7 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @{
-    PageLayout.Content.Title = L["Grants"].Value;
-    ViewBag.PageTitle = $"Applications / {Model.ApplicantName}({Model.ApplicationNumber}) - {Model.ApplicationStatus}";
+    PageLayout.Content.Title = L["Grants"].Value;    
 }
 @section styles
     {
@@ -31,6 +30,9 @@
     <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
 }
 
+<div id="applicationBreadcrumbWidget">
+    @await Component.InvokeAsync("ApplicationBreadcrumbWidget", new { applicationId = @Model.ApplicationId })
+</div>
 @await Component.InvokeAsync(typeof(DetailsActionBar), new { applicationId = @Model.ApplicationId })
 
 <input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
@@ -151,11 +153,11 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                 </li>
-                @* <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="chefs_file_count">@Model.ApplicationChefsFileAttachmentList.Count</span>)</button>
-                </li> *@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
             </ul>
 
@@ -237,12 +239,6 @@
                 </div>
                 @*-------- Comments Tab Section END ---------*@
 
-                @*-------- Links Tab Section ---------*@
-                <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab" style="text-align:center">
-                    <img src="/images/under-construction.png" alt="under-construction">
-                </div>
-                @*------- Links Tab Section END ---------*@
-
                 @*-------- Attachments Tab Section ---------*@
                 <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Assessment Attachments</h6>
@@ -261,6 +257,16 @@
                     @await Component.InvokeAsync("ChefsAttachments")
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
+
+                @*-------- Links Tab Section ---------*@
+                <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab">
+                    <h6 class="fw-bold px-3 pt-4 pb-3 m-0">Links</h6>
+                    <div class="px-3 pb-2" id="applicationRecordsWidget">
+                        @await Component.InvokeAsync("ApplicationLinksWidget", new { applicationId = Model.ApplicationId })
+                    </div>
+                </div>
+                @*------- Links Tab Section END ---------*@
+                
             </div>
 
         </abp-card>
