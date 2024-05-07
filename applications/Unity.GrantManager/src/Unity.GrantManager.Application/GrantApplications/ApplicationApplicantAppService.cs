@@ -23,20 +23,20 @@ namespace Unity.GrantManager.GrantApplications
             return new ApplicationApplicantInfoDto()
             {
                 ApplicantId = applicationId,
-                ApplicantName = applicantInfo.Applicant.ApplicantName,
+                ApplicantName = applicantInfo.Applicant?.ApplicantName ?? string.Empty,
                 ApplicationReferenceNo = applicantInfo.ReferenceNo,
                 ApplicationStatus = applicantInfo.ApplicationStatus.InternalStatus,
                 ApplicationStatusCode = applicantInfo.ApplicationStatus.StatusCode,
 
-                OrganizationName = applicantInfo.Applicant.OrgName,
-                OrganizationSize = applicantInfo.Applicant.OrganizationSize,
-                OrganizationType = applicantInfo.Applicant.OrganizationType,
-                OrgNumber = applicantInfo.Applicant.OrgNumber,
-                OrgStatus = applicantInfo.Applicant.OrgStatus,
+                OrganizationName = applicantInfo.Applicant?.OrgName ?? string.Empty,
+                OrganizationSize = applicantInfo.Applicant?.OrganizationSize ?? string.Empty,
+                OrganizationType = applicantInfo.Applicant?.OrganizationType ?? string.Empty,
+                OrgNumber = applicantInfo.Applicant?.OrgNumber ?? string.Empty,
+                OrgStatus = applicantInfo.Applicant?.OrgStatus ?? string.Empty,
                 
-                Sector = applicantInfo.Applicant.Sector,
-                SectorSubSectorIndustryDesc = applicantInfo.Applicant.SectorSubSectorIndustryDesc,
-                SubSector = applicantInfo.Applicant.SubSector,                
+                Sector = applicantInfo.Applicant?.Sector ?? string.Empty,
+                SectorSubSectorIndustryDesc = applicantInfo.Applicant?.SectorSubSectorIndustryDesc ?? string.Empty,
+                SubSector = applicantInfo.Applicant?.SubSector ?? string.Empty,                
 
                 SigningAuthorityBusinessPhone = applicantInfo.SigningAuthorityBusinessPhone ?? string.Empty,
                 SigningAuthorityCellPhone = applicantInfo.SigningAuthorityCellPhone ?? string.Empty,
