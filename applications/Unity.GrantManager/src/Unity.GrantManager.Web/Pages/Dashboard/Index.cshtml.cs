@@ -48,6 +48,7 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
         public async Task OnGetAsync()
         {
+            using (_intakeRepository.DisableTracking())
             using (_applicationFormRepository.DisableTracking())
             {
                 var intakesQ = from intakesq in await _intakeRepository.GetQueryableAsync()
@@ -62,7 +63,7 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
                 var intakeR = await intakesQ.ToListAsync();
                 if (intakeR.Count == 0) return;
-                
+
                 IntakeOptionsList = intakeR.DistinctBy(s => s.IntakeId).Select(intake => new SelectListItem { Value = intake.IntakeId.ToString(), Text = intake.IntakeName }).ToList();
                 var latestIntakeId = intakeR.OrderByDescending(intake => intake.IntakeCreationTime).FirstOrDefault()?.IntakeId;
                 IntakeIds = [latestIntakeId ?? Guid.Empty];
