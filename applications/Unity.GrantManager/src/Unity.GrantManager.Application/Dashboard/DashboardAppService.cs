@@ -42,11 +42,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     {
         var parameters = PrepareParameters(categories, statusCodes, substatus);
 
-        using (_intakeRepository.DisableTracking())
-        using (_applicationFormRepository.DisableTracking())
-        using (_applicationRepository.DisableTracking())
-        using (_applicationStatusRepository.DisableTracking())
-        {
+        var economicRegionDto = await ExecuteWithDisabledTracking(async () => {
             var query = from intake in await _intakeRepository.GetQueryableAsync()
                         join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                         join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
@@ -65,19 +61,16 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var queryResult = result.ToList();
 
             return queryResult;
-        }
+        });
+
+        return economicRegionDto;
     }
 
     public virtual async Task<List<GetSectorDto>> GetSectorCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
         var parameters = PrepareParameters(categories, statusCodes, substatus);
 
-        using (_intakeRepository.DisableTracking())
-        using (_applicationFormRepository.DisableTracking())
-        using (_applicationRepository.DisableTracking())
-        using (_applicantRepository.DisableTracking())
-        using (_applicationStatusRepository.DisableTracking())
-        {
+        var sectorCountDto = await ExecuteWithDisabledTracking(async () => {
             var query = from intake in await _intakeRepository.GetQueryableAsync()
                         join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                         join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
@@ -97,18 +90,16 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var queryResult = result.ToList();
 
             return queryResult;
-        }
+        });
+
+        return sectorCountDto;
     }
 
     public virtual async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
         var parameters = PrepareParameters(categories, statusCodes, substatus);
 
-        using (_intakeRepository.DisableTracking())
-        using (_applicationFormRepository.DisableTracking())
-        using (_applicationRepository.DisableTracking())
-        using (_applicationStatusRepository.DisableTracking())
-        {
+        var applicationStatusDto = await ExecuteWithDisabledTracking(async () => {
             var query = from intake in await _intakeRepository.GetQueryableAsync()
                         join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                         join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
@@ -127,19 +118,16 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var queryResult = result.ToList();
 
             return queryResult;
-        }
+        });
+
+        return applicationStatusDto;
     }
 
     public virtual async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
         var parameters = PrepareParameters(categories, statusCodes, substatus);
 
-        using (_intakeRepository.DisableTracking())
-        using (_applicationFormRepository.DisableTracking())
-        using (_applicationRepository.DisableTracking())
-        using (_applicationTagsRepository.DisableTracking())
-        using (_applicationStatusRepository.DisableTracking())
-        {
+        var applicationTagsDto = await ExecuteWithDisabledTracking(async () => {
             var query = from intake in await _intakeRepository.GetQueryableAsync()
                         join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                         join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
@@ -156,19 +144,16 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var uniqueTags = new HashSet<string>(tags);
             var result = uniqueTags.Select(tag => new GetApplicationTagDto { ApplicationTag = tag, Count = tags.Count(tg => tg == tag) }).ToList();
             return result;
-        }
+        });
+
+        return applicationTagsDto;
     }
 
     public virtual async Task<List<GetSubsectorRequestedAmtDto>> GetRequestedAmountPerSubsectorAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
     {
         var parameters = PrepareParameters(categories, statusCodes, substatus);
 
-        using (_intakeRepository.DisableTracking())
-        using (_applicationFormRepository.DisableTracking())
-        using (_applicationRepository.DisableTracking())
-        using (_applicationTagsRepository.DisableTracking())
-        using (_applicationStatusRepository.DisableTracking())
-        {
+        var subSectorRequestedAmtDto = await ExecuteWithDisabledTracking(async () => {
             var query = from intake in await _intakeRepository.GetQueryableAsync()
                         join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
                         join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
@@ -188,8 +173,24 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var queryResult = result.ToList();
             queryResult.RemoveAll(item => item.TotalRequestedAmount == 0);
             return queryResult;
+        });
+
+        return subSectorRequestedAmtDto;
+    }
+
+    private async Task<TResult> ExecuteWithDisabledTracking<TResult>(Func<Task<TResult>> logic)
+    {
+        using (_intakeRepository.DisableTracking())
+        using (_applicationFormRepository.DisableTracking())
+        using (_applicationRepository.DisableTracking())
+        using (_applicationTagsRepository.DisableTracking())
+        using (_applicationStatusRepository.DisableTracking())
+        {
+            return await logic();
         }
     }
+
+
 
     internal virtual DashboardParameters PrepareParameters(string[] categories, string[] statusCodes, string?[] substatus)
     {
