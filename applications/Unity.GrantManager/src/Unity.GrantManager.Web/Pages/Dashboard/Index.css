@@ -25,4 +25,6 @@
     justify-content: center;
 }
 
-    
+.application-dashboard-dropdown select {
+    display: none !important;
+}
