@@ -46,7 +46,7 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
         public async Task OnGetAsync()
         {
-            List<GrantManager.Intakes.Intake> intakes = _intakeRepository.GetListAsync().Result;
+            List<GrantManager.Intakes.Intake> intakes = await _intakeRepository.GetListAsync();
             IntakeOptionsList = intakes.Select(intake => new SelectListItem { Value = intake.Id.ToString(), Text = intake.IntakeName }).ToList();
             GrantManager.Intakes.Intake? latestIntake = intakes.OrderByDescending(intake => intake.CreationTime).FirstOrDefault();
             IntakeIds = [latestIntake?.Id ?? Guid.Empty];
