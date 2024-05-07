@@ -10,6 +10,8 @@ using System.ComponentModel.DataAnnotations;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Dashboard;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Web.Pages.Dashboard
 {
@@ -46,32 +48,61 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
         public async Task OnGetAsync()
         {
-            List<GrantManager.Intakes.Intake> intakes = _intakeRepository.GetListAsync().Result;
-            IntakeOptionsList = intakes.Select(intake => new SelectListItem { Value = intake.Id.ToString(), Text = intake.IntakeName }).ToList();
-            GrantManager.Intakes.Intake? latestIntake = intakes.OrderByDescending(intake => intake.CreationTime).FirstOrDefault();
-            IntakeIds = [latestIntake?.Id ?? Guid.Empty];
-
-            foreach (var intake in intakes)
+            using (_intakeRepository.DisableTracking())
+            using (_applicationFormRepository.DisableTracking())
             {
-                var query = from appForm in _applicationFormRepository.GetQueryableAsync().GetAwaiter().GetResult()
-                            where appForm.IntakeId == intake.Id
-                            select appForm.Category == null ? DashboardConsts.EmptyValue : appForm.Category;
+                var intakesQ = from intakesq in await _intakeRepository.GetQueryableAsync()
+                               join formsq in await _applicationFormRepository.GetQueryableAsync() on intakesq.Id equals formsq.IntakeId
+                               select new IntakeQ
+                               {
+                                   IntakeId = intakesq.Id,
+                                   IntakeCreationTime = intakesq.CreationTime,
+                                   IntakeName = intakesq.IntakeName,
+                                   Category = formsq.Category ?? DashboardConsts.EmptyValue
+                               };
 
-                List<string> categoryList = [.. query.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().OrderBy(c => c)];
-                DashboardIntakeDto dto = new() { IntakeId = intake.Id, IntakeName = intake.IntakeName, Categories = categoryList };
-                DashboardIntakes.Add(dto);
-                if (intake.Id == latestIntake?.Id)
+                var intakeR = await intakesQ.ToListAsync();
+                if (intakeR.Count == 0) return;
+                
+                IntakeOptionsList = intakeR.DistinctBy(s => s.IntakeId).Select(intake => new SelectListItem { Value = intake.IntakeId.ToString(), Text = intake.IntakeName }).ToList();
+                var latestIntakeId = intakeR.OrderByDescending(intake => intake.IntakeCreationTime).FirstOrDefault()?.IntakeId;
+                IntakeIds = [latestIntakeId ?? Guid.Empty];
+
+                foreach (var intake in intakeR)
                 {
-                    CategoryOptionsList = categoryList.Select(category => new SelectListItem { Value = category, Text = category }).ToList();
-                    CategoryNames = [.. categoryList];
+                    List<string> categoryList = [.. intakeR.Where(s => !string.IsNullOrWhiteSpace(s.Category) && s.IntakeId == intake.IntakeId)
+                        .Distinct()
+                        .OrderBy(c => c.Category).Select(s => s.Category)];
+
+                    DashboardIntakes.Add(new()
+                    {
+                        IntakeId = intake.IntakeId,
+                        IntakeName = intake.IntakeName,
+                        Categories = categoryList
+                    });
+
+                    if (intake.IntakeId == latestIntakeId)
+                    {
+                        CategoryOptionsList = categoryList.Select(category => new SelectListItem { Value = category, Text = category }).ToList();
+                        CategoryNames = [.. categoryList];
+                    }
                 }
+
+                var statuses = await _applicationStatusRepository.GetListAsync();
+                StatusOptionsList = statuses.Select(s => new SelectListItem { Value = s.StatusCode.ToString(), Text = s.InternalStatus }).ToList();
+                Statuses = statuses.Select(s => s.StatusCode.ToString()).ToArray();
+                SubStatusActionList = AssessmentResultsOptionsList.SubStatusActionList.Select(s => new SelectListItem { Value = s.Key, Text = s.Value }).ToList();
+                SubStatusActionList.Add(new SelectListItem { Value = DashboardConsts.EmptyValue, Text = DashboardConsts.EmptyValue }); //for applications with no Sub-Status
+                SubStatuses = SubStatusActionList.Select(s => s.Value).ToArray();
             }
-            var statuses = await _applicationStatusRepository.GetListAsync();
-            StatusOptionsList = statuses.Select(s => new SelectListItem { Value = s.StatusCode.ToString(), Text = s.InternalStatus }).ToList();
-            Statuses = statuses.Select(s => s.StatusCode.ToString()).ToArray();
-            SubStatusActionList = AssessmentResultsOptionsList.SubStatusActionList.Select(s=> new SelectListItem { Value = s.Key, Text = s.Value }).ToList();
-            SubStatusActionList.Add(new SelectListItem { Value = DashboardConsts.EmptyValue, Text = DashboardConsts.EmptyValue }); //for applications with no Sub-Status
-            SubStatuses = SubStatusActionList.Select(s => s.Value).ToArray();
+        }
+
+        private sealed class IntakeQ
+        {
+            public Guid IntakeId { get; internal set; }
+            public string? Category { get; internal set; } = null;
+            public DateTime IntakeCreationTime { get; internal set; }
+            public string IntakeName { get; internal set; } = string.Empty;
         }
     }
 }
