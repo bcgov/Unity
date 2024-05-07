@@ -48,7 +48,6 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
         public async Task OnGetAsync()
         {
-            using (_intakeRepository.DisableTracking())
             using (_applicationFormRepository.DisableTracking())
             {
                 var intakesQ = from intakesq in await _intakeRepository.GetQueryableAsync()
