@@ -9,6 +9,8 @@ using Volo.Abp.ObjectExtending;
 using Volo.Abp.Identity;
 using System.ComponentModel;
 using Volo.Abp.Validation;
+using Volo.Abp;
+using Volo.Abp.Data;
 
 namespace Unity.Identity.Web.Pages.Identity.Users;
 
@@ -26,9 +28,13 @@ public class EditModalModel : IdentityPageModel
 
     public bool IsEditCurrentUser { get; set; }
 
-    public EditModalModel(IIdentityUserAppService identityUserAppService)
+    private readonly IDataFilter _dataFilter;
+
+    public EditModalModel(IIdentityUserAppService identityUserAppService,
+        IDataFilter dataFilter)
     {
         IdentityUserAppService = identityUserAppService;
+        _dataFilter = dataFilter;
     }
 
     public virtual async Task<IActionResult> OnGetAsync(Guid id)
@@ -62,8 +68,11 @@ public class EditModalModel : IdentityPageModel
             return null;
         }
 
-        var user = await IdentityUserAppService.GetAsync(userId.Value);
-        return user.UserName;
+        using (_dataFilter.Disable<ISoftDelete>())
+        {
+            var user = await IdentityUserAppService.GetAsync(userId.Value);
+            return user.UserName;
+        }
     }
 
     public virtual async Task<IActionResult> OnPostAsync()
