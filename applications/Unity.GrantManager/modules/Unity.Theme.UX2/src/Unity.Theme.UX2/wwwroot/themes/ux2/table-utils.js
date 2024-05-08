@@ -63,7 +63,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
     );
 
     // Add custom manage columns button that remains sorted alphabetically
-    iDt.button().add(0, {
+    iDt.button().add(actionButtons.length + 1 ,{
         text: 'Columns',
         extend: 'collection',
         buttons: getColumnToggleButtonsSorted(listColumns, iDt),
