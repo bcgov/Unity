@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using Unity.Payments.Enums;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
@@ -24,6 +25,8 @@ namespace Unity.Payments.PaymentRequests
         public string ContractNumber { get; set; }
         public string SupplierNumber { get; set; }
         public  string CorrelationProvider { get;  set; } = string.Empty;
+
+        public  Collection<ExpenseApprovalDto> ExpenseApprovals { get;  set; }
 
     }
 #pragma warning restore CS8618

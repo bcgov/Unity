@@ -81,7 +81,7 @@ $(function () {
             getApplicantNameColumn(),
             getSupplierNumberColumn(),
             getSiteNumberColumn(),
-            getContactNumberColumn(),
+            getContractNumberColumn(),
             getInvoiceNumberColumn(),
             getPayGroupColumn(),
             getAmountColumn(),
@@ -91,6 +91,9 @@ $(function () {
             getUpdatedOnColumn(),
             getPaidOnColumn(),
             getCASCommentsColumn(),
+            getL1ApprovalColumn(),
+            getL2ApprovalColumn(),
+            getL3ApprovalColumn()
         ]
     }
 
@@ -107,12 +110,9 @@ $(function () {
         return {
             title: l('ApplicationPaymentListTable:ApplicantName'),
             name: 'applicantName',
-            data: 'applicantName',
+            data: 'payeeName',
             className: 'data-table-header',
             index: 2,
-            render: function (data) {
-                return '';
-            }
         };
     }
 
@@ -123,9 +123,6 @@ $(function () {
             data: 'supplierNumber',
             className: 'data-table-header',
             index: 3,
-            render: function (data) {
-                return '';
-            }
         };
     }
     function getSiteNumberColumn() {
@@ -140,16 +137,14 @@ $(function () {
             }
         };
     }
-    function getContactNumberColumn() {
+    function getContractNumberColumn() {
         return {
-            title: l('ApplicationPaymentListTable:ContactNumber'),
+            title: l('ApplicationPaymentListTable:ContractNumber'),
             name: 'contactNumber',
-            data: 'contactNumber',
+            data: 'contractNumber',
             className: 'data-table-header',
             index: 5,
-            render: function (data) {
-                return '';
-            }
+ 
         };
     }
 
@@ -166,11 +161,18 @@ $(function () {
         return {
             title: l('ApplicationPaymentListTable:PayGroup'),
             name: 'payGroup',
-            data: 'payGroup',
+            data: 'site',
             className: 'data-table-header',
             index: 7,
             render: function (data) {
-                return '';
+                switch (data.paymentGroup) {
+                    case 1:
+                        return 'EFT';
+                    case 2:
+                        return 'Cheque';
+                    default:
+                        return 'Unknown PaymentGroup';
+                }
             }
         };
     }
@@ -194,6 +196,22 @@ $(function () {
             data: 'status',
             className: 'data-table-header',
             index: 9,
+            render: function (data) {
+                switch (data) {
+                    case 1:
+                        return "Created";
+                    case 2:
+                        return "Submitted";
+                    case 3:
+                        return "Approved";
+                    case 4:
+                        return "Declined";
+                    case 5:
+                        return "Awaiting Approval"
+                    default:
+                        return "Created";
+                }
+            }
         };
     }
 
@@ -236,7 +254,7 @@ $(function () {
             name: 'paidOn',
             data: 'paidOn',
             className: 'data-table-header',
-            index: 12,
+            index: 13,
             render: function (data) {
                 return formatDate(data);
             }
@@ -248,13 +266,56 @@ $(function () {
             name: 'cASComments',
             data: 'casComments',
             className: 'data-table-header',
-            index: 12,
+            index: 14,
             render: function (data) {
                 return formatDate(data);
             }
         };
     }
-  
+    function getL1ApprovalColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:L1ApprovalDate'),
+            name: 'l1Approval',
+            data: 'expenseApprovals',
+            className: 'data-table-header',
+            index: 15,
+            render: function (data) {
+                let approval = getExpenseApprovalsDetails(data, 1)
+                return formatDate(approval?.decisionDate);
+            }
+        };
+    }
+    function getL2ApprovalColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:L2ApprovalDate'),
+            name: 'l2Approval',
+            data: 'expenseApprovals',
+            className: 'data-table-header',
+            index: 14,
+            render: function (data) {
+                let approval = getExpenseApprovalsDetails(data, 2)
+                return formatDate(approval?.decisionDate);
+            }
+        };
+    }
+    function getL3ApprovalColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:L3ApprovalDate'),
+            name: 'l3Approval',
+            data: 'expenseApprovals',
+            className: 'data-table-header',
+            index: 14,
+            render: function (data) {
+                let approval = getExpenseApprovalsDetails(data, 3)
+                return formatDate(approval?.decisionDate);
+            }
+        };
+    }
+
+
+    function getExpenseApprovalsDetails(expenseApprovals, type) {
+        return expenseApprovals.find(x => x.type == type);
+    }
 
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {

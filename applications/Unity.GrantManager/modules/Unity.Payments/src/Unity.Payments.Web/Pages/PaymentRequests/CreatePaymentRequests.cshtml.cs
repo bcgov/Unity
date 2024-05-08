@@ -56,7 +56,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
                     ContractNumber = application.ContractNumber,
-                    SupplierNumber = application.ContractNumber,
+                    
                     
                 };
 
@@ -75,6 +75,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     && supplier.Number != null)
                 {
                     string supplierNumber = supplier.Number;
+                    request.SupplierNumber = supplier.Number;
                     foreach (var site in supplier.Sites)
                     {
                         SelectListItem item = new()
@@ -120,7 +121,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     Description = payment.Description,
                     InvoiceNumber = payment.InvoiceNumber,
                     ContractNumber = payment.ContractNumber ?? string.Empty,
-                    SupplierNumber = payment.ContractNumber ?? string.Empty,
+                    SupplierNumber = payment.SupplierNumber ?? string.Empty,
                     PayeeName = payment.ApplicantName ?? string.Empty,
                     CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicationCorrelationProvider,
 
