@@ -60,8 +60,8 @@ namespace Unity.Payments.Domain.PaymentRequests
         {
             var expenseApprovals = new Collection<ExpenseApproval>()
             {
-                new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level1),
-                new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level2)
+                new(Guid.NewGuid(), ExpenseApprovalType.Level1),
+                new(Guid.NewGuid(), ExpenseApprovalType.Level2)
             };
 
             if (amount >= paymentThreshold)

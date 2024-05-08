@@ -30,7 +30,7 @@ namespace Unity.Payments.PaymentRequests
 
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
         {
-            List<PaymentRequestDto> createdPayments = new();
+            List<PaymentRequestDto> createdPayments = [];
 
             var paymentThreshold = await GetPaymentThresholdAsync();
 
@@ -50,7 +50,21 @@ namespace Unity.Payments.PaymentRequests
                     paymentThreshold);
 
                 var result = await _paymentRequestsRepository.InsertAsync(payment);
-                createdPayments.Add(ObjectMapper.Map<PaymentRequest, PaymentRequestDto>(result));
+                createdPayments.Add(new PaymentRequestDto()
+                {
+                    Id = result.Id,
+                    InvoiceNumber = result.InvoiceNumber,
+                    InvoiceStatus = result.InvoiceStatus,
+                    Amount = result.Amount,
+                    PayeeName = result.PayeeName,
+                    SupplierNumber = result.SupplierNumber,
+                    ContractNumber = result.ContractNumber,
+                    CorrelationId = result.CorrelationId,
+                    CorrelationProvider = result.CorrelationProvider,
+                    Description = result.Description,
+                    CreationTime = result.CreationTime,
+                    Status = result.Status,
+                });
             }
 
             return createdPayments;
