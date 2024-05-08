@@ -43,6 +43,7 @@ $(function () {
         {
             extend: 'csv',
             text: 'Export',
+            title: 'Payment Requests',
             className: 'custom-table-btn flex-none btn btn-secondary',
             exportOptions: {
                 columns: ':visible:not(.notexport)',
