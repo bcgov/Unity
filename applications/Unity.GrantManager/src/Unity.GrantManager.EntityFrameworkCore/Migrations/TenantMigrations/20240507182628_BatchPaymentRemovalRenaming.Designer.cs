@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240507182628_BatchPaymentRemovalRenaming")]
+    partial class BatchPaymentRemovalRenaming
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -260,9 +263,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantId");
 
-                    b.HasIndex("ApplicationId")
-                        .IsUnique();
-
                     b.HasIndex("OidcSubUser");
 
                     b.ToTable("ApplicantAgents", (string)null);
@@ -456,8 +456,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicationFormId");
 
                     b.HasIndex("ApplicationStatusId");
-
-                    b.HasIndex("OwnerId");
 
                     b.ToTable("Applications", (string)null);
                 });
@@ -1097,8 +1095,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApplicationId");
-
                     b.ToTable("ApplicationTags", (string)null);
                 });
 
@@ -1708,7 +1704,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("SiteId")
+                    b.Property<Guid?>("SiteId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -1901,32 +1897,24 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithOne("ApplicantAgent")
-                        .HasForeignKey("Unity.GrantManager.Applications.ApplicantAgent", "ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Unity.GrantManager.Identity.Person", null)
                         .WithMany()
                         .HasForeignKey("OidcSubUser")
                         .HasPrincipalKey("OidcSub");
-
-                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.Applicant", "Applicant")
+                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
                         .WithMany()
                         .HasForeignKey("ApplicantId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", "ApplicationForm")
+                    b.HasOne("Unity.GrantManager.Applications.ApplicationForm", null)
                         .WithMany()
                         .HasForeignKey("ApplicationFormId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Unity.GrantManager.Applications.ApplicationStatus", "ApplicationStatus")
@@ -1935,37 +1923,22 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Unity.GrantManager.Identity.Person", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Applicant");
-
-                    b.Navigation("ApplicationForm");
-
                     b.Navigation("ApplicationStatus");
-
-                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAssignment", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithMany("ApplicationAssignments")
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.Identity.Person", "Assignee")
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
                         .WithMany()
-                        .HasForeignKey("AssigneeId")
+                        .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Application");
-
-                    b.Navigation("Assignee");
+                    b.HasOne("Unity.GrantManager.Identity.Person", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationAttachment", b =>
@@ -2037,17 +2010,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationTags", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithMany("ApplicationTags")
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Application");
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.AssessmentAttachment", b =>
                 {
                     b.HasOne("Unity.GrantManager.Assessments.Assessment", null)
@@ -2059,8 +2021,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             modelBuilder.Entity("Unity.GrantManager.Assessments.Assessment", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.Application", "Application")
-                        .WithMany("Assessments")
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -2070,8 +2032,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasForeignKey("AssessorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Comments.ApplicationComment", b =>
@@ -2119,9 +2079,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 {
                     b.HasOne("Unity.Payments.Domain.Suppliers.Site", "Site")
                         .WithMany()
-                        .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .HasForeignKey("SiteId");
 
                     b.Navigation("Site");
                 });
@@ -2135,17 +2093,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
 
                     b.Navigation("Supplier");
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
-                {
-                    b.Navigation("ApplicantAgent");
-
-                    b.Navigation("ApplicationAssignments");
-
-                    b.Navigation("ApplicationTags");
-
-                    b.Navigation("Assessments");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>

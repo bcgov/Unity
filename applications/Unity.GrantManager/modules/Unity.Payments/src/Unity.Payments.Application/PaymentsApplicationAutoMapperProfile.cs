@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Unity.Payments.BatchPaymentRequests;
-using Unity.Payments.Domain.BatchPaymentRequests;
+using Unity.Payments.PaymentRequests;
+using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.PaymentConfigurations;
@@ -12,7 +12,6 @@ public class PaymentsApplicationAutoMapperProfile : Profile
 {
     public PaymentsApplicationAutoMapperProfile()
     {
-        CreateMap<BatchPaymentRequest, BatchPaymentRequestDto>();
         CreateMap<PaymentRequest, PaymentRequestDto>();
         CreateMap<ExpenseApproval, ExpenseApprovalDto>();
         CreateMap<Site, SiteDto>()

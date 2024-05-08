@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.EntityFrameworkCore.Modeling;
-using Unity.Payments.Domain.BatchPaymentRequests;
+using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.PaymentConfigurations;
@@ -15,28 +15,23 @@ public static class PaymentsDbContextModelCreatingExtensions
     {
         Check.NotNull(modelBuilder, nameof(modelBuilder));
 
-        modelBuilder.Entity<BatchPaymentRequest>(b =>
-        {
-            b.ToTable(PaymentsDbProperties.DbTablePrefix + "BatchPaymentRequests",
-                PaymentsDbProperties.DbSchema);
-
-            b.ConfigureByConvention();
-
-            b.HasMany(e => e.PaymentRequests)
-                .WithOne(e => e.BatchPaymentRequest)
-                .HasForeignKey(x => x.BatchPaymentRequestId);
-            b.HasMany(e => e.ExpenseApprovals)
-                .WithOne(e => e.BatchPaymentRequest)
-                .HasForeignKey(x => x.BatchPaymentRequestId);
-        });
-
         modelBuilder.Entity<PaymentRequest>(b =>
         {
             b.ToTable(PaymentsDbProperties.DbTablePrefix + "PaymentRequests",
                 PaymentsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+
+            b.HasMany(e => e.ExpenseApprovals)
+                .WithOne(e => e.PaymentRequest)
+                .HasForeignKey(x => x.PaymentRequestId);
+
+            b.HasOne(e => e.Site)
+                .WithMany()
+                .HasForeignKey(x => x.SiteId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
+
 
         modelBuilder.Entity<ExpenseApproval>(b =>
         {

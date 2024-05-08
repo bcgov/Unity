@@ -19,15 +19,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 new KeyValuePair<string, string>("VALUE2", "Value 2"),
             });
 
-      
         public List<SelectListItem> OrganizationTypeList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrganizationTypeList);
         public List<SelectListItem> OrgBookStatusList { get; set; } = FormatOptionsList(ProjectInfoOptionsList.OrgBookStatusList);
         public List<SelectListItem> ApplicationSectorsList { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ApplicationSubSectorsList { get; set; } = new List<SelectListItem>();
-
         
         public Guid ApplicationId { get; set; }
         public Guid ApplicantId { get; set; }
+
         public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
         public bool IsFinalDecisionMade { get; set; }
         public ApplicantInfoViewModelModel ApplicantInfo { get; set; } = new();
@@ -60,10 +59,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             [Display(Name = "ApplicantInfoView:ApplicantInfo.SubSector")]
             [SelectItems(nameof(ApplicationSubSectorsList))]
             public string? SubSector { get; set; }
-
-  
-
-           
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactFullName")]
             [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]
@@ -110,8 +105,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc")]
             [TextArea(Rows = 2)]
-            public string? SectorSubSectorIndustryDesc { get; set; }
-            
+            public string? SectorSubSectorIndustryDesc { get; set; }            
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

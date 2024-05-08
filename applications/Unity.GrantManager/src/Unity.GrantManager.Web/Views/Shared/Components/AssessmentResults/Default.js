@@ -29,7 +29,7 @@
                         'The application has been updated.'
                     );
                     $('#saveAssessmentResultBtn').prop('disabled', true);
-                    PubSub.publish('application_assessment_results_saved');
+                    PubSub.publish('application_assessment_results_saved', assessmentResultObj);
                     PubSub.publish('refresh_detail_panel_summary');
                     initDatePicker();
                 });
@@ -87,6 +87,13 @@
         'init_date_pickers',
         async (msg, data) => {
             initDatePicker();
+        }
+    );
+
+    PubSub.subscribe('project_info_saved',
+        (msg, data) => {
+            $('#RequestedAmountInputAR').prop("value", data.RequestedAmount);
+            $('#TotalBudgetInputAR').prop("value", data.TotalProjectBudget);
         }
     );
 });
