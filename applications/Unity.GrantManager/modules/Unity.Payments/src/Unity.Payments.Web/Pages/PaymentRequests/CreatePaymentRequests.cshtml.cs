@@ -13,7 +13,7 @@ using System.Text.Json;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
-    public class CreatePaymentsModel : AbpPageModel
+    public class CreatePaymentRequestsModel : AbpPageModel
     {
         [BindProperty]
         public List<PaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
@@ -29,7 +29,7 @@ namespace Unity.Payments.Web.Pages.Payments
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
         private readonly ISupplierAppService _iSupplierAppService;
 
-        public CreatePaymentsModel(IGrantApplicationAppService applicationService,
+        public CreatePaymentRequestsModel(IGrantApplicationAppService applicationService,
            ISupplierAppService iSupplierAppService,
            IPaymentRequestAppService batchPaymentRequestService,
            IPaymentConfigurationAppService paymentConfigurationAppService)
@@ -77,7 +77,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     string supplierNumber = supplier.Number;
                     foreach (var site in supplier.Sites)
                     {
-                        SelectListItem item = new SelectListItem
+                        SelectListItem item = new()
                         {
                             Value = site.Id.ToString(),
                             Text = $"{site.Number} ({supplierNumber}, {site.City})",
@@ -129,7 +129,5 @@ namespace Unity.Payments.Web.Pages.Payments
 
             return payments;
         }
-
-
     }
 }

@@ -21,8 +21,8 @@ namespace Unity.GrantManager.GrantApplications
             if (applicantInfo == null) return new ApplicationApplicantInfoDto();
 
             return new ApplicationApplicantInfoDto()
-            {
-                ApplicantId = applicationId,
+            {                
+                ApplicantId = applicantInfo.Applicant.Id,
                 ApplicantName = applicantInfo.Applicant?.ApplicantName ?? string.Empty,
                 ApplicationReferenceNo = applicantInfo.ReferenceNo,
                 ApplicationStatus = applicantInfo.ApplicationStatus.InternalStatus,

@@ -24,7 +24,7 @@ public class PaymentsMenuContributor : IMenuContributor
             new ApplicationMenuItem(
                     PaymentsMenus.Prefix,
                     displayName: "Payments",
-                    "~/Payments"
+                    "~/PaymentRequests"
         ));
         return Task.CompletedTask;
     }

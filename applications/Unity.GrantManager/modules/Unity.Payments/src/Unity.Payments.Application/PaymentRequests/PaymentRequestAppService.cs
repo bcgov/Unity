@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.Payment.Shared;
 using Unity.Payments.Domain.PaymentRequests;
@@ -9,7 +8,6 @@ using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -32,7 +30,7 @@ namespace Unity.Payments.PaymentRequests
 
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
         {
-            List<PaymentRequestDto> createdPayments = new List<PaymentRequestDto>();
+            List<PaymentRequestDto> createdPayments = new();
 
             var paymentThreshold = await GetPaymentThresholdAsync();
 
@@ -49,15 +47,10 @@ namespace Unity.Payments.PaymentRequests
                     dto.CorrelationId,
                     dto.CorrelationProvider,
                     dto.Description,
-                    paymentThreshold
-                   );
+                    paymentThreshold);
 
-   
                 var result = await _paymentRequestsRepository.InsertAsync(payment);
-
-               createdPayments.Add(ObjectMapper.Map<PaymentRequest, PaymentRequestDto>(result));
-               
-               
+                createdPayments.Add(ObjectMapper.Map<PaymentRequest, PaymentRequestDto>(result));
             }
 
             return createdPayments;
@@ -65,14 +58,10 @@ namespace Unity.Payments.PaymentRequests
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
-            var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
-
+            var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
         }
-
-        
-
         protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
             var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();

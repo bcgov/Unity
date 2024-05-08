@@ -8,7 +8,7 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace Unity.Payments.Repositories
 {
-    public class PaymentRequestRepository : EfCoreRepository<PaymentsDbContext, PaymentRequest, Guid> , IPaymentRequestRepository
+    public class PaymentRequestRepository : EfCoreRepository<PaymentsDbContext, PaymentRequest, Guid>, IPaymentRequestRepository
     {
         public PaymentRequestRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
         {
@@ -17,7 +17,7 @@ namespace Unity.Payments.Repositories
         public override async Task<IQueryable<PaymentRequest>> WithDetailsAsync()
         {
             // Uses the extension method defined above
-            return ((IQueryable<PaymentRequest>)await GetListAsync());
+            return (await GetQueryableAsync()).IncludeDetails();
         }
     }
 }

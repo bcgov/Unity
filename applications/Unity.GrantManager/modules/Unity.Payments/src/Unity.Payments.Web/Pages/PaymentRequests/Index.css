@@ -1,4 +1,4 @@
-﻿#BatchPaymentRequestTable_filter label {
+﻿#PaymentRequestListTable_filter label {
     font-size: var(--bc-font-size-sm);
     color: var(--bc-colors-grey-text-300);
     white-space: nowrap;
@@ -8,6 +8,6 @@
     margin-right: 5px;
 }
 
-#BatchPaymentRequestTable_filter input {
+#PaymentRequestListTable_filter input {
     margin: 0.25rem;
 }

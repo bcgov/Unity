@@ -14,8 +14,15 @@ namespace Unity.Payments.Domain.PaymentRequests
     public class PaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         public Guid? TenantId { get; set; }
-        public virtual Guid? SiteId { get; set; }
-        public virtual Site? Site { get; set; }
+        public virtual Guid SiteId { get; set; }
+        public virtual Site Site
+        {
+            set => _site = value;
+            get => _site
+                   ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Site));
+        }
+        private Site? _site;
+
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
         public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
@@ -43,14 +50,11 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
 
-
-
         protected PaymentRequest()
         {
             ExpenseApprovals = [];
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
-
 
         private static Collection<ExpenseApproval> GenerateExpenseApprovals(decimal amount, decimal? paymentThreshold = 500000m)
         {

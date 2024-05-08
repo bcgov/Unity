@@ -1,16 +1,12 @@
-$(function () {
-    const formatter = createNumberFormatter();
+$(function () {  
     const l = abp.localization.getResource('Payments');
-    let dt = $('#PaymentDetailsListTable');
+    let dt = $('#PaymentRequestListTable');
     let dataTable;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'id',
         'creationTime',
     ];
-
-
-  
 
     let actionButtons = [
         {
@@ -140,7 +136,7 @@ $(function () {
             className: 'data-table-header',
             index: 4,
             render: function (data) {
-                return data.number;
+                return data?.number;
             }
         };
     }
@@ -266,7 +262,9 @@ $(function () {
         }).toUTC().toLocaleString() : '{Not Available}';
     }
 
-    window.addEventListener('resize', setTableHeighDynamic(dt.id));
+    /* the resizer needs looking at again after ux2 refactor 
+     window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
+    */
 
     PubSub.subscribe(
         'refresh_application_list',

@@ -6,7 +6,6 @@ using Shouldly;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
-using Unity.Payments.Repositories;
 using Volo.Abp.Uow;
 using Xunit;
 
@@ -28,7 +27,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
     }
 
     [Fact]
-    [Trait("Category", "Integration")]    
+    [Trait("Category", "Integration")]
     public async Task CreateAsync_CreatesPaymentRequest()
     {
         // Arrange        
@@ -57,7 +56,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         _ = await _supplierRepository.InsertAsync(newSupplier, true);
 
         List<CreatePaymentRequestDto> paymentRequests = new List<CreatePaymentRequestDto> { new CreatePaymentRequestDto() {
-             Amount =0,
+               Amount = 50,
                InvoiceNumber ="Test",
                ContractNumber ="",
                CorrelationId = Guid.NewGuid(),
@@ -79,17 +78,22 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
     [Trait("Category", "Integration")]
     public async Task GetListAsync_ReturnsPaymentsList()
     {
-        // Arrange       
+        // Arrange
+        using var uow = _unitOfWorkManager.Begin();
+        var supplier = new Supplier(Guid.NewGuid(), "supp", "123", Guid.NewGuid(), "A");
+        supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
+        var addedSupplier = await _supplierRepository.InsertAsync(supplier);
+        
         _ = await _paymentRequestRepository
-            .InsertAsync(new PaymentRequest(Guid.NewGuid(),"",100,"Test","0000000000","", Guid.NewGuid(), Guid.NewGuid(), ""), true);
+            .InsertAsync(new PaymentRequest(Guid.NewGuid(), "", 100, "Test", "0000000000", "", addedSupplier.Sites[0].Id, Guid.NewGuid(), ""), true);
 
         // Act
-        var batchPayments = await _paymentRequestAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto()
+        var paymentRequests = await _paymentRequestAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto()
         {
             MaxResultCount = 100
         });
 
         // Assert           
-        batchPayments.TotalCount.ShouldBeGreaterThan(0);
+        paymentRequests.TotalCount.ShouldBeGreaterThan(0);
     }
 }

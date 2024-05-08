@@ -23,8 +23,9 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
-using Unity.GrantManager.Payments;
 using Microsoft.EntityFrameworkCore;
+using Unity.Modules.Shared.Correlation;
+using Unity.GrantManager.Payments;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -45,7 +46,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly ILocalEventBus _localEventBus;
-    private readonly ISupplierAppService _supplierAppService;
 
     public GrantApplicationAppService(
         IApplicationManager applicationManager,
@@ -58,8 +58,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicationFormRepository applicationFormRepository,
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
-        ILocalEventBus localEventBus,
-        ISupplierAppService supplierInfoAppService)
+        ILocalEventBus localEventBus)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -72,7 +71,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _localEventBus = localEventBus;
-        _supplierAppService = supplierInfoAppService;
     }
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -326,6 +324,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             throw new EntityNotFoundException();
         }
     }
+
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -346,8 +345,18 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
             _ = await _applicantRepository.UpdateAsync(applicant);
 
-            // Integrate with payments module
-            await UpsertSupplierAsync(input.SupplierNumber, input.ApplicantId);
+            // Integrate with payments module to update / insert supplier
+            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
+            {
+                await _localEventBus.PublishAsync(
+                    new UpsertSupplierEto
+                    {
+                        SupplierNumber = input.SupplierNumber,
+                        CorrelationId = applicant.Id,
+                        CorrelationProvider = CorrelationConsts.Applicant
+                    }
+                );
+            }
 
             var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
             if (applicantAgent == null)
@@ -394,39 +403,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         else
         {
             throw new EntityNotFoundException();
-        }
-    }
-
-    private async Task UpsertSupplierAsync(string? supplierNumber, Guid applicantId)
-    {
-        var existing = await _supplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
-        {
-            CorrelationId = applicantId,
-            CorrelationProvider = PaymentConsts.ApplicantCorrelationProvider
-        });
-
-        // This is subject to some business rules and a domain implmentation
-        if (existing != null)
-        {
-            existing.Number = supplierNumber;
-            await _supplierAppService.UpdateAsync(existing.Id, new UpdateSupplierDto()
-            {
-                Number = supplierNumber,
-                MailingAddress = existing.MailingAddress,
-                Name = existing.Name,
-                PostalCode = existing.PostalCode,
-                Province = existing.Province,
-                City = existing.City
-            });
-        }
-        else
-        {
-            await _supplierAppService.CreateAsync(new CreateSupplierDto()
-            {
-                Number = supplierNumber,
-                CorrelationId = applicantId,
-                CorrelationProvider = PaymentConsts.ApplicantCorrelationProvider,
-            });
         }
     }
 
@@ -752,5 +728,5 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var applications = await _applicationRepository.GetListAsync();
 
         return ObjectMapper.Map<List<Application>, List<GrantApplicationLiteDto>>(applications.ToList());
-    }    
+    }
 }
