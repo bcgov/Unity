@@ -50,14 +50,14 @@
                 <abp-column size="_4" class="px-1">
                     <div class="unity-input-group">
                         <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" class="unity-currency-input" 
-                            onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled="@(!Model.IsPostEditFieldsAllowed)" />
+                        <abp-input asp-for="@Model.ProjectInfo.RequestedAmount" class="unity-currency-input" id="RequestedAmountInputPI"
+                            onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled/>
                     </div>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                     <div class="unity-input-group">
                         <span class="unity-input-prepend">$</span>
-                        <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" class="unity-currency-input" 
+                        <abp-input asp-for="@Model.ProjectInfo.TotalProjectBudget" class="unity-currency-input" id="TotalBudgetInputPI"
                             onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled="@(!Model.IsEditGranted)" />
                     </div>
                 </abp-column>
