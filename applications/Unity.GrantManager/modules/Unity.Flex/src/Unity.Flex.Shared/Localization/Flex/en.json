@@ -1,7 +1,9 @@
 {
   "culture": "en",
   "texts": {
-    "MyAccount":  "My account",
-    "SamplePageMessage": "A sample page for the Flex module"
+    "MyAccount": "My account",
+    "SamplePageMessage": "A sample page for the Flex module",
+    "Scoresheet:Configuration:AddScoresheetButtonText": "ADD SCORING SHEET",
+    "Scoresheet:Configuration:ScoresheetModal.Name": "Name"
   }
 }

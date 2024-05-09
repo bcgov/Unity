@@ -18,7 +18,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual Scoresheet? Scoresheet { get; }
         public virtual Guid ScoresheetId { get; }
 
-        public virtual Collection<ScoreField> Fields { get; private set; } = [];
+        public virtual Collection<Question> Fields { get; private set; } = [];
 
 
         protected ScoresheetSection()
@@ -42,7 +42,7 @@ namespace Unity.Flex.Domain.Scoresheets
             return this;
         }
 
-        public ScoresheetSection AddField(ScoreField field)
+        public ScoresheetSection AddField(Question field)
         {
             if (Fields.Any(s => s.Name.Equals(field.Name, StringComparison.CurrentCultureIgnoreCase)))
             {

@@ -1,0 +1,37 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization
+@using Unity.Flex.Web.Pages.ScoresheetConfiguration
+@model Unity.Flex.Web.Pages.ScoresheetConfiguration.IndexModel
+@inject IStringLocalizer<FlexResource> L
+
+@section styles
+{
+    <abp-style src="/Pages/ScoresheetConfiguration/Index.css" />
+}
+@section scripts
+{
+    <abp-script src="/Pages/ScoresheetConfiguration/Index.js" />
+}
+<abp-row class="m-0 h-100 scoresheet-configuration-container">
+    <abp-column class="p-0">
+        <abp-card>
+            <abp-card-body>
+                <h4><b>Scoring Sheets</b></h4>
+                <abp-button text="@L["Scoresheet:Configuration:AddScoresheetButtonText"].Value"
+                            id="add_site_btn"
+                            icon-type="Other"
+                            icon="fl fl-plus"
+                            onclick="openScoresheetModal(null,'Add Scoresheet');"
+                            button-type="Light"/>
+            </abp-card-body>
+         </abp-card>
+    </abp-column>
+    <abp-column class="pe-0 ps-2">
+        <abp-card class="right-card">
+            <abp-card-body>
+                <h4><b>Preview</b></h4>
+            </abp-card-body>
+        </abp-card>
+    </abp-column>
+</abp-row>

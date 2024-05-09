@@ -273,9 +273,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
             }
 
             modelBuilder.ConfigurePayments();
-#pragma warning disable S125 // Sections of code should not be commented out
-            // modelBuilder.ConfigureFlex();
-#pragma warning restore S125 // Sections of code should not be commented out
+            modelBuilder.ConfigureFlex();
         }
     }
 }

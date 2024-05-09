@@ -36,21 +36,21 @@ public static class FlexDbContextModelCreatingExtensions
                 .HasForeignKey(x => x.ScoresheetId);
         });
 
-        modelBuilder.Entity<ScoreField>(b =>
+        modelBuilder.Entity<Question>(b =>
         {
-            b.ToTable(FlexDbProperties.DbTablePrefix + "ScoreFields",
+            b.ToTable(FlexDbProperties.DbTablePrefix + "Questions",
                 FlexDbProperties.DbSchema);
 
             b.ConfigureByConvention();
 
             b.HasMany(e => e.Values)
-               .WithOne(e => e.ScoreField)
-               .HasForeignKey(x => x.ScoreFieldId);
+               .WithOne(e => e.Question)
+               .HasForeignKey(x => x.QuestionId);
         });
 
-        modelBuilder.Entity<ScoreField>(b =>
+        modelBuilder.Entity<QuestionValue>(b =>
         {
-            b.ToTable(FlexDbProperties.DbTablePrefix + "ScoreFieldValues",
+            b.ToTable(FlexDbProperties.DbTablePrefix + "QuestionValues",
                 FlexDbProperties.DbSchema);
 
             b.ConfigureByConvention();
