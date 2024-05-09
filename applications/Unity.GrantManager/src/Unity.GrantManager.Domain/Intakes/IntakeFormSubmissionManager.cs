@@ -24,7 +24,6 @@ namespace Unity.GrantManager.Intakes
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
 
-
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
             IApplicantRepository applicantRepository,
             IApplicantAgentRepository applicantAgentRepository,
@@ -173,6 +172,7 @@ namespace Unity.GrantManager.Intakes
         private DateTime? ConvertDateTimeNullableFromString(string? dateTime)
         {
             DateTime? dateTimeValue = null;
+
             if (DateTime.TryParse(dateTime, out DateTime testDateTimeParse))
             {
                 dateTimeValue = testDateTimeParse;
@@ -252,7 +252,7 @@ namespace Unity.GrantManager.Intakes
                     Street = intakeMap.PhysicalStreet,
                     Street2 = intakeMap.PhysicalStreet2,
                     Unit = intakeMap.PhysicalUnit,
-                    AddressType = ApplicantAddressType.PhysicalAddress
+                    AddressType = AddressType.PhysicalAddress
                 });
             }
 
@@ -269,7 +269,7 @@ namespace Unity.GrantManager.Intakes
                     Street = intakeMap.PhysicalStreet,
                     Street2 = intakeMap.PhysicalStreet2,
                     Unit = intakeMap.PhysicalUnit,
-                    AddressType = ApplicantAddressType.MailingAddress
+                    AddressType = AddressType.MailingAddress
                 });
             }
         }

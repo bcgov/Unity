@@ -23,6 +23,6 @@ public class ApplicantAddress : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? Street { get; set; } = string.Empty;
     public string? Street2 { get; set; } = string.Empty;
     public string? Unit { get; set; } = string.Empty;
-    public ApplicantAddressType AddressType { get; set; } = ApplicantAddressType.PhysicalAddress;
+    public AddressType AddressType { get; set; } = AddressType.PhysicalAddress;
     public Guid? TenantId { get; set; }
 }

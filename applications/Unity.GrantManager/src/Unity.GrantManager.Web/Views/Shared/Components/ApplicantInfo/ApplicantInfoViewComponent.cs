@@ -50,10 +50,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             if (Sectors.Count > 0)
             {
-                List<SubSectorDto> SubSectors = new();
-                
+                List<SubSectorDto> SubSectors = [];
+
                 SectorDto? applicationSector = Sectors.Find(x => x.SectorName == applicatInfoDto.Sector);
-                SubSectors = applicationSector?.SubSectors ?? SubSectors;                
+                SubSectors = applicationSector?.SubSectors ?? SubSectors;
 
                 model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
                     new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
@@ -81,6 +81,33 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                 OrganizationSize = applicatInfoDto.OrganizationSize,
                 SectorSubSectorIndustryDesc = applicatInfoDto.SectorSubSectorIndustryDesc,
             };
+
+            if (applicatInfoDto.ApplicantAddresses.Count != 0)
+            {
+                ApplicantAddressDto? physicalAddress = applicatInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.PhysicalAddress);
+
+                if (physicalAddress != null)
+                {
+                    model.ApplicantInfo.PhysicalAddressStreet = physicalAddress.Street;
+                    model.ApplicantInfo.PhysicalAddressStreet2 = physicalAddress.Street2;
+                    model.ApplicantInfo.PhysicalAddressUnit = physicalAddress.Unit;
+                    model.ApplicantInfo.PhysicalAddressCity = physicalAddress.City;
+                    model.ApplicantInfo.PhysicalAddressProvince = physicalAddress.Province;
+                    model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
+                }
+
+                ApplicantAddressDto? mailingAddress = applicatInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.MailingAddress);
+
+                if (mailingAddress != null)
+                {
+                    model.ApplicantInfo.MailingAddressStreet = mailingAddress.Street;
+                    model.ApplicantInfo.MailingAddressStreet2 = mailingAddress.Street2;
+                    model.ApplicantInfo.MailingAddressUnit = mailingAddress.Unit;
+                    model.ApplicantInfo.MailingAddressCity = mailingAddress.City;
+                    model.ApplicantInfo.MailingAddressProvince = mailingAddress.Province;
+                    model.ApplicantInfo.MailingAddressPostalCode = mailingAddress.Postal;
+                }
+            }
 
             return View(model);
         }

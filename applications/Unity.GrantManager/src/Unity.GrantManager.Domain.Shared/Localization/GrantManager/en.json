@@ -296,6 +296,7 @@
     "ApplicantInfoView:ApplicantInfo.ApplicantInfoTitle": "Applicant Info",
     "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc": "Other Sector/Sub/Industry Description",
     "ApplicantInfoView:ApplicantInfo.Street": "Street",
+    "ApplicantInfoView:ApplicantInfo.Street2": "Street 2",
     "ApplicantInfoView:ApplicantInfo.Unit": "Unit",
     "ApplicantInfoView:ApplicantInfo.City": "City",
     "ApplicantInfoView:ApplicantInfo.Province": "Province",

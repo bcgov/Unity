@@ -1,6 +1,6 @@
 ﻿namespace Unity.GrantManager.GrantApplications
 {
-    public enum ApplicantAddressType
+    public enum AddressType
     {
         PhysicalAddress = 1,
         MailingAddress = 2        

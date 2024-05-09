@@ -110,6 +110,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             [Display(Name = "ApplicantInfoView:ApplicantInfo.Street")]
             public string? PhysicalAddressStreet { get; set; }
 
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Street2")]
+            public string? PhysicalAddressStreet2 { get; set; }
+
             [Display(Name = "ApplicantInfoView:ApplicantInfo.Unit")]
             public string? PhysicalAddressUnit { get; set; }
 
@@ -125,6 +128,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.Street")]
             public string? MailingAddressStreet { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Street2")]
+            public string? MailingAddressStreet2 { get; set; }
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.Unit")]
             public string? MailingAddressUnit { get; set; }

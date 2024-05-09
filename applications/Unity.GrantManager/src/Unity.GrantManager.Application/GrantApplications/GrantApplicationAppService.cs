@@ -301,7 +301,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
-            application.ProjectName = input.ProjectName ?? String.Empty;
+            application.ProjectName = input.ProjectName ?? string.Empty;
             application.RequestedAmount = input.RequestedAmount ?? 0;
             application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
             application.ProjectStartDate = input.ProjectStartDate;
@@ -328,7 +328,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             throw new EntityNotFoundException();
         }
     }
-
+    
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -386,7 +386,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
             }
 
-            await UpdateApplicationAddresses(input);
+            await UpdateApplicantAddresses(input);
 
             application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
             application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
@@ -412,43 +412,47 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    protected virtual async Task UpdateApplicationAddresses(CreateUpdateApplicantInfoDto input)
+    protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
     {
         var applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, ApplicantAddressType.MailingAddress, input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, ApplicantAddressType.PhysicalAddress, input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
     }
 
-    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, ApplicantAddressType applicantAddressType, Guid applicantId)
+    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId)
     {
         ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType);
 
         if (dbAddress != null)
         {
-            MapApplicationAddress(input, applicantAddressType, dbAddress);
+            MapApplicantAddress(input, applicantAddressType, dbAddress);
             await _applicantAddressRepository.UpdateAsync(dbAddress);
         }
         else
         {
             var newAddress = new ApplicantAddress() { AddressType = applicantAddressType, ApplicantId = applicantId };
-            MapApplicationAddress(input, applicantAddressType, newAddress);
+            MapApplicantAddress(input, applicantAddressType, newAddress);
             await _applicantAddressRepository.InsertAsync(newAddress);
         }
     }
 
-    private static void MapApplicationAddress(CreateUpdateApplicantInfoDto input, ApplicantAddressType applicantAddressType, ApplicantAddress address)
+    private static void MapApplicantAddress(CreateUpdateApplicantInfoDto input, AddressType applicantAddressType, ApplicantAddress address)
     {
         switch (applicantAddressType)
         {
-            case ApplicantAddressType.MailingAddress:
+            case AddressType.MailingAddress:
+                address.AddressType = AddressType.MailingAddress;
                 address.Street = input.MailingAddressStreet ?? "";
+                address.Street2 = input.MailingAddressStreet2 ?? "";
                 address.Unit = input.MailingAddressUnit ?? "";
                 address.City = input.MailingAddressCity ?? "";
                 address.Province = input.MailingAddressProvince ?? "";
                 address.Postal = input.MailingAddressPostalCode ?? "";
                 break;
-            case ApplicantAddressType.PhysicalAddress:
+            case AddressType.PhysicalAddress:
+                address.AddressType = AddressType.PhysicalAddress;
                 address.Street = input.PhysicalAddressStreet ?? "";
+                address.Street2 = input.PhysicalAddressStreet2 ?? "";
                 address.Unit = input.PhysicalAddressUnit ?? "";
                 address.City = input.PhysicalAddressCity ?? "";
                 address.Province = input.PhysicalAddressProvince ?? "";
