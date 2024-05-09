@@ -13,27 +13,30 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Net.Http;
-using Unity.Payments.BatchPaymentRequests;
 using Unity.Payments.Enums;
-using Unity.Payments.Suppliers;
+using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.PaymentConfigurations;
+using Unity.Payments.Domain.PaymentRequests;
+using System.Runtime.Intrinsics.X86;
+using System.Linq;
+using Volo.Abp.Domain.Repositories;
+
 
 namespace Unity.Payments.Integration.Cas
 {
     [IntegrationService]
     public class InvoiceService : ApplicationService, IInvoiceService
     {
+
+        private readonly IPaymentRequestRepository _iPaymentRequestRepository;
         private readonly IResilientHttpRequest _resilientRestClient;
         private readonly ISiteRepository _iSiteRepository;
         private readonly ISupplierRepository _iSupplierRepository;
         private readonly IOptions<CasClientOptions> _casClientOptions;
         private IPaymentConfigurationAppService _paymentConfigurationAppService;
         private readonly RestClient _restClient;
-
-		// MOVE THESE - SHOULD BE ROUTES???
-		private const string OAUTH_PATH = "oauth/token";
-		private const string CFS_APINVOICE = "cfs/apinvoice";
-        // "CasBaseUrl": "https://<server>:<port>/ords/cas/",
+        private const string OAUTH_PATH = "oauth/token";
+        private const string CFS_APINVOICE = "cfs/apinvoice";
 
         public readonly Dictionary<int, string> CASPaymentGroup = new Dictionary<int, string>
         {
@@ -42,6 +45,7 @@ namespace Unity.Payments.Integration.Cas
         };
 
         public InvoiceService(
+            IPaymentRequestRepository paymentRequestRepository,
             IPaymentConfigurationAppService paymentConfigurationAppService,
             IResilientHttpRequest resilientHttpRequest,
             IOptions<CasClientOptions> casClientOptions,
@@ -49,11 +53,12 @@ namespace Unity.Payments.Integration.Cas
             ISiteRepository iSiteRepository,
             RestClient restClient)
         {
+            _iPaymentRequestRepository = paymentRequestRepository;
             _paymentConfigurationAppService = paymentConfigurationAppService;
             _resilientRestClient = resilientHttpRequest;
             _casClientOptions = casClientOptions;
             _iSupplierRepository = iSupplierRepository;
-            _iSiteRepository = iSiteRepository;            
+            _iSiteRepository = iSiteRepository;
             _restClient = restClient;
         }
 
@@ -71,11 +76,9 @@ namespace Unity.Payments.Integration.Cas
                 var dateStringDayMonYear = $"{currentDay}-{currentMonth}-{currentYear}";
 
                 casInvoice.supplierNumber = site.Supplier.Number; // This is from each Applicant
+                casInvoice.supplierName = site.Supplier.Name;
                 casInvoice.supplierSiteNumber = site.Number;
                 casInvoice.payGroup = CASPaymentGroup[(int)site.PaymentGroup]; // GEN CHQ - other options
-
-                // Invoice Number/?????? Want to use the Submission ID - Confirmation ID + 4 digit sequence
-                // The Application ID in unity - Might NEED SEQUENCE IF MULTIPLE
                 casInvoice.invoiceNumber = paymentRequest.InvoiceNumber;
                 casInvoice.invoiceDate = dateStringDayMonYear; //DD-MMM-YYYY
                 casInvoice.dateInvoiceReceived = dateStringDayMonYear;
@@ -86,7 +89,7 @@ namespace Unity.Payments.Integration.Cas
                 invoiceLineDetail.invoiceLineNumber = 1;
                 invoiceLineDetail.invoiceLineAmount = paymentRequest.Amount;
                 invoiceLineDetail.defaultDistributionAccount = accountDistributionCode; // This will be at the tenant level
-                casInvoice.invoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };                
+                casInvoice.invoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };
             }
 
             return casInvoice;
@@ -100,7 +103,7 @@ namespace Unity.Payments.Integration.Cas
             return site;
         }
 
-        public async Task<InvoiceResponse> CreateInvoiceByPaymentRequestAsync(PaymentRequest paymentRequest)
+        public async Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(PaymentRequest paymentRequest)
         {
             InvoiceResponse invoiceResponse = new();
             string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
@@ -111,6 +114,20 @@ namespace Unity.Payments.Integration.Cas
                 if (invoice != null)
                 {
                     invoiceResponse = await CreateInvoiceAsync(invoice);
+                    if(invoiceResponse != null)
+                    {
+                        paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
+                        paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
+                        // Set the status - for the payment request
+                        if (invoiceResponse.IsSuccess())
+                        {
+                            paymentRequest.SetInvoiceStatus("SentToCas");
+                        } else
+                        {
+                            paymentRequest.SetInvoiceStatus("ErrorFromCas");
+                        }
+                        await _iPaymentRequestRepository.UpdateAsync(paymentRequest, autoSave: true);
+                    }
                 }
             }
 
@@ -120,30 +137,34 @@ namespace Unity.Payments.Integration.Cas
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
             var jsonString = Newtonsoft.Json.JsonConvert.SerializeObject(casAPInvoice);
-            HttpContent postContent = new StringContent(jsonString);
-
             var authHeaders = await GetAuthHeadersAsync();
-            var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}";
-			
-            //var jsonString = Newtonsoft.Json.JsonConvert.SerializeObject(casAPInvoice);
-			
-            var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, postContent);
+            var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/";						
+            var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, jsonString);
 
-            if (response != null && response.Content != null)
+            if (response != null)
             {
-                var result = JsonSerializer.Deserialize<InvoiceResponse>(response.Content) ?? throw new Exception();
-                return result;
+                if(response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
+                {
+                    var result = JsonSerializer.Deserialize<InvoiceResponse>(response.Content)
+                        ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
+                    result.CASHttpStatusCode = response.StatusCode;
+                    return result;
+                }
+                else if (response.ErrorMessage != null)
+                {
+                    throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response.ErrorMessage);
+                } else
+                {
+                    throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
+                }
             }
-            else if (response != null && response.ErrorMessage != null)
-            {
-                throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response.ErrorMessage);
-            } else
+            else
             {
                 throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync: Null response");
             }
         }
 
-		public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode)
+        public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode)
         {
             var authHeaders = await GetAuthHeadersAsync();
 			var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
@@ -164,7 +185,7 @@ namespace Unity.Payments.Integration.Cas
             }
         }
 
-		public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string paymentId)
+        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string paymentId)
         {
             var authHeaders = await GetAuthHeadersAsync();
             var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/payment/{paymentId}";

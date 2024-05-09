@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Text.Json.Serialization;
 
 namespace Unity.Payments.Integration.Http
@@ -11,6 +12,8 @@ namespace Unity.Payments.Integration.Http
 		[JsonPropertyName("CAS-Returned-Messages")]
 		public string CASReturnedMessages { get; set; } = null!;
 
-		public bool IsSuccess() => "SUCCEEDED".Equals(CASReturnedMessages, StringComparison.OrdinalIgnoreCase);
+        public HttpStatusCode CASHttpStatusCode { get; set; }
+
+        public bool IsSuccess() => "SUCCEEDED".Equals(CASReturnedMessages, StringComparison.OrdinalIgnoreCase);
 	}
 }

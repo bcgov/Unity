@@ -41,7 +41,7 @@ namespace Unity.Payments.Integrations.Cas
 
         [Required]
         [MaxLength(2)]
-        public string? remittanceCode { get; set; } = "01";
+        public string? remittanceCode { get; set; } = "01"; // 01 - Your Invoice Reference
 
         [Required]
         [MaxLength(1)]
@@ -67,27 +67,6 @@ namespace Unity.Payments.Integrations.Cas
 
         [MaxLength(40)]
         public string nameLine2 { get; set; }= "";
-
-        [MaxLength(40)]
-        public string? addressLine1 { get; set; }= "";
-
-        [MaxLength(40)]
-        public string? addressLine2 { get; set; }= "";
-
-        [MaxLength(40)]
-        public string? addressLine3 { get; set; }= "";
-
-        [MaxLength(25)]
-        public string? city { get; set; } = "";
-
-        [MaxLength(2)]
-        public string? country { get; set; } = "CA";
-
-        [MaxLength(2)]
-        public string? province { get; set; } = "BC";
-
-        [MaxLength(10)]
-        public string? postalCode { get; set; } = "";
 
         [MaxLength(150)]
         public string? qualifiedReceiver { get; set; } = "";

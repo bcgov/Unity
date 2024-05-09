@@ -37,8 +37,9 @@ namespace Unity.Payments.PaymentConfigurations
 				&& paymentConfiguration.MinistryClient != null
 				&& paymentConfiguration.ProjectNumber != null)
             {
+                string accountDistributionPostFix = "000000.0000";
                 accountDistributionCode = 
-                 $"{paymentConfiguration.MinistryClient}.{paymentConfiguration.Responsibility}.{paymentConfiguration.ServiceLine}.{paymentConfiguration.Stob}.{paymentConfiguration.ProjectNumber}"; 
+                 $"{paymentConfiguration.MinistryClient}.{paymentConfiguration.Responsibility}.{paymentConfiguration.ServiceLine}.{paymentConfiguration.Stob}.{paymentConfiguration.ProjectNumber}.{accountDistributionPostFix}"; 
             }
 
             return accountDistributionCode;
