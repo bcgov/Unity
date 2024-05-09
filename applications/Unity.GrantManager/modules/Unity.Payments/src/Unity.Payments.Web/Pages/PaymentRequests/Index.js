@@ -9,15 +9,7 @@ $(function () {
     ];
 
     let actionButtons = [
-        {
-            extend: 'csv',
-            text: 'Export',
-            className: 'custom-table-btn flex-none btn btn-secondary',
-            exportOptions: {
-                columns: ':visible:not(.notexport)',
-                orthogonal: 'fullName',
-            }
-        },
+        
         {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary',
@@ -38,7 +30,27 @@ $(function () {
             action: function (e, dt, node, config) {
                 alert('History Button activated');
             }
-        }
+        },
+        {
+            text: 'Filter',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            id: "btn-toggle-filter",
+            action: function (e, dt, node, config) {
+                $(".tr-toggle-filter").toggle();
+            }
+        },
+
+        {
+            extend: 'csv',
+            text: 'Export',
+            title: 'Payment Requests',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            exportOptions: {
+                columns: ':visible:not(.notexport)',
+                orthogonal: 'fullName',
+            }
+        },
+       
     ];
 
     dataTable = initializeDataTable(dt,
