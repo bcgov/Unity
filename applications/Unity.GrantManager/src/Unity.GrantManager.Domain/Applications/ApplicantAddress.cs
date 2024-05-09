@@ -4,7 +4,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Applications;
 
-public class Address : AuditedAggregateRoot<Guid>, IMultiTenant
+public class ApplicantAddress : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? ApplicantId { get; set; }
     public string? City { get; set; } = string.Empty;

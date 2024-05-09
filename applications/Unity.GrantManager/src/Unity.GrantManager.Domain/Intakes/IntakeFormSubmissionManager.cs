@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Intakes
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IApplicantRepository _applicantRepository;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
-        private readonly IAddressRepository _addressRepository;
+        private readonly IApplicantAddressRepository _addressRepository;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationStatusRepository _applicationStatusRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
@@ -28,7 +28,7 @@ namespace Unity.GrantManager.Intakes
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
             IApplicantRepository applicantRepository,
             IApplicantAgentRepository applicantAgentRepository,
-            IAddressRepository addressRepository,
+            IApplicantAddressRepository addressRepository,
             IApplicationRepository applicationRepository,
             IApplicationStatusRepository applicationStatusRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
@@ -228,11 +228,11 @@ namespace Unity.GrantManager.Intakes
            return applicantAgent;
         }
 
-        private async Task<Address> CreateApplicantAddressAsync(IntakeMapping intakeMap, Applicant applicant)
+        private async Task<ApplicantAddress> CreateApplicantAddressAsync(IntakeMapping intakeMap, Applicant applicant)
         {
-            var address = new Address();
+            var address = new ApplicantAddress();
             if(!intakeMap.PhysicalStreet.IsNullOrEmpty()) {
-                address = await _addressRepository.InsertAsync(new Address
+                address = await _addressRepository.InsertAsync(new ApplicantAddress
                 {
                     ApplicantId = applicant.Id,
                     City = intakeMap.PhysicalCity ?? "{PhysicalCity}",

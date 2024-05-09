@@ -31,7 +31,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<AssessmentComment> AssessmentComments { get; set; }
         public DbSet<Person> Persons { get; set; }
-        public DbSet<Address> Addresses { get; set; }
+        public DbSet<ApplicantAddress> ApplicantAddresses { get; set; }
         public DbSet<ApplicationTags> ApplicationTags  { get; set; }
         public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
@@ -133,9 +133,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .IsRequired();
             });
 
-            modelBuilder.Entity<Address>(b =>
+            modelBuilder.Entity<ApplicantAddress>(b =>
             {
-                b.ToTable(GrantManagerConsts.TenantTablePrefix + "Addresses", GrantManagerConsts.DbSchema);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAddresses", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId);
             });
