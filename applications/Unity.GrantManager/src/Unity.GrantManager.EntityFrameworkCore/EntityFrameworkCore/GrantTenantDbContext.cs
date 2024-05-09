@@ -32,13 +32,13 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<AssessmentComment> AssessmentComments { get; set; }
         public DbSet<Person> Persons { get; set; }
         public DbSet<ApplicantAddress> ApplicantAddresses { get; set; }
-        public DbSet<ApplicationTags> ApplicationTags  { get; set; }
+        public DbSet<ApplicationTags> ApplicationTags { get; set; }
         public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
-        public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
-        public DbSet<ApplicationContact> ApplicationContacts { get; set; }    
-        public DbSet<ApplicationLink> ApplicationLinks { get; set; }    
+        public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }
+        public DbSet<ApplicationContact> ApplicationContacts { get; set; }
+        public DbSet<ApplicationLink> ApplicationLinks { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -67,6 +67,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .HasMaxLength(600);
 
                 b.HasIndex(x => x.ApplicantName);
+
+                b.HasMany<ApplicantAddress>()
+                    .WithOne(s => s.Applicant)
+                    .HasForeignKey(x => x.ApplicantId)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             modelBuilder.Entity<Intake>(b =>
@@ -136,8 +141,12 @@ namespace Unity.GrantManager.EntityFrameworkCore
             modelBuilder.Entity<ApplicantAddress>(b =>
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAddresses", GrantManagerConsts.DbSchema);
-                b.ConfigureByConvention(); //auto configure for the base class props
-                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId);
+                b.ConfigureByConvention(); //auto configure for the base class props                
+
+                b.HasOne(x => x.Applicant)
+                    .WithMany(s => s.ApplicantAddresses)
+                    .HasForeignKey(s => s.ApplicantId)
+                    .IsRequired();
             });
 
             modelBuilder.Entity<ApplicantAgent>(b =>
@@ -242,7 +251,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ConfigureByConvention();
                 b.Property(x => x.Text)
                     .IsRequired()
-                    .HasMaxLength(250);               
+                    .HasMaxLength(250);
             });
 
             modelBuilder.Entity<ApplicationContact>(b =>
@@ -252,7 +261,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
-               
+
             });
 
             modelBuilder.Entity<ApplicationLink>(b =>
@@ -262,7 +271,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired();
-               
+
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();
