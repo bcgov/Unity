@@ -36,7 +36,7 @@ namespace Unity.Payments.Integration.Cas
         private const string OAUTH_PATH = "oauth/token";
         private const string CFS_APINVOICE = "cfs/apinvoice";
 
-        public readonly Dictionary<int, string> CASPaymentGroup = new Dictionary<int, string>
+        private readonly Dictionary<int, string> CASPaymentGroup = new Dictionary<int, string>
         {
             { (int)PaymentGroup.EFT, "GEN EFT" },
             { (int)PaymentGroup.Cheque, "GEN CHQ" }
