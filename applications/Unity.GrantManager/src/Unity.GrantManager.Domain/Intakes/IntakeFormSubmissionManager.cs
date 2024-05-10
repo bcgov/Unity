@@ -17,18 +17,17 @@ namespace Unity.GrantManager.Intakes
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IApplicantRepository _applicantRepository;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
-        private readonly IAddressRepository _addressRepository;
+        private readonly IApplicantAddressRepository _addressRepository;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationStatusRepository _applicationStatusRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
 
-
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
             IApplicantRepository applicantRepository,
             IApplicantAgentRepository applicantAgentRepository,
-            IAddressRepository addressRepository,
+            IApplicantAddressRepository addressRepository,
             IApplicationRepository applicationRepository,
             IApplicationStatusRepository applicationStatusRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
@@ -46,7 +45,8 @@ namespace Unity.GrantManager.Intakes
             _applicationFormVersionRepository = applicationFormVersionRepository;
         }
 
-        public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId) {
+        public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
+        {
 
             var applicationFormVersion = (await _applicationFormVersionRepository
                     .GetQueryableAsync())
@@ -106,7 +106,7 @@ namespace Unity.GrantManager.Intakes
                     Forestry = intakeMap.Forestry ?? null,
                     ForestryFocus = intakeMap.ForestryFocus ?? null,
                     City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
-                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}", 
+                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
                     CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
                     RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
                     SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
@@ -123,18 +123,22 @@ namespace Unity.GrantManager.Intakes
                     SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone ?? "{SigningAuthorityCellPhone}",
                     Place = intakeMap.Place ?? "{Place}"
                 }
-            );   
+            );
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
             return application;
         }
 
-        private string ResolveAndTruncateField(int maxLength, string defaultFieldName, string? valueString) {
+        private string ResolveAndTruncateField(int maxLength, string defaultFieldName, string? valueString)
+        {
             string fieldValue = defaultFieldName;
 
-            if(!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength) {
+            if (!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength)
+            {
                 Logger.LogWarning("Truncation: {fieldName} has been truncated! - Max length: {length}", defaultFieldName, maxLength);
                 fieldValue = valueString.Substring(0, maxLength);
-            } else if (!string.IsNullOrEmpty(valueString)) {
+            }
+            else if (!string.IsNullOrEmpty(valueString))
+            {
                 fieldValue = valueString.Trim();
             }
 
@@ -157,16 +161,20 @@ namespace Unity.GrantManager.Intakes
             if (decimal.TryParse(decimalString, out decimal decimalParse))
             {
                 decimalValue = decimalParse;
-            } else
+            }
+            else
             {
                 decimalValue = Convert.ToDecimal("0");
             }
             return decimalValue;
         }
 
-        private DateTime? ConvertDateTimeNullableFromString(string? dateTime) {
+        private DateTime? ConvertDateTimeNullableFromString(string? dateTime)
+        {
             DateTime? dateTimeValue = null;
-            if(DateTime.TryParse(dateTime, out DateTime testDateTimeParse)) {
+
+            if (DateTime.TryParse(dateTime, out DateTime testDateTimeParse))
+            {
                 dateTimeValue = testDateTimeParse;
             }
 
@@ -190,7 +198,7 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = ResolveAndTruncateField(600, "{ApplicantName}", intakeMap.ApplicantName), 
+                ApplicantName = ResolveAndTruncateField(600, "{ApplicantName}", intakeMap.ApplicantName),
                 NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
                 OrgName = intakeMap.OrgName ?? "{OrgName}",
                 OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
@@ -202,7 +210,7 @@ namespace Unity.GrantManager.Intakes
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
             });
 
-            await CreateApplicantAddressAsync(intakeMap, applicant);
+            await CreateApplicantAddressesAsync(intakeMap, applicant);
 
             return applicant;
         }
@@ -211,7 +219,8 @@ namespace Unity.GrantManager.Intakes
         {
             var applicantAgent = new ApplicantAgent();
             if (!string.IsNullOrEmpty(intakeMap.ContactName) || !string.IsNullOrEmpty(intakeMap.ContactPhone) || !string.IsNullOrEmpty(intakeMap.ContactPhone2)
-                || !string.IsNullOrEmpty(intakeMap.ContactEmail) || !string.IsNullOrEmpty(intakeMap.ContactTitle)) {
+                || !string.IsNullOrEmpty(intakeMap.ContactEmail) || !string.IsNullOrEmpty(intakeMap.ContactTitle))
+            {
 
                 applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
                 {
@@ -225,36 +234,53 @@ namespace Unity.GrantManager.Intakes
                 });
             }
 
-           return applicantAgent;
+            return applicantAgent;
         }
 
-        private async Task<Address> CreateApplicantAddressAsync(IntakeMapping intakeMap, Applicant applicant)
+        private async Task CreateApplicantAddressesAsync(IntakeMapping intakeMap, Applicant applicant)
         {
-            var address = new Address();
-            if(!intakeMap.PhysicalStreet.IsNullOrEmpty()) {
-                address = await _addressRepository.InsertAsync(new Address
+            if (!intakeMap.PhysicalStreet.IsNullOrEmpty()
+                || !intakeMap.PhysicalStreet2.IsNullOrEmpty())
+            {
+                await _addressRepository.InsertAsync(new ApplicantAddress
                 {
                     ApplicantId = applicant.Id,
-                    City = intakeMap.PhysicalCity ?? "{PhysicalCity}",
-                    Country = intakeMap.PhysicalProvince ?? "{PhysicalProvince}",
-                    Province = intakeMap.PhysicalCountry ?? "{PhysicalCountry}",
-                    Postal = intakeMap.PhysicalPostal ?? "{PhysicalPostal}",
-                    Street = intakeMap.PhysicalStreet ?? "{PhysicalStreet}",
-                    Street2 = intakeMap.PhysicalStreet2 ?? "{PhysicalStreet2}",
-                    Unit = intakeMap.PhysicalUnit ?? "{PhysicalUnit}",
+                    City = intakeMap.PhysicalCity,
+                    Country = intakeMap.PhysicalProvince,
+                    Province = intakeMap.PhysicalCountry,
+                    Postal = intakeMap.PhysicalPostal,
+                    Street = intakeMap.PhysicalStreet,
+                    Street2 = intakeMap.PhysicalStreet2,
+                    Unit = intakeMap.PhysicalUnit,
+                    AddressType = AddressType.PhysicalAddress
                 });
-
             }
-            return address;
+
+            if (!intakeMap.MailingStreet.IsNullOrEmpty()
+                || !intakeMap.MailingStreet2.IsNullOrEmpty())
+            {
+                await _addressRepository.InsertAsync(new ApplicantAddress
+                {
+                    ApplicantId = applicant.Id,
+                    City = intakeMap.PhysicalCity,
+                    Country = intakeMap.PhysicalProvince,
+                    Province = intakeMap.PhysicalCountry,
+                    Postal = intakeMap.PhysicalPostal,
+                    Street = intakeMap.PhysicalStreet,
+                    Street2 = intakeMap.PhysicalStreet2,
+                    Unit = intakeMap.PhysicalUnit,
+                    AddressType = AddressType.MailingAddress
+                });
+            }
         }
 
         public async Task ResyncSubmissionAttachments(Guid applicationId)
         {
             var query = from applicationFormSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()
-                            where applicationFormSubmission.ApplicationId == applicationId
-                            select applicationFormSubmission;
+                        where applicationFormSubmission.ApplicationId == applicationId
+                        select applicationFormSubmission;
             ApplicationFormSubmission? applicationFormSubmissionData = await AsyncExecuter.FirstOrDefaultAsync(query);
-            if(applicationFormSubmissionData == null) return;
+            if (applicationFormSubmissionData == null) return;
             var formSubmission = JsonConvert.DeserializeObject<dynamic>(applicationFormSubmissionData.Submission)!;
             await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(applicationId, formSubmission);
         }

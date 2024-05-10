@@ -105,7 +105,44 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             [Display(Name = "ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc")]
             [TextArea(Rows = 2)]
-            public string? SectorSubSectorIndustryDesc { get; set; }            
+            public string? SectorSubSectorIndustryDesc { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Street")]
+            public string? PhysicalAddressStreet { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Street2")]
+            public string? PhysicalAddressStreet2 { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Unit")]
+            public string? PhysicalAddressUnit { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.City")]
+            public string? PhysicalAddressCity { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Province")]
+            public string? PhysicalAddressProvince { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.PostalCode")]
+            public string? PhysicalAddressPostalCode { get; set; }
+
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Street")]
+            public string? MailingAddressStreet { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Street2")]
+            public string? MailingAddressStreet2 { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Unit")]
+            public string? MailingAddressUnit { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.City")]
+            public string? MailingAddressCity { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.Province")]
+            public string? MailingAddressProvince { get; set; }
+
+            [Display(Name = "ApplicantInfoView:ApplicantInfo.PostalCode")]
+            public string? MailingAddressPostalCode { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)
