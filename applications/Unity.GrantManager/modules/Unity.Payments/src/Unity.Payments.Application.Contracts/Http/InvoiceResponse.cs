@@ -6,11 +6,11 @@ namespace Unity.Payments.Integration.Http
 {
 	public class InvoiceResponse
 	{
-		[JsonPropertyName("invoice_number")]
-		public string? InvoiceNumber { get; set; }
+        [JsonPropertyName("invoice_number")]
+        public string? InvoiceNumber { get; set; }
 
-		[JsonPropertyName("CAS-Returned-Messages")]
-		public string CASReturnedMessages { get; set; } = null!;
+        [JsonPropertyName("CAS-Returned-Messages")]
+        public string CASReturnedMessages { get; set; } = null!;
 
         public HttpStatusCode CASHttpStatusCode { get; set; }
 

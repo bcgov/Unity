@@ -47,7 +47,7 @@ namespace Unity.Payments.Domain.PaymentConfigurations
 
             bool validNumeric = true;
             if (validateNumeric) { 
-                validNumeric = field.All(Char.IsDigit);
+                validNumeric = field.All(char.IsDigit);
             }
 
             if (field.Length != length || !validNumeric)
