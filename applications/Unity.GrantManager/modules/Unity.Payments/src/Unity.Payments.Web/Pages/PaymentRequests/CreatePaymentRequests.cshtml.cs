@@ -20,6 +20,12 @@ namespace Unity.Payments.Web.Pages.Payments
 
         [BindProperty]
         public decimal PaymentThreshold { get; set; }
+        
+        [BindProperty]
+        public bool DisableSubmit { get; set; }
+
+        [BindProperty]
+        public bool HasPaymentConfiguration { get; set; }
 
         public List<Guid> SelectedApplicationIds { get; set; }
 
@@ -43,21 +49,33 @@ namespace Unity.Payments.Web.Pages.Payments
 
         public async Task OnGetAsync(string applicationIds)
         {
+            var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
+            if (paymentConfiguration != null)
+            {
+                PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
+                HasPaymentConfiguration = true;
+            } else
+            {
+                DisableSubmit = true;
+                HasPaymentConfiguration = false;
+            }
+
             SelectedApplicationIds = JsonSerializer.Deserialize<List<Guid>>(applicationIds) ?? [];
             var applications = await _applicationService.GetApplicationDetailsListAsync(SelectedApplicationIds);
 
             foreach (var application in applications)
             {
+                List<string> errorList = [];
+                bool missingFields = false;
+
                 PaymentsModel request = new()
                 {
                     ApplicationId = application.Id,
                     ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
-                    Amount = application.ApprovedAmount,
+                    Amount = decimal.Parse("0.00"),
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
                     ContractNumber = application.ContractNumber,
-                    
-                    
                 };
 
                 // Massage Site list
@@ -85,13 +103,35 @@ namespace Unity.Payments.Web.Pages.Payments
                         };
                         request.SiteList.Add(item);
                     }
+                } else {
+                    missingFields = true;
                 }
 
+                if(application.ContractNumber.IsNullOrEmpty())
+                {
+                    missingFields = true;
+                }
+
+                if(missingFields)
+                {
+                    errorList.Add("Some payment information is missing for this applicant, please make sure Contract # and Supplier info are available.");
+                    request.DisableFields = true;
+                }
+
+                if (application.StatusCode != GrantApplicationState.GRANT_APPROVED) {
+                    errorList.Add("The selected Application is not Approved. To continue please remove the item from the list.");
+                    request.DisableFields = true;
+                }
+
+                if(application.ApplicationForm.Payable != true) {
+                    errorList.Add("The selected application is not Payable. To continue please remove the item from the list.");
+                    request.DisableFields = true;
+                }
+
+                request.ErrorList = errorList;
                 ApplicationPaymentRequestForm!.Add(request);
             }
 
-            var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
-            PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
         }
 
         public async Task<IActionResult> OnPostAsync()
