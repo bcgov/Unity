@@ -17,7 +17,7 @@ namespace Unity.Payments.PaymentConfigurations
                 ministryClient: "0TW",
                 responsibility: "51OCG",
                 serviceLine: "00000",
-                stob: "5717"
+                stob: "5717",
                 projectNumber: "5100000"
                 );
 
