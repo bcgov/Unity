@@ -22,17 +22,14 @@ namespace Unity.Payments.PaymentRequests
         private readonly IPaymentRequestRepository _paymentRequestsRepository;
         private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
         private readonly ICurrentUser _currentUser;
-        private readonly IInvoiceService _iInvoiceService;
 
         public PaymentRequestAppService(
             IRepository<PaymentRequest, Guid> iPaymentRequestRepository,
-            IInvoiceService iInvoiceService,
             IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
             ICurrentUser currentUser)
         {
             _iPaymentRequestRepository = iPaymentRequestRepository;
-            _iInvoiceService = iInvoiceService;
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
