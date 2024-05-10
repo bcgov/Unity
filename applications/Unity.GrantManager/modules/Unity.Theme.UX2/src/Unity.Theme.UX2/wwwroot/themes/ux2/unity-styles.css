@@ -99,8 +99,9 @@
 
     #user-dropdown.show {
         display: block;
-        right: 5px;
+        right: 12px;
         top: 5.5rem;
+        min-width: 264px;
     }
 
     #user-dropdown > button {
