@@ -6,7 +6,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.Scoresheets
 {
-    public class QuestionValue : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationEntity
+    public class Answer : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationEntity
     {
         [Column(TypeName = "jsonb")]
         public virtual string? CurrentValue { get; private set; } = "{}";
@@ -28,12 +28,12 @@ namespace Unity.Flex.Domain.Scoresheets
         public Guid? TenantId { get; set; }
 
 
-        protected QuestionValue()
+        protected Answer()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public QuestionValue(Guid id,
+        public Answer(Guid id,
             Guid correlationId,
             string correlationProvider)
         {

@@ -13,7 +13,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual QuestionType Type { get; private set; }
         public virtual bool Enabled { get; private set; }
 
-        public virtual Collection<QuestionValue> Values { get; private set; } = [];
+        public virtual Collection<Answer> Answers { get; private set; } = [];
 
         // Navigation
         public virtual ScoresheetSection? Section { get; }
@@ -35,9 +35,9 @@ namespace Unity.Flex.Domain.Scoresheets
             Enabled = true;
         }
 
-        public Question AddValue(QuestionValue value)
+        public Question AddAnswer(Answer answer)
         {
-            Values.Add(value);
+            Answers.Add(answer);
             return this;
         }        
     }

@@ -43,14 +43,14 @@ public static class FlexDbContextModelCreatingExtensions
 
             b.ConfigureByConvention();
 
-            b.HasMany(e => e.Values)
+            b.HasMany(e => e.Answers)
                .WithOne(e => e.Question)
                .HasForeignKey(x => x.QuestionId);
         });
 
-        modelBuilder.Entity<QuestionValue>(b =>
+        modelBuilder.Entity<Answer>(b =>
         {
-            b.ToTable(FlexDbProperties.DbTablePrefix + "QuestionValues",
+            b.ToTable(FlexDbProperties.DbTablePrefix + "Answers",
                 FlexDbProperties.DbSchema);
 
             b.ConfigureByConvention();
