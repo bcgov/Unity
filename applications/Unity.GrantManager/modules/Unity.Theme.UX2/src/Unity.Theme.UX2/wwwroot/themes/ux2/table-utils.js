@@ -26,7 +26,17 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
                 dataEndpoint,
-                data
+                data,
+                function (result) {
+                    if (result.totalCount <= maxRowsPerPage) {
+                        $('.dataTables_paginate').hide();
+                    }
+                    return {
+                        recordsTotal: result.totalCount,
+                        recordsFiltered: result.totalCount,
+                        data: result.items
+                    };
+                }
             ),
             select: {
                 style: 'multiple',
