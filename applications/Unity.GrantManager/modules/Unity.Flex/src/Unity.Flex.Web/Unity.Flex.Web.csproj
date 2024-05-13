@@ -35,6 +35,25 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="Views\_ViewImports.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
+    <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\_ViewImports.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Unity.Flex.Application.Contracts\Unity.Flex.Application.Contracts.csproj" />
   </ItemGroup>
 

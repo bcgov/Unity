@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Linq;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -14,7 +16,6 @@ namespace Unity.Flex.Domain.Worksheets
         public Guid? TenantId { get; set; }
 
         public virtual Collection<WorksheetSection> Sections { get; private set; } = [];
-        public virtual Collection<WorksheetInstance> Instances { get; private set; } = [];
 
         protected Worksheet()
         {
@@ -27,6 +28,15 @@ namespace Unity.Flex.Domain.Worksheets
         {
             Id = id;
             Name = name;
+        }
+
+        public Worksheet AddSection(WorksheetSection section)
+        {
+            if (Sections.Any(s => s.Name == section.Name))
+                throw new BusinessException("Cannot duplicate name");
+
+            Sections.Add(section);
+            return this;
         }
     }
 }

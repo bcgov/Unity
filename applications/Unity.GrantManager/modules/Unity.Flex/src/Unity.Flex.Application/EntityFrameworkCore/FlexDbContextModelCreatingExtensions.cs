@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
 using Unity.Flex.Domain;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
 using Volo.Abp.EntityFrameworkCore.Modeling;
@@ -88,11 +88,7 @@ public static class FlexDbContextModelCreatingExtensions
 
             b.HasMany(e => e.Sections)
                 .WithOne(e => e.Worksheet)
-                .HasForeignKey(x => x.WorksheetId);
-
-            b.HasMany(e => e.Instances)
-                .WithOne(e => e.Worksheet)
-                .HasForeignKey(x => x.WorksheetId);
+                .HasForeignKey(x => x.WorksheetId);            
         });
 
         modelBuilder.Entity<CustomField>(b =>
@@ -101,10 +97,6 @@ public static class FlexDbContextModelCreatingExtensions
                 FlexDbProperties.DbSchema);
 
             b.ConfigureByConvention();
-
-            b.HasMany(e => e.Values)
-               .WithOne(e => e.CustomField)
-               .HasForeignKey(x => x.CustomFieldId);
         });
 
         modelBuilder.Entity<CustomFieldValue>(b =>

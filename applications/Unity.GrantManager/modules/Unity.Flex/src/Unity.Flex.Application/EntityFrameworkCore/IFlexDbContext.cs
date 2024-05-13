@@ -1,4 +1,8 @@
-﻿using Unity.Flex.Domain;
+﻿using Microsoft.EntityFrameworkCore;
+using Unity.Flex.Domain;
+using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.Worksheets;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -7,10 +11,18 @@ namespace Unity.Flex.EntityFrameworkCore;
 [ConnectionStringName(FlexDbProperties.ConnectionStringName)]
 public interface IFlexDbContext : IEfCoreDbContext
 {
+    // Worksheets
+    DbSet<Worksheet> Worksheets { get; set; }
+    DbSet<WorksheetInstance> WorksheetsInstances { get; set; }
+    DbSet<WorksheetSection> WorksheetsSections { get; set; }
+    DbSet<CustomField> CustomFields { get; set; }
+    DbSet<CustomFieldValue> CustomFieldValues { get; set; }
 
-#pragma warning disable S125 // Sections of code should not be commented out
-    /* Add DbSet for each Aggregate Root here. Example:
-         * DbSet<Question> Questions { get; }
-         */
+    // Scoresheets
+    DbSet<Scoresheet> Scoresheets { get; set; }
+    DbSet<ScoresheetInstance> ScoresheetInstances { get; set; }
+    DbSet<ScoresheetSection> ScoresheetSections { get; set; }
+    DbSet<ScoreField> ScoreFields { get; set; }
+    DbSet<ScoreFieldValue> ScoreFieldsValues { get; set; }
 }
-#pragma warning restore S125 // Sections of code should not be commented out
+
