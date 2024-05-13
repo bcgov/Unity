@@ -25,7 +25,7 @@ namespace Unity.Payments.Web.Pages.Payments
         public decimal PaymentThreshold { get; set; }
         public List<SelectListItem> SiteList { get; set; } = new List<SelectListItem>{};
         public List<string> ErrorList { get; set; } = new List<string>{};
-        public bool DisableFields = false;
+        public bool DisableFields  { get; set; } = false;
         public string? ContractNumber { get; set; }
         public string? SupplierNumber { get; set; }
     }

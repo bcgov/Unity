@@ -123,7 +123,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     request.DisableFields = true;
                 }
 
-                if(application.ApplicationForm.Payable != true) {
+                if(!application.ApplicationForm.Payable) {
                     errorList.Add("The selected application is not Payable. To continue please remove the item from the list.");
                     request.DisableFields = true;
                 }
