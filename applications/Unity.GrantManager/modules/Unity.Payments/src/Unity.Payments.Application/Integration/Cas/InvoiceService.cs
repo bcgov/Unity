@@ -31,7 +31,7 @@ namespace Unity.Payments.Integration.Cas
         private readonly ISiteRepository _iSiteRepository;
         private readonly ISupplierRepository _iSupplierRepository;
         private readonly IOptions<CasClientOptions> _casClientOptions;
-        private IPaymentConfigurationAppService _paymentConfigurationAppService;
+        private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
         private readonly RestClient _restClient;
         private const string OAUTH_PATH = "oauth/token";
         private const string CFS_APINVOICE = "cfs/apinvoice";
@@ -60,7 +60,7 @@ namespace Unity.Payments.Integration.Cas
             _restClient = restClient;
         }
 
-        private async Task<Invoice?> InitializeCASInvoice(PaymentRequest paymentRequest,
+        protected virtual async Task<Invoice?> InitializeCASInvoice(PaymentRequest paymentRequest,
                                                           string? accountDistributionCode)
         {
             Invoice? casInvoice = new Invoice();
@@ -73,21 +73,21 @@ namespace Unity.Payments.Integration.Cas
                 var currentYear = DateTime.Now.ToString("yyyy");
                 var dateStringDayMonYear = $"{currentDay}-{currentMonth}-{currentYear}";
 
-                casInvoice.supplierNumber = site.Supplier.Number; // This is from each Applicant
-                casInvoice.supplierName = site.Supplier.Name;
-                casInvoice.supplierSiteNumber = site.Number;
-                casInvoice.payGroup = CASPaymentGroup[(int)site.PaymentGroup]; // GEN CHQ - other options
-                casInvoice.invoiceNumber = paymentRequest.InvoiceNumber;
-                casInvoice.invoiceDate = dateStringDayMonYear; //DD-MMM-YYYY
-                casInvoice.dateInvoiceReceived = dateStringDayMonYear;
-                casInvoice.glDate = dateStringDayMonYear;
-                casInvoice.invoiceAmount = paymentRequest.Amount;
+                casInvoice.SupplierNumber = site.Supplier.Number; // This is from each Applicant
+                casInvoice.SupplierName = site.Supplier.Name;
+                casInvoice.SupplierSiteNumber = site.Number;
+                casInvoice.PayGroup = CASPaymentGroup[(int)site.PaymentGroup]; // GEN CHQ - other options
+                casInvoice.InvoiceNumber = paymentRequest.InvoiceNumber;
+                casInvoice.InvoiceDate = dateStringDayMonYear; //DD-MMM-YYYY
+                casInvoice.DateInvoiceReceived = dateStringDayMonYear;
+                casInvoice.GlDate = dateStringDayMonYear;
+                casInvoice.InvoiceAmount = paymentRequest.Amount;
 
-                InvoiceLineDetail invoiceLineDetail = new InvoiceLineDetail();
-                invoiceLineDetail.invoiceLineNumber = 1;
-                invoiceLineDetail.invoiceLineAmount = paymentRequest.Amount;
-                invoiceLineDetail.defaultDistributionAccount = accountDistributionCode; // This will be at the tenant level
-                casInvoice.invoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };
+                InvoiceLineDetail InvoiceLineDetail = new InvoiceLineDetail();
+                invoiceLineDetail.InvoiceLineNumber = 1;
+                invoiceLineDetail.InvoiceLineAmount = paymentRequest.Amount;
+                invoiceLineDetail.DefaultDistributionAccount = accountDistributionCode; // This will be at the tenant level
+                casInvoice.InvoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };
             }
 
             return casInvoice;
@@ -173,8 +173,7 @@ namespace Unity.Payments.Integration.Cas
                 && response.IsSuccessStatusCode)
             {
                 string content = response.Content;
-                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content) ?? throw new Exception();
-
+                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content);
                 return result;
             }
             else
@@ -194,7 +193,7 @@ namespace Unity.Payments.Integration.Cas
                 && response.IsSuccessStatusCode)
             {
                 string content = response.Content;
-                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content) ?? throw new Exception();
+                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content);
                 return result;
             }
             else

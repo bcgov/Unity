@@ -8,7 +8,6 @@ using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
-using Unity.Payments.Integration.Cas;
 using Volo.Abp.Domain.Repositories;
 using System.Linq;
 
@@ -88,7 +87,7 @@ namespace Unity.Payments.PaymentRequests
                                             .Where(s => s.CorrelationId == correlationId)
                                             .ToList();
 
-            return currentPaymentRequests.Count() + 1;
+            return currentPaymentRequests.Count + 1;
         }
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
