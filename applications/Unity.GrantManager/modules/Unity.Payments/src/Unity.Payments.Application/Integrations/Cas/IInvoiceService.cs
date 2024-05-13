@@ -1,10 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Unity.Payments.Domain.PaymentRequests;
-using Unity.Payments.Integration.Http;
-using Unity.Payments.Integrations.Cas;
+using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 
-namespace Unity.Payments.Integration.Cas
+namespace Unity.Payments.Integrations.Cas
 {
     public interface IInvoiceService : IApplicationService
     {

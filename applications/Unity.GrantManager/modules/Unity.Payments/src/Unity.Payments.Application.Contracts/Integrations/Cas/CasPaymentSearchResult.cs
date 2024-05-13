@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.Payments.Integration.Cas
+namespace Unity.Payments.Integrations.Cas
 {
     public class CasPaymentSearchResult
     {

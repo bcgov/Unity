@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace Unity.Payments.Integration.Http
+namespace Unity.Payments.Integrations.Http
 {
     public class TokenValidationResponse
     {

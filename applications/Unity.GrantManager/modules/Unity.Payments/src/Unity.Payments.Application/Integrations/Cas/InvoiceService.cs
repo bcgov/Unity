@@ -5,9 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System;
-using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Integrations.Http;
-using Unity.Payments.Integration.Http;
 using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
@@ -19,7 +17,7 @@ using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
 
 
-namespace Unity.Payments.Integration.Cas
+namespace Unity.Payments.Integrations.Cas
 {
     [IntegrationService]
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
@@ -83,7 +81,7 @@ namespace Unity.Payments.Integration.Cas
                 casInvoice.GlDate = dateStringDayMonYear;
                 casInvoice.InvoiceAmount = paymentRequest.Amount;
 
-                InvoiceLineDetail InvoiceLineDetail = new InvoiceLineDetail();
+                InvoiceLineDetail invoiceLineDetail = new InvoiceLineDetail();
                 invoiceLineDetail.InvoiceLineNumber = 1;
                 invoiceLineDetail.InvoiceLineAmount = paymentRequest.Amount;
                 invoiceLineDetail.DefaultDistributionAccount = accountDistributionCode; // This will be at the tenant level
@@ -105,7 +103,8 @@ namespace Unity.Payments.Integration.Cas
         {
             InvoiceResponse invoiceResponse = new();
             string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
-            if(accountDistributionCode != null)
+
+            if (accountDistributionCode != null)
             {
                 Invoice? invoice = await InitializeCASInvoice(paymentRequest, accountDistributionCode);
                 
@@ -134,7 +133,7 @@ namespace Unity.Payments.Integration.Cas
 
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
-            var jsonString = Newtonsoft.Json.JsonConvert.SerializeObject(casAPInvoice);
+            var jsonString = JsonSerializer.Serialize(casAPInvoice);
             var authHeaders = await GetAuthHeadersAsync();
             var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/";						
             var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, jsonString);
@@ -174,7 +173,7 @@ namespace Unity.Payments.Integration.Cas
             {
                 string content = response.Content;
                 var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content);
-                return result;
+                return result ?? new CasPaymentSearchResult();
             }
             else
             {
@@ -194,7 +193,7 @@ namespace Unity.Payments.Integration.Cas
             {
                 string content = response.Content;
                 var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content);
-                return result;
+                return result ?? new CasPaymentSearchResult();
             }
             else
             {
@@ -244,6 +243,8 @@ namespace Unity.Payments.Integration.Cas
             var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
             return tokenResponse;
         }
+
+
     }
 
 #pragma warning disable S125 // Sections of code should not be commented out

@@ -49,8 +49,10 @@ namespace Unity.Payments.Domain.PaymentRequests
 
         public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
-        public virtual int CasHttpStatusCode { get; private set; }
-        public virtual string CasResponse { get; private set; } = string.Empty;
+
+        // Corperate Accounting System
+        public virtual int? CasHttpStatusCode { get; private set; } = null;
+        public virtual string? CasResponse { get; private set; } = string.Empty;
 
         protected PaymentRequest()
         {
