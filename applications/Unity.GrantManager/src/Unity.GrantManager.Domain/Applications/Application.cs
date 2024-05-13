@@ -20,8 +20,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public virtual ApplicationForm ApplicationForm
     {
         set => _applicationForm = value;
-        get => _applicationForm
-               ?? throw new InvalidOperationException("Uninitialized property: " + nameof(ApplicationForm));
+        get => _applicationForm ?? new();
     }
     private ApplicationForm? _applicationForm;
 
