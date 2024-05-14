@@ -2,16 +2,17 @@ let scoresheetModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/ScoresheetModal'
 });
 
+let scoresheetToEditId = null;
 scoresheetModal.onResult(function () {
-    PubSub.publish('refresh_scoresheet_list');
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
     abp.notify.success(
         'Scoresheet is successfully added.',
         'Scoresheet'
     );
     refreshScoresheetInfoWidget();
 });
-
-function openScoresheetModal(scoresheetId,actionType) {
+function openScoresheetModal(scoresheetId, actionType) {
+    scoresheetToEditId = scoresheetId;
     scoresheetModal.open({
         scoresheetId: scoresheetId,
         actionType: actionType

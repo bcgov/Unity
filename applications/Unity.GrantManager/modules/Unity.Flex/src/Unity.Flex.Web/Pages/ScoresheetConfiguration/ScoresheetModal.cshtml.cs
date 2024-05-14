@@ -42,12 +42,12 @@ public class ScoresheetModalModel : FlexPageModel
     {
         if (Scoresheet.ActionType.StartsWith("Edit"))
         {
+            await EditScoresheet();
             return NoContent();
         }
         else if (Scoresheet.ActionType.StartsWith("Add"))
         {
             await CreateScoresheet();
-
             return NoContent();
         }
         else
@@ -59,5 +59,10 @@ public class ScoresheetModalModel : FlexPageModel
     private async Task CreateScoresheet()
     {
         _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Name = Scoresheet.Name });
+    }
+
+    private async Task EditScoresheet()
+    {
+        _ = await _scoresheetAppService.EditAsync(new EditScoresheetDto() { Name = Scoresheet.Name, ScoresheetId = Scoresheet.Id});
     }
 }

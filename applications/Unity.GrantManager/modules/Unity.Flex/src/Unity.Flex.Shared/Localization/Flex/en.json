@@ -7,6 +7,7 @@
     "Scoresheet:Configuration:SectionModal.Name": "Name",
     "Scoresheet:Configuration:AddScoresheetButtonText": "ADD SCORING SHEET",
     "Scoresheet:Configuration:AddQuestionButtonText": "ADD QUESTION",
-    "Scoresheet:Configuration:AddSectionButtonText": "ADD SECTION"
+    "Scoresheet:Configuration:AddSectionButtonText": "ADD SECTION",
+    "Scoresheet:Configuration:EditScoresheetButtonText": "EDIT SCORING SHEET"
   }
 }

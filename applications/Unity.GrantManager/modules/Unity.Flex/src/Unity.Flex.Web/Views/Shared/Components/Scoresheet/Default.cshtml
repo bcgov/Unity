@@ -23,7 +23,15 @@
             </h2>
             <div id="collapse-@scoresheet.Id" class="accordion-collapse collapse" aria-labelledby="heading-@scoresheet.Id" data-bs-parent="#scoresheet-accordion">
                 <div class="accordion-body">
-                    <!-- Content of the accordion item goes here -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="p-3">
+                                <button id="edit_scoresheet_btn" onclick="openScoresheetModal('@scoresheet.Id','Edit Scoresheet');" class="btn btn-light" type="button">
+                                    <i class="fl fl-edit"></i> <span>@L["Scoresheet:Configuration:EditScoresheetButtonText"].Value</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div id="sections-questions" class="list-group col">
                         @foreach (var sec in scoresheet.Sections)
                         {

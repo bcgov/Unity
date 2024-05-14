@@ -72,5 +72,12 @@ namespace Unity.Flex.Scoresheets
             section.Name = dto.Name;
             return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(await _sectionRepository.UpdateAsync(section));
         }
+
+        public async Task<ScoresheetDto> EditAsync(EditScoresheetDto dto)
+        {
+            var scoresheet = await _scoresheetRepository.GetAsync(dto.ScoresheetId) ?? throw new AbpValidationException("Missing ScoresheetId:" + dto.ScoresheetId);
+            scoresheet.Name = dto.Name;
+            return ObjectMapper.Map<Scoresheet, ScoresheetDto>(await _scoresheetRepository.UpdateAsync(scoresheet));
+        }
     }
 }
