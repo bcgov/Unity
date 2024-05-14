@@ -21,7 +21,7 @@ namespace Unity.Flex.Domain.Worksheets
         public virtual string? DefaultValue { get; private set; } = "{}";
 
         [Column(TypeName = "jsonb")]
-        public virtual string? Definition { get; private set; } = "{}";
+        public virtual string? DefaultDefinition { get; private set; } = "{}";
 
         public Guid? TenantId { get; set; }
 
@@ -46,7 +46,7 @@ namespace Unity.Flex.Domain.Worksheets
             Name = name;
             Label = label;
             Type = type;
-            Definition = DefinitionResolver.Resolve(type);
+            DefaultDefinition = DefinitionResolver.Resolve(type);
         }
 
         public CustomField SetName(string name)

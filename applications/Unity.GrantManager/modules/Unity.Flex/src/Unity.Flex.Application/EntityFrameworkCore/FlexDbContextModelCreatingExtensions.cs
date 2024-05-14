@@ -19,7 +19,7 @@ public static class FlexDbContextModelCreatingExtensions
     }
 
     private static void ConfigureScoresheets(ModelBuilder modelBuilder)
-    {        
+    {
         modelBuilder.Entity<Scoresheet>(b =>
         {
             b.ToTable(FlexDbProperties.DbTablePrefix + "Scoresheets",
@@ -88,7 +88,7 @@ public static class FlexDbContextModelCreatingExtensions
 
             b.HasMany(e => e.Sections)
                 .WithOne(e => e.Worksheet)
-                .HasForeignKey(x => x.WorksheetId);            
+                .HasForeignKey(x => x.WorksheetId);
         });
 
         modelBuilder.Entity<CustomField>(b =>
@@ -122,6 +122,18 @@ public static class FlexDbContextModelCreatingExtensions
         modelBuilder.Entity<WorksheetInstance>(b =>
         {
             b.ToTable(FlexDbProperties.DbTablePrefix + "WorksheetInstances",
+                FlexDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.HasMany(e => e.Values)
+                .WithOne()
+                .HasForeignKey(x => x.WorksheetInstanceId);
+        });
+
+        modelBuilder.Entity<CustomFieldValue>(b =>
+        {
+            b.ToTable(FlexDbProperties.DbTablePrefix + "CustomFieldValues",
                 FlexDbProperties.DbSchema);
 
             b.ConfigureByConvention();

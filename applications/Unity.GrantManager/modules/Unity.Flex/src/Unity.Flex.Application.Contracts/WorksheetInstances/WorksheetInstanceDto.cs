@@ -7,7 +7,6 @@ namespace Unity.Flex.WorksheetInstances
     [Serializable]
     public class WorksheetInstanceDto : EntityDto<Guid>
     {
-        public string Name { get; set; } = string.Empty;
-        public virtual List<WorksheetInstanceSectionDto> Sections { get; set; } = [];
+        public virtual List<CustomFieldValueDto> Values { get; private set; } = [];
     }
 }
