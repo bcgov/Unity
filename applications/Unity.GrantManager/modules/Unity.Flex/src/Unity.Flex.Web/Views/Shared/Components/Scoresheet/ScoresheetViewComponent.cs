@@ -4,11 +4,15 @@ using Volo.Abp.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using System;
 using Unity.Flex.Scoresheets;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using System.Collections.Generic;
 
 namespace Unity.Flex.Web.Views.Shared.Components.Scoresheet;
 
 [Widget(
     RefreshUrl = "Widget/Scoresheet/Refresh",
+    ScriptTypes = [typeof(ScoresheetWidgetScriptBundleContributor)],
+    StyleTypes = [typeof(ScoresheetWidgetStyleBundleContributor)],
     AutoInitialize = true)]
 public class ScoresheetViewComponent : AbpViewComponent
 {
@@ -25,3 +29,20 @@ public class ScoresheetViewComponent : AbpViewComponent
     }
 }
 
+public class ScoresheetWidgetStyleBundleContributor : BundleContributor
+{
+    public override void ConfigureBundle(BundleConfigurationContext context)
+    {
+        context.Files
+          .AddIfNotContains("/Views/Shared/Components/Scoresheet/Scoresheet.css");
+    }
+}
+
+public class ScoresheetWidgetScriptBundleContributor : BundleContributor
+{
+    public override void ConfigureBundle(BundleConfigurationContext context)
+    {
+        context.Files
+          .AddIfNotContains("/Views/Shared/Components/Scoresheet/Scoresheet.js");
+    }
+}
