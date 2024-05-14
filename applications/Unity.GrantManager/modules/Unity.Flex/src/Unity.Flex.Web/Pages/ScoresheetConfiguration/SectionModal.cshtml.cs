@@ -46,12 +46,12 @@ public class SectionModalModel : FlexPageModel
     {
         if (Section.ActionType.StartsWith("Edit"))
         {
+            await EditSection();
             return NoContent();
         }
         else if (Section.ActionType.StartsWith("Add"))
         {
             await CreateSection();
-
             return NoContent();
         }
         else
@@ -63,5 +63,10 @@ public class SectionModalModel : FlexPageModel
     private async Task CreateSection()
     {
         _ = await _scoresheetAppService.CreateSectionAsync(new CreateSectionDto() { Name = Section.Name, ScoresheetId = Section.ScoresheetId });
+    }
+
+    private async Task EditSection()
+    {
+        _ = await _scoresheetAppService.EditSectionAsync(new EditSectionDto() { Name = Section.Name, SectionId = Section.SectionId });
     }
 }

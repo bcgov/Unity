@@ -5,6 +5,8 @@ using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Worksheets;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.ObjectMapping;
+using Volo.Abp.Validation;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Unity.Flex.Scoresheets
 {
@@ -62,6 +64,13 @@ namespace Unity.Flex.Scoresheets
         public virtual async Task<ScoresheetSectionDto> GetSectionAsync(Guid sectionId)
         {
             return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(await _sectionRepository.GetAsync(sectionId));
+        }
+
+        public async Task<ScoresheetSectionDto> EditSectionAsync(EditSectionDto dto)
+        {
+            var section = await _sectionRepository.GetAsync(dto.SectionId) ?? throw new AbpValidationException("Missing SectionId:"+dto.SectionId);
+            section.Name = dto.Name;
+            return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(await _sectionRepository.UpdateAsync(section));
         }
     }
 }

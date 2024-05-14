@@ -10,7 +10,7 @@ namespace Unity.Flex.Domain.Scoresheets
 {
     public class ScoresheetSection : FullAuditedEntity<Guid>, IMultiTenant
     {
-        public virtual string Name { get; private set; } = string.Empty;
+        public virtual string Name { get; set; } = string.Empty;
         public virtual uint Order { get; private set; }        
         public Guid? TenantId { get; set; }
 
