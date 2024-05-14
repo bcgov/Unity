@@ -1,10 +1,10 @@
 $(function () {
     document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
-        new Sortable(div, {
-            animation: 150,
-            onEnd: updatePreview,
-            ghostClass: 'blue-background'
-        });
+        _ = new Sortable(div, {
+                animation: 150,
+                onEnd: updatePreview,
+                ghostClass: 'blue-background'
+            });
     });
 
     // Function to update the preview section with the reordered list
