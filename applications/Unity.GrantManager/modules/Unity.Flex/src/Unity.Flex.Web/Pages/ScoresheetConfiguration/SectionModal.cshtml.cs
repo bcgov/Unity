@@ -46,8 +46,6 @@ public class SectionModalModel : FlexPageModel
     {
         if (Section.ActionType.StartsWith("Edit"))
         {
-            //await EditSection();
-
             return NoContent();
         }
         else if (Section.ActionType.StartsWith("Add"))

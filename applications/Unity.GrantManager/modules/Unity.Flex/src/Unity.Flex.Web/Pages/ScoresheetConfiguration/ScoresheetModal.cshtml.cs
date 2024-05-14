@@ -42,8 +42,6 @@ public class ScoresheetModalModel : FlexPageModel
     {
         if (Scoresheet.ActionType.StartsWith("Edit"))
         {
-            //await EditScoresheet();
-
             return NoContent();
         }
         else if (Scoresheet.ActionType.StartsWith("Add"))

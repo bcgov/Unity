@@ -44,8 +44,6 @@ public class QuestionModalModel : FlexPageModel
     {
         if (Question.ActionType.StartsWith("Edit"))
         {
-            //await EditQuestion();
-
             return NoContent();
         }
         else if (Question.ActionType.StartsWith("Add"))

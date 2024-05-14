@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
 using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Web.Views.Shared.Components.Scoresheet;

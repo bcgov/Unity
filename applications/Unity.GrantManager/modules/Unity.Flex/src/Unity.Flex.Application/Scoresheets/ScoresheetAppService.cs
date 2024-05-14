@@ -27,7 +27,7 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
-        public virtual async Task<QuestionDto> CreateQuestionAsync(CreateQuestionDto dto)
+        public virtual Task<QuestionDto> CreateQuestionAsync(CreateQuestionDto dto)
         {
             throw new NotImplementedException();
         }
