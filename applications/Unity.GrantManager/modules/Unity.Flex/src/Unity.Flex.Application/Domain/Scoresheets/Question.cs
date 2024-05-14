@@ -10,6 +10,7 @@ namespace Unity.Flex.Domain.Scoresheets
     {
         public virtual string Name { get; private set; } = string.Empty;
         public virtual string Label { get; private set; } = string.Empty;
+        public virtual uint Order { get; private set; }
         public virtual QuestionType Type { get; private set; }
         public virtual bool Enabled { get; private set; }
 

@@ -1,13 +1,23 @@
 $(function () {
-    document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
-        _ = new Sortable(div, {
+
+    function makeSectionsAndQuestionsSortable() {
+        document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
+            _ = new Sortable(div, {
                 animation: 150,
                 onEnd: updatePreview,
                 ghostClass: 'blue-background'
             });
-    });
+        });
+    }
+    makeSectionsAndQuestionsSortable();
+    PubSub.subscribe(
+        'make_scoresheet_body_sortable',
+        (msg, data) => {
+            makeSectionsAndQuestionsSortable();
+        }
+    );
+    
 
-    // Function to update the preview section with the reordered list
     function updatePreview(event) {
         const previewDiv = document.getElementById('preview');
         const sortedItems = Array.from(event.target.children).map(li => li.innerText);
@@ -38,8 +48,10 @@ let sectionModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/SectionModal'
 });
 
+let selectedScoresheetId = null;
+
 sectionModal.onResult(function () {
-    PubSub.publish('refresh_scoresheet_list');
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
     abp.notify.success(
         'Section is successfully added.',
         'Scoresheet Section'
@@ -47,6 +59,7 @@ sectionModal.onResult(function () {
 });
 
 function openSectionModal(scoresheetId, sectionId, actionType) {
+    selectedScoresheetId = scoresheetId;
     sectionModal.open({
         scoresheetId: scoresheetId,
         sectionId: sectionId,

@@ -18,12 +18,31 @@ function openScoresheetModal(scoresheetId,actionType) {
     });
 }
 
-function refreshScoresheetInfoWidget() {
+PubSub.subscribe(
+    'refresh_scoresheet_list',
+    (msg, data) => {
+        refreshScoresheetInfoWidget(data.scoresheetId);
+    }
+);
+
+function showAccordion(scoresheetId) {
+    if (!scoresheetId) {
+        return;
+    }
+    const accordionId = 'collapse-' + scoresheetId;
+    const accordion = document.getElementById(accordionId);
+
+    accordion.classList.add('show');
+}
+
+function refreshScoresheetInfoWidget(scoresheetId) {
     const url = `../Flex/Widget/Scoresheet/Refresh`;
     fetch(url)
         .then(response => response.text())
         .then(data => {
             document.getElementById('scoresheet-info-widget').innerHTML = data;
+            showAccordion(scoresheetId);
+            PubSub.publish('make_scoresheet_body_sortable');
         })
         .catch(error => {
             console.error('Error refreshing scoresheet-info-widget:', error);

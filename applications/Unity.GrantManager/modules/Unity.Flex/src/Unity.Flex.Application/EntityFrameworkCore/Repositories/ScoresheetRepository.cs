@@ -15,8 +15,8 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Scoresheets
-                .Include(s => s.Sections)
-                .ThenInclude(ss => ss.Fields)
+                .Include(s => s.Sections.OrderBy(sec => sec.Order))
+                .ThenInclude(sec => sec.Fields.OrderBy(q => q.Order))
                 .OrderBy(s => s.CreationTime)
                 .ToListAsync();    
         }
