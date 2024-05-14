@@ -24,9 +24,8 @@ function refreshScoresheetInfoWidget() {
         .then(response => response.text())
         .then(data => {
             document.getElementById('scoresheet-info-widget').innerHTML = data;
-            PubSub.publish('reload_sites_list');
         })
         .catch(error => {
-            console.error('Error refreshing supplier-info-widget:', error);
+            console.error('Error refreshing scoresheet-info-widget:', error);
         });
 }
