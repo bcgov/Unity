@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.VisualBasic;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 
@@ -17,12 +20,12 @@ namespace Unity.GrantManager.GrantApplications
 
         public async Task<ApplicationApplicantInfoDto> GetByApplicationIdAsync(Guid applicationId)
         {
-            var applicantInfo =  await _applicationRepository.WithBasicDetailsAsync(applicationId);
+            var applicantInfo = await _applicationRepository.WithBasicDetailsAsync(applicationId);
             if (applicantInfo == null) return new ApplicationApplicantInfoDto();
 
             return new ApplicationApplicantInfoDto()
             {
-                ApplicantId = applicationId,
+                ApplicantId = applicantInfo.Applicant.Id,
                 ApplicantName = applicantInfo.Applicant?.ApplicantName ?? string.Empty,
                 ApplicationReferenceNo = applicantInfo.ReferenceNo,
                 ApplicationStatus = applicantInfo.ApplicationStatus.InternalStatus,
@@ -33,10 +36,10 @@ namespace Unity.GrantManager.GrantApplications
                 OrganizationType = applicantInfo.Applicant?.OrganizationType ?? string.Empty,
                 OrgNumber = applicantInfo.Applicant?.OrgNumber ?? string.Empty,
                 OrgStatus = applicantInfo.Applicant?.OrgStatus ?? string.Empty,
-                
+
                 Sector = applicantInfo.Applicant?.Sector ?? string.Empty,
                 SectorSubSectorIndustryDesc = applicantInfo.Applicant?.SectorSubSectorIndustryDesc ?? string.Empty,
-                SubSector = applicantInfo.Applicant?.SubSector ?? string.Empty,                
+                SubSector = applicantInfo.Applicant?.SubSector ?? string.Empty,
 
                 SigningAuthorityBusinessPhone = applicantInfo.SigningAuthorityBusinessPhone ?? string.Empty,
                 SigningAuthorityCellPhone = applicantInfo.SigningAuthorityCellPhone ?? string.Empty,
@@ -48,7 +51,9 @@ namespace Unity.GrantManager.GrantApplications
                 ContactTitle = applicantInfo.ApplicantAgent?.Title ?? string.Empty,
                 ContactEmail = applicantInfo.ApplicantAgent?.Email ?? string.Empty,
                 ContactBusinessPhone = applicantInfo.ApplicantAgent?.Phone ?? string.Empty,
-                ContactCellPhone = applicantInfo.ApplicantAgent?.Phone2 ?? string.Empty
+                ContactCellPhone = applicantInfo.ApplicantAgent?.Phone2 ?? string.Empty,
+
+                ApplicantAddresses = ObjectMapper.Map<List<ApplicantAddress>, List<ApplicantAddressDto>>(applicantInfo.Applicant?.ApplicantAddresses?.ToList() ?? [])
             };
         }
     }

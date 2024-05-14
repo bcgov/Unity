@@ -7,8 +7,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
 {
     [Widget(        
-        ScriptTypes = new[] { typeof(ActionBarWidgetScriptBundleContributor) },
-        StyleTypes = new[] { typeof(ActionBarWidgetStyleBundleContributor) },
+        ScriptTypes = [typeof(ActionBarWidgetScriptBundleContributor)],
+        StyleTypes = [typeof(ActionBarWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class ActionBar : AbpViewComponent
     {
@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
             context.Files
               .AddIfNotContains("/Pages/AssigneeSelection/AssigneeSelection.js");
             context.Files
-              .AddIfNotContains("/Pages/BatchPayments/BatchPaymentsModal.js");
+              .AddIfNotContains("/Pages/PaymentRequests/CreatePaymentRequestsModal.js");
             context.Files
               .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
         }
