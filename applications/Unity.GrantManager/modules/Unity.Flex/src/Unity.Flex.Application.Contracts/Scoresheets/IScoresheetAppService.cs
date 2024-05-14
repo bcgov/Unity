@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
@@ -7,6 +8,11 @@ namespace Unity.Flex.Scoresheets
     public interface IScoresheetAppService : IApplicationService
     {
         Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto);
-        Task<ScoresheetDto> GetAsync(Guid id);
+        Task<QuestionDto> CreateQuestionAsync(CreateQuestionDto dto);
+        Task<ScoresheetSectionDto> CreateSectionAsync(CreateSectionDto dto);
+        Task<ScoresheetDto> GetAsync(Guid scoresheetId);
+        Task<QuestionDto> GetQuestionAsync(Guid questionId);
+        Task<ScoresheetSectionDto> GetSectionAsync(Guid sectionId);
+        Task<List<ScoresheetDto>> GetAllAsync();
     }
 }

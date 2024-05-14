@@ -2,6 +2,7 @@
 {
     public enum QuestionType
     {
-        Number = 1
+        Number = 1,
+        String = 2,
     }
 }

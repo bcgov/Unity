@@ -12,18 +12,23 @@
 @section scripts
 {
     <abp-script src="/Pages/ScoresheetConfiguration/Index.js" />
+    <abp-script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js" />
 }
 <abp-row class="m-0 h-100 scoresheet-configuration-container">
     <abp-column class="p-0">
         <abp-card>
             <abp-card-body>
                 <h4><b>Scoring Sheets</b></h4>
-                <abp-button text="@L["Scoresheet:Configuration:AddScoresheetButtonText"].Value"
-                            id="add_site_btn"
-                            icon-type="Other"
-                            icon="fl fl-plus"
-                            onclick="openScoresheetModal(null,'Add Scoresheet');"
-                            button-type="Light"/>
+                @await Component.InvokeAsync("Scoresheet")
+                <div class="p-4">
+                    <abp-button text="@L["Scoresheet:Configuration:AddScoresheetButtonText"].Value"
+                                id="add_scoresheet_btn"
+                                icon-type="Other"
+                                icon="fl fl-plus"
+                                onclick="openScoresheetModal(null,'Add Scoresheet');"
+                                button-type="Light" />
+                </div>
+                
             </abp-card-body>
          </abp-card>
     </abp-column>
@@ -31,6 +36,8 @@
         <abp-card class="right-card">
             <abp-card-body>
                 <h4><b>Preview</b></h4>
+                <div id="preview">
+                </div>
             </abp-card-body>
         </abp-card>
     </abp-column>

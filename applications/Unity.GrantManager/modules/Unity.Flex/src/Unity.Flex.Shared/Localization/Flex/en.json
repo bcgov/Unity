@@ -3,7 +3,10 @@
   "texts": {
     "MyAccount": "My account",
     "SamplePageMessage": "A sample page for the Flex module",
+    "Scoresheet:Configuration:ScoresheetModal.Name": "Name",
+    "Scoresheet:Configuration:SectionModal.Name": "Name",
     "Scoresheet:Configuration:AddScoresheetButtonText": "ADD SCORING SHEET",
-    "Scoresheet:Configuration:ScoresheetModal.Name": "Name"
+    "Scoresheet:Configuration:AddQuestionButtonText": "ADD QUESTION",
+    "Scoresheet:Configuration:AddSectionButtonText": "ADD SECTION"
   }
 }

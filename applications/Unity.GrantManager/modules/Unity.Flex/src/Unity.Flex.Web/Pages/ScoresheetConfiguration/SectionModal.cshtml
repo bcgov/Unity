@@ -4,7 +4,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
 @using Unity.Flex.Web.Pages.ScoresheetConfiguration;
-@model Unity.Flex.Web.Pages.ScoresheetConfiguration.ScoresheetModalModel
+@model Unity.Flex.Web.Pages.ScoresheetConfiguration.SectionModalModel
 
 @inject IStringLocalizer<FlexResource> L
 
@@ -12,14 +12,16 @@
     Layout = null;
 }
 <form method="post" asp-page-handler="OnPostAsync" id="scoresheetInfo">
-    <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Scoresheet.Id" />
-    <abp-input type="hidden" id="ActionType" asp-for="@Model.Scoresheet.ActionType" />
+    <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Section.ScoresheetId" />
+    <abp-input type="hidden" id="SectionId" asp-for="@Model.Section.SectionId" />
+    <abp-input type="hidden" id="ActionType" asp-for="@Model.Section.ActionType" />
+    <abp-input type="hidden" id="Order" asp-for="@Model.Section.Order" />
     <abp-modal size="Large" id="scoresheet-info-modal">
-        <abp-modal-header class="site-info-modal-header" title="@Model.Scoresheet.ActionType"></abp-modal-header>
+        <abp-modal-header class="site-info-modal-header" title="@Model.Section.ActionType"></abp-modal-header>
         <abp-modal-body>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.Scoresheet.Name" />
+                    <abp-input asp-for="@Model.Section.Name" />
                 </abp-column>
             </abp-row>
         </abp-modal-body>

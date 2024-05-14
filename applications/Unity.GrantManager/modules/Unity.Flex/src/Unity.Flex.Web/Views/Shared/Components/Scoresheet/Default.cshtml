@@ -1,0 +1,71 @@
+﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.Scoresheet;
+@using Volo.Abp.Authorization.Permissions;
+@inject IHtmlLocalizer<FlexResource> L
+@inject IPermissionChecker PermissionChecker
+@model Unity.Flex.Web.Views.Shared.Components.Scoresheet.ScoresheetViewModel
+
+@section Scripts {
+    <abp-script src="/libs/sortablejs/Sortable.js"></abp-script>
+}
+
+<div class="accordion" id="scoresheet-accordion">
+    @foreach (var scoresheet in Model.Scoresheets)
+    {
+        
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-@scoresheet.Id">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="true" aria-controls="collapse-@scoresheet.Id">
+                    @scoresheet.Name
+                </button>
+            </h2>
+            <div id="collapse-@scoresheet.Id" class="accordion-collapse collapse" aria-labelledby="heading-@scoresheet.Id" data-bs-parent="#scoresheet-accordion">
+                <div class="accordion-body">
+                    <!-- Content of the accordion item goes here -->
+                    <div id="sections-questions" class="list-group col">
+                        @foreach (var sec in scoresheet.Sections)
+                        {
+                            <div class="list-group-item row">
+                                <div class="col">
+                                    <i class="fl fl-draggable"></i>
+                                    <span class="p-2"><b>Section:</b> @sec.Name</span>
+                                    <button class="btn question-info-btn float-end" type="button">
+                                        <i class="fl fl-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="p-3">
+                                <button id="add_question_btn" onclick="openQuestionModal(null,'Add Question');" class="btn btn-light" type="button" disabled="@scoresheet.Sections.IsNullOrEmpty()">
+                                    <i class="fl fl-plus"></i> <span>@L["Scoresheet:Configuration:AddQuestionButtonText"].Value</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3">
+                                <button id="add_section_btn" onclick="openSectionModal('@scoresheet.Id',null,'Add Section');" class="btn btn-light" type="button">
+                                    <i class="fl fl-plus"></i> <span>@L["Scoresheet:Configuration:AddSectionButtonText"].Value</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+    }
+</div>
+
+
+
+
+
+
+
+
+

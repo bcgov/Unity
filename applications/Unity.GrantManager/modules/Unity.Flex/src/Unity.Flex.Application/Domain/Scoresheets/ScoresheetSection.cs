@@ -16,7 +16,7 @@ namespace Unity.Flex.Domain.Scoresheets
 
         // Navigation
         public virtual Scoresheet? Scoresheet { get; }
-        public virtual Guid ScoresheetId { get; }
+        public virtual Guid ScoresheetId { get; set; }
 
         public virtual Collection<Question> Fields { get; private set; } = [];
 
@@ -25,7 +25,6 @@ namespace Unity.Flex.Domain.Scoresheets
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */            
         }
-
         public ScoresheetSection(Guid id,
             string name,
             uint order)
@@ -33,7 +32,19 @@ namespace Unity.Flex.Domain.Scoresheets
         {
             Id = id;
             Name = name;
-            Order = order;            
+            Order = order;
+        }
+
+        public ScoresheetSection(Guid id,
+            string name,
+            uint order,
+            Guid scoresheetId)
+           : base(id)
+        {
+            Id = id;
+            Name = name;
+            Order = order;  
+            ScoresheetId = scoresheetId;
         }
 
         public ScoresheetSection SetName(string name)
