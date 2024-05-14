@@ -56,7 +56,7 @@ namespace Unity.Flex.Scoresheets
 
         public virtual async Task<QuestionDto> GetQuestionAsync(Guid questionId)
         {
-            throw new NotImplementedException();
+            return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.GetAsync(questionId));
         }
 
         public virtual async Task<ScoresheetSectionDto> GetSectionAsync(Guid sectionId)
