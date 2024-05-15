@@ -16,15 +16,34 @@ $(function () {
     }
 
     function updateUnsortedPreview() {
-        const items = document.querySelectorAll('[id^="sections-questions"] .list-group-item');
-        const sortedItems = Array.from(items).map(li => li.innerText);
+        const expandedAccordionBodies = document.querySelectorAll('#scoresheet-accordion .accordion-collapse.show');
+        const sortedItems = [];
+        expandedAccordionBodies.forEach(body => {
+            const items = body.querySelectorAll('.list-group-item');
+            items.forEach(item => {
+                sortedItems.push(item.innerText);
+            });
+        });
+
         updatePreviewAccordion(sortedItems);
     }
-
-    updateUnsortedPreview();
-
+    
+    function attachAccordionToggleListeners() {
+        const accordionItems = document.querySelectorAll('#scoresheet-accordion .accordion-button');
+        accordionItems.forEach(button => {
+            button.addEventListener('click', function () {
+                setTimeout(updateUnsortedPreview, 500); // Timeout to allow the collapse animation to complete
+            });
+        });
+    }
+    
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
+
+        if (sortedItems.length === 0) {
+            previewDiv.innerHTML = '<p>No sections to display.</p>';
+            return;
+        }
 
         const accordionHTML = sortedItems.map(item => `
                 <div class="accordion-item">
@@ -33,7 +52,7 @@ $(function () {
                             ${item}
                         </button>
                     </h2>
-                    <div id="collapse-${hashCode(item)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item)}" data-bs-parent="#preview-accordion">
+                    <div id="collapse-${hashCode(item)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item)}" >
                         <div class="accordion-body">
                             <!-- questions go here -->
                         </div>
@@ -61,12 +80,17 @@ $(function () {
         return hash;
     }
 
+    
     makeSectionsAndQuestionsSortable();
-
+    attachAccordionToggleListeners();
+    updateUnsortedPreview();
+    
     PubSub.subscribe(
-        'make_scoresheet_body_sortable',
+        'refresh_scoresheet_configuration_page',
         (msg, data) => {
             makeSectionsAndQuestionsSortable();
+            attachAccordionToggleListeners();
+            updateUnsortedPreview();
         }
     );
 });

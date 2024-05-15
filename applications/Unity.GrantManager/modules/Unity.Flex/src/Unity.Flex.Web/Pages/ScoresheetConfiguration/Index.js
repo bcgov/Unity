@@ -43,7 +43,7 @@ function refreshScoresheetInfoWidget(scoresheetId) {
         .then(data => {
             document.getElementById('scoresheet-info-widget').innerHTML = data;
             showAccordion(scoresheetId);
-            PubSub.publish('make_scoresheet_body_sortable');
+            PubSub.publish('refresh_scoresheet_configuration_page');
         })
         .catch(error => {
             console.error('Error refreshing scoresheet-info-widget:', error);
