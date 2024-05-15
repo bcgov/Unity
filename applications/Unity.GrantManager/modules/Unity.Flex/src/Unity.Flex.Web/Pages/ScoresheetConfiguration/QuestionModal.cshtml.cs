@@ -37,6 +37,7 @@ public class QuestionModalModel : FlexPageModel
         {
             QuestionDto question = await _scoresheetAppService.GetQuestionAsync(questionId);
             Question.Name = question.Name ?? "";
+            Question.Label = question.Label ?? "";
         }
     }
 

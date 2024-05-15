@@ -6,3 +6,20 @@
     --bs-btn-active-color: var(--bc-colors-white-primary-500);
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
 }
+
+#preview .accordion-button::after {
+    -webkit-filter: grayscale(1) invert(1);
+    filter: grayscale(1) invert(1);
+}
+
+#preview .preview-btn:not(.collapsed) {
+    background-color: #007bff; 
+    color: #ffffff; 
+}
+
+#preview .preview-btn.collapsed::after {
+    -webkit-filter: grayscale(1) invert(0); 
+    filter: grayscale(1) invert(0); 
+}
+
+
