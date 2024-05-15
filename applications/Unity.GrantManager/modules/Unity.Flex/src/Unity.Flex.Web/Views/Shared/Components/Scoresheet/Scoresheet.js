@@ -33,7 +33,7 @@ $(function () {
     }
 
     function updatePreview(event) {
-        const sortedItems = Array.from(event.target.children).map(li => li.innerText);
+        const sortedItems = Array.from(event.target.children);
         updatePreviewAccordion(sortedItems);
     }
 
@@ -43,7 +43,7 @@ $(function () {
         expandedAccordionBodies.forEach(body => {
             const items = body.querySelectorAll('.list-group-item');
             items.forEach(item => {
-                sortedItems.push(item.innerText);
+                sortedItems.push(item);
             });
         });
 
@@ -58,7 +58,7 @@ $(function () {
             });
         });
     }
-    
+
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
 
@@ -67,27 +67,46 @@ $(function () {
             return;
         }
 
-        const accordionHTML = sortedItems.map(item => `
+        let accordionHTML = '';
+        let currentSectionItem = null;
+
+        sortedItems.forEach(item => {
+            if (item.classList.contains('section-item')) {
+                if (currentSectionItem) {
+                    accordionHTML += '</div></div></div>'; // Close previous section and accordion item
+                }
+                accordionHTML += `
                 <div class="accordion-item">
-                    <h2 class="accordion-header" id="panel-${hashCode(item)}">
-                        <button class="accordion-button preview-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${hashCode(item)}" aria-expanded="true" aria-controls="collapse-${hashCode(item)}">
-                            ${item}
+                    <h2 class="accordion-header" id="panel-${hashCode(item.innerText)}">
+                        <button class="accordion-button preview-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="collapse-${hashCode(item.innerText)}">
+                            ${item.innerText}
                         </button>
                     </h2>
-                    <div id="collapse-${hashCode(item)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item)}" >
+                    <div id="collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item.innerText)}">
                         <div class="accordion-body">
-                            <!-- questions go here -->
-                        </div>
+                            <div class="list-group col">`;
+                currentSectionItem = item;
+            } else {
+                accordionHTML += `
+                <div class="list-group-item row">
+                    <div class="col">
+                        ${item.innerText}
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }
+        });
+
+        if (currentSectionItem) {
+            accordionHTML += '</div></div></div>';
+        }
 
         previewDiv.innerHTML = `
-                <div class="accordion" id="accordion-preview">
-                    ${accordionHTML}
-                </div>
-            `;
+        <div class="accordion" id="accordion-preview">
+            ${accordionHTML}
+        </div>
+    `;
     }
+
 
     function hashCode(str) {
         let hash = 0;
