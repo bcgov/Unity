@@ -5,7 +5,29 @@ $(function () {
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: updatePreview,
-                ghostClass: 'blue-background'
+                ghostClass: 'blue-background',
+                onMove: function (evt) {
+                    const draggedItem = evt.dragged;
+                    const targetItem = evt.related;
+                    const topItem = evt.from.children[0];
+                    const secondItem = evt.from.children[1];
+
+                    const isDraggedSection = draggedItem.classList.contains('section-item');
+                    const isTopItem = draggedItem === topItem;
+                    const isSecondItemSection = secondItem?.classList.contains('section-item');
+
+                    if (isTopItem && !isSecondItemSection) {
+                        return false; 
+                    }
+
+                    if (isDraggedSection) {
+                        return true;
+                    }
+
+                    const isTargetTop = targetItem === evt.from.children[0];
+
+                    return !(!isDraggedSection && isTargetTop && !evt.willInsertAfter);
+                }
             });
         });
     }
@@ -95,20 +117,24 @@ $(function () {
     );
 });
 
+let selectedScoresheetId = null;
+
 let questionModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/QuestionModal'
 });
 
 questionModal.onResult(function () {
-    PubSub.publish('refresh_scoresheet_list');
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
     abp.notify.success(
         'Question is successfully added.',
         'Question'
     );
 });
 
-function openQuestionModal(sectionId, questionId, actionType) {
+function openQuestionModal(scoresheetId, sectionId, questionId, actionType) {
+    selectedScoresheetId = scoresheetId;
     questionModal.open({
+        scoresheetId: scoresheetId,
         sectionId: sectionId,
         questionId: questionId,
         actionType: actionType
@@ -119,7 +145,7 @@ let sectionModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/SectionModal'
 });
 
-let selectedScoresheetId = null;
+
 
 sectionModal.onResult(function () {
     PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
