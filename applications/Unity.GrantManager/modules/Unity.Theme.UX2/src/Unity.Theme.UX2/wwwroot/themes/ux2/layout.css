@@ -526,8 +526,7 @@ abp-date-picker .btn {
 }
 
 .dropdown-toggle {
-    border-radius: 16px 16px 0px 0px !important;
-    height: 50px
+    height: 44px
 }
 
 .swal2-confirm {
