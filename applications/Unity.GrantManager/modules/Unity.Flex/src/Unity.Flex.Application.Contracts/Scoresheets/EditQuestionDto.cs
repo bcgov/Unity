@@ -3,14 +3,14 @@
 namespace Unity.Flex.Scoresheets
 {
     [Serializable]
-    public class CreateQuestionDto
+    public class EditQuestionDto
     {
         public string Name { get; set; } = string.Empty;
         public string Label { get; set; } = string.Empty;
         public string? Description {  get; set; }
         public bool Enabled { get; set; }
 
-        public Guid ScoresheetId { get; set; }
+        public Guid QuestionId { get; set; }
         public uint QuestionType { get; set; }
     }
 }

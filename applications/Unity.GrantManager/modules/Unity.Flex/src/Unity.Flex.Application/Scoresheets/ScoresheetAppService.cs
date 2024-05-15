@@ -16,7 +16,8 @@ namespace Unity.Flex.Scoresheets
         private readonly IScoresheetSectionRepository _sectionRepository;
         private readonly IQuestionRepository _questionRepository;
 
-        private readonly static object _lockObject = new();
+        private readonly static object _sectionLockObject = new();
+        private readonly static object _questionLockObject = new();
         public ScoresheetAppService(IScoresheetRepository scoresheetRepository, IScoresheetSectionRepository sectionRepository, IQuestionRepository questionRepository) 
         {
             _scoresheetRepository = scoresheetRepository;
@@ -31,12 +32,19 @@ namespace Unity.Flex.Scoresheets
 
         public virtual Task<QuestionDto> CreateQuestionAsync(CreateQuestionDto dto)
         {
-            throw new NotImplementedException();
+            lock (_questionLockObject)
+            {
+                ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(dto.ScoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
+                Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
+                var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
+                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, Domain.Enums.QuestionType.Number, order, dto.Description, highestOrderSection.Id)).Result;
+                return Task.FromResult(ObjectMapper.Map<Question, QuestionDto>(result));
+            }
         }
 
         public virtual Task<ScoresheetSectionDto> CreateSectionAsync(CreateSectionDto dto)
         {
-            lock (_lockObject)
+            lock (_sectionLockObject)
             {
                 ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(dto.ScoresheetId).Result;
                 var order = highestOrderSection == null ? 0 : highestOrderSection.Order + 1;
@@ -78,6 +86,15 @@ namespace Unity.Flex.Scoresheets
             var scoresheet = await _scoresheetRepository.GetAsync(dto.ScoresheetId) ?? throw new AbpValidationException("Missing ScoresheetId:" + dto.ScoresheetId);
             scoresheet.Name = dto.Name;
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(await _scoresheetRepository.UpdateAsync(scoresheet));
+        }
+
+        public async Task<QuestionDto> EditQuestionAsync(EditQuestionDto dto)
+        {
+            var question = await _questionRepository.GetAsync(dto.QuestionId) ?? throw new AbpValidationException("Missing QuestionId:" + dto.QuestionId);
+            question.Name = dto.Name;
+            question.Label = dto.Label;
+            question.Description = dto.Description;
+            return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.UpdateAsync(question));
         }
     }
 }

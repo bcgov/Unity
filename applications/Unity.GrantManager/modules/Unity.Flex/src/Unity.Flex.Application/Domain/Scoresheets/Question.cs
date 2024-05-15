@@ -8,10 +8,10 @@ namespace Unity.Flex.Domain.Scoresheets
 {
     public class Question : FullAuditedEntity<Guid>, IMultiTenant
     {
-        public virtual string Name { get; private set; } = string.Empty;
-        public virtual string Label { get; private set; } = string.Empty;
+        public virtual string Name { get; set; } = string.Empty;
+        public virtual string Label { get; set; } = string.Empty;
         public virtual string? Description { get; set; }
-        public virtual uint Order { get; private set; }
+        public virtual uint Order { get; set; }
         public virtual QuestionType Type { get; private set; }
         public virtual bool Enabled { get; private set; }
 
@@ -28,13 +28,15 @@ namespace Unity.Flex.Domain.Scoresheets
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public Question(Guid id, string name, string label, QuestionType type, string? description)
+        public Question(Guid id, string name, string label, QuestionType type, uint order, string? description, Guid sectionId)
         {
             Id = id;
             Name = name;
             Label = label;
             Type = type;
+            Order = order;
             Description = description;
+            SectionId = sectionId;
             Enabled = true;
         }
 
