@@ -209,7 +209,14 @@ function saveOrder() {
                 'Sections and Questions ordering is successfully saved.',
                 'Scoresheet Section and Question'
             );
-            PubSub.publish('refresh_scoresheet_list', { scoresheetId: null});
+
+            const nonCollapsedAccordion = document.querySelector('.accordion-collapse.show');
+            if (nonCollapsedAccordion) {
+                const scoresheetId = nonCollapsedAccordion.getAttribute('data-scoresheet');
+                PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId });
+            } else {
+                PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+            }
         });
 
     
