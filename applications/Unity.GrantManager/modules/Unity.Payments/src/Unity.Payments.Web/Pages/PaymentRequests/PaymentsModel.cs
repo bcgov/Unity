@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Unity.GrantManager.Attributes;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -28,5 +29,6 @@ namespace Unity.Payments.Web.Pages.Payments
         public bool DisableFields  { get; set; } = false;
         public string? ContractNumber { get; set; }
         public string? SupplierNumber { get; set; }
+        public decimal RemainingAmount { get; set; }
     }
 }

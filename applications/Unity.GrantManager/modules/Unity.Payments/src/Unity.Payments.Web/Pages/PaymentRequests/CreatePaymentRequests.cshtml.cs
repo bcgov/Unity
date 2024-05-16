@@ -17,32 +17,26 @@ namespace Unity.Payments.Web.Pages.Payments
     {
         [BindProperty]
         public List<PaymentsModel> ApplicationPaymentRequestForm { get; set; } = [];
-
         [BindProperty]
         public decimal PaymentThreshold { get; set; }
-        
         [BindProperty]
         public bool DisableSubmit { get; set; }
-
         [BindProperty]
         public bool HasPaymentConfiguration { get; set; }
-
         public List<Guid> SelectedApplicationIds { get; set; }
-
         private readonly IGrantApplicationAppService _applicationService;
-
         private readonly IPaymentRequestAppService _paymentRequestService;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
         private readonly ISupplierAppService _iSupplierAppService;
 
         public CreatePaymentRequestsModel(IGrantApplicationAppService applicationService,
            ISupplierAppService iSupplierAppService,
-           IPaymentRequestAppService batchPaymentRequestService,
+           IPaymentRequestAppService paymentRequestService,
            IPaymentConfigurationAppService paymentConfigurationAppService)
         {
             SelectedApplicationIds = [];
             _applicationService = applicationService;
-            _paymentRequestService = batchPaymentRequestService;
+            _paymentRequestService = paymentRequestService;
             _paymentConfigurationAppService = paymentConfigurationAppService;
             _iSupplierAppService = iSupplierAppService;
         }
@@ -65,26 +59,20 @@ namespace Unity.Payments.Web.Pages.Payments
 
             foreach (var application in applications)
             {
-                List<string> errorList = [];
-                bool missingFields = false;
+                decimal remainingAmount = await GetRemainingAmountAllowedByApplicationAsync(application);
 
                 PaymentsModel request = new()
                 {
                     ApplicationId = application.Id,
                     ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
-                    Amount = decimal.Parse("0.00"),
+                    Amount = remainingAmount,
                     Description = "",
                     InvoiceNumber = application.ReferenceNo,
                     ContractNumber = application.ContractNumber,
+                    RemainingAmount = remainingAmount
                 };
 
-                // Massage Site list
-                var supplier = await _iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
-                {
-                    CorrelationId = application.Applicant.Id,
-                    CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicantCorrelationProvider,
-                    IncludeDetails = true
-                });
+                var supplier = await GetSupplierByApplicationAync(application);
 
                 // If there are sites then add them
                 if (supplier != null
@@ -103,35 +91,85 @@ namespace Unity.Payments.Web.Pages.Payments
                         };
                         request.SiteList.Add(item);
                     }
-                } else {
-                    missingFields = true;
                 }
 
-                if(application.ContractNumber.IsNullOrEmpty())
+                request.ErrorList = GetErrorlist(supplier, application, remainingAmount);
+
+                if(request.ErrorList != null && request.ErrorList.Count > 0)
                 {
-                    missingFields = true;
-                }
-
-                if(missingFields)
-                {
-                    errorList.Add("Some payment information is missing for this applicant, please make sure Contract # and Supplier info are available.");
                     request.DisableFields = true;
                 }
 
-                if (application.StatusCode != GrantApplicationState.GRANT_APPROVED) {
-                    errorList.Add("The selected Application is not Approved. To continue please remove the item from the list.");
-                    request.DisableFields = true;
-                }
-
-                if(!application.ApplicationForm.Payable) {
-                    errorList.Add("The selected application is not Payable. To continue please remove the item from the list.");
-                    request.DisableFields = true;
-                }
-
-                request.ErrorList = errorList;
                 ApplicationPaymentRequestForm!.Add(request);
             }
 
+        }
+
+        protected virtual List<string> GetErrorlist(SupplierDto? supplier, GrantApplicationDto application, decimal remainingAmount)
+        {
+            bool missingFields = false;
+            List<string> errorList = [];
+            if (!(supplier != null
+                                && supplier.Sites != null
+                                && supplier.Sites.Count > 0
+                                && supplier.Number != null))
+            {
+                missingFields = true;
+            }
+
+            if (application.ContractNumber.IsNullOrEmpty())
+            {
+                missingFields = true;
+            }
+
+            if(remainingAmount <= 0)
+            {
+                errorList.Add("There is no remaining amount for this application.");
+            }
+
+            if (missingFields)
+            {
+                errorList.Add("Some payment information is missing for this applicant, please make sure Contract # and Supplier info are available.");
+            }
+
+            if (application.StatusCode != GrantApplicationState.GRANT_APPROVED)
+            {
+                errorList.Add("The selected Application is not Approved. To continue please remove the item from the list.");
+
+            }
+
+            if (!application.ApplicationForm.Payable)
+            {
+                errorList.Add("The selected application is not Payable. To continue please remove the item from the list.");
+            }
+            return errorList;
+        }
+
+        protected virtual async Task<decimal> GetRemainingAmountAllowedByApplicationAsync(GrantApplicationDto application) {
+            decimal remainingAmount = 0;
+            // Calculate the "Future paid amount" and if it is more than Approved Amount, the system shall:
+            // Highlight the record
+            // Show error message: This payment exceeds the Approved Amount.
+            // Future paid amount: Total Pending Amount + Total Paid amount + Amount that is in the current payment request
+            if(application.ApprovedAmount > 0) {
+                decimal approvedAmmount = application.ApprovedAmount;
+                decimal totalFutureRequested = await _paymentRequestService.GetTotalPaymentRequestAmmountByApplication(application.Id);
+                if(approvedAmmount > totalFutureRequested) {
+                    remainingAmount = approvedAmmount - totalFutureRequested;
+                }
+            }
+
+            return remainingAmount;
+        }
+
+        protected virtual async Task<SupplierDto?> GetSupplierByApplicationAync(GrantApplicationDto application)
+        {
+            return await _iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+            {
+                CorrelationId = application.Applicant.Id,
+                CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicantCorrelationProvider,
+                IncludeDetails = true
+            });
         }
 
         public async Task<IActionResult> OnPostAsync()
