@@ -54,6 +54,11 @@ public class SectionModalModel : FlexPageModel
             await CreateSection();
             return NoContent();
         }
+        else if (Section.ActionType.StartsWith("Delete"))
+        {
+            await DeleteSection();
+            return NoContent();
+        }
         else
         {
             throw new AbpValidationException("Invalid ActionType!");
@@ -68,5 +73,10 @@ public class SectionModalModel : FlexPageModel
     private async Task EditSection()
     {
         _ = await _scoresheetAppService.EditSectionAsync(new EditSectionDto() { Name = Section.Name, SectionId = Section.SectionId });
+    }
+
+    private async Task DeleteSection()
+    {
+        await _scoresheetAppService.DeleteSectionAsync(Section.SectionId);
     }
 }

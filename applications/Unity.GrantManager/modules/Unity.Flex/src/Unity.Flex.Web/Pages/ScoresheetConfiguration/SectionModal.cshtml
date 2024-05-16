@@ -10,7 +10,7 @@
 @{
     Layout = null;
 }
-<form method="post" asp-page-handler="OnPostAsync" id="scoresheetInfo">
+<form method="post" asp-page-handler="OnPostAsync" id="sectionInfo">
     <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Section.ScoresheetId" />
     <abp-input type="hidden" id="SectionId" asp-for="@Model.Section.SectionId" />
     <abp-input type="hidden" id="ActionType" asp-for="@Model.Section.ActionType" />
@@ -24,9 +24,8 @@
                 </abp-column>
             </abp-row>
         </abp-modal-body>
-        <!--abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></!--abp-modal-footer-->
         <abp-modal-footer>
-            <button type="button" class="btn btn-danger" onclick="deleteSection('@Model.Section.SectionId')">Delete</button>
+            <button type="button" class="btn btn-danger" onclick="deleteSection()">Delete</button>
             <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
         </abp-modal-footer>
@@ -46,8 +45,8 @@
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                abp.notify.success('Section deleted successfully.');
-                location.reload();
+                $('#ActionType').val('Delete Section');
+                $('#sectionInfo').submit();
             }
         });
     }

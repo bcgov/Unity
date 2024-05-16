@@ -3,6 +3,7 @@ let scoresheetModal = new abp.ModalManager({
 });
 
 let scoresheetToEditId = null;
+
 scoresheetModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
     if (actionType.startsWith('Delete')) {

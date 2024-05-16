@@ -169,10 +169,12 @@ let sectionModal = new abp.ModalManager({
 
 
 
-sectionModal.onResult(function () {
+sectionModal.onResult(function (response) {
+    const actionType = $(response.currentTarget).find('#ActionType').val();
     PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
+       
     abp.notify.success(
-        'Section is successfully added.',
+        actionType + ' is successful.',
         'Scoresheet Section'
     );
 });

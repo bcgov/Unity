@@ -13,6 +13,7 @@ namespace Unity.Flex.Scoresheets
         Task<ScoresheetDto> EditAsync(EditScoresheetDto dto);
         Task DeleteAsync(Guid scoresheetId);
         Task<ScoresheetSectionDto> EditSectionAsync(EditSectionDto dto);
+        Task DeleteSectionAsync(Guid sectionId);
         Task<QuestionDto> EditQuestionAsync(EditQuestionDto dto);
         Task<ScoresheetDto> GetAsync(Guid scoresheetId);
         Task<QuestionDto> GetQuestionAsync(Guid questionId);
