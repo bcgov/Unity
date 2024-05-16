@@ -82,11 +82,23 @@
     }
 </div>
 
-<div class="p-4">    
-    <button id="save_order_btn" onclick="saveOrder();" class="btn btn-light" type="button" disabled>
-        <span>@L["Scoresheet:Configuration:SaveChangesButtonText"].Value</span>
-    </button>
+<div class="row">
+    <div class="col-md-6">
+        <div class="p-3">
+            <button id="save_order_btn" onclick="saveOrder();" class="btn btn-light" type="button" disabled>
+                <span>@L["Scoresheet:Configuration:SaveChangesButtonText"].Value</span>
+            </button>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="p-3">
+            <button id="discard_order_btn" onclick="updateScoresheetAccordion();" class="btn btn-light" type="button" disabled>
+                <span>@L["Scoresheet:Configuration:DiscardChangesButtonText"].Value</span>
+            </button>
+        </div>
+    </div>
 </div>
+
 
 
 

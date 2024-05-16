@@ -12,6 +12,7 @@
     "Scoresheet:Configuration:AddQuestionButtonText": "ADD QUESTION",
     "Scoresheet:Configuration:AddSectionButtonText": "ADD SECTION",
     "Scoresheet:Configuration:EditScoresheetButtonText": "EDIT SCORING SHEET",
-    "Scoresheet:Configuration:SaveChangesButtonText": "SAVE CHANGES"
+    "Scoresheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
+    "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES"
   }
 }

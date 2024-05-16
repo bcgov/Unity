@@ -7,6 +7,7 @@ $(function () {
                 onEnd: function (evt) {
                     updatePreview(evt);
                     document.getElementById('save_order_btn').disabled = false;
+                    document.getElementById('discard_order_btn').disabled = false;
                 },
                 ghostClass: 'blue-background',
                 onMove: function (evt) {
@@ -211,15 +212,19 @@ function saveOrder() {
                 'Sections and Questions ordering is successfully saved.',
                 'Scoresheet Section and Question'
             );
-
-            const nonCollapsedAccordion = document.querySelector('.accordion-collapse.show');
-            if (nonCollapsedAccordion) {
-                const scoresheetId = nonCollapsedAccordion.getAttribute('data-scoresheet');
-                PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId });
-            } else {
-                PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
-            }
+            updateScoresheetAccordion();
         });
 
     
 }
+
+function updateScoresheetAccordion() {
+    const nonCollapsedAccordion = document.querySelector('.accordion-collapse.show');
+    if (nonCollapsedAccordion) {
+        const scoresheetId = nonCollapsedAccordion.getAttribute('data-scoresheet');
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId });
+    } else {
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+    }
+}
+
