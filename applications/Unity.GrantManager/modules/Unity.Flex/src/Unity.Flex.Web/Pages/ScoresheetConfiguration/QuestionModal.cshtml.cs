@@ -62,6 +62,11 @@ public class QuestionModalModel : FlexPageModel
 
             return NoContent();
         }
+        else if (Question.ActionType.StartsWith("Delete"))
+        {
+            await DeleteQuestion();
+            return NoContent();
+        }
         else
         {
             throw new AbpValidationException("Invalid ActionType!");
@@ -76,5 +81,10 @@ public class QuestionModalModel : FlexPageModel
     private async Task EditQuestion()
     {
         _ = await _scoresheetAppService.EditQuestionAsync(new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionId = Question.Id });
+    }
+
+    private async Task DeleteQuestion()
+    {
+        await _scoresheetAppService.DeleteQuestionAsync(Question.Id);
     }
 }

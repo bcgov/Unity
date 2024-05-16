@@ -145,10 +145,11 @@ let questionModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/QuestionModal'
 });
 
-questionModal.onResult(function () {
+questionModal.onResult(function (response) {
+    const actionType = $(response.currentTarget).find('#ActionType').val();
     PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
     abp.notify.success(
-        'Question is successfully added.',
+        actionType + ' is successful.',
         'Question'
     );
 });
@@ -172,7 +173,6 @@ let sectionModal = new abp.ModalManager({
 sectionModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
     PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
-       
     abp.notify.success(
         actionType + ' is successful.',
         'Scoresheet Section'

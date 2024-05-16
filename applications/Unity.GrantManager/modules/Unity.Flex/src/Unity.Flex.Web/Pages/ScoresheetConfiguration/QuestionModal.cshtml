@@ -34,6 +34,30 @@
                 </abp-column>
             </abp-row>
         </abp-modal-body>
-        <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
+        <abp-modal-footer>
+            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="deleteQuestion()">Delete</button>
+        </abp-modal-footer>
     </abp-modal>
 </form>
+
+<script>
+    function deleteQuestion() {
+        Swal.fire({
+            title: "Delete Question",
+            text: 'Are you sure you want to delete this question?',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#ActionType').val('Delete Question');
+                $('#questionInfo').submit();
+            }
+        });
+    }
+</script>

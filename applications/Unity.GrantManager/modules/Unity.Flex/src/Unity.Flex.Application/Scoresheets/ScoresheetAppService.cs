@@ -141,5 +141,10 @@ namespace Unity.Flex.Scoresheets
         {
             await _sectionRepository.DeleteAsync(sectionId);
         }
+
+        public async Task DeleteQuestionAsync(Guid questionId)
+        {
+            await _questionRepository.DeleteAsync(questionId);
+        }
     }
 }
