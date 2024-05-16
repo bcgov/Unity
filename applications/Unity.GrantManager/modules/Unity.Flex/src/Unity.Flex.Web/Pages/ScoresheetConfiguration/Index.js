@@ -5,7 +5,11 @@ let scoresheetModal = new abp.ModalManager({
 let scoresheetToEditId = null;
 scoresheetModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
-    PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
+    if (actionType.startsWith('Delete')) {
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+    } else {
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
+    }
     abp.notify.success(
         actionType + ' is successful.', 
         'Scoresheet'

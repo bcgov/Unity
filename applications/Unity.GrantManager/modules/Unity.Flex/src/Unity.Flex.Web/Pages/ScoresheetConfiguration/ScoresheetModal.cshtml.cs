@@ -50,6 +50,11 @@ public class ScoresheetModalModel : FlexPageModel
             await CreateScoresheet();
             return NoContent();
         }
+        else if (Scoresheet.ActionType.StartsWith("Delete"))
+        {
+            await DeleteScoresheet();
+            return NoContent();
+        }
         else
         {
             throw new AbpValidationException("Invalid ActionType!");
@@ -64,5 +69,10 @@ public class ScoresheetModalModel : FlexPageModel
     private async Task EditScoresheet()
     {
         _ = await _scoresheetAppService.EditAsync(new EditScoresheetDto() { Name = Scoresheet.Name, ScoresheetId = Scoresheet.Id});
+    }
+
+    private async Task DeleteScoresheet()
+    {
+        await _scoresheetAppService.DeleteAsync(Scoresheet.Id);
     }
 }

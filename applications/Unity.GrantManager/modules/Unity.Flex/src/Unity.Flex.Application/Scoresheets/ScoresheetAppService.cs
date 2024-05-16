@@ -132,5 +132,10 @@ namespace Unity.Flex.Scoresheets
                 
             return Task.CompletedTask;
         }
+
+        public async Task DeleteAsync(Guid scoresheetId)
+        {
+            await _scoresheetRepository.DeleteAsync(scoresheetId);
+        }
     }
 }

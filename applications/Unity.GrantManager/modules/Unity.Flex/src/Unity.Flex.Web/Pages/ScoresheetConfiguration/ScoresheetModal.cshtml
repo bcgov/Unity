@@ -22,6 +22,30 @@
                 </abp-column>
             </abp-row>
         </abp-modal-body>
-        <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
+        <abp-modal-footer>
+            <button type="button" class="btn btn-danger" onclick="deleteScoresheet()">Delete</button>
+            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+        </abp-modal-footer>
     </abp-modal>
 </form>
+
+<script>
+    function deleteScoresheet() {
+        Swal.fire({
+            title: "Delete Scoresheet",
+            text: 'Are you sure you want to delete this scoresheet?',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#ActionType').val('Delete Scoresheet');
+                $('#scoresheetInfo').submit();
+            }
+        });
+    }
+</script>
