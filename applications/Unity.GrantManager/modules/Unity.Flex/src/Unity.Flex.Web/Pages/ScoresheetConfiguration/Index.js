@@ -3,10 +3,11 @@ let scoresheetModal = new abp.ModalManager({
 });
 
 let scoresheetToEditId = null;
-scoresheetModal.onResult(function () {
+scoresheetModal.onResult(function (response) {
+    const actionType = $(response.currentTarget).find('#ActionType').val();
     PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
     abp.notify.success(
-        'Scoresheet is successfully added.',
+        actionType + ' is successful.', 
         'Scoresheet'
     );
 });
