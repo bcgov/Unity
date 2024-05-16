@@ -18,7 +18,7 @@ namespace Unity.Flex.Scoresheets
 
         private readonly static object _sectionLockObject = new();
         private readonly static object _questionLockObject = new();
-        public ScoresheetAppService(IScoresheetRepository scoresheetRepository, IScoresheetSectionRepository sectionRepository, IQuestionRepository questionRepository) 
+        public ScoresheetAppService(IScoresheetRepository scoresheetRepository, IScoresheetSectionRepository sectionRepository, IQuestionRepository questionRepository)
         {
             _scoresheetRepository = scoresheetRepository;
             _sectionRepository = sectionRepository;
@@ -26,7 +26,7 @@ namespace Unity.Flex.Scoresheets
         }
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
-            var result = await _scoresheetRepository.InsertAsync(new Scoresheet (Guid.NewGuid(),dto.Name));
+            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Name));
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
@@ -76,7 +76,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<ScoresheetSectionDto> EditSectionAsync(EditSectionDto dto)
         {
-            var section = await _sectionRepository.GetAsync(dto.SectionId) ?? throw new AbpValidationException("Missing SectionId:"+dto.SectionId);
+            var section = await _sectionRepository.GetAsync(dto.SectionId) ?? throw new AbpValidationException("Missing SectionId:" + dto.SectionId);
             section.Name = dto.Name;
             return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(await _sectionRepository.UpdateAsync(section));
         }
@@ -95,6 +95,42 @@ namespace Unity.Flex.Scoresheets
             question.Label = dto.Label;
             question.Description = dto.Description;
             return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.UpdateAsync(question));
+        }
+
+        public Task SaveOrder(List<ScoresheetItemDto> dto)
+        {
+            uint sectionOrder = 0;
+            uint questionOrder = 0;
+            ScoresheetSection? currentSection = null;
+            foreach (var item in dto)
+            {
+                if (item.Type == "section")
+                {
+                    var section = _sectionRepository.GetAsync(item.Id).Result ?? throw new AbpValidationException("SectionId not found.");
+                    section.Order = sectionOrder;
+                    sectionOrder++;
+                    questionOrder = 0;
+                    _sectionRepository.UpdateAsync(section);
+                    currentSection = section;
+                }
+                else if (item.Type == "question")
+                {
+                    var question = _questionRepository.GetAsync(item.Id).Result ?? throw new AbpValidationException("QuestionId not found.");
+                    question.Order = questionOrder;
+                    questionOrder++;
+                    if (currentSection != null)
+                    {
+                        question.SectionId = currentSection.Id;
+                    }
+                    _questionRepository.UpdateAsync(question);
+                }
+                else
+                {
+                    throw new AbpValidationException("Invalid type!");
+                }
+            }
+                
+            return Task.CompletedTask;
         }
     }
 }

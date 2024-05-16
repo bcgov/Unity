@@ -19,7 +19,7 @@ namespace Unity.Flex.Domain.Scoresheets
 
         // Navigation
         public virtual ScoresheetSection? Section { get; }
-        public virtual Guid SectionId { get; }
+        public virtual Guid SectionId { get; set; }
 
         public Guid? TenantId { get; set; }
 

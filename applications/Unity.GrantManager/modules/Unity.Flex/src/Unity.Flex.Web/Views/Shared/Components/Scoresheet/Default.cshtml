@@ -35,7 +35,7 @@
                     <div id="sections-questions" class="list-group col">
                         @foreach (var sec in scoresheet.Sections)
                         {
-                            <div class="list-group-item row section-item">
+                            <div class="list-group-item row section-item" data-type="section" data-id="@sec.Id" data-scoresheetid="@scoresheet.Id">
                                 <div class="col">
                                     <i class="fl fl-draggable"></i>
                                     <span class="p-2"><b>Section:</b> @sec.Name</span>
@@ -46,7 +46,7 @@
                             </div>
                             @foreach (var question in sec.Fields)
                             {
-                                <div class="list-group-item row">
+                                <div class="list-group-item row" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id">
                                     <div class="col">
                                         <i class="fl fl-draggable"></i>
                                         <span class="p-2">@question.Name</span>
@@ -82,6 +82,11 @@
     }
 </div>
 
+<div class="p-4">    
+    <button id="save_order_btn" onclick="saveOrder();" class="btn btn-light" type="button" disabled>
+        <span>@L["Scoresheet:Configuration:SaveChangesButtonText"].Value</span>
+    </button>
+</div>
 
 
 

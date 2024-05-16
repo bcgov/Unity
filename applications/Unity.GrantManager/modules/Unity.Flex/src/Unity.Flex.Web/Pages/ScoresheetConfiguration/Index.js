@@ -9,7 +9,6 @@ scoresheetModal.onResult(function () {
         'Scoresheet is successfully added.',
         'Scoresheet'
     );
-    refreshScoresheetInfoWidget();
 });
 function openScoresheetModal(scoresheetId, actionType) {
     scoresheetToEditId = scoresheetId;

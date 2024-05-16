@@ -4,7 +4,10 @@ $(function () {
         document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
             _ = new Sortable(div, {
                 animation: 150,
-                onEnd: updatePreview,
+                onEnd: function (evt) {
+                    updatePreview(evt);
+                    document.getElementById('save_order_btn').disabled = false;
+                },
                 ghostClass: 'blue-background',
                 onMove: function (evt) {
                     const draggedItem = evt.dragged;
@@ -54,7 +57,7 @@ $(function () {
         const accordionItems = document.querySelectorAll('#scoresheet-accordion .accordion-button');
         accordionItems.forEach(button => {
             button.addEventListener('click', function () {
-                setTimeout(updateUnsortedPreview, 500); // Timeout to allow the collapse animation to complete
+                setTimeout(updateUnsortedPreview, 500); 
             });
         });
     }
@@ -73,7 +76,7 @@ $(function () {
         sortedItems.forEach(item => {
             if (item.classList.contains('section-item')) {
                 if (currentSectionItem) {
-                    accordionHTML += '</div></div></div>'; // Close previous section and accordion item
+                    accordionHTML += '</div></div></div>'; 
                 }
                 accordionHTML += `
                 <div class="accordion-item">
@@ -116,7 +119,7 @@ $(function () {
         for (let i = 0; i < str.length; i++) {
             const char = str.charCodeAt(i);
             hash = ((hash << 5) - hash) + char;
-            hash |= 0; // Convert to 32bit integer
+            hash |= 0;
         }
         return hash;
     }
@@ -181,4 +184,33 @@ function openSectionModal(scoresheetId, sectionId, actionType) {
         sectionId: sectionId,
         actionType: actionType
     });
+}
+
+function saveOrder() {
+    const allSections = document.querySelectorAll('[id^="sections-questions"]');
+    const orderData = [];
+
+    allSections.forEach(section => {
+        const items = section.children;
+        Array.from(items).forEach((item, index) => {
+            orderData.push({
+                type: item.dataset.type,
+                id: item.dataset.id,
+                scoresheetid: item.dataset.scoresheetid,
+                order: index,
+                label: item.innerText.trim()
+            });
+        });
+    });
+
+    unity.flex.scoresheets.scoresheet.saveOrder(orderData)
+        .then(response => {
+            abp.notify.success(
+                'Sections and Questions ordering is successfully saved.',
+                'Scoresheet Section and Question'
+            );
+            PubSub.publish('refresh_scoresheet_list', { scoresheetId: null});
+        });
+
+    
 }
