@@ -97,7 +97,7 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.UpdateAsync(question));
         }
 
-        public Task SaveOrder(List<ScoresheetItemDto> dto)
+        public async Task SaveOrder(List<ScoresheetItemDto> dto)
         {
             uint sectionOrder = 0;
             uint questionOrder = 0;
@@ -106,23 +106,23 @@ namespace Unity.Flex.Scoresheets
             {
                 if (item.Type == "section")
                 {
-                    var section = _sectionRepository.GetAsync(item.Id).Result ?? throw new AbpValidationException("SectionId not found.");
+                    var section = await _sectionRepository.GetAsync(item.Id) ?? throw new AbpValidationException("SectionId not found.");
                     section.Order = sectionOrder;
                     sectionOrder++;
                     questionOrder = 0;
-                    _sectionRepository.UpdateAsync(section);
+                    await _sectionRepository.UpdateAsync(section);
                     currentSection = section;
                 }
                 else if (item.Type == "question")
                 {
-                    var question = _questionRepository.GetAsync(item.Id).Result ?? throw new AbpValidationException("QuestionId not found.");
+                    var question = await _questionRepository.GetAsync(item.Id) ?? throw new AbpValidationException("QuestionId not found.");
                     question.Order = questionOrder;
                     questionOrder++;
                     if (currentSection != null)
                     {
                         question.SectionId = currentSection.Id;
                     }
-                    _questionRepository.UpdateAsync(question);
+                    await _questionRepository.UpdateAsync(question);
                 }
                 else
                 {
@@ -130,7 +130,6 @@ namespace Unity.Flex.Scoresheets
                 }
             }
                 
-            return Task.CompletedTask;
         }
 
         public async Task DeleteAsync(Guid scoresheetId)
