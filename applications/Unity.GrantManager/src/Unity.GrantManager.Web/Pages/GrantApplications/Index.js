@@ -35,12 +35,20 @@
             }
         }
     ];
+
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
         15,
         4,
-        unity.grantManager.grantApplications.grantApplication.getList, {}, actionButtons,'dynamicButtonContainerId');
+        unity.grantManager.grantApplications.grantApplication.getList, {}, responseCallback, actionButtons,'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 

@@ -1,6 +1,6 @@
-$(function () {  
+$(function () {
     const l = abp.localization.getResource('Payments');
-    let dt = $('#PaymentRequestListTable');
+    let dt = $('#ApplicationPaymentRequestListTable');
     let dataTable;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
@@ -9,26 +9,11 @@ $(function () {
     ];
 
     let actionButtons = [
-        
         {
-            text: 'Approve',
+            text: 'Edit & Resubmit',
             className: 'custom-table-btn flex-none btn btn-secondary',
             action: function (e, dt, node, config) {
-                alert('Approve Button activated');
-            }
-        },
-        {
-            text: 'Decline',
-            className: 'custom-table-btn flex-none btn btn-secondary',
-            action: function (e, dt, node, config) {
-                alert('Decline Button activated');
-            }
-        },
-        {
-            text: 'History',
-            className: 'custom-table-btn flex-none btn btn-secondary',
-            action: function (e, dt, node, config) {
-                alert('History Button activated');
+                alert('Edit & Resubmit');
             }
         },
         {
@@ -50,19 +35,24 @@ $(function () {
                 orthogonal: 'fullName',
             }
         },
-       
+
     ];
+    let appId = document.getElementById('DetailsViewApplicationId').value;
+    let inputAction = function (requestData, dataTableSettings) {
+        const applicationId = appId
+        return applicationId;
+    }
     let responseCallback = function (result) {
         return {
-            recordsTotal: result.totalCount,
-            recordsFiltered: result.items.length,
-            data: result.items
+            recordsTotal: result.length,
+            recordsFiltered: result.length,
+            data: result
         };
     };
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -97,22 +87,13 @@ $(function () {
     function getColumns() {
         return [
             getPaymentIdColumn(),
-            getApplicantNameColumn(),
-            getSupplierNumberColumn(),
-            getSiteNumberColumn(),
-            getContractNumberColumn(),
-            getInvoiceNumberColumn(),
-            getPayGroupColumn(),
             getAmountColumn(),
             getStatusColumn(),
-            getDescriptionColumn(),
             getRequestedonColumn(),
             getUpdatedOnColumn(),
             getPaidOnColumn(),
+            getDescriptionColumn(),
             getCASResponseColumn(),
-            getL1ApprovalColumn(),
-            getL2ApprovalColumn(),
-            getL3ApprovalColumn()
         ]
     }
 
@@ -125,76 +106,7 @@ $(function () {
             index: 1,
         };
     }
-    function getApplicantNameColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:ApplicantName'),
-            name: 'applicantName',
-            data: 'payeeName',
-            className: 'data-table-header',
-            index: 2,
-        };
-    }
-
-    function getSupplierNumberColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:SupplierNumber'),
-            name: 'supplierNumber',
-            data: 'supplierNumber',
-            className: 'data-table-header',
-            index: 3,
-        };
-    }
-    function getSiteNumberColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:SiteNumber'),
-            name: 'siteNumber',
-            data: 'site',
-            className: 'data-table-header',
-            index: 4,
-            render: function (data) {
-                return data?.number;
-            }
-        };
-    }
-    function getContractNumberColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:ContractNumber'),
-            name: 'contactNumber',
-            data: 'contractNumber',
-            className: 'data-table-header',
-            index: 5,
- 
-        };
-    }
-
-    function getInvoiceNumberColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:InvoiceNumber'),
-            name: 'invoiceNumber',
-            data: 'invoiceNumber',
-            className: 'data-table-header',
-            index: 6,
-        };
-    }
-    function getPayGroupColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:PayGroup'),
-            name: 'payGroup',
-            data: 'site',
-            className: 'data-table-header',
-            index: 7,
-            render: function (data) {
-                switch (data.paymentGroup) {
-                    case 1:
-                        return 'EFT';
-                    case 2:
-                        return 'Cheque';
-                    default:
-                        return 'Unknown PaymentGroup';
-                }
-            }
-        };
-    }
+   
 
     function getAmountColumn() {
         return {
@@ -202,7 +114,7 @@ $(function () {
             name: 'amount',
             data: 'amount',
             className: 'data-table-header',
-            index: 8,
+            index:2,
         };
     }
 
@@ -214,7 +126,7 @@ $(function () {
             name: 'status',
             data: 'status',
             className: 'data-table-header',
-            index: 9,
+            index: 3,
             render: function (data) {
                 switch (data) {
                     case 1:
@@ -240,7 +152,7 @@ $(function () {
             name: 'description',
             data: 'description',
             className: 'data-table-header',
-            index: 10,
+            index: 4,
         };
     }
     function getRequestedonColumn() {
@@ -249,7 +161,7 @@ $(function () {
             name: 'requestedOn',
             data: 'creationTime',
             className: 'data-table-header',
-            index: 11,
+            index: 5,
             render: function (data) {
                 return formatDate(data);
             }
@@ -261,7 +173,7 @@ $(function () {
             name: 'updatedOn',
             data: 'lastModificationTime',
             className: 'data-table-header',
-            index: 12,
+            index: 6,
             render: function (data) {
                 return formatDate(data);
             }
@@ -273,7 +185,7 @@ $(function () {
             name: 'paidOn',
             data: 'paidOn',
             className: 'data-table-header',
-            index: 13,
+            index: 7,
             render: function (data) {
                 return formatDate(data);
             }
@@ -282,59 +194,16 @@ $(function () {
     function getCASResponseColumn() {
         return {
             title: l('ApplicationPaymentListTable:CASResponse'),
-            name: 'CASResponse',
+            name: 'cASResponse',
             data: 'casResponse',
             className: 'data-table-header',
-            index: 14,
+            index: 8,
             render: function (data) {
                 return formatDate(data);
             }
         };
     }
-    function getL1ApprovalColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:L1ApprovalDate'),
-            name: 'l1Approval',
-            data: 'expenseApprovals',
-            className: 'data-table-header',
-            index: 15,
-            render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 1)
-                return formatDate(approval?.decisionDate);
-            }
-        };
-    }
-    function getL2ApprovalColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:L2ApprovalDate'),
-            name: 'l2Approval',
-            data: 'expenseApprovals',
-            className: 'data-table-header',
-            index: 14,
-            render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 2)
-                return formatDate(approval?.decisionDate);
-            }
-        };
-    }
-    function getL3ApprovalColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:L3ApprovalDate'),
-            name: 'l3Approval',
-            data: 'expenseApprovals',
-            className: 'data-table-header',
-            index: 14,
-            render: function (data) {
-                let approval = getExpenseApprovalsDetails(data, 3)
-                return formatDate(approval?.decisionDate);
-            }
-        };
-    }
-
-
-    function getExpenseApprovalsDetails(expenseApprovals, type) {
-        return expenseApprovals.find(x => x.type == type);
-    }
+   
 
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
@@ -354,8 +223,12 @@ $(function () {
         }
     );
 
+    $('#nav-payment-info-tab').one('click', function () {
+        dataTable.columns.adjust();
+    });
+
     $('#search').keyup(function () {
-        let table = $('#PaymentRequestListTable').DataTable();
+        let table = $('#ApplicationPaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
 });

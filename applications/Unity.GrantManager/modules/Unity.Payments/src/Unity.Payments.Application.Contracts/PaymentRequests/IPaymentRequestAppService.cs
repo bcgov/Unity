@@ -11,5 +11,7 @@ namespace Unity.Payments.PaymentRequests
         Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests);
 
         Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input);
+        Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId);
+
     }
 }

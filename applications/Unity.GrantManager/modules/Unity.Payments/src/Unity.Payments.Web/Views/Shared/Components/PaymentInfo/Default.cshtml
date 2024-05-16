@@ -1,0 +1,50 @@
+﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Payments.Localization;
+@using Unity.Payments.Web.Views.Shared.Components.PaymentInfo;
+@using Volo.Abp.Authorization.Permissions;
+@inject IHtmlLocalizer<PaymentsResource> L
+@inject IPermissionChecker PermissionChecker
+@model Unity.Payments.Web.Views.Shared.Components.PaymentInfo.PaymentInfoViewModel
+@{
+    Layout = null;
+}
+@{
+}
+
+<abp-row class="m-0 payment-info">
+    <abp-row class="m-0 p-0">
+        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+            <div id="SupplierInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                <h6 class="ps-1 fw-bold">@L["PaymentInfoView:PaymentInfoTitle"].Value</h6>
+            </div>
+        </abp-column>
+    </abp-row>
+    <abp-row class="m-0 p-0">
+        <abp-column size="_6" class="px-1">
+            <abp-input asp-for="@Model.RequestedAmount" disabled />
+            <abp-input asp-for="@Model.ApprovedAmount" disabled />
+            <abp-input asp-for="@Model.TotalPendingAmounts" disabled />
+        </abp-column>
+        <abp-column size="_6" class="px-1">
+            <abp-input asp-for="@Model.RecommendedAmount" disabled />
+            <abp-input asp-for="@Model.TotalPaid" disabled />
+            <abp-input asp-for="@Model.RemainingAmount" disabled />
+        </abp-column>
+
+    </abp-row>
+    <abp-row class="m-0 p-0">
+        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+            <div id="SupplierInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                <h6 class="ps-1 fw-bold">@L["PaymentInfoView:PaymentInfoTableTitle"].Value</h6>
+            </div>
+        </abp-column>
+    </abp-row>
+    <abp-row class="m-0 p-0">
+        <abp-column size="_12" class="px-1">
+            @await Component.InvokeAsync("PaymentActionBar")
+        </abp-column>
+        <abp-column size="_12" class="px-1">
+            <abp-table id="ApplicationPaymentRequestListTable"></abp-table>
+        </abp-column>
+    </abp-row>
+</abp-row>

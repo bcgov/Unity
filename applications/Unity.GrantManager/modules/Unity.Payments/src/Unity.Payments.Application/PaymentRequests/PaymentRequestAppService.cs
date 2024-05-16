@@ -8,6 +8,7 @@ using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
+using System.Linq;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -75,7 +76,16 @@ namespace Unity.Payments.PaymentRequests
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
             var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
+        }  
+        public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
+        {
+
+            var payments = await _paymentRequestsRepository.GetListAsync();
+            var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
+
+            return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
         }
+       
         protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
             var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();

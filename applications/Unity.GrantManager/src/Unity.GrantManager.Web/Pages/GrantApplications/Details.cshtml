@@ -138,6 +138,12 @@
                 </abp-tab> *@
                 @*-------- Approval Section END ---------*@
 
+                <abp-tab name="nav-payment-info" title="Payment Info">
+                    <div class="w-100 px-2" id="PaymentInfoWidget">
+                        @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId })
+                    </div>
+                </abp-tab>
+
             </abp-tabs>
         </abp-card>
     </abp-column>
