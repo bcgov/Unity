@@ -45,6 +45,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
+    private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
 
     public GrantApplicationAppService(
@@ -58,6 +59,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicationFormRepository applicationFormRepository,
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
+        IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus)
     {
         _applicationRepository = applicationRepository;
@@ -70,6 +72,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _applicationFormRepository = applicationFormRepository;
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
+        _applicantAddressRepository = applicantAddressRepository;
+
         _localEventBus = localEventBus;
     }
 
@@ -297,7 +301,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
-            application.ProjectName = input.ProjectName ?? String.Empty;
+            application.ProjectName = input.ProjectName ?? string.Empty;
             application.RequestedAmount = input.RequestedAmount ?? 0;
             application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
             application.ProjectStartDate = input.ProjectStartDate;
@@ -324,7 +328,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             throw new EntityNotFoundException();
         }
     }
-
+    
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -382,6 +386,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
             }
 
+            await UpdateApplicantAddresses(input);
+
             application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
             application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
             application.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
@@ -403,6 +409,55 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         else
         {
             throw new EntityNotFoundException();
+        }
+    }
+
+    protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
+    {
+        var applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+    }
+
+    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId)
+    {
+        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType);
+
+        if (dbAddress != null)
+        {
+            MapApplicantAddress(input, applicantAddressType, dbAddress);
+            await _applicantAddressRepository.UpdateAsync(dbAddress);
+        }
+        else
+        {
+            var newAddress = new ApplicantAddress() { AddressType = applicantAddressType, ApplicantId = applicantId };
+            MapApplicantAddress(input, applicantAddressType, newAddress);
+            await _applicantAddressRepository.InsertAsync(newAddress);
+        }
+    }
+
+    private static void MapApplicantAddress(CreateUpdateApplicantInfoDto input, AddressType applicantAddressType, ApplicantAddress address)
+    {
+        switch (applicantAddressType)
+        {
+            case AddressType.MailingAddress:
+                address.AddressType = AddressType.MailingAddress;
+                address.Street = input.MailingAddressStreet ?? "";
+                address.Street2 = input.MailingAddressStreet2 ?? "";
+                address.Unit = input.MailingAddressUnit ?? "";
+                address.City = input.MailingAddressCity ?? "";
+                address.Province = input.MailingAddressProvince ?? "";
+                address.Postal = input.MailingAddressPostalCode ?? "";
+                break;
+            case AddressType.PhysicalAddress:
+                address.AddressType = AddressType.PhysicalAddress;
+                address.Street = input.PhysicalAddressStreet ?? "";
+                address.Street2 = input.PhysicalAddressStreet2 ?? "";
+                address.Unit = input.PhysicalAddressUnit ?? "";
+                address.City = input.PhysicalAddressCity ?? "";
+                address.Province = input.PhysicalAddressProvince ?? "";
+                address.Postal = input.PhysicalAddressPostalCode ?? "";
+                break;
         }
     }
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240509171837_RenameAddressTable")]
+    partial class RenameAddressTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,11 +117,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("AddressType")
-                        .HasColumnType("integer");
-
                     b.Property<Guid?>("ApplicantId")
-                        .IsRequired()
                         .HasColumnType("uuid");
 
                     b.Property<string>("City")
@@ -1892,13 +1891,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantAddress", b =>
                 {
-                    b.HasOne("Unity.GrantManager.Applications.Applicant", "Applicant")
-                        .WithMany("ApplicantAddresses")
-                        .HasForeignKey("ApplicantId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Applicant");
+                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicantId");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantAgent", b =>
@@ -2143,11 +2138,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
 
                     b.Navigation("Supplier");
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.Applicant", b =>
-                {
-                    b.Navigation("ApplicantAddresses");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
