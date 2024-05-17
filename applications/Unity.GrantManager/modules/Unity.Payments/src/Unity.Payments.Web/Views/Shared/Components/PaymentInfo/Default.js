@@ -5,7 +5,9 @@ $(function () {
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'id',
-        'creationTime',
+        'amount',
+        'status'
+
     ];
 
     let actionButtons = [
@@ -52,7 +54,7 @@ $(function () {
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 15, 3, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -80,7 +82,7 @@ $(function () {
                     element.classList.toggle('selected');
                 }
             );
-            PubSub.publish("deselect_batchpayment_application", "reset_data");
+            PubSub.publish("deselect_application_payment", "reset_data");
         }
     }
 
@@ -89,11 +91,7 @@ $(function () {
             getApplicationPaymentIdColumn(),
             getApplicationPaymentAmountColumn(),
             getApplicationPaymentStatusColumn(),
-            getApplicationPaymentRequestedonColumn(),
-            getApplicationPaymentUpdatedOnColumn(),
-            getApplicationPaymentPaidOnColumn(),
-            geApplicationPaymentDescriptionColumn(),
-            getApplicationPaymentCASResponseColumn(),
+            getApplicationPaymentRequestedonColumn()
         ]
     }
 
@@ -128,33 +126,12 @@ $(function () {
             className: 'data-table-header',
             index: 3,
             render: function (data) {
-                switch (data) {
-                    case 1:
-                        return "Created";
-                    case 2:
-                        return "Submitted";
-                    case 3:
-                        return "Approved";
-                    case 4:
-                        return "Declined";
-                    case 5:
-                        return "Awaiting Approval"
-                    default:
-                        return "Created";
-                }
+                return getStatusText(data);
             }
         };
     }
 
-    function geApplicationPaymentDescriptionColumn() {
-        return {
-            title: l('PaymentInfoView:ApplicationPaymentListTable.Description'),
-            name: 'description',
-            data: 'description',
-            className: 'data-table-header',
-            index: 4,
-        };
-    }
+
     function getApplicationPaymentRequestedonColumn() {
         return {
             title: l('PaymentInfoView:ApplicationPaymentListTable.RequestedOn'),
@@ -167,42 +144,7 @@ $(function () {
             }
         };
     }
-    function getApplicationPaymentUpdatedOnColumn() {
-        return {
-            title: l('PaymentInfoView:ApplicationPaymentListTable.UpdatedOn'),
-            name: 'updatedOn',
-            data: 'lastModificationTime',
-            className: 'data-table-header',
-            index: 6,
-            render: function (data) {
-                return formatDate(data);
-            }
-        };
-    }
-    function getApplicationPaymentPaidOnColumn() {
-        return {
-            title: l('PaymentInfoView:ApplicationPaymentListTable.PaidOn'),
-            name: 'paidOn',
-            data: 'paidOn',
-            className: 'data-table-header',
-            index: 7,
-            render: function (data) {
-                return formatDate(data);
-            }
-        };
-    }
-    function getApplicationPaymentCASResponseColumn() {
-        return {
-            title: l('PaymentInfoView:ApplicationPaymentListTable.CASResponse'),
-            name: 'cASResponse',
-            data: 'casResponse',
-            className: 'data-table-header',
-            index: 8,
-            render: function (data) {
-                return formatDate(data);
-            }
-        };
-    }
+
    
 
     function formatDate(data) {
@@ -231,4 +173,21 @@ $(function () {
         let table = $('#ApplicationPaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
+
+    function getStatusText(data) {
+        switch (data) {
+            case 1:
+                return "Created";
+            case 2:
+                return "Submitted";
+            case 3:
+                return "Approved";
+            case 4:
+                return "Declined";
+            case 5:
+                return "Awaiting Approval"
+            default:
+                return "Created";
+        }
+    }
 });
