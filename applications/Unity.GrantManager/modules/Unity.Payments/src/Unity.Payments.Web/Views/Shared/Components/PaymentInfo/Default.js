@@ -57,11 +57,11 @@ $(function () {
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'select_batchpayment_application');
+        selectApplication(type, indexes, 'select_application_payment');
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'deselect_batchpayment_application');
+        selectApplication(type, indexes, 'deselect_application_payment');
     });
 
     function selectApplication(type, indexes, action) {
@@ -86,20 +86,20 @@ $(function () {
 
     function getColumns() {
         return [
-            getPaymentIdColumn(),
-            getAmountColumn(),
-            getStatusColumn(),
-            getRequestedonColumn(),
-            getUpdatedOnColumn(),
-            getPaidOnColumn(),
-            getDescriptionColumn(),
-            getCASResponseColumn(),
+            getApplicationPaymentIdColumn(),
+            getApplicationPaymentAmountColumn(),
+            getApplicationPaymentStatusColumn(),
+            getApplicationPaymentRequestedonColumn(),
+            getApplicationPaymentUpdatedOnColumn(),
+            getApplicationPaymentPaidOnColumn(),
+            geApplicationPaymentDescriptionColumn(),
+            getApplicationPaymentCASResponseColumn(),
         ]
     }
 
-    function getPaymentIdColumn() {
+    function getApplicationPaymentIdColumn() {
         return {
-            title: l('ApplicationPaymentListTable:PaymentID'),
+            title: l('PaymentInfoView:ApplicationPaymentListTable.PaymentID'),
             name: 'id',
             data: 'id',
             className: 'data-table-header',
@@ -108,9 +108,9 @@ $(function () {
     }
    
 
-    function getAmountColumn() {
+    function getApplicationPaymentAmountColumn() {
         return {
-            title: l('ApplicationPaymentListTable:Amount'),
+            title: l('PaymentInfoView:ApplicationPaymentListTable.Amount'),
             name: 'amount',
             data: 'amount',
             className: 'data-table-header',
@@ -120,9 +120,9 @@ $(function () {
 
 
 
-    function getStatusColumn() {
+    function getApplicationPaymentStatusColumn() {
         return {
-            title: l('ApplicationPaymentListTable:Status'),
+            title: l('PaymentInfoView:ApplicationPaymentListTable.Status'),
             name: 'status',
             data: 'status',
             className: 'data-table-header',
@@ -146,18 +146,18 @@ $(function () {
         };
     }
 
-    function getDescriptionColumn() {
+    function geApplicationPaymentDescriptionColumn() {
         return {
-            title: l('ApplicationPaymentListTable:Description'),
+            title: l('PaymentInfoView:ApplicationPaymentListTable.Description'),
             name: 'description',
             data: 'description',
             className: 'data-table-header',
             index: 4,
         };
     }
-    function getRequestedonColumn() {
+    function getApplicationPaymentRequestedonColumn() {
         return {
-            title: l('ApplicationPaymentListTable:RequestedOn'),
+            title: l('PaymentInfoView:ApplicationPaymentListTable.RequestedOn'),
             name: 'requestedOn',
             data: 'creationTime',
             className: 'data-table-header',
@@ -167,9 +167,9 @@ $(function () {
             }
         };
     }
-    function getUpdatedOnColumn() {
+    function getApplicationPaymentUpdatedOnColumn() {
         return {
-            title: l('ApplicationPaymentListTable:UpdatedOn'),
+            title: l('PaymentInfoView:ApplicationPaymentListTable.UpdatedOn'),
             name: 'updatedOn',
             data: 'lastModificationTime',
             className: 'data-table-header',
@@ -179,9 +179,9 @@ $(function () {
             }
         };
     }
-    function getPaidOnColumn() {
+    function getApplicationPaymentPaidOnColumn() {
         return {
-            title: l('ApplicationPaymentListTable:PaidOn'),
+            title: l('PaymentInfoView:ApplicationPaymentListTable.PaidOn'),
             name: 'paidOn',
             data: 'paidOn',
             className: 'data-table-header',
@@ -191,9 +191,9 @@ $(function () {
             }
         };
     }
-    function getCASResponseColumn() {
+    function getApplicationPaymentCASResponseColumn() {
         return {
-            title: l('ApplicationPaymentListTable:CASResponse'),
+            title: l('PaymentInfoView:ApplicationPaymentListTable.CASResponse'),
             name: 'cASResponse',
             data: 'casResponse',
             className: 'data-table-header',

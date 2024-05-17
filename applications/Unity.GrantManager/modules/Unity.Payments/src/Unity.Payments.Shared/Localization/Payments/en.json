@@ -67,7 +67,16 @@
     "PaymentInfoView:PaymentInfo.TotalPaid": "Total Paid",
     "PaymentInfoView:PaymentInfo.RemainingAmount": "Remaining Amount",
 
-    "PaymentInfoView:PaymentInfoTableTitle": "Payment List"
+    "PaymentInfoView:PaymentInfoTableTitle": "Payment List",
+    "PaymentInfoView:ApplicationPaymentListTable.PaymentID": "Payment ID",
+    "PaymentInfoView:ApplicationPaymentListTable.Amount": "Amount",
+    "PaymentInfoView:ApplicationPaymentListTable.Status": "Status",
+    "PaymentInfoView:ApplicationPaymentListTable.Description": "Description",
+    "PaymentInfoView:ApplicationPaymentListTable.RequestedOn": "Requested On",
+    "PaymentInfoView:ApplicationPaymentListTable.UpdatedOn": "Updated On",
+    "PaymentInfoView:ApplicationPaymentListTable.PaidOn": "Paid On",
+    "PaymentInfoView:ApplicationPaymentListTable.CASResponse": "CAS Response"
+
 
   }
 }
