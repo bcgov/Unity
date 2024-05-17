@@ -73,30 +73,34 @@ $(function () {
 
         let accordionHTML = '';
         let currentSectionItem = null;
-
+        let sectionNumber = 1;
+        let questionNumber = 1;
         sortedItems.forEach(item => {
             if (item.classList.contains('section-item')) {
                 if (currentSectionItem) {
                     accordionHTML += '</div></div></div>'; 
+                    sectionNumber++;
                 }
                 accordionHTML += `
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="panel-${hashCode(item.innerText)}">
                         <button class="accordion-button preview-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="collapse-${hashCode(item.innerText)}">
-                            ${item.innerText}
+                            ${sectionNumber}.  ${item.dataset.label}
                         </button>
                     </h2>
                     <div id="collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item.innerText)}">
                         <div class="accordion-body">
                             <div class="list-group col">`;
-                currentSectionItem = item;
+                currentSectionItem = item;                
+                questionNumber = 1;
             } else {
                 accordionHTML += `
                 <div class="list-group-item row">
                     <div class="col">
-                        ${item.innerText}
+                        ${sectionNumber}.${questionNumber}  ${item.innerText}
                     </div>
                 </div>`;
+                questionNumber++;
             }
         });
 
