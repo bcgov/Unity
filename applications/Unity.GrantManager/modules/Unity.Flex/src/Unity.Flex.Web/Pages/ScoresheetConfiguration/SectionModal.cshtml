@@ -27,7 +27,10 @@
         <abp-modal-footer>
             <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
-            <button type="button" class="btn btn-danger" onclick="deleteSection()">Delete</button>
+            @if (!Model.Section.ActionType.StartsWith("Add"))
+            {
+                <button type="button" class="btn btn-danger" onclick="deleteSection()">Delete</button>
+            }
         </abp-modal-footer>
     </abp-modal>
 </form>
