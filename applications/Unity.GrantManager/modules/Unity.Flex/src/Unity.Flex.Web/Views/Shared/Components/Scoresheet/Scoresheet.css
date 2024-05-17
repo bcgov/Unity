@@ -22,4 +22,18 @@
     filter: grayscale(1) invert(0); 
 }
 
+.accordion-button .question-info {
+    margin-right: 20px; 
+}
+
+.accordion-button .question-info .total-questions {
+    font-size: 0.75rem; 
+}
+
+.accordion-button .text-end {
+    margin-right: 1rem; 
+}
+
+
+
 

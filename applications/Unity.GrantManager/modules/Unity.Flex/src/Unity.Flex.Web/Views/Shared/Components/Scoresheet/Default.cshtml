@@ -14,11 +14,15 @@
 <div class="accordion" id="scoresheet-accordion">
     @foreach (var scoresheet in Model.Scoresheets)
     {
-        
+        var totalQuestions = scoresheet.Sections.SelectMany(sec => sec.Fields).Count();
         <div class="accordion-item">
             <h2 class="accordion-header" id="heading-@scoresheet.Id">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="true" aria-controls="collapse-@scoresheet.Id">
-                    @scoresheet.Name
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="false" aria-controls="collapse-@scoresheet.Id">
+                    <span class="flex-grow-1 text-start"><b>@scoresheet.Name</b></span>
+                    <div class="text-end d-flex flex-column align-items-center question-info">
+                        <div class="total-questions"><b>Questions</b></div>
+                        <div class="total-questions">@totalQuestions</div>
+                    </div>
                 </button>
             </h2>
             <div id="collapse-@scoresheet.Id" class="accordion-collapse collapse" data-scoresheet="@scoresheet.Id" aria-labelledby="heading-@scoresheet.Id" data-bs-parent="#scoresheet-accordion">
