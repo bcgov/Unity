@@ -23,7 +23,7 @@ public class FlexDbContext(DbContextOptions<FlexDbContext> options) : AbpDbConte
     public DbSet<ScoresheetInstance> ScoresheetInstances { get; set; }
     public DbSet<ScoresheetSection> ScoresheetSections { get; set; }
     public DbSet<Question> Questions { get; set; }
-    public DbSet<Answer> Answers { get; set; }
+    public DbSet<Answer> Answers { get; set; }    
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -2,14 +2,10 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
-using Unity.Flex.Worksheets;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Validation;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Unity.Flex.Scoresheets
-{
+{ 
     public class ScoresheetAppService : FlexAppService, IScoresheetAppService
     {
         private readonly IScoresheetRepository _scoresheetRepository;
@@ -18,19 +14,32 @@ namespace Unity.Flex.Scoresheets
 
         private readonly static object _sectionLockObject = new();
         private readonly static object _questionLockObject = new();
+
         public ScoresheetAppService(IScoresheetRepository scoresheetRepository, IScoresheetSectionRepository sectionRepository, IQuestionRepository questionRepository)
         {
             _scoresheetRepository = scoresheetRepository;
             _sectionRepository = sectionRepository;
             _questionRepository = questionRepository;
         }
+
+        public async Task<List<ScoresheetDto>> GetListAsync()
+        {
+            var result = await _scoresheetRepository.GetListWithChildrenAsync();
+            return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
+        }
+
+        public virtual async Task<ScoresheetDto> GetAsync(Guid id)
+        {
+            return ObjectMapper.Map<Scoresheet, ScoresheetDto>(await _scoresheetRepository.GetAsync(id));
+        }
+
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
             var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Name));
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
-        public virtual Task<QuestionDto> CreateQuestionAsync(CreateQuestionDto dto)
+        public virtual Task<QuestionDto> CreateQuestionAsync(Guid id, CreateQuestionDto dto)
         {
             lock (_questionLockObject)
             {
@@ -42,7 +51,7 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-        public virtual Task<ScoresheetSectionDto> CreateSectionAsync(CreateSectionDto dto)
+        public virtual Task<ScoresheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto)
         {
             lock (_sectionLockObject)
             {
@@ -53,48 +62,16 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-        public async Task<List<ScoresheetDto>> GetAllAsync()
-        {
-            var result = await _scoresheetRepository.GetListWithChildrenAsync();
-            return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
-        }
-
-        public virtual async Task<ScoresheetDto> GetAsync(Guid scoresheetId)
-        {
-            return ObjectMapper.Map<Scoresheet, ScoresheetDto>(await _scoresheetRepository.GetAsync(scoresheetId));
-        }
-
-        public virtual async Task<QuestionDto> GetQuestionAsync(Guid questionId)
-        {
-            return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.GetAsync(questionId));
-        }
-
-        public virtual async Task<ScoresheetSectionDto> GetSectionAsync(Guid sectionId)
-        {
-            return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(await _sectionRepository.GetAsync(sectionId));
-        }
-
-        public async Task<ScoresheetSectionDto> EditSectionAsync(EditSectionDto dto)
-        {
-            var section = await _sectionRepository.GetAsync(dto.SectionId) ?? throw new AbpValidationException("Missing SectionId:" + dto.SectionId);
-            section.Name = dto.Name;
-            return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(await _sectionRepository.UpdateAsync(section));
-        }
-
-        public async Task<ScoresheetDto> EditAsync(EditScoresheetDto dto)
+        public async Task<ScoresheetDto> UpdateAsync(Guid id, EditScoresheetDto dto)
         {
             var scoresheet = await _scoresheetRepository.GetAsync(dto.ScoresheetId) ?? throw new AbpValidationException("Missing ScoresheetId:" + dto.ScoresheetId);
             scoresheet.Name = dto.Name;
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(await _scoresheetRepository.UpdateAsync(scoresheet));
         }
 
-        public async Task<QuestionDto> EditQuestionAsync(EditQuestionDto dto)
+        public async Task DeleteAsync(Guid id)
         {
-            var question = await _questionRepository.GetAsync(dto.QuestionId) ?? throw new AbpValidationException("Missing QuestionId:" + dto.QuestionId);
-            question.Name = dto.Name;
-            question.Label = dto.Label;
-            question.Description = dto.Description;
-            return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.UpdateAsync(question));
+            await _scoresheetRepository.DeleteAsync(id);
         }
 
         public async Task SaveOrder(List<ScoresheetItemDto> dto)
@@ -129,22 +106,6 @@ namespace Unity.Flex.Scoresheets
                     throw new AbpValidationException("Invalid type!");
                 }
             }
-                
-        }
-
-        public async Task DeleteAsync(Guid scoresheetId)
-        {
-            await _scoresheetRepository.DeleteAsync(scoresheetId);
-        }
-
-        public async Task DeleteSectionAsync(Guid sectionId)
-        {
-            await _sectionRepository.DeleteAsync(sectionId);
-        }
-
-        public async Task DeleteQuestionAsync(Guid questionId)
-        {
-            await _questionRepository.DeleteAsync(questionId);
         }
     }
 }

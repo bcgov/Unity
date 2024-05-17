@@ -24,7 +24,7 @@ public class ScoresheetViewComponent : AbpViewComponent
 
     public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
     {
-        var scoresheets = await _scoresheetService.GetAllAsync();
+        var scoresheets = await _scoresheetService.GetListAsync();
         return View(new ScoresheetViewModel() { Scoresheets = scoresheets });
     }
 }

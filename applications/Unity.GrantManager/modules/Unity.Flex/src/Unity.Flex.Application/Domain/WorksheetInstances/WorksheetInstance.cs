@@ -11,7 +11,7 @@ namespace Unity.Flex.Domain.WorksheetInstances
     public class WorksheetInstance : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         [Column(TypeName = "jsonb")]
-        public virtual string Value { get; private set; } = "{}"
+        public virtual string CurrentValue { get; private set; } = "{}";
 
         public Guid WorksheetId { get; set; }
 
@@ -19,7 +19,7 @@ namespace Unity.Flex.Domain.WorksheetInstances
         public virtual Guid CorrelationId { get; private set; }
         public virtual string CorrelationProvider { get; private set; } = string.Empty;
 
-        public virtual string CorrelationAnchor { get; private set; } = string.Empty;
+        public virtual string UiAnchor { get; private set; } = string.Empty;
 
         public Guid? TenantId { get; set; }
 
@@ -39,7 +39,7 @@ namespace Unity.Flex.Domain.WorksheetInstances
             Id = id;
             CorrelationId = correlationId;
             CorrelationProvider = correlationProvider;
-            CorrelationAnchor = correlationAnchor;
+            UiAnchor = correlationAnchor;
             WorksheetId = worksheetId;
         }
 
@@ -52,7 +52,7 @@ namespace Unity.Flex.Domain.WorksheetInstances
         public WorksheetInstance UpdateValue()
         {
             // this needs to dig and get the sheet + sections + field values
-            Value = JsonSerializer.Serialize(this);
+            CurrentValue = JsonSerializer.Serialize(this);
             return this;
         }
     }

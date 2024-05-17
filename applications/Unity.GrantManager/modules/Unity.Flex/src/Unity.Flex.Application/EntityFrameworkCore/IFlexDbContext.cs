@@ -22,7 +22,7 @@ public interface IFlexDbContext : IEfCoreDbContext
     DbSet<Scoresheet> Scoresheets { get; set; }
     DbSet<ScoresheetInstance> ScoresheetInstances { get; set; }
     DbSet<ScoresheetSection> ScoresheetSections { get; set; }
-    DbSet<ScoreField> ScoreFields { get; set; }
-    DbSet<ScoreFieldValue> ScoreFieldsValues { get; set; }
+    DbSet<Question> Questions { get; set; }
+    DbSet<Answer> Answers { get; set; }
 }
 

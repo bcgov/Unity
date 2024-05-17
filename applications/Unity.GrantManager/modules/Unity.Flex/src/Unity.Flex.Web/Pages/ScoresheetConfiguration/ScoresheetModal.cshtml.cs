@@ -68,7 +68,7 @@ public class ScoresheetModalModel : FlexPageModel
 
     private async Task EditScoresheet()
     {
-        _ = await _scoresheetAppService.EditAsync(new EditScoresheetDto() { Name = Scoresheet.Name, ScoresheetId = Scoresheet.Id});
+        _ = await _scoresheetAppService.UpdateAsync(Scoresheet.Id, new EditScoresheetDto() { Name = Scoresheet.Name, ScoresheetId = Scoresheet.Id});
     }
 
     private async Task DeleteScoresheet()

@@ -16,7 +16,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
             return await dbSet.IncludeDetails()
                 .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
                         && s.CorrelationProvider == correlationProvider
-                        && s.CorrelationAnchor == correlationAnchor);
+                        && s.UiAnchor == correlationAnchor);
         }
     }
 }

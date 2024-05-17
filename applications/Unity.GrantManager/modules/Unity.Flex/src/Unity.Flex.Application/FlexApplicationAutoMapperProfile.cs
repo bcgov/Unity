@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;

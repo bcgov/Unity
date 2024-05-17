@@ -9,10 +9,12 @@ namespace Unity.Flex.Web.Pages.ScoresheetConfiguration;
 
 public class QuestionModalModel : FlexPageModel
 {
+    private readonly IQuestionAppService _questionAppService;
     private readonly IScoresheetAppService _scoresheetAppService;
 
-    public QuestionModalModel(IScoresheetAppService scoresheetAppService)
+    public QuestionModalModel(IQuestionAppService questionAppService, IScoresheetAppService scoresheetAppService)
     {
+        _questionAppService = questionAppService;
         _scoresheetAppService = scoresheetAppService;
     }
 
@@ -41,7 +43,7 @@ public class QuestionModalModel : FlexPageModel
         Question.ActionType = actionType;
         if (Question.ActionType.Contains("Edit"))
         {
-            QuestionDto question = await _scoresheetAppService.GetQuestionAsync(questionId);
+            QuestionDto question = await _questionAppService.GetAsync(questionId);
             Question.Name = question.Name ?? "";
             Question.Label = question.Label ?? "";
             Question.Description = question.Description ?? "";
@@ -75,16 +77,16 @@ public class QuestionModalModel : FlexPageModel
 
     private async Task CreateQuestion()
     {
-        _ = await _scoresheetAppService.CreateQuestionAsync(new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, ScoresheetId = Question.ScoresheetId});
+        _ = await _scoresheetAppService.CreateQuestionAsync(Question.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, ScoresheetId = Question.ScoresheetId });
     }
 
     private async Task EditQuestion()
     {
-        _ = await _scoresheetAppService.EditQuestionAsync(new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionId = Question.Id });
+        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionId = Question.Id });
     }
 
     private async Task DeleteQuestion()
     {
-        await _scoresheetAppService.DeleteQuestionAsync(Question.Id);
+        await _questionAppService.DeleteAsync(Question.Id);
     }
 }

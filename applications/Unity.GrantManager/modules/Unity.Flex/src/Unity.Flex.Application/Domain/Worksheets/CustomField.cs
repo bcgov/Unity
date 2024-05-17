@@ -14,7 +14,7 @@ namespace Unity.Flex.Domain.Worksheets
         public virtual string Label { get; private set; } = string.Empty;
         public virtual CustomFieldType Type { get; private set; } = CustomFieldType.Undefined;
         public virtual uint Order { get; private set; }
-        public virtual bool Enabled { get; private set; } = true;        
+        public virtual bool Enabled { get; private set; } = true;
 
         [Column(TypeName = "jsonb")]
         public virtual string Definition { get; private set; } = "{}";

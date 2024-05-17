@@ -10,10 +10,12 @@ namespace Unity.Flex.Web.Pages.ScoresheetConfiguration;
 public class SectionModalModel : FlexPageModel
 {
     private readonly IScoresheetAppService _scoresheetAppService;
+    private readonly ISectionAppService _sectionAppService;
 
-    public SectionModalModel(IScoresheetAppService scoresheetAppService)
+    public SectionModalModel(IScoresheetAppService scoresheetAppService, ISectionAppService sectionAppService)
     {
         _scoresheetAppService = scoresheetAppService;
+        _sectionAppService = sectionAppService;
     }
 
     [BindProperty]
@@ -36,7 +38,7 @@ public class SectionModalModel : FlexPageModel
         Section.ActionType = actionType;
         if (Section.ActionType.Contains("Edit"))
         {
-            ScoresheetSectionDto section = await _scoresheetAppService.GetSectionAsync(sectionId);
+            ScoresheetSectionDto section = await _sectionAppService.GetAsync(sectionId);
             Section.Name = section.Name ?? "";
             Section.Order = section.Order;
         }
@@ -67,16 +69,16 @@ public class SectionModalModel : FlexPageModel
 
     private async Task CreateSection()
     {
-        _ = await _scoresheetAppService.CreateSectionAsync(new CreateSectionDto() { Name = Section.Name, ScoresheetId = Section.ScoresheetId });
+        _ = await _scoresheetAppService.CreateSectionAsync(Section.ScoresheetId, new CreateSectionDto() { Name = Section.Name, ScoresheetId = Section.ScoresheetId });
     }
 
     private async Task EditSection()
     {
-        _ = await _scoresheetAppService.EditSectionAsync(new EditSectionDto() { Name = Section.Name, SectionId = Section.SectionId });
+        _ = await _sectionAppService.UpdateAsync(Section.SectionId, new EditSectionDto() { Name = Section.Name, SectionId = Section.SectionId });
     }
 
     private async Task DeleteSection()
     {
-        await _scoresheetAppService.DeleteSectionAsync(Section.SectionId);
+        await _sectionAppService.DeleteAsync(Section.SectionId);
     }
 }
