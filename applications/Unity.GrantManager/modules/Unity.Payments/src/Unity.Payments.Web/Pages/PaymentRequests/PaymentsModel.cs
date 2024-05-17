@@ -16,7 +16,7 @@ namespace Unity.Payments.Web.Pages.Payments
         [Required(ErrorMessage = "This field is required.")]
         [DisplayName("ApplicationPaymentRequest:InvoiceNumber")]
         public string InvoiceNumber { get; set; } = string.Empty;
-        public Guid ApplicationId { get; set; }
+        public Guid CorrelationId { get; set; }
         [Required(ErrorMessage = "This field is required.")]
         [DisplayName("ApplicationPaymentRequest:SiteNumber")]
         public Guid SiteId { get; set; }
@@ -24,7 +24,10 @@ namespace Unity.Payments.Web.Pages.Payments
         public string? ApplicantName { get; set; }
         public decimal PaymentThreshold { get; set; }
         public List<SelectListItem> SiteList { get; set; } = new List<SelectListItem>{};
+        public List<string> ErrorList { get; set; } = new List<string>{};
+        public bool DisableFields  { get; set; } = false;
         public string? ContractNumber { get; set; }
         public string? SupplierNumber { get; set; }
+        public decimal RemainingAmount { get; set; }
     }
 }
