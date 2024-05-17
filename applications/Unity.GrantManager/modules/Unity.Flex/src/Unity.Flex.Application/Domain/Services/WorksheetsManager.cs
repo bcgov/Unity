@@ -25,7 +25,7 @@ namespace Unity.Flex.Domain.Services
             var worksheet = await worksheetRepository.GetByUiAnchorAsync(eventData.UiAnchor, true);
 
             if (worksheetInstance == null)
-            {                
+            {
                 if (worksheet == null) return;
 
                 var newInstance = new WorksheetInstance(Guid.NewGuid(),
@@ -37,7 +37,10 @@ namespace Unity.Flex.Domain.Services
                 foreach (var field in fields)
                 {
                     var customField = FindCustomFieldByName(worksheet, field.FieldName);
-                    newInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type));
+                    if (customField != null && field.Value != null)
+                    {
+                        newInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type));
+                    }
                 }
 
                 await worksheetInstanceRepository.InsertAsync(newInstance);
@@ -48,7 +51,10 @@ namespace Unity.Flex.Domain.Services
                 {
                     var customField = FindCustomFieldByName(worksheet, field.FieldName);
                     var valueField = worksheetInstance.Values.FirstOrDefault(s => s.CustomFieldId == field.FieldId);
-                    valueField?.SetValue(ValueConverter.Convert(field.Value, customField.Type));
+                    if (customField != null && field.Value != null)
+                    {
+                        valueField?.SetValue(ValueConverter.Convert(field.Value, customField.Type));
+                    }
                 }
             }
         }
