@@ -30,6 +30,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.css" />
+    <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.css" />
+    <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.js" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Unity.Flex.Application.Contracts\Unity.Flex.Application.Contracts.csproj" />
   </ItemGroup>
 
