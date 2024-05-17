@@ -71,8 +71,9 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
                 foreach (var intake in intakeR)
                 {
                     List<string> categoryList = [.. intakeR.Where(s => !string.IsNullOrWhiteSpace(s.Category) && s.IntakeId == intake.IntakeId)
+                        .Select(s => s.Category)
                         .Distinct()
-                        .OrderBy(c => c.Category).Select(s => s.Category)];
+                        .OrderBy(c => c)];
 
                     DashboardIntakes.Add(new()
                     {
