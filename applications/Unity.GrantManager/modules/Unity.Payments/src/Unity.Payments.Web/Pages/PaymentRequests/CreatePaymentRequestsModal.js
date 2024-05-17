@@ -23,17 +23,16 @@ function closePaymentModal() {
 function checkMaxValue(applicationId, input, amountRemaining) {
     let enteredValue = parseFloat(input.value.replace(/,/g, ""));
     let remainingErrorId = "#column_" + applicationId + "_remaining_error";
-    if(amountRemaining < enteredValue) {
+    if (amountRemaining < enteredValue) {
         $(remainingErrorId).css("display", "block");
     } else {
         $(remainingErrorId).css("display", "none");
     }
 }
 
-function submitPayments(){
-    console.log('here');
+function submitPayments() {
     // check for error class divs
-    var validationFailed = $(".payment-error-column:visible").length > 0;
+    let validationFailed = $(".payment-error-column:visible").length > 0;
 
     if (validationFailed) {
         abp.notify.error(

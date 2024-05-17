@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Unity.GrantManager.Attributes;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
@@ -17,7 +16,7 @@ namespace Unity.Payments.Web.Pages.Payments
         [Required(ErrorMessage = "This field is required.")]
         [DisplayName("ApplicationPaymentRequest:InvoiceNumber")]
         public string InvoiceNumber { get; set; } = string.Empty;
-        public Guid ApplicationId { get; set; }
+        public Guid CorrelationId { get; set; }
         [Required(ErrorMessage = "This field is required.")]
         [DisplayName("ApplicationPaymentRequest:SiteNumber")]
         public Guid SiteId { get; set; }

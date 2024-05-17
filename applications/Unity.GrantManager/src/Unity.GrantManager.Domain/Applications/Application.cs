@@ -14,18 +14,20 @@ namespace Unity.GrantManager.Applications;
 // NOTE: See https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#required-navigation-properties
 
 public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
-{   
+{
     public Guid ApplicationFormId { get; set; }
 
     public virtual ApplicationForm ApplicationForm
     {
         set => _applicationForm = value;
-        get => _applicationForm ?? new();
+        get => _applicationForm
+            ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Applicant));
     }
+
     private ApplicationForm? _applicationForm;
 
     public Guid ApplicantId { get; set; }
-    
+
     public virtual Applicant Applicant
     {
         set => _applicant = value;
@@ -38,7 +40,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public virtual ApplicantAgent? ApplicantAgent { get; set; }
 
     public Guid ApplicationStatusId { get; set; }
-    
+
     public virtual ApplicationStatus ApplicationStatus
     {
         set => _applicationStatus = value;
@@ -158,7 +160,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     }
 
     public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
-    {        
+    {
         DueDiligenceStatus = dueDiligenceStatus;
         TotalProjectBudget = totalProjectBudget ?? 0;
         RecommendedAmount = recommendedAmount ?? 0;

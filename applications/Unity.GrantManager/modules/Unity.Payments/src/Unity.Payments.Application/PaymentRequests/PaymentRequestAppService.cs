@@ -8,9 +8,6 @@ using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
-using Unity.Payments.Repositories;
-using System.Linq;
-using NUglify.Helpers;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -79,6 +76,17 @@ namespace Unity.Payments.PaymentRequests
             var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
         }
+
+        public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
+        {
+            return await _paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);          
+        }
+
+        protected virtual string GetCurrentRequesterName()
+        {
+            return $"{_currentUser.Name} {_currentUser.SurName}";
+        }
+
         protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
             var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
@@ -89,26 +97,6 @@ namespace Unity.Payments.PaymentRequests
                 return paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
             }
             return PaymentSharedConsts.DefaultThresholdAmount;
-        }
-
-        public async Task<decimal> GetTotalPaymentRequestAmmountByApplication(Guid applicationId)
-        {
-            IQueryable<PaymentRequest> paymentRequestQueryable = await _paymentRequestsRepository.GetQueryableAsync();
-
-            decimal applicationPaymentRequestsTotal = paymentRequestQueryable
-                .Where(p => p.CorrelationId.Equals(applicationId))
-                // Need to define a where clause on the Status
-                // Don't include declined - right now we don't know how to set status
-                .GroupBy(p => p.CorrelationId)
-                .Select(p => p.Sum(q => q.Amount))
-                .First();
-
-            return applicationPaymentRequestsTotal;
-        }
-
-        protected virtual string GetCurrentRequesterName()
-        {
-            return $"{_currentUser.Name} {_currentUser.SurName}";
         }
     }
 }

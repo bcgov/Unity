@@ -48,7 +48,8 @@ namespace Unity.Payments.Web.Pages.Payments
             {
                 PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
                 HasPaymentConfiguration = true;
-            } else
+            }
+            else
             {
                 DisableSubmit = true;
                 HasPaymentConfiguration = false;
@@ -63,7 +64,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
                 PaymentsModel request = new()
                 {
-                    ApplicationId = application.Id,
+                    CorrelationId = application.Id,
                     ApplicantName = application.Applicant.ApplicantName == "" ? "Applicant Name" : application.Applicant.ApplicantName,
                     Amount = remainingAmount,
                     Description = "",
@@ -95,7 +96,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
                 request.ErrorList = GetErrorlist(supplier, application, remainingAmount);
 
-                if(request.ErrorList != null && request.ErrorList.Count > 0)
+                if (request.ErrorList != null && request.ErrorList.Count > 0)
                 {
                     request.DisableFields = true;
                 }
@@ -105,7 +106,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
         }
 
-        protected virtual List<string> GetErrorlist(SupplierDto? supplier, GrantApplicationDto application, decimal remainingAmount)
+        private static List<string> GetErrorlist(SupplierDto? supplier, GrantApplicationDto application, decimal remainingAmount)
         {
             bool missingFields = false;
             List<string> errorList = [];
@@ -122,7 +123,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 missingFields = true;
             }
 
-            if(remainingAmount <= 0)
+            if (remainingAmount <= 0)
             {
                 errorList.Add("There is no remaining amount for this application.");
             }
@@ -135,7 +136,6 @@ namespace Unity.Payments.Web.Pages.Payments
             if (application.StatusCode != GrantApplicationState.GRANT_APPROVED)
             {
                 errorList.Add("The selected Application is not Approved. To continue please remove the item from the list.");
-
             }
 
             if (!application.ApplicationForm.Payable)
@@ -145,16 +145,19 @@ namespace Unity.Payments.Web.Pages.Payments
             return errorList;
         }
 
-        protected virtual async Task<decimal> GetRemainingAmountAllowedByApplicationAsync(GrantApplicationDto application) {
+        private async Task<decimal> GetRemainingAmountAllowedByApplicationAsync(GrantApplicationDto application)
+        {
             decimal remainingAmount = 0;
             // Calculate the "Future paid amount" and if it is more than Approved Amount, the system shall:
             // Highlight the record
             // Show error message: This payment exceeds the Approved Amount.
             // Future paid amount: Total Pending Amount + Total Paid amount + Amount that is in the current payment request
-            if(application.ApprovedAmount > 0) {
+            if (application.ApprovedAmount > 0)
+            {
                 decimal approvedAmmount = application.ApprovedAmount;
-                decimal totalFutureRequested = await _paymentRequestService.GetTotalPaymentRequestAmmountByApplication(application.Id);
-                if(approvedAmmount > totalFutureRequested) {
+                decimal totalFutureRequested = await _paymentRequestService.GetTotalPaymentRequestAmountByCorrelationIdAsync(application.Id);
+                if (approvedAmmount > totalFutureRequested)
+                {
                     remainingAmount = approvedAmmount - totalFutureRequested;
                 }
             }
@@ -162,7 +165,7 @@ namespace Unity.Payments.Web.Pages.Payments
             return remainingAmount;
         }
 
-        protected virtual async Task<SupplierDto?> GetSupplierByApplicationAync(GrantApplicationDto application)
+        private async Task<SupplierDto?> GetSupplierByApplicationAync(GrantApplicationDto application)
         {
             return await _iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
             {
@@ -194,7 +197,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 payments.Add(new CreatePaymentRequestDto()
                 {
                     Amount = payment.Amount,
-                    CorrelationId = payment.ApplicationId,
+                    CorrelationId = payment.CorrelationId,
                     SiteId = payment.SiteId,
                     Description = payment.Description,
                     InvoiceNumber = payment.InvoiceNumber,
