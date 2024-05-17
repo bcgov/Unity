@@ -76,6 +76,17 @@ namespace Unity.Payments.PaymentRequests
             var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
         }
+
+        public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
+        {
+            return await _paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);          
+        }
+
+        protected virtual string GetCurrentRequesterName()
+        {
+            return $"{_currentUser.Name} {_currentUser.SurName}";
+        }
+
         protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
             var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
@@ -86,11 +97,6 @@ namespace Unity.Payments.PaymentRequests
                 return paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
             }
             return PaymentSharedConsts.DefaultThresholdAmount;
-        }
-
-        protected virtual string GetCurrentRequesterName()
-        {
-            return $"{_currentUser.Name} {_currentUser.SurName}";
         }
     }
 }

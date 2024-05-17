@@ -14,6 +14,20 @@ namespace Unity.Payments.Repositories
         {
         }
 
+        public async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
+        {
+            var dbSet = await GetDbSetAsync();
+            decimal applicationPaymentRequestsTotal = dbSet
+              .Where(p => p.CorrelationId.Equals(correlationId))
+              // Need to define a where clause on the Status
+              // Don't include declined - right now we don't know how to set status
+              .GroupBy(p => p.CorrelationId)
+              .Select(p => p.Sum(q => q.Amount))
+              .First();
+
+            return applicationPaymentRequestsTotal;
+        }
+
         public override async Task<IQueryable<PaymentRequest>> WithDetailsAsync()
         {
             // Uses the extension method defined above

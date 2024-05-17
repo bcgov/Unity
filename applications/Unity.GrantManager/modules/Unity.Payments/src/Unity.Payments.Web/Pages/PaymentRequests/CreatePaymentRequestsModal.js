@@ -9,7 +9,7 @@ function removeApplicationPayment(applicationId) {
     }
     if (!$('div.single-payment').length) {
         $('#no-payment-msg').css("display", "block");
-        $("#payment-modal").find('button[type="submit"]').prop("disabled", true);
+        $("#payment-modal").find('#btnSubmitPayment').prop("disabled", true);
     }
     else {
         $('#no-payment-msg').css("display", "none");
@@ -20,18 +20,29 @@ function closePaymentModal() {
     $('#payment-modal').modal('hide');
 }
 
-function checkMaxValue(applicationId, input) {
-    let maxValue = $('#PaymentThreshold').val();
-    let applicationCount = $('#ApplicationCount').val();
+function checkMaxValue(applicationId, input, amountRemaining) {
     let enteredValue = parseFloat(input.value.replace(/,/g, ""));
-    if (applicationCount > 1 && maxValue) {
-        let errorId = "#" + applicationId + "_maxerror";
-        if (enteredValue > maxValue) {
-            $(errorId).css("display", "block");
-        } else {
-            $(errorId).css("display", "none");
-        }
+    let remainingErrorId = "#column_" + applicationId + "_remaining_error";
+    if (amountRemaining < enteredValue) {
+        $(remainingErrorId).css("display", "block");
+    } else {
+        $(remainingErrorId).css("display", "none");
     }
 }
+
+function submitPayments() {
+    // check for error class divs
+    let validationFailed = $(".payment-error-column:visible").length > 0;
+
+    if (validationFailed) {
+        abp.notify.error(
+            '',
+            'There are payment requests that are in error please remove or fix them before submitting.'
+        );
+        return false;
+    } else {
+        $('#paymentform').submit();
+    }
+};
 
 
