@@ -11,7 +11,7 @@ namespace Unity.Flex.Domain.WorksheetInstances
     public class WorksheetInstance : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         [Column(TypeName = "jsonb")]
-        public virtual string Value { get; private set; } = "{}";
+        public virtual string Value { get; private set; } = "{}"
 
         public Guid WorksheetId { get; set; }
 
