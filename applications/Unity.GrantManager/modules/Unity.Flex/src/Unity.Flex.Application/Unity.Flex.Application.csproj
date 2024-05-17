@@ -18,9 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Domain\Services\" />
 		<Folder Include="Integration\" />
-		<Folder Include="Handlers\" />
 	</ItemGroup>
 
 	<ItemGroup>

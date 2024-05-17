@@ -350,3 +350,7 @@
 .fl-arrow-left:before {
     content: '\F0B0';
 }
+
+.fl-draggable:before {
+    content: '\E76F';
+}

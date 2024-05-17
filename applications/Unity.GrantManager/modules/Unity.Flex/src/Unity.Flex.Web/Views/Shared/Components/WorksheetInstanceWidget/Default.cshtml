@@ -1,0 +1,43 @@
+﻿@using Microsoft.AspNetCore.Authorization;
+@using Unity.Flex.Localization
+@using Microsoft.Extensions.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
+@using Unity.Flex.Worksheets
+
+@model WorksheetViewModel;
+
+@inject IStringLocalizer<FlexResource> L
+@inject IAuthorizationService AuthorizationService
+
+@if (Model.IsConfigured)
+{    
+    @foreach (var worksheetSection in Model.Sections)
+    {
+        <div class="@($"worksheet_section worksheet_section_{Model.UiAnchor}")">
+            <label class="@($"worksheet_section_label worksheet_section_label_{Model.UiAnchor}")">@worksheetSection.Name</label>
+
+            @foreach (var field in worksheetSection.Fields)
+            {
+                <div class="worksheet_field worksheet_field_@Model.UiAnchor">
+                    <label class="form-label">@field.Label</label>
+                    <input type="@field.Type.ConvertInputType()"
+                           label="@field.Label"                           
+                           value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
+                           class="form-control"
+                                                      
+                           min="@field.Definition?.ConvertDefinition(field.Type)?.Min"
+                           max="@field.Definition?.ConvertDefinition(field.Type)?.Max"                           
+                           
+                           minlength="@field.Definition?.ConvertDefinition(field.Type)?.MinLength"
+                           maxlength="@field.Definition?.ConvertDefinition(field.Type)?.MaxLength"
+
+                           id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                           name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                           onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
+                    <span class="text-danger field-validation-valid" data-valmsg-for="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")" data-valmsg-replace="true"></span>
+                </div>
+            }
+        </div>
+    }
+}

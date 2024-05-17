@@ -7,23 +7,27 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
+@using Unity.Modules.Shared.Correlation
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
+@using Volo.Abp.Features
 
 @model DetailsModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
+@inject IFeatureChecker FeatureChecker
+
 @{
-    PageLayout.Content.Title = L["Grants"].Value;    
+    PageLayout.Content.Title = L["Grants"].Value;
 }
 @section styles
-    {
+{
     <abp-style src="/libs/formiojs/formio.form.css" />
     <abp-style src="/Pages/GrantApplications/Details.css" />
 }
 @section scripts
-    {
+{
     <abp-script src="/Pages/GrantApplications/Details.js" />
     <abp-script src="/libs/formiojs/formio.form.js" />
     <abp-script src="/libs/jspdf/dist/jspdf.umd.js" />
@@ -69,7 +73,7 @@
                     <div class="container-fluid">
                         <abp-row>
                             <abp-column size="_12">
-                               <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
+                                <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
                                 @*TODO: Put FormIO handler here!*@
                                 <div id="formio"></div>
 
@@ -126,15 +130,15 @@
                 <abp-tab name="nav-organization-info" title="Applicant Info">
                     <div class="w-100 px-2" id="ApplicantInfoWidget">
                         @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId })
-                     </div>
-                 </abp-tab>
+                    </div>
+                </abp-tab>
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Approval Section ---------*@
                 @* <abp-tab name="nav-approval" title="Approval">
-                    <div style="text-align:center">
-                        <img src="/images/under-construction.png" alt="under-construction">
-                    </div>
+                <div style="text-align:center">
+                <img src="/images/under-construction.png" alt="under-construction">
+                </div>
                 </abp-tab> *@
                 @*-------- Approval Section END ---------*@
 
@@ -148,7 +152,7 @@
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
                 @* <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
                 </li> *@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
@@ -186,7 +190,7 @@
                         <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Scores</h6>
 
                         <div id="assessmentScoresWidgetArea">
-                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId})
+                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId })
                         </div>
 
                         <h6 class="fw-bold px-3 pt-4 pb-2">Scoring Attachments</h6>
@@ -266,7 +270,7 @@
                     </div>
                 </div>
                 @*------- Links Tab Section END ---------*@
-                
+
             </div>
 
         </abp-card>
