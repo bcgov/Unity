@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using Unity.Payments.Enums;
-using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.Payments.PaymentRequests
