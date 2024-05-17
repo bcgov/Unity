@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
@@ -9,6 +10,7 @@ namespace Unity.Flex.Domain.WorksheetInstances
 {
     public class WorksheetInstance : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
+        [Column(TypeName = "jsonb")]
         public virtual string Value { get; private set; } = "{}";
 
         public Guid WorksheetId { get; set; }
@@ -39,6 +41,12 @@ namespace Unity.Flex.Domain.WorksheetInstances
             CorrelationProvider = correlationProvider;
             CorrelationAnchor = correlationAnchor;
             WorksheetId = worksheetId;
+        }
+
+        public WorksheetInstance AddValue(Guid customFieldId, string definition, string currentValue)
+        {
+            Values.Add(new CustomFieldValue(Guid.NewGuid(), Id, customFieldId, currentValue));
+            return this;
         }
 
         public WorksheetInstance UpdateValue()

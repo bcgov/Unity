@@ -123,15 +123,6 @@
                     <div class="w-100 px-2" id="assessmentResultWidget">
                         @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId })
                     </div>
-
-                    @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-                    {
-                        <div class="w-100 px-2" id="assessmentMainView">
-                            @await Component.InvokeAsync("WorksheetInstanceWidget",
-                                     new { correlationId = Model.ApplicationId, correlationProvider = CorrelationConsts.Application, uiAnchor = "ProjectInfo" })
-                        </div>
-                    }
-
                 </abp-tab>
                 @*-------- Project Info Section END ---------*@
 

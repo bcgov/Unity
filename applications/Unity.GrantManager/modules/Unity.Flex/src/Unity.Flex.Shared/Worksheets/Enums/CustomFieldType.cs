@@ -1,4 +1,4 @@
-﻿namespace Unity.Flex.Enums
+﻿namespace Unity.Flex.Worksheets
 {
     public enum CustomFieldType
     {

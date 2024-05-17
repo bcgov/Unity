@@ -9,7 +9,7 @@ namespace Unity.Flex.WorksheetInstances
     public class WorksheetInstanceAppService(IWorksheetInstanceRepository worksheetInstanceRepository) : FlexAppService, IWorksheetInstanceAppService
     {
         public virtual async Task<WorksheetInstanceDto> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string uiAnchor)
-        {
+        {            
             return ObjectMapper.Map<WorksheetInstance?, WorksheetInstanceDto>(await worksheetInstanceRepository.GetByCorrelationAsync(correlationId, correlationProvider, uiAnchor, true));
         }
 

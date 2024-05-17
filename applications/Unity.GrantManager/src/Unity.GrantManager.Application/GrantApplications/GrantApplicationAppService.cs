@@ -26,6 +26,8 @@ using Volo.Abp.EventBus.Local;
 using Microsoft.EntityFrameworkCore;
 using Unity.Modules.Shared.Correlation;
 using Unity.GrantManager.Payments;
+using Unity.Flex.WorksheetInstances;
+using Unity.GrantManager.Flex;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -319,7 +321,16 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
-            await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+            {
+                CorrelationId = id,
+                CorrelationProvider = CorrelationConsts.Application,
+                UiAnchor = FlexConsts.ProjectInfoUiAnchor,
+                CustomFields = input.CustomFields
+            }); 
+
+            await _applicationRepository.UpdateAsync(application);
 
             return ObjectMapper.Map<Application, GrantApplicationDto>(application);
         }
@@ -328,7 +339,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             throw new EntityNotFoundException();
         }
     }
-    
+
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);

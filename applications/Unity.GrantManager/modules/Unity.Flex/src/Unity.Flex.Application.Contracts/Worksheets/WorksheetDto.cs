@@ -8,6 +8,7 @@ namespace Unity.Flex.Worksheets
     public class WorksheetDto : ExtensibleFullAuditedEntityDto<Guid>
     {
         public string Name { get; set; } = string.Empty;
+        public string UiAnchor { get; set; } = string.Empty;
         public virtual List<WorksheetSectionDto> Sections { get; set; } = [];
     }
 }

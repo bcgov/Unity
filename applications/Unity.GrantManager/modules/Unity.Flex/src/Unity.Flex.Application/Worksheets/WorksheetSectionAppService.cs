@@ -17,7 +17,7 @@ namespace Unity.Flex.Worksheets
 
         public async Task CreateCustomField(Guid id, CreateCustomFieldDto dto)
         {
-            var worksheet = await worksheetRepository.GetBySectionAsync(id) ?? throw new EntityNotFoundException();
+            var worksheet = await worksheetRepository.GetBySectionAsync(id, true) ?? throw new EntityNotFoundException();
             var section = worksheet.Sections.First(s => s.Id == id);
 
             section.AddField(new CustomField(Guid.NewGuid(), dto.Name, dto.Label, dto.Type));

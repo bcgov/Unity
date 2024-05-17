@@ -23,17 +23,21 @@ namespace Unity.Flex.Domain.Worksheets
         }
 
         public Worksheet(Guid id,
-        string name)
+        string name,
+        string uiAnchor)
         : base(id)
         {
             Id = id;
             Name = name;
+            UIAnchor = uiAnchor;
         }
 
         public Worksheet AddSection(WorksheetSection section)
         {
             if (Sections.Any(s => s.Name == section.Name))
                 throw new BusinessException("Cannot duplicate name");
+
+            section = section.SetOrder((uint)Sections.Count + 1);
 
             Sections.Add(section);
             return this;

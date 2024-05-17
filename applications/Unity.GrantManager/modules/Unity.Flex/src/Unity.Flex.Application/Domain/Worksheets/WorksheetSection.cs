@@ -10,7 +10,7 @@ namespace Unity.Flex.Domain.Worksheets
     public class WorksheetSection : FullAuditedEntity<Guid>, IMultiTenant
     {
         // Navigation
-        public Guid WorksheetId { get; set; }
+        public virtual Guid WorksheetId { get; set; }
         public virtual Worksheet Worksheet
         {
             set => _worksheet = value;
@@ -20,7 +20,9 @@ namespace Unity.Flex.Domain.Worksheets
         private Worksheet? _worksheet;
 
 
-        public string Name { get; private set; } = string.Empty;
+        public virtual string Name { get; private set; } = string.Empty;
+        public virtual uint Order { get; private set; }
+
         public virtual Collection<CustomField> Fields { get; private set; } = [];
 
         public Guid? TenantId { get; set; }
@@ -50,7 +52,15 @@ namespace Unity.Flex.Domain.Worksheets
             if (Fields.Any(s => s.Name == field.Name))
                 throw new BusinessException("Cannot duplicate name");
 
+            field = field.SetOrder((uint)Fields.Count + 1);
+
             Fields.Add(field);
+            return this;
+        }
+
+        public WorksheetSection SetOrder(uint order)
+        {
+            Order = order;
             return this;
         }
     }

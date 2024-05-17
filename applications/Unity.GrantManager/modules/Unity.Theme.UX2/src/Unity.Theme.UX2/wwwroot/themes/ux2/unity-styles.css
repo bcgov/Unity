@@ -637,3 +637,11 @@ div.dataTables_wrapper div.dataTables_filter {
     font-size: 0.7rem;
     opacity: 0.5;
 }
+
+.worksheet_section_label {
+    font-weight: 700;
+    padding-left: 0.25rem;
+    font-size: 1rem;
+    line-height: 1.2;
+    color: var(--bs-heading-color);
+}

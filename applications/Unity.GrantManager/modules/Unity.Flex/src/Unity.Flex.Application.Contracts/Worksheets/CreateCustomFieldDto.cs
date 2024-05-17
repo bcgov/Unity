@@ -1,5 +1,4 @@
 ﻿using System;
-using Unity.Flex.Enums;
 
 namespace Unity.Flex.Worksheets
 {

@@ -1,8 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using Unity.Flex.Domain.Worksheets.Definitions;
-using Unity.Flex.Enums;
+using Unity.Flex.Worksheets;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -14,14 +13,11 @@ namespace Unity.Flex.Domain.Worksheets
         public virtual string Name { get; private set; } = string.Empty;
         public virtual string Label { get; private set; } = string.Empty;
         public virtual CustomFieldType Type { get; private set; } = CustomFieldType.Undefined;
-
-        public virtual bool Enabled { get; private set; } = true;
-
-        [Column(TypeName = "jsonb")]
-        public virtual string? DefaultValue { get; private set; } = "{}";
+        public virtual uint Order { get; private set; }
+        public virtual bool Enabled { get; private set; } = true;        
 
         [Column(TypeName = "jsonb")]
-        public virtual string? DefaultDefinition { get; private set; } = "{}";
+        public virtual string Definition { get; private set; } = "{}";
 
         public Guid? TenantId { get; set; }
 
@@ -46,7 +42,7 @@ namespace Unity.Flex.Domain.Worksheets
             Name = name;
             Label = label;
             Type = type;
-            DefaultDefinition = DefinitionResolver.Resolve(type);
+            Definition = DefinitionResolver.Resolve(type);
         }
 
         public CustomField SetName(string name)
@@ -67,6 +63,12 @@ namespace Unity.Flex.Domain.Worksheets
         public CustomField SetEnabled(bool enabled)
         {
             Enabled = enabled;
+            return this;
+        }
+
+        public CustomField SetOrder(uint order)
+        {
+            Order = order;
             return this;
         }
     }

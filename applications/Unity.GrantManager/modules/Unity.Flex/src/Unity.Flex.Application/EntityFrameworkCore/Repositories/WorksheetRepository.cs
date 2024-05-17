@@ -11,6 +11,14 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class WorksheetRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Worksheet, Guid>(dbContextProvider), IWorksheetRepository
     {
+        public async Task<Worksheet?> GetByUiAnchorAsync(string uiAnchor, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet.IncludeDetails(includeDetails)
+                    .FirstOrDefaultAsync(s => s.UIAnchor == uiAnchor);
+        }
+
         public async Task<Worksheet?> GetBySectionAsync(Guid id, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();

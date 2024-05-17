@@ -14,5 +14,6 @@ public class FlexApplicationAutoMapperProfile : Profile
         CreateMap<WorksheetSection, WorksheetSectionDto>();
         CreateMap<WorksheetInstance, WorksheetInstanceDto>();
         CreateMap<CustomFieldValue, CustomFieldValueDto>();
+        CreateMap<CustomField, CustomFieldDto>();
     }
 }
