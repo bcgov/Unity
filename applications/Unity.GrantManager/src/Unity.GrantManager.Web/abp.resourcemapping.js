@@ -25,6 +25,7 @@ module.exports = {
         "@node_modules/echarts/dist/echarts.min.js": "@libs/echarts/",
         '@node_modules/bootstrap-4/dist': '@libs/bootstrap-4/dist/',
         '@node_modules/popper.js/dist': '@libs/popper.js/dist/',
-        '@node_modules/bootstrap-select/dist': '@libs/bootstrap-select/dist'
+        '@node_modules/bootstrap-select/dist': '@libs/bootstrap-select/dist',
+        '@node_modules/sortablejs':'@libs/sortablejs'
     },
 };

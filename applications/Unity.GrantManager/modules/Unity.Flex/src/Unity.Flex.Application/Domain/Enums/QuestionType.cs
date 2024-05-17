@@ -1,6 +1,6 @@
 ﻿namespace Unity.Flex.Domain.Enums
 {
-    public enum ScoreFieldType
+    public enum QuestionType
     {
         Number = 1
     }

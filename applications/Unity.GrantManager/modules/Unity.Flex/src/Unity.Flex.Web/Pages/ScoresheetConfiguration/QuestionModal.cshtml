@@ -1,0 +1,66 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@using Unity.Flex.Web.Pages.ScoresheetConfiguration;
+@model Unity.Flex.Web.Pages.ScoresheetConfiguration.QuestionModalModel
+
+@inject IStringLocalizer<FlexResource> L
+
+@{
+    Layout = null;
+}
+<form method="post" asp-page-handler="OnPostAsync" id="questionInfo">
+    <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Question.ScoresheetId" />
+    <abp-input type="hidden" id="SectionId" asp-for="@Model.Question.SectionId" />
+    <abp-input type="hidden" id="QuestionId" asp-for="@Model.Question.Id" />
+    <abp-input type="hidden" id="ActionType" asp-for="@Model.Question.ActionType" />
+    <abp-modal size="Large" id="question-info-modal">
+        <abp-modal-header class="question-info-modal-header" title="@Model.Question.ActionType"></abp-modal-header>
+        <abp-modal-body>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Question.Name" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Question.Label" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Question.Description" />
+                </abp-column>
+            </abp-row>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+            @if (!Model.Question.ActionType.StartsWith("Add"))
+            {
+                <button type="button" class="btn btn-danger" onclick="deleteQuestion()">Delete</button>
+            }
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+    function deleteQuestion() {
+        Swal.fire({
+            title: "Delete Question",
+            text: 'Are you sure you want to delete this question?',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#ActionType').val('Delete Question');
+                $('#questionInfo').submit();
+            }
+        });
+    }
+</script>

@@ -22,8 +22,8 @@ public class FlexDbContext(DbContextOptions<FlexDbContext> options) : AbpDbConte
     public DbSet<Scoresheet> Scoresheets { get; set; }
     public DbSet<ScoresheetInstance> ScoresheetInstances { get; set; }
     public DbSet<ScoresheetSection> ScoresheetSections { get; set; }
-    public DbSet<ScoreField> ScoreFields { get; set; }
-    public DbSet<ScoreFieldValue> ScoreFieldsValues { get; set; }
+    public DbSet<Question> Questions { get; set; }
+    public DbSet<Answer> Answers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

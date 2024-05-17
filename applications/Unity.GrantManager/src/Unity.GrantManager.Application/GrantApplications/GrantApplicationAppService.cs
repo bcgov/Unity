@@ -27,6 +27,7 @@ using Microsoft.EntityFrameworkCore;
 using Unity.Modules.Shared.Correlation;
 using Unity.GrantManager.Payments;
 using Unity.Flex.WorksheetInstances;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Flex;
 
 namespace Unity.GrantManager.GrantApplications;
@@ -594,12 +595,14 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    join applicationForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals applicationForm.Id
                     where applicationIds.Contains(application.Id)
                     select new
                     {
                         application,
                         appStatus,
-                        applicant
+                        applicant,
+                        applicationForm
                     };
 
         var result = query
@@ -615,7 +618,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
             appDto.Status = grouping.First().appStatus.InternalStatus;
+            appDto.StatusCode = grouping.First().appStatus.StatusCode;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().applicant);
+            appDto.ApplicationForm = ObjectMapper.Map<ApplicationForm, ApplicationFormDto>(grouping.First().applicationForm);
             appDtos.Add(appDto);
         }
 

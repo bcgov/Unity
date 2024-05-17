@@ -45,6 +45,16 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.css">
+    <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.css" />
+    <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.css" />
+    <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.js" />
+  </ItemGroup>
+
+  <ItemGroup>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.js">

@@ -19,7 +19,7 @@
     "ApplicationPaymentRequest:SiteNumber": "Site #",
     "ApplicationPaymentRequest:SubmitButtonText": "Submit Payment Requests",
     "ApplicationPaymentRequest:CancelButtonText": "Cancel",
-    "ApplicationPaymentRequest:Validations:ThresholdExceeded": "Cannot add a payment to an existing batch with a value above threshold of",
+    "ApplicationPaymentRequest:Validations:RemainingAmountExceeded": "Cannot add a payment that exceeds the remaining amount of ",
 
 
     "ApplicationPaymentTable:BatchNumber": "Batch Number",
