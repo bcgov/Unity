@@ -91,7 +91,11 @@ $(function () {
             getApplicationPaymentIdColumn(),
             getApplicationPaymentAmountColumn(),
             getApplicationPaymentStatusColumn(),
-            getApplicationPaymentRequestedonColumn()
+            getApplicationPaymentRequestedonColumn(),
+            getApplicationPaymentUpdatedOnColumn(),
+            getApplicationPaymentPaidOnColumn(),
+            getApplicationPaymentDescriptionColumn(),
+            getApplicationPaymentCASResponseColumn(),
         ]
     }
 
@@ -139,6 +143,53 @@ $(function () {
             data: 'creationTime',
             className: 'data-table-header',
             index: 5,
+            render: function (data) {
+                return formatDate(data);
+            }
+        };
+    }
+
+    function getApplicationPaymentUpdatedOnColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.UpdatedOn'),
+            name: 'updatedOn',
+            data: 'lastModificationTime',
+            className: 'data-table-header',
+            index: 6,
+            render: function (data) {
+                return formatDate(data);
+            }
+        };
+    }
+    function getApplicationPaymentPaidOnColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.PaidOn'),
+            name: 'paidOn',
+            data: 'paidOn',
+            className: 'data-table-header',
+            index: 7,
+            render: function (data) {
+                return formatDate(data);
+            }
+        };
+    }
+
+    function getApplicationPaymentDescriptionColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.Description'),
+            name: 'description',
+            data: 'description',
+            className: 'data-table-header',
+            index: 4,
+        };
+    }
+    function getApplicationPaymentCASResponseColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.CASResponse'),
+            name: 'cASResponse',
+            data: 'casResponse',
+            className: 'data-table-header',
+            index: 8,
             render: function (data) {
                 return formatDate(data);
             }
