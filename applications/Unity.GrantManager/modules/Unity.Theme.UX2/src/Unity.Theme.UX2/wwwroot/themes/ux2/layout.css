@@ -117,11 +117,6 @@ body {
     width: auto !important;
 }
 
-.dataTables_wrapper {
-    padding-left: 1rem;
-    padding-right: 1rem;
-}
-
 .table-action-icons {
     margin: 0.7rem;
     cursor: pointer;
@@ -421,7 +416,13 @@ div.dataTables_wrapper div.dataTables_length label {
     justify-content: space-between;
     align-items: center;
     flex-wrap: nowrap;
-    padding: 15px 7px 7px 12px;
+    padding: 1rem;
+    padding-bottom: 6px;
+}
+
+.identity-toolbar h4 {
+    margin-bottom: 0;
+    margin-left: 4px;
 }
 
 .nav {
