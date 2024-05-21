@@ -357,10 +357,7 @@
         return Math.log10(n);
     }
 
-    // Generate a Random Number between 0 and 1
-    function random() {
-        return Math.random();
-    }
+
 
     // Round a Number to the Nearest Integer
     function round(n) {
@@ -387,7 +384,6 @@
     console.log("Natural Logarithm (e):", naturalLogarithm(Math.E));
     console.log("Exponential (1):", exponential(1));
     console.log("Logarithm Base 10 (100):", logarithmBase10(100));
-    console.log("Random Number (0 to 1):", random());
     console.log("Round (4.7):", round(4.7));
 
 
