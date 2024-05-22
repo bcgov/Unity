@@ -24,3 +24,8 @@ table.dataTable tbody tr {
     overflow-y: scroll;
     height: calc(100vh - 190px);
 }
+
+.single-payment {
+    border: var(--bs-border-width) solid;
+    border-color: var(--bs-border-color);
+}

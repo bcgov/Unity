@@ -1,0 +1,8 @@
+﻿.scoresheet-configuration-container {
+    width: 100%;
+}
+
+.scoresheet-scrollable-content {
+    overflow-y: scroll;
+    height: calc(100vh - 120px);
+}

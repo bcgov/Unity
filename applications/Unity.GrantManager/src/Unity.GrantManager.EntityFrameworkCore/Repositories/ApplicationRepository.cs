@@ -57,7 +57,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
           .Include(s => s.Applicant)
             .ThenInclude(s => s.ApplicantAddresses)
           .Include(s => s.ApplicantAgent)
-          .Include(s => s.ApplicationStatus)
+          .Include(s => s.ApplicationStatus)          
           .FirstAsync(s => s.Id == id);                   
     }
 

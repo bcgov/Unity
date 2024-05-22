@@ -1,8 +1,9 @@
 ﻿using System;
+using Unity.Flex.Worksheets;
 
 namespace Unity.GrantManager.GrantApplications
 {
-    public class CreateUpdateProjectInfoDto
+    public class CreateUpdateProjectInfoDto : CustomDataFieldDto
     {
         public Guid? ApplicationId { get; set; }
         public string? ProjectSummary { get; set; }
