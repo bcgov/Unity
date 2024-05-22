@@ -69,6 +69,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                     visible: false // Hide all other columns initially
                 }
             ],
+            processing: true,
         })
     );
 
