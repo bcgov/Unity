@@ -1,6 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.Integration.Css
+namespace Unity.Payments.Integrations.Http
 {
     public class TokenValidationResponse
     {

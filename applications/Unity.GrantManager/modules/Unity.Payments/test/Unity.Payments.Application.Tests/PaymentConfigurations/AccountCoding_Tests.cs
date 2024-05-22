@@ -14,11 +14,12 @@ namespace Unity.Payments.PaymentConfigurations
             // Arrange
             // Act
             var accountCoding = AccountCoding.Create(
-                ministryClient: "1234",
-                projectNumber: "1234567890",
-                responsibility: "123",
-                serviceLine: "123456",
-                stob: "12345678");
+                ministryClient: "0TW",
+                responsibility: "51OCG",
+                serviceLine: "00000",
+                stob: "5717",
+                projectNumber: "5100000"
+                );
 
             // Assert
             accountCoding.ShouldNotBeNull();

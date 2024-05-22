@@ -9,5 +9,6 @@ namespace Unity.Payments.PaymentConfigurations
         Task<PaymentConfigurationDto> CreateAsync(CreatePaymentConfigurationDto createPaymentConfigurationDto);
 
         Task<PaymentConfigurationDto> UpdateAsync(UpdatePaymentConfigurationDto updatePaymentConfigurationDto);
-    }
+        Task<string?> GetAccountDistributionCodeAsync();
+	}
 }
