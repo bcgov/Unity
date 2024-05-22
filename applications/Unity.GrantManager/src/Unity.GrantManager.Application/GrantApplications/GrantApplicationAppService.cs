@@ -26,6 +26,9 @@ using Volo.Abp.EventBus.Local;
 using Microsoft.EntityFrameworkCore;
 using Unity.Modules.Shared.Correlation;
 using Unity.GrantManager.Payments;
+using Unity.Flex.WorksheetInstances;
+using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Flex;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -45,6 +48,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
+    private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
 
     public GrantApplicationAppService(
@@ -58,6 +62,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IApplicationFormRepository applicationFormRepository,
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
+        IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus)
     {
         _applicationRepository = applicationRepository;
@@ -70,6 +75,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _applicationFormRepository = applicationFormRepository;
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
+        _applicantAddressRepository = applicantAddressRepository;
+
         _localEventBus = localEventBus;
     }
 
@@ -297,7 +304,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
-            application.ProjectName = input.ProjectName ?? String.Empty;
+            application.ProjectName = input.ProjectName ?? string.Empty;
             application.RequestedAmount = input.RequestedAmount ?? 0;
             application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
             application.ProjectStartDate = input.ProjectStartDate;
@@ -315,7 +322,16 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
-            await _applicationRepository.UpdateAsync(application, autoSave: true);
+
+            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+            {
+                CorrelationId = id,
+                CorrelationProvider = CorrelationConsts.Application,
+                UiAnchor = FlexConsts.ProjectInfoUiAnchor,
+                CustomFields = input.CustomFields
+            }); 
+
+            await _applicationRepository.UpdateAsync(application);
 
             return ObjectMapper.Map<Application, GrantApplicationDto>(application);
         }
@@ -382,6 +398,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
                 applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
             }
 
+            await UpdateApplicantAddresses(input);
+
             application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
             application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
             application.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
@@ -403,6 +421,55 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         else
         {
             throw new EntityNotFoundException();
+        }
+    }
+
+    protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
+    {
+        var applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+    }
+
+    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId)
+    {
+        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType);
+
+        if (dbAddress != null)
+        {
+            MapApplicantAddress(input, applicantAddressType, dbAddress);
+            await _applicantAddressRepository.UpdateAsync(dbAddress);
+        }
+        else
+        {
+            var newAddress = new ApplicantAddress() { AddressType = applicantAddressType, ApplicantId = applicantId };
+            MapApplicantAddress(input, applicantAddressType, newAddress);
+            await _applicantAddressRepository.InsertAsync(newAddress);
+        }
+    }
+
+    private static void MapApplicantAddress(CreateUpdateApplicantInfoDto input, AddressType applicantAddressType, ApplicantAddress address)
+    {
+        switch (applicantAddressType)
+        {
+            case AddressType.MailingAddress:
+                address.AddressType = AddressType.MailingAddress;
+                address.Street = input.MailingAddressStreet ?? "";
+                address.Street2 = input.MailingAddressStreet2 ?? "";
+                address.Unit = input.MailingAddressUnit ?? "";
+                address.City = input.MailingAddressCity ?? "";
+                address.Province = input.MailingAddressProvince ?? "";
+                address.Postal = input.MailingAddressPostalCode ?? "";
+                break;
+            case AddressType.PhysicalAddress:
+                address.AddressType = AddressType.PhysicalAddress;
+                address.Street = input.PhysicalAddressStreet ?? "";
+                address.Street2 = input.PhysicalAddressStreet2 ?? "";
+                address.Unit = input.PhysicalAddressUnit ?? "";
+                address.City = input.PhysicalAddressCity ?? "";
+                address.Province = input.PhysicalAddressProvince ?? "";
+                address.Postal = input.PhysicalAddressPostalCode ?? "";
+                break;
         }
     }
 
@@ -528,12 +595,14 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    join applicationForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals applicationForm.Id
                     where applicationIds.Contains(application.Id)
                     select new
                     {
                         application,
                         appStatus,
-                        applicant
+                        applicant,
+                        applicationForm
                     };
 
         var result = query
@@ -549,7 +618,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
             appDto.Status = grouping.First().appStatus.InternalStatus;
+            appDto.StatusCode = grouping.First().appStatus.StatusCode;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().applicant);
+            appDto.ApplicationForm = ObjectMapper.Map<ApplicationForm, ApplicationFormDto>(grouping.First().applicationForm);
             appDtos.Add(appDto);
         }
 

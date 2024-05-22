@@ -146,6 +146,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
             public DateTime? ContractExecutionDate { get; set; }
             [Display(Name = "ProjectInfoView:ProjectInfo.Place")]
+            [StringLength(50)]
             public string? Place { get; set; }
         }
 

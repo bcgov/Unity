@@ -1,9 +1,6 @@
 $(function () {
     let selectedPaymentIds = [];
-    $("#btn-toggle-filter").on("click", function () {
-        // Toggle the visibility of the div
-        $(".tr-toggle-filter").toggle();
-    });
+    
   
 
     PubSub.subscribe("select_batchpayment_application", (msg, data) => {
