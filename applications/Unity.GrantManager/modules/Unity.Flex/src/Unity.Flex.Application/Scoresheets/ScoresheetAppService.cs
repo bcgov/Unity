@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -35,7 +36,21 @@ namespace Unity.Flex.Scoresheets
         {
             var result = await _scoresheetRepository.GetListWithChildrenAsync();
             var scoresheets = ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
-            return scoresheets;
+            var groupedScoresheets = scoresheets.GroupBy(s => s.GroupId);
+            var uniqueScoresheets = groupedScoresheets
+                    .Select(g => g.OrderBy(s => s.CreationTime).First())
+                    .OrderBy(s => s.CreationTime)
+                    .ToList();
+            foreach (var scoresheet in uniqueScoresheets)
+            {
+                var groupVersions = groupedScoresheets
+                    .First(g => g.Key == scoresheet.GroupId)
+                    .Select(s => s.Version)
+                    .ToList();
+
+                scoresheet.GroupVersions = new Collection<uint>(groupVersions);
+            }
+            return uniqueScoresheets;
         }
 
         public virtual async Task<ScoresheetDto> GetAsync(Guid id)

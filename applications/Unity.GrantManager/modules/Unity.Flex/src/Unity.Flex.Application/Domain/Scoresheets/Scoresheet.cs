@@ -17,9 +17,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public Guid GroupId { get; set; }
 
         public Guid? TenantId { get; set; }
-
-        [NotMapped]
-        public Collection<uint> GroupVersions { get; set; }
+               
 
         public virtual Collection<ScoresheetSection> Sections { get; set; } = [];
         public virtual Collection<ScoresheetInstance> Instances { get; set; } = [];

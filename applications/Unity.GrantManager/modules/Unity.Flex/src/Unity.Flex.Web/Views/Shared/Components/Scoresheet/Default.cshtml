@@ -16,15 +16,23 @@
     {
         var totalQuestions = scoresheet.Sections.SelectMany(sec => sec.Fields).Count();
         <div class="accordion-item">
-            <h2 class="accordion-header" id="heading-@scoresheet.Id">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="false" aria-controls="collapse-@scoresheet.Id">
-                    <span class="flex-grow-1 text-start"><b>@scoresheet.Name</b></span>
-                    <div class="text-end d-flex flex-column align-items-center question-info">
-                        <div class="total-questions"><b>Questions</b></div>
-                        <div class="total-questions">@totalQuestions</div>
-                    </div>
-                </button>
-            </h2>
+            <div class="accordion-header" id="heading-@scoresheet.Id">
+                <div class="d-flex w-100 align-items-center">
+                    <button class="accordion-button collapsed flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="false" aria-controls="collapse-@scoresheet.Id">
+                        <span class="flex-grow-1 text-start"><b>@scoresheet.Name</b></span>
+                        <div class="text-end d-flex flex-column align-items-center question-info">
+                            <div class="total-questions"><b>Questions</b></div>
+                            <div class="total-questions">@totalQuestions</div>
+                        </div>                    
+                    </button>
+                    <select class="form-select ms-3" style="width: auto;" aria-label="Select version" id="version-selector-@scoresheet.GroupId">
+                        @foreach (var version in scoresheet.GroupVersions)
+                        {
+                            <option value="@version">Version @version</option>
+                        }
+                    </select>
+                </div>
+            </div>
             <div id="collapse-@scoresheet.Id" class="accordion-collapse collapse" data-scoresheet="@scoresheet.Id" aria-labelledby="heading-@scoresheet.Id" data-bs-parent="#scoresheet-accordion">
                 <div class="accordion-body">
                     <div class="row">
