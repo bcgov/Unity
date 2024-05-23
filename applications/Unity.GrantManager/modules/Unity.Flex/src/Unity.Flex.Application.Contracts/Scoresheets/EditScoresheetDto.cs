@@ -7,5 +7,7 @@ namespace Unity.Flex.Scoresheets
     {
         public string Name { get; set; } = string.Empty;
         public Guid ScoresheetId { get; set; }
+        public Guid GroupId { get; set; }
+        public string ActionType {  get; set; } = string.Empty;
     }
 }

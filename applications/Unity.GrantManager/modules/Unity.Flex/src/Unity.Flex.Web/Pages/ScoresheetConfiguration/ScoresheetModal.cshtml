@@ -13,6 +13,7 @@
 <form method="post" asp-page-handler="OnPostAsync" id="scoresheetInfo">
     <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Scoresheet.Id" />
     <abp-input type="hidden" id="ActionType" asp-for="@Model.Scoresheet.ActionType" />
+    <abp-input type="hidden" id="GroupId" asp-for="@Model.Scoresheet.GroupId" />
     <abp-modal size="Large" id="scoresheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="@Model.Scoresheet.ActionType"></abp-modal-header>
         <abp-modal-body>
@@ -23,7 +24,7 @@
             </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
+            <button type="submit" class="btn btn-primary" onclick="handleSaveButtonClick(event)">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
             @if (!Model.Scoresheet.ActionType.StartsWith("Add"))
             {
@@ -34,6 +35,31 @@
 </form>
 
 <script>
+    function handleSaveButtonClick(event) {
+        if ($('#ActionType').val() === 'Edit Scoring Sheet') {
+            event.preventDefault();
+            Swal.fire({
+                title: "Confirm changes made to scoring sheet",
+                text: "Do you want to save your changes on the current versions only or create a new score sheet version too?",
+                showCancelButton: true,
+                confirmButtonText: 'Save changes to the current versions',
+                cancelButtonText: 'Create a new version',
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#ActionType').val('Edit Scoring Sheet On Current Version');
+                    $('#scoresheetInfo').submit();
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    $('#ActionType').val('Edit Scoring Sheet On New Version');
+                    $('#scoresheetInfo').submit();
+                }
+            });
+        } 
+    }
+
     function deleteScoresheet() {
         Swal.fire({
             title: "Delete Scoresheet",

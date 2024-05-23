@@ -18,7 +18,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual Scoresheet? Scoresheet { get; }
         public virtual Guid ScoresheetId { get; set; }
 
-        public virtual Collection<Question> Fields { get; private set; } = [];
+        public virtual Collection<Question> Fields { get; set; } = [];
 
 
         protected ScoresheetSection()

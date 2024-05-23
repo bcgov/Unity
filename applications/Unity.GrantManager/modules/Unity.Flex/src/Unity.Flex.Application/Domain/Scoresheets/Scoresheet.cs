@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using Unity.Flex.Domain.Exceptions;
 using Volo.Abp;
@@ -11,12 +12,17 @@ namespace Unity.Flex.Domain.Scoresheets
     public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public virtual string Name { get; set; } = string.Empty;
-        public virtual uint Version { get; private set; } = 1;
+        public virtual uint Version { get; set; } = 1;
+
+        public Guid GroupId { get; set; }
 
         public Guid? TenantId { get; set; }
 
-        public virtual Collection<ScoresheetSection> Sections { get; private set; } = [];
-        public virtual Collection<ScoresheetInstance> Instances { get; private set; } = [];
+        [NotMapped]
+        public Collection<uint> GroupVersions { get; set; }
+
+        public virtual Collection<ScoresheetSection> Sections { get; set; } = [];
+        public virtual Collection<ScoresheetInstance> Instances { get; set; } = [];
 
         protected Scoresheet()
         {
@@ -24,11 +30,13 @@ namespace Unity.Flex.Domain.Scoresheets
         }
 
         public Scoresheet(Guid id,
-        string name)
+        string name,
+        Guid groupId)
         : base(id)
         {
             Id = id;
             Name = name;
+            GroupId = groupId;
         }
 
         public Scoresheet AddSection(string name, uint order)

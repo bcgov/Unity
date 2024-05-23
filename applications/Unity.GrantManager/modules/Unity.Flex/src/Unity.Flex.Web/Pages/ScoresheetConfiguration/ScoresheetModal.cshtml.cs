@@ -22,15 +22,17 @@ public class ScoresheetModalModel : FlexPageModel
     public class ScoresheetModalModelModel
     {
         public Guid Id { get; set; }
+        public Guid GroupId { get; set; }
         public string ActionType { get; set; } = string.Empty;
         [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Name")]
         public string Name { get; set; } = string.Empty;
     }
     public async Task OnGetAsync(Guid scoresheetId,
-       string actionType)
+       string actionType, Guid groupId)
     {
         Scoresheet.Id = scoresheetId;
         Scoresheet.ActionType = actionType;
+        Scoresheet.GroupId = groupId;
         if (Scoresheet.ActionType.Contains("Edit"))
         {
             ScoresheetDto scoresheet = await _scoresheetAppService.GetAsync(scoresheetId);
@@ -68,7 +70,7 @@ public class ScoresheetModalModel : FlexPageModel
 
     private async Task EditScoresheet()
     {
-        _ = await _scoresheetAppService.UpdateAsync(Scoresheet.Id, new EditScoresheetDto() { Name = Scoresheet.Name, ScoresheetId = Scoresheet.Id});
+        await _scoresheetAppService.UpdateAsync(new EditScoresheetDto() { Name = Scoresheet.Name, ScoresheetId = Scoresheet.Id, ActionType = Scoresheet.ActionType, GroupId = Scoresheet.GroupId});
     }
 
     private async Task DeleteScoresheet()

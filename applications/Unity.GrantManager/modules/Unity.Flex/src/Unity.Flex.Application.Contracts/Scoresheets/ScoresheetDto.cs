@@ -7,6 +7,7 @@ namespace Unity.Flex.Scoresheets
     public class ScoresheetDto : ExtensibleFullAuditedEntityDto<Guid>
     {
         public string Name { get; set; } = string.Empty;
+        public Guid GroupId { get; set; }
         public virtual Collection<ScoresheetSectionDto> Sections { get; private set; } = [];
     }
 }

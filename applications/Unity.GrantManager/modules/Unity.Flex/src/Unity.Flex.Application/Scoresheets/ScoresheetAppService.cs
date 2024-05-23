@@ -1,8 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Reflection.Emit;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using Unity.Flex.Domain.Enums;
 using Unity.Flex.Domain.Scoresheets;
+using Volo.Abp.Uow;
 using Volo.Abp.Validation;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Unity.Flex.Scoresheets
 { 
@@ -12,11 +18,14 @@ namespace Unity.Flex.Scoresheets
         private readonly IScoresheetSectionRepository _sectionRepository;
         private readonly IQuestionRepository _questionRepository;
 
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
+
         private readonly static object _sectionLockObject = new();
         private readonly static object _questionLockObject = new();
 
-        public ScoresheetAppService(IScoresheetRepository scoresheetRepository, IScoresheetSectionRepository sectionRepository, IQuestionRepository questionRepository)
+        public ScoresheetAppService(IUnitOfWorkManager unitOfWorkManager, IScoresheetRepository scoresheetRepository, IScoresheetSectionRepository sectionRepository, IQuestionRepository questionRepository)
         {
+            _unitOfWorkManager = unitOfWorkManager;
             _scoresheetRepository = scoresheetRepository;
             _sectionRepository = sectionRepository;
             _questionRepository = questionRepository;
@@ -25,7 +34,8 @@ namespace Unity.Flex.Scoresheets
         public async Task<List<ScoresheetDto>> GetListAsync()
         {
             var result = await _scoresheetRepository.GetListWithChildrenAsync();
-            return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
+            var scoresheets = ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
+            return scoresheets;
         }
 
         public virtual async Task<ScoresheetDto> GetAsync(Guid id)
@@ -35,7 +45,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
-            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Name));
+            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Name, Guid.NewGuid()));
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
@@ -62,11 +72,64 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-        public async Task<ScoresheetDto> UpdateAsync(Guid id, EditScoresheetDto dto)
+        public async Task UpdateAsync(EditScoresheetDto dto)
         {
-            var scoresheet = await _scoresheetRepository.GetAsync(dto.ScoresheetId) ?? throw new AbpValidationException("Missing ScoresheetId:" + dto.ScoresheetId);
-            scoresheet.Name = dto.Name;
-            return ObjectMapper.Map<Scoresheet, ScoresheetDto>(await _scoresheetRepository.UpdateAsync(scoresheet));
+            if(dto.ActionType.Contains("Current Version"))
+            {
+                await UpdateScoresheetOnCurrentVersions(dto);
+            }
+            else if(dto.ActionType.Contains("New Version"))
+            {
+                await UpdateScoresheetOnCurrentVersions(dto);
+                await CreateNewVersion(dto);
+            }
+            else
+            {
+                throw new AbpValidationException("Invalid ActionType for Edit Scoresheet.");
+            }
+            
+        }
+
+        private async Task CreateNewVersion(EditScoresheetDto dto)
+        {
+            using var unitOfWork = _unitOfWorkManager.Begin();
+            var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(dto.ScoresheetId) ?? throw new AbpValidationException("Scoresheet not found.");
+            var highestVersionScoresheet = await _scoresheetRepository.GetHighestVersionAsync(dto.GroupId) ?? throw new AbpValidationException("Scoresheet not found.");
+            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), dto.Name, dto.GroupId)
+            {
+                Version = highestVersionScoresheet.Version + 1,
+                Sections = []
+            };
+
+            foreach (var originalSection in originalScoresheet.Sections)
+            {
+                var clonedSection = new ScoresheetSection(Guid.NewGuid(), originalSection.Name, originalSection.Order)
+                {
+                    ScoresheetId = clonedScoresheet.Id,
+                    Fields = []
+                };
+
+                foreach (var originalQuestion in originalSection.Fields)
+                {
+                    var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, clonedSection.Id);
+                    clonedSection.Fields.Add(clonedQuestion);
+                }
+
+                clonedScoresheet.Sections.Add(clonedSection);
+            }
+
+            await _scoresheetRepository.InsertAsync(clonedScoresheet);
+            await unitOfWork.CompleteAsync();
+        }
+
+        private async Task UpdateScoresheetOnCurrentVersions(EditScoresheetDto dto)
+        {
+            var scoresheets = await _scoresheetRepository.GetScoresheetsByGroupId(dto.GroupId);
+            foreach(var scoresheet in scoresheets)
+            {
+                scoresheet.Name = dto.Name;
+                await _scoresheetRepository.UpdateAsync(scoresheet);
+            }
         }
 
         public async Task DeleteAsync(Guid id)

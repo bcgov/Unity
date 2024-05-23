@@ -14,6 +14,6 @@ namespace Unity.Flex.Scoresheets
         Task<ScoresheetDto> GetAsync(Guid id);
         Task<List<ScoresheetDto>> GetListAsync();
         Task SaveOrder(List<ScoresheetItemDto> dto);
-        Task<ScoresheetDto> UpdateAsync(Guid id, EditScoresheetDto dto);
+        Task UpdateAsync(EditScoresheetDto dto);
     }
 }

@@ -16,11 +16,12 @@ scoresheetModal.onResult(function (response) {
         'Scoresheet'
     );
 });
-function openScoresheetModal(scoresheetId, actionType) {
+function openScoresheetModal(scoresheetId, actionType, groupId) {
     scoresheetToEditId = scoresheetId;
     scoresheetModal.open({
         scoresheetId: scoresheetId,
-        actionType: actionType
+        actionType: actionType,
+        groupId: groupId
     });
 }
 
