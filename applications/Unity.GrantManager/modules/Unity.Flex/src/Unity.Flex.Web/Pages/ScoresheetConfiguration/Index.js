@@ -7,7 +7,7 @@ let scoresheetToEditId = null;
 scoresheetModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
     if (actionType.startsWith('Delete')) {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: [] });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
     } else if (actionType == 'Edit Scoring Sheet On New Version') {
         const scoresheetIdsToLoad = getScoresheetIdsToLoad().filter(element => element !== scoresheetToEditId);
         PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: scoresheetIdsToLoad });
