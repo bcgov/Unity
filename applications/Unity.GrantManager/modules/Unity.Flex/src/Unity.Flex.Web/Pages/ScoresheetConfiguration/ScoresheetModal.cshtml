@@ -53,8 +53,17 @@
                     $('#ActionType').val('Edit Scoring Sheet On Current Version');
                     $('#scoresheetInfo').submit();
                 } else if (result.dismiss === Swal.DismissReason.cancel) {
-                    $('#ActionType').val('Edit Scoring Sheet On New Version');
-                    $('#scoresheetInfo').submit();
+                    Swal.fire({
+                        title: "Note",
+                        text: "Note that to apply the new version of the scoresheet in the assessment process, you need to link the corresponding form to the updated version.",
+                        confirmButtonText: 'Ok',
+                        customClass: {
+                            confirmButton: 'btn btn-primary'
+                        }
+                    }).then(() => {
+                        $('#ActionType').val('Edit Scoring Sheet On New Version');
+                        $('#scoresheetInfo').submit();
+                    });
                 }
             });
         } 
