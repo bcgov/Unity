@@ -46,11 +46,21 @@ namespace Unity.Flex.Scoresheets
                     .Select(g => g.OrderBy(s => s.CreationTime).First())
                     .OrderBy(s => s.CreationTime)
                     .ToList();
+            var highestVersionScoresheetsByGroupId = groupedScoresheets
+                    .Select(g => g.OrderByDescending(s => s.CreationTime).First())
+                    .OrderBy(s => s.CreationTime)
+                    .ToList();
+            var highestVersionScoresheetToLoad = highestVersionScoresheetsByGroupId
+                    .ToDictionary(s => s.GroupId, s => s);
             for (int i = 0; i < uniqueScoresheets.Count; i++)
             {
                 if (scoresheetsToLoadByGroupId.TryGetValue(uniqueScoresheets[i].GroupId, out var replacement))
                 {
                     uniqueScoresheets[i] = replacement;
+                }
+                else if(highestVersionScoresheetToLoad.TryGetValue(uniqueScoresheets[i].GroupId, out var highestVersionReplacement))
+                {
+                    uniqueScoresheets[i] = highestVersionReplacement;
                 }
             }
             foreach (var scoresheet in uniqueScoresheets)
