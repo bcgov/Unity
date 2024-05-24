@@ -32,23 +32,35 @@ namespace Unity.Flex.Scoresheets
             _questionRepository = questionRepository;
         }
 
-        public async Task<List<ScoresheetDto>> GetListAsync()
+        public async Task<List<ScoresheetDto>> GetListAsync(List<Guid> scoresheetIdsToLoad)
         {
             var result = await _scoresheetRepository.GetListWithChildrenAsync();
             var scoresheets = ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
+            var scoresheetsToLoad = scoresheets
+                    .Where(s => scoresheetIdsToLoad.Contains(s.Id))
+                    .ToList();
+            var scoresheetsToLoadByGroupId = scoresheetsToLoad
+                    .ToDictionary(s => s.GroupId, s => s);
             var groupedScoresheets = scoresheets.GroupBy(s => s.GroupId);
             var uniqueScoresheets = groupedScoresheets
                     .Select(g => g.OrderBy(s => s.CreationTime).First())
                     .OrderBy(s => s.CreationTime)
                     .ToList();
+            for (int i = 0; i < uniqueScoresheets.Count; i++)
+            {
+                if (scoresheetsToLoadByGroupId.TryGetValue(uniqueScoresheets[i].GroupId, out var replacement))
+                {
+                    uniqueScoresheets[i] = replacement;
+                }
+            }
             foreach (var scoresheet in uniqueScoresheets)
             {
                 var groupVersions = groupedScoresheets
                     .First(g => g.Key == scoresheet.GroupId)
-                    .Select(s => s.Version)
+                    .Select(s => new VersionDto { ScoresheetId = s.Id,Version = s.Version })
                     .ToList();
 
-                scoresheet.GroupVersions = new Collection<uint>(groupVersions);
+                scoresheet.GroupVersions = new Collection<VersionDto>(groupVersions);
             }
             return uniqueScoresheets;
         }

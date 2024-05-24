@@ -25,10 +25,10 @@
                             <div class="total-questions">@totalQuestions</div>
                         </div>                    
                     </button>
-                    <select class="form-select ms-3" style="width: auto;" aria-label="Select version" id="version-selector-@scoresheet.GroupId">
+                    <select class="form-select ms-3" style="width: auto;" aria-label="Select version" id="version-selector" onchange="handleVersionChange(event)">
                         @foreach (var version in scoresheet.GroupVersions)
-                        {
-                            <option value="@version">Version @version</option>
+                        {                         
+                            <!option value="@version.ScoresheetId"  @(scoresheet.Version == version.Version ? "selected" : "")>Version @version.Version</!option>
                         }
                     </select>
                 </div>

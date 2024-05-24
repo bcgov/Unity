@@ -9,7 +9,7 @@ namespace Unity.Flex.Scoresheets
         public string Name { get; set; } = string.Empty;
         public Guid GroupId { get; set; }
         public uint Version { get; set; }
-        public Collection<uint> GroupVersions { get; set; } = [];
+        public Collection<VersionDto> GroupVersions { get; set; } = [];
         public Collection<ScoresheetSectionDto> Sections { get; private set; } = [];
     }
 }

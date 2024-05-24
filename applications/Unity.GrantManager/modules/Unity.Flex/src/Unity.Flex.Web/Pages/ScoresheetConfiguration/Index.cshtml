@@ -27,7 +27,7 @@
                     <abp-card-body>
                         <h4><b>Scoring Sheets</b></h4>
                         <div id="scoresheet-info-widget">
-                            @await Component.InvokeAsync("Scoresheet")
+                            @await Component.InvokeAsync("Scoresheet", new { scoresheetIdsToLoad = new List<Guid>() })
                         </div>
                         <div class="p-4">
                             <abp-button text="@L["Scoresheet:Configuration:AddScoresheetButtonText"].Value"

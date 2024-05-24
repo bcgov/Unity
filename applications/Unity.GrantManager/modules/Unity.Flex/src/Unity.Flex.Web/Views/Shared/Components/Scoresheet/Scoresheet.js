@@ -152,7 +152,7 @@ let questionModal = new abp.ModalManager({
 
 questionModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
-    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
     abp.notify.success(
         actionType + ' is successful.',
         'Question'
@@ -177,7 +177,7 @@ let sectionModal = new abp.ModalManager({
 
 sectionModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
-    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
     abp.notify.success(
         actionType + ' is successful.',
         'Scoresheet Section'
@@ -226,9 +226,19 @@ function updateScoresheetAccordion() {
     const nonCollapsedAccordion = document.querySelector('.accordion-collapse.show');
     if (nonCollapsedAccordion) {
         const scoresheetId = nonCollapsedAccordion.getAttribute('data-scoresheet');
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
     } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
     }
 }
 
+function handleVersionChange(event) {
+    const selectedScoresheet = event.target.value;
+    const scorsheetIdsToLoad = getScoresheetIdsToLoad();
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheet, scorsheetIdsToLoad: scorsheetIdsToLoad });
+}
+
+function getScoresheetIdsToLoad() {
+    let selectElements = document.querySelectorAll('[id^="version-selector"]');
+    return Array.from(selectElements).map(select => select.value);
+}

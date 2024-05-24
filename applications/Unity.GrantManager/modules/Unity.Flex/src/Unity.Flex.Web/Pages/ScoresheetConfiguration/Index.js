@@ -7,9 +7,9 @@ let scoresheetToEditId = null;
 scoresheetModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
     if (actionType.startsWith('Delete')) {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: [] });
     } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
     }
     abp.notify.success(
         actionType + ' is successful.', 
@@ -28,7 +28,7 @@ function openScoresheetModal(scoresheetId, actionType, groupId) {
 PubSub.subscribe(
     'refresh_scoresheet_list',
     (msg, data) => {
-        refreshScoresheetInfoWidget(data.scoresheetId);
+        refreshScoresheetInfoWidget(data.scoresheetId, data.scorsheetIdsToLoad);
     }
 );
 
@@ -42,8 +42,8 @@ function showAccordion(scoresheetId) {
     accordion.classList.add('show');
 }
 
-function refreshScoresheetInfoWidget(scoresheetId) {
-    const url = `../Flex/Widget/Scoresheet/Refresh`;
+function refreshScoresheetInfoWidget(scoresheetId, scorsheetIdsToLoad) {
+    const url = `../Flex/Widget/Scoresheet/Refresh?scoresheetIdsToLoad=${scorsheetIdsToLoad.join(',')}`;
     fetch(url)
         .then(response => response.text())
         .then(data => {
