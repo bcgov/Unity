@@ -1,8 +1,10 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
+@using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
 @using Unity.GrantManager.Payments;
+@using Unity.Modules.Shared.Correlation
 @using Volo.Abp.Features;
 
 @inject IAuthorizationService AuthorizationService
@@ -103,61 +105,61 @@
                 </abp-column>
             </abp-row>
         </abp-row>
-         <abp-row class="m-0 contact-info-form">
-        <div class="d-flex">
-            <abp-row class="m-0 physical-address-form pe-2">
-                <abp-row class="m-0 p-0">
-                    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
-                        <div class="d-flex align-items-stretch justify-content-start">
-                            <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:PhysicalAddress"].Value</h6>
-                        </div>
-                    </abp-column>
+        <abp-row class="m-0 contact-info-form">
+            <div class="d-flex">
+                <abp-row class="m-0 physical-address-form pe-2">
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
+                            <div class="d-flex align-items-stretch justify-content-start">
+                                <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:PhysicalAddress"].Value</h6>
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_9" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressStreet" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_3" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressUnit" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressCity" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressProvince" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressPostalCode" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                    </abp-row>
                 </abp-row>
-                <abp-row class="m-0 p-0">
-                    <abp-column size="_9" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressStreet" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_3" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressUnit" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressCity" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressProvince" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.PhysicalAddressPostalCode" onchange="enableSaveBtn(this)" />
-                    </abp-column>
+                <abp-row class="m-0 mailing-address-form ps-2">
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
+                            <div class="d-flex align-items-stretch justify-content-start">
+                                <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:MailingAddress"].Value</h6>
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_9" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.MailingAddressStreet" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_3" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.MailingAddressUnit" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.MailingAddressCity" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.MailingAddressProvince" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                        <abp-column size="_4" class="px-1">
+                            <abp-input asp-for="@Model.ApplicantInfo.MailingAddressPostalCode" onchange="enableSaveBtn(this)" />
+                        </abp-column>
+                    </abp-row>
                 </abp-row>
-            </abp-row>
-            <abp-row class="m-0 mailing-address-form ps-2">
-                <abp-row class="m-0 p-0">
-                    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
-                        <div class="d-flex align-items-stretch justify-content-start">
-                            <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:MailingAddress"].Value</h6>
-                        </div>
-                    </abp-column>
-                </abp-row>
-                <abp-row class="m-0 p-0">
-                    <abp-column size="_9" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.MailingAddressStreet" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_3" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.MailingAddressUnit" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.MailingAddressCity" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.MailingAddressProvince" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                    <abp-column size="_4" class="px-1">
-                        <abp-input asp-for="@Model.ApplicantInfo.MailingAddressPostalCode" onchange="enableSaveBtn(this)" />
-                    </abp-column>
-                </abp-row>
-            </abp-row>
-        </div>
+            </div>
         </abp-row>
         <abp-row class="m-0 signin-authority-form">
             <abp-row class="m-0 p-0">
@@ -187,6 +189,18 @@
                 </abp-column>
             </abp-row>
         </abp-row>
+
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+        {
+            @await Component.InvokeAsync("WorksheetInstanceWidget",
+                     new
+                     {
+                         correlationId = Model.ApplicationId,
+                         correlationProvider = CorrelationConsts.Application,
+                         uiAnchor = FlexConsts.ApplicantInfoUiAnchor
+                     })
+        }
+
         @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
         {
             <div id="supplier-info-widget">

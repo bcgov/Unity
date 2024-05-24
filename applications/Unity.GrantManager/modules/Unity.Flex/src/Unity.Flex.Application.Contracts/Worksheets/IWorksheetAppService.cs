@@ -8,7 +8,7 @@ namespace Unity.Flex.Worksheets
     public interface IWorksheetAppService : IApplicationService
     {
         Task<WorksheetDto> GetAsync(Guid id);
-        Task<WorksheetDto?> GetByUiAnchorAsync(string uiAnchor);
+        Task<WorksheetDto?> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string uiAnchor);
         Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto);
         Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateCustomFieldDto dto);
         Task<List<WorksheetDto>> GetListAsync();

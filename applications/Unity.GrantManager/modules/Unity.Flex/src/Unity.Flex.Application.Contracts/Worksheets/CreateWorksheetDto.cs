@@ -8,6 +8,8 @@ namespace Unity.Flex.Worksheets
     {
         public string Name { get; set; } = string.Empty;
         public string UIAnchor { get; set; } = string.Empty;
+        public Guid CorrelationId { get; set; }
+        public string CorrelationProvider { get; set; } = string.Empty;
         public List<WorksheetSectionDto> Sections { get; set; } = [];
     }
 }

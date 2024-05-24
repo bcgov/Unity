@@ -15,9 +15,9 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<Worksheet, WorksheetDto>(await worksheetRepository.GetAsync(id, true));
         }
 
-        public virtual async Task<WorksheetDto?> GetByUiAnchorAsync(string uiAnchor)
+        public virtual async Task<WorksheetDto?> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string uiAnchor)
         {
-            return ObjectMapper.Map<Worksheet?, WorksheetDto?>(await worksheetRepository.GetByUiAnchorAsync(uiAnchor, true));
+            return ObjectMapper.Map<Worksheet?, WorksheetDto?>(await worksheetRepository.GetByCorrelationAsync(correlationId, correlationProvider, uiAnchor, true));
         }
 
         public virtual async Task<List<WorksheetDto>> GetListAsync()
@@ -29,7 +29,7 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto)
         {
-            var newWorksheet = new Worksheet(Guid.NewGuid(), dto.Name, dto.UIAnchor);
+            var newWorksheet = new Worksheet(Guid.NewGuid(), dto.Name, dto.UIAnchor, dto.CorrelationId, dto.CorrelationProvider);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {
@@ -37,7 +37,7 @@ namespace Unity.Flex.Worksheets
 
                 foreach (var field in section.Fields)
                 {
-                    newWorksheet.Sections[^1].AddField(new CustomField(Guid.NewGuid(), field.Name, field.Label, field.Type));
+                    newWorksheet.Sections[^1].AddField(new CustomField(Guid.NewGuid(), field.Name, field.Label, field.Type, field.Definition));
                 }
             }
 

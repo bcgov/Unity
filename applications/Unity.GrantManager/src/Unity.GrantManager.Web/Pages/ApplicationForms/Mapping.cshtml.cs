@@ -1,15 +1,19 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.Flex.Worksheets;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationForms
 {
@@ -25,6 +29,8 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
         private readonly IApplicationFormAppService _applicationFormAppService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
+        private readonly IWorksheetAppService _worksheetAppService;
+        private readonly IFeatureChecker _featureChecker;
 
         [BindProperty]
         public ApplicationFormDto? ApplicationFormDto { get; set; }
@@ -42,10 +48,14 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         public string? IntakeProperties { get; set; }
 
         public MappingModel(IApplicationFormAppService applicationFormAppService,
-                            IApplicationFormVersionAppService applicationFormVersionAppService)
+                            IApplicationFormVersionAppService applicationFormVersionAppService,
+                            IWorksheetAppService worksheetAppService,
+                            IFeatureChecker featureChecker)
         {
             _applicationFormAppService = applicationFormAppService;
             _applicationFormVersionAppService = applicationFormVersionAppService;
+            _worksheetAppService = worksheetAppService;
+            _featureChecker = featureChecker;
         }
 
         public async Task OnGetAsync()
@@ -84,16 +94,55 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 ApplicationFormVersionDtoString = JsonSerializer.Serialize(ApplicationFormVersionDto);
             }
 
+            IntakeProperties = JsonSerializer.Serialize(await GenerateMappingFieldsAsync());
+        }
 
+        private async Task<List<MapField>> GenerateMappingFieldsAsync()
+        {
+            IntakeMapping intakeMapping = new();
+            List<MapField> properties = [];
 
-            IntakeMapping intakeMapping = new IntakeMapping();
-            List<string> properties = new List<string>();
             foreach (var property in intakeMapping.GetType().GetProperties())
             {
-                properties.Add("{ \"Name\": \"" + property.Name + "\", \"Type\": \"" + property.PropertyType.Name + "\"}");
+                var attribute = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault();
+
+                properties.Add(new MapField() 
+                { 
+                    Name = property.Name, 
+                    Type = property.PropertyType.Name, 
+                    IsCustom = false, 
+                    Label = attribute?.DisplayName ?? property.Name
+                });
             }
 
-            IntakeProperties = JsonSerializer.Serialize(properties);
+            if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+            {
+                // Get the available field from the worksheets
+                var worksheets = await _worksheetAppService.GetListAsync();
+
+                var fields = worksheets.SelectMany(s => s.Sections).SelectMany(s => s.Fields).ToList();
+
+                foreach (var field in fields)
+                {             
+                    properties.Add(new MapField() 
+                    { 
+                        Name = field.Name, 
+                        Type = "String", 
+                        IsCustom = false, 
+                        Label = field.Label 
+                    });
+                }
+            }
+
+            return [.. properties.OrderBy(s => s.Name)];
+        }
+
+        public class MapField
+        {
+            public string Name { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty;
+            public bool IsCustom { get; set; }
+            public string Label { get; set; } = string.Empty;
         }
     }
 }

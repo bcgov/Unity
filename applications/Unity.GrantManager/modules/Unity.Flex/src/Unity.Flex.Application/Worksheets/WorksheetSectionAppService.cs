@@ -20,7 +20,7 @@ namespace Unity.Flex.Worksheets
             var worksheet = await worksheetRepository.GetBySectionAsync(id, true) ?? throw new EntityNotFoundException();
             var section = worksheet.Sections.First(s => s.Id == id);
 
-            section.AddField(new CustomField(Guid.NewGuid(), dto.Name, dto.Label, dto.Type));
+            section.AddField(new CustomField(Guid.NewGuid(), dto.Name, dto.Label, dto.Type, dto.Definition));
         }
     }
 }

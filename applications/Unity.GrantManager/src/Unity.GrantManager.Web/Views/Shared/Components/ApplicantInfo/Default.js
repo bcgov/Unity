@@ -1,24 +1,26 @@
-﻿$(function () {    
+﻿$(function () {
     $('.currency-input').maskMoney();
 
     $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
-        $.each(formData, function (key, input) {
-           
+        $.each(formData, function (_, input) {            
+            if (Flex?.isCustomField(input)) {                
+                Flex.includeCustomFieldObj(ApplicantInfoObj, input);
+            }
+            else {
                 // This will not work if the culture is different and uses a different decimal separator
                 ApplicantInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
 
-                
                 if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
                     ApplicantInfoObj[input.name.split(".")[1]] = null;
                 }
 
-            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber') {
-                ApplicantInfoObj[input.name] = input.value;
+                if (input.name == 'ApplicantId' || input.name == 'SupplierNumber') {
+                    ApplicantInfoObj[input.name] = input.value;
+                }
             }
-            
         });
         try {
             unity.grantManager.grantApplications.grantApplication
@@ -53,8 +55,6 @@
             });
     }
 
- 
-
     $('#orgSectorDropdown').change(function () {
         const selectedValue = $(this).val();
         let sectorList = JSON.parse($('#orgApplicationSectorList').text());
@@ -75,6 +75,12 @@
         });
     });
 
+    PubSub.subscribe(
+        'fields_ApplicantInfo',
+        () => {
+            enableSaveBtn();
+        }
+    );
 });
 
 

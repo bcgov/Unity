@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetInstances;
-using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Values;
+using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
@@ -22,7 +23,7 @@ namespace Unity.Flex.Domain.Services
             var fields = BuildFields(dictionary);
 
             var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationAsync(eventData.CorrelationId, eventData.CorrelationProvider, eventData.UiAnchor, true);
-            var worksheet = await worksheetRepository.GetByUiAnchorAsync(eventData.UiAnchor, true);
+            var worksheet = await worksheetRepository.GetByCorrelationAsync(CurrentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, eventData.UiAnchor, true);
 
             if (worksheetInstance == null)
             {

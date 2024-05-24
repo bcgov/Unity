@@ -5,8 +5,11 @@
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
-        $.each(formData, function (key, input) {
-            if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "AssessmentResults.Notes")) {
+        $.each(formData, function (_, input) {
+            if (Flex?.isCustomField(input)) {
+                Flex.includeCustomFieldObj(assessmentResultObj, input);
+            }
+            else if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "AssessmentResults.Notes")) {
                 assessmentResultObj[input.name.split(".")[1]] = input.value;
             } else {
                 // This will not work if the culture is different and uses a different decimal separator
@@ -92,8 +95,15 @@
 
     PubSub.subscribe('project_info_saved',
         (msg, data) => {
-            $('#RequestedAmountInputAR').prop("value", data.RequestedAmount);
-            $('#TotalBudgetInputAR').prop("value", data.TotalProjectBudget);
+            $('#RequestedAmountInputAR')?.prop("value", data.RequestedAmount);
+            $('#TotalBudgetInputAR')?.prop("value", data.TotalProjectBudget);
+        }
+    );
+
+    PubSub.subscribe(
+        'fields_AssessmentInfo',
+        () => {
+            enableResultSaveBtn();
         }
     );
 });
@@ -146,7 +156,7 @@ function hasInvalidExplicitValidations() {
 
 function flaggedFieldIsValid(flag, name) {
     if (flag === true) {
-        if (document.getElementById(name).value && !document.getElementById(name).validity.valid) {            
+        if (document.getElementById(name).value && !document.getElementById(name).validity.valid) {
             return false;
         }
     }

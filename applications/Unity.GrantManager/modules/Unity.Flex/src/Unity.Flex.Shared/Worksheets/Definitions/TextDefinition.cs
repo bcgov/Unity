@@ -1,15 +1,12 @@
-﻿using Unity.Flex.Worksheets.Definitions;
-
-namespace Unity.Flex.Worksheets
+﻿namespace Unity.Flex.Worksheets.Definitions
 {
-    public class TextDefinition : DefinitionBase
+    public class TextDefinition : CustomFieldDefinition
     {
+        public uint MinLength { get; set; }
+        public uint MaxLength { get; set; }
+
         public TextDefinition()
         {
-            Min = null;
-            Max = null;
-            MinLength = 0;
-            MaxLength = 2000;
         }
     }
 }

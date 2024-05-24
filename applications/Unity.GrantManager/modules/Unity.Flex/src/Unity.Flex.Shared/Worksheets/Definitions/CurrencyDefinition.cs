@@ -1,15 +1,12 @@
-﻿using Unity.Flex.Worksheets.Definitions;
-
-namespace Unity.Flex.Worksheets
+﻿namespace Unity.Flex.Worksheets.Definitions
 {
-    public class CurrencyDefinition : DefinitionBase
+    public class CurrencyDefinition : CustomFieldDefinition
     {
+        public decimal Min { get; set; }
+        public decimal Max { get; set; }
+
         public CurrencyDefinition()
         {
-            Min = 0;
-            Max = 999999999999;
-            MinLength = null;
-            MaxLength = null;
         }
     }
 }

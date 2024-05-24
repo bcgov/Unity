@@ -283,7 +283,10 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
 
+        await PublishCustomFieldUpdatesAsync(id, CorrelationConsts.Application, FlexConsts.AssessmentInfoUiAnchor, input.CustomFields);
+
         await _applicationRepository.UpdateAsync(application);
+
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
@@ -323,13 +326,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
 
-            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
-            {
-                CorrelationId = id,
-                CorrelationProvider = CorrelationConsts.Application,
-                UiAnchor = FlexConsts.ProjectInfoUiAnchor,
-                CustomFields = input.CustomFields
-            }); 
+            await PublishCustomFieldUpdatesAsync(id, CorrelationConsts.Application, FlexConsts.ProjectInfoUiAnchor, input.CustomFields);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -406,6 +403,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
             application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
 
+            await PublishCustomFieldUpdatesAsync(id, CorrelationConsts.Application, FlexConsts.ApplicantInfoUiAnchor, input.CustomFields);
+
             await _applicationRepository.UpdateAsync(application);
 
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
@@ -421,6 +420,20 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         else
         {
             throw new EntityNotFoundException();
+        }
+    }
+
+    protected virtual async Task PublishCustomFieldUpdatesAsync(Guid id, string correlationProvider, string uiAnchor, dynamic? customFields)
+    {
+        if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+        {
+            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+            {
+                CorrelationId = id,
+                CorrelationProvider = correlationProvider,
+                UiAnchor = uiAnchor,
+                CustomFields = customFields
+            });
         }
     }
 

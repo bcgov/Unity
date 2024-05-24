@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +9,12 @@ using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
+using Unity.Flex.Worksheets.Values;
+using Unity.Modules.Shared.Correlation;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
 
@@ -20,14 +24,14 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
         ScriptTypes = [typeof(WorksheetInstanceWidgetScriptBundleContributor)],
         StyleTypes = [typeof(WorksheetInstanceWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInstanceAppService, IWorksheetAppService worksheetAppService) : AbpViewComponent
+public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInstanceAppService, IWorksheetAppService worksheetAppService, ICurrentTenant currentTenant) : AbpViewComponent
 {
     public async Task<IViewComponentResult> InvokeAsync(Guid correlationId, string correlationProvider, string uiAnchor)
     {
         WorksheetViewModel viewModel;
 
         var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAsync(correlationId, correlationProvider, uiAnchor);
-        var worksheet = await worksheetAppService.GetByUiAnchorAsync(uiAnchor);
+        var worksheet = await worksheetAppService.GetByCorrelationAsync(currentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, uiAnchor);
 
         if (worksheet == null) return View(new WorksheetViewModel());
 
@@ -117,7 +121,10 @@ public static class InputExtensions
         {
             CustomFieldType.Text => "text",
             CustomFieldType.Numeric => "number",
-            CustomFieldType.Currency => "number",
+            CustomFieldType.Currency => "text",
+            CustomFieldType.DateTime => "datetime-local",
+            CustomFieldType.Date => "date",
+            CustomFieldType.YesNo => "checkbox",
             _ => "text",
         };
     }
@@ -127,15 +134,53 @@ public static class InputExtensions
         return ValueResolver.Resolve(currentValue, type);
     }
 
-    public static DefinitionBase? ConvertDefinition(this string definition, CustomFieldType type)
+    public static CustomFieldDefinition? ConvertDefinition(this string definition, CustomFieldType type)
     {
         return type switch
         {
             CustomFieldType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
             CustomFieldType.Numeric => JsonSerializer.Deserialize<NumericDefinition>(definition),
             CustomFieldType.Currency => JsonSerializer.Deserialize<CurrencyDefinition>(definition),
+            CustomFieldType.DateTime => JsonSerializer.Deserialize<DateTimeDefinition>(definition),
+            CustomFieldType.Date => JsonSerializer.Deserialize<DateDefinition>(definition),
+            CustomFieldType.YesNo => JsonSerializer.Deserialize<YesNoDefinition>(definition),
             _ => null,
         };
+    }
+
+    public static bool CompareSelectListValue(this string value, string compare)
+    {
+        var yesNo = JsonSerializer.Deserialize<YesNoValue>(value);
+        return yesNo?.Value?.ToString() == compare;
+    }
+
+    public static string ApplyCssClass(this CustomFieldType type)
+    {
+        return type switch
+        {
+            CustomFieldType.YesNo => "form-select form-control",
+            _ => "form-control",
+        };
+    }    
+
+    public static string? GetMinValueOrNull(this CustomFieldDefinition field)
+    {
+        return null;
+    }
+
+    public static string? GetMaxValueOrNull(this CustomFieldDefinition field)
+    {
+        return null;
+    }
+
+    public static string? GetMinLengthValueOrNull(this CustomFieldDefinition field)
+    {
+        return null;
+    }
+
+    public static string? GetMaxLengthValueOrNull(this CustomFieldDefinition field)
+    {
+        return null;
     }
 }
 

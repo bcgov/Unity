@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
 
 [ApiExplorerSettings(IgnoreApi = true)]
-[Route("GrantApplications/Widgets/ApplicationActionWidget")]
+[Route("GrantApplications/Widgets/WorksheetInstance")]
 public class WorksheetInstanceWidgetController : AbpController
 {
     [HttpGet]
