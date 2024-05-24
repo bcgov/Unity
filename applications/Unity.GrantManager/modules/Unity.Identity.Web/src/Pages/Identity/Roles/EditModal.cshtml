@@ -65,6 +65,9 @@
                 }
             }
         </abp-modal-body>
-        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
     </abp-modal>
 </form>

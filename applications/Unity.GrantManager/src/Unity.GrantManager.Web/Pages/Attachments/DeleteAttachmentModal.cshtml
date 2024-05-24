@@ -17,8 +17,8 @@
             <abp-input type="hidden" asp-for="@Model.AttachmentTypeId" />
         </abp-modal-body>
         <abp-modal-footer> 
-            <abp-modal-footer buttons="@AbpModalButtons.Cancel"></abp-modal-footer>
-            <abp-button text="Delete" button-type="Primary" type="submit" icon="check"/>             
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Delete</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>            
         </abp-modal-footer>
         
     </abp-modal>
