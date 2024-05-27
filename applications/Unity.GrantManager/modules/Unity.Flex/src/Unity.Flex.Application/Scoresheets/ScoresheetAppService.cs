@@ -122,7 +122,7 @@ namespace Unity.Flex.Scoresheets
             }
             else
             {
-                throw new AbpValidationException("Invalid ActionType for Edit Scoresheet.");
+                throw new AbpValidationException("Invalid ActionType for Edit Scoresheet:"+dto.ActionType);
             }
             
         }

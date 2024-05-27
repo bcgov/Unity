@@ -61,3 +61,33 @@ function refreshScoresheetInfoWidget(scoresheetId, scorsheetIdsToLoad) {
             console.error('Error refreshing scoresheet-info-widget:', error);
         });
 }
+
+async function askToCreateNewVersion() {
+    const result = await Swal.fire({
+        title: "Confirm changes made to scoring sheet",
+        text: "Do you want to save your changes on the current version or create a new score sheet version?",
+        showCancelButton: true,
+        confirmButtonText: 'Save changes to the current version',
+        cancelButtonText: 'Create a new version',
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+        }
+    });
+    
+    
+    if (result.isConfirmed) {
+        return " On Current Version";
+    } else if (result.dismiss === Swal.DismissReason.cancel) {
+        await Swal.fire({
+            title: "Note",
+            text: "Note that to apply the new version of the scoresheet in the assessment process, you need to link the corresponding form to the updated version.",
+            confirmButtonText: 'Ok',
+            customClass: {
+                confirmButton: 'btn btn-primary'
+            }
+        });
+        return " On New Version";
+    }
+    
+}

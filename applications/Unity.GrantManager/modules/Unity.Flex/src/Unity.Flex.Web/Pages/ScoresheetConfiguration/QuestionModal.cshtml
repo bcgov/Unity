@@ -10,6 +10,10 @@
 @{
     Layout = null;
 }
+@section scripts
+{
+    <abp-script src="/Pages/ScoresheetConfiguration/Index.js" />
+}
 <form method="post" asp-page-handler="OnPostAsync" id="questionInfo">
     <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Question.ScoresheetId" />
     <abp-input type="hidden" id="SectionId" asp-for="@Model.Question.SectionId" />
