@@ -12,6 +12,6 @@ public static class AssessmentResultsOptionsList
 
     public static Dictionary<string, string> DeclineRationalActionList => new() { { "INELIGIBLE_PROJECT", "Ineligible Project" }, { "INELIGIBLE_APPLICANT", "Ineligible Applicant" }, { "INSUFFICIENT_READINESS", "Insufficient Readiness" }, { "LOW_PRIORITY", "Lower Priority Relative To Other Requests" }, { "NOT_ENOUGH_INFO", "Insufficient Information Provided" }, { "NOT_ALIGNED", "Not Aligned" }, { "OVERSUBSCRIBED", "Oversubscribed" }, { "OTHER", "Other" } };
 
-    public static Dictionary<string, string> SubStatusActionList => new() { { "REQUIRES_SECONDARY_REVIEW", "Requires Secondary Review" }, { "REQUIRES_TEAM_LEAD_REVIEW", "Requires Team Lead Review" }, { "MISSING_INFORMATION", "Missing Information" }, { "BATCH_FOR_DECISION", "Batch For Decision" }, { "NOTIFIED", "Notified" }, { "COMPLETE", "Complete" } };
+    public static Dictionary<string, string> SubStatusActionList => new() { { "BATCH_FOR_DECISION", "Batch For Decision" }, { "COMPLETE", "Complete" }, { "MISSING_INFORMATION", "Missing Information" }, { "NOTIFIED", "Notified" }, { "REQUIRES_SECONDARY_REVIEW", "Requires Secondary Review" }, { "REQUIRES_TEAM_LEAD_REVIEW", "Requires Team Lead Review" } };
 
 }
