@@ -354,3 +354,7 @@
 .fl-draggable:before {
     content: '\E76F';
 }
+
+.fl-datetime:before {
+    content: '\EC92';
+}

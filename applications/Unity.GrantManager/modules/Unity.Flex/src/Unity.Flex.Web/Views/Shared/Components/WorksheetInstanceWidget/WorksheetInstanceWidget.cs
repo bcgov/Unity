@@ -158,6 +158,7 @@ public static class InputExtensions
     {
         return type switch
         {
+            CustomFieldType.Currency => "form-control unity-currency-input",
             CustomFieldType.YesNo => "form-select form-control",
             _ => "form-control",
         };

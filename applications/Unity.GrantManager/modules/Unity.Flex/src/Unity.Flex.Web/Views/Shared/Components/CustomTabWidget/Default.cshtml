@@ -1,0 +1,30 @@
+@using Unity.Flex.Localization
+@using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@model CustomTabWidgetViewModel
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<FlexResource> L
+@inject IStringLocalizerFactory StringLocalizerFactory
+@{
+    Layout = null;
+}
+
+<abp-row class="px-1 pb-2 mb-4 custom-tab-container">
+    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
+        <div id="@($"custom-tab-title_{Model.Name}")" class="d-flex align-items-stretch justify-content-start">
+            <h6 class="ps-1 fw-bold">@($"{Model.Title}")</h6>
+        </div>
+        <abp-button text="Save" id="@($"save_{Model.Name}_btn")" class="floating-save-btn custom-tab-save" icon-type="Other"
+                    icon="fl fl-save" button-type="Primary" disabled="true" />
+    </abp-column>
+    <form id="@($"{Model.Name}_form")">
+        @await Component.InvokeAsync("WorksheetInstanceWidget",
+                 new
+                 {
+                     correlationId = Model.CorrelationId,
+                     correlationProvider = Model.CorrelationProvider,
+                     uiAnchor = Model.UiAnchor
+                 })
+    </form>
+</abp-row>                                 

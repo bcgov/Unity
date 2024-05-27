@@ -12,49 +12,81 @@
 
 @if (Model.IsConfigured)
 {
-    @foreach (var worksheetSection in Model.Sections)
-    {
-        <div class="@($"worksheet_section worksheet_section_{Model.UiAnchor}")">
-            <label class="@($"worksheet_section_label worksheet_section_label_{Model.UiAnchor}")">@worksheetSection.Name</label>
-            <div class="@($"worksheet_section_wrapper worksheet_section_wrapper_{Model.UiAnchor}")">
-                @foreach (var field in worksheetSection.Fields)
-                {
-                    <div class="worksheet_field worksheet_field_@Model.UiAnchor">
-                        <label class="form-label">@field.Label</label>
-                        @switch (field.Type)
-                        {
-                            case CustomFieldType.YesNo:
-                                {
-                                    <select class="@field.Type.ApplyCssClass()"
-                                            id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                            name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                            onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")">
+    <div class="@($"worksheet worksheet_{Model.UiAnchor}")">
+        @foreach (var worksheetSection in Model.Sections)
+        {
+            <div class="@($"worksheet_section worksheet_section_{Model.UiAnchor}")">
+                <label class="@($"worksheet_section_label worksheet_section_label_{Model.UiAnchor}")">@worksheetSection.Name</label>
+                <div class="@($"worksheet_section_wrapper worksheet_section_wrapper_{Model.UiAnchor}")">
+                    @foreach (var field in worksheetSection.Fields)
+                    {
+                        <div class="worksheet_field worksheet_field_@Model.UiAnchor">
+                            <label class="form-label">@field.Label</label>
+                            @switch (field.Type)
+                            {
+                                case CustomFieldType.YesNo:
+                                    {
+                                        <select class="@field.Type.ApplyCssClass()"
+                                                id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                                                name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                                                onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")">
                                             <option selected="@field.CurrentValue?.CompareSelectListValue("Please choose...")">Please choose...</option>
                                             <option selected="@field.CurrentValue?.CompareSelectListValue("Yes")">Yes</option>
                                             <option selected="@field.CurrentValue?.CompareSelectListValue("No")">No</option>
-                                    </select>
-                                    break;
-                                }
-                            default:
-                                {
-                                    <input type="@field.Type.ConvertInputType()"
-                                           label="@field.Label"
-                                           value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
-                                           class="@field.Type.ApplyCssClass()"
-                                           min="@field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull()"
-                                           max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
-                                           minlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMinLengthValueOrNull()"
-                                           maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()"
-                                           id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                           name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                           onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
-                                    break;
-                                }
-                        }
-                        <span class="text-danger field-validation-valid" data-valmsg-for="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")" data-valmsg-replace="true"></span>
-                    </div>
-                }                
+                                        </select>
+                                        break;
+                                    }
+                                case CustomFieldType.Currency:
+                                    {
+                                        <div class="custom-input-group">
+                                            <span class="custom-input-prepend">$</span>
+                                            <input type="@field.Type.ConvertInputType()"
+                                                   label="@field.Label"
+                                                   value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
+                                                   class="@field.Type.ApplyCssClass()"
+                                                   min="@field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull()"
+                                                   max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
+                                                   id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                                                   name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                                                   onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
+                                        </div>
+                                        break;
+                                    }
+                                case CustomFieldType.Date:
+                                    {
+                                        <div class="custom-input-group">
+                                            <span class="custom-input-append"><i class="fl fl-datetime"></i></span>
+                                            <input type="@field.Type.ConvertInputType()"
+                                                   class="@field.Type.ApplyCssClass()"
+                                                   value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
+                                                   label="@field.Label"
+                                                   id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                                                   name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                                                   onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
+                                        </div>
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        <input type="@field.Type.ConvertInputType()"
+                                               label="@field.Label"
+                                               value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
+                                               class="@field.Type.ApplyCssClass()"
+                                               min="@field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull()"
+                                               max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
+                                               minlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMinLengthValueOrNull()"
+                                               maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()"
+                                               id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                                               name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
+                                               onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
+                                        break;
+                                    }
+                            }
+                            <span class="text-danger field-validation-valid" data-valmsg-for="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")" data-valmsg-replace="true"></span>
+                        </div>
+                    }
+                </div>
             </div>
-        </div>
-    }
+        }
+    </div>
 }

@@ -11,6 +11,6 @@ namespace Unity.Flex.Worksheets
         Task<WorksheetDto?> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string uiAnchor);
         Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto);
         Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateCustomFieldDto dto);
-        Task<List<WorksheetDto>> GetListAsync();
+        Task<List<WorksheetDto>> GetListAsync();     
     }
 }

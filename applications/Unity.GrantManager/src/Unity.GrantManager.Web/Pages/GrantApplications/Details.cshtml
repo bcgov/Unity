@@ -12,11 +12,13 @@
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.Features
+@using Volo.Abp.MultiTenancy
 
 @model DetailsModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @inject IFeatureChecker FeatureChecker
+@inject ICurrentTenant CurrentTenant
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
@@ -142,6 +144,18 @@
                 </abp-tab> *@
                 @*-------- Approval Section END ---------*@
 
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                {
+                    @foreach (var customTab in Model.CustomTabs)
+                    {
+                        <abp-tab name="@customTab.Name" title="@customTab.Name">
+                            @await Component.InvokeAsync("CustomTabWidget", new { 
+                                correlationId = Model.ApplicationId, 
+                                correlationProvider = CorrelationConsts.Application, 
+                                uiAnchor = customTab.UiAnchor })
+                        </abp-tab>
+                    }
+                }
             </abp-tabs>
         </abp-card>
     </abp-column>

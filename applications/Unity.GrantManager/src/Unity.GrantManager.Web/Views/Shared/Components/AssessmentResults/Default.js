@@ -95,8 +95,8 @@
 
     PubSub.subscribe('project_info_saved',
         (msg, data) => {
-            $('#RequestedAmountInputAR')?.prop("value", data.RequestedAmount);
-            $('#TotalBudgetInputAR')?.prop("value", data.TotalProjectBudget);
+            $('#RequestedAmountInputAR')?.prop("value", data?.RequestedAmount);
+            $('#TotalBudgetInputAR')?.prop("value", data?.TotalProjectBudget);
         }
     );
 

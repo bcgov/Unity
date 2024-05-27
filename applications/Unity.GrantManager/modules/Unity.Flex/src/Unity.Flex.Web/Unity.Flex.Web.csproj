@@ -47,4 +47,13 @@
     <ProjectReference Include="..\Unity.Flex.Application.Contracts\Unity.Flex.Application.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Views\Shared\Components\CustomTabWidget\Default.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Views\Shared\Components\CustomTabWidget\Default.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
