@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -20,13 +22,17 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     private readonly IApplicationTagsRepository _applicationTagsRepository;
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly IIntakeRepository _intakeRepository;
+    private readonly IApplicationAssignmentRepository _applicationAssignmentRepository;
+    private readonly IPersonRepository _personRepository;
 
     public DashboardAppService(IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
         IApplicantRepository applicantRepository,
         IApplicationTagsRepository applicationTagsRepository,
         IApplicationFormRepository applicationFormRepository,
-        IIntakeRepository intakeRepository
+        IIntakeRepository intakeRepository,
+        IApplicationAssignmentRepository applicationAssignmentRepository,
+        IPersonRepository personRepository
         )
          : base()
     {
@@ -36,6 +42,8 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         _applicationTagsRepository = applicationTagsRepository;
         _applicationFormRepository = applicationFormRepository;
         _intakeRepository = intakeRepository;
+        _applicationAssignmentRepository = applicationAssignmentRepository;
+        _personRepository = personRepository;
     }
 
     public virtual async Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
@@ -121,6 +129,38 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         });
 
         return applicationStatusDto;
+    }
+
+    public virtual async Task<List<GetApplicationAssigneeDto>> GetApplicationAssigneeCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
+    {
+        var parameters = PrepareParameters(categories, statusCodes, substatus);
+
+        var applicationAssigneeDto = await ExecuteWithDisabledTracking(async () => {
+            var query = from intake in await _intakeRepository.GetQueryableAsync()
+                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                        join applicationAssignee in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals applicationAssignee.ApplicationId
+                        join person in await _personRepository.GetQueryableAsync() on applicationAssignee.AssigneeId equals person.Id
+                        where intakeIds.Contains(intake.Id) && parameters.Categories.Contains(form.Category) && parameters.StatusCodes.Contains(appStatus.StatusCode) && parameters.SubStatuses.Contains(application.SubStatus)
+                        select new { application, appStatus, applicationAssignee };
+
+            var result = query?.GroupBy(app => app.applicationAssignee.Assignee)
+                .Select(group => new GetApplicationAssigneeDto { 
+                    ApplicationAssignee = string.IsNullOrEmpty(group.Key!.FullName) ? DashboardConsts.EmptyValue : group.Key!.FullName,
+                    AssigneeOidcDisplayName = string.IsNullOrEmpty(group.Key!.OidcDisplayName) ? DashboardConsts.EmptyValue : group.Key!.OidcDisplayName,
+                    Count = group.Count() 
+                })
+                .OrderBy(o => o.ApplicationAssignee);
+
+            if (result == null) return [];
+
+            var queryResult = result.ToList();
+
+            return queryResult;
+        });
+
+        return applicationAssigneeDto;
     }
 
     public virtual async Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(Guid[] intakeIds, string[] categories, string[] statusCodes, string?[] substatus)
