@@ -2,14 +2,10 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using Unity.Flex.Domain.Enums;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Unity.Flex.Scoresheets
 { 
@@ -118,7 +114,7 @@ namespace Unity.Flex.Scoresheets
             else if(dto.ActionType.Contains("New Version"))
             {
                 await UpdateScoresheetOnCurrentVersions(dto);
-                await CreateNewVersion(dto);
+                await CloneScoresheetAsync(dto.ScoresheetId,null,null);
             }
             else
             {
@@ -127,12 +123,14 @@ namespace Unity.Flex.Scoresheets
             
         }
 
-        private async Task CreateNewVersion(EditScoresheetDto dto)
+        public async Task<ClonedObjectDto> CloneScoresheetAsync(Guid scoresheetIdToClone, Guid? sectionIdToClone, Guid? questionIdToClone)
         {
             using var unitOfWork = _unitOfWorkManager.Begin();
-            var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(dto.ScoresheetId) ?? throw new AbpValidationException("Scoresheet not found.");
-            var highestVersionScoresheet = await _scoresheetRepository.GetHighestVersionAsync(dto.GroupId) ?? throw new AbpValidationException("Scoresheet not found.");
-            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), dto.Name, dto.GroupId)
+            ScoresheetSection? clonedSectionToGet = null;
+            Question? clonedQuestionToGet = null;
+            var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
+            var highestVersionScoresheet = await _scoresheetRepository.GetHighestVersionAsync(originalScoresheet.GroupId) ?? throw new AbpValidationException("Scoresheet not found.");
+            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Name, originalScoresheet.GroupId)
             {
                 Version = highestVersionScoresheet.Version + 1,
                 Sections = []
@@ -146,17 +144,34 @@ namespace Unity.Flex.Scoresheets
                     Fields = []
                 };
 
+                if(sectionIdToClone != null && originalSection.Id == sectionIdToClone)
+                {
+                    clonedSectionToGet = clonedSection;
+                }
+
                 foreach (var originalQuestion in originalSection.Fields)
                 {
                     var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, clonedSection.Id);
                     clonedSection.Fields.Add(clonedQuestion);
+                    if(questionIdToClone != null && originalQuestion.Id == questionIdToClone)
+                    {
+                        clonedQuestionToGet = clonedQuestion;
+                    }
                 }
 
                 clonedScoresheet.Sections.Add(clonedSection);
             }
 
-            await _scoresheetRepository.InsertAsync(clonedScoresheet);
+            var newScoresheet = await _scoresheetRepository.InsertAsync(clonedScoresheet);
+            await unitOfWork.SaveChangesAsync();
             await unitOfWork.CompleteAsync();
+            return new ClonedObjectDto { ScoresheetId = newScoresheet.Id, SectionId = clonedSectionToGet?.Id, QuestionId = clonedQuestionToGet?.Id};
+        }
+
+        public async Task<ScoresheetSectionDto> CreateSectionOnNewVersionAsync(Guid id, CreateSectionDto dto)
+        {
+            var clone = await CloneScoresheetAsync(id,null,null);
+            return await CreateSectionAsync(clone.ScoresheetId, new CreateSectionDto { ScoresheetId = clone.ScoresheetId, Name = dto.Name });
         }
 
         private async Task UpdateScoresheetOnCurrentVersions(EditScoresheetDto dto)
@@ -207,5 +222,7 @@ namespace Unity.Flex.Scoresheets
                 }
             }
         }
+
+       
     }
 }

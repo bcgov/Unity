@@ -177,7 +177,13 @@ let sectionModal = new abp.ModalManager({
 
 sectionModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
-    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
+    if (actionType.includes('On New Version')) {
+        const scoresheetIdsToLoad = getScoresheetIdsToLoad().filter(element => element !== selectedScoresheetId);
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: scoresheetIdsToLoad });
+    } else {
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
+    }
+    
     abp.notify.success(
         actionType + ' is successful.',
         'Scoresheet Section'
