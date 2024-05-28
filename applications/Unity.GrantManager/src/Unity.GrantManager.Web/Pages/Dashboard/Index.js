@@ -183,7 +183,7 @@ function formatCurrency(num) {
         }
     }
 
-    return `$${num}`;
+    return `$${num.toFixed(2)}`;
 }
 
 $('#dashboardIntakeId').change(function () {
