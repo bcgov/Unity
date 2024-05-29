@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
@@ -68,13 +67,14 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var applicationTags = await GetFilteredApplicationTags(query.Select(app => app), parameters);
             query = query.Where(application => applicationTags.Contains(application.Id));
 
-            var result = query?.Distinct()?.GroupBy(app => app.EconomicRegion)
+            var result = query.Distinct().GroupBy(app => app.EconomicRegion)
                 .Select(group => new { EconomicRegion = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, Count = group.Count() })
                 .GroupBy(app => app.EconomicRegion)
                 .Select(group => new GetEconomicRegionDto { EconomicRegion = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.EconomicRegion);
 
-            if (result == null) return [];
+            if (result == null) 
+                return new List<GetEconomicRegionDto>();
 
             var queryResult = result.ToList();
 
@@ -109,13 +109,14 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var applicationTags = await GetFilteredApplicationTags(query.Select(app => app.application), parameters);
             query = query.Where(application => applicationTags.Contains(application.application.Id));
 
-            var result = query?.Distinct()?.GroupBy(app => app.applicant.Sector)
+            var result = query.Distinct().GroupBy(app => app.applicant.Sector)
                 .Select(group => new { Sector = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, Count = group.Count() })
                 .GroupBy(group => group.Sector)
                 .Select(group => new GetSectorDto { Sector = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.Sector);
 
-            if (result == null) return [];
+            if (result == null) 
+                return new List<GetSectorDto>();
 
             var queryResult = result.ToList();
 
@@ -149,13 +150,14 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var applicationTags = await GetFilteredApplicationTags(query.Select(app => app.application), parameters);
             query = query.Where(application => applicationTags.Contains(application.application.Id));
 
-            var result = query?.Distinct()?.GroupBy(app => app.appStatus.InternalStatus)
+            var result = query.Distinct().GroupBy(app => app.appStatus.InternalStatus)
                 .Select(group => new { ApplicationStatus = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, Count = group.Count() })
                 .GroupBy(app => app.ApplicationStatus)
                 .Select(group => new GetApplicationStatusDto { ApplicationStatus = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.ApplicationStatus);
 
-            if (result == null) return [];
+            if (result == null) 
+                return new List<GetApplicationStatusDto>();
 
             var queryResult = result.ToList();
 
@@ -225,13 +227,14 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var applicationTags = await GetFilteredApplicationTags(query.Select(app => app.application), parameters);
             query = query.Where(application => applicationTags.Contains(application.application.Id));
 
-            var result = query?.Distinct()?.GroupBy(app => app.applicant.SubSector)
+            var result = query.Distinct().GroupBy(app => app.applicant.SubSector)
                 .Select(group => new { Subsector = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, TotalRequestedAmount = group.Sum(item => item.application.RequestedAmount) })
                 .GroupBy(app => app.Subsector)
                 .Select(group => new GetSubsectorRequestedAmtDto { Subsector = group.Key, TotalRequestedAmount = group.Sum(obj => obj.TotalRequestedAmount) })
                 .OrderBy(o => o.Subsector);
 
-            if (result == null) return [];
+            if (result == null) 
+                return new List<GetSubsectorRequestedAmtDto>();
 
             var queryResult = result.ToList();
             queryResult.RemoveAll(item => item.TotalRequestedAmount == 0);
@@ -246,7 +249,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         var tags = await _applicationTagsRepository.GetQueryableAsync();
         var tagsResult = tags.Join(applications, tag => tag.ApplicationId, app => app.Id, (tag, app) => tag);
 
-        var applicationIdsWithTags = tagsResult.ToList()
+        var applicationIdsWithTags = tagsResult.AsEnumerable()
             .SelectMany(tag => tag.Text.Split(','), (tagResult, tag) => new { tagResult.ApplicationId, Tag = tag })
             .Where(tag => parameters.Tags.Contains(tag.Tag))
             .Select(tag => tag.ApplicationId)
