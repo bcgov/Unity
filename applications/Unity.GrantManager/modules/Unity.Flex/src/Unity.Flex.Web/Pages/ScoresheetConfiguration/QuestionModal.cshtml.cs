@@ -90,24 +90,24 @@ public class QuestionModalModel : FlexPageModel
 
     private async Task CreateQuestionOnCurrentVersion()
     {
-        _ = await _scoresheetAppService.CreateQuestionAsync(Question.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, ScoresheetId = Question.ScoresheetId });
+        _ = await _scoresheetAppService.CreateQuestionAsync(new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, ScoresheetId = Question.ScoresheetId });
     }
 
     private async Task CreateQuestionOnNewVersion()
     {
         var clone = await _scoresheetAppService.CloneScoresheetAsync(Question.ScoresheetId, Question.SectionId, Question.Id);
-        _ = await _scoresheetAppService.CreateQuestionAsync(clone.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, ScoresheetId = clone.ScoresheetId });
+        _ = await _scoresheetAppService.CreateQuestionAsync(new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, ScoresheetId = clone.ScoresheetId });
     }
 
     private async Task EditQuestionOnCurrentVersion()
     {
-        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionId = Question.Id });
+        _ = await _questionAppService.UpdateAsync(new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionId = Question.Id });
     }
 
     private async Task EditQuestionOnNewVersion()
     {
         var clone = await _scoresheetAppService.CloneScoresheetAsync(Question.ScoresheetId, Question.SectionId, Question.Id);
-        _ = await _questionAppService.UpdateAsync(clone.QuestionId ?? Guid.Empty, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionId = clone.QuestionId ?? Guid.Empty });
+        _ = await _questionAppService.UpdateAsync(new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionId = clone.QuestionId ?? Guid.Empty });
     }
 
     private async Task DeleteQuestionOnCurrentVersion()

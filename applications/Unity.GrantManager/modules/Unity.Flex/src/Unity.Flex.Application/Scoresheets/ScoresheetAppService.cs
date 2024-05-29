@@ -82,7 +82,7 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
-        public virtual Task<QuestionDto> CreateQuestionAsync(Guid id, CreateQuestionDto dto)
+        public virtual Task<QuestionDto> CreateQuestionAsync(CreateQuestionDto dto)
         {
             lock (_questionLockObject)
             {
@@ -94,7 +94,7 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-        public virtual Task<ScoresheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto)
+        public virtual Task<ScoresheetSectionDto> CreateSectionAsync(CreateSectionDto dto)
         {
             lock (_sectionLockObject)
             {
@@ -166,12 +166,6 @@ namespace Unity.Flex.Scoresheets
             await unitOfWork.SaveChangesAsync();
             await unitOfWork.CompleteAsync();
             return new ClonedObjectDto { ScoresheetId = newScoresheet.Id, SectionId = clonedSectionToGet?.Id, QuestionId = clonedQuestionToGet?.Id};
-        }
-
-        public async Task<ScoresheetSectionDto> CreateSectionOnNewVersionAsync(Guid id, CreateSectionDto dto)
-        {
-            var clone = await CloneScoresheetAsync(id,null,null);
-            return await CreateSectionAsync(clone.ScoresheetId, new CreateSectionDto { ScoresheetId = clone.ScoresheetId, Name = dto.Name });
         }
 
         private async Task UpdateScoresheetOnCurrentVersions(EditScoresheetDto dto)

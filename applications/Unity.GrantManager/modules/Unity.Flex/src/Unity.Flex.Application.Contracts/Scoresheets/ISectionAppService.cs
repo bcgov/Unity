@@ -7,7 +7,7 @@ namespace Unity.Flex.Scoresheets
     public interface ISectionAppService : IApplicationService
     {        
         Task<ScoresheetSectionDto> GetAsync(Guid id);
-        Task<ScoresheetSectionDto> UpdateAsync(Guid id, EditSectionDto dto);
+        Task<ScoresheetSectionDto> UpdateAsync(EditSectionDto dto);
         Task DeleteAsync(Guid id);
     }
 }

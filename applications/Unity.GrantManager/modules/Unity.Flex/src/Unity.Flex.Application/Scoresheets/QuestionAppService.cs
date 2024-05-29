@@ -19,7 +19,7 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.GetAsync(id));
         }
 
-        public async Task<QuestionDto> UpdateAsync(Guid id, EditQuestionDto dto)
+        public async Task<QuestionDto> UpdateAsync(EditQuestionDto dto)
         {
             var question = await _questionRepository.GetAsync(dto.QuestionId) ?? throw new AbpValidationException("Missing QuestionId:" + dto.QuestionId);
             question.Name = dto.Name;
