@@ -86,8 +86,8 @@
             </abp-card>
         </abp-modal-body>
         <abp-modal-footer>
-            <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
             <abp-button id="btnSubmitPayment" class="btn btn-primary" text="@L["ApplicationPaymentRequest:SubmitButtonText"].Value"  onclick="submitPayments()" disabled="@Model.DisableSubmit" type="button"></abp-button>
+            <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
         </abp-modal-footer>
     </abp-modal>
 </form>

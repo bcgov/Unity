@@ -79,11 +79,9 @@ function initializeChart(labelsArray, dataArray, labelDesc, chartId, width, heig
         useDirtyRect: false,
     });
 
-    let sum = 0;
-    if (chartId === 'applicationTagsChart' || chartId === 'subsectorRequestedAmountChart') {
-        sum = labelsArray.length;
-    } else {
-        sum = dataArray.reduce((partialSum, a) => partialSum + a, 0);
+    let sum = dataArray?.reduce((partialSum, a) => partialSum + a, 0) ?? 0;
+    if (chartId === 'subsectorRequestedAmountChart') {
+        sum = formatCurrency(sum);
     }
 
     let data = [];
@@ -188,6 +186,21 @@ function initializeChart(labelsArray, dataArray, labelDesc, chartId, width, heig
     }
 
     window.addEventListener('resize', myChart.resize);
+}
+
+function formatCurrency(num) {
+    const units = [
+        { value: 1e9, suffix: 'B' },
+        { value: 1e6, suffix: 'M' }
+    ];
+
+    for (const { value, suffix } of units) {
+        if (num >= value) {
+            return `$${(num / value).toFixed(1).replace(/\.0$/, '')}${suffix}`;
+        }
+    }
+
+    return `$${num.toFixed(2)}`;
 }
 
 $('#dashboardIntakeId').change(function () {
