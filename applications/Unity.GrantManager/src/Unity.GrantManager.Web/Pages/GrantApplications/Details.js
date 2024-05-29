@@ -90,7 +90,6 @@ $(function () {
                     ).then(function (form) {
                         // Set Example Submission Object
                         form.submission = data.submission.submission;
-                        addEventListeners();
                     });
                 });
         } catch (error) {
@@ -318,7 +317,6 @@ $(function () {
         'application_status_changed',
         (msg, data) => {
             console.log(msg, data);
-            applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
             assessmentResultWidgetManager.refresh();
         }
@@ -344,9 +342,10 @@ $(function () {
     );
 
     function initializeDetailsPage() {
-        getSubmission();
         initCommentsWidget();
         updateLinksCounters();
+        addEventListeners();
+        getSubmission();
     }
 
     initializeDetailsPage();
