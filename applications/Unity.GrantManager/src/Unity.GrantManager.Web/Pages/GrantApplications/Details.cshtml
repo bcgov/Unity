@@ -148,11 +148,14 @@
                 {
                     @foreach (var customTab in Model.CustomTabs)
                     {
-                        <abp-tab name="@customTab.Name" title="@customTab.Name">
+                        <abp-tab name="@customTab.Name" title="@customTab.Title">
                             @await Component.InvokeAsync("CustomTabWidget", new { 
                                 correlationId = Model.ApplicationId, 
                                 correlationProvider = CorrelationConsts.Application, 
-                                uiAnchor = customTab.UiAnchor })
+                                uiAnchor = customTab.UiAnchor,
+                                name = customTab.Name,
+                                title = customTab.Title
+                            })
                         </abp-tab>
                     }
                 }

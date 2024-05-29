@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 using Unity.Flex.Worksheets;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels

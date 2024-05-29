@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Net.Http.Headers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,6 +52,7 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         {
             IsConfigured = true,
             UiAnchor = worksheetDto.UiAnchor,
+            Name = worksheetDto.Name
         };
 
         foreach (var section in worksheetDto.Sections.OrderBy(s => s.Order))

@@ -18,6 +18,7 @@ public class FlexApplicationAutoMapperProfile : Profile
         CreateMap<CustomFieldValue, CustomFieldValueDto>();
         CreateMap<CustomField, CustomFieldDto>();
         CreateMap<Worksheet, WorksheetBasicDto>();
+        CreateMap<PersistWorksheetIntanceValuesDto, PersistWorksheetIntanceValuesEto>();
 
         CreateMap<Question, QuestionDto>()
             .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore());

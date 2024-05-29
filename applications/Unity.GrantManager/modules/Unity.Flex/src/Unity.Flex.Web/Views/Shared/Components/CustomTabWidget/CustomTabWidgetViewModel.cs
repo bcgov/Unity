@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using System;
+﻿using System;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 {

@@ -257,7 +257,6 @@
                 }
             }
         }
-        debugger;
         handleSaveMapping(mappingJson);
     }
 
@@ -312,8 +311,8 @@
                     let dragableDiv = document.createElement('div');
                     dragableDiv.id = 'unity_' + intakeFieldJson.Name;
                     dragableDiv.className = 'card';
-                    dragableDiv.setAttribute("draggable", "true");
-                    dragableDiv.innerHTML = intakeFieldJson.Label;
+                    dragableDiv.setAttribute("draggable", "true");                    
+                    dragableDiv.innerHTML = intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
                     intakeMapColumn.appendChild(dragableDiv);
                 }
             }

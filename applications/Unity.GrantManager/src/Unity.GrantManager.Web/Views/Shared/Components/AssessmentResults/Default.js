@@ -1,6 +1,5 @@
 ﻿$(function () {
-    $('.unity-currency-input').maskMoney();
-
+   
     $('body').on('click', '#saveAssessmentResultBtn', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
@@ -101,11 +100,13 @@
     );
 
     PubSub.subscribe(
-        'fields_AssessmentInfo',
+        'fields_assessmentinfo',
         () => {
             enableResultSaveBtn();
         }
     );
+
+    $('.unity-currency-input').maskMoney();
 });
 
 let dueDateHasChanged = false;

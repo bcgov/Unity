@@ -27,9 +27,9 @@
                                 case CustomFieldType.YesNo:
                                     {
                                         <select class="@field.Type.ApplyCssClass()"
-                                                id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                                name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                                onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")">
+                                                id="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                name="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                onchange="@($"notifyFieldChange('{Model.Name}', this)")">
                                             <option selected="@field.CurrentValue?.CompareSelectListValue("Please choose...")">Please choose...</option>
                                             <option selected="@field.CurrentValue?.CompareSelectListValue("Yes")">Yes</option>
                                             <option selected="@field.CurrentValue?.CompareSelectListValue("No")">No</option>
@@ -46,9 +46,9 @@
                                                    class="@field.Type.ApplyCssClass()"
                                                    min="@field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull()"
                                                    max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
-                                                   id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                                   name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                                   onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
+                                                   id="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                   name="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
                                         </div>
                                         break;
                                     }
@@ -60,9 +60,9 @@
                                                    class="@field.Type.ApplyCssClass()"
                                                    value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
                                                    label="@field.Label"
-                                                   id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                                   name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                                   onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
+                                                   id="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                   name="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
                                         </div>
                                         break;
                                     }
@@ -76,13 +76,13 @@
                                                max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
                                                minlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMinLengthValueOrNull()"
                                                maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()"
-                                               id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                               name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                                               onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
+                                               id="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                               name="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                               onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
                                         break;
                                     }
                             }
-                            <span class="text-danger field-validation-valid" data-valmsg-for="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")" data-valmsg-replace="true"></span>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field.Name}.{Model.Name}.{field.Id}")" data-valmsg-replace="true"></span>
                         </div>
                     }
                 </div>

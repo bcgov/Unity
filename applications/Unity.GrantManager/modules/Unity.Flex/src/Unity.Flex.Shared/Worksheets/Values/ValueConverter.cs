@@ -11,7 +11,7 @@ namespace Unity.Flex.Worksheets.Values
             {
                 CustomFieldType.Text => JsonSerializer.Serialize(new TextValue(currentValue)),
                 CustomFieldType.Numeric => JsonSerializer.Serialize(new NumericValue(currentValue)),
-                CustomFieldType.Currency => JsonSerializer.Serialize(new CurrencyValue(currentValue)),
+                CustomFieldType.Currency => JsonSerializer.Serialize(new CurrencyValue(decimal.Parse(currentValue))),
                 CustomFieldType.Date => JsonSerializer.Serialize(new DateValue(currentValue)),
                 CustomFieldType.DateTime => JsonSerializer.Serialize(new DateTimeValue(currentValue)),
                 CustomFieldType.YesNo => JsonSerializer.Serialize(new YesNoValue(currentValue)),

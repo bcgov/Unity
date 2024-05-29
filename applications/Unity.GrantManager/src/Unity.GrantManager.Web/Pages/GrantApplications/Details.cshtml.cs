@@ -13,6 +13,8 @@ using Unity.Flex.Worksheets;
 using Volo.Abp.MultiTenancy;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Features;
+using System.Linq;
+using Unity.GrantManager.Flex;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -77,7 +79,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                CustomTabs = await _worksheetListAppService.GetListByCorrelationAsync(_currentTenant.Id, CorrelationConsts.Tenant);
+                var worksheets = await _worksheetListAppService.GetListByCorrelationAsync(_currentTenant.Id, CorrelationConsts.Tenant);
+                CustomTabs = worksheets.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).ToList();
             }
 
             if (applicationFormSubmission != null)

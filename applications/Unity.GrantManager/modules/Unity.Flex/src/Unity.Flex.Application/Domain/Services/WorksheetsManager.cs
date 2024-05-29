@@ -16,7 +16,7 @@ namespace Unity.Flex.Domain.Services
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
-            if ((object?)eventData.CustomFields == null) { return; }            
+            if ((object?)eventData.CustomFields == null) { return; }
 
             string json = JsonSerializer.Serialize(eventData.CustomFields);
             var dictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
@@ -68,15 +68,15 @@ namespace Unity.Flex.Domain.Services
 
             foreach (var field in dictionary)
             {
-                // Field is broken down into {FieldId}.{UiAnchor}.{FieldName} and then value
+                // Field is broken down into {FieldName}.{UiAnchor}.{FieldId} and then value
 
                 var split = field.Key.Split('.', StringSplitOptions.RemoveEmptyEntries);
 
                 fields.Add(new ValueFieldContainer()
                 {
-                    FieldId = Guid.Parse(split[0]),
+                    FieldId = Guid.Parse(split[2]),
                     UiAnchor = split[1],
-                    FieldName = split[2],
+                    FieldName = split[0],
                     Value = field.Value
                 });
             }

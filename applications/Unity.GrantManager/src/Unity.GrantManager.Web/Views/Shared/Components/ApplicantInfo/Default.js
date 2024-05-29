@@ -1,6 +1,4 @@
 ﻿$(function () {
-    $('.currency-input').maskMoney();
-
     $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
@@ -76,11 +74,13 @@
     });
 
     PubSub.subscribe(
-        'fields_ApplicantInfo',
+        'fields_applicantinfo',
         () => {
             enableSaveBtn();
         }
     );
+
+    $('.unity-currency-input').maskMoney();
 });
 
 

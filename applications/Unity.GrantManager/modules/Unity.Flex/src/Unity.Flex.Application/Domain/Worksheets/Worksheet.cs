@@ -11,6 +11,7 @@ namespace Unity.Flex.Domain.Worksheets
     public class Worksheet : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         public virtual string Name { get; private set; } = string.Empty;
+        public virtual string Title { get; private set; } = string.Empty;
         public virtual uint Version { get; private set; } = 1;
         public string UIAnchor { get; set; } = string.Empty;
 
@@ -29,6 +30,7 @@ namespace Unity.Flex.Domain.Worksheets
 
         public Worksheet(Guid id,
         string name,
+        string title,
         string uiAnchor,
         Guid correlationId,
         string correlationProvider)
@@ -36,6 +38,7 @@ namespace Unity.Flex.Domain.Worksheets
         {
             Id = id;
             Name = name;
+            Title = title;
             UIAnchor = uiAnchor;
             CorrelationId = correlationId;
             CorrelationProvider = correlationProvider;

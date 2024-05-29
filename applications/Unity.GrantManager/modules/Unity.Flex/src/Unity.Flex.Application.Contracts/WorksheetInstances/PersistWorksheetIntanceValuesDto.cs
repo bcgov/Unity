@@ -1,15 +1,13 @@
 ﻿using System;
 
-namespace Unity.Flex.Worksheets
-{
+namespace Unity.Flex.WorksheetInstances
+{    
     [Serializable]
-    public class WorksheetBasicDto
+    public class PersistWorksheetIntanceValuesDto
     {
-        public Guid Id { get; set; }
         public Guid CorrelationId { get; set; }
         public string CorrelationProvider { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
         public string UiAnchor { get; set; } = string.Empty;
+        public dynamic? CustomFields { get; set; }
     }
 }

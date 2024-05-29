@@ -29,7 +29,7 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto)
         {
-            var newWorksheet = new Worksheet(Guid.NewGuid(), dto.Name, dto.UIAnchor, dto.CorrelationId, dto.CorrelationProvider);
+            var newWorksheet = new Worksheet(Guid.NewGuid(), dto.Title.Trim().Replace(" ", "").ToLower(), dto.Title, dto.UIAnchor, dto.CorrelationId, dto.CorrelationProvider);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {

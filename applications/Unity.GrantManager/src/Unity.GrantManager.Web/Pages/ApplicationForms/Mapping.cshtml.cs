@@ -126,15 +126,20 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 {             
                     properties.Add(new MapField() 
                     { 
-                        Name = field.Name, 
-                        Type = "String", 
-                        IsCustom = false, 
-                        Label = field.Label 
+                        Name = field.Name,
+                        Type = ConvertCustomType(),
+                        IsCustom = true,
+                        Label = field.Label
                     });
                 }
             }
 
-            return [.. properties.OrderBy(s => s.Name)];
+            return [.. properties.OrderBy(s => s.Label)];
+        }
+
+        private string ConvertCustomType()
+        {
+            return "String";
         }
 
         public class MapField
