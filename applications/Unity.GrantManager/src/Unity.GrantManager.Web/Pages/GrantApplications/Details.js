@@ -317,6 +317,7 @@ $(function () {
         'application_status_changed',
         (msg, data) => {
             console.log(msg, data);
+            applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
             assessmentResultWidgetManager.refresh();
         }
