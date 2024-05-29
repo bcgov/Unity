@@ -39,7 +39,7 @@
             </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-primary" onclick="handleSaveQuestionButtonClick(event)">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
             @if (!Model.Question.ActionType.StartsWith("Add"))
             {
@@ -50,8 +50,17 @@
 </form>
 
 <script>
-    function deleteQuestion() {
-        Swal.fire({
+    async function handleSaveQuestionButtonClick(event) {
+        event.preventDefault();
+        const action = await askToCreateNewVersion();
+        if (action) {
+            $('#ActionType').val($('#ActionType').val() + action);
+            $('#questionInfo').submit();
+        }
+    }
+
+    async function deleteQuestion() {
+        let result = await Swal.fire({
             title: "Delete Question",
             text: 'Are you sure you want to delete this question?',
             showCancelButton: true,
@@ -60,11 +69,15 @@
                 confirmButton: 'btn btn-primary',
                 cancelButton: 'btn btn-secondary'
             }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $('#ActionType').val('Delete Question');
+        });
+
+        if (result.isConfirmed) {
+            const action = await askToCreateNewVersion();
+            if (action) {
+                $('#ActionType').val('Delete Question' + action);
                 $('#questionInfo').submit();
             }
-        });
+        }
+
     }
 </script>
