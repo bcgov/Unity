@@ -99,8 +99,9 @@
 
     #user-dropdown.show {
         display: block;
-        right: 5px;
+        right: 12px;
         top: 5.5rem;
+        min-width: 264px;
     }
 
     #user-dropdown > button {
@@ -156,7 +157,7 @@
 
 .unity-app-main-container {
     padding: 0 0.5rem;
-    width: calc(100vw - 210px);
+    width: 100%;
 }
 
 .unity-user-initials {
@@ -172,6 +173,18 @@
     cursor: pointer;
 }
 
+.unity-page-titlebar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    padding-bottom: 6px;
+}
+
+.unity-page-titlebar h4 {
+    margin-bottom: 0;
+    margin-left: 4px;
+}
 
 .unity-side-nav {
     min-width: 200px;
@@ -636,4 +649,12 @@ div.dataTables_wrapper div.dataTables_filter {
     right: 0;
     font-size: 0.7rem;
     opacity: 0.5;
+}
+
+.worksheet_section_label {
+    font-weight: 700;
+    padding-left: 0.25rem;
+    font-size: 1rem;
+    line-height: 1.2;
+    color: var(--bs-heading-color);
 }

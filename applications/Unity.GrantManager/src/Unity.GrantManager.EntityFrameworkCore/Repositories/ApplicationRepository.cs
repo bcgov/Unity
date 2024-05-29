@@ -55,8 +55,9 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
         return await (await GetQueryableAsync())
           .AsNoTracking()
           .Include(s => s.Applicant)
+            .ThenInclude(s => s.ApplicantAddresses)
           .Include(s => s.ApplicantAgent)
-          .Include(s => s.ApplicationStatus)
+          .Include(s => s.ApplicationStatus)          
           .FirstAsync(s => s.Id == id);                   
     }
 

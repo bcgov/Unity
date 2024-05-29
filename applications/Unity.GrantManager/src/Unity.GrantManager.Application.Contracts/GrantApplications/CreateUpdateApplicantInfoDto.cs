@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Flex.Worksheets;
 
 namespace Unity.GrantManager.GrantApplications
 {
@@ -25,6 +26,21 @@ namespace Unity.GrantManager.GrantApplications
         public string? SigningAuthorityBusinessPhone { get; set; }
         public string? SigningAuthorityCellPhone { get; set; }
         public string? SupplierNumber { get; set; }
-        public Guid ApplicantId {  get; set; }
+
+        public string? PhysicalAddressStreet { get; set; }
+        public string? PhysicalAddressStreet2 { get; set; }
+        public string? PhysicalAddressUnit { get; set; }
+        public string? PhysicalAddressCity { get; set; }
+        public string? PhysicalAddressProvince { get; set; }
+        public string? PhysicalAddressPostalCode { get; set; }
+
+        public string? MailingAddressStreet { get; set; }
+        public string? MailingAddressStreet2 { get; set; }
+        public string? MailingAddressUnit { get; set; }
+        public string? MailingAddressCity { get; set; }
+        public string? MailingAddressProvince { get; set; }
+        public string? MailingAddressPostalCode { get; set; }
+
+        public Guid ApplicantId {  get; set; }        
     }
 }

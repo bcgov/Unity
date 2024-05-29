@@ -266,14 +266,14 @@ select.selected{
 .details-scrollable {
     overflow-y: scroll;
     overflow-x: hidden;
-    height: calc(100vh - 240px);
+    height: calc(100vh - 276px);
     margin-right: -6px;
 }
 
 #detailsTabContent {
     overflow-y: scroll;
     overflow-x: hidden;
-    height: calc(100vh - 256px);
+    height: calc(100vh - 298px);
     /* position: relative; */
     z-index: 1;
 }

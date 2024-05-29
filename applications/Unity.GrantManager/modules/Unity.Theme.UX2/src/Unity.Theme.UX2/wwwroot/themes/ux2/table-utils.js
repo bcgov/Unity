@@ -9,7 +9,7 @@ function createNumberFormatter() {
 
 function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, actionButtons, dynamicButtonContainerId) {
 
-    let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name).index);
+    let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
 
     let iDt = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -26,7 +26,17 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
                 dataEndpoint,
-                data
+                data,
+                function (result) {
+                    if (result.totalCount <= maxRowsPerPage) {
+                        $('.dataTables_paginate').hide();
+                    }
+                    return {
+                        recordsTotal: result.totalCount,
+                        recordsFiltered: result.totalCount,
+                        data: result.items
+                    };
+                }
             ),
             select: {
                 style: 'multiple',
@@ -59,11 +69,12 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                     visible: false // Hide all other columns initially
                 }
             ],
+            processing: true,
         })
     );
 
     // Add custom manage columns button that remains sorted alphabetically
-    iDt.button().add(0, {
+    iDt.button().add(actionButtons.length + 1 ,{
         text: 'Columns',
         extend: 'collection',
         buttons: getColumnToggleButtonsSorted(listColumns, iDt),

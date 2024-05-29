@@ -1,29 +1,41 @@
-﻿$(function () {    
+﻿$(function () {
     $('.currency-input').maskMoney();
 
     $('body').on('click', '#saveProjectInfoBtn', function () {
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
         let projectInfoObj = {};
-        $.each(formData, function (key, input) {
-            if ((input.name == "ProjectInfo.ProjectName") || (input.name == "ProjectInfo.ProjectSummary") || (input.name == "ProjectInfo.Community")) {
+        $.each(formData, function (_, input) {
+            if (Flex?.isCustomField(input)) {
+                Flex.includeCustomFieldObj(projectInfoObj, input);
+            }
+            else if ((input.name == "ProjectInfo.ProjectName") || (input.name == "ProjectInfo.ProjectSummary") || (input.name == "ProjectInfo.Community")) {
                 projectInfoObj[input.name.split(".")[1]] = input.value;
             } else {
-                // This will not work if the culture is different and uses a different decimal separator
-                projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
-
-                if (isNumberField(input)) {
-                    if (projectInfoObj[input.name.split(".")[1]] == '') {
-                        projectInfoObj[input.name.split(".")[1]] = 0;
-                    } else if (projectInfoObj[input.name.split(".")[1]] > getMaxNumberField(input)) {
-                        projectInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
-                    }
-                }
-                else if (projectInfoObj[input.name.split(".")[1]] == '') {
-                    projectInfoObj[input.name.split(".")[1]] = null;
-                }
+               buildFormData(projectInfoObj, input)
             }
         });
+
+        updateProjectInfo(applicationId, projectInfoObj);
+    });
+
+    function buildFormData(projectInfoObj, input) {
+        // This will not work if the culture is different and uses a different decimal separator
+        projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+
+        if (isNumberField(input)) {
+            if (projectInfoObj[input.name.split(".")[1]] == '') {
+                projectInfoObj[input.name.split(".")[1]] = 0;
+            } else if (projectInfoObj[input.name.split(".")[1]] > getMaxNumberField(input)) {
+                projectInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
+            }
+        }
+        else if (projectInfoObj[input.name.split(".")[1]] == '') {
+            projectInfoObj[input.name.split(".")[1]] = null;
+        }
+    }
+
+    function updateProjectInfo(applicationId, projectInfoObj) {        
         try {
             unity.grantManager.grantApplications.grantApplication
                 .updateProjectInfo(applicationId, projectInfoObj)
@@ -32,14 +44,14 @@
                         'The project info has been updated.'
                     );
                     $('#saveProjectInfoBtn').prop('disabled', true);
-                    PubSub.publish('project_info_saved');
+                    PubSub.publish('project_info_saved', projectInfoObj);
                 });
         }
         catch (error) {
             console.log(error);
             $('#saveProjectInfoBtn').prop('disabled', false);
         }
-    });
+    }
 
     function getMaxNumberField(input) {
         const maxCurrency = 10000000000000000000000000000;
@@ -65,11 +77,11 @@
         return input.name == 'ProjectInfo.PercentageTotalProjectBudget';
     }
 
-    $('#startDate').on('apply.daterangepicker', function(event, picker) {
+    $('#startDate').on('apply.daterangepicker', function (event, picker) {
         console.log(event, picker);
     });
 
-   
+
 
     $('#economicRegions').change(function () {
 
@@ -125,6 +137,20 @@
         let newValue = inputValue.replace(/^0+(?!$)/, '');
         $(this).val(newValue);
     });
+
+    PubSub.subscribe('application_assessment_results_saved',
+        (msg, data) => {
+            $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
+            $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
+        }
+    );
+
+    PubSub.subscribe(
+        'fields_ProjectInfo',
+        () => {
+            enableProjectInfoSaveBtn();
+        }
+    );
 });
 
 
@@ -133,14 +159,14 @@ function enableProjectInfoSaveBtn(inputText) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
     }
-  
+
 
     $('#saveProjectInfoBtn').prop('disabled', false);
 }
 
 function calculatePercentage() {
-    const requestedAmount = parseFloat(document.getElementById("ProjectInfo_RequestedAmount").value.replace(/,/g, ''));
-    const totalProjectBudget = parseFloat(document.getElementById("ProjectInfo_TotalProjectBudget").value.replace(/,/g, ''));
+    const requestedAmount = parseFloat(document.getElementById("ProjectInfo_RequestedAmount")?.value.replace(/,/g, ''));
+    const totalProjectBudget = parseFloat(document.getElementById("ProjectInfo_TotalProjectBudget")?.value.replace(/,/g, ''));
     if (isNaN(requestedAmount) || isNaN(totalProjectBudget) || totalProjectBudget == 0) {
         document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
         return;

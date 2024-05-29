@@ -33,18 +33,22 @@ namespace Unity.Payments.Domain.PaymentConfigurations
         string stob,
         string projectNumber)
         {
-            ValidateField(ministryClient, 4, nameof(MinistryClient));  
-            ValidateField(responsibility, 3, nameof(Responsibility));
-            ValidateField(serviceLine, 6, nameof(serviceLine));
-            ValidateField(stob, 8, nameof(stob));
-            ValidateField(projectNumber, 10, nameof(projectNumber));
+            ValidateField(ministryClient, 3, nameof(MinistryClient), false);  
+            ValidateField(responsibility, 5, nameof(Responsibility), false);
+            ValidateField(serviceLine, 5, nameof(serviceLine));
+            ValidateField(stob, 4, nameof(stob));
+            ValidateField(projectNumber, 7, nameof(projectNumber));
 
             return new AccountCoding(ministryClient, responsibility, serviceLine, stob, projectNumber);
         }
 
-        private static void ValidateField(string field, uint length, string fieldName)
+        private static void ValidateField(string field, uint length, string fieldName, bool validateNumeric = true)
         {
-            bool validNumeric = field.All(Char.IsDigit);
+
+            bool validNumeric = true;
+            if (validateNumeric) { 
+                validNumeric = field.All(char.IsDigit);
+            }
 
             if (field.Length != length || !validNumeric)
             {

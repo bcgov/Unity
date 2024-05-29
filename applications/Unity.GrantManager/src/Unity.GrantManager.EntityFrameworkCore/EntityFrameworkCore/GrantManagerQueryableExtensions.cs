@@ -13,7 +13,8 @@ public static class GrantManagerQueryableExtensions
             .Include(x => x.Owner)
             .Include(x => x.ApplicationAssignments)
             .Include(x => x.Applicant)
-            .Include(x => x.ApplicantAgent);
+            .Include(x => x.ApplicantAgent)
+            .Include(x => x.ApplicationForm);
     }
 
     public static IQueryable<Sector> IncludeDetails(this IQueryable<Sector> queryable, bool include = true)
