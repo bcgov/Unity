@@ -4,6 +4,10 @@ function reloadDashboard() {
     const categories = $('#dashboardCategoryName').val();
     const statusCodes = $('#dashboardStatuses').val();
     const substatus = $('#dashboardSubStatus').val();
+    const tags = $('#dashboardTags').val();
+    const assignees = $('#dashboardAssignees').val();
+    const dateFrom = $('#dateFrom').val();
+    const dateTo = $('#dateTo').val();
     const params = {};
     if (intakeIds.length > 0) {
         params.intakeIds = intakeIds;
@@ -17,27 +21,40 @@ function reloadDashboard() {
     if (substatus.length > 0) {
         params.substatus = substatus;
     }
-    unity.grantManager.dashboard.dashboard.getEconomicRegionCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(economicRegion => {
+    if (tags.length > 0) {
+        params.tags = tags;
+    }
+    if (assignees.length > 0) {
+        params.assignees = assignees;
+    }
+    if (dateFrom.length > 0) {
+        params.dateFrom = dateFrom;
+    }
+    if (dateTo.length > 0) {
+        params.dateTo = dateTo;
+    }
+
+    unity.grantManager.dashboard.dashboard.getEconomicRegionCount(params).then(economicRegion => {
         initializeChart(economicRegion.map(obj => obj.economicRegion), economicRegion.map(obj => obj.count),
             'Submissions by Economic Region', 'economicRegionChart', 465, 280);
     });
 
-    unity.grantManager.dashboard.dashboard.getApplicationStatusCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(applicationStatus => {
+    unity.grantManager.dashboard.dashboard.getApplicationStatusCount(params).then(applicationStatus => {
         initializeChart(applicationStatus.map(obj => obj.applicationStatus), applicationStatus.map(obj => obj.count),
             'Submissions by Status', 'applicationStatusChart', 465, 280)
     });
 
-    unity.grantManager.dashboard.dashboard.getApplicationTagsCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(applicationTags => {
+    unity.grantManager.dashboard.dashboard.getApplicationTagsCount(params).then(applicationTags => {
         initializeChart(applicationTags.map(obj => obj.applicationTag), applicationTags.map(obj => obj.count),
             'Application Tags Overview', 'applicationTagsChart', 465, 280)
     });
 
-    unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(subSector => {
+    unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector(params).then(subSector => {
         initializeChart(subSector.map(obj => obj.subsector), subSector.map(obj => obj.totalRequestedAmount),
             'Total Funding Requested Per Sub-Sector', 'subsectorRequestedAmountChart', 698, 420)
     });
 
-    unity.grantManager.dashboard.dashboard.getSectorCount(params.intakeIds, params.categories, params.statusCodes, params.substatus).then(sector => {
+    unity.grantManager.dashboard.dashboard.getSectorCount(params).then(sector => {
         initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
             'sectorChart', 698, 420);
     });
@@ -211,11 +228,15 @@ $(function () {
     initDropdown('dashboardCategoryName', 'CATEGORIES');
     initDropdown('dashboardStatuses', 'STATUS');
     initDropdown('dashboardSubStatus', 'SUB-STATUS');
+    initDropdown('dashboardTags', 'TAGS');
+    initDropdown('dashboardAssignees', 'ASSIGNEES');
 
     highlightSelected('dashboardIntakeId', 'INTAKES');
     highlightSelected('dashboardCategoryName', 'CATEGORIES');
     highlightSelected('dashboardStatuses', 'STATUS');
     highlightSelected('dashboardSubStatus', 'SUB-STATUS');
+    highlightSelected('dashboardTags', 'TAG(S)');
+    highlightSelected('dashboardAssignees', 'ASSIGNEE(S)');
     
     $('#dashboardIntakeId').change(function () {
         highlightSelected('dashboardIntakeId', 'INTAKES');
@@ -229,5 +250,10 @@ $(function () {
     $('#dashboardSubStatus').change(function () {
         highlightSelected('dashboardSubStatus', 'SUB-STATUS');
     });
-
+    $('#dashboardTags').change(function () {
+        highlightSelected('dashboardTags', 'TAGS');
+    });
+    $('#dashboardAssignees').change(function () {
+        highlightSelected('dashboardAssignees', 'ASSIGNEES');
+    });
 });

@@ -8,10 +8,9 @@
     border-radius: 15px !important;
 }
 
-
 .application-dashboard-dropdown {
     min-width: 250px;
-    margin-top: 10px;
+    margin-top: 5px;
 }
 
 .dashboard-scrollable-content {
@@ -27,4 +26,11 @@
 
 .application-dashboard-dropdown select {
     display: none !important;
+}
+
+.application-dashboard-date {
+    min-width: 250px;
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: bold;
 }
