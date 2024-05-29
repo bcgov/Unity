@@ -42,9 +42,14 @@ public class ScoresheetModalModel : FlexPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Scoresheet.ActionType.StartsWith("Edit"))
+        if (Scoresheet.ActionType.Equals("Edit Scoring Sheet On Current Version"))
         {
-            await EditScoresheet();
+            await EditScoresheets();
+            return NoContent();
+        }
+        else if (Scoresheet.ActionType.Equals("Edit Scoring Sheet On New Version"))
+        {
+            await EditScoresheetsAndCreateNewVersion();
             return NoContent();
         }
         else if (Scoresheet.ActionType.StartsWith("Add"))
@@ -68,9 +73,15 @@ public class ScoresheetModalModel : FlexPageModel
         _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Name = Scoresheet.Name });
     }
 
-    private async Task EditScoresheet()
+    private async Task EditScoresheets()
     {
-        await _scoresheetAppService.UpdateAsync(new EditScoresheetDto() { Name = Scoresheet.Name, ScoresheetId = Scoresheet.Id, ActionType = Scoresheet.ActionType, GroupId = Scoresheet.GroupId});
+        await _scoresheetAppService.UpdateAsync(new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType, GroupId = Scoresheet.GroupId});
+    }
+
+    private async Task EditScoresheetsAndCreateNewVersion()
+    {
+        await _scoresheetAppService.UpdateAsync(new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType, GroupId = Scoresheet.GroupId });
+        _ = await _scoresheetAppService.CloneScoresheetAsync(Scoresheet.Id, null, null);
     }
 
     private async Task DeleteScoresheet()

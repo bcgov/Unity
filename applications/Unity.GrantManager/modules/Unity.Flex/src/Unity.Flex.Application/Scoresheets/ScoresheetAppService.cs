@@ -105,22 +105,14 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-        public async Task UpdateAsync(EditScoresheetDto dto)
+        public async Task UpdateAsync(EditScoresheetsDto dto)
         {
-            if(dto.ActionType.Contains("Current Version"))
+            var scoresheets = await _scoresheetRepository.GetScoresheetsByGroupId(dto.GroupId);
+            foreach (var scoresheet in scoresheets)
             {
-                await UpdateScoresheetOnCurrentVersions(dto);
+                scoresheet.Name = dto.Name;
+                await _scoresheetRepository.UpdateAsync(scoresheet);
             }
-            else if(dto.ActionType.Contains("New Version"))
-            {
-                await UpdateScoresheetOnCurrentVersions(dto);
-                await CloneScoresheetAsync(dto.ScoresheetId,null,null);
-            }
-            else
-            {
-                throw new AbpValidationException("Invalid ActionType for Edit Scoresheet:"+dto.ActionType);
-            }
-            
         }
 
         public async Task<ClonedObjectDto> CloneScoresheetAsync(Guid scoresheetIdToClone, Guid? sectionIdToClone, Guid? questionIdToClone)
@@ -166,16 +158,6 @@ namespace Unity.Flex.Scoresheets
             await unitOfWork.SaveChangesAsync();
             await unitOfWork.CompleteAsync();
             return new ClonedObjectDto { ScoresheetId = newScoresheet.Id, SectionId = clonedSectionToGet?.Id, QuestionId = clonedQuestionToGet?.Id};
-        }
-
-        private async Task UpdateScoresheetOnCurrentVersions(EditScoresheetDto dto)
-        {
-            var scoresheets = await _scoresheetRepository.GetScoresheetsByGroupId(dto.GroupId);
-            foreach(var scoresheet in scoresheets)
-            {
-                scoresheet.Name = dto.Name;
-                await _scoresheetRepository.UpdateAsync(scoresheet);
-            }
         }
 
         public async Task DeleteAsync(Guid id)
