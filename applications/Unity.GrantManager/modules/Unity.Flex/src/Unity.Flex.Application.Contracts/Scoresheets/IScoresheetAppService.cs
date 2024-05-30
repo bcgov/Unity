@@ -14,6 +14,7 @@ namespace Unity.Flex.Scoresheets
         Task<ClonedObjectDto> CloneScoresheetAsync(Guid scoresheetIdToClone, Guid? sectionIdToClone, Guid? questionIdToClone);
         Task<ScoresheetDto> GetAsync(Guid id);
         Task<List<ScoresheetDto>> GetListAsync(List<Guid> scoresheetIdsToLoad);
+        Task<List<ScoresheetDto>> GetAllScoresheetsAsync();
         Task SaveOrder(List<ScoresheetItemDto> dto);
         Task UpdateAsync(EditScoresheetsDto dto);
     }
