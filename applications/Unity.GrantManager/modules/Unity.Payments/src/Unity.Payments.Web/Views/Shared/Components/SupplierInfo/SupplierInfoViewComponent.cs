@@ -7,6 +7,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Unity.Payments.Suppliers;
 using Unity.Modules.Shared.Correlation;
+using Volo.Abp.Features;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
@@ -18,26 +19,36 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
     public class SupplierInfoViewComponent : AbpViewComponent
     {
         private readonly ISupplierAppService _supplierService;
-        public SupplierInfoViewComponent(ISupplierAppService supplierService)
+        private readonly IFeatureChecker _featureChecker;
+
+        public SupplierInfoViewComponent(ISupplierAppService supplierService,
+            IFeatureChecker featureChecker)
         {
             _supplierService = supplierService;
+            _featureChecker = featureChecker;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
         {
-            var supplier = await _supplierService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+            if (await _featureChecker.IsEnabledAsync("Unity.Payments"))
             {
-                CorrelationId = applicantId,
-                CorrelationProvider = CorrelationConsts.Applicant
-            });
+                var supplier = await _supplierService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+                {
+                    CorrelationId = applicantId,
+                    CorrelationProvider = CorrelationConsts.Applicant
+                });
 
-            return View(new SupplierInfoViewModel()
+                return View(new SupplierInfoViewModel()
+                {
+                    SupplierCorrelationId = applicantId,
+                    SupplierCorrelationProvider = CorrelationConsts.Applicant,
+                    SupplierId = supplier?.Id ?? Guid.Empty,
+                    SupplierNumber = supplier?.Number?.ToString()
+                });
+            } else
             {
-                SupplierCorrelationId = applicantId,
-                SupplierCorrelationProvider = CorrelationConsts.Applicant,
-                SupplierId = supplier?.Id ?? Guid.Empty,
-                SupplierNumber = supplier?.Number?.ToString()
-            });
+                return View(new SupplierInfoViewModel());
+            }
         }
     }
 
