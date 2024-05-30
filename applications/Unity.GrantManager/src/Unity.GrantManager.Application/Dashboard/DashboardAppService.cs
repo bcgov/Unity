@@ -48,22 +48,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
         var economicRegionDto = await ExecuteWithDisabledTracking(async () => {
 
-            var query = from intake in await _intakeRepository.GetQueryableAsync()
-                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
-                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
-                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                        join assignee in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals assignee.ApplicationId into appAssignees
-                        from subAssignee in appAssignees.DefaultIfEmpty()
-                        where dashboardParams.IntakeIds.Contains(intake.Id)
-                            && parameters.Categories.Contains(form.Category)
-                            && parameters.StatusCodes.Contains(appStatus.StatusCode)
-                            && parameters.SubStatuses.Contains(application.SubStatus)
-                            && (parameters.DateFrom == null || application.SubmissionDate >= parameters.DateFrom)
-                            && (parameters.DateTo == null || application.SubmissionDate <= parameters.DateTo)
-                            && (parameters.Assignees.Contains(subAssignee.AssigneeId.ToString())
-                               || (subAssignee == null && parameters.Assignees.Contains(null)))
-                        select application;
-
+            var query = await GetBaseQueryAsync(parameters);
             var applicationTags = await GetFilteredApplicationTags(query.Select(app => app), parameters);
             query = query.Where(application => applicationTags.Contains(application.Id));
 
@@ -73,12 +58,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetEconomicRegionDto { EconomicRegion = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.EconomicRegion);
 
-            if (result == null) 
-                return new List<GetEconomicRegionDto>();
-
-            var queryResult = result.ToList();
-
-            return queryResult;
+            return result.ToList() ?? new List<GetEconomicRegionDto>();
         });
 
         return economicRegionDto;
@@ -89,21 +69,9 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         var parameters = PrepareParameters(dashboardParams);
 
         var sectorCountDto = await ExecuteWithDisabledTracking(async () => {
-            var query = from intake in await _intakeRepository.GetQueryableAsync()
-                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
-                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+
+            var query = from application in await GetBaseQueryAsync(parameters)
                         join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                        join assignee in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals assignee.ApplicationId into appAssignees
-                        from subAssignee in appAssignees.DefaultIfEmpty()
-                        where dashboardParams.IntakeIds.Contains(intake.Id)
-                            && parameters.Categories.Contains(form.Category)
-                            && parameters.StatusCodes.Contains(appStatus.StatusCode)
-                            && parameters.SubStatuses.Contains(application.SubStatus)
-                            && (parameters.DateFrom == null || application.SubmissionDate >= parameters.DateFrom)
-                            && (parameters.DateTo == null || application.SubmissionDate <= parameters.DateTo)
-                            && (parameters.Assignees.Contains(subAssignee.AssigneeId.ToString())
-                               || (subAssignee == null && parameters.Assignees.Contains(null)))
                         select new { application, applicant };
 
             var applicationTags = await GetFilteredApplicationTags(query.Select(app => app.application), parameters);
@@ -115,12 +83,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetSectorDto { Sector = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.Sector);
 
-            if (result == null) 
-                return new List<GetSectorDto>();
-
-            var queryResult = result.ToList();
-
-            return queryResult;
+            return result.ToList() ?? new List<GetSectorDto>();
         });
 
         return sectorCountDto;
@@ -131,20 +94,9 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         var parameters = PrepareParameters(dashboardParams);
 
         var applicationStatusDto = await ExecuteWithDisabledTracking(async () => {
-            var query = from intake in await _intakeRepository.GetQueryableAsync()
-                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
-                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+
+            var query = from application in await GetBaseQueryAsync(parameters)
                         join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                        join assignee in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals assignee.ApplicationId into appAssignees
-                        from subAssignee in appAssignees.DefaultIfEmpty()
-                        where dashboardParams.IntakeIds.Contains(intake.Id)
-                            && parameters.Categories.Contains(form.Category)
-                            && parameters.StatusCodes.Contains(appStatus.StatusCode)
-                            && parameters.SubStatuses.Contains(application.SubStatus)
-                            && (parameters.DateFrom == null || application.SubmissionDate >= parameters.DateFrom)
-                            && (parameters.DateTo == null || application.SubmissionDate <= parameters.DateTo)
-                            && (parameters.Assignees.Contains(subAssignee.AssigneeId.ToString())
-                               || (subAssignee == null && parameters.Assignees.Contains(null)))
                         select new { application, appStatus };
 
             var applicationTags = await GetFilteredApplicationTags(query.Select(app => app.application), parameters);
@@ -156,12 +108,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetApplicationStatusDto { ApplicationStatus = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.ApplicationStatus);
 
-            if (result == null) 
-                return new List<GetApplicationStatusDto>();
-
-            var queryResult = result.ToList();
-
-            return queryResult;
+            return result.ToList() ?? new List<GetApplicationStatusDto>();
         });
 
         return applicationStatusDto;
@@ -172,21 +119,9 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         var parameters = PrepareParameters(dashboardParams);
 
         var applicationTagsDto = await ExecuteWithDisabledTracking(async () => {
-            var query = from intake in await _intakeRepository.GetQueryableAsync()
-                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
-                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+
+            var query = from application in await GetBaseQueryAsync(parameters)
                         join tag in await _applicationTagsRepository.GetQueryableAsync() on application.Id equals tag.ApplicationId
-                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                        join assignee in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals assignee.ApplicationId into appAssignees
-                        from subAssignee in appAssignees.DefaultIfEmpty()
-                        where dashboardParams.IntakeIds.Contains(intake.Id)
-                            && parameters.Categories.Contains(form.Category)
-                            && parameters.StatusCodes.Contains(appStatus.StatusCode)
-                            && parameters.SubStatuses.Contains(application.SubStatus)
-                            && (parameters.DateFrom == null || application.SubmissionDate >= parameters.DateFrom)
-                            && (parameters.DateTo == null || application.SubmissionDate <= parameters.DateTo)
-                            && (parameters.Assignees.Contains(subAssignee.AssigneeId.ToString())
-                               || (subAssignee == null && parameters.Assignees.Contains(null)))
                         select tag;
 
             var applicationTags = query.Distinct().ToList();
@@ -207,21 +142,9 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         var parameters = PrepareParameters(dashboardParams);
 
         var subSectorRequestedAmtDto = await ExecuteWithDisabledTracking(async () => {
-            var query = from intake in await _intakeRepository.GetQueryableAsync()
-                        join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
-                        join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+
+            var query = from application in await GetBaseQueryAsync(parameters)
                         join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                        join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                        join assignee in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals assignee.ApplicationId into appAssignees
-                        from subAssignee in appAssignees.DefaultIfEmpty()
-                        where dashboardParams.IntakeIds.Contains(intake.Id)
-                            && parameters.Categories.Contains(form.Category)
-                            && parameters.StatusCodes.Contains(appStatus.StatusCode)
-                            && parameters.SubStatuses.Contains(application.SubStatus)
-                            && (parameters.DateFrom == null || application.SubmissionDate >= parameters.DateFrom)
-                            && (parameters.DateTo == null || application.SubmissionDate <= parameters.DateTo)
-                            && (parameters.Assignees.Contains(subAssignee.AssigneeId.ToString())
-                               || (subAssignee == null && parameters.Assignees.Contains(null)))
                         select new { application, applicant };
 
             var applicationTags = await GetFilteredApplicationTags(query.Select(app => app.application), parameters);
@@ -233,11 +156,9 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetSubsectorRequestedAmtDto { Subsector = group.Key, TotalRequestedAmount = group.Sum(obj => obj.TotalRequestedAmount) })
                 .OrderBy(o => o.Subsector);
 
-            if (result == null) 
-                return new List<GetSubsectorRequestedAmtDto>();
-
-            var queryResult = result.ToList();
+            var queryResult = result.ToList() ?? new List<GetSubsectorRequestedAmtDto>();
             queryResult.RemoveAll(item => item.TotalRequestedAmount == 0);
+
             return queryResult;
         });
 
@@ -268,6 +189,27 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return await applications.Select(app => app.Id).ToListAsync();
     }
 
+    private async Task<IQueryable<Application>> GetBaseQueryAsync(DashboardParameters parameters)
+    {
+        var query = from intake in await _intakeRepository.GetQueryableAsync()
+                    join form in await _applicationFormRepository.GetQueryableAsync() on intake.Id equals form.IntakeId
+                    join application in await _applicationRepository.GetQueryableAsync() on form.Id equals application.ApplicationFormId
+                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
+                    join assignee in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals assignee.ApplicationId into appAssignees
+                    from subAssignee in appAssignees.DefaultIfEmpty()
+                    where parameters.IntakeIds.Contains(intake.Id)
+                        && parameters.Categories.Contains(form.Category)
+                        && parameters.StatusCodes.Contains(appStatus.StatusCode)
+                        && parameters.SubStatuses.Contains(application.SubStatus)
+                        && (parameters.DateFrom == null || application.SubmissionDate >= parameters.DateFrom)
+                        && (parameters.DateTo == null || application.SubmissionDate <= parameters.DateTo)
+                        && (parameters.Assignees.Contains(subAssignee.AssigneeId.ToString())
+                           || (subAssignee == null && parameters.Assignees.Contains(null)))
+                    select application;
+
+        return query;
+    }
+
     private async Task<TResult> ExecuteWithDisabledTracking<TResult>(Func<Task<TResult>> logic)
     {
         using (_intakeRepository.DisableTracking())
@@ -284,6 +226,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
     {
         var parameters = new DashboardParameters
         {
+            IntakeIds = dashboardParams.IntakeIds.ToArray(),
             Categories = dashboardParams.Categories.Select(category => category == DashboardConsts.EmptyValue ? null : category).ToArray(),
             StatusCodes = dashboardParams.StatusCodes.Select(s => Enum.Parse<GrantApplicationState>(s)),
             DateFrom = dashboardParams.DateFrom,
@@ -308,6 +251,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     internal sealed class DashboardParameters
     {
+        public Guid[] IntakeIds { get; set; } = Array.Empty<Guid>();
         public string?[] Categories { get; set; } = [];
         public IEnumerable<GrantApplicationState> StatusCodes { get; set; } = [];
         public string?[] SubStatuses { get; set; } = [];
