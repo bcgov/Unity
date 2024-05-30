@@ -24,8 +24,8 @@ namespace Unity.Flex.Domain.Services
             if (dictionary == null || dictionary.Count == 0) return;
             var fields = BuildFields(dictionary);
 
-            var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationAsync(eventData.CorrelationId, eventData.CorrelationProvider, eventData.UiAnchor, true);
-            var worksheet = await worksheetRepository.GetByCorrelationAsync(CurrentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, eventData.UiAnchor, true);
+            var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationByAnchorAsync(eventData.CorrelationId, eventData.CorrelationProvider, eventData.UiAnchor, true);
+            var worksheet = await worksheetRepository.GetByCorrelationByAnchorAsync(CurrentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, eventData.UiAnchor, true);
 
             if (worksheetInstance == null)
             {
@@ -54,10 +54,62 @@ namespace Unity.Flex.Domain.Services
                 {
                     var customField = FindCustomFieldByName(worksheet, field.FieldName);
                     var valueField = worksheetInstance.Values.FirstOrDefault(s => s.CustomFieldId == field.FieldId);
-                    if (customField != null && field.Value != null)
+                    if (customField != null && field.Value != null && valueField != null)
                     {
-                        valueField?.SetValue(ValueConverter.Convert(field.Value, customField.Type));
+                        valueField.SetValue(ValueConverter.Convert(field.Value, customField.Type));
                     }
+                    else
+                    {
+                        // add the value to worksheet instance
+                        if (worksheet != null)
+                        {
+                            var wsField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Name == field.FieldName);
+                            if (wsField != null)
+                            {
+                                worksheetInstance.AddValue(wsField.Id, wsField.Definition ?? "{}", ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public async Task CreateWorksheetDataByFields(CreateWorksheetInstanceByFieldValuesEto eventData)
+        {
+            if (eventData.CustomFields.Count == 0) { return; }
+            var worksheetNames = new List<string>();
+
+            // naming convention custom_worksheetname_fieldname
+            foreach (var field in eventData.CustomFields)
+            {
+                var split = field.Key.Split('_', StringSplitOptions.RemoveEmptyEntries);
+                if (!worksheetNames.Contains(split[1]))
+                {
+                    worksheetNames.Add(split[1]);
+                }
+            }
+
+            foreach (var worksheetName in worksheetNames)
+            {
+                var worksheet = await worksheetRepository.GetByCorrelationByNameAsync(CurrentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, worksheetName, true);
+
+                if (worksheet != null)
+                {
+                    var newInstance = new WorksheetInstance(Guid.NewGuid(),
+                     worksheet.Id,
+                     eventData.CorrelationId,
+                     eventData.CorrelationProvider,
+                     worksheet.UIAnchor);
+
+                    var allFields = worksheet.Sections.SelectMany(s => s.Fields);
+
+                    foreach (var field in allFields)
+                    {
+                        var match = eventData.CustomFields.Find(s => s.Key == field.Name);
+                        newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
+                    }
+
+                    await worksheetInstanceRepository.InsertAsync(newInstance);
                 }
             }
         }

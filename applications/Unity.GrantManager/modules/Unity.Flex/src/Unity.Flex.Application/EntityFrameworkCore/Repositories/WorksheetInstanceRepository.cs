@@ -9,7 +9,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class WorksheetInstanceRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, WorksheetInstance, Guid>(dbContextProvider), IWorksheetInstanceRepository
     {
-        public async Task<WorksheetInstance?> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string correlationAnchor, bool includeDetails)
+        public async Task<WorksheetInstance?> GetByCorrelationByAnchorAsync(Guid correlationId, string correlationProvider, string correlationAnchor, bool includeDetails)
         {
             var dbSet = await GetDbSetAsync();
 

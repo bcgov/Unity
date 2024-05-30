@@ -17,7 +17,7 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task<WorksheetDto?> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string uiAnchor)
         {
-            return ObjectMapper.Map<Worksheet?, WorksheetDto?>(await worksheetRepository.GetByCorrelationAsync(correlationId, correlationProvider, uiAnchor, true));
+            return ObjectMapper.Map<Worksheet?, WorksheetDto?>(await worksheetRepository.GetByCorrelationByAnchorAsync(correlationId, correlationProvider, uiAnchor, true));
         }
 
         public virtual async Task<List<WorksheetDto>> GetListAsync()

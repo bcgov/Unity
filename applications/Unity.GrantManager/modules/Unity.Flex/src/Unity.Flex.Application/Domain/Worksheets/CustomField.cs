@@ -46,9 +46,9 @@ namespace Unity.Flex.Domain.Worksheets
             Definition = definition ?? DefinitionResolver.Resolve(type);
         }
 
-        private static string ConfigureName(string name)
+        private string ConfigureName(string name)
         {
-            return "custom_" + name.Trim().Replace(" ", "");
+            return "custom_" + Name + "_" +  name.Trim().Replace(" ", "");
         }
 
         public CustomField SetName(string name)

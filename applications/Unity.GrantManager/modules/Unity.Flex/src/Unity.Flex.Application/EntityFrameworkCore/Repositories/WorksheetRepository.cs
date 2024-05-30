@@ -11,7 +11,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class WorksheetRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Worksheet, Guid>(dbContextProvider), IWorksheetRepository
     {
-        public async Task<Worksheet?> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false)
+        public async Task<Worksheet?> GetByCorrelationByAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
 
@@ -19,6 +19,16 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                     .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
                     && s.CorrelationProvider == correlationProvider
                     && s.UIAnchor == uiAnchor);
+        }
+
+        public async Task<Worksheet?> GetByCorrelationByNameAsync(Guid correlationId, string correlationProvider, string name, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet.IncludeDetails(includeDetails)
+                    .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
+                    && s.CorrelationProvider == correlationProvider
+                    && s.Name == name);
         }
 
         public async Task<Worksheet?> GetBySectionAsync(Guid id, bool includeDetails = false)
