@@ -58,7 +58,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetEconomicRegionDto { EconomicRegion = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.EconomicRegion);
 
-            return result.ToList() ?? new List<GetEconomicRegionDto>();
+            return result.ToList();
         });
 
         return economicRegionDto;
@@ -83,7 +83,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetSectorDto { Sector = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.Sector);
 
-            return result.ToList() ?? new List<GetSectorDto>();
+            return result.ToList();
         });
 
         return sectorCountDto;
@@ -108,7 +108,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetApplicationStatusDto { ApplicationStatus = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.ApplicationStatus);
 
-            return result.ToList() ?? new List<GetApplicationStatusDto>();
+            return result.ToList();
         });
 
         return applicationStatusDto;
@@ -156,7 +156,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetSubsectorRequestedAmtDto { Subsector = group.Key, TotalRequestedAmount = group.Sum(obj => obj.TotalRequestedAmount) })
                 .OrderBy(o => o.Subsector);
 
-            var queryResult = result.ToList() ?? new List<GetSubsectorRequestedAmtDto>();
+            var queryResult = result.ToList();
             queryResult.RemoveAll(item => item.TotalRequestedAmount == 0);
 
             return queryResult;
