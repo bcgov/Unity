@@ -300,7 +300,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
-        var percentageTotalProjectBudget = input.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(input.RequestedAmount ?? 0, input.TotalProjectBudget ?? 0), 100).To<double>();
+        var percentageTotalProjectBudget = (input.TotalProjectBudget == 0 || input.TotalProjectBudget == null) ? 0 : decimal.Multiply(decimal.Divide(input.RequestedAmount ?? 0, input.TotalProjectBudget ?? 0), 100).To<double>();
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
@@ -323,13 +323,16 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
 
-            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+            if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                CorrelationId = id,
-                CorrelationProvider = CorrelationConsts.Application,
-                UiAnchor = FlexConsts.ProjectInfoUiAnchor,
-                CustomFields = input.CustomFields
-            }); 
+                await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+                {
+                    CorrelationId = id,
+                    CorrelationProvider = CorrelationConsts.Application,
+                    UiAnchor = FlexConsts.ProjectInfoUiAnchor,
+                    CustomFields = input.CustomFields
+                });
+            }
 
             await _applicationRepository.UpdateAsync(application);
 
