@@ -2,9 +2,9 @@
     $('body').on('click', '#saveProjectInfoBtn', function () {
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
-        let projectInfoObj = {};
+        let projectInfoObj = {};        
         $.each(formData, function (_, input) {
-            if (Flex?.isCustomField(input)) {
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(projectInfoObj, input);
             }
             else if ((input.name == "ProjectInfo.ProjectName") || (input.name == "ProjectInfo.ProjectSummary") || (input.name == "ProjectInfo.Community")) {
