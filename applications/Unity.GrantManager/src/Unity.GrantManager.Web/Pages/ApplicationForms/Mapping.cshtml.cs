@@ -62,6 +62,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         public async Task OnGetAsync()
         {
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
+            ScoresheetId = ApplicationFormDto.ScoresheetId;
             ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
 
             if (ApplicationFormVersionDtoList != null)
