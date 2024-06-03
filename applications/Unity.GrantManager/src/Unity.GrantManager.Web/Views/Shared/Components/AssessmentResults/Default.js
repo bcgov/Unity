@@ -93,7 +93,6 @@
 
     PubSub.subscribe('project_info_saved',
         (msg, data) => { 
-            debugger;
             if (data.RequestedAmount) {
                 $('#RequestedAmountInputAR')?.prop("value", data?.RequestedAmount);
             }
