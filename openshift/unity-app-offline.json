@@ -23,7 +23,7 @@
       "metadata": {
         "name": "${NAME}",
         "labels": {
-          "app.kubernetes.io/part-of": "unity-maintenance-tools"
+          "app.kubernetes.io/part-of": "unity-tools"
         },
         "annotations": {
           "description": "Exposes and load balances the application pods"
@@ -49,7 +49,7 @@
       "metadata": {
         "name": "${NAME}",
         "labels": {
-          "app.kubernetes.io/part-of": "unity-maintenance-tools"
+          "app.kubernetes.io/part-of": "unity-tools"
         },
         "annotations": {
           "template.openshift.io/expose-uri": "http://{.spec.host}{.spec.path}"
@@ -68,84 +68,23 @@
       }
     },
     {
-      "kind": "ImageStream",
-      "apiVersion": "image.openshift.io/v1",
-      "metadata": {
-        "name": "${NAME}",
-        "labels": {
-          "app.kubernetes.io/part-of": "unity-maintenance-tools"
-        },
-        "annotations": {
-          "description": "Keeps track of changes in the application image"
-        }
-      }
-    },
-    {
-      "kind": "BuildConfig",
-      "apiVersion": "build.openshift.io/v1",
-      "metadata": {
-        "name": "${NAME}",
-        "labels": {
-          "app.kubernetes.io/part-of": "unity-maintenance-tools"
-        },
-        "annotations": {
-          "description": "Defines how to build the application",
-          "template.alpha.openshift.io/wait-for-ready": "true"
-        }
-      },
-      "spec": {
-        "source": {
-          "type": "Git",
-          "git": {
-            "uri": "${SOURCE_REPOSITORY_URL}",
-            "ref": "${SOURCE_REPOSITORY_REF}"
-          },
-          "contextDir": "${CONTEXT_DIR}"
-        },
-        "strategy": {
-          "type": "Source",
-          "sourceStrategy": {
-            "from": {
-              "kind": "ImageStreamTag",
-              "namespace": "${NAMESPACE}",
-              "name": "nginx:${NGINX_VERSION}"
-            }
-          }
-        },
-        "output": {
-          "to": {
-            "kind": "ImageStreamTag",
-            "name": "${NAME}:latest"
-          }
-        },
-        "triggers": [
-          {
-            "type": "ImageChange"
-          },
-          {
-            "type": "ConfigChange"
-          }
-        ]
-      }
-    },
-    {
       "kind": "Deployment",
       "apiVersion": "apps/v1",
       "metadata": {
         "name": "${NAME}",
         "labels": {
           "app.openshift.io/runtime": "nginx",
-          "app.kubernetes.io/part-of": "unity-maintenance-tools" 
+          "app.kubernetes.io/part-of": "unity-tools" 
         },
         "annotations": {
           "description": "Defines how to deploy the application server",
-          "template.alpha.openshift.io/wait-for-ready": "true",
-          "image.openshift.io/triggers": "[{\"from\":{\"kind\":\"ImageStreamTag\",\"name\":\"${NAME}:latest\"},\"fieldPath\": \"spec.template.spec.containers[0].image\"}]"
+          "template.alpha.openshift.io/wait-for-ready": "true", 
+          "image.openshift.io/triggers": "[{\"from\":{\"kind\":\"ImageStreamTag\",\"name\":\"unity-offline:latest\",\"namespace\":\"d18498-tools\"},\"fieldPath\":\"spec.template.spec.containers[?(@.name==\\\"unity-app-offline\\\")].image\",\"pause\":\"true\"}]"
         }
       },
       "spec": {
         "strategy": {
-          "type": "RollingUpdate"
+          "type": "Recreate"
         },
         "replicas": 1,
         "selector": {
@@ -165,7 +104,7 @@
             "containers": [
               {
                 "name": "${NAME}",
-                "image": " ",
+                "image": "image-registry.openshift-image-registry.svc:5000/d18498-tools/unity-app-offline:latest",
                 "ports": [
                   {
                     "containerPort": 8080
@@ -191,8 +130,13 @@
                 ],
                 "resources": {
                   "limits": {
+                    "cpu": "50m",
                     "memory": "${MEMORY_LIMIT}"
-                  }
+                  },
+                  "requests": {
+                    "cpu": "50m",
+                    "memory": "${MEMORY_LIMIT}"
+                }
                 }
               }
             ]
@@ -210,43 +154,11 @@
       "value": "unity-app-offline"
     },
     {
-      "name": "NAMESPACE",
-      "displayName": "Namespace",
-      "description": "The OpenShift Namespace where the ImageStream resides.",
-      "required": true,
-      "value": "openshift"
-    },
-    {
-      "name": "NGINX_VERSION",
-      "displayName": "NGINX Version",
-      "description": "Version of NGINX image to be used (1.20-ubi8 by default).",
-      "required": true,
-      "value": "1.20-ubi8"
-    },
-    {
       "name": "MEMORY_LIMIT",
       "displayName": "Memory Limit",
       "description": "Maximum amount of memory the container can use.",
       "required": true,
       "value": "64Mi"
-    },
-    {
-      "name": "SOURCE_REPOSITORY_URL",
-      "displayName": "Git Repository URL",
-      "description": "The URL of the repository with your application source code.",
-      "required": true,
-      "value": "https://github.com/bcgov/Unity.git"
-    },
-    {
-      "name": "SOURCE_REPOSITORY_REF",
-      "displayName": "Git Reference",
-      "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch."
-    },
-    {
-      "name": "CONTEXT_DIR",
-      "displayName": "Context Directory",
-      "description": "Set this to the relative path to your project if it is not in the root of your repository.",
-      "value": "/applications/Unity.Tools"
     },
     {
       "name": "APPLICATION_DOMAIN",
