@@ -70,6 +70,36 @@ namespace Unity.Payments.PaymentRequests
 
             return createdPayments;
         }
+        public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
+        {
+            List<PaymentRequestDto> updatedPayments = [];
+
+
+            foreach (var dto in paymentRequests)
+            {
+                var payment = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
+              
+                payment.SetPaymentRequestStatus(dto.Status);
+                var result = await _paymentRequestsRepository.UpdateAsync(payment);
+                updatedPayments.Add(new PaymentRequestDto()
+                {
+                    Id = result.Id,
+                    InvoiceNumber = result.InvoiceNumber,
+                    InvoiceStatus = result.InvoiceStatus,
+                    Amount = result.Amount,
+                    PayeeName = result.PayeeName,
+                    SupplierNumber = result.SupplierNumber,
+                    ContractNumber = result.ContractNumber,
+                    CorrelationId = result.CorrelationId,
+                    CorrelationProvider = result.CorrelationProvider,
+                    Description = result.Description,
+                    CreationTime = result.CreationTime,
+                    Status = result.Status,
+                });
+            }
+
+            return updatedPayments;
+        }
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
@@ -84,6 +114,14 @@ namespace Unity.Payments.PaymentRequests
             var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
 
             return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
+        } 
+        public async Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync (List<Guid> paymentIds)
+        {
+
+            var payments = await _paymentRequestsRepository.GetListAsync(e => paymentIds.Contains(e.Id));
+           
+
+            return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(payments));
         }
 
         public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
