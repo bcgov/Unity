@@ -140,8 +140,12 @@
 
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
-            $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
-            $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
+            if (data.RequestedAmount) {
+                $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
+            }
+            if (data.TotalProjectBudget) {
+                $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
+            }
         }
     );
 
