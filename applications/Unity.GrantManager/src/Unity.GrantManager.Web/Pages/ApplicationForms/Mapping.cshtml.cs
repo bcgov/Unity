@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
     [Authorize]
     public class MappingModel : AbpPageModel
     {
-        public List<SelectListItem> ScoresheetOptionsList { get; set; }
+        public List<SelectListItem> ScoresheetOptionsList { get; set; } = [];
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
@@ -107,7 +107,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             IntakeProperties = JsonSerializer.Serialize(properties);
             var scoresheets = await _scoresheetAppService.GetAllScoresheetsAsync();
-            ScoresheetOptionsList = new List<SelectListItem>();
+            ScoresheetOptionsList = [];
             foreach (var scoresheet in scoresheets)
             {
                 ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Name + " V" + scoresheet.Version + ".0", Value =scoresheet.Id.ToString()});
