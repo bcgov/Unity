@@ -246,8 +246,8 @@ namespace Unity.GrantManager.Intakes
                 {
                     ApplicantId = applicant.Id,
                     City = intakeMap.PhysicalCity,
-                    Country = intakeMap.PhysicalProvince,
-                    Province = intakeMap.PhysicalCountry,
+                    Country = intakeMap.PhysicalCountry,
+                    Province = intakeMap.PhysicalProvince,
                     Postal = intakeMap.PhysicalPostal,
                     Street = intakeMap.PhysicalStreet,
                     Street2 = intakeMap.PhysicalStreet2,
@@ -262,13 +262,13 @@ namespace Unity.GrantManager.Intakes
                 await _addressRepository.InsertAsync(new ApplicantAddress
                 {
                     ApplicantId = applicant.Id,
-                    City = intakeMap.PhysicalCity,
-                    Country = intakeMap.PhysicalProvince,
-                    Province = intakeMap.PhysicalCountry,
-                    Postal = intakeMap.PhysicalPostal,
-                    Street = intakeMap.PhysicalStreet,
-                    Street2 = intakeMap.PhysicalStreet2,
-                    Unit = intakeMap.PhysicalUnit,
+                    City = intakeMap.MailingCity,
+                    Country = intakeMap.MailingCountry,
+                    Province = intakeMap.MailingProvince,
+                    Postal = intakeMap.MailingPostal,
+                    Street = intakeMap.MailingStreet,
+                    Street2 = intakeMap.MailingStreet2,
+                    Unit = intakeMap.MailingUnit,
                     AddressType = AddressType.MailingAddress
                 });
             }
