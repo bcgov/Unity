@@ -50,6 +50,10 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual Collection<ExpenseApproval> ExpenseApprovals { get; private set; }
         public virtual bool IsApproved { get => ExpenseApprovals.All(s => s.Status == ExpenseApprovalStatus.Approved); }
 
+        // Corperate Accounting System
+        public virtual int? CasHttpStatusCode { get; private set; } = null;
+        public virtual string? CasResponse { get; private set; } = string.Empty;
+
         protected PaymentRequest()
         {
             ExpenseApprovals = [];
@@ -140,6 +144,19 @@ namespace Unity.Payments.Domain.PaymentRequests
             PaymentDate = paymentDate;
             return this;
         }
+
+        public PaymentRequest SetCasHttpStatusCode(int casHttpStatusCode)
+        {
+            CasHttpStatusCode = casHttpStatusCode;
+            return this;
+        }
+
+        public PaymentRequest SetCasResponse(string casResponse)
+        {
+            CasResponse = casResponse;
+            return this;
+        }
+
         public PaymentRequest ValidatePaymentRequest()
         {
             if (Amount <= 0)

@@ -20,9 +20,9 @@ table.dataTable tbody tr {
     min-width: 145px;
 }
 
-.application-scrollable-content {
+#GrantApplicationsTable_wrapper .dataTables_scrollBody {
     overflow-y: scroll;
-    height: calc(100vh - 190px);
+    max-height: calc(100vh - 312px);
 }
 
 .single-payment {
