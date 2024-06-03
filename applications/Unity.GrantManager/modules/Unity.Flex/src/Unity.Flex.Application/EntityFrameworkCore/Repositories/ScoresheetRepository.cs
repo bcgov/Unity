@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 
 namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
