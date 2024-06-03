@@ -258,6 +258,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     {
         var application = await _applicationRepository.GetAsync(id);
 
+        SanitizeDisabledInputs(input, application);
+
         application.ValidateAndChangeDueDate(input.DueDate);
         application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding);
 
@@ -285,6 +287,16 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         await _applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private static void SanitizeDisabledInputs(CreateUpdateAssessmentResultsDto input, Application application)
+    {
+        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RecommendedAmount ??= application.RecommendedAmount;
+        input.ApprovedAmount ??= application.ApprovedAmount;
+        input.TotalScore ??= application.TotalScore;
+        input.RequestedAmount ??= application.RequestedAmount;
     }
 
     private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
