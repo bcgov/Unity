@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.Json;
-using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
 
 namespace Unity.Flex.Worksheets.Values
 {
@@ -16,6 +15,12 @@ namespace Unity.Flex.Worksheets.Values
                 CustomFieldType.Date => JsonSerializer.Deserialize<DateValue>(currentValue)?.Value,
                 CustomFieldType.DateTime => JsonSerializer.Deserialize<DateTimeValue>(currentValue)?.Value,
                 CustomFieldType.YesNo => JsonSerializer.Deserialize<YesNoValue>(currentValue)?.Value,
+                CustomFieldType.Phone => JsonSerializer.Deserialize<PhoneValue>(currentValue)?.Value,
+                CustomFieldType.Email => JsonSerializer.Deserialize<EmailValue>(currentValue)?.Value,
+                CustomFieldType.Radio => JsonSerializer.Deserialize<RadioValue>(currentValue)?.Value,
+                CustomFieldType.Checkbox => ValueResolverHelpers.ConvertCheckbox(JsonSerializer.Deserialize<CheckboxValue>(currentValue)?.Value),
+                CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupValue>(currentValue)?.Value,
+                CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListValue>(currentValue)?.Value,
                 _ => throw new NotImplementedException()
             }; ;
         }

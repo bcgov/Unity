@@ -310,9 +310,9 @@
                 if (!excludedIntakeMappings.includes(intakeFieldJson.Name)) {
                     let dragableDiv = document.createElement('div');
                     dragableDiv.id = 'unity_' + intakeFieldJson.Name;
-                    dragableDiv.className = 'card';
-                    dragableDiv.setAttribute("draggable", "true");                    
-                    dragableDiv.innerHTML = intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
+                    dragableDiv.className = 'card mapping-field';
+                    dragableDiv.setAttribute("draggable", "true");
+                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}` + intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
                     intakeMapColumn.appendChild(dragableDiv);
                 }
             }
@@ -330,6 +330,46 @@
         catch (err) {
             console.info('Mapping error: ' + err);
         }
+    }
+
+    function setTypeIndicator(intakeField) {
+        switch (intakeField.Type) {
+            case 'String':
+            case 'Phone':
+            case 'Date':
+            case 'Email':
+            case 'Radio':
+                return `<i class="${setTypeIcon(intakeField)}"></i> `;
+            case 'Number':
+                return setTypeIndicatorText('123');
+            case 'Currency':
+                return setTypeIndicatorText('$');
+            case 'YesNo':                            
+                return setTypeIndicatorText('Y/N');                  
+            default:
+                return '';
+        }
+    }
+
+    function setTypeIcon(intakeField) {
+        switch (intakeField.Type) {
+            case 'String':
+                return 'fl fl-font';
+            case 'Phone':
+                return 'fl fl-phone';
+            case 'Date':
+                return 'fl fl-datetime';
+            case 'Email':
+                return 'fl fl-mail';
+            case 'Radio':
+                return 'fl fl-radio';
+            default:
+                return '';
+        }
+    }
+
+    function setTypeIndicatorText(text) {
+        return `<span class="mapping-indicator-text">${text}</span>`;
     }
 
     function stripHtml(html) {

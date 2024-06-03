@@ -3,8 +3,9 @@
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
+
         $.each(formData, function (_, input) {            
-            if (Flex?.isCustomField(input)) {                
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {                
                 Flex.includeCustomFieldObj(ApplicantInfoObj, input);
             }
             else {
@@ -20,6 +21,12 @@
                 }
             }
         });
+
+        // Update checkboxes which are serialized if unchecked
+        $(`#ApplicantInfoForm input:checkbox`).each(function () {
+            ApplicantInfoObj[this.name] = (this.checked).toString();
+        });
+
         try {
             unity.grantManager.grantApplications.grantApplication
                 .updateProjectApplicantInfo(applicationId, ApplicantInfoObj)

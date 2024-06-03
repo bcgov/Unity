@@ -10,6 +10,6 @@ namespace Unity.Flex.Worksheets
         public string UIAnchor { get; set; } = string.Empty;
         public Guid CorrelationId { get; set; }
         public string CorrelationProvider { get; set; } = string.Empty;
-        public List<WorksheetSectionDto> Sections { get; set; } = [];
+        public List<CreateWorksheetSectionDto> Sections { get; set; } = [];
     }
 }

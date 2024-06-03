@@ -15,6 +15,12 @@ namespace Unity.Flex.Worksheets.Definitions
                 CustomFieldType.Date => JsonSerializer.Serialize(new DateDefinition()),
                 CustomFieldType.DateTime => JsonSerializer.Serialize(new DateTimeDefinition()),
                 CustomFieldType.YesNo => JsonSerializer.Serialize(new YesNoDefinition()),
+                CustomFieldType.Phone => JsonSerializer.Serialize(new PhoneDefinition()),
+                CustomFieldType.Email => JsonSerializer.Serialize(new EmailDefinition()),
+                CustomFieldType.Radio => JsonSerializer.Serialize(new RadioDefinition()),
+                CustomFieldType.Checkbox => JsonSerializer.Serialize(new CheckboxDefinition()),
+                CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupDefinition()),
+                CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),
                 _ => throw new NotImplementedException(),
             };
         }

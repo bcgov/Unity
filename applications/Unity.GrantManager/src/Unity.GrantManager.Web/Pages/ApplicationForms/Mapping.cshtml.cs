@@ -1,7 +1,6 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -104,14 +103,15 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             foreach (var property in intakeMapping.GetType().GetProperties())
             {
-                var attribute = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault();
+                var displayName = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault();
+                var fieldType = property.GetCustomAttributes(typeof(MapFieldTypeAttribute), true).Cast<MapFieldTypeAttribute>().SingleOrDefault();
 
-                properties.Add(new MapField() 
-                { 
-                    Name = property.Name, 
-                    Type = property.PropertyType.Name, 
-                    IsCustom = false, 
-                    Label = attribute?.DisplayName ?? property.Name
+                properties.Add(new MapField()
+                {
+                    Name = property.Name,
+                    Type = fieldType?.Type ?? "String",
+                    IsCustom = false,
+                    Label = displayName?.DisplayName ?? property.Name
                 });
             }
 
@@ -123,11 +123,11 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 var fields = worksheets.SelectMany(s => s.Sections).SelectMany(s => s.Fields).ToList();
 
                 foreach (var field in fields)
-                {             
-                    properties.Add(new MapField() 
-                    { 
+                {
+                    properties.Add(new MapField()
+                    {
                         Name = field.Name,
-                        Type = ConvertCustomType(),
+                        Type = ConvertCustomType(field.Type),
                         IsCustom = true,
                         Label = field.Label
                     });
@@ -137,9 +137,21 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
             return [.. properties.OrderBy(s => s.Label)];
         }
 
-        private string ConvertCustomType()
+        private static string ConvertCustomType(CustomFieldType type)
         {
-            return "String";
+            return type switch
+            {
+                CustomFieldType.Text => "String",
+                CustomFieldType.Date => "Date",
+                CustomFieldType.Email => "Email",
+                CustomFieldType.Phone => "Phone",
+                CustomFieldType.DateTime => "Date",
+                CustomFieldType.YesNo => "YesNo",
+                CustomFieldType.Currency => "Currency",
+                CustomFieldType.Numeric => "Number",
+                CustomFieldType.Radio => "Radio",
+                _ => "",
+            };
         }
 
         public class MapField

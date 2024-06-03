@@ -4,8 +4,9 @@
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
+
         $.each(formData, function (_, input) {
-            if (Flex?.isCustomField(input)) {
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(assessmentResultObj, input);
             }
             else if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "AssessmentResults.Notes")) {
@@ -23,6 +24,12 @@
                 }
             }
         });
+
+        // Update checkboxes which are serialized if unchecked
+        $(`#assessmentResultForm input:checkbox`).each(function () {
+            assessmentResultObj[this.name] = (this.checked).toString();
+        });
+
         try {
             unity.grantManager.grantApplications.grantApplication
                 .updateAssessmentResults(applicationId, assessmentResultObj)

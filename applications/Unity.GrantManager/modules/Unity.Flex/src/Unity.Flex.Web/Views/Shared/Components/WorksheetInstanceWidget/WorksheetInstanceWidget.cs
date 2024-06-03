@@ -123,8 +123,9 @@ public static class InputExtensions
             CustomFieldType.Numeric => "number",
             CustomFieldType.Currency => "text",
             CustomFieldType.DateTime => "datetime-local",
-            CustomFieldType.Date => "date",
-            CustomFieldType.YesNo => "checkbox",
+            CustomFieldType.Date => "date",            
+            CustomFieldType.Radio => "radio",
+            CustomFieldType.Checkbox => "checkbox",
             _ => "text",
         };
     }
@@ -144,6 +145,12 @@ public static class InputExtensions
             CustomFieldType.DateTime => JsonSerializer.Deserialize<DateTimeDefinition>(definition),
             CustomFieldType.Date => JsonSerializer.Deserialize<DateDefinition>(definition),
             CustomFieldType.YesNo => JsonSerializer.Deserialize<YesNoDefinition>(definition),
+            CustomFieldType.Phone => JsonSerializer.Deserialize<PhoneDefinition>(definition),
+            CustomFieldType.Email => JsonSerializer.Deserialize<EmailDefinition>(definition),
+            CustomFieldType.Radio => JsonSerializer.Deserialize<RadioDefinition>(definition),
+            CustomFieldType.Checkbox => JsonSerializer.Deserialize<CheckboxDefinition>(definition),
+            CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxDefinition>(definition),
+            CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
             _ => null,
         };
     }
@@ -162,7 +169,7 @@ public static class InputExtensions
             CustomFieldType.YesNo => "form-select form-control",
             _ => "form-control",
         };
-    }    
+    }
 
     public static string? GetMinValueOrNull(this CustomFieldDefinition field)
     {

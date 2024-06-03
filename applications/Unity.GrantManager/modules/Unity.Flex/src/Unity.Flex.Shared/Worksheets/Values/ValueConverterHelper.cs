@@ -17,6 +17,13 @@ namespace Unity.Flex.Worksheets.Values
             return string.Empty;
         }
 
+        internal static string ConvertDecimal(string currentValue)
+        {
+            var valid = decimal.TryParse(currentValue, out decimal value);
+            if (valid) return value.ToString();
+            return string.Empty;
+        }
+
         internal static string ConvertYesNo(object? value)
         {
             if (value == null) return string.Empty;
@@ -26,6 +33,18 @@ namespace Unity.Flex.Worksheets.Values
             var valCheck = strVal.Trim().ToLower();
             if (valCheck == "yes" || valCheck == "true" || valCheck == "1") return "Yes";
             if (valCheck == "no" || valCheck == "false" || valCheck == "0") return "No";
+            return string.Empty;
+        }
+
+        internal static string ConvertCheckbox(object? value)
+        {
+            if (value == null) return "false";
+            var strVal = value.ToString();
+            if (strVal == null) return "false";
+
+            var valCheck = strVal.Trim().ToLower();
+            if (valCheck == "on" || valCheck == "true" || valCheck == "1") return "true";
+            if (valCheck == "" || valCheck == "false" || valCheck == "0") return "false";
             return string.Empty;
         }
     }

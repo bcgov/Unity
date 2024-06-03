@@ -14,6 +14,11 @@
             }
         });
 
+        // Update checkboxes which are serialized if unchecked
+        $(`#projectInfoForm input:checkbox`).each(function () {
+            projectInfoObj[this.name] = (this.checked).toString();
+        });
+
         updateProjectInfo(applicationId, projectInfoObj);
     });
 

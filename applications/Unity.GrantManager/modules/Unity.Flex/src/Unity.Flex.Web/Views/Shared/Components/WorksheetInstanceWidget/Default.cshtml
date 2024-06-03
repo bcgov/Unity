@@ -4,6 +4,7 @@
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 @using Unity.Flex.Worksheets
+@using Unity.Flex.Worksheets.Definitions
 
 @model WorksheetViewModel;
 
@@ -36,6 +37,26 @@
                                         </select>
                                         break;
                                     }
+                                case CustomFieldType.Checkbox:
+                                    {
+                                        @if ((bool)(field?.CurrentValue?.ConvertInputValueOrNull(field.Type) ?? false) == true)
+                                        {
+                                            <input type="@field?.Type.ConvertInputType()"
+                                                   id="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                   name="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")"
+                                                   checked />
+                                        }
+                                        else
+                                        {
+                                            <input type="@field?.Type.ConvertInputType()"
+                                                   id="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                   name="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                                        }
+                                        <label for="@($"{field?.Name}.{Model.Name}.{field?.Id}")">@($"{field?.Label}")</label>
+                                        break;
+                                    }
                                 case CustomFieldType.Currency:
                                     {
                                         <div class="custom-input-group">
@@ -66,6 +87,38 @@
                                         </div>
                                         break;
                                     }
+                                case CustomFieldType.Radio:
+                                    {
+                                        <fieldset>
+                                            @foreach (var value in ((RadioDefinition?)field?.Definition?.ConvertDefinition(field.Type))?.Options ?? [])
+                                            {
+                                                <div class="custom-radio-button">
+                                                    @if (field != null)
+                                                    {
+                                                        @if ((field?.CurrentValue?.ConvertInputValueOrNull(field.Type))?.ToString() == value.Value)
+                                                        {
+                                                            <input type="@field.Type.ConvertInputType()"
+                                                                   id="@($"{field.Name}.{Model.Name}.{field.Id}.{value.Value}")"
+                                                                   name="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                                   value="@($"{value.Value}")"
+                                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")"
+                                                                   checked />
+                                                        }
+                                                        else
+                                                        {
+                                                            <input type="@field?.Type.ConvertInputType()"
+                                                                   id="@($"{field?.Name}.{Model.Name}.{field?.Id}.{value.Value}")"
+                                                                   name="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                                   value="@($"{value.Value}")"
+                                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                                                        }
+                                                        <label for="@($"{field?.Name}.{Model.Name}.{field?.Id}")">@($"{value.Label}")</label>
+                                                    }
+                                                </div>
+                                            }
+                                        </fieldset>
+                                        break;
+                                    }
                                 default:
                                     {
                                         <input type="@field.Type.ConvertInputType()"
@@ -82,7 +135,7 @@
                                         break;
                                     }
                             }
-                            <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field.Name}.{Model.Name}.{field.Id}")" data-valmsg-replace="true"></span>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field?.Name}.{Model.Name}.{field?.Id}")" data-valmsg-replace="true"></span>
                         </div>
                     }
                 </div>

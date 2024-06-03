@@ -37,18 +37,18 @@ namespace Unity.Flex.Domain.Worksheets
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public CustomField(Guid id, string name, string label, CustomFieldType type, string? definition)
+        public CustomField(Guid id, string name, string worksheetName, string label, CustomFieldType type, string? definition)
         {
             Id = id;
-            Name = ConfigureName(name);
+            Name = ConfigureName(name, worksheetName);
             Label = label;
             Type = type;
             Definition = definition ?? DefinitionResolver.Resolve(type);
         }
 
-        private string ConfigureName(string name)
+        private static string ConfigureName(string name, string worksheetName)
         {
-            return "custom_" + Name + "_" +  name.Trim().Replace(" ", "");
+            return "custom_" + SanitizeNameField(worksheetName) + "_" + SanitizeNameField(name);
         }
 
         public CustomField SetName(string name)
@@ -76,6 +76,11 @@ namespace Unity.Flex.Domain.Worksheets
         {
             Order = order;
             return this;
+        }
+
+        private static string SanitizeNameField(string field)
+        {
+            return field.Trim().ToLower().Replace(" ", "");
         }
     }
 }

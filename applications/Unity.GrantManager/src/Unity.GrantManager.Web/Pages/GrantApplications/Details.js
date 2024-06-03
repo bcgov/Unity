@@ -391,11 +391,15 @@ $(function () {
         let uiAnchor = $(this).attr('data-ui-anchor');
         let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
         let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
-        let formData = $(`#${formDataName}`).serializeArray();
+        let formData = $(`#${formDataName}`).serializeArray();        
         let customFormObj = {};
 
         $.each(formData, function (_, input) {
             customFormObj[input.name] = input.value;
+        });
+        
+        $(`#${formDataName} input:checkbox`).each(function () {
+            customFormObj[this.name] = (this.checked).toString();
         });
 
         updateCustomForm(applicationId, customFormObj, uiAnchor, id);

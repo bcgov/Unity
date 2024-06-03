@@ -37,7 +37,7 @@ namespace Unity.Flex.Worksheets
 
                 foreach (var field in section.Fields)
                 {
-                    newWorksheet.Sections[^1].AddField(new CustomField(Guid.NewGuid(), field.Name, field.Label, field.Type, field.Definition));
+                    newWorksheet.Sections[^1].AddField(new CustomField(Guid.NewGuid(), field.Name, newWorksheet.Name, field.Label, field.Type, field.Definition));
                 }
             }
 
