@@ -19,19 +19,17 @@
     <abp-script src="/Pages/Intakes/Index.js" />
 }
 
-<div class="container-fluid px-2">
-    <div class="d-flex my-1 p-2">
-        <abp-column size="_6">
-            <abp-card-title>@L["Intakes"]</abp-card-title>
-        </abp-column>
-        <abp-column size="_6" class="d-flex justify-content-end">
-            <abp-button id="CreateIntakeButton"
-                        text="@L["Common:Command:Create"].Value"
-                        icon-type="Other"
-                        icon="fl fl-add-to"
-                        button-type="Light" />
-        </abp-column>
+<div class="container-fluid px-0">
+    <div class="unity-page-titlebar">
+        <h4>@L["Intakes"]</h4>
+        <abp-button id="CreateIntakeButton"
+            text="@L["Common:Command:Create"].Value"
+            icon-type="Other"
+            icon="fl fl-add-to"
+            button-type="Light" />
     </div>
-    <abp-table id="IntakesTable"></abp-table>
+    <div class="p-3">
+        <abp-table id="IntakesTable"></abp-table>
+    </div>
 </div>
 

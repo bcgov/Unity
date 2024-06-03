@@ -8,6 +8,7 @@ using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
+using Volo.Abp.Domain.Repositories;
 using System.Linq;
 
 namespace Unity.Payments.PaymentRequests
@@ -16,14 +17,18 @@ namespace Unity.Payments.PaymentRequests
     [Authorize]
     public class PaymentRequestAppService : PaymentsAppService, IPaymentRequestAppService
     {
+        private readonly IRepository<PaymentRequest, Guid> _iPaymentRequestRepository;
         private readonly IPaymentRequestRepository _paymentRequestsRepository;
         private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
         private readonly ICurrentUser _currentUser;
 
-        public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
+        public PaymentRequestAppService(
+            IRepository<PaymentRequest, Guid> iPaymentRequestRepository,
+            IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
             ICurrentUser currentUser)
         {
+            _iPaymentRequestRepository = iPaymentRequestRepository;
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
@@ -37,9 +42,14 @@ namespace Unity.Payments.PaymentRequests
 
             foreach (var dto in paymentRequests)
             {
+
+                // Confirmation ID + 4 digit sequence NEED SEQUENCE IF MULTIPLE
+                string format = "0000";
+                int applicationPaymentRequestCount = await paymentRequestsPerApplicationCountAsync(dto.CorrelationId);
+
                 // Create a new Payment entity from the DTO
                 var payment = new PaymentRequest(Guid.NewGuid(),
-                    dto.InvoiceNumber,
+                    dto.InvoiceNumber + $"-{applicationPaymentRequestCount.ToString(format)}",
                     dto.Amount,
                     dto.PayeeName,
                     dto.ContractNumber,
@@ -69,6 +79,15 @@ namespace Unity.Payments.PaymentRequests
             }
 
             return createdPayments;
+        }
+
+        private async Task<int> paymentRequestsPerApplicationCountAsync(Guid correlationId)
+        {
+            var currentPaymentRequests = (await _iPaymentRequestRepository.GetQueryableAsync())
+                                            .Where(s => s.CorrelationId == correlationId)
+                                            .ToList();
+
+            return currentPaymentRequests.Count + 1;
         }
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)

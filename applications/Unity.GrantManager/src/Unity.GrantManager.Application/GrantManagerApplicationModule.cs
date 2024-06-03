@@ -24,6 +24,7 @@ using Volo.Abp.Application.Dtos;
 using Unity.Notifications;
 using Unity.Notifications.Integrations.Ches;
 using Unity.GrantManager.Intakes.BackgroundWorkers;
+using Unity.Payments.Integrations.Cas;
 using Unity.Flex;
 using Unity.Payments;
 
@@ -83,6 +84,7 @@ public class GrantManagerApplicationModule : AbpModule
             options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
 
+        context.Services.Configure<CasClientOptions>(configuration.GetSection(key: "Payments"));
         context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
         Configure<BackgroundJobsOptions>(options =>

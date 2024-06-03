@@ -18,6 +18,7 @@
             order: [[1, "asc"]],
             searching: true,
             scrollX: true,
+            processing: true,
             ajax: abp.libs.datatables.createAjax(_applicationFormsAppService.getList),
             columnDefs: [
                 {
