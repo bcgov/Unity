@@ -21,6 +21,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public AssessmentResultsModel AssessmentResults { get; set; } = new();
         public bool IsEditGranted { get; set; }
         public bool IsPostEditFieldsAllowed { get; set; }
+        public bool IsEditFieldsStatApproved { get; set; }
 
         public class AssessmentResultsModel
         {

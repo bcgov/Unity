@@ -42,7 +42,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
         public bool IsEditGranted { get; set; }
         public bool IsPostEditFieldsAllowed { get; set; }
-
+        public bool IsEditFieldsStatApproved { get; set; }
 
 
         public class ProjectInfoViewModelModel

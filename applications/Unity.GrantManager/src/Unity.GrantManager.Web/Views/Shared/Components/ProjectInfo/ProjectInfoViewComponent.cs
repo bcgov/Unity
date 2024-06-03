@@ -54,8 +54,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
             bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
+            bool isEditFieldsStatApproved = isEditGranted || GrantApplicationState.GRANT_APPROVED.Equals(application.StatusCode);
             bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
-
 
             List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
 
@@ -73,7 +73,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 EconomicRegions = EconomicRegions,
                 IsFinalDecisionMade = finalDecisionState,
                 IsEditGranted = isEditGranted,
-                IsPostEditFieldsAllowed = isPostEditFieldsAllowed
+                IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
+                IsEditFieldsStatApproved = isEditFieldsStatApproved
             };
 
             model.EconomicRegionList.AddRange(EconomicRegions.Select(EconomicRegion =>
