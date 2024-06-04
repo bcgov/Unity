@@ -1,5 +1,5 @@
 (function () {
-    abp.widgets.ApplicationActionWidget = function ($wrapper) {
+    abp.widgets.WorksheetInstanceWidget = function ($wrapper) {
         let widgetManager = $wrapper.data('abp-widget-manager');
         console.log(widgetManager);
     };
