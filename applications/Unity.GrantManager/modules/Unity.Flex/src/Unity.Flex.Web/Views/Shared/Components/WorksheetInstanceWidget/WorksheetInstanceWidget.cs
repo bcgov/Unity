@@ -126,6 +126,7 @@ public static class InputExtensions
             CustomFieldType.Date => "date",            
             CustomFieldType.Radio => "radio",
             CustomFieldType.Checkbox => "checkbox",
+            CustomFieldType.CheckboxGroup => "checkbox",
             _ => "text",
         };
     }
@@ -149,7 +150,7 @@ public static class InputExtensions
             CustomFieldType.Email => JsonSerializer.Deserialize<EmailDefinition>(definition),
             CustomFieldType.Radio => JsonSerializer.Deserialize<RadioDefinition>(definition),
             CustomFieldType.Checkbox => JsonSerializer.Deserialize<CheckboxDefinition>(definition),
-            CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxDefinition>(definition),
+            CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupDefinition>(definition),
             CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
             _ => null,
         };

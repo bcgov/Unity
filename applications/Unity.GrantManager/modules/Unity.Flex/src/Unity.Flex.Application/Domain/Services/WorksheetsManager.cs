@@ -12,6 +12,37 @@ using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
 {
+    public static class FieldsExtensions
+    {
+        public static List<ValueFieldContainer> BuildFields(this Dictionary<string, string> dictionary)
+        {
+            var fields = new List<ValueFieldContainer>();
+
+            foreach (var field in dictionary)
+            {
+                // Field is broken down into {FieldName}.{UiAnchor}.{FieldId} and then value
+
+                var split = field.Key.Split('.', StringSplitOptions.RemoveEmptyEntries);
+
+                fields.Add(new ValueFieldContainer()
+                {
+                    FieldId = Guid.Parse(split[2]),
+                    UiAnchor = split[1],
+                    FieldName = split[0],
+                    Value = field.Value
+                });
+            }
+
+            return fields;
+        }
+
+        public static List<ValueFieldContainer> GroupFieldSets(this List<ValueFieldContainer> valueFields)
+        {
+            var groups = valueFields.GroupBy(s => s.FieldId);
+            return new List<ValueFieldContainer>();
+        }
+    }
+
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository, IWorksheetRepository worksheetRepository) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
@@ -22,10 +53,13 @@ namespace Unity.Flex.Domain.Services
             var dictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
 
             if (dictionary == null || dictionary.Count == 0) return;
-            var fields = BuildFields(dictionary);
 
             var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationByAnchorAsync(eventData.CorrelationId, eventData.CorrelationProvider, eventData.UiAnchor, true);
             var worksheet = await worksheetRepository.GetByCorrelationByAnchorAsync(CurrentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, eventData.UiAnchor, true);
+
+            var fields = dictionary
+                .BuildFields()
+                .GroupFieldSets();
 
             if (worksheetInstance == null)
             {
@@ -112,28 +146,6 @@ namespace Unity.Flex.Domain.Services
                     await worksheetInstanceRepository.InsertAsync(newInstance);
                 }
             }
-        }
-
-        private static List<ValueFieldContainer> BuildFields(Dictionary<string, string> dictionary)
-        {
-            var fields = new List<ValueFieldContainer>();
-
-            foreach (var field in dictionary)
-            {
-                // Field is broken down into {FieldName}.{UiAnchor}.{FieldId} and then value
-
-                var split = field.Key.Split('.', StringSplitOptions.RemoveEmptyEntries);
-
-                fields.Add(new ValueFieldContainer()
-                {
-                    FieldId = Guid.Parse(split[2]),
-                    UiAnchor = split[1],
-                    FieldName = split[0],
-                    Value = field.Value
-                });
-            }
-
-            return fields;
         }
 
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)

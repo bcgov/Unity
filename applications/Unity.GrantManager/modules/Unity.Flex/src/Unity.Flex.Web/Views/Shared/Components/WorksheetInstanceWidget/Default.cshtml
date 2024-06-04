@@ -39,22 +39,24 @@
                                     }
                                 case CustomFieldType.Checkbox:
                                     {
-                                        @if ((bool)(field?.CurrentValue?.ConvertInputValueOrNull(field.Type) ?? false) == true)
-                                        {
-                                            <input type="@field?.Type.ConvertInputType()"
-                                                   id="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
-                                                   name="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
-                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")"
-                                                   checked />
-                                        }
-                                        else
-                                        {
-                                            <input type="@field?.Type.ConvertInputType()"
-                                                   id="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
-                                                   name="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
-                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
-                                        }
-                                        <label for="@($"{field?.Name}.{Model.Name}.{field?.Id}")">@($"{field?.Label}")</label>
+                                        <div class="custom-checkbox">
+                                            @if ((bool)(field?.CurrentValue?.ConvertInputValueOrNull(field.Type) ?? false) == true)
+                                            {
+                                                <input type="@field?.Type.ConvertInputType()"
+                                                       id="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                       name="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                       onchange="@($"notifyFieldChange('{Model.Name}', this)")"
+                                                       checked />
+                                            }
+                                            else
+                                            {
+                                                <input type="@field?.Type.ConvertInputType()"
+                                                       id="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                       name="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
+                                                       onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                                            }
+                                            <label for="@($"{field?.Name}.{Model.Name}.{field?.Id}")">@($"{field?.Label}")</label>
+                                        </div>
                                         break;
                                     }
                                 case CustomFieldType.Currency:
@@ -90,30 +92,72 @@
                                 case CustomFieldType.Radio:
                                     {
                                         <fieldset>
-                                            @foreach (var value in ((RadioDefinition?)field?.Definition?.ConvertDefinition(field.Type))?.Options ?? [])
+                                            @foreach (var option in ((RadioDefinition?)field?.Definition?.ConvertDefinition(field.Type))?.Options ?? [])
                                             {
                                                 <div class="custom-radio-button">
                                                     @if (field != null)
                                                     {
-                                                        @if ((field?.CurrentValue?.ConvertInputValueOrNull(field.Type))?.ToString() == value.Value)
+                                                        @if ((field?.CurrentValue?.ConvertInputValueOrNull(field.Type))?.ToString() == option.Value)
                                                         {
                                                             <input type="@field.Type.ConvertInputType()"
-                                                                   id="@($"{field.Name}.{Model.Name}.{field.Id}.{value.Value}")"
+                                                                   id="@($"{field.Name}.{Model.Name}.{field.Id}.{option.Value}")"
                                                                    name="@($"{field.Name}.{Model.Name}.{field.Id}")"
-                                                                   value="@($"{value.Value}")"
+                                                                   value="@($"{option.Value}")"
                                                                    onchange="@($"notifyFieldChange('{Model.Name}', this)")"
                                                                    checked />
                                                         }
                                                         else
                                                         {
                                                             <input type="@field?.Type.ConvertInputType()"
-                                                                   id="@($"{field?.Name}.{Model.Name}.{field?.Id}.{value.Value}")"
+                                                                   id="@($"{field?.Name}.{Model.Name}.{field?.Id}.{option.Value}")"
                                                                    name="@($"{field?.Name}.{Model.Name}.{field?.Id}")"
-                                                                   value="@($"{value.Value}")"
+                                                                   value="@($"{option.Value}")"
                                                                    onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
                                                         }
-                                                        <label for="@($"{field?.Name}.{Model.Name}.{field?.Id}")">@($"{value.Label}")</label>
+                                                        <label for="@($"{field?.Name}.{Model.Name}.{field?.Id}")">@($"{option.Label}")</label>
                                                     }
+                                                </div>
+                                            }
+                                        </fieldset>
+                                        break;
+                                    }
+                                case CustomFieldType.SelectList:
+                                    {
+                                        <select class="@field.Type.ApplyCssClass()"
+                                                id="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                name="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                onchange="@($"notifyFieldChange('{Model.Name}', this)")">
+
+                                            @foreach (var item in ((SelectListDefinition?)field?.Definition?.ConvertDefinition(field.Type))?.Options ?? [])
+                                            {
+                                                <option selected="@field?.CurrentValue?.CompareSelectListValue(@item.Value)" value="@item.Value">@item.Key</option>
+                                            }
+
+                                        </select>
+                                        break;
+                                    }
+                                case CustomFieldType.CheckboxGroup:
+                                    {
+                                        <fieldset>
+                                            @foreach (var option in ((CheckboxGroupDefinition?)field?.Definition?.ConvertDefinition(field.Type))?.Options ?? [])
+                                            {
+                                                <div class="custom-checkbox">
+                                                    @if (option.Value == true)
+                                                    {
+                                                        <input type="@field?.Type.ConvertInputType()"
+                                                               id="@($"{field?.Name}.{Model.Name}.{field?.Id}.{option.Key}")"
+                                                               name="@($"{field?.Name}.{Model.Name}.{field?.Id}.{option.Key}")"
+                                                               onchange="@($"notifyFieldChange('{Model.Name}', this)")"
+                                                               checked />
+                                                    }
+                                                    else
+                                                    {
+                                                        <input type="@field?.Type.ConvertInputType()"
+                                                               id="@($"{field?.Name}.{Model.Name}.{field?.Id}.{option.Key}")"
+                                                               name="@($"{field?.Name}.{Model.Name}.{field?.Id}.{option.Key}")"
+                                                               onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                                                    }
+                                                    <label for="@($"{field?.Name}.{Model.Name}.{field?.Id}")">@($"{field?.Label}")</label>
                                                 </div>
                                             }
                                         </fieldset>
