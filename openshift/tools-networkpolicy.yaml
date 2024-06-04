@@ -8,12 +8,12 @@ metadata:
     template: tools-networkpolicy
   annotations:
     description: |-
-      Template for tools namespace comunications in OpenShift.
+      Template for tools namespace communications in OpenShift.
 parameters:
 # Project namespace parameters
   - name: PROJECT_NAMESPACE
     displayName: "Project Namespace"
-    description: "The OpenShift project license plate 6 charater alpha numberic."
+    description: "The OpenShift project license plate 6 character alpha numeric."
     required: true
     generate: expression
     from: "[a-z0-9]{6}"
