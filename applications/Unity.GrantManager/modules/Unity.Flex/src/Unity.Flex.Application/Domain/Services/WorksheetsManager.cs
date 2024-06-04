@@ -15,6 +15,8 @@ namespace Unity.Flex.Domain.Services
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
+            if ((object?)eventData.CustomFields == null) { return; }
+
             string json = JsonSerializer.Serialize(eventData.CustomFields);
             var dictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
 
