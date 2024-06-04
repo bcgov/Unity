@@ -49,20 +49,20 @@ parameters:
   generate: expression
 - name: DATABASE_BACKUP_KEEP
   description: 'Number of backups to keep'
-  value: '28'
+  value: '7'
 - name: DATABASE_BACKUP_SCHEDULE
   description: 'Cron-like schedule expression m h D M DayOfWeek add +7/8 hours for UTC conversions'
   required: true
-  value: '0 0,14 * * *'
+  value: '0 14 * * *'
 - name: DATABASE_BACKUP_VOLUME_CLAIM
   description: 'Name of the volume claim to be used as storage'
   required: true
   value: unity-data-backup
-- description: Volume space available for data, e.g. 512Mi, 2Gi.
-  displayName: Volume Capacity
-  name: VOLUME_CAPACITY
+- description: The name of the storage object.
+  displayName: Object Storage Name
+  name: STORAGE_OBJECT_NAME
   required: true
-  value: 256Mi
+  value: s3-object-storage
 - description: The Namespace where the database container image resides default=redhat cluster=openshift, project=tools
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
@@ -93,7 +93,7 @@ parameters:
   displayName: CPU Limit
   name: CPU_LIMIT
   required: true
-  value: 250m
+  value: 200m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
@@ -144,12 +144,12 @@ objects:
                   - > 
                     trap "echo Backup failed; exit 0" ERR; date;
                     FILENAME=dumpall-${DATABASE_SERVICE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
-                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_SERVICE_NAME}-*"  -exec ls -1tr "{}" + | head -n -${DATABASE_BACKUP_KEEP} | xargs rm -fr; 
+                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_SERVICE_NAME}-*"  -exec ls -1tr "{}" + | head -n -$DATABASE_BACKUP_KEEP | xargs rm -fr; 
                     PGPASSWORD="$DATABASE_PASSWORD" pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME); 
                     echo "";
                     echo "Backup successful"; du -h /var/lib/pgsql/backups/$FILENAME; 
                     echo "to restore the backup to the serviced host use: $ psql --username=$DATABASE_USER --password --host=$DATABASE_HOST --port=$DATABASE_PORT postgres < /var/lib/pgsql/backups/<backupfile> (unpacked with gunzip)";
-                    echo ""; du -hc /var/lib/pgsql/backups/*
+                    echo ""; du -hs /var/lib/pgsql/backups;/var/lib/pgsql/backups/bin/mc alias set $AccessKeyID $RestEndpoint $AccessKeyID $SecretKey;/var/lib/pgsql/backups/bin/mc cp /var/lib/pgsql/backups/$FILENAME $AccessKeyID/$BucketDisplayName/Unity/Backups
                 env:
                   - name: DATABASE_PORT
                     valueFrom:
@@ -173,6 +173,26 @@ objects:
                       secretKeyRef:
                         name: ${DATABASE_SERVICE_NAME}
                         key: database-password
+                  - name: RestEndpoint
+                    valueFrom:
+                      configMapKeyRef:
+                        name: ${STORAGE_OBJECT_NAME}
+                        key: Rest-Endpoint
+                  - name: AccessKeyID
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${STORAGE_OBJECT_NAME}
+                        key: Access-Key-ID
+                  - name: BucketDisplayName
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${STORAGE_OBJECT_NAME}
+                        key: Bucket-Display-Name
+                  - name: SecretKey
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${STORAGE_OBJECT_NAME}
+                        key: Secret-Key                        
                   - name: DATABASE_BACKUP_KEEP
                     value: ${DATABASE_BACKUP_KEEP}
                   - name: TZ
@@ -180,4 +200,11 @@ objects:
                 volumeMounts:
                   - name: ${BACKUP_APPLICATION_NAME}
                     mountPath: /var/lib/pgsql/backups
+                resources:
+                  limits:
+                    cpu: ${CPU_LIMIT}
+                    memory: ${MEMORY_LIMIT} 
+                  requests:
+                    cpu: ${CPU_REQUEST}
+                    memory: ${MEMORY_REQUEST}
             restartPolicy: Never
