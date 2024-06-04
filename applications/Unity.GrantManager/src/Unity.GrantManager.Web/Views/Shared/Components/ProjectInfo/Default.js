@@ -142,8 +142,12 @@
 
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
-            $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
-            $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
+            if (data.RequestedAmount) {
+                $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
+            }
+            if (data.TotalProjectBudget) {
+                $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
+            }
         }
     );
 
@@ -168,8 +172,8 @@ function enableProjectInfoSaveBtn(inputText) {
 }
 
 function calculatePercentage() {
-    const requestedAmount = parseFloat(document.getElementById("ProjectInfo_RequestedAmount")?.value.replace(/,/g, ''));
-    const totalProjectBudget = parseFloat(document.getElementById("ProjectInfo_TotalProjectBudget")?.value.replace(/,/g, ''));
+    const requestedAmount = parseFloat(document.getElementById("RequestedAmountInputPI")?.value.replace(/,/g, ''));
+    const totalProjectBudget = parseFloat(document.getElementById("TotalBudgetInputPI")?.value.replace(/,/g, ''));
     if (isNaN(requestedAmount) || isNaN(totalProjectBudget) || totalProjectBudget == 0) {
         document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
         return;
