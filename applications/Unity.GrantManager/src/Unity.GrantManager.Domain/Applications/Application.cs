@@ -134,11 +134,12 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
     }
 
-    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding)
+    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, decimal? totalProjectBudget)
     {
         Notes = notes;
         SubStatus = subStatus;
         LikelihoodOfFunding = likelihoodOfFunding;
+        TotalProjectBudget = totalProjectBudget ?? 0;
     }
 
     public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore, DateTime? notificationDate)
@@ -159,10 +160,9 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         AssessmentResultStatus = assessmentResultStatus;
     }
 
-    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
+    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? recommendedAmount, string? declineRational)
     {
-        DueDiligenceStatus = dueDiligenceStatus;
-        TotalProjectBudget = totalProjectBudget ?? 0;
+        DueDiligenceStatus = dueDiligenceStatus;        
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
     }
