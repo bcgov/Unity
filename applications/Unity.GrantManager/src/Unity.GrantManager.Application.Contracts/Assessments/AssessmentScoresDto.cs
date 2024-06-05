@@ -7,16 +7,16 @@ namespace Unity.GrantManager.Assessments
     {
         public Guid AssessmentId { get; set; }
 
-        [MaxValue(int.MaxValue, "Financial Analysis")]
+        [MaxValue(int.MaxValue, "Section Score 1")]
         public int? FinancialAnalysis { get; set; }
 
-        [MaxValue(int.MaxValue, "Economic Impact")]
+        [MaxValue(int.MaxValue, "Section Score 2")]
         public int? EconomicImpact { get; set; }
 
-        [MaxValue(int.MaxValue, "Inclusive Growth")]
+        [MaxValue(int.MaxValue, "Section Score 3")]
         public int? InclusiveGrowth { get; set; }
 
-        [MaxValue(int.MaxValue, "Clean Growth")]
+        [MaxValue(int.MaxValue, "Section Score 4")]
         public int? CleanGrowth { get; set; }
     }
 }
