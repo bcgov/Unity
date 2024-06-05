@@ -90,6 +90,20 @@ namespace Unity.Payments.PaymentRequests
                 var payment = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
               
                 payment.SetPaymentRequestStatus(dto.Status);
+
+                if(dto.Status == Enums.PaymentRequestStatus.L1Approved)
+                {
+                  var index =  payment.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
+                    payment.ExpenseApprovals[index].Approve();
+                  
+
+                }
+                else if(dto.Status == Enums.PaymentRequestStatus.L1Declined)
+                {
+                    var index = payment.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
+                    payment.ExpenseApprovals[index].Decline();
+                }
+
                 var result = await _paymentRequestsRepository.UpdateAsync(payment);
                 updatedPayments.Add(new PaymentRequestDto()
                 {

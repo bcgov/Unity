@@ -38,6 +38,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         public ExpenseApproval Approve()
         {
             Status = ExpenseApprovalStatus.Approved;
+            DecisionDate = DateTime.Now;
             return this;
         }
 
@@ -45,6 +46,7 @@ namespace Unity.Payments.Domain.PaymentRequests
         {
 
             Status = ExpenseApprovalStatus.Declined;
+            DecisionDate = DateTime.Now;
             return this;
         }
     }
