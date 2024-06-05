@@ -5,14 +5,27 @@ using Unity.Payments.Enums;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Unity.Payments.Domain.Suppliers
 {
     public class Supplier : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid Id { get; set; }
         public Guid? TenantId { get; set; }
         public virtual string? Name { get; set; } = string.Empty;
         public virtual string? Number { get; set; } = string.Empty;
+        public virtual string? Subcategory { get; set; } = string.Empty;
+        public virtual string? SIN { get; set; } = string.Empty;
+        public virtual string? ProviderId { get; set; } = string.Empty;
+        public virtual string? BusinessNumber { get; set; } = string.Empty;
+        public virtual string? Status { get; set; } = string.Empty;
+        public virtual string? SupplierProtected { get; set; } = string.Empty;
+        public virtual string? StandardIndustryClassification { get; set; } = string.Empty;
+        public virtual DateTime? LastUpdatedInCAS { get; set; }
         public virtual Collection<Site> Sites { get; private set; }
 
         /* Address */
@@ -34,6 +47,13 @@ namespace Unity.Payments.Domain.Suppliers
         public Supplier(Guid id,
             string? name,
             string? number,
+            string? subcategory,
+            string? providerId,
+            string? businessNumber,
+            string? status,
+            string? supplierProtected,
+            string? standardIndustryClassification,
+            DateTime? lastUpdatedInCAS,
             Guid correlationId,
             string correlationProvider,
             string? mailingAddress = default,
@@ -44,6 +64,13 @@ namespace Unity.Payments.Domain.Suppliers
         {
             Name = name;
             Number = number;
+            Subcategory = subcategory;
+            ProviderId = providerId;
+            BusinessNumber = businessNumber;
+            Status = status;
+            SupplierProtected = supplierProtected;
+            StandardIndustryClassification = standardIndustryClassification;
+            LastUpdatedInCAS = lastUpdatedInCAS;
             CorrelationId = correlationId;
             CorrelationProvider = correlationProvider;
             Sites = new Collection<Site>();
@@ -84,17 +111,6 @@ namespace Unity.Payments.Domain.Suppliers
 
             return this;
         }
-
-        public void SetName(string? name)
-        {
-            Name = name;
-        }
-
-        public void SetNumber(string? number)
-        {
-            Number = number;
-        }
-
         public void SetAddress(string? mailingAddress,
             string? city,
             string? province,

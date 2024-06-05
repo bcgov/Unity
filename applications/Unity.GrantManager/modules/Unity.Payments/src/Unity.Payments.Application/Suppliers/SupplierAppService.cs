@@ -20,32 +20,49 @@ namespace Unity.Payments.Suppliers
 
         public virtual async Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto)
         {
-            var result = await _supplierRepository.InsertAsync(new Supplier(Guid.NewGuid(),
+            Supplier supplier = new Supplier(Guid.NewGuid(),
                 createSupplierDto.Name,
                 createSupplierDto.Number,
+                createSupplierDto.Subcategory,
+                createSupplierDto.ProviderId,
+                createSupplierDto.BusinessNumber,
+                createSupplierDto.Status,
+                createSupplierDto.SupplierProtected,
+                createSupplierDto.StandardIndustryClassification,
+                createSupplierDto.LastUpdatedInCAS,
                 createSupplierDto.CorrelationId,
                 createSupplierDto.CorrelationProvider,
                 createSupplierDto.MailingAddress,
                 createSupplierDto.City,
                 createSupplierDto.Province,
-                createSupplierDto.PostalCode));
+                createSupplierDto.PostalCode);
 
+            var result = await _supplierRepository.InsertAsync(supplier);
             return ObjectMapper.Map<Supplier, SupplierDto>(result);
         }
-
 
         public virtual async Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto)
         {
             var supplier = await _supplierRepository.GetAsync(id);
+            supplier.Name = updateSupplierDto.Name;
+            supplier.Number = updateSupplierDto.Number;
+            supplier.Subcategory = updateSupplierDto.Subcategory;
+            supplier.ProviderId = updateSupplierDto.ProviderId;
+            supplier.BusinessNumber = updateSupplierDto.BusinessNumber;
+            supplier.Status = updateSupplierDto.Status;
+            supplier.SupplierProtected = updateSupplierDto.SupplierProtected;
+            supplier.StandardIndustryClassification = updateSupplierDto.StandardIndustryClassification;
+            supplier.LastUpdatedInCAS = updateSupplierDto.LastUpdatedInCAS;
+            supplier.CorrelationId = updateSupplierDto.CorrelationId;
+            supplier.CorrelationProvider = updateSupplierDto.CorrelationProvider;
 
-            supplier.SetName(updateSupplierDto.Name);
-            supplier.SetNumber(updateSupplierDto.Number);
             supplier.SetAddress(updateSupplierDto.MailingAddress,
                 updateSupplierDto.City,
                 updateSupplierDto.Province,
                 updateSupplierDto.PostalCode);
 
-            return ObjectMapper.Map<Supplier, SupplierDto>(supplier);
+            Supplier result = await _supplierRepository.UpdateAsync(supplier);
+            return ObjectMapper.Map<Supplier, SupplierDto>(result);
         }
 
         public virtual async Task<SupplierDto> GetAsync(Guid id)

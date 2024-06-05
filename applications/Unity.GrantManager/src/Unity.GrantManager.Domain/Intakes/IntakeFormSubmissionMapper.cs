@@ -71,7 +71,7 @@ namespace Unity.GrantManager.Intakes
             {
                 // Duplicates are not an issue when adding the components 
                 // as it is a hash if it exists already it should be ok just continue on
-                Logger.LogException(ex);
+                Logger.LogInformation(ex.Message);
             }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }

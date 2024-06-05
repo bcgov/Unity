@@ -3,7 +3,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Payments.Domain.Suppliers
 {
-    public interface ISiteRepository : IReadOnlyBasicRepository<Site, Guid>
+    public interface ISiteRepository : IRepository<Site, Guid>
     {
     }
 }

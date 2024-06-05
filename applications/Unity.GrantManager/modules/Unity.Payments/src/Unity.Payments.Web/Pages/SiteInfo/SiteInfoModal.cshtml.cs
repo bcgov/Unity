@@ -60,6 +60,16 @@ public class SiteInfoModalModel : AbpPageModel
         public string? Province { get; set; }
         [Display(Name = "ApplicantInfoView:ApplicantInfo.SiteInfo:PostalCode")]
         public string? PostalCode { get; set; }
+        
+        [Display(Name = "Status")]
+        [ReadOnlyInput]
+        [DisabledInput]
+        public string Status { get; set; } = string.Empty;
+
+        [Display(Name = "Email")]
+        [ReadOnlyInput]
+        [DisabledInput]
+        public string Email { get; set; } = string.Empty;
     }
 
 
