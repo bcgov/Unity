@@ -15,12 +15,20 @@
                     ApplicantInfoObj[input.name.split(".")[1]] = null;
                 }
 
-            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber') {
+            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
                 ApplicantInfoObj[input.name] = input.value;
             }
             
         });
         try {
+
+            if (ApplicantInfoObj["SupplierNumber"]+"" != "undefined" 
+             && ApplicantInfoObj["SupplierNumber"]+"" != ""
+             && ApplicantInfoObj["SupplierNumber"]+"" != ApplicantInfoObj["OriginalSupplierNumber"]+"")
+            {
+                $('.cas-spinner').show();
+            }
+
             unity.grantManager.grantApplications.grantApplication
                 .updateProjectApplicantInfo(applicationId, ApplicantInfoObj)
                 .done(function () {
@@ -31,9 +39,15 @@
                     PubSub.publish("refresh_detail_panel_summary");
                     PubSub.publish('project_info_saved');
                     refreshSupplierInfoWidget();
+                })
+                .then(function () {
+                    $('.cas-spinner').hide();
+                }).catch(function(){
+                    $('.cas-spinner').hide();
                 });
         }
         catch (error) {
+            $('.cas-spinner').hide();
             console.log(error);
             $('#saveApplicantInfoBtn').prop('disabled', false);
         }
@@ -50,8 +64,10 @@
                     supplierInfo.innerHTML = data;
                     PubSub.publish('reload_sites_list');
                 }
+                $('.cas-spinner').hide();
             })
             .catch(error => {
+                $('.cas-spinner').hide();
                 console.error('Error refreshing supplier-info-widget:', error);
             });
     }

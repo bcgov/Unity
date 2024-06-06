@@ -370,7 +370,10 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             _ = await _applicantRepository.UpdateAsync(applicant);
 
             // Integrate with payments module to update / insert supplier
-            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
+            // Check that the original supplier number has changed
+            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+                && !string.IsNullOrEmpty(input.SupplierNumber)
+                && input.OriginalSupplierNumber != input.SupplierNumber)
             {
                 dynamic casSupplierResponse = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
                 UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);

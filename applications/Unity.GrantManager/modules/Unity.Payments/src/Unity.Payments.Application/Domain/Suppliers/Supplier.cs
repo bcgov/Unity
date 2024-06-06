@@ -12,9 +12,6 @@ namespace Unity.Payments.Domain.Suppliers
 {
     public class Supplier : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid Id { get; set; }
         public Guid? TenantId { get; set; }
         public virtual string? Name { get; set; } = string.Empty;
         public virtual string? Number { get; set; } = string.Empty;
@@ -43,6 +40,29 @@ namespace Unity.Payments.Domain.Suppliers
             /* This constructor is for ORMs to be used while getting the entity from the database. */
             Sites = new Collection<Site>();
         }
+
+        public Supplier(Guid id,
+            string? name,
+            string? number,
+            Guid correlationId,
+            string correlationProvider,
+            string? mailingAddress = default,
+            string? city = default,
+            string? province = default,
+            string? postalCode = default)
+           : base(id)
+        {
+            Name = name;
+            Number = number;
+            CorrelationId = correlationId;
+            CorrelationProvider = correlationProvider;
+            Sites = new Collection<Site>();
+            MailingAddress = mailingAddress;
+            City = city;
+            Province = province;
+            PostalCode = postalCode;
+        }
+
 
         public Supplier(Guid id,
             string? name,

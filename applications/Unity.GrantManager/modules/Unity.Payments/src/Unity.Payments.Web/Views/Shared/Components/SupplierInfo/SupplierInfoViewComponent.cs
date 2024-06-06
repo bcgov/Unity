@@ -46,6 +46,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
                     SupplierNumber = supplier?.Number?.ToString(),
                     SupplierName = supplier?.Name?.ToString(),
                     Status = supplier?.Status?.ToString(),
+                    OriginalSupplierNumber = supplier?.Number?.ToString(),
                 });
             } else
             {
