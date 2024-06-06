@@ -1,0 +1,663 @@
+﻿apiVersion: template.openshift.io/v1
+kind: Template
+message: |-
+  A new application been created in your project: unity-grantmanager-web
+  For more information about using this template, including OpenShift considerations, 
+  see template usage guide found in the project readme.md and wiki documents.
+metadata:
+  name: unity-grantmanager-web
+  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # oc process -f .\openshift\unity-grantmanager-web.yaml --param-file=namespace.env | oc create -f -
+  labels:
+    template: unity-grantmanager-web
+  annotations:
+    description: |-
+      Template for running a DotNet web application on OpenShift.
+    iconClass: icon-dotnet
+    openshift.io/display-name: DotNet web application
+    template.openshift.io/long-description: |-
+      This template defines resources needed to build and deploy a GitHub DotNet core base web application.
+    tags: dotnet,unity-grantmanager-web
+parameters:
+# Project namespace parameters
+- description: The name of the application grouping.
+  displayName: Application Group
+  name: APPLICATION_GROUP
+  value: unity-grantmanager
+- description: The name of the application.
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: true
+  value: unity-grantmanager-web
+# Additional parameters for project application provisioning.
+- description: The name of the OpenShift Service exposed for the database.
+  displayName: Database Service Name
+  name: DATABASE_SERVICE_NAME
+  required: true
+  value: unity-data-postgres
+- description: The name of the storage object.
+  displayName: Object Storage Name
+  name: STORAGE_OBJECT_NAME
+  required: true
+  value: s3-object-storage
+- description: Volume space available for data, e.g. 512Mi, 2Gi.
+  displayName: Volume Capacity
+  name: VOLUME_CAPACITY
+  required: true
+  value: 128Mi
+- description: Git source URI for application
+  displayName: Git Repository URL
+  name: SOURCE_REPOSITORY_URL
+  required: true
+  value: https://github.com/bcgov/Unity
+- description: Git branch/tag reference
+  displayName: Git Reference
+  name: SOURCE_REPOSITORY_REF
+  value: dev
+- description: 'Custom hostname for http service route. Leave blank for default hostname,
+    e.g.: <application-name>-<project>.<default-domain-suffix>'
+  displayName: Custom http Route Hostname
+  name: HOSTNAME_HTTP
+  value: dev2-unity.apps.silver.devops.gov.bc.ca
+- description: ASPNETCORE_ENVIRONMENT
+  displayName: ASPNETCORE_ENVIRONMENT
+  name: ASPNETCORE_ENVIRONMENT
+  value: Development
+- description: ASPNETCORE_URLS
+  displayName: ASPNETCORE_URLS
+  name: ASPNETCORE_URLS
+  value: 'http://*:8080'
+- description: StringEncryption__DefaultPassPhrase
+  displayName: StringEncryption__DefaultPassPhrase
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: StringEncryption__DefaultPassPhrase
+  required: true
+- description: AuthServer__ClientId
+  displayName: AuthServer__ClientId
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: AuthServer__ClientId
+  required: true
+- description: AuthServer__ClientSecret
+  displayName: AuthServer__ClientSecret
+  from: 'unity-[0-9]{4}'
+  generate: expression
+  name: AuthServer__ClientSecret
+  required: true
+- description: AuthServer__Audience
+  displayName: AuthServer__Audience
+  from: 'unity-[0-9]{4}'
+  generate: expression
+  name: AuthServer__Audience
+  required: true
+- description: AuthServer__ServerAddress
+  displayName: AuthServer__ServerAddress
+  name: AuthServer__ServerAddress
+  value: 'https://dev.loginproxy.gov.bc.ca/auth'
+- description: BackgroundJobs__IntakeResync__NumDaysToCheck
+  displayName: BackgroundJobs__IntakeResync__NumDaysToCheck
+  name: BackgroundJobs__IntakeResync__NumDaysToCheck
+  value: '-2'
+- description: BackgroundJobs__IntakeResync__Expression
+  displayName: BackgroundJobs__IntakeResync__Expression
+  name: BackgroundJobs__IntakeResync__Expression
+  value: '0 0 0/2 1/1 * ? *'
+- description: Intake__BaseUri
+  displayName: Intake__BaseUri
+  name: Intake__BaseUri
+  value: 'https://submit.digital.gov.bc.ca/app/api/v1'
+- description: Name of the tenant database accessed.
+  displayName: PostgreSQL Tenant Database Name
+  name: UNITY_TENANT_DB
+  value: UnityGrantTenant
+- description: CssApi__ClientId
+  displayName: CssApi__ClientId
+  name: CssApi__ClientId
+  from: 'service-account-[0-9]{4}-[0-9]{4}'
+  generate: expression
+- description: CssApi__ClientSecret
+  displayName: CssApi__ClientSecret
+  name: CssApi__ClientSecret
+  from: '[a-zA-Z0-9]{32}'
+  generate: expression
+  required: true
+- description: CssApi__TokenUrl
+  displayName: CssApi__TokenUrl
+  name: CssApi__TokenUrl
+  value: 'https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token'
+- description: CssApi__Url
+  displayName: CssApi__Url
+  name: CssApi__Url
+  value: 'https://api.loginproxy.gov.bc.ca/api/v1'
+- description: CssApi__Env
+  displayName: CssApi__Env
+  name: CssApi__Env
+  value: dev
+- description: Notifications__TeamsNotificationsWebhook
+  displayName: Notifications__TeamsNotificationsWebhook
+  name: Notifications__TeamsNotificationsWebhook
+- description: Notifications__ChesClientSecret
+  displayName: Notifications__ChesClientSecret
+  name: Notifications__ChesClientSecret
+  from: '[a-zA-Z0-9]{32}'
+  generate: expression
+  required: true
+- description: Notifications__ChesClientId
+  displayName: Notifications__ChesClientId
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: Notifications__ChesClientId
+  required: true
+- description: Notifications__ChesTokenUrl
+  displayName: Notifications__ChesTokenUrl
+  name: Notifications__ChesTokenUrl
+  value: 'https://dev.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token'
+- description: Notifications__ChesUrl
+  displayName: Notifications__ChesUrl
+  name: Notifications__ChesUrl
+  value: 'https://ches-dev.api.gov.bc.ca/api/v1'
+- description: Notifications__ChesFromEmail
+  displayName: Notifications__ChesFromEmail
+  name: Notifications__ChesFromEmail
+  value: 'unity-noreply@gov.bc.ca'
+- description: Payments__CasBaseUrl
+  displayName: Payments__CasBaseUrl
+  name: Payments__CasBaseUrl
+  value: 'https://cfs-systws.cas.gov.bc.ca:7025/ords/cas'
+- description: Payments__CasClientSecret
+  displayName: Payments__CasClientSecret
+  from: '[a-zA-Z0-9]{22}..' 
+  generate: expression
+  name: Payments__CasClientSecret
+- description: Payments__CasClientId
+  displayName: Payments__CasClientId
+  from: '[a-zA-Z0-9]{22}..'
+  generate: expression
+  name: Payments__CasClientId
+# Base image location
+- description: The Namespace where the container image resides
+  displayName: Registry Namespace
+  name: IMAGEPULL_NAMESPACE
+  from: '[a-zA-Z0-9]{5}-tools'
+  generate: expression
+- description: The ImageStream Name 
+  displayName: Registry imagestream name
+  name: IMAGESTREAM_NAME
+  value: unity-grantmanager-build 
+- description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
+  displayName: Application Version
+  name: IMAGESTREAM_TAG
+  required: true
+  value: latest
+- description: The registry path of the container image used.
+  displayName: Registry location to pull from
+  name: IMAGEPULL_REGISTRY
+  value: image-registry.openshift-image-registry.svc:5000/
+- description: The DB Migrator ImageStream Name 
+  displayName: Registry dbmigrator imagestream name
+  name: DBMIGRATOR_NAME
+  value: unity-dbmigrator-build 
+# Resource limits control how much CPU and memory a container will consume
+- description: The minimum amount of CPU the Container is guaranteed.
+  displayName: CPU Request
+  name: CPU_REQUEST
+  required: true
+  value: 50m
+- description: The maximum amount of CPU the Container is allowed to use when running.
+  displayName: CPU Limit
+  name: CPU_LIMIT
+  required: true
+  value: 250m
+- description: The minimum amount of Memory the Container is guaranteed.
+  displayName: Memory Request
+  name: MEMORY_REQUEST
+  required: true
+  value: 256Mi
+- description: The maximum amount of Memory the Container is allowed to use when running.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 512Mi
+# Template objects to instantiate the project application.
+objects:
+# Secrets 
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  stringData:
+    StringEncryption__DefaultPassPhrase: ${StringEncryption__DefaultPassPhrase}
+    AuthServer__ClientId: ${AuthServer__ClientId}
+    AuthServer__ClientSecret: ${AuthServer__ClientSecret}
+    AuthServer__Audience: ${AuthServer__Audience}
+    CssApi__ClientId: ${CssApi__ClientId}
+    CssApi__ClientSecret: ${CssApi__ClientSecret}
+    Notifications__TeamsNotificationsWebhook:  ${Notifications__TeamsNotificationsWebhook}
+    Notifications__ChesClientId: ${Notifications__ChesClientId}
+    Notifications__ChesClientSecret: ${Notifications__ChesClientSecret}
+    Payments__CasClientSecret: ${Payments__CasClientSecret}
+    Payments__CasClientId: ${Payments__CasClientId}
+  type: Opaque
+# Configmap
+- apiVersion: v1 
+  kind: ConfigMap 
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  data:
+    # Configuration values can be set as key-value properties
+    ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+    AuthServer__IsBehindTlsTerminationProxy: 'true'
+    AuthServer__Realm: standard
+    AuthServer__RequireHttpsMetadata: 'false'
+    AuthServer__ServerAddress: ${AuthServer__ServerAddress}
+    BackgroundJobs__IntakeResync__NumDaysToCheck: ${BackgroundJobs__IntakeResync__NumDaysToCheck}
+    BackgroundJobs__IntakeResync__Expression: ${BackgroundJobs__IntakeResync__Expression}
+    CssApi__TokenUrl: ${CssApi__TokenUrl}
+    CssApi__Url: ${CssApi__Url}
+    CssApi__Env: ${CssApi__Env}
+    Intake__BaseUri: ${Intake__BaseUri}
+    Notifications__ChesTokenUrl: ${Notifications__ChesTokenUrl}
+    Notifications__ChesUrl: ${Notifications__ChesUrl}
+    Notifications__ChesFromEmail: ${Notifications__ChesFromEmail}
+    Payments__CasBaseUrl: ${Payments__CasBaseUrl}
+# Service
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: The application's http port.
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    ports:
+      - name: 80-tcp
+        protocol: TCP
+        port: 80
+        targetPort: 8080
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+# Route
+- apiVersion: route.openshift.io/v1
+  id: ${APPLICATION_NAME}-http
+  kind: Route
+  metadata:
+    annotations:
+      description: Route for application's http service.
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    host: ${HOSTNAME_HTTP}
+    path: /
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}
+      weight: 100
+    port:
+      targetPort: 80-tcp
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+    wildcardPolicy: None
+# Imagestream
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${IMAGESTREAM_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    lookupPolicy:
+      local: true
+# Imagestream
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${DBMIGRATOR_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    lookupPolicy:
+      local: true
+# Persistent storage for the application logfiles.
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${APPLICATION_NAME}-logfiles
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    accessModes:
+    - ReadWriteMany
+    resources:
+      requests:
+        storage: ${VOLUME_CAPACITY}
+      storageClassName: netapp-file-standard
+      volumeMode: Filesystem
+# Deployment Config
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${APPLICATION_NAME}
+    annotations:
+      app.openshift.io/route-disabled: "false"
+      app.openshift.io/vcs-ref: ${SOURCE_REPOSITORY_REF}
+      app.openshift.io/vcs-uri: ${SOURCE_REPOSITORY_URL}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.openshift.io/runtime: dotnet
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          application: ${APPLICATION_NAME}
+          deploymentConfig: ${APPLICATION_NAME}
+        name: ${APPLICATION_NAME}
+      spec:
+        volumes:
+          - name: ${APPLICATION_NAME}-logfiles
+            persistentVolumeClaim:
+              claimName: ${APPLICATION_NAME}-logfiles
+        containers:
+        - env:
+            ## Runtime environment ASP.NET Core 
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ASPNETCORE_URLS
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: ASPNETCORE_URLS
+            ## DATABASE SETTINGS
+            - name: UNITY_DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ${DATABASE_SERVICE_NAME}
+                  key: UNITY_DB_PORT
+            - name: UNITY_DB_HOST
+              value: ${DATABASE_SERVICE_NAME}
+            - name: UNITY_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: ${DATABASE_SERVICE_NAME}
+                  key: database-name
+            - name: UNITY_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ${DATABASE_SERVICE_NAME}
+                  key: database-user
+            - name: UNITY_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${DATABASE_SERVICE_NAME}
+                  key: database-password
+            - name: UNITY_TENANT_DB
+              value: ${UNITY_TENANT_DB}
+            ## APPLICATION SETTINGS
+            - name: ConnectionStrings__Default
+              value: >-
+                Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+            - name: ConnectionStrings__Tenant
+              value: >-
+                Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_TENANT_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+            - name: StringEncryption__DefaultPassPhrase
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: StringEncryption__DefaultPassPhrase
+           ## CHEFS INTEGRATION
+            - name: Intake__BaseUri
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Intake__BaseUri
+            - name: BackgroundJobs__IntakeResync__NumDaysToCheck
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: BackgroundJobs__IntakeResync__NumDaysToCheck
+            - name: BackgroundJobs__IntakeResync__Expression
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: BackgroundJobs__IntakeResync__Expression
+            ## COMMON HOSTED SINGLE SIGN ON
+            - name: AuthServer__Realm
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: AuthServer__Realm
+            - name: AuthServer__RequireHttpsMetadata
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: AuthServer__RequireHttpsMetadata
+            - name: AuthServer__ServerAddress
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: AuthServer__ServerAddress
+            - name: AuthServer__ClientId
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: AuthServer__ClientId
+            - name: AuthServer__ClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: AuthServer__ClientSecret
+            - name: AuthServer__Audience
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: AuthServer__Audience
+            - name: AuthServer__IsBehindTlsTerminationProxy
+              valueFrom: 
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: AuthServer__IsBehindTlsTerminationProxy
+            ## COMMON HOSTED SINGLE SIGN ON - API
+            - name: CssApi__ClientId
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: CssApi__ClientId
+            - name: CssApi__ClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: CssApi__ClientSecret
+            - name: CssApi__Env
+              valueFrom:
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: CssApi__Env
+            - name: CssApi__TokenUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: CssApi__TokenUrl
+            - name: CssApi__Url
+              valueFrom:
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: CssApi__Url
+            ## S3 STORAGE
+            - name: S3__AccessKeyId
+              valueFrom:
+                secretKeyRef:
+                  name: ${STORAGE_OBJECT_NAME}
+                  key: Access-Key-ID   
+            - name: S3__Bucket
+              valueFrom:
+                secretKeyRef:
+                  name: ${STORAGE_OBJECT_NAME}
+                  key: Bucket-Display-Name  
+            - name: S3__Endpoint
+              valueFrom:
+                configMapKeyRef:
+                  name: ${STORAGE_OBJECT_NAME}
+                  key: Rest-Endpoint  
+            - name: S3__SecretAccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: ${STORAGE_OBJECT_NAME}
+                  key: Secret-Key
+            - name: S3__ApplicationS3Folder
+              valueFrom:
+                configMapKeyRef:
+                  name: ${STORAGE_OBJECT_NAME}
+                  key: ApplicationFolder
+            - name: S3__AssessmentS3Folder
+              valueFrom:
+                configMapKeyRef:
+                  name: ${STORAGE_OBJECT_NAME}
+                  key: AssessmentFolder
+            - name: S3__DisallowedFileTypes
+              valueFrom:
+                configMapKeyRef:
+                  name: ${STORAGE_OBJECT_NAME}
+                  key: DisallowedFileTypes
+            - name: S3__MaxFileSize
+              valueFrom:
+                configMapKeyRef:
+                  name: ${STORAGE_OBJECT_NAME}
+                  key: MaxFileSize
+            ## Common Hosted Email System
+            - name: Notifications__ChesClientId
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Notifications__ChesClientId
+            - name: Notifications__ChesClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Notifications__ChesClientSecret
+            - name: Notifications__ChesTokenUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Notifications__ChesTokenUrl
+            - name: Notifications__ChesUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Notifications__ChesUrl
+            - name: Notifications__TeamsNotificationsWebhook
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Notifications__TeamsNotificationsWebhook
+            - name: Notifications__ChesFromEmail
+              valueFrom:
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Notifications__ChesFromEmail        
+          image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+          imagePullPolicy: Always
+          name: ${APPLICATION_NAME}
+          resources:
+            limits:
+              cpu: ${CPU_LIMIT}
+              memory: ${MEMORY_LIMIT}
+            requests:
+              cpu: ${CPU_REQUEST}
+              memory: ${MEMORY_REQUEST}
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: 8080
+              scheme: HTTP
+              httpHeaders:
+                - name: content-type
+                  value: text/plain
+            initialDelaySeconds: 120
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          ports:
+            - containerPort: 443
+              protocol: TCP
+            - containerPort: 80
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /healthz/startup
+              port: 8080
+              scheme: HTTP
+              httpHeaders:
+                - name: content-type
+                  value: text/plain
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 12
+          volumeMounts:
+          - mountPath: /app/logs
+            name: ${APPLICATION_NAME}-logfiles
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+    triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APPLICATION_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+          namespace: ${IMAGEPULL_NAMESPACE}
+    - type: ConfigChange
+  status: {}
