@@ -6,12 +6,19 @@ $(function () {
     function initializeDetailsPage() {
         initCommentsWidget();
         updateLinksCounters();
-        if (hasRenderedHtml == "False") {
-            getSubmission();
-        }       
+        renderSubmission();
     }
 
     initializeDetailsPage();
+
+    function renderSubmission() {
+        if (hasRenderedHtml == "False") {
+            getSubmission();
+        } else {
+            $('.spinner-grow').hide();
+            addEventListeners();
+        }
+    }
 
     function formatChefComponents(data) {
         // Advanced Components
