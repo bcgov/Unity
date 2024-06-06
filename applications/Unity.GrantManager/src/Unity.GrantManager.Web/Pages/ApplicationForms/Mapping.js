@@ -339,6 +339,9 @@
             case 'Date':
             case 'Email':
             case 'Radio':
+            case 'Checkbox':
+            case 'CheckboxGroup':
+            case 'SelectList':
                 return `<i class="${setTypeIcon(intakeField)}"></i> `;
             case 'Number':
                 return setTypeIndicatorText('123');
@@ -363,6 +366,12 @@
                 return 'fl fl-mail';
             case 'Radio':
                 return 'fl fl-radio';
+            case 'Checkbox':
+                return 'fl fl-checkbox-checked';
+            case 'CheckboxGroup':
+                return 'fl fl-multi-select'
+            case 'SelectList':
+                return 'fl fl-list';
             default:
                 return '';
         }

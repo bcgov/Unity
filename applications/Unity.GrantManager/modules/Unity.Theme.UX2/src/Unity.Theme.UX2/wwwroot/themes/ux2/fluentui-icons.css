@@ -373,3 +373,7 @@
 .fl-radio:before {
     content: '\ECCB';
 }
+
+.fl-multi-select:before {
+    content: '\E762';
+}

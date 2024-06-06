@@ -150,6 +150,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 CustomFieldType.Currency => "Currency",
                 CustomFieldType.Numeric => "Number",
                 CustomFieldType.Radio => "Radio",
+                CustomFieldType.Checkbox => "Checkbox",
+                CustomFieldType.CheckboxGroup => "CheckboxGroup",
+                CustomFieldType.SelectList => "SelectList",
                 _ => "",
             };
         }
