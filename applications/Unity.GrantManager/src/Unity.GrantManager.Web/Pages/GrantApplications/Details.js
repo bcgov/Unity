@@ -1,16 +1,17 @@
 $(function () {
     let selectedReviewDetails = null;
+    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
-    function replaceKey(obj, keyToReplace, matchValue, newValue ) {
-        for (let key in obj) {
-            if (key === keyToReplace && obj[key] === matchValue) {
-                obj[key] = newValue;
-            } else if (typeof obj[key] === 'object') {
-                replaceKey(obj[key], keyToReplace, matchValue, newValue ); 
-            }
-        }
+    function initializeDetailsPage() {
+        initCommentsWidget();
+        updateLinksCounters();
+        if (hasRenderedHtml == "False") {
+            getSubmission();
+        }       
     }
+
+    initializeDetailsPage();
 
     function formatChefComponents(data) {
         // Advanced Components
@@ -35,8 +36,6 @@ $(function () {
         replaceKey(data, "type", "simpletextfieldadvanced", "textfield");
         replaceKey(data, "type", "simpletimeadvanced", "time");
         replaceKey(data, "type", "simpleurladvanced", "url");
-       
-      
 
         // Regular components
         replaceKey(data, "type", "simplebcaddress", "address");
@@ -66,36 +65,64 @@ $(function () {
         replaceKey(data, "type", "simpletextfield", "textfield");
         replaceKey(data, "type", "simpletime", "time");
 
-
         return data;
+    }
+
+    function replaceKey(obj, keyToReplace, matchValue, newValue ) {
+        for (let key in obj) {
+            if (key === keyToReplace && obj[key] === matchValue) {
+                obj[key] = newValue;
+            } else if (typeof obj[key] === 'object') {
+                replaceKey(obj[key], keyToReplace, matchValue, newValue ); 
+            }
+        }
     }
 
     async function getSubmission() {
         try {
-            let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-            unity.grantManager.intakes.submission
-                .getSubmission(submissionId)
-                .done(function (result) {
-                    $('.spinner-grow').hide();
-                    Formio.icons = 'fontawesome';
-                    let data = formatChefComponents(result);
-                    Formio.createForm(
-                        document.getElementById('formio'),
-                        data.version.schema,
-                        {
-                            readOnly: true,
-                            renderMode: 'form',
-                            flatten: true,
-                        }
-                    ).then(function (form) {
-                        // Set Example Submission Object
-                        form.submission = data.submission.submission;
-                        addEventListeners();
-                    });
-                });
+            $('.spinner-grow').hide();
+            let submissionString = document.getElementById('ApplicationFormSubmissionData').value;
+            let submissionData = JSON.parse(submissionString);
+            Formio.icons = 'fontawesome';
+            let data = formatChefComponents(submissionData);
+
+            Formio.createForm(
+                document.getElementById('formio'),
+                data.version.schema,
+                {
+                    readOnly: true,
+                    renderMode: 'form',
+                    flatten: true,
+                }
+            ).then(function (form) {
+                // Set Example Submission Object
+                form.submission = data.submission.submission;
+                addEventListeners();
+                storeRenderedHtml();
+            });
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async function storeRenderedHtml() {
+        console.log('storing html');
+        let innerHTML = document.getElementById('formio').innerHTML;
+        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
+        $.ajax(
+            {
+                url: "/api/app/submission",
+                data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
+                contentType: "application/json",
+                type: "POST",
+            success: function (data) {
+                    console.log(data);
+                },
+                error: function () {
+                    console.log('error');
+                }
+            },
+        );
     }
 
     // Wait for the DOM to be fully loaded
@@ -139,7 +166,6 @@ $(function () {
             });
         }
         // Add click event listeners to each card header
-       
     }
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
@@ -343,13 +369,6 @@ $(function () {
         }
     );
 
-    function initializeDetailsPage() {
-        getSubmission();
-        initCommentsWidget();
-        updateLinksCounters();
-    }
-
-    initializeDetailsPage();
 
     let attachCounters = {
         files: 0,
