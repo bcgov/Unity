@@ -43,8 +43,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public bool IsEditGranted { get; set; }
         public bool IsPostEditFieldsAllowed { get; set; }
 
-
-
         public class ProjectInfoViewModelModel
         {
 
