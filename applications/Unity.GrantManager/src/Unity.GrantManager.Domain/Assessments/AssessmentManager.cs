@@ -11,11 +11,13 @@ namespace Unity.GrantManager.Assessments;
 public class AssessmentManager : DomainService
 {
     private readonly IAssessmentRepository _assessmentRepository;
+    private readonly IApplicationFormRepository _applicationFormRepository;
 
     public AssessmentManager(
-        IAssessmentRepository assessmentRepository)
+        IAssessmentRepository assessmentRepository, IApplicationFormRepository applicationFormRepository)
     {
         _assessmentRepository = assessmentRepository;
+        _applicationFormRepository = applicationFormRepository; 
     }
 
     /// <summary>
@@ -43,11 +45,14 @@ public class AssessmentManager : DomainService
             throw new BusinessException(GrantManagerDomainErrorCodes.CantCreateAssessmentForFinalStateApplication);
         }
 
+        var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
+
         return await _assessmentRepository.InsertAsync(
             new Assessment(
                 GuidGenerator.Create(),
                 application.Id,
-                assessorUser.Id),
+                assessorUser.Id,
+                form.ScoresheetId),
             autoSave: true);
     }
 
