@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,7 +124,7 @@ public static class InputExtensions
             CustomFieldType.Numeric => "number",
             CustomFieldType.Currency => "text",
             CustomFieldType.DateTime => "datetime-local",
-            CustomFieldType.Date => "date",            
+            CustomFieldType.Date => "date",
             CustomFieldType.Radio => "radio",
             CustomFieldType.Checkbox => "checkbox",
             CustomFieldType.CheckboxGroup => "checkbox",
@@ -154,6 +155,26 @@ public static class InputExtensions
             CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
             _ => null,
         };
+    }
+
+    public static bool IsCheckedGroupOption(this string value, string key)
+    {
+        try
+        {
+            var currentValue = JsonSerializer.Deserialize<CheckboxGroupCurrentValue>(value);
+            if (currentValue == null) return false;
+            var exists = currentValue.Value.ToList().Exists(s => s.Key == key);
+            if (exists)
+            {
+                return currentValue.Value?.First(s => s.Key == key).Value ?? false;
+            }
+            return false;
+        }
+        catch (JsonException)
+        {
+            // Log the error
+            return false;
+        }
     }
 
     public static bool CompareSelectListValue(this string value, string compare)

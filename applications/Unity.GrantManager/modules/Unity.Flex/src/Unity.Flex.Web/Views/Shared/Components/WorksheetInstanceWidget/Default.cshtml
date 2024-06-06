@@ -137,12 +137,12 @@
                                         break;
                                     }
                                 case CustomFieldType.CheckboxGroup:
-                                    {
+                                    {                                        
                                         <fieldset>
                                             @foreach (var option in ((CheckboxGroupDefinition?)field?.Definition?.ConvertDefinition(field.Type))?.Options ?? [])
-                                            {
+                                            {                                             
                                                 <div class="custom-checkbox">
-                                                    @if (option.Value == true)
+                                                    @if (field?.CurrentValue?.IsCheckedGroupOption(option.Key) == true)
                                                     {
                                                         <input type="@field?.Type.ConvertInputType()"
                                                                id="@($"{field?.Name}.{Model.Name}.{field?.Id}.{option.Key}")"
@@ -158,7 +158,7 @@
                                                                onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
                                                     }
                                                     <label for="@($"{field?.Name}.{Model.Name}.{field?.Id}")">@($"{field?.Label}")</label>
-                                                </div>
+                                                </div>                                                
                                             }
                                         </fieldset>
                                         break;

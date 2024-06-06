@@ -20,7 +20,7 @@ namespace Unity.Flex.Worksheets.Values
             var strVal = value.ToString();
             if (string.IsNullOrEmpty(strVal)) return null;
             var currencyParse = decimal.TryParse(strVal, out decimal currency);
-            if (currencyParse) { return null; }
+            if (!currencyParse) { return null; }
             IFormatProvider caFormatProvider = new System.Globalization.CultureInfo("en-CA");
             return currency.ToString("#,##0.00", caFormatProvider);
         }

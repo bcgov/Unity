@@ -11,38 +11,7 @@ using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
-{
-    public static class FieldsExtensions
-    {
-        public static List<ValueFieldContainer> BuildFields(this Dictionary<string, string> dictionary)
-        {
-            var fields = new List<ValueFieldContainer>();
-
-            foreach (var field in dictionary)
-            {
-                // Field is broken down into {FieldName}.{UiAnchor}.{FieldId} and then value
-
-                var split = field.Key.Split('.', StringSplitOptions.RemoveEmptyEntries);
-
-                fields.Add(new ValueFieldContainer()
-                {
-                    FieldId = Guid.Parse(split[2]),
-                    UiAnchor = split[1],
-                    FieldName = split[0],
-                    Value = field.Value
-                });
-            }
-
-            return fields;
-        }
-
-        public static List<ValueFieldContainer> GroupFieldSets(this List<ValueFieldContainer> valueFields)
-        {
-            var groups = valueFields.GroupBy(s => s.FieldId);
-            return new List<ValueFieldContainer>();
-        }
-    }
-
+{    
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository, IWorksheetRepository worksheetRepository) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
@@ -58,8 +27,8 @@ namespace Unity.Flex.Domain.Services
             var worksheet = await worksheetRepository.GetByCorrelationByAnchorAsync(CurrentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, eventData.UiAnchor, true);
 
             var fields = dictionary
-                .BuildFields()
-                .GroupFieldSets();
+                    .BuildFields()
+                    .GroupAndTransformFieldSets(worksheet);
 
             if (worksheetInstance == null)
             {
@@ -76,7 +45,7 @@ namespace Unity.Flex.Domain.Services
                     var customField = FindCustomFieldByName(worksheet, field.FieldName);
                     if (customField != null && field.Value != null)
                     {
-                        newInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type));
+                        newInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type, customField.Definition));
                     }
                 }
 
@@ -90,7 +59,7 @@ namespace Unity.Flex.Domain.Services
                     var valueField = worksheetInstance.Values.FirstOrDefault(s => s.CustomFieldId == field.FieldId);
                     if (customField != null && field.Value != null && valueField != null)
                     {
-                        valueField.SetValue(ValueConverter.Convert(field.Value, customField.Type));
+                        valueField.SetValue(ValueConverter.Convert(field.Value, customField.Type, customField.Definition));
                     }
                     else
                     {
@@ -100,7 +69,7 @@ namespace Unity.Flex.Domain.Services
                             var wsField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Name == field.FieldName);
                             if (wsField != null)
                             {
-                                worksheetInstance.AddValue(wsField.Id, wsField.Definition ?? "{}", ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type));
+                                worksheetInstance.AddValue(wsField.Id, wsField.Definition ?? "{}", ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type, customField?.Definition));
                             }
                         }
                     }
@@ -117,6 +86,7 @@ namespace Unity.Flex.Domain.Services
             foreach (var field in eventData.CustomFields)
             {
                 var split = field.Key.Split('_', StringSplitOptions.RemoveEmptyEntries);
+
                 if (!worksheetNames.Contains(split[1]))
                 {
                     worksheetNames.Add(split[1]);
@@ -140,7 +110,7 @@ namespace Unity.Flex.Domain.Services
                     foreach (var field in allFields)
                     {
                         var match = eventData.CustomFields.Find(s => s.Key == field.Name);
-                        newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
+                        newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type, field.Definition));
                     }
 
                     await worksheetInstanceRepository.InsertAsync(newInstance);
@@ -163,5 +133,6 @@ namespace Unity.Flex.Domain.Services
         public string UiAnchor { get; set; } = string.Empty;
         public string FieldName { get; set; } = string.Empty;
         public string? Value { get; set; }
+        public string? AdditionalIdentifier { get; set;} = string.Empty;
     }
 }

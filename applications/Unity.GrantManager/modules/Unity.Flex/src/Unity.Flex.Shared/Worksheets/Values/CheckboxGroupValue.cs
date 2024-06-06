@@ -4,5 +4,5 @@
     {
         public CheckboxGroupValue() : base() { }
         public CheckboxGroupValue(object value) : base(value) { }
-    }
+    }    
 }
