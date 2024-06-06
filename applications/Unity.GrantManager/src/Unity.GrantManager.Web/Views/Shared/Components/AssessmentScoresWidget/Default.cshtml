@@ -14,24 +14,24 @@
             <div class="scores-block">
                 <div class="scores-block-left">
                     <div class="scores-block-score">
-                        <label class="form-label" for="financialAnalysis">Section Score 1</label>
+                        <label class="form-label" for="financialAnalysis">Section Score 1</label> <!-- We're renaming this -->
                         <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
                     </div>
 
                     <div class="scores-block-score">
-                        <label class="form-label" for="inclusiveGrowth">Section Score 3</label>
+                        <label class="form-label" for="inclusiveGrowth">Section Score 3</label> <!-- We're renaming this -->
                         <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.InclusiveGrowth" />
                     </div>
                 </div>
 
                 <div class="scores-block-right">
                     <div class="scores-block-score">
-                        <label class="form-label" for="economicImpact">Section Score 2</label>
+                        <label class="form-label" for="economicImpact">Section Score 2</label> <!-- We're renaming this -->
                         <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.EconomicImpact" />
                     </div>
 
                     <div class="scores-block-score">
-                        <label class="form-label" for="CleanGrowth">Section Score 4</label>
+                        <label class="form-label" for="CleanGrowth">Section Score 4</label> <!-- We're renaming this -->
                         <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
                     </div>
                 </div> 
