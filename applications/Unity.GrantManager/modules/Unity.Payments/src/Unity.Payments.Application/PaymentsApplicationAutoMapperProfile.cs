@@ -13,6 +13,7 @@ public class PaymentsApplicationAutoMapperProfile : Profile
     public PaymentsApplicationAutoMapperProfile()
     {
         CreateMap<PaymentRequest, PaymentRequestDto>();
+        CreateMap<PaymentRequest, PaymentDetailsDto>();
         CreateMap<ExpenseApproval, ExpenseApprovalDto>();
         CreateMap<Site, SiteDto>()
             .ForMember(dest => dest.PaymentGroup, opt => opt.MapFrom(s => s.PaymentGroup.ToString()));
