@@ -71,6 +71,11 @@ parameters:
   name: VOLUME_CAPACITY
   required: true
   value: 256Mi
+- description: The name of the storage object.
+  displayName: Object Storage Name
+  name: STORAGE_OBJECT_NAME
+  required: true
+  value: s3-object-storage
 - description: The Namespace where the database container image resides default=redhat cluster=openshift, project=tools
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
@@ -101,7 +106,7 @@ parameters:
   displayName: CPU Limit
   name: CPU_LIMIT
   required: true
-  value: 250m
+  value: 500m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
@@ -111,7 +116,7 @@ parameters:
   displayName: Memory Limit
   name: MEMORY_LIMIT
   required: true
-  value: 512Mi
+  value: 1024Mi
 # Template objects to instantiate the project database.
 objects:
 # Secrets 

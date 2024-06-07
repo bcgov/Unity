@@ -7,7 +7,6 @@
         'id',
         'amount',
         'status'
-
     ];
 
     let actionButtons = [
@@ -26,7 +25,6 @@
                 $(".tr-toggle-filter").toggle();
             }
         },
-
         {
             extend: 'csv',
             text: 'Export',
@@ -37,13 +35,14 @@
                 orthogonal: 'fullName',
             }
         },
-
     ];
+
     let appId = document.getElementById('DetailsViewApplicationId').value;
     let inputAction = function (requestData, dataTableSettings) {
         const applicationId = appId
         return applicationId;
     }
+
     let responseCallback = function (result) {
         return {
             recordsTotal: result.length,
@@ -108,7 +107,6 @@
             index: 1,
         };
     }
-   
 
     function getApplicationPaymentAmountColumn() {
         return {
@@ -116,10 +114,9 @@
             name: 'amount',
             data: 'amount',
             className: 'data-table-header',
-            index:2,
+            index: 2,
         };
     }
-
 
 
     function getApplicationPaymentStatusColumn() {
@@ -134,7 +131,6 @@
             }
         };
     }
-
 
     function getApplicationPaymentRequestedonColumn() {
         return {
@@ -161,6 +157,7 @@
             }
         };
     }
+
     function getApplicationPaymentPaidOnColumn() {
         return {
             title: l('PaymentInfoView:ApplicationPaymentListTable.PaidOn'),
@@ -183,6 +180,7 @@
             index: 4,
         };
     }
+
     function getApplicationPaymentCASResponseColumn() {
         return {
             title: l('PaymentInfoView:ApplicationPaymentListTable.CASResponse'),
@@ -196,7 +194,6 @@
         };
     }
 
-   
 
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
@@ -358,7 +355,6 @@
     }
 
 
-
     // Round a Number to the Nearest Integer
     function round(n) {
         return Math.round(n);
@@ -385,8 +381,4 @@
     console.log("Exponential (1):", exponential(1));
     console.log("Logarithm Base 10 (100):", logarithmBase10(100));
     console.log("Round (4.7):", round(4.7));
-
-
-
-
 });

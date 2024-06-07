@@ -56,7 +56,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
             bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
 
-
             List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
 
             List<ElectoralDistrictDto> ElectoralDistricts = (await _applicationElectoralDistrictAppService.GetListAsync()).ToList();
@@ -73,7 +72,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 EconomicRegions = EconomicRegions,
                 IsFinalDecisionMade = finalDecisionState,
                 IsEditGranted = isEditGranted,
-                IsPostEditFieldsAllowed = isPostEditFieldsAllowed
+                IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
             };
 
             model.EconomicRegionList.AddRange(EconomicRegions.Select(EconomicRegion =>

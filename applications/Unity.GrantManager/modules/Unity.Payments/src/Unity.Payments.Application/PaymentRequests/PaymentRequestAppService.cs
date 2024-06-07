@@ -126,10 +126,9 @@ namespace Unity.Payments.PaymentRequests
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
             var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
-        }  
+        }
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
         {
-
             var payments = await _paymentRequestsRepository.GetListAsync();
             var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
 
@@ -146,7 +145,7 @@ namespace Unity.Payments.PaymentRequests
 
         public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
         {
-            return await _paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);          
+            return await _paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);
         }
 
         protected virtual string GetCurrentRequesterName()
