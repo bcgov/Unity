@@ -2,26 +2,40 @@ $(function () {
     const l = abp.localization.getResource('Payments');
     let dt = $('#PaymentRequestListTable');
     let dataTable;
+    let isApprove = false;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
         'id',
         'creationTime',
     ];
 
+    let paymentRequestStatusModal = new abp.ModalManager({
+        viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
+    });
+    let selectedPaymentIds = [];
+ 
     let actionButtons = [
         
         {
             text: 'Approve',
-            className: 'custom-table-btn flex-none btn btn-secondary',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-status-approve',
             action: function (e, dt, node, config) {
-                alert('Approve Button activated');
+                paymentRequestStatusModal.open({
+                    paymentIds: JSON.stringify(selectedPaymentIds),
+                    isApprove : true
+                });
+                isApprove = true;
             }
         },
         {
             text: 'Decline',
-            className: 'custom-table-btn flex-none btn btn-secondary',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-status-decline',
             action: function (e, dt, node, config) {
-                alert('Decline Button activated');
+                paymentRequestStatusModal.open({
+                    paymentIds: JSON.stringify(selectedPaymentIds),
+                    isApprove: false
+                });
+                isApprove = false;
             }
         },
         {
@@ -52,11 +66,22 @@ $(function () {
         },
        
     ];
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
+    let approve_buttons = dataTable.buttons(['.payment-status-approve']);
+    let decline_buttons = dataTable.buttons(['.payment-status-decline']);
+    approve_buttons.disable();
+    decline_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
@@ -71,7 +96,37 @@ $(function () {
         if (type === 'row') {
             let data = dataTable.row(indexes).data();
             PubSub.publish(action, data);
+
+            if (action == 'select_batchpayment_application') {
+                selectedPaymentIds.push(data.id);
+            }
+            else if (action == 'deselect_batchpayment_application') {
+                selectedPaymentIds = selectedPaymentIds.filter(item => item !== data.id);
+            }
+
+            checkActionButtons();
+          
         }
+    }
+
+   function checkActionButtons() {
+
+       if (dataTable.rows({ selected: true }).indexes().length === 0) {
+           approve_buttons.disable();
+           decline_buttons.disable();
+       }
+       else {
+           if(abp.auth.isGranted('GrantApplicationManagement.Payments.Approve')) {
+               approve_buttons.enable();
+              
+           }
+           if(abp.auth.isGranted('GrantApplicationManagement.Payments.Decline')) {
+               decline_buttons.enable();
+           }
+           
+          
+       }
+
     }
 
     function handleSearch() {
@@ -102,7 +157,7 @@ $(function () {
             getRequestedonColumn(),
             getUpdatedOnColumn(),
             getPaidOnColumn(),
-            getCASCommentsColumn(),
+            getCASResponseColumn(),
             getL1ApprovalColumn(),
             getL2ApprovalColumn(),
             getL3ApprovalColumn()
@@ -219,7 +274,25 @@ $(function () {
                     case 4:
                         return "Declined";
                     case 5:
-                        return "Awaiting Approval"
+                        return "Awaiting Approval";
+                    case 6:
+                        return "L1 Pending";
+                    case 7:
+                        return "L1 Approved";
+                    case 8:
+                        return "L1 Declined";
+                    case 9:
+                        return "L2 Pending";
+                    case 10:
+                        return "L2 Approved";
+                    case 11:
+                        return "L2 Declined";
+                    case 12:
+                        return "L3 Pending";
+                    case 13:
+                        return "L3 Approved";
+                    case 14:
+                        return "L3 Declined";
                     default:
                         return "Created";
                 }
@@ -272,11 +345,11 @@ $(function () {
             }
         };
     }
-    function getCASCommentsColumn() {
+    function getCASResponseColumn() {
         return {
-            title: l('ApplicationPaymentListTable:CASComments'),
-            name: 'cASComments',
-            data: 'casComments',
+            title: l('ApplicationPaymentListTable:CASResponse'),
+            name: 'CASResponse',
+            data: 'casResponse',
             className: 'data-table-header',
             index: 14,
             render: function (data) {
@@ -339,11 +412,22 @@ $(function () {
      window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
     */
 
-    PubSub.subscribe(
-        'refresh_application_list',
-        (msg, data) => {
-            dataTable.ajax.reload(null, false);
-            PubSub.publish('clear_payment_application');
-        }
-    );
+
+
+    $('#search').keyup(function () {
+        let table = $('#PaymentRequestListTable').DataTable();
+        table.search($(this).val()).draw();
+    });
+
+    paymentRequestStatusModal.onResult(function () {
+
+        abp.notify.success(
+            isApprove ? 'The payment request/s has been successfully approved' : 'The payment request/s has been successfully declined',
+            'Payment Requests'
+        );
+        dataTable.ajax.reload(null, false);
+        approve_buttons.disable();
+        decline_buttons.disable();
+        selectedPaymentIds = [];
+    });
 });

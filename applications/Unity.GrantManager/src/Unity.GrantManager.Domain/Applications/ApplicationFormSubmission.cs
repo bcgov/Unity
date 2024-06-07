@@ -6,7 +6,7 @@ using Volo.Abp.MultiTenancy;
 namespace Unity.GrantManager.Applications;
 
 public class ApplicationFormSubmission : AuditedAggregateRoot<Guid>, IMultiTenant
-{
+{    
     public string OidcSub { get; set; } = string.Empty;
     public Guid ApplicantId { get; set; }
     public Guid ApplicationFormId { get; set; }
@@ -15,4 +15,5 @@ public class ApplicationFormSubmission : AuditedAggregateRoot<Guid>, IMultiTenan
     [Column(TypeName = "jsonb")]
     public string Submission { get; set; } = string.Empty;
     public Guid? TenantId { get; set; }
+    public string? RenderedHTML { get; set; } = string.Empty;
 }

@@ -4,8 +4,6 @@
     let dt = $('#GrantApplicationsTable');
     let dataTable;
 
-    let x = unity;
-
     const listColumns = getColumns();
     const defaultVisibleColumns = ['select',
         'applicantName',
@@ -35,12 +33,24 @@
             }
         }
     ];
+
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
         15,
         4,
-        unity.grantManager.grantApplications.grantApplication.getList, {}, actionButtons,'dynamicButtonContainerId');
+        unity.grantManager.grantApplications.grantApplication.getList,
+        {},
+        responseCallback,
+        actionButtons,
+        'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -878,8 +888,8 @@
         }
     }
 
-    window.addEventListener('resize', () => {                 
-    }); 
+    window.addEventListener('resize', () => {
+    });
 
     PubSub.subscribe(
         'refresh_application_list',
