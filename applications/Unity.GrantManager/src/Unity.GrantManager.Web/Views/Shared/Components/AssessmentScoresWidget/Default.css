@@ -1,14 +1,20 @@
-﻿.scores-block label,input {
-    display: block;
+﻿#assessment-scoresheet #section-button::after {
+    -webkit-filter: grayscale(1) invert(0);
+    filter: grayscale(1) invert(0);
 }
 
-.scores-block {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: center;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 5px;
+#assessment-scoresheet #section-button:not(.collapsed)::after {
+    -webkit-filter: grayscale(1) invert(1);
+    filter: grayscale(1) invert(1);
+}
+
+#assessment-scoresheet .preview-btn:not(.collapsed) {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+.assessment-sum{
+    margin-top :2px;
 }
 
 .scores-block-save {
@@ -16,20 +22,4 @@
     display: flex;
     justify-content: flex-end;
     margin: 5px 0px 5px 0px;
-}
-
-.scores-block-wrapper {
-    display: inline-block;
-}
-
-.assessment-scores-container .form-label {
-        font-size: var(--bc-font-size-sm);
-        color: var(--bc-colors-grey-text-300);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin-bottom: 0;
- }
-.assessment-sum{
-    margin-top :2px;
 }

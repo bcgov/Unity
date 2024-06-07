@@ -10,6 +10,7 @@ namespace Unity.Flex.Scoresheets
         public virtual string Label { get; set; } = string.Empty;
         public virtual string? Description { get; set; }
         public virtual bool Enabled { get; private set; }
+        public virtual uint Order { get; set; }
 
         public virtual Guid SectionId { get; }
 
