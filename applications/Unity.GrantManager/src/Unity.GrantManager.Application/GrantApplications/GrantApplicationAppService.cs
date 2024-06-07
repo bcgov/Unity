@@ -30,8 +30,6 @@ using Unity.Flex.WorksheetInstances;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Flex;
 using Unity.Payments.Integrations.Cas;
-using System.Globalization;
-using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -468,10 +466,10 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         string supplierprotected = casSupplierResponse.GetProperty("supplierprotected").ToString();
         string standardindustryclassification = casSupplierResponse.GetProperty("standardindustryclassification").ToString();
 
-        DateTime.TryParse(lastUpdated, out DateTime lastUpdatedDate);
+        _ = DateTime.TryParse(lastUpdated, out DateTime lastUpdatedDate);
         List<SiteEto> siteEtos = new List<SiteEto>();
         JArray siteArray = JsonConvert.DeserializeObject<dynamic>(casSupplierResponse.GetProperty("supplieraddress").ToString());
-        foreach (JObject site in siteArray)
+        foreach (dynamic site in siteArray)
         {
             siteEtos.Add(GetSiteEto(site));
         }
@@ -491,7 +489,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         };
     }
 
-    protected SiteEto GetSiteEto(dynamic site)
+    protected static SiteEto GetSiteEto(dynamic site)
     {
         string supplierSiteCode = site["suppliersitecode"].ToString();
         string addressLine1 = site["addressline1"].ToString();
@@ -507,7 +505,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         string siteProtected = site["siteprotected"].ToString();
         string siteLastUpdated = site["lastupdated"].ToString();
 
-        DateTime.TryParse(siteLastUpdated, out DateTime siteLastUpdatedDate);
+        _ = DateTime.TryParse(siteLastUpdated, out DateTime siteLastUpdatedDate);
         return new SiteEto
         {
             SupplierSiteCode = supplierSiteCode,
