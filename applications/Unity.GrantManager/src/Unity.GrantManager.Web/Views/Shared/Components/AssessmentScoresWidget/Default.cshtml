@@ -43,7 +43,7 @@
                                                                 <p>@question.Description</p>
                                                                 <div class="mb-3">
                                                                     <label for="answer-@question.Id" class="form-label">Answer</label>
-                                                                    <input type="text" class="form-control answer-input" id="answer-@question.Id" name="Answers[@question.Id]" value="" data-original-value="" oninput="handleInputChange('@question.Id')" />
+                                                                    <input type="number" class="form-control answer-input" id="answer-@question.Id" name="Answers[@question.Id]" value="" data-original-value="" oninput="handleInputChange('@question.Id')" />
                                                                 </div>
                                                                 <div class="btn-group">
                                                                     <button type="button" class="btn btn-primary" id="save-@question.Id" disabled onclick="saveChanges('@question.Id')">SAVE CHANGES</button>
@@ -72,12 +72,9 @@
                     }
                 </div>
             </div>
-            <div class="assessment-sum">
+            <div class="assessment-sum p-4">
                 <label class="form-label" for="subTotal">Subtotal</label>
-                <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" value="@Model.ScoreTotal()" min="0" max="2147483647" />
-            </div>
-            <div class="scores-block-save">
-                <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" />
+                <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" min="0" max="2147483647" />
             </div>
         </div>
     </div>
@@ -89,6 +86,8 @@
         answerInputs.forEach(input => {
             input.setAttribute('data-original-value', input.value);
         });
+
+        updateSubtotal();
     });
 
     function handleInputChange(questionId) {
@@ -103,6 +102,15 @@
         }
     }
 
+    function updateSubtotal() {
+        const answerInputs = document.querySelectorAll('.answer-input');
+        let subtotal = 0;
+        answerInputs.forEach(input => {
+            subtotal += parseInt(input.value) || 0;
+        });
+        document.getElementById('subTotal').value = subtotal;
+    }
+
     function saveChanges(questionId) {
         const inputField = document.getElementById('answer-' + questionId);
         const saveButton = document.getElementById('save-' + questionId);
@@ -113,6 +121,8 @@
         // After saving, update the original value to the new value
         inputField.setAttribute('data-original-value', inputField.value);
         saveButton.disabled = true;
+
+        updateSubtotal();
     }
 
     function discardChanges(questionId) {

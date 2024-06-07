@@ -16,10 +16,3 @@
 .assessment-sum{
     margin-top :2px;
 }
-
-.scores-block-save {
-    flex-basis: 100%;
-    display: flex;
-    justify-content: flex-end;
-    margin: 5px 0px 5px 0px;
-}
