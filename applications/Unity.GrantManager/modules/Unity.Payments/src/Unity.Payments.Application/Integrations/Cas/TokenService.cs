@@ -61,10 +61,7 @@ namespace Unity.Payments.Integrations.Cas
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                string StatusCode = response.StatusCode;
-                string ErrorMessage = response.ErrorMessage;
-                string ErrorException = response.ErrorException;
-                Logger.LogError("Error fetching CAS API token {StatusCode} {ErrorMessage} {ErrorException}", StatusCode, ErrorMessage, ErrorException);
+                Logger.LogError("Error fetching CAS API token");
 
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
