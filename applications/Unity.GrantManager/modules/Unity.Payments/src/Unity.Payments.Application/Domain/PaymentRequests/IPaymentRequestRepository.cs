@@ -7,6 +7,7 @@ namespace Unity.Payments.Domain.PaymentRequests
 {
     public interface IPaymentRequestRepository : IRepository<PaymentRequest, Guid>
     {
+        Task<int> GetCountByCorrelationId(Guid correlationId);
         Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId);
     }
 }

@@ -16,19 +16,15 @@ namespace Unity.Payments.PaymentRequests
     [RequiresFeature("Unity.Payments")]
     [Authorize]
     public class PaymentRequestAppService : PaymentsAppService, IPaymentRequestAppService
-    {
-        private readonly IRepository<PaymentRequest, Guid> _iPaymentRequestRepository;
+    {        
         private readonly IPaymentRequestRepository _paymentRequestsRepository;
         private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
         private readonly ICurrentUser _currentUser;
 
-        public PaymentRequestAppService(
-            IRepository<PaymentRequest, Guid> iPaymentRequestRepository,
-            IPaymentConfigurationRepository paymentConfigurationRepository,
+        public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
             ICurrentUser currentUser)
-        {
-            _iPaymentRequestRepository = iPaymentRequestRepository;
+        {            
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
@@ -42,10 +38,10 @@ namespace Unity.Payments.PaymentRequests
 
             foreach (var dto in paymentRequests)
             {
-
                 // Confirmation ID + 4 digit sequence NEED SEQUENCE IF MULTIPLE
                 string format = "0000";
-                int applicationPaymentRequestCount = await paymentRequestsPerApplicationCountAsync(dto.CorrelationId);
+                // Needs to be optimized
+                int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
 
                 // Create a new Payment entity from the DTO
                 var payment = new PaymentRequest(Guid.NewGuid(),
@@ -123,15 +119,6 @@ namespace Unity.Payments.PaymentRequests
             }
 
             return updatedPayments;
-        }
-
-        private async Task<int> paymentRequestsPerApplicationCountAsync(Guid correlationId)
-        {
-            var currentPaymentRequests = (await _iPaymentRequestRepository.GetQueryableAsync())
-                                            .Where(s => s.CorrelationId == correlationId)
-                                            .ToList();
-
-            return currentPaymentRequests.Count + 1;
         }
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
