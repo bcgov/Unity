@@ -63,9 +63,9 @@ namespace Unity.Payments.Integrations.Cas
 
             if (site != null && site.Supplier != null && site.Supplier.Number != null && accountDistributionCode != null)
             {
-                var currentMonth = DateTime.Now.ToString("MMM").Trim('.');
-                var currentDay = DateTime.Now.ToString("dd");
-                var currentYear = DateTime.Now.ToString("yyyy");
+                var currentMonth = DateTime.UtcNow.ToString("MMM").Trim('.');
+                var currentDay = DateTime.UtcNow.ToString("dd");
+                var currentYear = DateTime.UtcNow.ToString("yyyy");
                 var dateStringDayMonYear = $"{currentDay}-{currentMonth}-{currentYear}";
 
                 casInvoice.SupplierNumber = site.Supplier.Number; // This is from each Applicant

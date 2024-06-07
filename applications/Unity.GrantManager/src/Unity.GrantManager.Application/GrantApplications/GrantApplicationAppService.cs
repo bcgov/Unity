@@ -263,8 +263,10 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     {
         var application = await _applicationRepository.GetAsync(id);
 
+        SanitizeAssessmentResultsDisabledInputs(input, application);
+
         application.ValidateAndChangeDueDate(input.DueDate);
-        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding);
+        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget);
 
         if (application.IsInFinalDecisionState())
         {
@@ -279,8 +281,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
                 application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);
-                application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
-                    input.TotalProjectBudget,
+                application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,                    
                     input.RecommendedAmount,
                     input.DeclineRational);
 
@@ -290,6 +291,16 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         await _applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private static void SanitizeAssessmentResultsDisabledInputs(CreateUpdateAssessmentResultsDto input, Application application)
+    {
+        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RecommendedAmount ??= application.RecommendedAmount;
+        input.ApprovedAmount ??= application.ApprovedAmount;
+        input.TotalScore ??= application.TotalScore;
+        input.RequestedAmount ??= application.RequestedAmount;
     }
 
     private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
@@ -305,7 +316,11 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
+
+        SanitizeProjectInfoDisabledInputs(input, application);
+
         var percentageTotalProjectBudget = (input.TotalProjectBudget == 0 || input.TotalProjectBudget == null) ? 0 : decimal.Multiply(decimal.Divide(input.RequestedAmount ?? 0, input.TotalProjectBudget ?? 0), 100).To<double>();
+        
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
@@ -347,6 +362,14 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         {
             throw new EntityNotFoundException();
         }
+    }
+
+    private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
+    {
+        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
+        input.TotalProjectBudget ??= application.TotalProjectBudget;        
+        input.RequestedAmount ??= application.RequestedAmount;  
+        input.ProjectFundingTotal ??= application.ProjectFundingTotal;        
     }
 
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
