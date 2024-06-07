@@ -5,11 +5,10 @@ using Volo.Abp.Application.Dtos;
 
 namespace Unity.Payments.PaymentRequests
 {
-#pragma warning disable CS8618
     [Serializable]
     public class PaymentDetailsDto : AuditedEntityDto<Guid>
     {
-        public string InvoiceNumber { get; set; }
+        public string InvoiceNumber { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public PaymentRequestStatus Status { get; set; }
         public string? Description { get; set; }
@@ -19,13 +18,11 @@ namespace Unity.Payments.PaymentRequests
         public string? PaymentNumber { get; set; }
         public string? PaymentDate { get; set; }
         public Guid CorrelationId { get; set; }
-        public string PayeeName { get; set; }
-        public string ContractNumber { get; set; }
-        public string SupplierNumber { get; set; }
-        public  string CorrelationProvider { get;  set; } = string.Empty;
+        public string PayeeName { get; set; } = string.Empty;
+        public string ContractNumber { get; set; } = string.Empty;
+        public string SupplierNumber { get; set; } = string.Empty;
+        public string CorrelationProvider { get; set; } = string.Empty;
 
-        public  Collection<ExpenseApprovalDto> ExpenseApprovals { get;  set; }
-
+        public Collection<ExpenseApprovalDto> ExpenseApprovals { get; set; } = [];
     }
-#pragma warning restore CS8618
 }

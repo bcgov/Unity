@@ -7,6 +7,5 @@
         Approved = 3,
         Declined = 4,
         AwaitingApproval = 5,
-
     }
 }

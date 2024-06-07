@@ -4,8 +4,6 @@
     let dt = $('#GrantApplicationsTable');
     let dataTable;
 
-    let x = unity;
-
     const listColumns = getColumns();
     const defaultVisibleColumns = ['select',
         'applicantName',
@@ -48,7 +46,11 @@
         listColumns,
         15,
         4,
-        unity.grantManager.grantApplications.grantApplication.getList, {}, responseCallback, actionButtons,'dynamicButtonContainerId');
+        unity.grantManager.grantApplications.grantApplication.getList,
+        {},
+        responseCallback,
+        actionButtons,
+        'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -374,7 +376,7 @@
                     return 'Historical';
                 } else {
                     return data ?? '{Org Book Status}';
-                }  
+                }
             },
             index: 17
         }
@@ -886,8 +888,8 @@
         }
     }
 
-    window.addEventListener('resize', () => {                 
-    }); 
+    window.addEventListener('resize', () => {
+    });
 
     PubSub.subscribe(
         'refresh_application_list',

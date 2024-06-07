@@ -22,7 +22,5 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
 
         [Display(Name = "PaymentInfoView:PaymentInfo.RemainingAmount")]
         public decimal? RemainingAmount { get; set; }
-
-
     }
 }
