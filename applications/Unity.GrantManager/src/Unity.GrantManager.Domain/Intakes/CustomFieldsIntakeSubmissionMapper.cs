@@ -9,6 +9,7 @@ using Volo.Abp;
 using Volo.Abp.Domain.Services;
 using Unity.Flex.WorksheetInstances;
 using Unity.Modules.Shared.Correlation;
+using Unity.Flex.Worksheets;
 
 namespace Unity.GrantManager.Intakes
 {
@@ -38,7 +39,11 @@ namespace Unity.GrantManager.Intakes
                         var dataKey = property.Name;
                         if (dataKey.StartsWith("custom_"))
                         {
-                            customIntakeValues.Add(new(dataKey, data.SelectToken(property.Value.ToString())));
+                            customIntakeValues.Add(new(dataKey, data.SelectToken(property
+                                .Value
+                                .ApplyTransformer(ResolveFieldType(property))
+                                .Value?
+                                .ToString())));
                         }
                     }
                 }
@@ -50,6 +55,11 @@ namespace Unity.GrantManager.Intakes
                     CustomFields = customIntakeValues
                 });
             }
+        }
+
+        private CustomFieldType ResolveFieldType(JProperty property)
+        {
+            throw new NotImplementedException();
         }
     }
 }
