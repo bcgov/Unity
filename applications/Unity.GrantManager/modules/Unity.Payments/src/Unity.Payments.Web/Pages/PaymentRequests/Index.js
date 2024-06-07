@@ -52,10 +52,17 @@ $(function () {
         },
        
     ];
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -102,7 +109,7 @@ $(function () {
             getRequestedonColumn(),
             getUpdatedOnColumn(),
             getPaidOnColumn(),
-            getCASCommentsColumn(),
+            getCASResponseColumn(),
             getL1ApprovalColumn(),
             getL2ApprovalColumn(),
             getL3ApprovalColumn()
@@ -272,11 +279,11 @@ $(function () {
             }
         };
     }
-    function getCASCommentsColumn() {
+    function getCASResponseColumn() {
         return {
-            title: l('ApplicationPaymentListTable:CASComments'),
-            name: 'cASComments',
-            data: 'casComments',
+            title: l('ApplicationPaymentListTable:CASResponse'),
+            name: 'CASResponse',
+            data: 'casResponse',
             className: 'data-table-header',
             index: 14,
             render: function (data) {
@@ -346,4 +353,9 @@ $(function () {
             PubSub.publish('clear_payment_application');
         }
     );
+
+    $('#search').keyup(function () {
+        let table = $('#PaymentRequestListTable').DataTable();
+        table.search($(this).val()).draw();
+    });
 });

@@ -42,7 +42,6 @@ namespace Unity.Payments.PaymentRequests
 
             foreach (var dto in paymentRequests)
             {
-
                 // Confirmation ID + 4 digit sequence NEED SEQUENCE IF MULTIPLE
                 string format = "0000";
                 int applicationPaymentRequestCount = await paymentRequestsPerApplicationCountAsync(dto.CorrelationId);
@@ -96,10 +95,17 @@ namespace Unity.Payments.PaymentRequests
             var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
         }
+        public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
+        {
+            var payments = await _paymentRequestsRepository.GetListAsync();
+            var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
+
+            return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
+        }
 
         public virtual async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
         {
-            return await _paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);          
+            return await _paymentRequestsRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);
         }
 
         protected virtual string GetCurrentRequesterName()
