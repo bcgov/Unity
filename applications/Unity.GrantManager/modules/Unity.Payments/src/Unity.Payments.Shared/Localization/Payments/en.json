@@ -75,7 +75,18 @@
     "PaymentInfoView:ApplicationPaymentListTable.RequestedOn": "Requested On",
     "PaymentInfoView:ApplicationPaymentListTable.UpdatedOn": "Updated On",
     "PaymentInfoView:ApplicationPaymentListTable.PaidOn": "Paid On",
-    "PaymentInfoView:ApplicationPaymentListTable.CASResponse": "CAS Response"
+    "PaymentInfoView:ApplicationPaymentListTable.CASResponse": "CAS Response",
+
+    "ApplicationPaymentStatusRequest:ApproveTitle": "Approve Payments",
+    "ApplicationPaymentStatusRequest:DeclineTitle": "Decline Payments",
+    "ApplicationPaymentStatusRequest:Id": "Payment Id",
+    "ApplicationPaymentStatusRequest:Amount": "Amount",
+    "ApplicationPaymentStatusRequest:Description": "Description",
+    "ApplicationPaymentStatusRequest:CancelButtonText": "Cancel",
+    "ApplicationPaymentStatusRequest:ApproveButtonText": "Approve Payments",
+    "ApplicationPaymentStatusRequest:DeclineButtonText": "Decline Payments"
+
+
 
 
   }

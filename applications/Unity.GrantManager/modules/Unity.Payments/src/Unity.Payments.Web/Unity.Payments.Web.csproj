@@ -36,6 +36,8 @@
   </ItemGroup>
 
   <ItemGroup>
+	<None Remove="Pages\PaymentApprovals\UpdatePaymentRequestStatus.css" />
+	<None Remove="Pages\PaymentApprovals\UpdatePaymentRequestStatusModal.js" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.css" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.js" />
 	<None Remove="Views\Shared\Components\PaymentInfo\Default.css" />
