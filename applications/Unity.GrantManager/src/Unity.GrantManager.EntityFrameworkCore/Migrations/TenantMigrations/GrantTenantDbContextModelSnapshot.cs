@@ -1520,6 +1520,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("RenderedHTML")
+                        .HasColumnType("text");
+
                     b.Property<string>("Submission")
                         .IsRequired()
                         .HasColumnType("jsonb");

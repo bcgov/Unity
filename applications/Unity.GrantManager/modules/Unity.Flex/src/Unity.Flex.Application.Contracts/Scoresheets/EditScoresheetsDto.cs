@@ -6,7 +6,6 @@ namespace Unity.Flex.Scoresheets
     public class EditScoresheetsDto
     {
         public string Name { get; set; } = string.Empty;
-        public Guid GroupId { get; set; }
         public string ActionType {  get; set; } = string.Empty;
     }
 }

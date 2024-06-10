@@ -11,3 +11,8 @@
 #PaymentRequestListTable_filter input {
     margin: 0.25rem;
 }
+
+.single-payment {
+    border: var(--bs-border-width) solid;
+    border-color: var(--bs-border-color);
+}

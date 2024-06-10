@@ -18,7 +18,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual Scoresheet? Scoresheet { get; }
         public virtual Guid ScoresheetId { get; set; }
 
-        public virtual Collection<Question> Fields { get; set; } = [];
+        public virtual Collection<Question> Fields { get; private set; } = [];
 
 
         protected ScoresheetSection()
@@ -59,7 +59,7 @@ namespace Unity.Flex.Domain.Scoresheets
             {
                 throw new BusinessException(ErrorConsts.DuplicateSectionName).WithData("duplicateName", field.Name); // cannot have duplicate field names
             }
-
+            field.SectionId = this.Id;
             Fields.Add(field);
 
             return this;

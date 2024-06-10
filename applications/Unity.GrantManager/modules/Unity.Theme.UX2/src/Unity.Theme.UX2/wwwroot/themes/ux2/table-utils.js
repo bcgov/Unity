@@ -7,7 +7,7 @@ function createNumberFormatter() {
     });
 }
 
-function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, actionButtons, dynamicButtonContainerId) {
+function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, responseCallback, actionButtons, dynamicButtonContainerId) {
 
     let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
 

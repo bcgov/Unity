@@ -18,8 +18,8 @@ namespace Unity.Flex.Domain.Scoresheets
         public Guid? TenantId { get; set; }
                
 
-        public virtual Collection<ScoresheetSection> Sections { get; set; } = [];
-        public virtual Collection<ScoresheetInstance> Instances { get; set; } = [];
+        public virtual Collection<ScoresheetSection> Sections { get; private set; } = [];
+        public virtual Collection<ScoresheetInstance> Instances { get; private set; } = [];
 
         protected Scoresheet()
         {
@@ -42,8 +42,11 @@ namespace Unity.Flex.Domain.Scoresheets
             {
                 throw new BusinessException(ErrorConsts.DuplicateSectionName).WithData("duplicateName", name); // cannot have duplicate section names
             }
-
-            Sections.Add(new ScoresheetSection(Guid.NewGuid(), name, order));
+            ScoresheetSection newSection = new(Guid.NewGuid(), name, order)
+            {
+                ScoresheetId = this.Id
+            };
+            Sections.Add(newSection);
             return this;
         }
 
