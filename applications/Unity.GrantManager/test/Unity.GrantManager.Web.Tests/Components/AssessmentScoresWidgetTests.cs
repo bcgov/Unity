@@ -5,6 +5,7 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 using Xunit;
@@ -18,6 +19,7 @@ namespace Unity.GrantManager.Components
         {
             // Arrange
             var assessmentRepository = Substitute.For<IAssessmentRepository>();
+            var scoresheetRepository = Substitute.For<IScoresheetRepository>();
             var expectedFinancialAnalysis = 1;
             var expectedEconomicImpact = 2;
             var expectedInclusiveGrowth = 3;
@@ -42,7 +44,7 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new AssessmentScoresWidgetViewComponent(assessmentRepository)
+            var viewComponent = new AssessmentScoresWidgetViewComponent(assessmentRepository, scoresheetRepository)
             {
                 ViewComponentContext = viewComponentContext
             };
