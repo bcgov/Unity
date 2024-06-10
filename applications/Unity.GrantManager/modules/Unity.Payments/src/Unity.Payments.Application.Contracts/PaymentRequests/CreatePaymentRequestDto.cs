@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Payments.Enums;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -16,6 +17,12 @@ namespace Unity.Payments.PaymentRequests
         public string SupplierNumber { get; set; }
 
         public string CorrelationProvider { get; set; } = string.Empty;
+    }
+
+    public class UpdatePaymentStatusRequestDto
+    {
+        public Guid PaymentRequestId { get; set; }
+        public PaymentRequestStatus Status { get; set; }
     }
 #pragma warning restore CS8618
 }
