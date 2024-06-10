@@ -82,11 +82,11 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
-        public virtual Task<QuestionDto> CreateQuestionAsync(CreateQuestionDto dto)
+        public virtual Task<QuestionDto> CreateQuestionInHighestOrderSectionAsync(Guid scoresheetId, CreateQuestionDto dto)
         {
             lock (_questionLockObject)
             {
-                ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(dto.ScoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
+                ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
                 Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
                 var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
                 var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, Domain.Enums.QuestionType.Number, order, dto.Description, highestOrderSection.Id)).Result;
@@ -94,20 +94,20 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-        public virtual Task<ScoresheetSectionDto> CreateSectionAsync(CreateSectionDto dto)
+        public virtual Task<ScoresheetSectionDto> CreateSectionAsync(Guid scoresheetId, CreateSectionDto dto)
         {
             lock (_sectionLockObject)
             {
-                ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(dto.ScoresheetId).Result;
+                ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result;
                 var order = highestOrderSection == null ? 0 : highestOrderSection.Order + 1;
-                var result = _sectionRepository.InsertAsync(new ScoresheetSection(Guid.NewGuid(), dto.Name, order, dto.ScoresheetId)).Result;
+                var result = _sectionRepository.InsertAsync(new ScoresheetSection(Guid.NewGuid(), dto.Name, order, scoresheetId)).Result;
                 return Task.FromResult(ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(result));
             }
         }
 
-        public async Task UpdateAsync(EditScoresheetsDto dto)
+        public async Task UpdateAllAsync(Guid groupId, EditScoresheetsDto dto)
         {
-            var scoresheets = await _scoresheetRepository.GetScoresheetsByGroupId(dto.GroupId);
+            var scoresheets = await _scoresheetRepository.GetScoresheetsByGroupId(groupId);
             foreach (var scoresheet in scoresheets)
             {
                 scoresheet.Name = dto.Name;
@@ -125,7 +125,6 @@ namespace Unity.Flex.Scoresheets
             var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Name, originalScoresheet.GroupId)
             {
                 Version = highestVersionScoresheet.Version + 1,
-                Sections = []
             };
 
             foreach (var originalSection in originalScoresheet.Sections)
@@ -133,7 +132,6 @@ namespace Unity.Flex.Scoresheets
                 var clonedSection = new ScoresheetSection(Guid.NewGuid(), originalSection.Name, originalSection.Order)
                 {
                     ScoresheetId = clonedScoresheet.Id,
-                    Fields = []
                 };
 
                 if(sectionIdToClone != null && originalSection.Id == sectionIdToClone)

@@ -84,24 +84,24 @@ public class SectionModalModel : FlexPageModel
 
     private async Task CreateSectionOnCurrentVersion()
     {
-        _ = await _scoresheetAppService.CreateSectionAsync(new CreateSectionDto() { Name = Section.Name, ScoresheetId = Section.ScoresheetId });
+        _ = await _scoresheetAppService.CreateSectionAsync(Section.ScoresheetId, new CreateSectionDto() { Name = Section.Name });
     }
 
     private async Task CreateSectionOnNewVersion()
     {
         var clone = await _scoresheetAppService.CloneScoresheetAsync(Section.ScoresheetId, null, null);
-        _ = await _scoresheetAppService.CreateSectionAsync(new CreateSectionDto() { Name = Section.Name, ScoresheetId = clone.ScoresheetId });
+        _ = await _scoresheetAppService.CreateSectionAsync(clone.ScoresheetId, new CreateSectionDto() { Name = Section.Name });
     }
 
     private async Task EditSectionOnCurrentVersion()
     {
-        _ = await _sectionAppService.UpdateAsync(new EditSectionDto() { Name = Section.Name, SectionId = Section.SectionId });
+        _ = await _sectionAppService.UpdateAsync(Section.SectionId, new EditSectionDto() { Name = Section.Name });
     }
 
     private async Task EditSectionOnNewVersion()
     {
         var clone = await _scoresheetAppService.CloneScoresheetAsync(Section.ScoresheetId, Section.SectionId, null);
-        _ = await _sectionAppService.UpdateAsync(new EditSectionDto() { Name = Section.Name, SectionId = clone.SectionId ?? Guid.Empty });
+        _ = await _sectionAppService.UpdateAsync(clone.SectionId ?? Guid.Empty, new EditSectionDto() { Name = Section.Name });
     }
 
     private async Task DeleteSectionOnCurrentVersion()
