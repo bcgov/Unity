@@ -9,5 +9,7 @@ namespace Unity.Payments.PaymentRequests
     {
         public ExpenseApprovalType Type { get; set; }
         public ExpenseApprovalStatus Status { get; set; }
+
+        public  DateTime? DecisionDate { get; set; }
     }
 }

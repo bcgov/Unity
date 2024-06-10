@@ -14,6 +14,12 @@ namespace Unity.Payments.Repositories
         {
         }
 
+        public async Task<int> GetCountByCorrelationId(Guid correlationId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return dbSet.Count(s => s.CorrelationId == correlationId);
+        }
+
         public async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
         {
             var dbSet = await GetDbSetAsync();

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,6 +9,7 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Users;
 using Microsoft.Extensions.Configuration;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -37,6 +38,16 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? ApplicationFormSubmissionId { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
+        public string? ApplicationFormSubmissionData { get; set; } = null;
+
+        [BindProperty(SupportsGet = true)]
+
+        public string? ApplicationFormSubmissionHtml { get; set; } = null;
+
+        [BindProperty(SupportsGet = true)]
+        public bool? HasRenderedHTML { get; set; } = false;
+
+        [BindProperty(SupportsGet = true)]
         public Guid? CurrentUserId { get; set; }
 
         [BindProperty(SupportsGet = true)]
@@ -55,11 +66,14 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         public async Task OnGetAsync()
         {
-            var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
 
             if (applicationFormSubmission != null)
             {
-                ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
+                ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
+                ApplicationFormSubmissionData = applicationFormSubmission.Submission;
+                ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
+                HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
             }
         }
 

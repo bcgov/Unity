@@ -75,12 +75,12 @@ public class ScoresheetModalModel : FlexPageModel
 
     private async Task EditScoresheets()
     {
-        await _scoresheetAppService.UpdateAsync(new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType, GroupId = Scoresheet.GroupId});
+        await _scoresheetAppService.UpdateAllAsync(Scoresheet.GroupId, new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType });
     }
 
     private async Task EditScoresheetsAndCreateNewVersion()
     {
-        await _scoresheetAppService.UpdateAsync(new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType, GroupId = Scoresheet.GroupId });
+        await _scoresheetAppService.UpdateAllAsync(Scoresheet.GroupId, new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType });
         _ = await _scoresheetAppService.CloneScoresheetAsync(Scoresheet.Id, null, null);
     }
 
