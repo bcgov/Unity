@@ -9,6 +9,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.Payments.PaymentRequests;
 using System.Linq;
 using Unity.Payments.Enums;
+using Volo.Abp.Features;
 
 namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
 {
@@ -21,32 +22,41 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
         private readonly IPaymentRequestAppService _paymentRequestService;
+        private readonly IFeatureChecker _featureChecker;
+
         public PaymentInfoViewComponent(GrantApplicationAppService grantApplicationAppService,
-                 IPaymentRequestAppService paymentRequestService)
+                 IPaymentRequestAppService paymentRequestService,
+                 IFeatureChecker featureChecker)
         {
             _grantApplicationAppService = grantApplicationAppService;
             _paymentRequestService = paymentRequestService;
+            _featureChecker = featureChecker;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
-
         {
-            var application = await _grantApplicationAppService.GetAsync(applicationId);
-            PaymentInfoViewModel model = new()
+            if (await _featureChecker.IsEnabledAsync("Unity.Payments"))
             {
-               RequestedAmount = application.RequestedAmount,
-                RecommendedAmount = application.RecommendedAmount,
-                ApprovedAmount = application.ApprovedAmount,
-            };
-            var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
+                var application = await _grantApplicationAppService.GetAsync(applicationId);
+                PaymentInfoViewModel model = new()
+                {
+                    RequestedAmount = application.RequestedAmount,
+                    RecommendedAmount = application.RecommendedAmount,
+                    ApprovedAmount = application.ApprovedAmount,
+                };
+                var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
 
-           model.TotalPaid= paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Approved))
-                                  .Sum(e => e.Amount);
-            model.TotalPendingAmounts = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Created) || e.Status.Equals(PaymentRequestStatus.Submitted) || e.Status.Equals(PaymentRequestStatus.AwaitingApproval)).Sum(e => e.Amount);
-            model.RemainingAmount = application.ApprovedAmount - model.TotalPaid;
+                model.TotalPaid = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Approved))
+                                       .Sum(e => e.Amount);
+                model.TotalPendingAmounts = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Created) || e.Status.Equals(PaymentRequestStatus.Submitted) || e.Status.Equals(PaymentRequestStatus.AwaitingApproval)).Sum(e => e.Amount);
+                model.RemainingAmount = application.ApprovedAmount - model.TotalPaid;
 
-            return View(model);
+                return View(model);
+            }
+            else
+                return View(new PaymentInfoViewModel());
         }
+
         public class PaymentInfoStyleBundleContributor : BundleContributor
         {
             public override void ConfigureBundle(BundleConfigurationContext context)
