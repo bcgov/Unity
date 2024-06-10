@@ -2,5 +2,8 @@
 {
     public class CheckboxDefinition : CustomFieldDefinition
     {
+        public CheckboxDefinition() : base()
+        {                
+        }
     }
 }

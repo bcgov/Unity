@@ -2,12 +2,15 @@
 
 namespace Unity.Flex.Worksheets.Definitions
 {
-    public class SelectListOption
+    public class CheckboxGroupDefinitionOption
     {
         [JsonPropertyName("key")]
         public string Key { get; set; } = string.Empty;
-
+        
         [JsonPropertyName("value")]
-        public string Value { get; set; } = string.Empty;
+        public bool Value { get; set; } = false;
+
+        [JsonPropertyName("label")]
+        public string Label { get; set; } = string.Empty;
     }
 }

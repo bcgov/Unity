@@ -88,7 +88,7 @@ namespace Unity.Flex.Domain.Services
 
         internal static string? ConvertCheckboxGroupMultiValues(List<string?> additionalIdentifiers, List<string?> values)
         {
-            var keysAndValues = additionalIdentifiers.Zip(values, (n, w) => new { Key = n, Value = w.IsTruthy() });
+            var keysAndValues = additionalIdentifiers.Zip(values, (n, w) => new { key = n, value = w.IsTruthy() });
             return JsonSerializer.Serialize(new CheckboxGroupValue(keysAndValues).Value);
         }
     }   

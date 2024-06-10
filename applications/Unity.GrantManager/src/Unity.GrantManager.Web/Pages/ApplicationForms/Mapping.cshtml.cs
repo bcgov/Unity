@@ -126,7 +126,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 {
                     properties.Add(new MapField()
                     {
-                        Name = field.Name,
+                        Name = $"{field.Name}.{field.Type}",
                         Type = ConvertCustomType(field.Type),
                         IsCustom = true,
                         Label = field.Label

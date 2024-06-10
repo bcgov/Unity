@@ -1,8 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using Unity.Flex.Worksheets.Definitions;
-using Unity.Flex.Worksheets.Transformers;
 using Unity.Flex.Worksheets.Values;
+using System.Collections.Generic;
 
 namespace Unity.GrantManager.Intakes
 {
@@ -10,23 +8,19 @@ namespace Unity.GrantManager.Intakes
     {
         public CheckboxGroupValue Transform(JToken value)
         {
-            // raw post from CHEFS object                                
-            var fieldDefinition = new CheckboxGroupDefinition();
-            var checkBoxGroupValueOptions = new List<CheckboxGroupValueOption>();
-            foreach (CheckboxOption check in fieldDefinition.Options)
+            // Post from CHEFS checkboxgroup value                                                        
+            var checkboxValues = new List<CheckboxGroupValueOption>();            
+            JObject obj = JObject.FromObject(value);
+            foreach (var prop in obj.Properties())
             {
-                JToken? jToken = ((JObject)value).SelectToken(check.Key);
-                var fieldOption = fieldDefinition.Options.Find(s => s.Key == check.Key);
-                if (fieldOption != null)
+                checkboxValues.Add(new CheckboxGroupValueOption()
                 {
-                    checkBoxGroupValueOptions.Add(new CheckboxGroupValueOption()
-                    {
-                        Key = fieldOption.Key,
-                        Value = bool.Parse(jToken?.SelectToken(check.Key)?.ToString() ?? "false")
-                    });
-                }
+                    Key = prop.Name,
+                    Value = bool.Parse(prop.Value.ToString())
+                });
             }
-            return new CheckboxGroupValue(checkBoxGroupValueOptions.ToArray());
+
+            return new CheckboxGroupValue(checkboxValues);
         }
     }
 }

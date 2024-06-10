@@ -1,4 +1,6 @@
-﻿namespace Unity.Flex.Worksheets.Values
+﻿using System.Text.Json.Serialization;
+
+namespace Unity.Flex.Worksheets.Values
 {
     public abstract class CustomValueBase
     {
@@ -11,6 +13,7 @@
             Value = value;
         }
 
+        [JsonPropertyName("value")]
         public object? Value { get; set; }
     }
 }

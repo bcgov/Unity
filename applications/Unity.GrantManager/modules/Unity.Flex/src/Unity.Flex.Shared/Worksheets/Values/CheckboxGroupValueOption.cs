@@ -1,13 +1,13 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.Flex.Worksheets.Definitions
+namespace Unity.Flex.Worksheets.Values
 {
-    public class SelectListOption
+    public class CheckboxGroupValueOption
     {
         [JsonPropertyName("key")]
         public string Key { get; set; } = string.Empty;
 
         [JsonPropertyName("value")]
-        public string Value { get; set; } = string.Empty;
+        public bool Value { get; set; }
     }
 }

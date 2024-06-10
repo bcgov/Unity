@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Unity.Flex.Worksheets.Definitions
 {
     public class CheckboxGroupDefinition : CustomFieldDefinition
     {
-        public List<CheckboxOption> Options { get; set; } = [];
+        [JsonPropertyName("options")]
+        public List<CheckboxGroupDefinitionOption> Options { get; set; } = [];
     }
 }

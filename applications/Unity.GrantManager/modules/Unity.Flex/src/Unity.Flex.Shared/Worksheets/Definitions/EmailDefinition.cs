@@ -2,5 +2,8 @@
 {
     public class EmailDefinition : CustomFieldDefinition
     {
+        public EmailDefinition() : base()
+        {            
+        }
     }
 }

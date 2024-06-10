@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -157,24 +156,12 @@ public static class InputExtensions
         };
     }
 
-    public static bool IsCheckedGroupOption(this string value, string key)
+    public static string[] GetCheckedOptions(this string value)
     {
-        try
-        {
-            var currentValue = JsonSerializer.Deserialize<CheckboxGroupCurrentValue>(value);
-            if (currentValue == null) return false;
-            var exists = currentValue.Value.ToList().Exists(s => s.Key == key);
-            if (exists)
-            {
-                return currentValue.Value?.First(s => s.Key == key).Value ?? false;
-            }
-            return false;
-        }
-        catch (JsonException)
-        {
-            // Log the error
-            return false;
-        }
+        var currentValue = JsonSerializer.Deserialize<CheckboxGroupValue>(value);
+        if (currentValue == null) return [];
+        var values = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(currentValue.Value?.ToString() ?? "[]");
+        return values?.Where(s => s.Value).Select(s => s.Key).ToArray() ?? [];
     }
 
     public static bool CompareSelectListValue(this string value, string compare)

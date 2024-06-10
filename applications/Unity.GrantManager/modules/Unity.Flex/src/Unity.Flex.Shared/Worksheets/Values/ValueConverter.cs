@@ -21,7 +21,7 @@ namespace Unity.Flex.Worksheets.Values
                     CustomFieldType.Email => JsonSerializer.Serialize(new EmailValue(currentValue)),
                     CustomFieldType.Radio => JsonSerializer.Serialize(new RadioValue(currentValue)),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize(new CheckboxValue(ValueConverterHelpers.ConvertCheckbox(currentValue))),
-                    CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupValue(ValueConverterHelpers.ConvertCheckboxGroupCurrentValue(currentValue, definition))),
+                    CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupValue(currentValue)),
                     CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListValue(currentValue)),
                     _ => throw new NotImplementedException()
                 };

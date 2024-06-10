@@ -159,7 +159,7 @@
                 let keys = Object.keys(existingMapping);
                 for (let key of keys) {
                     let intakeProperty = key;
-                    let chefsMappingProperty = existingMapping[intakeProperty];
+                    let chefsMappingProperty = existingMapping[intakeProperty];                    
                     let intakeMappingCard = document.getElementById("unity_" + intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
                     if (chefsMappingDiv != null) {

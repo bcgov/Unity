@@ -11,12 +11,12 @@ using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
-{    
+{
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository, IWorksheetRepository worksheetRepository) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
-            if ((object?)eventData.CustomFields == null) { return; }
+            if (eventData.CustomFields is null) { return; }
 
             string json = JsonSerializer.Serialize(eventData.CustomFields);
             var dictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
@@ -34,47 +34,64 @@ namespace Unity.Flex.Domain.Services
             {
                 if (worksheet == null) return;
 
-                var newInstance = new WorksheetInstance(Guid.NewGuid(),
-                      worksheet.Id,
-                      eventData.CorrelationId,
-                      eventData.CorrelationProvider,
-                      eventData.UiAnchor);
-
-                foreach (var field in fields)
-                {
-                    var customField = FindCustomFieldByName(worksheet, field.FieldName);
-                    if (customField != null && field.Value != null)
-                    {
-                        newInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type, customField.Definition));
-                    }
-                }
-
-                await worksheetInstanceRepository.InsertAsync(newInstance);
+                var instance = await CreateNewWorksheetInstanceAsync(worksheetInstanceRepository, eventData, worksheet, fields);
+                UpdateWorksheetInstanceValue(instance);
             }
             else
             {
-                foreach (var field in fields)
+                UpdateExistingWorksheetInstance(worksheetInstance, worksheet, fields);
+                UpdateWorksheetInstanceValue(worksheetInstance);
+            }
+        }
+
+        private void UpdateWorksheetInstanceValue(WorksheetInstance instance)
+        {
+            // Update and set the instance value for the worksheet - high level values serialized
+        }
+
+        private static void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)
+        {
+            foreach (var field in fields)
+            {
+                var customField = FindCustomFieldByName(worksheet, field.FieldName);
+                var valueField = worksheetInstance.Values.FirstOrDefault(s => s.CustomFieldId == field.FieldId);
+                if (customField != null && field.Value != null && valueField != null)
                 {
-                    var customField = FindCustomFieldByName(worksheet, field.FieldName);
-                    var valueField = worksheetInstance.Values.FirstOrDefault(s => s.CustomFieldId == field.FieldId);
-                    if (customField != null && field.Value != null && valueField != null)
+                    valueField.SetValue(ValueConverter.Convert(field.Value, customField.Type, customField.Definition));
+                }
+                else
+                {
+                    // add the value to worksheet instance
+                    if (worksheet != null)
                     {
-                        valueField.SetValue(ValueConverter.Convert(field.Value, customField.Type, customField.Definition));
-                    }
-                    else
-                    {
-                        // add the value to worksheet instance
-                        if (worksheet != null)
+                        var wsField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Name == field.FieldName);
+                        if (wsField != null)
                         {
-                            var wsField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Name == field.FieldName);
-                            if (wsField != null)
-                            {
-                                worksheetInstance.AddValue(wsField.Id, wsField.Definition ?? "{}", ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type, customField?.Definition));
-                            }
+                            worksheetInstance.AddValue(wsField.Id, wsField.Definition ?? "{}", ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type, customField?.Definition));
                         }
                     }
                 }
             }
+        }
+
+        private static async Task<WorksheetInstance> CreateNewWorksheetInstanceAsync(IWorksheetInstanceRepository worksheetInstanceRepository, PersistWorksheetIntanceValuesEto eventData, Worksheet worksheet, List<ValueFieldContainer> fields)
+        {
+            var newWorksheetInstance = new WorksheetInstance(Guid.NewGuid(),
+                   worksheet.Id,
+                   eventData.CorrelationId,
+                   eventData.CorrelationProvider,
+                   eventData.UiAnchor);
+
+            foreach (var field in fields)
+            {
+                var customField = FindCustomFieldByName(worksheet, field.FieldName);
+                if (customField != null && field.Value != null)
+                {
+                    newWorksheetInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type, customField.Definition));
+                }
+            }
+
+            return await worksheetInstanceRepository.InsertAsync(newWorksheetInstance);
         }
 
         public async Task CreateWorksheetDataByFields(CreateWorksheetInstanceByFieldValuesEto eventData)
@@ -113,7 +130,8 @@ namespace Unity.Flex.Domain.Services
                         newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type, field.Definition));
                     }
 
-                    await worksheetInstanceRepository.InsertAsync(newInstance);
+                    var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);
+                    UpdateWorksheetInstanceValue(newWorksheetInstance);
                 }
             }
         }
@@ -133,6 +151,6 @@ namespace Unity.Flex.Domain.Services
         public string UiAnchor { get; set; } = string.Empty;
         public string FieldName { get; set; } = string.Empty;
         public string? Value { get; set; }
-        public string? AdditionalIdentifier { get; set;} = string.Empty;
+        public string? AdditionalIdentifier { get; set; } = string.Empty;
     }
 }

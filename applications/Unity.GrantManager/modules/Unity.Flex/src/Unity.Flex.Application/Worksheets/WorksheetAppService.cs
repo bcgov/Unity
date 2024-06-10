@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Worksheets;
+using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
 {
@@ -29,7 +30,15 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto)
         {
-            var newWorksheet = new Worksheet(Guid.NewGuid(), dto.Title.Trim().Replace(" ", "").ToLower(), dto.Title, dto.UIAnchor, dto.CorrelationId, dto.CorrelationProvider);
+            var worksheetName = dto.Title.Trim().Replace(" ", "").ToLower(); //default naming convention
+            var existingWorksheet = await worksheetRepository.GetByCorrelationByNameAsync(dto.CorrelationId, dto.CorrelationProvider, worksheetName, false);
+
+            if (existingWorksheet != null)
+            {
+                throw new BusinessException("Cannot have duplicate worksheet names");
+            }
+
+            var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title, dto.UIAnchor, dto.CorrelationId, dto.CorrelationProvider);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {
@@ -37,7 +46,14 @@ namespace Unity.Flex.Worksheets
 
                 foreach (var field in section.Fields)
                 {
-                    newWorksheet.Sections[^1].AddField(new CustomField(Guid.NewGuid(), field.Name, newWorksheet.Name, field.Label, field.Type, field.Definition));
+                    newWorksheet
+                        .Sections[^1]
+                        .AddField(new CustomField(Guid.NewGuid(),
+                            field.Name,
+                            newWorksheet.Name,
+                            field.Label,
+                            field.Type,
+                            field.Definition));
                 }
             }
 

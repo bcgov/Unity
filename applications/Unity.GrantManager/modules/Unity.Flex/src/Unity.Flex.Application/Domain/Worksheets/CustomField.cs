@@ -37,13 +37,13 @@ namespace Unity.Flex.Domain.Worksheets
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public CustomField(Guid id, string name, string worksheetName, string label, CustomFieldType type, string? definition)
+        public CustomField(Guid id, string name, string worksheetName, string label, CustomFieldType type, object? definition)
         {
             Id = id;
             Name = ConfigureName(name, worksheetName);
             Label = label;
             Type = type;
-            Definition = definition ?? DefinitionResolver.Resolve(type);
+            Definition = DefinitionResolver.Resolve(type, definition);
         }
 
         private static string ConfigureName(string name, string worksheetName)

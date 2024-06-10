@@ -6,10 +6,5 @@ namespace Unity.Flex.Worksheets.Values
     {
         public CurrencyValue() : base() { }
         public CurrencyValue(object value) : base(value) { }
-
-        internal object Convert()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

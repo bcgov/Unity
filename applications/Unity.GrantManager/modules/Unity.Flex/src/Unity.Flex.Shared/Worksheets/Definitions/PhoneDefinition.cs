@@ -2,5 +2,8 @@
 {
     public class PhoneDefinition : CustomFieldDefinition
     {
+        public PhoneDefinition() : base()
+        {            
+        }
     }
 }

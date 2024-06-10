@@ -2,5 +2,8 @@
 {
     public class YesNoDefinition : CustomFieldDefinition
     {
+        public YesNoDefinition() : base()
+        {
+        }
     }
 }
