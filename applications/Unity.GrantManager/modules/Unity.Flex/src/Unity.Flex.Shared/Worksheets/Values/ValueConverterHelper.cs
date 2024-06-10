@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Text.Json;
 
 namespace Unity.Flex.Worksheets.Values
 {
@@ -39,13 +38,15 @@ namespace Unity.Flex.Worksheets.Values
 
         internal static string ConvertCheckbox(object? value)
         {
-            if (value == null) return "false";
+            const string falseStr = "false";
+            const string trueStr = "true";
+            if (value == null) return falseStr;
             var strVal = value.ToString();
-            if (strVal == null) return "false";
+            if (strVal == null) return falseStr;
 
             var valCheck = strVal.Trim().ToLower();
-            if (valCheck == "on" || valCheck == "true" || valCheck == "1") return "true";
-            if (valCheck == "" || valCheck == "false" || valCheck == "0") return "false";
+            if (valCheck == "on" || valCheck == trueStr || valCheck == "1") return trueStr;
+            if (valCheck == "" || valCheck == falseStr || valCheck == "0") return falseStr;
             return string.Empty;
         }
     }

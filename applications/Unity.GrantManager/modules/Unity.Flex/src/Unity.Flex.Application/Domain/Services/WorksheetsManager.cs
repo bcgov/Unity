@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -44,37 +45,44 @@ namespace Unity.Flex.Domain.Services
             }
         }
 
-        private void UpdateWorksheetInstanceValue(WorksheetInstance instance)
+        private static void UpdateWorksheetInstanceValue(WorksheetInstance instance)
         {
             // Update and set the instance value for the worksheet - high level values serialized
         }
 
-        private static void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)
+        private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)
         {
             foreach (var field in fields)
             {
-                var customField = FindCustomFieldByName(worksheet, field.FieldName);
-                var valueField = worksheetInstance.Values.FirstOrDefault(s => s.CustomFieldId == field.FieldId);
-                if (customField != null && field.Value != null && valueField != null)
+                try
                 {
-                    valueField.SetValue(ValueConverter.Convert(field.Value, customField.Type, customField.Definition));
-                }
-                else
-                {
-                    // add the value to worksheet instance
-                    if (worksheet != null)
+                    var customField = FindCustomFieldByName(worksheet, field.FieldName);
+                    var valueField = worksheetInstance.Values.FirstOrDefault(s => s.CustomFieldId == field.FieldId);
+                    if (customField != null && field.Value != null && valueField != null)
                     {
-                        var wsField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Name == field.FieldName);
-                        if (wsField != null)
+                        valueField.SetValue(ValueConverter.Convert(field.Value, customField.Type));
+                    }
+                    else
+                    {
+                        // add the value to worksheet instance
+                        if (worksheet != null)
                         {
-                            worksheetInstance.AddValue(wsField.Id, wsField.Definition ?? "{}", ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type, customField?.Definition));
+                            var wsField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Name == field.FieldName);
+                            if (wsField != null)
+                            {
+                                worksheetInstance.AddValue(wsField.Id, wsField.Definition ?? "{}", ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type));
+                            }
                         }
                     }
+                }
+                catch (JsonException ex)
+                {
+                    Logger.LogException(ex);
                 }
             }
         }
 
-        private static async Task<WorksheetInstance> CreateNewWorksheetInstanceAsync(IWorksheetInstanceRepository worksheetInstanceRepository, PersistWorksheetIntanceValuesEto eventData, Worksheet worksheet, List<ValueFieldContainer> fields)
+        private async Task<WorksheetInstance> CreateNewWorksheetInstanceAsync(IWorksheetInstanceRepository worksheetInstanceRepository, PersistWorksheetIntanceValuesEto eventData, Worksheet worksheet, List<ValueFieldContainer> fields)
         {
             var newWorksheetInstance = new WorksheetInstance(Guid.NewGuid(),
                    worksheet.Id,
@@ -84,10 +92,17 @@ namespace Unity.Flex.Domain.Services
 
             foreach (var field in fields)
             {
-                var customField = FindCustomFieldByName(worksheet, field.FieldName);
-                if (customField != null && field.Value != null)
+                try
                 {
-                    newWorksheetInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type, customField.Definition));
+                    var customField = FindCustomFieldByName(worksheet, field.FieldName);
+                    if (customField != null && field.Value != null)
+                    {
+                        newWorksheetInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type));
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Logger.LogException(ex);
                 }
             }
 
@@ -127,7 +142,7 @@ namespace Unity.Flex.Domain.Services
                     foreach (var field in allFields)
                     {
                         var match = eventData.CustomFields.Find(s => s.Key == field.Name);
-                        newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type, field.Definition));
+                        newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
                     }
 
                     var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);

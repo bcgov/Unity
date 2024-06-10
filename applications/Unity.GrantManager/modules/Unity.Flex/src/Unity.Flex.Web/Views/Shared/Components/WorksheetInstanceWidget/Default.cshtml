@@ -92,6 +92,7 @@
                                 case CustomFieldType.Radio:
                                     {
                                         <fieldset>
+                                            <legend></legend>
                                             @foreach (var option in ((RadioDefinition?)field?.Definition?.ConvertDefinition(field.Type))?.Options ?? [])
                                             {
                                                 <div class="custom-radio-button">
@@ -139,6 +140,7 @@
                                 case CustomFieldType.CheckboxGroup:
                                     {
                                         <fieldset>
+                                            <legend></legend>
                                             @{
                                                 var checkedValues = field?.CurrentValue?.GetCheckedOptions() ?? [];
                                                 foreach (var option in ((CheckboxGroupDefinition?)field?.Definition?.ConvertDefinition(field.Type))?.Options ?? [])

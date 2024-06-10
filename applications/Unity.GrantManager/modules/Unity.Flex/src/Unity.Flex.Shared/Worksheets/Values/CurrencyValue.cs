@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Unity.Flex.Worksheets.Values
+﻿namespace Unity.Flex.Worksheets.Values
 {
     public class CurrencyValue : CustomValueBase
     {
