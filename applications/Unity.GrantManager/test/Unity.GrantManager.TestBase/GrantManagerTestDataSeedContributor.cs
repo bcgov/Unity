@@ -161,6 +161,7 @@ public class GrantManagerTestDataSeedContributor : IDataSeedContributor, ITransi
                 id: GrantManagerTestData.Assessment1_Id,
                 applicationId: GrantManagerTestData.Application1_Id,
                 assessorId: GrantManagerTestData.User1_UserId,
+                null,
                 AssessmentState.IN_PROGRESS
             ), autoSave: true);
 
