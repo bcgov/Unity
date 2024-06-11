@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Text.Json;
+using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Values;
 
-namespace Unity.Flex.Worksheets.Values
+namespace Unity.Flex.Web.Views.Shared.Components
 {
     public static class ValueResolver
     {

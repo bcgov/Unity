@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Unity.Flex.Worksheets.Values
+namespace Unity.Flex.Web.Views.Shared.Components
 {
     internal static class ValueResolverHelpers
     {

@@ -1,0 +1,36 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupWidget;
+@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Worksheets.Definitions;
+
+@model CheckboxGroupViewModel;
+
+@if (Model.Field != null)
+{
+    <fieldset>
+        <legend></legend>
+        @{
+            var checkedValues = Model.Field?.CurrentValue?.GetCheckedOptions() ?? [];
+            foreach (var option in ((CheckboxGroupDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Options ?? [])
+            {
+                <div class="custom-checkbox">
+                    @if (checkedValues.Contains(option.Key))
+                    {
+                        <input type="@Model.Field?.Type.ConvertInputType()"
+                               id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
+                               name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
+                               onchange="@($"notifyFieldChange('{Model.Name}', this)")"
+                               checked />
+                    }
+                    else
+                    {
+                        <input type="@Model.Field?.Type.ConvertInputType()"
+                               id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
+                               name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
+                               onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                    }
+                    <label for="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")">@($"{option.Label}")</label>
+                </div>
+            }
+        }
+    </fieldset>
+}
