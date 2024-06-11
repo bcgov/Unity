@@ -6,7 +6,7 @@ namespace Unity.Notifications.Integrations.Ches
 {
     public interface IChesClientService : IApplicationService
     {
-        Task SendAsync(object emailRequest);
+        Task<RestResponse> SendAsync(object emailRequest);
 
         Task<RestResponse> HealthCheckAsync();
     }

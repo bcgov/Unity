@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailNotifications;
@@ -47,12 +48,19 @@ namespace Unity.GrantManager.Events
                 {
                     case GrantApplicationAction.Approve:
                         {
-                            await _emailNotificationService.SendEmailNotification(email, _emailNotificationService.GetApprovalBody(), subject);
+                            await _emailNotificationService.SendEmaiToQueue(
+                                email, _emailNotificationService.GetApprovalBody(), 
+                                subject, 
+                                eventData.ApplicationId);
                             break;
                         }
                     case GrantApplicationAction.Deny:
                         {
-                            await _emailNotificationService.SendEmailNotification(email, _emailNotificationService.GetDeclineBody(), subject);
+                            await _emailNotificationService.SendEmaiToQueue(
+                                email, 
+                                _emailNotificationService.GetDeclineBody(),
+                                subject, 
+                                eventData.ApplicationId);
                             break;
                         }
                     default: break;

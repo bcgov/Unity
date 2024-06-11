@@ -47,7 +47,7 @@ namespace Unity.Notifications.Integrations.Ches
             return response;
         }
 
-        public async Task SendAsync(Object emailRequest)
+        public async Task<RestResponse> SendAsync(Object emailRequest)
         {
             // Ches Tokens Expire Immediately After use but we could use bulk send
             var tokenResponse = await GetAccessTokenAsync();
@@ -58,11 +58,7 @@ namespace Unity.Notifications.Integrations.Ches
             };
    
             var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, emailRequest);
-
-            if (response != null && response.ErrorMessage != null)
-            {
-               throw new UserFriendlyException("ChesClientService SendAsync Exception: " + response.ErrorMessage);
-            }
+            return response;
         }
 
         private async Task<TokenValidationResponse> GetAccessTokenAsync()

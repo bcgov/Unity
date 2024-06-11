@@ -3,12 +3,14 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Unity.Notifications.Integrations.Ches;
-using Unity.Notifications.EmailNotifications;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundJobs.RabbitMQ;
 using Volo.Abp.EventBus.RabbitMq;
 using Volo.Abp.RabbitMQ;
-
+using Unity.Notifications.Emails;
+using Unity.Notifications.EmailNotifications;
+using Microsoft.Extensions.Configuration;
+using Volo.Abp.BackgroundWorkers.Quartz;
 
 namespace Unity.Notifications;
 
@@ -17,42 +19,32 @@ namespace Unity.Notifications;
     typeof(NotificationsApplicationContractsModule),
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
-    typeof(AbpBackgroundJobsModule)
+    typeof(AbpBackgroundJobsModule),
+    typeof(AbpBackgroundWorkersQuartzModule)
     )]
+[DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
 public class NotificationsApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var configuration = context.Services.GetConfiguration();
         context.Services.AddAutoMapperObjectMapper<NotificationsApplicationModule>();
         context.Services.AddScoped<IChesClientService, ChesClientService>();
-        
-        Configure<AbpRabbitMqOptions>(options =>
+
+        Configure<EmailBackgroundJobsOptions>(options =>
         {
-            options.Connections.Default.UserName = "guest";
-            options.Connections.Default.Password = "guest";
-            options.Connections.Default.HostName = "localhost";
-            options.Connections.Default.Port = 5672;
-            options.Connections.Default.VirtualHost = "/";
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+            options.EmailResend.Expression = configuration.GetValue<string>("BackgroundJobs:EmailResend:Expression") ?? "";
+            options.EmailResend.RetryAttemptsMaximum = configuration.GetValue<int>("BackgroundJobs:EmailResend:RetryAttemptsMaximum");
         });
 
-        Configure<AbpRabbitMqBackgroundJobOptions>(options =>
+        Configure<RabbitMQOptions>(options =>
         {
-            options.DefaultQueueNamePrefix = "unity_jobs.";
-            options.DefaultDelayedQueueNamePrefix = "unity_jobs.delayed";
-            options.PrefetchCount = 1;
-            options.JobQueues[typeof(EmailSendingArgs)] =
-                new JobQueueConfiguration(
-                    typeof(EmailSendingArgs),
-                    queueName: "unity_jobs.emails",
-                    connectionName: "Default",
-                    delayedQueueName:"unity_jobs.emails.delayed"
-                );
-        });
-
-        Configure<AbpRabbitMqEventBusOptions>(options =>
-        {
-            options.ExchangeArguments["x-delayed-type"] = "direct";
-            //options.QueueArguments["x-message-ttl"] = 60000;
+            options.HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "";
+            options.Port = configuration.GetValue<int>("RabbitMQ:Port");
+            options.UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "";
+            options.Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "";
+            options.VirtualHost = configuration.GetValue<string>("RabbitMQ:VirtualHost") ?? "";
         });
     }
 }

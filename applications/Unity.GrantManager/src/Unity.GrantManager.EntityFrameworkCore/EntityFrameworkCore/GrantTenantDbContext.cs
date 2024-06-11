@@ -11,6 +11,7 @@ using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
 using Unity.Payments.EntityFrameworkCore;
+using Unity.Notifications.Emails;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -35,9 +36,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
-        public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }        
-        public DbSet<ApplicationContact> ApplicationContacts { get; set; }    
-        public DbSet<ApplicationLink> ApplicationLinks { get; set; }    
+        public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }
+        public DbSet<ApplicationContact> ApplicationContacts { get; set; }
+        public DbSet<ApplicationLink> ApplicationLinks { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
