@@ -4,8 +4,6 @@
     let dt = $('#GrantApplicationsTable');
     let dataTable;
 
-    let x = unity;
-
     const listColumns = getColumns();
     const defaultVisibleColumns = ['select',
         'applicantName',
@@ -35,12 +33,24 @@
             }
         }
     ];
+
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
         15,
         4,
-        unity.grantManager.grantApplications.grantApplication.getList, {}, actionButtons,'dynamicButtonContainerId');
+        unity.grantManager.grantApplications.grantApplication.getList,
+        {},
+        responseCallback,
+        actionButtons,
+        'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 
@@ -199,7 +209,7 @@
             data: 'applicant.sector',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Sector}';
+                return data ?? '';
             },
             index: 6
         }
@@ -212,7 +222,7 @@
             data: 'applicant.subSector',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SubSector}';
+                return data ?? '';
             },
             index: 7
         }
@@ -307,7 +317,7 @@
             data: 'economicRegion',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Region}';
+                return data ?? '';
             },
             index: 13
         }
@@ -320,7 +330,7 @@
             data: 'regionalDistrict',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Regional District}';
+                return data ?? '';
             },
             index: 14
         }
@@ -333,7 +343,7 @@
             data: 'community',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Community}';
+                return data ?? '';
             },
             index: 15
         }
@@ -347,7 +357,7 @@
             className: 'data-table-header',
             visible: false,
             render: function (data) {
-                return data ?? '{Organization Number}';
+                return data ?? '';
             },
             index: 16
         }
@@ -365,7 +375,7 @@
                 } else if (data != null && data == 'HISTORICAL') {
                     return 'Historical';
                 } else {
-                    return data ?? '{Org Book Status}';
+                    return data ?? '';
                 }  
             },
             index: 17
@@ -381,7 +391,7 @@
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '{Project Start Date}';
+                }).toUTC().toLocaleString() : '';
             },
             index: 18
         }
@@ -396,7 +406,7 @@
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '{Project End Date}';
+                }).toUTC().toLocaleString() : '';
             },
             index: 19
         }
@@ -409,7 +419,7 @@
             data: 'projectFundingTotal',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return formatter.format(data) ?? '{Projected Funding Total}';
+                return formatter.format(data) ?? '';
             },
             index: 20
         }
@@ -422,7 +432,7 @@
             data: 'percentageTotalProjectBudget',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{% of Total Project Budget}';
+                return data ?? '';
             },
             index: 21
         }
@@ -448,7 +458,7 @@
             data: 'electoralDistrict',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Electoral District}';
+                return data ?? '';
             },
             index: 23
         }
@@ -464,7 +474,7 @@
                 if (data != null)
                     return data == 'FORESTRY' ? 'Forestry' : 'Non Forestry';
                 else
-                    return '{Forestry or Non-Forestry}';
+                    return '';
             },
             index: 24
         }
@@ -489,11 +499,11 @@
                     } else if (data != '') {
                         return data;
                     } else {
-                        return '{Forestry Focus}';
+                        return '';
                     }
                 }
                 else {
-                    return '{Forestry Focus}';
+                    return '';
                 }
 
             },
@@ -513,7 +523,7 @@
                     return titleCase(data);
                 }
                 else {
-                    return '{Acquisition}';
+                    return '';
                 }
 
             },
@@ -528,7 +538,7 @@
             data: 'city',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{city}';
+                return data ?? '';
 
             },
             index: 27
@@ -542,7 +552,7 @@
             data: 'communityPopulation',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Community Population}';
+                return data ?? '';
             },
             index: 28
         }
@@ -559,7 +569,7 @@
                     return titleCase(data);
                 }
                 else {
-                    return '{Likelihood of Funding}';
+                    return '';
                 }
             },
             index: 29
@@ -573,7 +583,7 @@
             data: 'subStatusDisplayValue',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SubStatus}';
+                return data ?? '';
             },
             index: 30
         }
@@ -586,7 +596,7 @@
             data: 'applicationTag',
             className: '',
             render: function (data) {
-                return data.replace(/,/g, ', ') ?? '{Tags}';
+                return data.replace(/,/g, ', ') ?? '';
             },
             index: 31
         }
@@ -599,7 +609,7 @@
             data: 'totalScore',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Total Score}';
+                return data ?? '';
             },
             index: 32
         }
@@ -616,7 +626,7 @@
                     return titleCase(data);
                 }
                 else {
-                    return '{Assessment Result}';
+                    return '';
                 }
             },
             index: 33
@@ -630,7 +640,7 @@
             data: 'recommendedAmount',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return formatter.format(data) ?? '{Recommended Amount}';
+                return formatter.format(data) ?? '';
             },
             index: 34
         }
@@ -645,7 +655,7 @@
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '{Due Date}';
+                }).toUTC().toLocaleString() : '';
             },
             index: 35
         }
@@ -658,7 +668,7 @@
             data: 'owner',
             className: 'data-table-header',
             render: function (data) {
-                return data != null ? data.fullName : '{Owner}';
+                return data != null ? data.fullName : '';
             },
             index: 36
         }
@@ -673,7 +683,7 @@
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '{Decision Date}';
+                }).toUTC().toLocaleString() : '';
             },
             index: 37
         }
@@ -686,7 +696,7 @@
             data: 'projectSummary',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ProjectSummary}';
+                return data ?? '';
             },
             index: 38
         }
@@ -712,7 +722,7 @@
             data: 'organizationName',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{OrgName}';
+                return data ?? '';
             },
             index: 40
         }
@@ -724,7 +734,7 @@
             data: 'dueDiligenceStatus',
             className: 'data-table-header',
             render: function (data) {
-                return titleCase(data ?? '') ?? '{DueDiligenceStatus}';
+                return titleCase(data ?? '') ?? '';
             },
             index: 41
         }
@@ -737,7 +747,7 @@
             data: 'declineRational',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{DeclineRationale}';
+                return data ?? '';
             },
             index: 42
         }
@@ -750,7 +760,7 @@
             data: 'contactFullName',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactFullName}';
+                return data ?? '';
             },
             index: 43
         }
@@ -762,7 +772,7 @@
             data: 'contactTitle',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactTitle}';
+                return data ?? '';
             },
             index: 44
         }
@@ -774,7 +784,7 @@
             data: 'contactEmail',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactEmail}';
+                return data ?? '';
             },
             index: 45
         }
@@ -786,7 +796,7 @@
             data: 'contactBusinessPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactBusinessPhone}';
+                return data ?? '';
             },
             index: 46
         }
@@ -798,7 +808,7 @@
             data: 'contactCellPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactCellPhone}';
+                return data ?? '';
             },
             index: 47
         }
@@ -811,7 +821,7 @@
             data: 'applicant.sectorSubSectorIndustryDesc',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SectorSubSectorIndustryDesc}';
+                return data ?? '';
             },
             index: 48
         }
@@ -824,7 +834,7 @@
             data: 'signingAuthorityFullName',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SigningAuthorityFullName}';
+                return data ?? '';
             },
             index: 49
         }
@@ -836,7 +846,7 @@
             data: 'signingAuthorityTitle',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SigningAuthorityTitle}';
+                return data ?? '';
             },
             index: 50
         }
@@ -848,7 +858,7 @@
             data: 'signingAuthorityEmail',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SigningAuthorityEmail}';
+                return data ?? '';
             },
             index: 51
         }
@@ -860,7 +870,7 @@
             data: 'signingAuthorityBusinessPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SigningAuthorityBusinessPhone}';
+                return data ?? '';
             },
             index: 52
         }
@@ -872,14 +882,14 @@
             data: 'signingAuthorityCellPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? 'S{igningAuthorityCellPhone}';
+                return data ?? '';
             },
             index: 53
         }
     }
 
-    window.addEventListener('resize', () => {                 
-    }); 
+    window.addEventListener('resize', () => {
+    });
 
     PubSub.subscribe(
         'refresh_application_list',

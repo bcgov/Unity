@@ -200,6 +200,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1461,6 +1464,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Payable")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("ScoresheetId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -1523,6 +1529,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("OidcSub")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RenderedHTML")
                         .HasColumnType("text");
 
                     b.Property<string>("Submission")

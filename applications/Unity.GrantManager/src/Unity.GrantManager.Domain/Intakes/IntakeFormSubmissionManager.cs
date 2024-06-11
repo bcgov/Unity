@@ -104,31 +104,31 @@ namespace Unity.GrantManager.Intakes
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = ResolveAndTruncateField(255, "{ProjectName}", intakeMap.ProjectName),
+                    ProjectName = ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
-                    ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
-                    Acquisition = intakeMap.Acquisition ?? null,
-                    Forestry = intakeMap.Forestry ?? null,
-                    ForestryFocus = intakeMap.ForestryFocus ?? null,
-                    City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
-                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
+                    ReferenceNo = intakeMap.ConfirmationId ?? string.Empty,
+                    Acquisition = intakeMap.Acquisition,
+                    Forestry = intakeMap.Forestry,
+                    ForestryFocus = intakeMap.ForestryFocus,
+                    City = intakeMap.PhysicalCity, // To be determined from the applicant
+                    EconomicRegion = intakeMap.EconomicRegion,
                     CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
                     RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
                     SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
                     ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
                     ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
                     TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
-                    Community = intakeMap.Community ?? "{Community}",
-                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
-                    SigningAuthorityFullName = intakeMap.SigningAuthorityFullName ?? "{SigningAuthorityFullName}",
-                    SigningAuthorityTitle = intakeMap.SigningAuthorityTitle ?? "{SigningAuthorityTitle}",
-                    SigningAuthorityEmail = intakeMap.SigningAuthorityEmail ?? "{SigningAuthorityEmail}",
-                    SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone ?? "{SigningAuthorityBusinessPhone}",
-                    SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone ?? "{SigningAuthorityCellPhone}",
-                    Place = intakeMap.Place ?? "{Place}"
+                    Community = intakeMap.Community,
+                    ElectoralDistrict = intakeMap.ElectoralDistrict,
+                    RegionalDistrict = intakeMap.RegionalDistrict,
+                    SigningAuthorityFullName = intakeMap.SigningAuthorityFullName,
+                    SigningAuthorityTitle = intakeMap.SigningAuthorityTitle,
+                    SigningAuthorityEmail = intakeMap.SigningAuthorityEmail,
+                    SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone,
+                    SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone,
+                    Place = intakeMap.Place
                 }
             );
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
@@ -205,15 +205,15 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = ResolveAndTruncateField(600, "{ApplicantName}", intakeMap.ApplicantName),
-                NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
-                OrgName = intakeMap.OrgName ?? "{OrgName}",
-                OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
-                OrganizationType = intakeMap.OrganizationType ?? "{OrganizationType}",
-                Sector = intakeMap.Sector ?? "{Sector}",
-                SubSector = intakeMap.SubSector ?? "{SubSector}",
-                SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc ?? "{SectorSubSectorIndustryDesc}",
-                ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
+                ApplicantName = ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
+                NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
+                OrgName = intakeMap.OrgName,
+                OrgNumber = intakeMap.OrgNumber,
+                OrganizationType = intakeMap.OrganizationType,
+                Sector = intakeMap.Sector,
+                SubSector = intakeMap.SubSector,
+                SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc,
+                ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
             });
 
@@ -233,11 +233,11 @@ namespace Unity.GrantManager.Intakes
                 {
                     ApplicantId = applicant.Id,
                     ApplicationId = application.Id,
-                    Name = intakeMap.ContactName ?? "{ContactName}",
-                    Phone = intakeMap.ContactPhone ?? "{ContactPhone}",
-                    Phone2 = intakeMap.ContactPhone2 ?? "{ContactPhone2}",
-                    Email = intakeMap.ContactEmail ?? "{ContactEmail}",
-                    Title = intakeMap.ContactTitle ?? "{ContactTitle}",
+                    Name = intakeMap.ContactName ?? string.Empty,
+                    Phone = intakeMap.ContactPhone ?? string.Empty,
+                    Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
+                    Email = intakeMap.ContactEmail ?? string.Empty,
+                    Title = intakeMap.ContactTitle ?? string.Empty,
                 });
             }
 

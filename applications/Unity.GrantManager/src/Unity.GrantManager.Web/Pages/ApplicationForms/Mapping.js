@@ -258,6 +258,19 @@
             }
         }
         handleSaveMapping(mappingJson);
+        saveScoresheet();
+    }
+
+    function saveScoresheet() {
+        let appFormId = $('#applicationFormId').val();
+        let scoresheetId = $('#scoresheet').val();
+        unity.grantManager.applicationForms.applicationForm.saveApplicationFormScoresheet({ applicationFormId: appFormId, scoresheetId: scoresheetId })
+            .then(response => {
+                abp.notify.success(
+                    'Scoresheet is successfully saved.',
+                    'Application Form Scoresheet'
+                );
+            });
     }
 
     function handleSaveMapping(mappingJson) {

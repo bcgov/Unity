@@ -43,6 +43,8 @@
 
 <input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
+<input type="hidden" id="ApplicationFormSubmissionData" value="@Model.ApplicationFormSubmissionData" />
+<input type="hidden" id="HasRenderedHTML" value="@Model.HasRenderedHTML.ToString()" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
@@ -76,9 +78,7 @@
                         <abp-row>
                             <abp-column size="_12">
                                 <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
-                                @*TODO: Put FormIO handler here!*@
-                                <div id="formio"></div>
-
+                                <div id="formio">@Html.Raw(@Model.ApplicationFormSubmissionHtml)</div>
                             </abp-column>
 
                         </abp-row>
@@ -143,6 +143,14 @@
                 </div>
                 </abp-tab> *@
                 @*-------- Approval Section END ---------*@
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+                {
+                    <abp-tab name="nav-payment-info" title="Payment Info">
+                        <div class="w-100 px-2" id="PaymentInfoWidget">
+                            @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId })
+                        </div>
+                    </abp-tab>
+                }
 
                 @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
                 {
