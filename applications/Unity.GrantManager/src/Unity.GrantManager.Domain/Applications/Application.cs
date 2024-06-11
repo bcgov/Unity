@@ -1,28 +1,57 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Applications;
 
+// NOTE: See https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#required-navigation-properties
+
 public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid ApplicationFormId { get; set; }
+
+    public virtual ApplicationForm ApplicationForm
+    {
+        set => _applicationForm = value;
+        get => _applicationForm
+            ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Applicant));
+    }
+
+    private ApplicationForm? _applicationForm;
+
     public Guid ApplicantId { get; set; }
+
+    public virtual Applicant Applicant
+    {
+        set => _applicant = value;
+        get => _applicant
+               ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Applicant));
+    }
+
+    private Applicant? _applicant;
+
+    public virtual ApplicantAgent? ApplicantAgent { get; set; }
+
     public Guid ApplicationStatusId { get; set; }
 
-    // Navigation Property - Application Status
     public virtual ApplicationStatus ApplicationStatus
     {
-        // NOTE: See https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#required-navigation-properties
         set => _applicationStatus = value;
         get => _applicationStatus
                ?? throw new InvalidOperationException("Uninitialized property: " + nameof(ApplicationStatus));
     }
     private ApplicationStatus? _applicationStatus;
+
+    public virtual Collection<Assessment>? Assessments { get; set; }
+    public virtual Collection<ApplicationTags>? ApplicationTags { get; set; }
+    public virtual Collection<ApplicationAssignment>? ApplicationAssignments { get; set; }
 
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
@@ -81,12 +110,16 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? ForestryFocus { get; set; }
 
     public string? ElectoralDistrict { get; set; }
+    public string? Place { get; set; }
 
     public string? RegionalDistrict { get; set; }
 
     public Guid? TenantId { get; set; }
 
     public Guid? OwnerId { get; set; }
+    // Navigation Property - Application Status
+    public virtual Person? Owner { get; set; }
+
 
     public string? SigningAuthorityFullName { get; set; }
     public string? SigningAuthorityTitle { get; set; }
@@ -101,11 +134,12 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
     }
 
-    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding)
+    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, decimal? totalProjectBudget)
     {
         Notes = notes;
         SubStatus = subStatus;
         LikelihoodOfFunding = likelihoodOfFunding;
+        TotalProjectBudget = totalProjectBudget ?? 0;
     }
 
     public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore, DateTime? notificationDate)
@@ -126,10 +160,9 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         AssessmentResultStatus = assessmentResultStatus;
     }
 
-    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? totalProjectBudget, decimal? recommendedAmount, string? declineRational)
-    {        
-        DueDiligenceStatus = dueDiligenceStatus;
-        TotalProjectBudget = totalProjectBudget ?? 0;
+    public void UpdateFieldsOnlyForPreFinalDecision(string? dueDiligenceStatus, decimal? recommendedAmount, string? declineRational)
+    {
+        DueDiligenceStatus = dueDiligenceStatus;        
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
     }

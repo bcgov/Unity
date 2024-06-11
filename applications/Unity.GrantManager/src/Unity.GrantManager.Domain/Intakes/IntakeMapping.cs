@@ -38,6 +38,7 @@
         public string? PhysicalStreet { get; set; }
         public string? PhysicalStreet2 { get; set; }
         public string? PhysicalUnit { get; set; }
+        public string? Place {  get; set; }
         public string? ProjectEndDate { get; set; }
         public string? ProjectName { get; set; }
         public string? ProjectStartDate { get; set; }

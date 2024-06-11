@@ -45,8 +45,11 @@
         fetch(url)
             .then(response => response.text())
             .then(data => {
-                document.getElementById('supplier-info-widget').innerHTML = data;
-                PubSub.publish('reload_sites_list');
+                let supplierInfo = document.getElementById('supplier-info-widget');
+                if (supplierInfo) {
+                    supplierInfo.innerHTML = data;
+                    PubSub.publish('reload_sites_list');
+                }
             })
             .catch(error => {
                 console.error('Error refreshing supplier-info-widget:', error);

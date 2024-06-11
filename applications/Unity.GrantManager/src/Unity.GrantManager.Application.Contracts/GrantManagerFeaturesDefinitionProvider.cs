@@ -1,4 +1,5 @@
-﻿using Unity.Notifications.Localization;
+﻿using Unity.Flex.Localization;
+using Unity.Notifications.Localization;
 using Unity.Payments.Localization;
 using Volo.Abp.Features;
 using Volo.Abp.Localization;
@@ -22,6 +23,12 @@ namespace Unity.GrantManager
                 defaultValue: "false",
                 displayName: LocalizableString
                                 .Create<NotificationsResource>("Allow Notifications"),
+                valueType: new ToggleStringValueType());
+
+            myGroup.AddFeature("Unity.Flex",
+                defaultValue: "false",
+                   displayName: LocalizableString
+                                .Create<FlexResource>("Flex"),
                 valueType: new ToggleStringValueType());
         }
     }

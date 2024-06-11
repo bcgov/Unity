@@ -15,35 +15,33 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
     [Widget(
         RefreshUrl = "Widget/ApplicantInfo/Refresh",
-        ScriptTypes = new[] { typeof(ApplicantInfoScriptBundleContributor) },
-        StyleTypes = new[] { typeof(ApplicantInfoStyleBundleContributor) },
+        ScriptTypes = [typeof(ApplicantInfoScriptBundleContributor)],
+        StyleTypes = [typeof(ApplicantInfoStyleBundleContributor)],
         AutoInitialize = true)]
     public class ApplicantInfoViewComponent : AbpViewComponent
     {
-        private readonly IGrantApplicationAppService _grantApplicationAppService;
+        private readonly IApplicationApplicantAppService _applicationAppicantService;
         private readonly ISectorService _applicationSectorAppService;
 
         public ApplicantInfoViewComponent(
-            IGrantApplicationAppService grantApplicationAppService,
+            IApplicationApplicantAppService applicationAppicantService,
             ISectorService applicationSectorAppService
             )
         {
-            _grantApplicationAppService = grantApplicationAppService;
+            _applicationAppicantService = applicationAppicantService;
             _applicationSectorAppService = applicationSectorAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
-
-            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
-
-            List<SectorDto> Sectors = (await _applicationSectorAppService.GetListAsync()).ToList();
+            var applicatInfoDto = await _applicationAppicantService.GetByApplicationIdAsync(applicationId);
+            List<SectorDto> Sectors = [.. (await _applicationSectorAppService.GetListAsync())];
 
             ApplicantInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationSectors = Sectors,
-                ApplicantId = application.Applicant.Id
+                ApplicantId = applicatInfoDto.ApplicantId
             };
 
             model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
@@ -52,10 +50,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             if (Sectors.Count > 0)
             {
-                List<SubSectorDto> SubSectors = new();
-                
-                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == application.Sector);
-                SubSectors = applicationSector?.SubSectors ?? SubSectors;                
+                List<SubSectorDto> SubSectors = [];
+
+                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == applicatInfoDto.Sector);
+                SubSectors = applicationSector?.SubSectors ?? SubSectors;
 
                 model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
                     new SelectListItem { Value = SubSector.SubSectorName, Text = SubSector.SubSectorName }));
@@ -64,26 +62,52 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             model.ApplicantInfo = new()
             {
-
-                Sector = application.Sector,
-                SubSector = application.SubSector,
-                ContactFullName = application.ContactFullName,
-                ContactTitle = application.ContactTitle,
-                ContactEmail = application.ContactEmail,
-                ContactBusinessPhone = application.ContactBusinessPhone,
-                ContactCellPhone = application.ContactCellPhone,
-                OrgName = application.OrganizationName,
-                OrgNumber = application.OrgNumber,
-                OrgStatus = application.OrgStatus,
-                OrganizationType = application.OrganizationType,
-                SigningAuthorityFullName = application.SigningAuthorityFullName,
-                SigningAuthorityTitle = application.SigningAuthorityTitle,
-                SigningAuthorityEmail = application.SigningAuthorityEmail,
-                SigningAuthorityBusinessPhone = application.SigningAuthorityBusinessPhone,
-                SigningAuthorityCellPhone = application.SigningAuthorityCellPhone,
-                OrganizationSize = application.OrganizationSize,
-                SectorSubSectorIndustryDesc = application.SectorSubSectorIndustryDesc,
+                Sector = applicatInfoDto.Sector,
+                SubSector = applicatInfoDto.SubSector,
+                ContactFullName = applicatInfoDto.ContactFullName,
+                ContactTitle = applicatInfoDto.ContactTitle,
+                ContactEmail = applicatInfoDto.ContactEmail,
+                ContactBusinessPhone = applicatInfoDto.ContactBusinessPhone,
+                ContactCellPhone = applicatInfoDto.ContactCellPhone,
+                OrgName = applicatInfoDto.OrganizationName,
+                OrgNumber = applicatInfoDto.OrgNumber,
+                OrgStatus = applicatInfoDto.OrgStatus,
+                OrganizationType = applicatInfoDto.OrganizationType,
+                SigningAuthorityFullName = applicatInfoDto.SigningAuthorityFullName,
+                SigningAuthorityTitle = applicatInfoDto.SigningAuthorityTitle,
+                SigningAuthorityEmail = applicatInfoDto.SigningAuthorityEmail,
+                SigningAuthorityBusinessPhone = applicatInfoDto.SigningAuthorityBusinessPhone,
+                SigningAuthorityCellPhone = applicatInfoDto.SigningAuthorityCellPhone,
+                OrganizationSize = applicatInfoDto.OrganizationSize,
+                SectorSubSectorIndustryDesc = applicatInfoDto.SectorSubSectorIndustryDesc,
             };
+
+            if (applicatInfoDto.ApplicantAddresses.Count != 0)
+            {
+                ApplicantAddressDto? physicalAddress = applicatInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.PhysicalAddress);
+
+                if (physicalAddress != null)
+                {
+                    model.ApplicantInfo.PhysicalAddressStreet = physicalAddress.Street;
+                    model.ApplicantInfo.PhysicalAddressStreet2 = physicalAddress.Street2;
+                    model.ApplicantInfo.PhysicalAddressUnit = physicalAddress.Unit;
+                    model.ApplicantInfo.PhysicalAddressCity = physicalAddress.City;
+                    model.ApplicantInfo.PhysicalAddressProvince = physicalAddress.Province;
+                    model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
+                }
+
+                ApplicantAddressDto? mailingAddress = applicatInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.MailingAddress);
+
+                if (mailingAddress != null)
+                {
+                    model.ApplicantInfo.MailingAddressStreet = mailingAddress.Street;
+                    model.ApplicantInfo.MailingAddressStreet2 = mailingAddress.Street2;
+                    model.ApplicantInfo.MailingAddressUnit = mailingAddress.Unit;
+                    model.ApplicantInfo.MailingAddressCity = mailingAddress.City;
+                    model.ApplicantInfo.MailingAddressProvince = mailingAddress.Province;
+                    model.ApplicantInfo.MailingAddressPostalCode = mailingAddress.Postal;
+                }
+            }
 
             return View(model);
         }

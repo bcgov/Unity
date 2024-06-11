@@ -25,15 +25,15 @@
                     <abp-column size="_3" class="px-1">
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
-                            <abp-input asp-for="@Model.AssessmentResults.RequestedAmount"
+                            <abp-input asp-for="@Model.AssessmentResults.RequestedAmount" id="RequestedAmountInputAR"
                                        onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsPostEditFieldsAllowed)" />
                         </div>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
-                            <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget"
-                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsEditGranted)" />
+                            <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget" id="TotalBudgetInputAR"
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" />
                         </div>
                     </abp-column>
                     <abp-column size="_3" class="px-1">

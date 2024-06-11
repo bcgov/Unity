@@ -19,11 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
-    <ProjectReference Include="..\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.3" />
   </ItemGroup>
 
@@ -41,12 +36,18 @@
   </ItemGroup>
 
   <ItemGroup>
+	<None Remove="Pages\PaymentApprovals\UpdatePaymentRequestStatus.css" />
+	<None Remove="Pages\PaymentApprovals\UpdatePaymentRequestStatusModal.js" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.css" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.js" />
+	<None Remove="Views\Shared\Components\PaymentInfo\Default.css" />
+	<None Remove="Views\Shared\Components\PaymentInfo\Default.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.css" />
 	<EmbeddedResource Include="Views\Shared\Components\PaymentActionBar\Default.css" />
 	<EmbeddedResource Include="Views\Shared\Components\PaymentActionBar\Default.js" />
+	<EmbeddedResource Include="Views\Shared\Components\PaymentInfo\Default.css" />
+	<EmbeddedResource Include="Views\Shared\Components\PaymentInfo\Default.js" />
 	<EmbeddedResource Include="Views\Shared\Components\SupplierInfo\SupplierInfo.js">
 		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</EmbeddedResource>
@@ -56,15 +57,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
+    <ProjectReference Include="..\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
     <PackageReference Update="Fody" Version="6.8.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Pages\Payments\" />
   </ItemGroup>
 
 </Project>

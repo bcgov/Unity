@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Locality
         private readonly IDistributedCache<IList<SectorDto>, LocalityCacheKey> _cache;
         private readonly ICurrentTenant _currentTenant;
 
-        public SectorAppService(ISectorRepository sectorRepository,            
+        public SectorAppService(ISectorRepository sectorRepository,
             ISettingManager settingManager,
             ICurrentTenant currentTenant,
             IDistributedCache<IList<SectorDto>, LocalityCacheKey> cache)
@@ -33,35 +33,35 @@ namespace Unity.GrantManager.Locality
             _cache = cache;
         }
 
-        public async Task<IList<SectorDto>> GetListAsync()
+        public virtual async Task<IList<SectorDto>> GetListAsync()
         {
             var cacheKey = new LocalityCacheKey(SettingsConstants.SectorFilterName, _currentTenant.GetId());
             return await _cache.GetOrAddAsync(
                 cacheKey,
                 GetTenantSectors
-            ) ?? new List<SectorDto>();
+            ) ?? [];
         }
 
-        public async Task<IList<SectorDto>> GetTenantSectors()
+        protected virtual async Task<IList<SectorDto>> GetTenantSectors()
         {
             var sectors = await _sectorRepository.GetListAsync(true);
 
             var applicationSectorDtos = sectors.Select(x =>
             {
                 var sector = ObjectMapper.Map<Sector, SectorDto>(x);
-                sector.SubSectors = ObjectMapper.Map<List<SubSector>, List<SubSectorDto>>(x.SubSectors.OrderBy(ss => ss.SubSectorName).ToList());
+                sector.SubSectors = ObjectMapper.Map<List<SubSector>, List<SubSectorDto>>([.. x.SubSectors.OrderBy(ss => ss.SubSectorName)]);
                 return sector;
             }).ToList();
 
             var sectorFilter = await _settingManager.GetOrNullForCurrentTenantAsync(SettingsConstants.SectorFilterName);
             if (string.IsNullOrEmpty(sectorFilter))
             {
-                return applicationSectorDtos.OrderBy(s => s.SectorName).ToList();
+                return [.. applicationSectorDtos.OrderBy(s => s.SectorName)];
             }
             else
             {
                 string[] sectorCodes = sectorFilter.Split(',');
-                return applicationSectorDtos.Where(x => sectorCodes.Contains(x.SectorCode)).OrderBy(s => s.SectorName).ToList();
+                return [.. applicationSectorDtos.Where(x => sectorCodes.Contains(x.SectorCode)).OrderBy(s => s.SectorName)];
             }
         }
     }

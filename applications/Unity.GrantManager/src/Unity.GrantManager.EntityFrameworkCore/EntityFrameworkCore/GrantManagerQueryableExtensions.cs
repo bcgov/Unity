@@ -8,7 +8,13 @@ public static class GrantManagerQueryableExtensions
 {
     public static IQueryable<Application> IncludeDetails(this IQueryable<Application> queryable, bool include = true)
     {
-        return !include ? queryable : queryable.Include(x => x.ApplicationStatus);
+        return !include ? queryable : queryable
+            .Include(x => x.ApplicationStatus)
+            .Include(x => x.Owner)
+            .Include(x => x.ApplicationAssignments)
+            .Include(x => x.Applicant)
+            .Include(x => x.ApplicantAgent)
+            .Include(x => x.ApplicationForm);
     }
 
     public static IQueryable<Sector> IncludeDetails(this IQueryable<Sector> queryable, bool include = true)

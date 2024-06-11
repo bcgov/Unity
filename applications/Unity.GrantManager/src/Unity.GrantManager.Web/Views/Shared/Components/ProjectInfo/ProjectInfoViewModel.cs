@@ -43,8 +43,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public bool IsEditGranted { get; set; }
         public bool IsPostEditFieldsAllowed { get; set; }
 
-
-
         public class ProjectInfoViewModelModel
         {
 
@@ -145,6 +143,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
             public DateTime? ContractExecutionDate { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.Place")]
+            [StringLength(50)]
+            public string? Place { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

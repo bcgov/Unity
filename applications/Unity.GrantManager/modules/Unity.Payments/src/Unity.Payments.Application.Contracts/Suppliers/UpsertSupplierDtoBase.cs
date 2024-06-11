@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace Unity.Payments.Suppliers
 {
     [Serializable]

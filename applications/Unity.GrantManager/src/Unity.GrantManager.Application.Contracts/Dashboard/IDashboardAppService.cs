@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
@@ -7,8 +6,9 @@ namespace Unity.GrantManager.Dashboard;
 
 public interface IDashboardAppService : IApplicationService
 {
-    Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(Guid intakeId, string category);
-    Task<List<GetSectorDto>> GetSectorCountAsync(Guid intakeId, string category);
-    Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(Guid intakeId, string category);
-    Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(Guid intakeId, string? category);
+    Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetSectorDto>> GetSectorCountAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetSubsectorRequestedAmtDto>> GetRequestedAmountPerSubsectorAsync(DashboardParametersDto dashboardParams);
 }

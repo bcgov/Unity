@@ -1,5 +1,4 @@
 ﻿@page
-@using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
 @using Unity.Payments.Localization;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
@@ -59,6 +58,9 @@
                 </abp-column>
             </abp-row>
         </abp-modal-body>
-        <abp-modal-footer buttons="@AbpModalButtons.Save | @AbpModalButtons.Cancel"></abp-modal-footer>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
     </abp-modal>
 </form>

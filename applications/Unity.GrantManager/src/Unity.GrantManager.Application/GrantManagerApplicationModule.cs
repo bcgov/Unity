@@ -20,11 +20,13 @@ using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Unity.GrantManager.GrantApplications;
-using Unity.Payments;
 using Volo.Abp.Application.Dtos;
 using Unity.Notifications;
 using Unity.Notifications.Integrations.Ches;
 using Unity.GrantManager.Intakes.BackgroundWorkers;
+using Unity.Payments.Integrations.Cas;
+using Unity.Flex;
+using Unity.Payments;
 
 namespace Unity.GrantManager;
 
@@ -36,12 +38,13 @@ namespace Unity.GrantManager;
     typeof(UnityTenantManagementApplicationModule),
     typeof(AbpFeatureManagementApplicationModule),
     typeof(AbpSettingManagementApplicationModule),
-    typeof(AbpBackgroundWorkersQuartzModule)
+    typeof(AbpBackgroundWorkersQuartzModule),
+    typeof(AbpBackgroundWorkersQuartzModule),
+    typeof(NotificationsApplicationModule),
+    typeof(FlexApplicationModule),
+    typeof(PaymentsApplicationModule)
     )]
-[DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
-    [DependsOn(typeof(NotificationsApplicationModule))]
-    [DependsOn(typeof(PaymentsApplicationModule))]
-    public class GrantManagerApplicationModule : AbpModule
+public class GrantManagerApplicationModule : AbpModule
 {
     //Set some defaults 
 
@@ -81,6 +84,7 @@ namespace Unity.GrantManager;
             options.AllowUnregisteredVersions = configuration.GetValue<bool>("Intake:AllowUnregisteredVersions");
         });
 
+        context.Services.Configure<CasClientOptions>(configuration.GetSection(key: "Payments"));
         context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
         Configure<BackgroundJobsOptions>(options =>

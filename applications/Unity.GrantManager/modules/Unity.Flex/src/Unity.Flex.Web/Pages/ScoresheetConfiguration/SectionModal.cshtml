@@ -1,0 +1,74 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@using Unity.Flex.Web.Pages.ScoresheetConfiguration;
+@model Unity.Flex.Web.Pages.ScoresheetConfiguration.SectionModalModel
+
+@inject IStringLocalizer<FlexResource> L
+
+@{
+    Layout = null;
+}
+@section scripts
+{
+    <abp-script src="/Pages/ScoresheetConfiguration/Index.js" />
+}
+<form method="post" asp-page-handler="OnPostAsync" id="sectionInfo">
+    <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Section.ScoresheetId" />
+    <abp-input type="hidden" id="SectionId" asp-for="@Model.Section.SectionId" />
+    <abp-input type="hidden" id="ActionType" asp-for="@Model.Section.ActionType" />
+    <abp-input type="hidden" id="Order" asp-for="@Model.Section.Order" />
+    <abp-modal size="Large" id="scoresheet-info-modal">
+        <abp-modal-header class="site-info-modal-header" title="@Model.Section.ActionType"></abp-modal-header>
+        <abp-modal-body>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Section.Name" />
+                </abp-column>
+            </abp-row>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="button" class="btn btn-primary" onclick="handleSaveSectionButtonClick(event)">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+            @if (!Model.Section.ActionType.StartsWith("Add"))
+            {
+                <button type="button" class="btn btn-danger" onclick="deleteSection()">Delete</button>
+            }
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+    async function handleSaveSectionButtonClick(event) {
+        event.preventDefault();
+        const action = await askToCreateNewVersion();
+        if (action) {
+            $('#ActionType').val($('#ActionType').val() + action);
+            $('#sectionInfo').submit();
+        }
+        
+    }    
+
+    async function deleteSection() {
+        let result = await Swal.fire({
+            title: "Delete Section",
+            text: 'Are you sure you want to delete this section?',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        });
+        
+        if (result.isConfirmed) {
+            const action = await askToCreateNewVersion();
+            if (action) {
+                $('#ActionType').val('Delete Section' + action);
+                $('#sectionInfo').submit();
+            }
+        }
+        
+    }
+</script>

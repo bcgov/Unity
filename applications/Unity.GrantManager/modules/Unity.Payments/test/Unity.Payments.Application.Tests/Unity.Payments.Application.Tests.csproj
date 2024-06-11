@@ -10,8 +10,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Unity.Payments.Application\Unity.Payments.Application.csproj" />
-    <ProjectReference Include="..\Unity.Payments.Domain.Tests\Unity.Payments.Domain.Tests.csproj" />
+    <ProjectReference Include="..\Unity.Payments.TestBase\Unity.Payments.TestBase.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.1.0" />
   </ItemGroup>
 
   <ItemGroup>

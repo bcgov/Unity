@@ -17,25 +17,34 @@
     Layout = null;
 }
 <form asp-page="/Identity/Users/ImportModal" data-check-form-on-close="false">
-    <abp-modal>
+    <abp-modal centered="true" scrollable="true" size="ExtraLarge">
         <abp-modal-header title="@L["UnityIdentity:ImportUser"].Value"></abp-modal-header>
         <abp-modal-body>
             <div class="mt-3" >
                 <abp-input id="import-user-directory" asp-for="UserInfo.Directory" disabled readonly="true" />
-                <abp-input id="import-user-firstName" asp-for="UserInfo.FirstName" />
-                <abp-input id="import-user-lastName" asp-for="UserInfo.LastName" />
-                <abp-input type="hidden" id="import-user-id" asp-for="UserInfo.UserIdentifier" />
-            </div>                    
-            <abp-button id="ImportUserSearchButton"
-                        text="@L["Common:Command:Search"].Value"
-                        icon-type="Other"
-                        icon="fl fl-search"
-                        button-type="Light" />
+                <abp-row>
+                    <abp-column size="_5">
+                        <abp-input id="import-user-firstName" asp-for="UserInfo.FirstName" />
+                    </abp-column>
+                    <abp-column size="_5">
+                        <abp-input id="import-user-lastName" asp-for="UserInfo.LastName" />
+                    </abp-column>
+                    <abp-column size="_2" class="d-flex align-items-center justify-content-end">
+                        <abp-button id="ImportUserSearchButton"
+                            text="@L["Common:Command:Search"].Value"
+                            class="mt-2"
+                            icon-type="Other"
+                            icon="fl fl-search"
+                            button-type="Light" />
+                    </abp-column>
+                </abp-row>
+                <abp-input type="hidden" id="import-user-id" asp-for="UserInfo.UserIdentifier" class="mb-0" />
+            </div>
             <abp-table id="UserSearchTable"></abp-table>                
         </abp-modal-body>
         <abp-modal-footer>
-            <abp-button id="cancel-import-btn" class="close" data-dismiss="modal" aria-label="Close" text="@L["Cancel"].Value" button-type="Secondary"></abp-button>
             <abp-button id="import-user-btn" text="@L["UnityIdentity:Import"].Value" type="submit" button-type="Primary" disabled="true"></abp-button>
+            <abp-button id="cancel-import-btn" class="close" data-dismiss="modal" aria-label="Close" text="@L["Cancel"].Value" button-type="Secondary"></abp-button>
         </abp-modal-footer>
     </abp-modal>
 </form>

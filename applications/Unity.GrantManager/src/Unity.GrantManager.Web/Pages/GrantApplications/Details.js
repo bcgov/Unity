@@ -1,14 +1,22 @@
 $(function () {
     let selectedReviewDetails = null;
+    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
-    function replaceKey(obj, keyToReplace, matchValue, newValue ) {
-        for (let key in obj) {
-            if (key === keyToReplace && obj[key] === matchValue) {
-                obj[key] = newValue;
-            } else if (typeof obj[key] === 'object') {
-                replaceKey(obj[key], keyToReplace, matchValue, newValue ); 
-            }
+    function initializeDetailsPage() {
+        initCommentsWidget();
+        updateLinksCounters();
+        renderSubmission();
+    }
+
+    initializeDetailsPage();
+
+    function renderSubmission() {
+        if (hasRenderedHtml == "False") {
+            getSubmission();
+        } else {
+            $('.spinner-grow').hide();
+            addEventListeners();
         }
     }
 
@@ -35,8 +43,6 @@ $(function () {
         replaceKey(data, "type", "simpletextfieldadvanced", "textfield");
         replaceKey(data, "type", "simpletimeadvanced", "time");
         replaceKey(data, "type", "simpleurladvanced", "url");
-       
-      
 
         // Regular components
         replaceKey(data, "type", "simplebcaddress", "address");
@@ -66,78 +72,107 @@ $(function () {
         replaceKey(data, "type", "simpletextfield", "textfield");
         replaceKey(data, "type", "simpletime", "time");
 
-
         return data;
+    }
+
+    function replaceKey(obj, keyToReplace, matchValue, newValue ) {
+        for (let key in obj) {
+            if (key === keyToReplace && obj[key] === matchValue) {
+                obj[key] = newValue;
+            } else if (typeof obj[key] === 'object') {
+                replaceKey(obj[key], keyToReplace, matchValue, newValue ); 
+            }
+        }
     }
 
     async function getSubmission() {
         try {
-            let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-            unity.grantManager.intakes.submission
-                .getSubmission(submissionId)
-                .done(function (result) {
-                    $('.spinner-grow').hide();
-                    Formio.icons = 'fontawesome';
-                    let data = formatChefComponents(result);
-                    Formio.createForm(
-                        document.getElementById('formio'),
-                        data.version.schema,
-                        {
-                            readOnly: true,
-                            renderMode: 'form',
-                            flatten: true,
-                        }
-                    ).then(function (form) {
-                        // Set Example Submission Object
-                        form.submission = data.submission.submission;
-                        addEventListeners();
-                    });
-                });
+            $('.spinner-grow').hide();
+            let submissionString = document.getElementById('ApplicationFormSubmissionData').value;
+            let submissionData = JSON.parse(submissionString);
+            Formio.icons = 'fontawesome';
+            let data = formatChefComponents(submissionData);
+
+            Formio.createForm(
+                document.getElementById('formio'),
+                data.version.schema,
+                {
+                    readOnly: true,
+                    renderMode: 'form',
+                    flatten: true,
+                }
+            ).then(function (form) {
+                // Set Example Submission Object
+                form.submission = data.submission.submission;
+                addEventListeners();
+                storeRenderedHtml();
+            });
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async function storeRenderedHtml() {
+        console.log('storing html');
+        let innerHTML = document.getElementById('formio').innerHTML;
+        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
+        $.ajax(
+            {
+                url: "/api/app/submission",
+                data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
+                contentType: "application/json",
+                type: "POST",
+            success: function (data) {
+                    console.log(data);
+                },
+                error: function () {
+                    console.log('error');
+                }
+            },
+        );
     }
 
     // Wait for the DOM to be fully loaded
     function addEventListeners() {
         // Get all the card headers
         const cardHeaders = document.querySelectorAll('.card-header:not(.card-body .card-header)');
+        if (cardHeaders.length) {
+            cardHeaders.forEach((header) => {
+                header.addEventListener('click', function () {
+                    // Toggle the display of the corresponding card body
 
-        // Add click event listeners to each card header
-        cardHeaders.forEach((header) => {
-            header.addEventListener('click', function () {
-                // Toggle the display of the corresponding card body
+                    const cardBody = this.nextElementSibling;
+                    if (
+                        cardBody.style.display === 'none' ||
+                        cardBody.style.display === ''
+                    ) {
+                        cardBody.style.display = 'block';
+                        header.classList.add('custom-active');
 
-                const cardBody = this.nextElementSibling;
-                if (
-                    cardBody.style.display === 'none' ||
-                    cardBody.style.display === ''
-                ) {
-                    cardBody.style.display = 'block';
-                    header.classList.add('custom-active');
 
-                  
-                } else {
-                    cardBody.style.display = 'none';
-                    header.classList.remove('custom-active');
-                }
-
-                // Hide all other card bodies except the one that is being clicked
-                cardHeaders.forEach((otherHeader) => {
-                    if (otherHeader !== header) {
-                        const otherCardBody = otherHeader.nextElementSibling;
-                        otherCardBody.style.display = 'none';
-                        otherHeader.classList.remove('custom-active');
+                    } else {
+                        cardBody.style.display = 'none';
+                        header.classList.remove('custom-active');
                     }
+
+                    // Hide all other card bodies except the one that is being clicked
+                    cardHeaders.forEach((otherHeader) => {
+                        if (otherHeader !== header) {
+                            const otherCardBody = otherHeader.nextElementSibling;
+                            otherCardBody.style.display = 'none';
+                            otherHeader.classList.remove('custom-active');
+                        }
+                    });
                 });
             });
-        });
 
-        // Collapse all card bodies initially
-        const cardBodies = document.querySelectorAll('.card-body:not(.card-body .card-body)');
-        cardBodies.forEach((body) => {
-            body.style.display = 'none';
-        });
+            // Collapse all card bodies initially
+            const cardBodies = document.querySelectorAll('.card-body:not(.card-body .card-body)');
+            cardBodies.forEach((body) => {
+                body.style.display = 'none';
+            });
+        }
+        // Add click event listeners to each card header
     }
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
@@ -288,6 +323,14 @@ $(function () {
     });
 
      
+    let applicationBreadcrumbWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationBreadcrumbWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val()
+            };
+        }
+    });
     let applicationStatusWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationStatusWidget',
         filterCallback: function () {
@@ -308,6 +351,7 @@ $(function () {
         'application_status_changed',
         (msg, data) => {
             console.log(msg, data);
+            applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
             assessmentResultWidgetManager.refresh();
         }
@@ -332,13 +376,6 @@ $(function () {
         }
     );
 
-    function initializeDetailsPage() {
-        getSubmission();
-        initCommentsWidget();
-        updateLinksCounters();
-    }
-
-    initializeDetailsPage();
 
     let attachCounters = {
         files: 0,

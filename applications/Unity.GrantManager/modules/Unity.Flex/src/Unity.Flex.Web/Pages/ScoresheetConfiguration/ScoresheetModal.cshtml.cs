@@ -1,0 +1,91 @@
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
+using Unity.Flex.Scoresheets;
+using Volo.Abp.Validation;
+
+namespace Unity.Flex.Web.Pages.ScoresheetConfiguration;
+
+public class ScoresheetModalModel : FlexPageModel
+{
+    private readonly IScoresheetAppService _scoresheetAppService;
+
+    public ScoresheetModalModel(IScoresheetAppService scoresheetAppService)
+    {
+        _scoresheetAppService = scoresheetAppService;
+    }
+
+    [BindProperty]
+    public ScoresheetModalModelModel Scoresheet { get; set; } = new();
+
+    public class ScoresheetModalModelModel
+    {
+        public Guid Id { get; set; }
+        public Guid GroupId { get; set; }
+        public string ActionType { get; set; } = string.Empty;
+        [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Name")]
+        public string Name { get; set; } = string.Empty;
+    }
+    public async Task OnGetAsync(Guid scoresheetId,
+       string actionType, Guid groupId)
+    {
+        Scoresheet.Id = scoresheetId;
+        Scoresheet.ActionType = actionType;
+        Scoresheet.GroupId = groupId;
+        if (Scoresheet.ActionType.Contains("Edit"))
+        {
+            ScoresheetDto scoresheet = await _scoresheetAppService.GetAsync(scoresheetId);
+            Scoresheet.Name = scoresheet.Name ?? "";
+        }
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        if (Scoresheet.ActionType.Equals("Edit Scoring Sheet On Current Version"))
+        {
+            await EditScoresheets();
+            return NoContent();
+        }
+        else if (Scoresheet.ActionType.Equals("Edit Scoring Sheet On New Version"))
+        {
+            await EditScoresheetsAndCreateNewVersion();
+            return NoContent();
+        }
+        else if (Scoresheet.ActionType.StartsWith("Add"))
+        {
+            await CreateScoresheet();
+            return NoContent();
+        }
+        else if (Scoresheet.ActionType.StartsWith("Delete"))
+        {
+            await DeleteScoresheet();
+            return NoContent();
+        }
+        else
+        {
+            throw new AbpValidationException("Invalid ActionType!");
+        }
+    }
+
+    private async Task CreateScoresheet()
+    {
+        _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Name = Scoresheet.Name });
+    }
+
+    private async Task EditScoresheets()
+    {
+        await _scoresheetAppService.UpdateAllAsync(Scoresheet.GroupId, new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType });
+    }
+
+    private async Task EditScoresheetsAndCreateNewVersion()
+    {
+        await _scoresheetAppService.UpdateAllAsync(Scoresheet.GroupId, new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType });
+        _ = await _scoresheetAppService.CloneScoresheetAsync(Scoresheet.Id, null, null);
+    }
+
+    private async Task DeleteScoresheet()
+    {
+        await _scoresheetAppService.DeleteAsync(Scoresheet.Id);
+    }
+}
