@@ -1,11 +1,14 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.Flex.Scoresheets;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
@@ -16,6 +19,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
     [Authorize]
     public class MappingModel : AbpPageModel
     {
+        public List<SelectListItem> ScoresheetOptionsList { get; set; } = [];
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
@@ -25,6 +29,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
         private readonly IApplicationFormAppService _applicationFormAppService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
+        private readonly IScoresheetAppService _scoresheetAppService;
 
         [BindProperty]
         public ApplicationFormDto? ApplicationFormDto { get; set; }
@@ -41,16 +46,23 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         [BindProperty]
         public string? IntakeProperties { get; set; }
 
+        [BindProperty]
+        [Display(Name = "")]
+        public Guid? ScoresheetId { get; set; }
+
         public MappingModel(IApplicationFormAppService applicationFormAppService,
-                            IApplicationFormVersionAppService applicationFormVersionAppService)
+                            IApplicationFormVersionAppService applicationFormVersionAppService,
+                            IScoresheetAppService scoresheetAppService)
         {
             _applicationFormAppService = applicationFormAppService;
             _applicationFormVersionAppService = applicationFormVersionAppService;
+            _scoresheetAppService = scoresheetAppService;
         }
 
         public async Task OnGetAsync()
         {
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
+            ScoresheetId = ApplicationFormDto.ScoresheetId;
             ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
 
             if (ApplicationFormVersionDtoList != null)
@@ -94,6 +106,13 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
             }
 
             IntakeProperties = JsonSerializer.Serialize(properties);
+            var scoresheets = await _scoresheetAppService.GetAllScoresheetsAsync();
+            ScoresheetOptionsList = [];
+            foreach (var scoresheet in scoresheets)
+            {
+                ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Name + " V" + scoresheet.Version + ".0", Value =scoresheet.Id.ToString()});
+            }
+            ScoresheetOptionsList = ScoresheetOptionsList.OrderBy(item => item.Text).ToList();
         }
     }
 }
