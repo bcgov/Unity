@@ -9,8 +9,6 @@ namespace Unity.Flex.Scoresheets
         public string Label { get; set; } = string.Empty;
         public string? Description {  get; set; }
         public bool Enabled { get; set; }
-
-        public Guid QuestionId { get; set; }
         public uint QuestionType { get; set; }
     }
 }

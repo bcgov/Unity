@@ -8,12 +8,13 @@ namespace Unity.Flex.Scoresheets
     public interface IScoresheetAppService : IApplicationService
     {
         Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto);
-        Task<QuestionDto> CreateQuestionAsync(Guid id, CreateQuestionDto dto);
-        Task<ScoresheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto);
+        Task<QuestionDto> CreateQuestionInHighestOrderSectionAsync(Guid scoresheetId, CreateQuestionDto dto);
+        Task<ScoresheetSectionDto> CreateSectionAsync(Guid scoresheetId, CreateSectionDto dto);
         Task DeleteAsync(Guid id);
+        Task<ClonedObjectDto> CloneScoresheetAsync(Guid scoresheetIdToClone, Guid? sectionIdToClone, Guid? questionIdToClone);
         Task<ScoresheetDto> GetAsync(Guid id);
-        Task<List<ScoresheetDto>> GetListAsync();
+        Task<List<ScoresheetDto>> GetListAsync(List<Guid> scoresheetIdsToLoad);
         Task SaveOrder(List<ScoresheetItemDto> dto);
-        Task<ScoresheetDto> UpdateAsync(Guid id, EditScoresheetDto dto);
+        Task UpdateAllAsync(Guid groupId, EditScoresheetsDto dto);
     }
 }
