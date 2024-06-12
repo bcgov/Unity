@@ -104,9 +104,13 @@ $(function () {
             ).then(function (form) {
                 // Set Example Submission Object
                 form.submission = data.submission.submission;
+                form.refresh();
                 addEventListeners();
+                
             }).finally(function() {
-                //storeRenderedHtml();
+                setTimeout(function () {
+                    storeRenderedHtml();
+                }, 2000);
             });
         } catch (error) {
             console.error(error);
