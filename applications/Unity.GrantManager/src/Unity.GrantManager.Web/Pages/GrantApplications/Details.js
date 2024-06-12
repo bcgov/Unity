@@ -261,7 +261,7 @@ $(function () {
     });
 
     $('#printPdf').click(function () {
-        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
+        let submissionId = document.getElementById('ChefsSubmissionId').value;
         unity.grantManager.intakes.submission
             .getSubmission(submissionId)
             .done(function (result) {

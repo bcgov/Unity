@@ -38,6 +38,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? ApplicationFormSubmissionId { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
+        public string? ChefsSubmissionId { get; set; } = null;
+        
+        [BindProperty(SupportsGet = true)]
         public string? ApplicationFormSubmissionData { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
@@ -70,6 +73,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             if (applicationFormSubmission != null)
             {
+                ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
                 ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
                 ApplicationFormSubmissionData = applicationFormSubmission.Submission;
                 ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
