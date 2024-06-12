@@ -32,8 +32,7 @@ public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentSta
     public int? EconomicImpact { get; set; }
     public int? InclusiveGrowth { get; set; }
     public int? CleanGrowth { get; set; }
-    public Guid? ScoresheetId { get; set; }
-    
+        
 
     [NotMapped]
     public UnityWorkflow<AssessmentState, AssessmentAction> Workflow { get; private set; }
@@ -50,14 +49,12 @@ public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentSta
         Guid id,
         Guid applicationId,
         Guid assessorId,
-        Guid? scoresheetId,
         AssessmentState status = AssessmentState.IN_PROGRESS)
         : base(id)
     {
         ApplicationId = applicationId;
         AssessorId = assessorId;
         Status = status;
-        ScoresheetId = scoresheetId;
         Workflow = new UnityWorkflow<AssessmentState, AssessmentAction>(() => Status, s => Status = s, ConfigureWorkflow);
     }
 

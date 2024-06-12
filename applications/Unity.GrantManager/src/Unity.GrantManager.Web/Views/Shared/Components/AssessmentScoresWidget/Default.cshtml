@@ -9,6 +9,7 @@
 }
 
 <form id="assessmentScoresWidgetForm" action="Widgets/AssessmentScores/UpdateAssessmentScores" method="post" enctype="multipart/form-data">
+    <abp-input type="hidden" id="AssessmentId" asp-for="@Model.AssessmentId" />
     <div class="container-fluid px-3" id="assessment-scoresheet">
         <div class="scores-block-wrapper assessment-scores-container">
             <div class="scores-block">
@@ -114,15 +115,18 @@
     function saveChanges(questionId) {
         const inputField = document.getElementById('answer-' + questionId);
         const saveButton = document.getElementById('save-' + questionId);
-
-        // Your save logic here
-        
-
-        // After saving, update the original value to the new value
-        inputField.setAttribute('data-original-value', inputField.value);
-        saveButton.disabled = true;
-
-        updateSubtotal();
+        const assessmentId = $("#AssessmentId").val();
+        unity.flex.scoresheets.scoresheet.saveAnswer(assessmentId, questionId, inputField.value)
+            .then(response => {
+                abp.notify.success(
+                    'Answer is successfully saved.',
+                    'Save Answer'
+                );
+                inputField.setAttribute('data-original-value', inputField.value);
+                saveButton.disabled = true;
+                updateSubtotal();
+            });
+                
     }
 
     function discardChanges(questionId) {

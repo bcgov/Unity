@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\modules\Unity.Flex\src\Unity.Flex.Application\Unity.Flex.Application.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Domain\Unity.Notifications.Domain.csproj" />
   </ItemGroup>

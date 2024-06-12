@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.Flex.Domain;
+using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
@@ -74,6 +75,10 @@ public static class FlexDbContextModelCreatingExtensions
                 FlexDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+
+            b.HasMany(e => e.Answers)
+                .WithOne()
+                .HasForeignKey(x => x.ScoresheetInstanceId);
         });
     }
 

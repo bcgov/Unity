@@ -1,5 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp;
@@ -12,12 +15,13 @@ public class AssessmentManager : DomainService
 {
     private readonly IAssessmentRepository _assessmentRepository;
     private readonly IApplicationFormRepository _applicationFormRepository;
-
+    private readonly IScoresheetInstanceRepository _scoresheetInstanceRepository;
     public AssessmentManager(
-        IAssessmentRepository assessmentRepository, IApplicationFormRepository applicationFormRepository)
+        IAssessmentRepository assessmentRepository, IApplicationFormRepository applicationFormRepository, IScoresheetInstanceRepository scoresheetInstanceRepository)
     {
         _assessmentRepository = assessmentRepository;
         _applicationFormRepository = applicationFormRepository; 
+        _scoresheetInstanceRepository = scoresheetInstanceRepository;
     }
 
     /// <summary>
@@ -47,13 +51,19 @@ public class AssessmentManager : DomainService
 
         var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
 
-        return await _assessmentRepository.InsertAsync(
+        var assessment = await _assessmentRepository.InsertAsync(
             new Assessment(
                 GuidGenerator.Create(),
                 application.Id,
-                assessorUser.Id,
-                form.ScoresheetId),
+                assessorUser.Id),
             autoSave: true);
+
+        if (form.ScoresheetId != null)
+        {
+            await _scoresheetInstanceRepository.InsertAsync(new ScoresheetInstance(Guid.NewGuid(), form.ScoresheetId ?? Guid.Empty, assessment.Id, "Assessment"));
+        }
+
+        return assessment;
     }
 
     /// <summary>
