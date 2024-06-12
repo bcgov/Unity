@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -16,6 +15,7 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Features;
+using Unity.Modules.Shared.Correlation;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationForms
 {
@@ -58,7 +58,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         public MappingModel(IApplicationFormAppService applicationFormAppService,
                             IApplicationFormVersionAppService applicationFormVersionAppService,
                             IWorksheetAppService worksheetAppService,
-                            IScoresheetAppService scoresheetAppService)
+                            IScoresheetAppService scoresheetAppService,
                             IFeatureChecker featureChecker)
         {
             _applicationFormAppService = applicationFormAppService;
@@ -129,16 +129,18 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-            var scoresheets = await _scoresheetAppService.GetAllScoresheetsAsync();
-            ScoresheetOptionsList = [];
-            foreach (var scoresheet in scoresheets)
-            {
-                ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Name + " V" + scoresheet.Version + ".0", Value =scoresheet.Id.ToString()});
-            }
-            ScoresheetOptionsList = ScoresheetOptionsList.OrderBy(item => item.Text).ToList();
-            
-                // Get the available field from the worksheets
-                var worksheets = await _worksheetAppService.GetListAsync();
+                var scoresheets = await _scoresheetAppService.GetAllScoresheetsAsync();
+                ScoresheetOptionsList = [];
+
+                foreach (var scoresheet in scoresheets)
+                {
+                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Name + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
+                }
+
+                ScoresheetOptionsList = [.. ScoresheetOptionsList.OrderBy(item => item.Text)];
+
+                // Get the available field from the worksheets for the current Form
+                var worksheets = await _worksheetAppService.GetListByCorrelationAsync(ApplicationFormDto?.Id ?? Guid.Empty, CorrelationConsts.Form);
 
                 var fields = worksheets.SelectMany(s => s.Sections).SelectMany(s => s.Fields).ToList();
 

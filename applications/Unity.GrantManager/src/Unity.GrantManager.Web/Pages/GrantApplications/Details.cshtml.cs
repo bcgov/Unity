@@ -25,7 +25,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         private readonly GrantApplicationAppService _grantApplicationAppService;
         private readonly IWorksheetListAppService _worksheetListAppService;
         private readonly IFeatureChecker _featureChecker;
-        private readonly ICurrentTenant _currentTenant;
 
         [BindProperty(SupportsGet = true)]
         public string? SubmissionId { get; set; } = null;
@@ -39,6 +38,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public Guid ApplicationFormId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public Guid AssessmentId { get; set; }
@@ -69,7 +71,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         public DetailsModel(GrantApplicationAppService grantApplicationAppService,
             IWorksheetListAppService worksheetListAppService,
-            ICurrentTenant currentTenant,
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration)
@@ -77,7 +78,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             _grantApplicationAppService = grantApplicationAppService;
             _worksheetListAppService = worksheetListAppService;
             _featureChecker = featureChecker;
-            _currentTenant = currentTenant;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
@@ -90,12 +90,13 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                var worksheets = await _worksheetListAppService.GetListByCorrelationAsync(_currentTenant.Id, CorrelationConsts.Tenant);
+                var worksheets = await _worksheetListAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
                 CustomTabs = worksheets.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).ToList();
             }
 
             if (applicationFormSubmission != null)
             {
+                ApplicationFormId = applicationFormSubmission.ApplicationFormId;
                 ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
                 ApplicationFormSubmissionData = applicationFormSubmission.Submission;
                 ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;

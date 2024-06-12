@@ -417,6 +417,7 @@ $(function () {
         let uiAnchor = $(this).attr('data-ui-anchor');
         let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
         let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
+        let formId = decodeURIComponent($("#ApplicationFormId").val());
         let formData = $(`#${formDataName}`).serializeArray();        
         let customFormObj = {};
 
@@ -428,7 +429,7 @@ $(function () {
             customFormObj[this.name] = (this.checked).toString();
         });
 
-        updateCustomForm(applicationId, customFormObj, uiAnchor, id);
+        updateCustomForm(applicationId, formId, customFormObj, uiAnchor, id);
     });
 
     PubSub.subscribe(
@@ -440,13 +441,15 @@ $(function () {
     );
 });
 
-function updateCustomForm(applicationId, customFormObj, uiAnchor, saveId) {
+function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId) {
     let customFormUpdate = {
-        correlationId: applicationId,
-        correlationProvider: 'Application',
+        instanceCorrelationId: applicationId,
+        instanceCorrelationProvider: 'Application',
+        sheetCorrelationId: formId,
+        sheetCorrelationProvider: 'Form',
         uiAnchor: uiAnchor,
         customFields: customFormObj
-    }
+    }     
 
     $(`#${saveId}`).prop('disabled', true);
     unity.flex.worksheetInstances.worksheetInstance.update(customFormUpdate)

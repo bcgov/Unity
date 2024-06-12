@@ -18,9 +18,11 @@
     <form id="@($"{Model.Name}_form")">
         @await Component.InvokeAsync("WorksheetInstanceWidget",
                  new
-                 {
-                     correlationId = Model.CorrelationId,
-                     correlationProvider = Model.CorrelationProvider,
+                 {                     
+                     instanceCorrelationId = Model.InstanceCorrelationId,
+                     instanceCorrelationProvider = Model.InstanceCorrelationProvider,
+                     sheetCorrelationId = Model.SheetCorrelationId,
+                     sheetCorrelationProvider = Model.SheetCorrelationProvider,                     
                      uiAnchor = Model.UiAnchor,
                      name = Model.Name,
                      title = Model.Title

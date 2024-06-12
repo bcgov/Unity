@@ -89,7 +89,7 @@ namespace Unity.GrantManager.Intakes
                 Submission = formSubmission.ToString()
             });
 
-            await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id, formSubmission, formVersionSubmissionHeaderMapping);
+            await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id, application.ApplicationFormId, formSubmission, formVersionSubmissionHeaderMapping);
             
             await uow.SaveChangesAsync();
 

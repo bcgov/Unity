@@ -19,16 +19,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
         {
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid correlationId, 
-            string correlationProvider, 
+        public async Task<IViewComponentResult> InvokeAsync(Guid instanceCorrelationId, 
+            string instanceCorrelationProvider, 
+            Guid sheetCorrelationId,
+            string sheetCorrelationProvider,
             string uiAnchor,
             string name,
             string title)
         {
             CustomTabWidgetViewModel model = new()
             {
-                CorrelationId = correlationId,
-                CorrelationProvider = correlationProvider,
+                InstanceCorrelationId = instanceCorrelationId,
+                InstanceCorrelationProvider = instanceCorrelationProvider,
+                SheetCorrelationId = sheetCorrelationId,
+                SheetCorrelationProvider = sheetCorrelationProvider,
                 UiAnchor = uiAnchor,
                 Name = name,
                 Title = title

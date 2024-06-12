@@ -2,18 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
-using Unity.Flex.Worksheets.Definitions;
-using Unity.Flex.Worksheets.Values;
-using Unity.Modules.Shared.Correlation;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
 
@@ -23,14 +18,20 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
         ScriptTypes = [typeof(WorksheetInstanceWidgetScriptBundleContributor)],
         StyleTypes = [typeof(WorksheetInstanceWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInstanceAppService, IWorksheetAppService worksheetAppService, ICurrentTenant currentTenant) : AbpViewComponent
+public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInstanceAppService, IWorksheetAppService worksheetAppService) : AbpViewComponent
 {
-    public async Task<IViewComponentResult> InvokeAsync(Guid correlationId, string correlationProvider, string uiAnchor)
+    public async Task<IViewComponentResult> InvokeAsync(Guid instanceCorrelationId,
+        string instanceCorrelationProvider,
+        Guid sheetCorrelationId,
+        string sheetCorrelationProvider,
+        string uiAnchor)
     {
         WorksheetViewModel viewModel;
 
-        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAsync(correlationId, correlationProvider, uiAnchor);
-        var worksheet = await worksheetAppService.GetByCorrelationAsync(currentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, uiAnchor);
+        if (instanceCorrelationId == Guid.Empty && sheetCorrelationId == Guid.Empty) return View(new WorksheetViewModel());
+
+        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, instanceCorrelationProvider, uiAnchor);
+        var worksheet = await worksheetAppService.GetByCorrelationAnchorAsync(sheetCorrelationId, sheetCorrelationProvider, uiAnchor);
 
         if (worksheet == null) return View(new WorksheetViewModel());
 

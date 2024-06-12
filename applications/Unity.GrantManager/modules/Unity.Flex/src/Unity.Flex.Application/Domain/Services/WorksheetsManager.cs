@@ -8,7 +8,6 @@ using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets.Values;
-using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
@@ -24,8 +23,8 @@ namespace Unity.Flex.Domain.Services
 
             if (dictionary == null || dictionary.Count == 0) return;
 
-            var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationByAnchorAsync(eventData.CorrelationId, eventData.CorrelationProvider, eventData.UiAnchor, true);
-            var worksheet = await worksheetRepository.GetByCorrelationByAnchorAsync(CurrentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, eventData.UiAnchor, true);
+            var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationAnchorAsync(eventData.InstanceCorrelationId, eventData.InstanceCorrelationProvider, eventData.UiAnchor, true);                       
+            var worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(eventData.SheetCorrelationId, eventData.SheetCorrelationProvider, eventData.UiAnchor, true);
 
             var fields = dictionary
                     .BuildFields()
@@ -86,8 +85,8 @@ namespace Unity.Flex.Domain.Services
         {
             var newWorksheetInstance = new WorksheetInstance(Guid.NewGuid(),
                    worksheet.Id,
-                   eventData.CorrelationId,
-                   eventData.CorrelationProvider,
+                   eventData.InstanceCorrelationId,
+                   eventData.InstanceCorrelationProvider,
                    eventData.UiAnchor);
 
             foreach (var field in fields)
@@ -127,14 +126,14 @@ namespace Unity.Flex.Domain.Services
 
             foreach (var worksheetName in worksheetNames)
             {
-                var worksheet = await worksheetRepository.GetByCorrelationByNameAsync(CurrentTenant.Id ?? Guid.Empty, CorrelationConsts.Tenant, worksheetName, true);
+                var worksheet = await worksheetRepository.GetByCorrelationByNameAsync(eventData.SheetCorrelationId, eventData.SheetCorrelationProvider, worksheetName, true);
 
                 if (worksheet != null)
                 {
                     var newInstance = new WorksheetInstance(Guid.NewGuid(),
                      worksheet.Id,
-                     eventData.CorrelationId,
-                     eventData.CorrelationProvider,
+                     eventData.InstanceCorrelationId,
+                     eventData.InstanceCorrelationProvider,
                      worksheet.UIAnchor);
 
                     var allFields = worksheet.Sections.SelectMany(s => s.Fields);

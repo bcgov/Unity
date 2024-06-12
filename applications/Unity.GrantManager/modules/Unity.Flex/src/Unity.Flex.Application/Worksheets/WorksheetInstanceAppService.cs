@@ -9,9 +9,9 @@ namespace Unity.Flex.WorksheetInstances
     [Authorize]
     public class WorksheetInstanceAppService(IWorksheetInstanceRepository worksheetInstanceRepository, WorksheetsManager worksheetsManager) : FlexAppService, IWorksheetInstanceAppService
     {
-        public virtual async Task<WorksheetInstanceDto> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string uiAnchor)
+        public virtual async Task<WorksheetInstanceDto> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor)
         {
-            return ObjectMapper.Map<WorksheetInstance?, WorksheetInstanceDto>(await worksheetInstanceRepository.GetByCorrelationByAnchorAsync(correlationId, correlationProvider, uiAnchor, true));
+            return ObjectMapper.Map<WorksheetInstance?, WorksheetInstanceDto>(await worksheetInstanceRepository.GetByCorrelationAnchorAsync(correlationId, correlationProvider, uiAnchor, true));
         }
 
         public virtual async Task<WorksheetInstanceDto> CreateAsync(CreateWorksheetInstanceDto dto)

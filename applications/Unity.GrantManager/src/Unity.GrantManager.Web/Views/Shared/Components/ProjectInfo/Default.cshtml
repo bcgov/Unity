@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
@@ -171,11 +172,13 @@
 
         @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            @await Component.InvokeAsync("WorksheetInstanceWidget",
+            @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
                      new
                      {
-                         correlationId = Model.ApplicationId,
-                         correlationProvider = CorrelationConsts.Application,
+                         instanceCorrelationId = Model.ApplicationId,
+                         instanceCorrelationProvider = CorrelationConsts.Application,
+                         sheetCorrelationId = Model.ApplicationFormId,
+                         sheetCorrelationProvider = CorrelationConsts.Form,
                          uiAnchor = FlexConsts.ProjectInfoUiAnchor
                      })
         }

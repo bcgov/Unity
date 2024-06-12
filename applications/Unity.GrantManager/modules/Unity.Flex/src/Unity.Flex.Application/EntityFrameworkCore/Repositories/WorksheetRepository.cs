@@ -11,7 +11,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class WorksheetRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Worksheet, Guid>(dbContextProvider), IWorksheetRepository
     {
-        public async Task<Worksheet?> GetByCorrelationByAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false)
+        public async Task<Worksheet?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
 
@@ -39,11 +39,13 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .FirstOrDefaultAsync(s => s.Sections.Any(s => s.Id == id));
         }
 
-        public async Task<List<Worksheet>> GetListOrderedAsync(bool includeDetails = false)
+        public async Task<List<Worksheet>> GetListOrderedAsync(Guid correlationId, string correlationProvider, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
 
-            return await dbSet.IncludeDetails(includeDetails).OrderBy(s => s.Name).ToListAsync();
+            return await dbSet.IncludeDetails(includeDetails)
+                .Where(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider)
+                .OrderBy(s => s.Name).ToListAsync();
         }
     }
 }

@@ -10,9 +10,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
     {
         [HttpGet]
         [Route("RefreshCustomTab")]
-        public IActionResult CustomTab(Guid correlationId, string correlationProvider, string uiAnchor, string name, string title)
+        public IActionResult CustomTab(Guid instanceCorrelationId, string instanceCorrelationProvider, Guid sheetCorrelationId, string sheetCorrelationProvider, string uiAnchor, string name, string title)
         { 
-            return ViewComponent("CustomTabWidget", new { correlationId, correlationProvider, uiAnchor, name, title });
+            return ViewComponent("CustomTabWidget", new { instanceCorrelationId, instanceCorrelationProvider, sheetCorrelationId, sheetCorrelationProvider, uiAnchor, name, title });
         }
     }
 }
