@@ -105,7 +105,8 @@ $(function () {
                 // Set Example Submission Object
                 form.submission = data.submission.submission;
                 addEventListeners();
-                storeRenderedHtml();
+            }).finally(function() {
+                //storeRenderedHtml();
             });
         } catch (error) {
             console.error(error);
