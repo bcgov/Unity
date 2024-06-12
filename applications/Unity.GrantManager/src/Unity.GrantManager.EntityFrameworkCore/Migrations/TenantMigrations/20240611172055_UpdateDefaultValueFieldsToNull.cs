@@ -44,7 +44,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 ("Applications", "Forestry", true),
                 ("Applications", "ForestryFocus", true),
                 ("Applications", "City", true),
-                ("Applications", "EconomicRegion", true),
                 ("Applications", "Community", true),
                 ("Applications", "ElectoralDistrict", true),
                 ("Applications", "RegionalDistrict", true),
