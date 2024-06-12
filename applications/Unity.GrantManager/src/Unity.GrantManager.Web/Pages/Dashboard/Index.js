@@ -51,17 +51,12 @@ function reloadDashboard() {
 
     unity.grantManager.dashboard.dashboard.getApplicationAssigneeCount(params).then(applicationAssignees => {
         initializeChart(applicationAssignees.map(obj => obj.applicationAssignee), applicationAssignees.map(obj => obj.count),
-            'Application Assignee Overview', 'applicationAssigneeChart', 465, 280)
+            'Application Assignee Overview', 'applicationAssigneeChart', 698, 420)
     });
 
     unity.grantManager.dashboard.dashboard.getRequestedAmountPerSubsector(params).then(subSector => {
         initializeChart(subSector.map(obj => obj.subsector), subSector.map(obj => obj.totalRequestedAmount),
-            'Total Funding Requested Per Sub-Sector', 'subsectorRequestedAmountChart', 465, 280)
-    });
-
-    unity.grantManager.dashboard.dashboard.getSectorCount(params).then(sector => {
-        initializeChart(sector.map(obj => obj.sector), sector.map(obj => obj.count), 'Submissions by Sector',
-            'sectorChart', 465, 280);
+            'Total Funding Requested Per Sub-Sector', 'subsectorRequestedAmountChart', 698, 420)
     });
 }
 
