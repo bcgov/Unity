@@ -44,7 +44,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 ("Applications", "Forestry", true),
                 ("Applications", "ForestryFocus", true),
                 ("Applications", "City", true),
-                ("Applications", "EconomicRegion", true),
                 ("Applications", "Community", true),
                 ("Applications", "ElectoralDistrict", true),
                 ("Applications", "RegionalDistrict", true),
@@ -62,12 +61,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 ("Applicants", "Sector", true),
                 ("Applicants", "SubSector", true),
                 ("Applicants", "SectorSubSectorIndustryDesc", true),
-                ("Applicants", "ApproxNumberOfEmployees", true),
-                ("ApplicantAgents", "Name", false),
-                ("ApplicantAgents", "Phone", false),
-                ("ApplicantAgents", "Phone2", false),
-                ("ApplicantAgents", "Email", false),
-                ("ApplicantAgents", "Title", false),
+                ("Applicants", "ApproxNumberOfEmployees", true)
             };
         }
     }
