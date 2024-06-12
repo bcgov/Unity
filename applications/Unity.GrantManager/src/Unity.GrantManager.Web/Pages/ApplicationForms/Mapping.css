@@ -6,7 +6,7 @@
 }
 
 .mapping-container {
-    height: calc(100vh - 300px);
+    height: calc(100vh - 350px);
     width: calc(100vw - 250px);
     overflow: scroll;
     border: 1px solid black;

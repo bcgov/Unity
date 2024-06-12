@@ -197,6 +197,10 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-       
+        public async Task<List<ScoresheetDto>> GetAllScoresheetsAsync()
+        {
+            var result = await _scoresheetRepository.GetListAsync();
+            return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
+        }
     }
 }

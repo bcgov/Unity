@@ -30,7 +30,7 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IFormsApiService _formsApiService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
-
+        private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
         public ApplicationFormAppService(IRepository<ApplicationForm, Guid> repository,
             IStringEncryptionService stringEncryptionService,
             IApplicationFormVersionAppService applicationFormVersionAppService,
@@ -42,6 +42,7 @@ namespace Unity.GrantManager.ApplicationForms
             _applicationFormVersionAppService = applicationFormVersionAppService;
             _formsApiService = formsApiService;
             _applicationFormVersionRepository = applicationFormVersionRepository;
+            _applicationFormRepository = repository;
         }
 
         public override async Task<ApplicationFormDto> CreateAsync(CreateUpdateApplicationFormDto input)
@@ -107,6 +108,13 @@ namespace Unity.GrantManager.ApplicationForms
             IQueryable<ApplicationFormVersion> queryableFormVersions = _applicationFormVersionRepository.GetQueryableAsync().Result;
             var formVersions = queryableFormVersions.Where(c => c.ApplicationFormId.Equals(id)).ToList();
             return await Task.FromResult<IList<ApplicationFormVersionDto>>(ObjectMapper.Map<List<ApplicationFormVersion>, List<ApplicationFormVersionDto>>(formVersions.OrderByDescending(s => s.Version).ToList()));
+        }
+
+        public async Task SaveApplicationFormScoresheet(FormScoresheetDto dto)
+        {
+            var appForm = await _applicationFormRepository.GetAsync(dto.ApplicationFormId);
+            appForm.ScoresheetId = dto.ScoresheetId;
+            await _applicationFormRepository.UpdateAsync(appForm);
         }
     }
 }

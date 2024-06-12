@@ -20,5 +20,6 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string? ConnectionHttpStatus { get; set; }
     public DateTime? AttemptedConnectionDate { get; set; }
     public bool Payable {  get; set; }
+    public Guid? ScoresheetId {  get; set; }
     public Guid? TenantId { get; set; }
 }
