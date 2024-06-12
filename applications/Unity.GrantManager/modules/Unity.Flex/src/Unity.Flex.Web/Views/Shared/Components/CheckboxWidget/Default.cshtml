@@ -6,7 +6,7 @@
 @if (Model.Field != null)
 {
     <div class="custom-checkbox">
-        @if ((bool)(Model.Field?.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type) ?? false) == true)
+        @if ((bool)(Model.Field?.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type) ?? false))
         {
             <input type="@Model.Field?.Type.ConvertInputType()"
                    id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")"

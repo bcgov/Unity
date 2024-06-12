@@ -11,7 +11,6 @@ using Volo.Abp.Users;
 using Microsoft.Extensions.Configuration;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applications;
-using Volo.Abp.MultiTenancy;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Features;
 using System.Linq;
