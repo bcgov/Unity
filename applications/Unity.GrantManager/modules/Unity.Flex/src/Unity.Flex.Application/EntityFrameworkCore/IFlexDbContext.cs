@@ -13,6 +13,7 @@ public interface IFlexDbContext : IEfCoreDbContext
 {
     // Worksheets
     DbSet<Worksheet> Worksheets { get; set; }
+    DbSet<WorksheetLink> WorksheetLinks { get; set; }
     DbSet<WorksheetInstance> WorksheetsInstances { get; set; }
     DbSet<WorksheetSection> WorksheetsSections { get; set; }
     DbSet<CustomField> CustomFields { get; set; }

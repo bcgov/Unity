@@ -13,10 +13,11 @@ public class FlexDbContext(DbContextOptions<FlexDbContext> options) : AbpDbConte
 {
     // Worksheets
     public DbSet<Worksheet> Worksheets { get; set; }
+    public DbSet<WorksheetLink> WorksheetLinks { get; set; }
     public DbSet<WorksheetInstance> WorksheetsInstances { get; set; }
     public DbSet<WorksheetSection> WorksheetsSections { get; set; }
     public DbSet<CustomField> CustomFields { get; set; }
-    public DbSet<CustomFieldValue> CustomFieldValues { get; set; }
+    public DbSet<CustomFieldValue> CustomFieldValues { get; set; }    
 
     // Scoresheets
     public DbSet<Scoresheet> Scoresheets { get; set; }

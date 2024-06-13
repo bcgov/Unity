@@ -18,7 +18,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Domain\WorksheetLinks\" />
 		<Folder Include="Integration\" />
 	</ItemGroup>
 
