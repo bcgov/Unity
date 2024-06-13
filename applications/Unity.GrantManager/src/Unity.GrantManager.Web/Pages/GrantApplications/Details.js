@@ -240,6 +240,7 @@ $(function () {
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
                 assessmentUserDetailsWidgetManager.refresh();
                 assessmentScoresWidgetManager.refresh();
+                updateSubtotal()
                 checkCurrentUser(data);
             }
             else {

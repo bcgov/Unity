@@ -62,15 +62,6 @@ function positiveIntegersOnly(e) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', (event) => {
-    const answerInputs = document.querySelectorAll('.answer-input');
-    answerInputs.forEach(input => {
-        input.setAttribute('data-original-value', input.value);
-    });
-
-    updateSubtotal();
-});
-
 function handleInputChange(questionId) {
     const inputField = document.getElementById('answer-' + questionId);
     const saveButton = document.getElementById('save-' + questionId);
@@ -84,19 +75,27 @@ function handleInputChange(questionId) {
 }
 
 function updateSubtotal() {
-    const answerInputs = document.querySelectorAll('.answer-input');
-    let subtotal = 0;
-    answerInputs.forEach(input => {
-        subtotal += parseInt(input.value) || 0;
-    });
-    document.getElementById('subTotal').value = subtotal;
+    setTimeout(function () {
+        const answerInputs = document.querySelectorAll('.answer-input');
+        let subtotal = 0;
+        answerInputs.forEach(input => {
+            subtotal += parseFloat(input.value) || 0;
+        });
+
+        let subTotalField = document.getElementById('scoresheetSubtotal');
+        if (subTotalField) {
+            subTotalField.value = subtotal;
+        }
+    }, 500);
 }
+
 
 function saveChanges(questionId) {
     const inputField = document.getElementById('answer-' + questionId);
     const saveButton = document.getElementById('save-' + questionId);
     const assessmentId = $("#AssessmentId").val();
-    unity.flex.scoresheets.scoresheetInstance.saveAnswer(assessmentId, questionId, inputField.value)
+    const answerValue = inputField.value || 0;
+    unity.flex.scoresheets.scoresheetInstance.saveAnswer(assessmentId, questionId, answerValue)
         .then(response => {
             abp.notify.success(
                 'Answer is successfully saved.',

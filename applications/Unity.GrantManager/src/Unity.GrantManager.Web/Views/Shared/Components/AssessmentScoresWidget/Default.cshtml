@@ -45,7 +45,7 @@
                                                                     <p>@question.Description</p>
                                                                     <div class="mb-3">
                                                                         <label for="answer-@question.Id" class="form-label">Answer</label>
-                                                                        <input type="number" class="form-control answer-input" id="answer-@question.Id" name="Answers[@question.Id]" value="" data-original-value="" oninput="handleInputChange('@question.Id')" />
+                                                                        <input type="number" class="form-control answer-input" id="answer-@question.Id" name="Answers[@question.Id]" value="@question.Answer" data-original-value="@question.Answer" oninput="handleInputChange('@question.Id')" />
                                                                     </div>
                                                                     <div class="btn-group">
                                                                         <button type="button" class="btn btn-primary" id="save-@question.Id" disabled onclick="saveChanges('@question.Id')">SAVE CHANGES</button>
@@ -75,8 +75,8 @@
                     </div>
                 </div>
                 <div class="assessment-sum p-4">
-                    <label class="form-label" for="subTotal">Subtotal</label>
-                    <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" min="0" max="2147483647" />
+                    <label class="form-label" for="scoresheetSubtotal">Subtotal</label>
+                    <input type="number" size="18" class="form-control" disabled="disabled" name="ScoresheetSubtotal" id="scoresheetSubtotal" min="0" max="2147483647" />
                 </div>
             </div>
         </div>

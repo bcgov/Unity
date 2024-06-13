@@ -9,6 +9,7 @@ using Unity.GrantManager.Assessments;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets;
+using System.Linq;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 {
@@ -45,6 +46,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 if (scoresheet != null)
                 {
                     scoresheetDto = ObjectMapper.Map<Scoresheet, ScoresheetDto?>(scoresheet);
+                    foreach (var answer in scoresheetInstance.Answers)
+                    {
+                        foreach (var section in scoresheetDto!.Sections)
+                        {
+                            var question = section.Fields.FirstOrDefault(q => q.Id == answer.QuestionId);
+                            if (question != null)
+                            {
+                                question.Answer = answer.CurrentScore;
+                            }
+                        }
+                    }
                 }
             }
             AssessmentScoresWidgetViewModel model = new()
