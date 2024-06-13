@@ -1,6 +1,7 @@
 $(function () {
     let selectedReviewDetails = null;
-    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
+    let hasRenderedHtml = "False";
+    // document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
     function initializeDetailsPage() {
@@ -105,7 +106,7 @@ $(function () {
                 // Set Example Submission Object
                 form.submission = data.submission.submission;
                 addEventListeners();
-                storeRenderedHtml();
+                // fix, WIP - storeRenderedHtml();
             });
         } catch (error) {
             console.error(error);
