@@ -55,6 +55,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public bool HasScoresheet {  get; set; } = false;
+
         public DetailsModel(GrantApplicationAppService grantApplicationAppService, ICurrentUser currentUser, IConfiguration configuration)
         {
             _grantApplicationAppService = grantApplicationAppService;

@@ -7,42 +7,121 @@
     Layout = null;
 }
 
-
-<form id="assessmentScoresWidgetForm" action="Widgets/AssessmentScores/UpdateAssessmentScores" method="post" enctype="multipart/form-data">
-    <div class="container-fluid px-3">
-        <div class="scores-block-wrapper assessment-scores-container">
-            <div class="scores-block">
-                <div class="scores-block-left">
-                    <div class="scores-block-score">
-                        <label class="form-label" for="financialAnalysis">Financial Analysis</label>
-                        <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
-                    </div>
-
-                    <div class="scores-block-score">
-                        <label class="form-label" for="inclusiveGrowth">Inclusive Growth</label>
-                        <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.InclusiveGrowth" />
+@if (Model.Scoresheet != null)
+{
+    <form id="assessmentScoresheetForm" action="Widgets/AssessmentScoresheet/UpdateAssessmentScoresheet" method="post" enctype="multipart/form-data">
+        <abp-input type="hidden" id="AssessmentId" asp-for="@Model.AssessmentId" />
+        <div class="container-fluid px-3" id="assessment-scoresheet">
+            <div>
+                <div>
+                    <div class="accordion" id="scoresheetAccordion">
+                        @if (Model.Scoresheet.Sections.Any())
+                        {
+                            var sectionNumber = 1;
+                            @foreach (var sec in Model.Scoresheet.Sections.OrderBy(s => s.Order))
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading-@sec.Id">
+                                        <button id="section-button" class="accordion-button collapsed preview-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@sec.Id" aria-expanded="true" aria-controls="collapse-@sec.Id">
+                                            @sectionNumber. @sec.Name
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-@sec.Id" class="accordion-collapse collapse" aria-labelledby="heading-@sec.Id">
+                                        <div class="accordion-body">
+                                            <div class="accordion" id="questionsAccordion-@sec.Id">
+                                                @if (sec.Fields != null && sec.Fields.Any())
+                                                {
+                                                    var questionNumber = 1;
+                                                    @foreach (var question in sec.Fields.OrderBy(q => q.Order))
+                                                    {
+                                                        <div class="accordion-item">
+                                                            <h2 class="accordion-header" id="question-heading-@question.Id">
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
+                                                                    @sectionNumber.@questionNumber @question.Name
+                                                                </button>
+                                                            </h2>
+                                                            <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id" data-bs-parent="#questionsAccordion-@sec.Id">
+                                                                <div class="accordion-body">
+                                                                    <p>@question.Description</p>
+                                                                    <div class="mb-3">
+                                                                        <label for="answer-@question.Id" class="form-label">Answer</label>
+                                                                        <input type="number" class="form-control answer-input" id="answer-@question.Id" name="Answers[@question.Id]" value="" data-original-value="" oninput="handleInputChange('@question.Id')" />
+                                                                    </div>
+                                                                    <div class="btn-group">
+                                                                        <button type="button" class="btn btn-primary" id="save-@question.Id" disabled onclick="saveChanges('@question.Id')">SAVE CHANGES</button>
+                                                                        <button type="button" class="btn btn-secondary" onclick="discardChanges('@question.Id')">DISCARD CHANGES</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        questionNumber++;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <p>No questions available.</p>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                sectionNumber++;
+                            }
+                        }
+                        else
+                        {
+                            <p>No sections available.</p>
+                        }
                     </div>
                 </div>
-
-                <div class="scores-block-right">
-                    <div class="scores-block-score">
-                        <label class="form-label" for="economicImpact">Economic Impact</label>
-                        <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.EconomicImpact" />
-                    </div>
-
-                    <div class="scores-block-score">
-                        <label class="form-label" for="CleanGrowth">Clean Growth</label>
-                        <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
-                    </div>
-                </div> 
-            </div>
-            <div class="assessment-sum">
-                <label class="form-label" for="subTotal">Subtotal</label>
-                <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" value="@Model.ScoreTotal()" min="0" max="2147483647" />
-            </div>
-            <div class="scores-block-save">
-                <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" />
+                <div class="assessment-sum p-4">
+                    <label class="form-label" for="subTotal">Subtotal</label>
+                    <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" min="0" max="2147483647" />
+                </div>
             </div>
         </div>
-    </div>
-</form>
+    </form>
+}
+else
+{
+    <form id="assessmentScoresWidgetForm" action="Widgets/AssessmentScores/UpdateAssessmentScores" method="post" enctype="multipart/form-data">
+        <div class="container-fluid px-3">
+            <div class="scores-block-wrapper assessment-scores-container">
+                <div class="scores-block">
+                    <div class="scores-block-left">
+                        <div class="scores-block-score">
+                            <label class="form-label" for="financialAnalysis">Financial Analysis</label>
+                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
+                        </div>
+
+                        <div class="scores-block-score">
+                            <label class="form-label" for="inclusiveGrowth">Inclusive Growth</label>
+                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.InclusiveGrowth" />
+                        </div>
+                    </div>
+
+                    <div class="scores-block-right">
+                        <div class="scores-block-score">
+                            <label class="form-label" for="economicImpact">Economic Impact</label>
+                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.EconomicImpact" />
+                        </div>
+
+                        <div class="scores-block-score">
+                            <label class="form-label" for="CleanGrowth">Clean Growth</label>
+                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
+                        </div>
+                    </div>
+                </div>
+                <div class="assessment-sum">
+                    <label class="form-label" for="subTotal">Subtotal</label>
+                    <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" value="@Model.ScoreTotal()" min="0" max="2147483647" />
+                </div>
+                <div class="scores-block-save">
+                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" />
+                </div>
+            </div>
+        </div>
+    </form>
+}
+
+

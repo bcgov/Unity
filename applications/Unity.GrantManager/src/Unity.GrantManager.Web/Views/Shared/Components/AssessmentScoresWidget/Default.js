@@ -61,3 +61,60 @@ function positiveIntegersOnly(e) {
         return false;
     }
 }
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    const answerInputs = document.querySelectorAll('.answer-input');
+    answerInputs.forEach(input => {
+        input.setAttribute('data-original-value', input.value);
+    });
+
+    updateSubtotal();
+});
+
+function handleInputChange(questionId) {
+    const inputField = document.getElementById('answer-' + questionId);
+    const saveButton = document.getElementById('save-' + questionId);
+    const originalValue = inputField.getAttribute('data-original-value');
+
+    if (inputField.value !== originalValue) {
+        saveButton.disabled = false;
+    } else {
+        saveButton.disabled = true;
+    }
+}
+
+function updateSubtotal() {
+    const answerInputs = document.querySelectorAll('.answer-input');
+    let subtotal = 0;
+    answerInputs.forEach(input => {
+        subtotal += parseInt(input.value) || 0;
+    });
+    document.getElementById('subTotal').value = subtotal;
+}
+
+function saveChanges(questionId) {
+    const inputField = document.getElementById('answer-' + questionId);
+    const saveButton = document.getElementById('save-' + questionId);
+    const assessmentId = $("#AssessmentId").val();
+    unity.flex.scoresheets.scoresheetInstance.saveAnswer(assessmentId, questionId, inputField.value)
+        .then(response => {
+            abp.notify.success(
+                'Answer is successfully saved.',
+                'Save Answer'
+            );
+            inputField.setAttribute('data-original-value', inputField.value);
+            saveButton.disabled = true;
+            updateSubtotal();
+        });
+
+}
+
+function discardChanges(questionId) {
+    const inputField = document.getElementById('answer-' + questionId);
+    const saveButton = document.getElementById('save-' + questionId);
+
+    const originalValue = inputField.getAttribute('data-original-value');
+    inputField.value = originalValue;
+
+    saveButton.disabled = true;
+}
