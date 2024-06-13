@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Worksheets;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -29,6 +30,15 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                     .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
                     && s.CorrelationProvider == correlationProvider
                     && s.Name == name);
+        }
+
+        public async Task<Worksheet?> GetByNameAsync(string name, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+            var sanitizedName = name.SanitizeWorksheetName();
+
+            return await dbSet.IncludeDetails(includeDetails)
+                .FirstOrDefaultAsync(s => s.Sections.Any(s => s.Name == sanitizedName));
         }
 
         public async Task<Worksheet?> GetBySectionAsync(Guid id, bool includeDetails = false)

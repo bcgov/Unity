@@ -34,15 +34,15 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto)
         {
-            var worksheetName = dto.Title.Trim().Replace(" ", "").ToLower(); //default naming convention
-            var existingWorksheet = await worksheetRepository.GetByCorrelationByNameAsync(dto.CorrelationId, dto.CorrelationProvider, worksheetName, false);
+            var worksheetName = dto.Name.SanitizeWorksheetName();
+            var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, false);
 
             if (existingWorksheet != null)
             {
                 throw new BusinessException("Cannot have duplicate worksheet names");
             }
 
-            var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title, dto.UIAnchor, dto.CorrelationId, dto.CorrelationProvider);
+            var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title, dto.UIAnchor);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {

@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Unity.Modules.Shared.Correlation;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.Worksheets
 {
-    public class Worksheet : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
+    public class Worksheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public virtual string Name { get; private set; } = string.Empty;
         public virtual string Title { get; private set; } = string.Empty;
@@ -18,10 +17,7 @@ namespace Unity.Flex.Domain.Worksheets
         public Guid? TenantId { get; set; }
 
         public virtual Collection<WorksheetSection> Sections { get; private set; } = [];
-
-        // Correlation
-        public virtual Guid CorrelationId { get; private set; }
-        public virtual string CorrelationProvider { get; private set; } = string.Empty;
+        public virtual Collection<WorksheetLink> Links { get; private set; } = [];
 
         protected Worksheet()
         {
@@ -29,19 +25,15 @@ namespace Unity.Flex.Domain.Worksheets
         }
 
         public Worksheet(Guid id,
-        string name,
-        string title,
-        string uiAnchor,
-        Guid correlationId,
-        string correlationProvider)
+            string name,
+            string title,
+            string uiAnchor)
         : base(id)
         {
             Id = id;
             Name = name;
             Title = title;
             UIAnchor = uiAnchor;
-            CorrelationId = correlationId;
-            CorrelationProvider = correlationProvider;
         }
 
         public Worksheet AddSection(WorksheetSection section)
