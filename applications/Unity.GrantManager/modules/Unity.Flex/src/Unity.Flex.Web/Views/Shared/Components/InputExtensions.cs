@@ -51,6 +51,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
 
         public static string[] GetCheckedOptions(this string value)
         {
+            if (string.IsNullOrEmpty(value)) return [];
             var currentValue = JsonSerializer.Deserialize<CheckboxGroupValue>(value);
             if (currentValue == null) return [];
             var values = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(currentValue.Value?.ToString() ?? "[]");

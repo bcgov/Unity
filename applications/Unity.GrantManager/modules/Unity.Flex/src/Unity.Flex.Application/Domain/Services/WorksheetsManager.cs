@@ -5,14 +5,18 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets.Values;
+using Volo.Abp;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
 {
-    public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository, IWorksheetRepository worksheetRepository) : DomainService
+    public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository,
+        IWorksheetRepository worksheetRepository,
+        IWorksheetLinkRepository worksheetLinkRepository) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
@@ -23,7 +27,7 @@ namespace Unity.Flex.Domain.Services
 
             if (dictionary == null || dictionary.Count == 0) return;
 
-            var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationAnchorAsync(eventData.InstanceCorrelationId, eventData.InstanceCorrelationProvider, eventData.UiAnchor, true);                       
+            var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationAnchorAsync(eventData.InstanceCorrelationId, eventData.InstanceCorrelationProvider, eventData.UiAnchor, true);
             var worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(eventData.SheetCorrelationId, eventData.SheetCorrelationProvider, eventData.UiAnchor, true);
 
             var fields = dictionary
@@ -148,6 +152,20 @@ namespace Unity.Flex.Domain.Services
                     UpdateWorksheetInstanceValue(newWorksheetInstance);
                 }
             }
+        }
+
+        public async Task<WorksheetLink> CreateWorksheetLink(Guid worksheetId, Guid correlationId, string correlationProvider)
+        {
+            // Validate duplicates etc...
+
+            var existing = await worksheetLinkRepository.GetExistingLinkAsync(worksheetId, correlationId, correlationProvider);
+
+            if (existing != null)
+            {
+                throw new BusinessException("Link already exists, use versioning to update links");
+            }
+
+            return await worksheetLinkRepository.InsertAsync(new WorksheetLink(Guid.NewGuid(), worksheetId, correlationId, correlationProvider));
         }
 
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)

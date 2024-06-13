@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.WorksheetInstances;
@@ -13,6 +14,7 @@ public class FlexApplicationAutoMapperProfile : Profile
     public FlexApplicationAutoMapperProfile()
     {
         CreateMap<Worksheet, WorksheetDto>();
+        CreateMap<WorksheetLink, WorksheetLinkDto>();
         CreateMap<WorksheetSection, WorksheetSectionDto>();
         CreateMap<WorksheetInstance, WorksheetInstanceDto>();
         CreateMap<CustomFieldValue, CustomFieldValueDto>();

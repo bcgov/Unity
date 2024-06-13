@@ -17,8 +17,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
             var dbSet = await GetDbSetAsync();
 
             return await dbSet.IncludeDetails(includeDetails)
-                    .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
-                    && s.CorrelationProvider == correlationProvider
+                    .FirstOrDefaultAsync(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider)
                     && s.UIAnchor == uiAnchor);
         }
 
@@ -27,8 +26,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
             var dbSet = await GetDbSetAsync();
 
             return await dbSet.IncludeDetails(includeDetails)
-                    .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
-                    && s.CorrelationProvider == correlationProvider
+                    .FirstOrDefaultAsync(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider)
                     && s.Name == name);
         }
 
@@ -54,7 +52,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
             var dbSet = await GetDbSetAsync();
 
             return await dbSet.IncludeDetails(includeDetails)
-                .Where(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider)
+                .Where(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider))
                 .OrderBy(s => s.Name).ToListAsync();
         }
     }

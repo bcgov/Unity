@@ -3,9 +3,9 @@ using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
-namespace Unity.Flex.Domain.Worksheets
+namespace Unity.Flex.Domain.WorksheetLinks
 {
-    public class WorksheetLink : FullAuditedEntity<Guid>, IMultiTenant, ICorrelationEntity
+    public class WorksheetLink : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         public Guid? TenantId { get; set; }
         public Guid WorksheetId { get; set; }
@@ -18,8 +18,8 @@ namespace Unity.Flex.Domain.Worksheets
         }
 
         public WorksheetLink(Guid id,
-            Guid correlationId,
             Guid worksheetId,
+            Guid correlationId,            
             string correlationProvider)
       : base(id)
         {

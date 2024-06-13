@@ -9,18 +9,14 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
-    public class WorksheetListRepository : EfCoreRepository<FlexDbContext, Worksheet, Guid>, IWorksheetListRepository
+    public class WorksheetListRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Worksheet, Guid>(dbContextProvider), IWorksheetListRepository
     {
-        public WorksheetListRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
-
         public async Task<List<Worksheet>> GetListByCorrelationAsync(Guid? correlationId, string correlationProvider)
         {
             var dbSet = await GetDbSetAsync();
 
             return await dbSet
-                .Where(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider)
+                .Where(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider))
                 .OrderBy(s => s.Name)
                 .ToListAsync();
         }
