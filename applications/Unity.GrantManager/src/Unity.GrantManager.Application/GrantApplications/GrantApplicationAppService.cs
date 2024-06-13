@@ -276,7 +276,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
                 application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);
-                application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,                    
+                application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
                     input.RecommendedAmount,
                     input.DeclineRational);
 
@@ -284,7 +284,10 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
 
+        await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.AssessmentInfoUiAnchor, input.CustomFields);
+
         await _applicationRepository.UpdateAsync(application);
+
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
@@ -315,7 +318,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         SanitizeProjectInfoDisabledInputs(input, application);
 
         var percentageTotalProjectBudget = (input.TotalProjectBudget == 0 || input.TotalProjectBudget == null) ? 0 : decimal.Multiply(decimal.Divide(input.RequestedAmount ?? 0, input.TotalProjectBudget ?? 0), 100).To<double>();
-        
+
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
@@ -338,16 +341,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
 
-            if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-            {
-                await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
-                {
-                    CorrelationId = id,
-                    CorrelationProvider = CorrelationConsts.Application,
-                    UiAnchor = FlexConsts.ProjectInfoUiAnchor,
-                    CustomFields = input.CustomFields
-                });
-            }
+            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.ProjectInfoUiAnchor, input.CustomFields);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -362,9 +356,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
     {
         // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
-        input.TotalProjectBudget ??= application.TotalProjectBudget;        
-        input.RequestedAmount ??= application.RequestedAmount;  
-        input.ProjectFundingTotal ??= application.ProjectFundingTotal;        
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RequestedAmount ??= application.RequestedAmount;
+        input.ProjectFundingTotal ??= application.ProjectFundingTotal;
     }
 
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
@@ -432,6 +426,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
             application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
 
+            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.ApplicantInfoUiAnchor, input.CustomFields);
+
             await _applicationRepository.UpdateAsync(application);
 
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
@@ -447,6 +443,27 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         else
         {
             throw new EntityNotFoundException();
+        }
+    }
+
+    protected virtual async Task PublishCustomFieldUpdatesAsync(Guid instanceCorrelationId,
+        string instanceCorrelationProvider,
+        Guid sheetCorrelationId,
+        string sheetCorrelationProvider,
+        string uiAnchor,
+        dynamic? customFields)
+    {
+        if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+        {
+            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+            {
+                InstanceCorrelationId = instanceCorrelationId,
+                InstanceCorrelationProvider = instanceCorrelationProvider,
+                SheetCorrelationId = sheetCorrelationId,
+                SheetCorrelationProvider = sheetCorrelationProvider,
+                UiAnchor = uiAnchor,
+                CustomFields = customFields
+            });
         }
     }
 

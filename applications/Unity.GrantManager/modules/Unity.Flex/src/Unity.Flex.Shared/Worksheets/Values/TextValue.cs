@@ -1,17 +1,8 @@
-﻿namespace Unity.Flex.Worksheets
+﻿namespace Unity.Flex.Worksheets.Values
 {
-    public class TextValue
+    public class TextValue : CustomValueBase
     {
-        public TextValue()
-        {
-            // Intentionally left blank
-        }
-
-        public TextValue(string value)
-        {
-            Value = value;
-        }
-
-        public object? Value { get; set; }
+        public TextValue() : base() { }
+        public TextValue(object value) : base(value) { }
     }
 }
