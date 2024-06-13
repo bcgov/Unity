@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
@@ -83,10 +85,83 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormId = applicationForm.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
                 ApplicationId = application.Id,
-                Submission = formSubmission.ToString()
+                Submission = ReplaceAdvancedFormIoControls(formSubmission)
             });
             await uow.SaveChangesAsync();
             return applicationFormSubmission.Id;
+        }
+
+        private string ReplaceAdvancedFormIoControls(dynamic formSubmission)
+        {
+            string formSubmissionStr = formSubmission.ToString();
+            if (!string.IsNullOrEmpty(formSubmissionStr))
+            {
+                Dictionary<string, string> subPatterns = new Dictionary<string, string>();
+                subPatterns.Add(@"\borgbook\b", "select");
+                subPatterns.Add(@"\bsimpleaddressadvanced\b", "address");
+                subPatterns.Add(@"\bsimplebuttonadvanced\b", "button");
+                subPatterns.Add(@"\bsimplecheckboxadvanced\b", "checkbox");
+                subPatterns.Add(@"\bsimplecurrencyadvanced\b", "currency");
+                subPatterns.Add(@"\bsimpledatetimeadvanced\b", "datetime");
+                subPatterns.Add(@"\bsimpledayadvanced\b", "day");
+                subPatterns.Add(@"\bsimpleemailadvanced\b", "email");
+                subPatterns.Add(@"\bsimplenumberadvanced\b", "number");
+                subPatterns.Add(@"\bsimplepasswordadvanced\b", "password");
+                subPatterns.Add(@"\bsimplephonenumberadvanced\b", "phoneNumber");
+                subPatterns.Add(@"\bsimpleradioadvanced\b", "radio");
+                subPatterns.Add(@"\bsimpleselectadvanced\b", "select");
+                subPatterns.Add(@"\bsimpleselectboxesadvanced\b", "selectboxes");
+                subPatterns.Add(@"\bsimplesignatureadvanced\b", "signature");
+                subPatterns.Add(@"\bsimplesurveyadvanced\b", "survey");
+                subPatterns.Add(@"\bsimpletagsadvanced\b", "tags");
+                subPatterns.Add(@"\bsimpletextareaadvanced\b", "textarea");
+                subPatterns.Add(@"\bsimpletextfieldadvanced\b", "textfield");
+                subPatterns.Add(@"\bsimpletimeadvanced\b", "time");
+                subPatterns.Add(@"\bsimpleurladvanced\b", "url");
+
+                // Regular components
+                subPatterns.Add(@"\bsimplebcaddress\b", "address");
+                subPatterns.Add(@"\bbcaddress\b", "address");
+                subPatterns.Add(@"\bsimplebtnreset\b", "button");
+                subPatterns.Add(@"\bsimplebtnsubmit\b", "button");
+                subPatterns.Add(@"\bsimplecheckboxes\b", "selectboxes");
+                subPatterns.Add(@"\bsimplecheckbox\b", "checkbox");
+                subPatterns.Add(@"\bsimplecols2\b", "columns");
+                subPatterns.Add(@"\bsimplecols3\b", "columns");
+                subPatterns.Add(@"\bsimplecols4\b", "columns");
+                subPatterns.Add(@"\bsimplecontent\b", "content");
+                subPatterns.Add(@"\bsimpledatetime\b", "datetime");
+                subPatterns.Add(@"\bsimpleday\b", "day");
+                subPatterns.Add(@"\bsimpleemail\b", "email");
+                subPatterns.Add(@"\bsimplefile\b", "file");
+                subPatterns.Add(@"\bsimpleheading\b", "header");
+                subPatterns.Add(@"\bsimplefieldset\b", "fieldset");
+                subPatterns.Add(@"\bsimplenumber\b", "number");
+                subPatterns.Add(@"\bsimplepanel", "panel");
+                subPatterns.Add(@"\bsimpleparagraph\b", "textarea");
+                subPatterns.Add(@"\bsimplephonenumber\b", "phoneNumber");
+                subPatterns.Add(@"\bsimpleradios\b", "radio");
+                subPatterns.Add(@"\bsimpleselect\b", "select");
+                subPatterns.Add(@"\bsimpletabs\b", "tabs");
+                subPatterns.Add(@"\bsimpletextarea\b", "textarea");
+                subPatterns.Add(@"\bsimpletextfield\b", "textfield");
+                subPatterns.Add(@"\bsimpletime\b", "time");
+
+                //build the compositing pattern from sub patterns
+                string pattern = string.Join("|", subPatterns.Select(e => e.Key));
+                string replacedString = formSubmissionStr;
+   
+                //find the replacement
+                foreach (var subPattern in subPatterns)
+                {
+                    string patternKey = subPattern.Key;
+                    string replace = subPattern.Value;
+                    replacedString = Regex.Replace(replacedString, patternKey, replace);         
+                }
+                
+                formSubmissionStr = replacedString;
+            }
+            return formSubmissionStr;
         }
 
         private async Task<Application> CreateNewApplicationAsync(IntakeMapping intakeMap,
