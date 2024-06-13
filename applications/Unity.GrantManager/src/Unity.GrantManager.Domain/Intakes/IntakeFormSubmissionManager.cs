@@ -147,8 +147,6 @@ namespace Unity.GrantManager.Intakes
                 subPatterns.Add(@"\bsimpletextfield\b", "textfield");
                 subPatterns.Add(@"\bsimpletime\b", "time");
 
-                //build the compositing pattern from sub patterns
-                string pattern = string.Join("|", subPatterns.Select(e => e.Key));
                 string replacedString = formSubmissionStr;
    
                 //find the replacement
@@ -156,7 +154,7 @@ namespace Unity.GrantManager.Intakes
                 {
                     string patternKey = subPattern.Key;
                     string replace = subPattern.Value;
-                    replacedString = Regex.Replace(replacedString, patternKey, replace);         
+                    replacedString = Regex.Replace(replacedString, patternKey, replace);
                 }
                 
                 formSubmissionStr = replacedString;
