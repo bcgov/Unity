@@ -6,9 +6,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Assessments;
-using Unity.Flex.Domain.Scoresheets;
-using Unity.Flex.Scoresheets;
-using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 {
@@ -20,11 +17,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
     public class AssessmentScoresWidgetViewComponent : AbpViewComponent
     {
         private readonly IAssessmentRepository _assessmentRepository;
-        private readonly IScoresheetRepository _scoresheetRepository;
-        public AssessmentScoresWidgetViewComponent(IAssessmentRepository assessmentRepository, IScoresheetRepository scoresheetRepository)
+        public AssessmentScoresWidgetViewComponent(IAssessmentRepository assessmentRepository)
         {
             _assessmentRepository = assessmentRepository;
-            _scoresheetRepository = scoresheetRepository;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId)
@@ -34,15 +29,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 return View(new AssessmentScoresWidgetViewModel());
             }
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
-            ScoresheetDto? scoresheetDto = null;
-            if (assessment.ScoresheetId != null)
-            {
-                var scoresheet = await _scoresheetRepository.GetWithChildrenAsync(assessment.ScoresheetId ?? Guid.Empty);
-                if(scoresheet != null)
-                {
-                    scoresheetDto = ObjectMapper.Map<Scoresheet, ScoresheetDto?>(scoresheet);
-                }
-            }
+
             AssessmentScoresWidgetViewModel model = new()
             {
                 AssessmentId = assessmentId,
@@ -53,7 +40,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
-                Scoresheet = scoresheetDto,
             };
 
             return View(model);

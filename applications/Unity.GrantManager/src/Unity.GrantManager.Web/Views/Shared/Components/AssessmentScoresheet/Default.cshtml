@@ -1,0 +1,141 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresheet
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.GrantManager.Web.Pages.GrantApplications
+
+@model AssessmentScoresheetViewModel
+@{
+    Layout = null;
+}
+
+<form id="assessmentScoresheetForm" action="Widgets/AssessmentScoresheet/UpdateAssessmentScoresheet" method="post" enctype="multipart/form-data">
+    <abp-input type="hidden" id="AssessmentId" asp-for="@Model.AssessmentId" />
+    <div class="container-fluid px-3" id="assessment-scoresheet">
+        <div class="scores-block-wrapper assessment-scores-container">
+            <div class="scores-block">
+                <div class="accordion" id="scoresheetAccordion">
+                    @if (Model.Scoresheet != null && Model.Scoresheet.Sections.Any())
+                    {
+                        var sectionNumber = 1;
+                        @foreach (var sec in Model.Scoresheet.Sections.OrderBy(s => s.Order))
+                        {
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading-@sec.Id">
+                                    <button id="section-button" class="accordion-button collapsed preview-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@sec.Id" aria-expanded="true" aria-controls="collapse-@sec.Id">
+                                        @sectionNumber. @sec.Name
+                                    </button>
+                                </h2>
+                                <div id="collapse-@sec.Id" class="accordion-collapse collapse" aria-labelledby="heading-@sec.Id">
+                                    <div class="accordion-body">
+                                        <div class="accordion" id="questionsAccordion-@sec.Id">
+                                            @if (sec.Fields != null && sec.Fields.Any())
+                                            {
+                                                var questionNumber = 1;
+                                                @foreach (var question in sec.Fields.OrderBy(q => q.Order))
+                                                {
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="question-heading-@question.Id">
+                                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
+                                                                @sectionNumber.@questionNumber @question.Name
+                                                            </button>
+                                                        </h2>
+                                                        <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id" data-bs-parent="#questionsAccordion-@sec.Id">
+                                                            <div class="accordion-body">
+                                                                <p>@question.Description</p>
+                                                                <div class="mb-3">
+                                                                    <label for="answer-@question.Id" class="form-label">Answer</label>
+                                                                    <input type="number" class="form-control answer-input" id="answer-@question.Id" name="Answers[@question.Id]" value="" data-original-value="" oninput="handleInputChange('@question.Id')" />
+                                                                </div>
+                                                                <div class="btn-group">
+                                                                    <button type="button" class="btn btn-primary" id="save-@question.Id" disabled onclick="saveChanges('@question.Id')">SAVE CHANGES</button>
+                                                                    <button type="button" class="btn btn-secondary" onclick="discardChanges('@question.Id')">DISCARD CHANGES</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    questionNumber++;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <p>No questions available.</p>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            sectionNumber++;
+                        }
+                    }
+                    else
+                    {
+                        <p>No sections available.</p>
+                    }
+                </div>
+            </div>
+            <div class="assessment-sum p-4">
+                <label class="form-label" for="subTotal">Subtotal</label>
+                <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" min="0" max="2147483647" />
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const answerInputs = document.querySelectorAll('.answer-input');
+        answerInputs.forEach(input => {
+            input.setAttribute('data-original-value', input.value);
+        });
+
+        updateSubtotal();
+    });
+
+    function handleInputChange(questionId) {
+        const inputField = document.getElementById('answer-' + questionId);
+        const saveButton = document.getElementById('save-' + questionId);
+        const originalValue = inputField.getAttribute('data-original-value');
+        
+        if (inputField.value !== originalValue) {
+            saveButton.disabled = false;
+        } else {
+            saveButton.disabled = true;
+        }
+    }
+
+    function updateSubtotal() {
+        const answerInputs = document.querySelectorAll('.answer-input');
+        let subtotal = 0;
+        answerInputs.forEach(input => {
+            subtotal += parseInt(input.value) || 0;
+        });
+        document.getElementById('subTotal').value = subtotal;
+    }
+
+    function saveChanges(questionId) {
+        const inputField = document.getElementById('answer-' + questionId);
+        const saveButton = document.getElementById('save-' + questionId);
+        const assessmentId = $("#AssessmentId").val();
+        unity.flex.scoresheets.scoresheet.saveAnswer(assessmentId, questionId, inputField.value)
+            .then(response => {
+                abp.notify.success(
+                    'Answer is successfully saved.',
+                    'Save Answer'
+                );
+                inputField.setAttribute('data-original-value', inputField.value);
+                saveButton.disabled = true;
+                updateSubtotal();
+            });
+                
+    }
+
+    function discardChanges(questionId) {
+        const inputField = document.getElementById('answer-' + questionId);
+        const saveButton = document.getElementById('save-' + questionId);
+
+        const originalValue = inputField.getAttribute('data-original-value');
+        inputField.value = originalValue;
+
+        saveButton.disabled = true;
+    }
+</script>
