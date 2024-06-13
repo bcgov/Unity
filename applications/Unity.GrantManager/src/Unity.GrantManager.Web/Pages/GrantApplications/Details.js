@@ -1,6 +1,6 @@
 $(function () {
     let selectedReviewDetails = null;
-    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
+    let hasRenderedHtml = "False";    
     abp.localization.getResource('GrantManager');
 
     function initializeDetailsPage() {
@@ -105,31 +105,11 @@ $(function () {
                 // Set Example Submission Object
                 form.submission = data.submission.submission;
                 addEventListeners();
-                storeRenderedHtml();
+                // fix, WIP - storeRenderedHtml();
             });
         } catch (error) {
             console.error(error);
         }
-    }
-
-    async function storeRenderedHtml() {
-        console.log('storing html');
-        let innerHTML = document.getElementById('formio').innerHTML;
-        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-        $.ajax(
-            {
-                url: "/api/app/submission",
-                data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
-                contentType: "application/json",
-                type: "POST",
-            success: function (data) {
-                    console.log(data);
-                },
-                error: function () {
-                    console.log('error');
-                }
-            },
-        );
     }
 
     // Wait for the DOM to be fully loaded
@@ -261,7 +241,7 @@ $(function () {
     });
 
     $('#printPdf').click(function () {
-        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
+        let submissionId = document.getElementById('ChefsSubmissionId').value;
         unity.grantManager.intakes.submission
             .getSubmission(submissionId)
             .done(function (result) {
