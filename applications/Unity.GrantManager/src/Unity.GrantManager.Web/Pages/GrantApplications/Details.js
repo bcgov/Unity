@@ -108,9 +108,7 @@ $(function () {
                 addEventListeners();
                 
             }).finally(function() {
-                setTimeout(function () {
-                    storeRenderedHtml();
-                }, 2000);
+                storeRenderedHtml();
             });
         } catch (error) {
             console.error(error);
