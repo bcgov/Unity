@@ -65,6 +65,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
+                FinancialAnalysis = assessment.FinancialAnalysis,
+                EconomicImpact = assessment.EconomicImpact,
+                InclusiveGrowth = assessment.InclusiveGrowth,
+                CleanGrowth = assessment.CleanGrowth,
                 Scoresheet = scoresheetDto,
             };
 

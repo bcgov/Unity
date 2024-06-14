@@ -83,7 +83,7 @@ namespace Unity.GrantManager.Assessments
             var instance = await _scoresheetInstanceRepository.GetByCorrelationAsync(assessment.Id);
             if(instance == null)
             {
-                return assessment.FinancialAnalysis ?? 0 + assessment.EconomicImpact ?? 0 + assessment.InclusiveGrowth ?? 0 + assessment.CleanGrowth ?? 0;
+                return (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
             }
             else
             {
