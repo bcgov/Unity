@@ -1,6 +1,6 @@
 $(function () {
     let selectedReviewDetails = null;
-    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
+    let hasRenderedHtml = "False";    
     abp.localization.getResource('GrantManager');
 
     function initializeDetailsPage() {
