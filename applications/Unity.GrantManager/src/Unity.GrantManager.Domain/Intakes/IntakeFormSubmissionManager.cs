@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -91,7 +90,7 @@ namespace Unity.GrantManager.Intakes
             return applicationFormSubmission.Id;
         }
 
-        private string ReplaceAdvancedFormIoControls(dynamic formSubmission)
+        private static string ReplaceAdvancedFormIoControls(dynamic formSubmission)
         {
             string formSubmissionStr = formSubmission.ToString();
             if (!string.IsNullOrEmpty(formSubmissionStr))
