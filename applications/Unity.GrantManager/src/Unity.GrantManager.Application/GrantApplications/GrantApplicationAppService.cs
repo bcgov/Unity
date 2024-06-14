@@ -29,6 +29,7 @@ using Unity.GrantManager.Payments;
 using Unity.Flex.WorksheetInstances;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Flex;
+using Unity.Payments.Integrations.Cas;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -50,6 +51,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
     private readonly IApplicantAgentRepository _applicantAgentRepository;
     private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
+    private readonly ISupplierService _iSupplierService;
 
     public GrantApplicationAppService(
         IApplicationManager applicationManager,
@@ -63,7 +65,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
         IApplicantAddressRepository applicantAddressRepository,
-        ILocalEventBus localEventBus)
+        ILocalEventBus localEventBus,
+        ISupplierService iSupplierService)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -76,7 +79,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
         _applicantAddressRepository = applicantAddressRepository;
-
+        _iSupplierService = iSupplierService;
         _localEventBus = localEventBus;
     }
 
@@ -382,16 +385,16 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             _ = await _applicantRepository.UpdateAsync(applicant);
 
             // Integrate with payments module to update / insert supplier
-            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
+            // Check that the original supplier number has changed
+            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+                && !string.IsNullOrEmpty(input.SupplierNumber)
+                && input.OriginalSupplierNumber != input.SupplierNumber)
             {
-                await _localEventBus.PublishAsync(
-                    new UpsertSupplierEto
-                    {
-                        SupplierNumber = input.SupplierNumber,
-                        CorrelationId = applicant.Id,
-                        CorrelationProvider = CorrelationConsts.Applicant
-                    }
-                );
+                dynamic casSupplierResponse = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
+                UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
+                supplierEto.CorrelationId = applicant.Id;
+                supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+                await _localEventBus.PublishAsync(supplierEto);
             }
 
             var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
@@ -466,6 +469,79 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             });
         }
     }
+
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+    protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
+    {
+        string lastUpdated = casSupplierResponse.GetProperty("lastupdated").ToString();
+        string suppliernumber = casSupplierResponse.GetProperty("suppliernumber").ToString();
+        string suppliername = casSupplierResponse.GetProperty("suppliername").ToString();
+        string subcategory = casSupplierResponse.GetProperty("subcategory").ToString();
+        string providerid = casSupplierResponse.GetProperty("providerid").ToString();
+        string businessnumber = casSupplierResponse.GetProperty("businessnumber").ToString();
+        string status = casSupplierResponse.GetProperty("status").ToString();
+        string supplierprotected = casSupplierResponse.GetProperty("supplierprotected").ToString();
+        string standardindustryclassification = casSupplierResponse.GetProperty("standardindustryclassification").ToString();
+
+        _ = DateTime.TryParse(lastUpdated, out DateTime lastUpdatedDate);
+        List<SiteEto> siteEtos = new List<SiteEto>();
+        JArray siteArray = JsonConvert.DeserializeObject<dynamic>(casSupplierResponse.GetProperty("supplieraddress").ToString());
+        foreach (dynamic site in siteArray)
+        {
+            siteEtos.Add(GetSiteEto(site));
+        }
+
+        return new UpsertSupplierEto
+        {
+            Number = suppliernumber,
+            Name = suppliername,
+            Subcategory = subcategory,
+            ProviderId = providerid,
+            BusinessNumber = businessnumber,
+            Status = status,
+            SupplierProtected = supplierprotected,
+            StandardIndustryClassification = standardindustryclassification,
+            LastUpdatedInCAS = lastUpdatedDate,
+            SiteEtos = siteEtos
+        };
+    }
+
+    protected static SiteEto GetSiteEto(dynamic site)
+    {
+        string supplierSiteCode = site["suppliersitecode"].ToString();
+        string addressLine1 = site["addressline1"].ToString();
+        string addressLine2 = site["addressline2"].ToString();
+        string city = site["city"].ToString();
+        string province = site["province"].ToString();
+        string country = site["country"].ToString();
+        string postalCode = site["postalcode"].ToString();
+        string emailAddress = site["emailaddress"].ToString();
+        string eftAdvicePref = site["eftadvicepref"].ToString();
+        string providerId = site["providerid"].ToString();
+        string siteStatus = site["status"].ToString();
+        string siteProtected = site["siteprotected"].ToString();
+        string siteLastUpdated = site["lastupdated"].ToString();
+
+        _ = DateTime.TryParse(siteLastUpdated, out DateTime siteLastUpdatedDate);
+        return new SiteEto
+        {
+            SupplierSiteCode = supplierSiteCode,
+            AddressLine1 = addressLine1,
+            AddressLine2 = addressLine2,
+            AddressLine3 = addressLine2,
+            City = city,
+            Province = province,
+            Country = country,
+            PostalCode = postalCode,
+            EmailAddress = emailAddress,
+            EFTAdvicePref = eftAdvicePref,
+            ProviderId = providerId,
+            Status = siteStatus,
+            SiteProtected = siteProtected,
+            LastUpdated = siteLastUpdatedDate
+        };
+    }
+#pragma warning restore CS8600
 
     protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
     {

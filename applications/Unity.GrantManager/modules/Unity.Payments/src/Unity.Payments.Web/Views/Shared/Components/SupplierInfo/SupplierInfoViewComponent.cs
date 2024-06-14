@@ -42,8 +42,11 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
                 {
                     SupplierCorrelationId = applicantId,
                     SupplierCorrelationProvider = CorrelationConsts.Applicant,
-                    SupplierId = supplier?.Id ?? Guid.Empty,
-                    SupplierNumber = supplier?.Number?.ToString()
+                    SupplierId = supplier?.Id ?? Guid.Empty, 
+                    SupplierNumber = supplier?.Number?.ToString(),
+                    SupplierName = supplier?.Name?.ToString(),
+                    Status = supplier?.Status?.ToString(),
+                    OriginalSupplierNumber = supplier?.Number?.ToString(),
                 });
             } else
             {

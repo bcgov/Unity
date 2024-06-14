@@ -72,8 +72,9 @@ namespace Unity.GrantManager.Intakes
                 }
             }
             catch (Exception ex)
-            {
-                Logger.LogInformation(ex, "IntakeFormSubmissionMapper Exception: {Exception}", ex);
+            {                
+                string ExceptionMessage = ex.Message;
+                Logger.LogInformation("An exception orccured adding components: {ExceptionMessage}", ExceptionMessage);
             }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
