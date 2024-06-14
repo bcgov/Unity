@@ -45,11 +45,11 @@
                                                                     <p>@question.Description</p>
                                                                     <div class="mb-3">
                                                                         <label for="answer-@question.Id" class="form-label">Answer</label>
-                                                                        <input type="number" class="form-control answer-input" id="answer-@question.Id" name="Answers[@question.Id]" value="@question.Answer" data-original-value="@question.Answer" oninput="handleInputChange('@question.Id')" />
+                                                                        <input type="number" class="form-control answer-input" disabled="@Model.IsDisabled()" id="answer-@question.Id" name="Answers[@question.Id]" value="@question.Answer" data-original-value="@question.Answer" oninput="handleInputChange('@question.Id')" />
                                                                     </div>
                                                                     <div class="btn-group">
-                                                                        <button type="button" class="btn btn-primary" id="save-@question.Id" disabled onclick="saveChanges('@question.Id')">SAVE CHANGES</button>
-                                                                        <button type="button" class="btn btn-secondary" onclick="discardChanges('@question.Id')">DISCARD CHANGES</button>
+                                                                        <button type="button" class="btn btn-primary" disabled="@Model.IsDisabled()" id="save-@question.Id" disabled onclick="saveChanges('@question.Id')">SAVE CHANGES</button>
+                                                                        <button type="button" class="btn btn-secondary" disabled="@Model.IsDisabled()" onclick="discardChanges('@question.Id')">DISCARD CHANGES</button>
                                                                     </div>
                                                                 </div>
                                                             </div>

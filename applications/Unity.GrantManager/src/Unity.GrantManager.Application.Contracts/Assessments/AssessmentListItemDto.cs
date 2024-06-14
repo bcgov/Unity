@@ -22,4 +22,5 @@ public class AssessmentListItemDto
     public int? EconomicImpact { get; set; }
     public int? InclusiveGrowth { get; set; }
     public int? CleanGrowth { get; set; }
+    public double SubTotal {  get; set; }
 }

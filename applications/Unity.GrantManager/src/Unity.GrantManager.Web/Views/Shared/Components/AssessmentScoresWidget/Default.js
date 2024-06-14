@@ -95,7 +95,7 @@ function saveChanges(questionId) {
     const saveButton = document.getElementById('save-' + questionId);
     const assessmentId = $("#AssessmentId").val();
     const answerValue = inputField.value || 0;
-    unity.flex.scoresheets.scoresheetInstance.saveAnswer(assessmentId, questionId, answerValue)
+    unity.grantManager.assessments.assessment.saveScoresheetAnswer(assessmentId, questionId, answerValue)
         .then(response => {
             abp.notify.success(
                 'Answer is successfully saved.',
@@ -104,6 +104,7 @@ function saveChanges(questionId) {
             inputField.setAttribute('data-original-value', inputField.value);
             saveButton.disabled = true;
             updateSubtotal();
+            PubSub.publish('refresh_review_list_without_select', assessmentId);
         });
 
 }
