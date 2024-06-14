@@ -1,15 +1,17 @@
-﻿using Unity.Flex.Worksheets.Definitions;
+﻿using System.Text.Json.Serialization;
 
-namespace Unity.Flex.Worksheets
+namespace Unity.Flex.Worksheets.Definitions
 {
-    public class TextDefinition : DefinitionBase
+    public class TextDefinition : CustomFieldDefinition
     {
-        public TextDefinition()
+        [JsonPropertyName("minLength")]
+        public uint MinLength { get; set; }
+
+        [JsonPropertyName("maxLength")]
+        public uint MaxLength { get; set; } = uint.MaxValue;
+
+        public TextDefinition() : base()
         {
-            Min = null;
-            Max = null;
-            MinLength = 0;
-            MaxLength = 2000;
         }
     }
 }

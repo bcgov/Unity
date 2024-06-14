@@ -67,31 +67,6 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return economicRegionDto;
     }
 
-    public virtual async Task<List<GetSectorDto>> GetSectorCountAsync(DashboardParametersDto dashboardParams)
-    {
-        var parameters = PrepareParameters(dashboardParams);
-
-        var sectorCountDto = await ExecuteWithDisabledTracking(async () => {
-
-            var query = from baseQuery in await GetBaseQueryAsync(parameters)
-                        join applicant in await _applicantRepository.GetQueryableAsync() on baseQuery.Application.ApplicantId equals applicant.Id
-                        select new { baseQuery.Application, applicant };
-
-            var applicationTags = await GetFilteredApplicationTags(query.Select(app => app.Application), parameters);
-            query = query.Where(application => applicationTags.Contains(application.Application.Id));
-
-            var result = query.Distinct().GroupBy(app => app.applicant.Sector)
-                .Select(group => new { Sector = string.IsNullOrEmpty(group.Key) ? DashboardConsts.EmptyValue : group.Key, Count = group.Count() })
-                .GroupBy(group => group.Sector)
-                .Select(group => new GetSectorDto { Sector = group.Key, Count = group.Sum(obj => obj.Count) })
-                .OrderBy(o => o.Sector);
-
-            return result.ToList();
-        });
-
-        return sectorCountDto;
-    }
-
     public virtual async Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(DashboardParametersDto dashboardParams)
     {
         var parameters = PrepareParameters(dashboardParams);

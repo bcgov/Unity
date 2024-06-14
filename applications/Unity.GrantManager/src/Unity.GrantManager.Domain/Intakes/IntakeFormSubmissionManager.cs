@@ -24,6 +24,7 @@ namespace Unity.GrantManager.Intakes
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
+        private readonly CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper;
 
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
             IApplicantRepository applicantRepository,
@@ -33,7 +34,8 @@ namespace Unity.GrantManager.Intakes
             IApplicationStatusRepository applicationStatusRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
-            IApplicationFormVersionRepository applicationFormVersionRepository)
+            IApplicationFormVersionRepository applicationFormVersionRepository,
+            CustomFieldsIntakeSubmissionMapper customFieldsIntakeSubmissionMapper)
         {
             _unitOfWorkManager = unitOfWorkManager;
             _applicantRepository = applicantRepository;
@@ -44,6 +46,7 @@ namespace Unity.GrantManager.Intakes
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _applicationFormVersionRepository = applicationFormVersionRepository;
+            _customFieldsIntakeSubmissionMapper = customFieldsIntakeSubmissionMapper;
         }
 
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
@@ -86,7 +89,11 @@ namespace Unity.GrantManager.Intakes
                 ApplicationId = application.Id,
                 Submission = ReplaceAdvancedFormIoControls(formSubmission)
             });
+
+            await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id, application.ApplicationFormId, formSubmission, formVersionSubmissionHeaderMapping);
+            
             await uow.SaveChangesAsync();
+
             return applicationFormSubmission.Id;
         }
 

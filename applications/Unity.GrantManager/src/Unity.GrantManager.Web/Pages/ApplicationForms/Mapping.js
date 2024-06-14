@@ -10,45 +10,45 @@
     let dataTable;
     toastr.options.positionClass = 'toast-top-center';
 
-    let allowableTypes = ['textarea', 
-                          'orgbook',
-                          'textfield', 
-                          'currency', 
-                          'datetime', 
-                          'checkbox',
-                          'select',
-                          'selectboxes',
-                          'radio',
-                          'phoneNumber',
-                          'email',
-                          'number',
-                          'time',
-                          'day',
-                          'hidden',
-                          'simpletextfield', 
-                          'simpletextfieldadvanced',
-                          'simpletime',
-                          'simpletimeadvanced',
-                          'simplenumber',
-                          'simplenumberadvanced',
-                          'simplephonenumber',
-                          'simplephonenumberadvanced',
-                          'simpleselectadvanced',
-                          'simpleday',
-                          'simpledayadvanced',
-                          'simpleemail',
-                          'simpleemailadvanced',
-                          'simpledatetime',
-                          'simpledatetimeadvanced',
-                          'simpleurladvanced',
-                          'simplecheckbox',
-                          'simpleradios',
-                          'simpleradioadvanced',
-                          'simplecheckboxes',
-                          'simplecheckboxadvanced',
-                          'simplecurrencyadvanced', 
-                          'simpletextarea',
-                          'simpletextareaadvanced'];
+    let allowableTypes = ['textarea',
+        'orgbook',
+        'textfield',
+        'currency',
+        'datetime',
+        'checkbox',
+        'select',
+        'selectboxes',
+        'radio',
+        'phoneNumber',
+        'email',
+        'number',
+        'time',
+        'day',
+        'hidden',
+        'simpletextfield',
+        'simpletextfieldadvanced',
+        'simpletime',
+        'simpletimeadvanced',
+        'simplenumber',
+        'simplenumberadvanced',
+        'simplephonenumber',
+        'simplephonenumberadvanced',
+        'simpleselectadvanced',
+        'simpleday',
+        'simpledayadvanced',
+        'simpleemail',
+        'simpleemailadvanced',
+        'simpledatetime',
+        'simpledatetimeadvanced',
+        'simpleurladvanced',
+        'simplecheckbox',
+        'simpleradios',
+        'simpleradioadvanced',
+        'simplecheckboxes',
+        'simplecheckboxadvanced',
+        'simplecurrencyadvanced',
+        'simpletextarea',
+        'simpletextareaadvanced'];
 
     const UIElements = {
         btnBack: $('#btn-back'),
@@ -65,7 +65,7 @@
     };
 
     init();
-    
+
     function init() {
         bindUIEvents();
         dataTable = initializeDataTable();
@@ -93,7 +93,6 @@
     }
 
     function handleSaveEditMapping() {
-
         try {
             let jsonText = $('#jsonText').val();
             $.parseJSON(jsonText);
@@ -105,18 +104,18 @@
                 '',
                 'Edit mapping save successful. Reloading page to new version'
             );
-    
-            setTimeout(function(){
+
+            setTimeout(function () {
                 window.location.href = location.href;
             }, 2000);
 
-          }
-          catch (err) {
+        }
+        catch (err) {
             abp.notify.error(
                 '',
-                'The JSON is not valid'
+                'The JSON is not valid:' + err
             );
-          }
+        }
     }
 
     function handleCancelMapping() {
@@ -133,35 +132,35 @@
         let chefsFormVersionGuid = e.currentTarget.value;
         navigateToVersion(chefsFormVersionGuid);
     }
-   
+
     function navigateToVersion(chefsFormVersionGuid) {
         let searchStr = "&ChefsFormVersionGuid=";
         let indexOfVersion = location.href.indexOf(searchStr);
-    
+
         abp.notify.success(
             '',
             'Reloading page to new version'
         );
 
-        setTimeout(function(){
-            if(indexOfVersion > 0) {
+        setTimeout(function () {
+            if (indexOfVersion > 0) {
                 location.href = location.href.substring(0, indexOfVersion + searchStr.length) + chefsFormVersionGuid;
             } else {
-                location.href = location.href+"&ChefsFormVersionGuid="+chefsFormVersionGuid;
+                location.href = location.href + "&ChefsFormVersionGuid=" + chefsFormVersionGuid;
             }
         }, 2000);
 
     }
 
     function bindExistingMaps() {
-        if (existingMappingString+"" != "undefined" && existingMappingString != null && existingMappingString != "") {
+        if (existingMappingString + "" != "undefined" && existingMappingString != null && existingMappingString != "") {
             try {
                 let existingMapping = JSON.parse(existingMappingString);
                 let keys = Object.keys(existingMapping);
                 for (let key of keys) {
                     let intakeProperty = key;
-                    let chefsMappingProperty = existingMapping[intakeProperty];
-                    let intakeMappingCard = document.getElementById("unity"+intakeProperty);
+                    let chefsMappingProperty = existingMapping[intakeProperty];                    
+                    let intakeMappingCard = document.getElementById("unity_" + intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
                     if (chefsMappingDiv != null) {
                         chefsMappingDiv.appendChild(intakeMappingCard);
@@ -185,19 +184,19 @@
             fixedHeader: true,
             paging: false,
             columnDefs: [
-                { 
+                {
                     render: function (data) {
-                        return '<div id="'+data+'" class="col map-div non-drag" draggable="false"></div>';
+                        return '<div id="' + data + '" class="col map-div non-drag" draggable="false"></div>';
                     },
                     targets: 3
                 }
             ]
         });
     }
-    
+
     function handleSync() {
         let chefsFormVersionId = document.getElementById('chefsFormVersionId').value;
-        if(!validateGuid(chefsFormVersionId)) {
+        if (!validateGuid(chefsFormVersionId)) {
             abp.notify.error(
                 '',
                 'The Form Version ID is not in a GUID format'
@@ -205,12 +204,12 @@
             return;
         }
 
-        if(chefsFormVersionId == "") {
+        if (chefsFormVersionId == "") {
             abp.notify.error(
                 '',
                 'ChefsFormVersionGuid is neeeded - Mapping Not Synchronized Successful'
             );
-            
+
         } else {
             $.ajax(
                 {
@@ -249,12 +248,12 @@
         for (let mappingDiv of mappingDivs) {
             let chefMappingDiv = mappingDiv;
             if (chefMappingDiv.childElementCount > 0) {
-                
+
                 let chefsKey = mappingDiv.id;
                 let intakeMappingChildren = chefMappingDiv.children;
-                
+
                 for (let intakeMappingChild of intakeMappingChildren) {
-                    mappingJson[intakeMappingChild.innerHTML] = chefsKey;
+                    mappingJson[intakeMappingChild.id.replace('unity_', '')] = chefsKey;
                 }
             }
         }
@@ -303,7 +302,7 @@
             }
         );
     }
-    
+
     function handleReset() {
         $(intakeMapColumn).empty();
         let availableChefsFields = JSON.parse(availableChefFieldsString)
@@ -318,15 +317,15 @@
     function initializeIntakeMap(availableChefsFields) {
         try {
             let intakeFields = JSON.parse(intakeFieldsString);
-            
+
             for (let intakeField of intakeFields) {
-                let intakeFieldJson = JSON.parse(intakeField);
-                if(!excludedIntakeMappings.includes(intakeFieldJson.Name)) {
+                let intakeFieldJson = intakeField;
+                if (!excludedIntakeMappings.includes(intakeFieldJson.Name)) {
                     let dragableDiv = document.createElement('div');
-                    dragableDiv.id = 'unity'+intakeFieldJson.Name;
-                    dragableDiv.className = 'card';
+                    dragableDiv.id = 'unity_' + intakeFieldJson.Name;
+                    dragableDiv.className = 'card mapping-field';
                     dragableDiv.setAttribute("draggable", "true");
-                    dragableDiv.innerHTML = intakeFieldJson.Name;
+                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}` + intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
                     intakeMapColumn.appendChild(dragableDiv);
                 }
             }
@@ -336,25 +335,73 @@
             for (let key of keys) {
                 let jsonObj = JSON.parse(availableChefsFields[key]);
 
-                if(allowableTypes.includes(jsonObj.type.trim())) {
+                if (allowableTypes.includes(jsonObj.type.trim())) {
                     dataTable.row.add([stripHtml(jsonObj.label), key, jsonObj.type, key]).draw();
                 }
-            }		
+            }
         }
         catch (err) {
-            console.log('Mapping error');
+            console.info('Mapping error: ' + err);
         }
     }
 
-    function stripHtml(html)
-    {
-       let tmp = document.createElement("DIV");
-       tmp.innerHTML = html;
-       return tmp.textContent || tmp.innerText || "";
+    function setTypeIndicator(intakeField) {
+        switch (intakeField.Type) {
+            case 'String':
+            case 'Phone':
+            case 'Date':
+            case 'Email':
+            case 'Radio':
+            case 'Checkbox':
+            case 'CheckboxGroup':
+            case 'SelectList':
+                return `<i class="${setTypeIcon(intakeField)}"></i> `;
+            case 'Number':
+                return setTypeIndicatorText('123');
+            case 'Currency':
+                return setTypeIndicatorText('$');
+            case 'YesNo':                            
+                return setTypeIndicatorText('Y/N');                  
+            default:
+                return '';
+        }
+    }
+
+    function setTypeIcon(intakeField) {
+        switch (intakeField.Type) {
+            case 'String':
+                return 'fl fl-font';
+            case 'Phone':
+                return 'fl fl-phone';
+            case 'Date':
+                return 'fl fl-datetime';
+            case 'Email':
+                return 'fl fl-mail';
+            case 'Radio':
+                return 'fl fl-radio';
+            case 'Checkbox':
+                return 'fl fl-checkbox-checked';
+            case 'CheckboxGroup':
+                return 'fl fl-multi-select'
+            case 'SelectList':
+                return 'fl fl-list';
+            default:
+                return '';
+        }
+    }
+
+    function setTypeIndicatorText(text) {
+        return `<span class="mapping-indicator-text">${text}</span>`;
+    }
+
+    function stripHtml(html) {
+        let tmp = document.createElement("DIV");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
     }
 
     document.addEventListener('dragstart', function (ev) {
-        if(ev.target.classList.contains('non-drag')) {
+        if (ev.target.classList.contains('non-drag')) {
             ev.preventDefault();
             return;
         }
@@ -362,10 +409,10 @@
     });
 
     document.addEventListener('dragend', function (ev) {
-        if(ev.target.classList.contains('non-drag')) {
+        if (ev.target.classList.contains('non-drag')) {
             ev.preventDefault();
             return;
-        }        
+        }
         dragEnd(ev);
     });
 
@@ -388,14 +435,14 @@
 
     function beingDragged(ev) {
         let draggedEl = ev.target;
-        if(draggedEl.classList+"" != "undefined") {
+        if (draggedEl.classList + "" != "undefined") {
             draggedEl.classList.add('dragging');
         }
     }
 
     function dragEnd(ev) {
         let draggedEl = ev.target;
-        if(draggedEl.classList+"" != "undefined") {
+        if (draggedEl.classList + "" != "undefined") {
             draggedEl.classList.remove('dragging');
         }
     }
@@ -449,59 +496,59 @@
     const TAB = '    ';
 
     function prettyJson(jsonText) {
-        if(!jsonText) {
+        if (!jsonText) {
             return jsonText;
         }
-        
+
         let prettyJson = new Array();
         let depth = 0;
         let currChar;
         let prevChar;
         let doubleQuoteIn = false;
-        
-        for(let i = 0; i < jsonText.length; i++) {
+
+        for (let i = 0; i < jsonText.length; i++) {
             currChar = jsonText.charAt(i);
-            
-            if(currChar == '\"') {
-                if(prevChar != '\\') {
+
+            if (currChar == '\"') {
+                if (prevChar != '\\') {
                     doubleQuoteIn = !doubleQuoteIn;
                 }
             }
 
-            switch(currChar) {
-            case '{':
-                prettyJson.push(currChar);
-                if(!doubleQuoteIn) {
-                    prettyJson.push('\n');
-                    insertTab(prettyJson, ++depth);
-                }
-                break;
-            case '}':
-                if(!doubleQuoteIn) {
-                    prettyJson.push('\n');
-                    insertTab(prettyJson, --depth);
-                }
-                prettyJson.push(currChar);
-                break;
-            case ',':
-                prettyJson.push(currChar);
-                if(!doubleQuoteIn) {
-                    prettyJson.push('\n');
-                    insertTab(prettyJson, depth);
-                }
-                break;
-            default:
-                prettyJson.push(currChar);
-                break;
+            switch (currChar) {
+                case '{':
+                    prettyJson.push(currChar);
+                    if (!doubleQuoteIn) {
+                        prettyJson.push('\n');
+                        insertTab(prettyJson, ++depth);
+                    }
+                    break;
+                case '}':
+                    if (!doubleQuoteIn) {
+                        prettyJson.push('\n');
+                        insertTab(prettyJson, --depth);
+                    }
+                    prettyJson.push(currChar);
+                    break;
+                case ',':
+                    prettyJson.push(currChar);
+                    if (!doubleQuoteIn) {
+                        prettyJson.push('\n');
+                        insertTab(prettyJson, depth);
+                    }
+                    break;
+                default:
+                    prettyJson.push(currChar);
+                    break;
             }
-            
+
             prevChar = currChar;
         }
         return prettyJson.join('');
     }
 
     function insertTab(prettyJson, depth) {
-        for(let i = 0; i < depth; i++) {
+        for (let i = 0; i < depth; i++) {
             prettyJson.push(TAB);
         }
     }
