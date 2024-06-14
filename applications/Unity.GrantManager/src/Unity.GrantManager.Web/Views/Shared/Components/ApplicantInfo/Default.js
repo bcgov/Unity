@@ -1,25 +1,32 @@
-﻿$(function () {    
-    $('.currency-input').maskMoney();
-
+﻿$(function () {
     $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
-        $.each(formData, function (key, input) {
-           
+
+        $.each(formData, function (_, input) {            
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {                
+                Flex.includeCustomFieldObj(ApplicantInfoObj, input);
+            }
+            else {
                 // This will not work if the culture is different and uses a different decimal separator
                 ApplicantInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
 
-                
                 if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
                     ApplicantInfoObj[input.name.split(".")[1]] = null;
                 }
 
-            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber') {
-                ApplicantInfoObj[input.name] = input.value;
+                if (input.name == 'ApplicantId' || input.name == 'SupplierNumber') {
+                    ApplicantInfoObj[input.name] = input.value;
+                }
             }
-            
         });
+
+        // Update checkboxes which are serialized if unchecked
+        $(`#ApplicantInfoForm input:checkbox`).each(function () {
+            ApplicantInfoObj[this.name] = (this.checked).toString();
+        });
+
         try {
             unity.grantManager.grantApplications.grantApplication
                 .updateProjectApplicantInfo(applicationId, ApplicantInfoObj)
@@ -56,8 +63,6 @@
             });
     }
 
- 
-
     $('#orgSectorDropdown').change(function () {
         const selectedValue = $(this).val();
         let sectorList = JSON.parse($('#orgApplicationSectorList').text());
@@ -78,6 +83,14 @@
         });
     });
 
+    PubSub.subscribe(
+        'fields_applicantinfo',
+        () => {
+            enableSaveBtn();
+        }
+    );
+
+    $('.unity-currency-input').maskMoney();
 });
 
 

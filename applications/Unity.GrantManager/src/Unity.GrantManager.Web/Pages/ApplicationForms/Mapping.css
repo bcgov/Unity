@@ -7,7 +7,7 @@
 
 .mapping-container {
     height: calc(100vh - 350px);
-    width: calc(100vw - 250px);
+    width: calc(100vw - 25px);
     overflow: scroll;
     border: 1px solid black;
 }
@@ -292,4 +292,20 @@ textarea {
 
 .dtfh-floatingparenthead {
     position: relative !important;
+}
+
+.mapping-field {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.mapping-field i {
+    font-size: 0.7rem;
+}
+
+.mapping-indicator-text {
+    font-size: 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+    margin-right: 2px;
 }

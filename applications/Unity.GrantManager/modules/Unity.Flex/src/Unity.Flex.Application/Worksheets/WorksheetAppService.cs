@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Worksheets;
+using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
 {
@@ -15,21 +16,33 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<Worksheet, WorksheetDto>(await worksheetRepository.GetAsync(id, true));
         }
 
-        public virtual async Task<WorksheetDto?> GetByUiAnchorAsync(string uiAnchor)
+        public virtual async Task<List<WorksheetDto>> GetListByCorrelationAsync(Guid correlationId, string correlationProvider)
         {
-            return ObjectMapper.Map<Worksheet?, WorksheetDto?>(await worksheetRepository.GetByUiAnchorAsync(uiAnchor, true));
-        }
-
-        public virtual async Task<List<WorksheetDto>> GetListAsync()
-        {
-            var worksheets = await worksheetRepository.GetListOrderedAsync(true);
+            var worksheets = await worksheetRepository.GetListOrderedAsync(correlationId, correlationProvider, true);
 
             return ObjectMapper.Map<List<Worksheet>, List<WorksheetDto>>(worksheets);
         }
 
+        public virtual async Task<WorksheetDto?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor)
+        {
+            var worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(correlationId, correlationProvider, uiAnchor, true);
+
+            if (worksheet == null) return null;
+
+            return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
+        }
+
         public virtual async Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto)
         {
-            var newWorksheet = new Worksheet(Guid.NewGuid(), dto.Name, dto.UIAnchor);
+            var worksheetName = dto.Name.SanitizeWorksheetName();
+            var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, false);
+
+            if (existingWorksheet != null)
+            {
+                throw new BusinessException("Cannot have duplicate worksheet names");
+            }
+
+            var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title, dto.UIAnchor);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {
@@ -37,7 +50,14 @@ namespace Unity.Flex.Worksheets
 
                 foreach (var field in section.Fields)
                 {
-                    newWorksheet.Sections[^1].AddField(new CustomField(Guid.NewGuid(), field.Name, field.Label, field.Type));
+                    newWorksheet
+                        .Sections[^1]
+                        .AddField(new CustomField(Guid.NewGuid(),
+                            field.Name,
+                            newWorksheet.Name,
+                            field.Label,
+                            field.Type,
+                            field.Definition));
                 }
             }
 

@@ -67,6 +67,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
+                ApplicationFormId = application.ApplicationForm.Id,
                 RegionalDistricts = RegionalDistricts,
                 Communities = Communities,
                 EconomicRegions = EconomicRegions,
@@ -145,7 +146,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 RegionalDistrict = application.RegionalDistrict,
                 ContractNumber = application.ContractNumber,
                 ContractExecutionDate = application.ContractExecutionDate,
-                Place = application.Place,
+                Place = application.Place,                
             };
 
             return View(model);
