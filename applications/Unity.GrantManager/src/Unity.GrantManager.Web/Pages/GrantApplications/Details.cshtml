@@ -1,6 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
 @using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
 @using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
@@ -12,11 +13,13 @@
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.Features
+@using Volo.Abp.MultiTenancy
 
 @model DetailsModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @inject IFeatureChecker FeatureChecker
+@inject ICurrentTenant CurrentTenant
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
@@ -41,7 +44,9 @@
 
 <input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
+<input type="hidden" id="ChefsSubmissionId" value="@Model.ChefsSubmissionId" />
 <input type="hidden" id="ApplicationFormSubmissionData" value="@Model.ApplicationFormSubmissionData" />
+<input type="hidden" id="ApplicationFormId" value="@Model.ApplicationFormId" />
 <input type="hidden" id="HasRenderedHTML" value="@Model.HasRenderedHTML.ToString()" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
@@ -141,13 +146,33 @@
                 </div>
                 </abp-tab> *@
                 @*-------- Approval Section END ---------*@
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+                {
+                    <abp-tab name="nav-payment-info" title="Payment Info">
+                        <div class="w-100 px-2" id="PaymentInfoWidget">
+                            @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId })
+                        </div>
+                    </abp-tab>
+                }
 
-                <abp-tab name="nav-payment-info" title="Payment Info">
-                    <div class="w-100 px-2" id="PaymentInfoWidget">
-                        @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId })
-                    </div>
-                </abp-tab>
-
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                {
+                    @foreach (var customTab in Model.CustomTabs)
+                    {
+                        <abp-tab name="@customTab.Name" title="@customTab.Title">
+                            @await Component.InvokeAsync(typeof(CustomTabWidgetViewComponent), new
+                                {
+                                    instanceCorrelationId = Model.ApplicationId,
+                                    instanceCorrelationProvider = CorrelationConsts.Application,
+                                    sheetCorrelationId = Model.ApplicationFormId,
+                                    sheetCorrelationProvider = CorrelationConsts.Form,
+                                    uiAnchor = customTab.UiAnchor,
+                                    name = customTab.Name,
+                                    title = customTab.Title
+                                })
+                        </abp-tab>
+                    }
+                }
             </abp-tabs>
         </abp-card>
     </abp-column>

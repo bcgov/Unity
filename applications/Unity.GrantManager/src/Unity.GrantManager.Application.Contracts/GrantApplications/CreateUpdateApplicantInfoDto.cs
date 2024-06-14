@@ -2,7 +2,7 @@
 
 namespace Unity.GrantManager.GrantApplications
 {
-    public class CreateUpdateApplicantInfoDto
+    public class CreateUpdateApplicantInfoDto : CustomDataFieldDto
     {
         public string? OrgName { get; set; }
         public string? OrgNumber { get; set; }

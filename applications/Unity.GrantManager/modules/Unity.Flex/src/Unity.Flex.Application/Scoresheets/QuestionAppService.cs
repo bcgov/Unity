@@ -21,7 +21,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<QuestionDto> UpdateAsync(Guid id, EditQuestionDto dto)
         {
-            var question = await _questionRepository.GetAsync(dto.QuestionId) ?? throw new AbpValidationException("Missing QuestionId:" + dto.QuestionId);
+            var question = await _questionRepository.GetAsync(id) ?? throw new AbpValidationException("Missing QuestionId:" + id);
             question.Name = dto.Name;
             question.Label = dto.Label;
             question.Description = dto.Description;

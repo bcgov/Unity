@@ -1,8 +1,9 @@
 ﻿using System;
+using Unity.Flex.Worksheets;
 
 namespace Unity.GrantManager.GrantApplications
 {
-    public class CreateUpdateAssessmentResultsDto
+    public class CreateUpdateAssessmentResultsDto : CustomDataFieldDto
     {
         public DateTime? DueDate { get; set; }
         public DateTime? NotificationDate { get; set; }

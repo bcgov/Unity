@@ -1,6 +1,6 @@
 $(function () {
     let selectedReviewDetails = null;
-    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
+    let hasRenderedHtml = "False";    
     abp.localization.getResource('GrantManager');
 
     function initializeDetailsPage() {
@@ -105,31 +105,11 @@ $(function () {
                 // Set Example Submission Object
                 form.submission = data.submission.submission;
                 addEventListeners();
-                storeRenderedHtml();
+                // fix, WIP - storeRenderedHtml();
             });
         } catch (error) {
             console.error(error);
         }
-    }
-
-    async function storeRenderedHtml() {
-        console.log('storing html');
-        let innerHTML = document.getElementById('formio').innerHTML;
-        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
-        $.ajax(
-            {
-                url: "/api/app/submission",
-                data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
-                contentType: "application/json",
-                type: "POST",
-            success: function (data) {
-                    console.log(data);
-                },
-                error: function () {
-                    console.log('error');
-                }
-            },
-        );
     }
 
     // Wait for the DOM to be fully loaded
@@ -204,7 +184,7 @@ $(function () {
     let assessmentUserDetailsWidgetManager = new abp.WidgetManager({
         wrapper: '#assessmentUserDetailsWidget',
         filterCallback: function () {
-            return {                
+            return {
                 'displayName': selectedReviewDetails.assessorDisplayName,
                 'badge': selectedReviewDetails.assessorBadge,
                 'title': 'Title, Role'
@@ -232,8 +212,8 @@ $(function () {
     PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
-            if (data) {                
-                selectedReviewDetails = data; 
+            if (data) {
+                selectedReviewDetails = data;
                 setDetailsContext('assessment');
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
@@ -261,7 +241,7 @@ $(function () {
     });
 
     $('#printPdf').click(function () {
-        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
+        let submissionId = document.getElementById('ChefsSubmissionId').value;
         unity.grantManager.intakes.submission
             .getSubmission(submissionId)
             .done(function (result) {
@@ -303,13 +283,13 @@ $(function () {
                 newTab.document.write(inputToStore);
                 newTab.document.write(divToStore);
                 newTab.document.write('</body></html>');
-               
+
                 newTab.onload = function () {
                     let script = newTab.document.createElement('script');
                     script.src = '/Pages/GrantApplications/loadPrint.js';
                     script.onload = function () {
                         newTab.executeOperations(data);
-                        
+
                     };
 
                     newTab.document.head.appendChild(script);
@@ -322,7 +302,7 @@ $(function () {
 
     });
 
-     
+
     let applicationBreadcrumbWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationBreadcrumbWidget',
         filterCallback: function () {
@@ -358,7 +338,7 @@ $(function () {
     );
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
-            assessmentResultWidgetManager.refresh();                  
+            assessmentResultWidgetManager.refresh();
         }
     );
 
@@ -384,13 +364,13 @@ $(function () {
 
     PubSub.subscribe(
         'update_application_attachment_count',
-        (msg, data) => {            
+        (msg, data) => {
             if (data.files || data.files === 0) {
                 attachCounters.files = data.files;
-            } 
+            }
             if (data.chefs || data.chefs === 0) {
                 attachCounters.chefs = data.chefs;
-            } 
+            }
             $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
         }
     );
@@ -411,30 +391,111 @@ $(function () {
         }
     );
 
+    // custom fields
+    $('body').on('click', '.custom-tab-save', function (event) {
+        let id = $(this).attr('id');
+        let uiAnchor = $(this).attr('data-ui-anchor');
+        let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
+        let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
+        let formId = decodeURIComponent($("#ApplicationFormId").val());
+        let formData = $(`#${formDataName}`).serializeArray();        
+        let customFormObj = {};
+
+        $.each(formData, function (_, input) {
+            customFormObj[input.name] = input.value;
+        });
+        
+        $(`#${formDataName} input:checkbox`).each(function () {
+            customFormObj[this.name] = (this.checked).toString();
+        });
+
+        updateCustomForm(applicationId, formId, customFormObj, uiAnchor, id);
+    });
+
+    PubSub.subscribe(
+        'fields_tab',
+        (_, fieldId) => {
+            let saveBtn = $(`#save_${fieldId.split('.')[1]}_btn`);
+            saveBtn.prop('disabled', false);
+        }
+    );
 });
 
-function uploadApplicationFiles(inputId) {    
-    let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
-    let currentUserId = decodeURIComponent($("#CurrentUserId").val());  
-    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    let url = "/api/app/attachment/application/" + applicationId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
-    uploadFiles(inputId, url, 'refresh_application_attachment_list');     
+function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId) {
+    let customFormUpdate = {
+        instanceCorrelationId: applicationId,
+        instanceCorrelationProvider: 'Application',
+        sheetCorrelationId: formId,
+        sheetCorrelationProvider: 'Form',
+        uiAnchor: uiAnchor,
+        customFields: customFormObj
+    }     
+
+    $(`#${saveId}`).prop('disabled', true);
+    unity.flex.worksheetInstances.worksheetInstance.update(customFormUpdate)
+        .done(function () {
+            abp.notify.success(
+                'Information has been updated.'
+            );
+        });        
 }
 
-function uploadAssessmentFiles(inputId) {    
+// custom fields
+function notifyFieldChange(event, field) {
+    let value = document.getElementById(field.id).value;
+    if (PubSub) {
+        if (isKnownAnchor(event)) {
+            PubSub.publish('fields_' + event, value);
+        } else {
+            PubSub.publish('fields_tab', field.id);
+        }
+    }
+}
+
+function isKnownAnchor(event) {
+    if (event === 'projectinfo'
+        || event === 'applicantinfo'
+        || event === 'assessmentinfo') {
+        return true;
+    }
+}
+
+const Flex = class {
+    static isCustomField(input) {
+        return input.name.startsWith('custom_');
+    }
+
+    static includeCustomFieldObj(formObject, input) {
+        if (!formObject.CustomFields) {
+            formObject.CustomFields = {};
+        }
+
+        formObject.CustomFields[input.name] = input.value;
+    }
+}
+
+function uploadApplicationFiles(inputId) {
+    let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
+    let currentUserId = decodeURIComponent($("#CurrentUserId").val());
+    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
+    let url = "/api/app/attachment/application/" + applicationId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
+    uploadFiles(inputId, url, 'refresh_application_attachment_list');
+}
+
+function uploadAssessmentFiles(inputId) {
     let assessmentId = decodeURIComponent($("#AssessmentId").val());
     let currentUserId = decodeURIComponent($("#CurrentUserId").val());
     let currentUserName = decodeURIComponent($("#CurrentUserName").val());
     let url = "/api/app/attachment/assessment/" + assessmentId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
-    uploadFiles(inputId, url, 'refresh_assessment_attachment_list');        
+    uploadFiles(inputId, url, 'refresh_assessment_attachment_list');
 }
 
 function uploadFiles(inputId, urlStr, channel) {
-    let input = document.getElementById(inputId);    
+    let input = document.getElementById(inputId);
     let files = input.files;
     let formData = new FormData();
-    const disallowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
-    const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
+    const disallowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val()));
+    const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
 
     let isAllowedTypeError = false;
     let isMaxFileSizeError = false;
@@ -480,7 +541,7 @@ function uploadFiles(inputId, urlStr, channel) {
                     data.responseText,
                     'File Upload Is Successful'
 
-                ); 
+                );
                 PubSub.publish(channel);
                 input.value = null;
             },
@@ -529,7 +590,7 @@ function updateLinksCounters() {
 }
 
 function initCommentsWidget() {
-    const currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
     let selectedReviewDetails;
     let applicationCommentsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationCommentsWidget',
@@ -588,7 +649,7 @@ function initCommentsWidget() {
             tagsWidgetManager.refresh();
         }
     );
-    
+
 }
 
 function setDetailsContext(context) {
