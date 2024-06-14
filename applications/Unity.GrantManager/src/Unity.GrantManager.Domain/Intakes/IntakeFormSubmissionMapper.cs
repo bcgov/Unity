@@ -73,7 +73,7 @@ namespace Unity.GrantManager.Intakes
             }
             catch (Exception ex)
             {
-                Logger.LogInformation("IntakeFormSubmissionMapper Exception: {Ex}", ex);
+                Logger.LogInformation(ex, "IntakeFormSubmissionMapper Exception: {Exception}", ex);
             }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
