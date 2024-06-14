@@ -20,82 +20,16 @@ $(function () {
         }
     }
 
-    function formatChefComponents(data) {
-        // Advanced Components
-        replaceKey(data, "type", "orgbook", "select");
-        replaceKey(data, "type", "simpleaddressadvanced", "address");
-        replaceKey(data, "type", "simplebuttonadvanced", "button");
-        replaceKey(data, "type", "simplecheckboxadvanced", "checkbox");
-        replaceKey(data, "type", "simplecurrencyadvanced", "currency");
-        replaceKey(data, "type", "simpledatetimeadvanced", "datetime");
-        replaceKey(data, "type", "simpledayadvanced", "day");
-        replaceKey(data, "type", "simpleemailadvanced", "email");
-        replaceKey(data, "type", "simplenumberadvanced", "number");
-        replaceKey(data, "type", "simplepasswordadvanced", "password");
-        replaceKey(data, "type", "simplephonenumberadvanced", "phoneNumber");
-        replaceKey(data, "type", "simpleradioadvanced", "radio");
-        replaceKey(data, "type", "simpleselectadvanced", "select");
-        replaceKey(data, "type", "simpleselectboxesadvanced", "selectboxes");
-        replaceKey(data, "type", "simplesignatureadvanced", "signature");
-        replaceKey(data, "type", "simplesurveyadvanced", "survey");
-        replaceKey(data, "type", "simpletagsadvanced", "tags");
-        replaceKey(data, "type", "simpletextareaadvanced", "textarea");
-        replaceKey(data, "type", "simpletextfieldadvanced", "textfield");
-        replaceKey(data, "type", "simpletimeadvanced", "time");
-        replaceKey(data, "type", "simpleurladvanced", "url");
-
-        // Regular components
-        replaceKey(data, "type", "simplebcaddress", "address");
-        replaceKey(data, "type", "bcaddress", "address");
-        replaceKey(data, "type", "simplebtnreset", "button");
-        replaceKey(data, "type", "simplebtnsubmit", "button");
-        replaceKey(data, "type", "simplecheckboxes", "selectboxes");
-        replaceKey(data, "type", "simplecheckbox", "checkbox");
-        replaceKey(data, "type", "simplecols2", "columns");
-        replaceKey(data, "type", "simplecols3", "columns");
-        replaceKey(data, "type", "simplecols4", "columns");
-        replaceKey(data, "type", "simplecontent", "content");
-        replaceKey(data, "type", "simpledatetime", "datetime");
-        replaceKey(data, "type", "simpleday", "day");
-        replaceKey(data, "type", "simpleemail", "email");
-        replaceKey(data, "type", "simplefile", "file");
-        replaceKey(data, "type", "simpleheading", "header");
-        replaceKey(data, "type", "simplefieldset", "fieldset");
-        replaceKey(data, "type", "simplenumber", "number");
-        replaceKey(data, "type", "simplepanel", "panel");
-        replaceKey(data, "type", "simpleparagraph", "textarea");
-        replaceKey(data, "type", "simplephonenumber", "phoneNumber");
-        replaceKey(data, "type", "simpleradios", "radio");
-        replaceKey(data, "type", "simpleselect", "select");
-        replaceKey(data, "type", "simpletabs", "tabs");
-        replaceKey(data, "type", "simpletextarea", "textarea");
-        replaceKey(data, "type", "simpletextfield", "textfield");
-        replaceKey(data, "type", "simpletime", "time");
-
-        return data;
-    }
-
-    function replaceKey(obj, keyToReplace, matchValue, newValue ) {
-        for (let key in obj) {
-            if (key === keyToReplace && obj[key] === matchValue) {
-                obj[key] = newValue;
-            } else if (typeof obj[key] === 'object') {
-                replaceKey(obj[key], keyToReplace, matchValue, newValue ); 
-            }
-        }
-    }
-
     async function getSubmission() {
         try {
             $('.spinner-grow').hide();
             let submissionString = document.getElementById('ApplicationFormSubmissionData').value;
             let submissionData = JSON.parse(submissionString);
             Formio.icons = 'fontawesome';
-            let data = formatChefComponents(submissionData);
 
             Formio.createForm(
                 document.getElementById('formio'),
-                data.version.schema,
+                submissionData.version.schema,
                 {
                     readOnly: true,
                     renderMode: 'form',
@@ -103,7 +37,7 @@ $(function () {
                 }
             ).then(function (form) {
                 // Set Example Submission Object
-                form.submission = data.submission.submission;
+                form.submission = submissionData.submission.submission;
                 addEventListeners();
                 // fix, WIP - storeRenderedHtml();
             });
@@ -246,9 +180,7 @@ $(function () {
             .getSubmission(submissionId)
             .done(function (result) {
 
-                let data = formatChefComponents(result);
-
-
+                let data = result;
                 let newHiddenInput = $('<input>');
 
                 // Set attributes for the hidden input
