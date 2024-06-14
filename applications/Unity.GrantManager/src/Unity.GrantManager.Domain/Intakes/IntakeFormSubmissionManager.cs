@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,7 @@ namespace Unity.GrantManager.Intakes
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper;
+        private static int OneMinuteMilliseconds = 60000;
 
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
             IApplicantRepository applicantRepository,
@@ -152,15 +154,26 @@ namespace Unity.GrantManager.Intakes
                 subPatterns.Add(@"\bsimpletextarea\b", "textarea");
                 subPatterns.Add(@"\bsimpletextfield\b", "textfield");
                 subPatterns.Add(@"\bsimpletime\b", "time");
-
                 string replacedString = formSubmissionStr;
-   
+
                 //find the replacement
                 foreach (var subPattern in subPatterns)
                 {
                     string patternKey = subPattern.Key;
                     string replace = subPattern.Value;
-                    replacedString = Regex.Replace(replacedString, patternKey, replace);
+                    // Allow one minute timeout
+                    try
+                    {
+                        replacedString = Regex.Replace(replacedString, 
+                            patternKey, 
+                            replace, 
+                            RegexOptions.None, 
+                            TimeSpan.FromMilliseconds(OneMinuteMilliseconds));
+                    }
+                    catch (RegexMatchTimeoutException ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
                 }
                 
                 formSubmissionStr = replacedString;
