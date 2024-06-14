@@ -83,7 +83,7 @@ namespace Unity.Payments.Handlers
         {
             foreach(SiteEto siteEto in upsertSupplierEto.SiteEtos)
             {                
-                SiteDto siteDto = new SiteDto
+                SiteDto siteDto = new()
                 {
                     Number = siteEto.SupplierSiteCode,
                     PaymentGroup = siteEto.EFTAdvicePref == "E" ? Enums.PaymentGroup.EFT : Enums.PaymentGroup.Cheque,
@@ -102,6 +102,7 @@ namespace Unity.Payments.Handlers
                     SiteProtected = siteEto.SiteProtected,
                     LastUpdatedInCas = siteEto.LastUpdated
                 };
+
                 await _siteAppService.InsertAsync(siteDto);
             }            
         }

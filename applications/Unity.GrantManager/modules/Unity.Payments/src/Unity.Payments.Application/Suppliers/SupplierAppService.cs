@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Features;
 using Unity.Payments.Domain.Suppliers;
+using Unity.Payments.Domain.Suppliers.ValueObjects;
 
 namespace Unity.Payments.Suppliers
 {
@@ -13,9 +14,9 @@ namespace Unity.Payments.Suppliers
     {
         private readonly ISupplierRepository _supplierRepository;
 
-        public SupplierAppService(ISupplierRepository supplierRepository)            
+        public SupplierAppService(ISupplierRepository supplierRepository)
         {
-            _supplierRepository = supplierRepository;            
+            _supplierRepository = supplierRepository;
         }
 
         public virtual async Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto)
@@ -32,10 +33,10 @@ namespace Unity.Payments.Suppliers
                 createSupplierDto.LastUpdatedInCAS,
                 createSupplierDto.CorrelationId,
                 createSupplierDto.CorrelationProvider,
-                createSupplierDto.MailingAddress,
-                createSupplierDto.City,
-                createSupplierDto.Province,
-                createSupplierDto.PostalCode);
+                new MailingAddress(createSupplierDto.MailingAddress,
+                    createSupplierDto.City,
+                    createSupplierDto.Province,
+                    createSupplierDto.PostalCode));
 
             var result = await _supplierRepository.InsertAsync(supplier);
             return ObjectMapper.Map<Supplier, SupplierDto>(result);
@@ -89,12 +90,14 @@ namespace Unity.Payments.Suppliers
                 newId,
                 createSiteDto.Number,
                 createSiteDto.PaymentGroup,
+                new Address(
                 createSiteDto.AddressLine1,
                 createSiteDto.AddressLine2,
                 createSiteDto.AddressLine3,
+                string.Empty,
                 createSiteDto.City,
                 createSiteDto.Province,
-                createSiteDto.PostalCode));
+                createSiteDto.PostalCode)));
 
             return ObjectMapper.Map<Site, SiteDto>(updateSupplier.Sites.First(s => s.Id == newId));
         }

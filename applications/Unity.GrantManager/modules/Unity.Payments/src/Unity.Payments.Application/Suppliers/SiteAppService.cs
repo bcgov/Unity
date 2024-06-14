@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Payments.Domain.Suppliers;
+using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.Suppliers
@@ -34,13 +34,14 @@ namespace Unity.Payments.Suppliers
                 siteDto.ProviderId,
                 siteDto.Status,
                 siteDto.SiteProtected,
-                siteDto.AddressLine1,
-                siteDto.AddressLine2,
-                siteDto.AddressLine3,
-                siteDto.Country,
-                siteDto.City,
-                siteDto.Province,
-                siteDto.PostalCode,
+                new Address(
+                    siteDto.AddressLine1,
+                    siteDto.AddressLine2,
+                    siteDto.AddressLine3,
+                    siteDto.Country,
+                    siteDto.City,
+                    siteDto.Province,
+                    siteDto.PostalCode),
                 siteDto.SupplierId,
                 siteDto.LastUpdatedInCas);
 
@@ -49,14 +50,8 @@ namespace Unity.Payments.Suppliers
 
         public virtual async Task DeleteBySupplierIdAsync(Guid supplierId)
         {
-            IQueryable<Site> queryableAssignment = _siteRepository.GetQueryableAsync().Result;
-            List<Site> sites = queryableAssignment
-                .Where(a => a.SupplierId.Equals(supplierId)).ToList();
-
-            foreach (Site site in sites)
-            {
-                await _siteRepository.DeleteAsync(site);
-            }            
+            var sites = await _siteRepository.GetBySupplierAsync(supplierId);
+            await _siteRepository.DeleteManyAsync(sites.Select(s => s.Id));
         }
     }
 }

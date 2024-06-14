@@ -5,6 +5,7 @@ using Unity.Payments.Enums;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using Unity.Payments.Domain.Suppliers.ValueObjects;
 
 namespace Unity.Payments.Domain.Suppliers
 {
@@ -44,10 +45,7 @@ namespace Unity.Payments.Domain.Suppliers
             string? number,
             Guid correlationId,
             string correlationProvider,
-            string? mailingAddress = default,
-            string? city = default,
-            string? province = default,
-            string? postalCode = default)
+            MailingAddress? mailingAddress = default)
            : base(id)
         {
             Name = name;
@@ -55,12 +53,11 @@ namespace Unity.Payments.Domain.Suppliers
             CorrelationId = correlationId;
             CorrelationProvider = correlationProvider;
             Sites = new Collection<Site>();
-            MailingAddress = mailingAddress;
-            City = city;
-            Province = province;
-            PostalCode = postalCode;
+            MailingAddress = mailingAddress?.AddressLine;
+            City = mailingAddress?.City;
+            Province = mailingAddress?.Province;
+            PostalCode = mailingAddress?.PostalCode;
         }
-
 
         public Supplier(Guid id,
             string? name,
@@ -74,10 +71,7 @@ namespace Unity.Payments.Domain.Suppliers
             DateTime? lastUpdatedInCAS,
             Guid correlationId,
             string correlationProvider,
-            string? mailingAddress = default,
-            string? city = default,
-            string? province = default,
-            string? postalCode = default)
+            MailingAddress? mailingAddress = default)
            : base(id)
         {
             Name = name;
@@ -92,10 +86,10 @@ namespace Unity.Payments.Domain.Suppliers
             CorrelationId = correlationId;
             CorrelationProvider = correlationProvider;
             Sites = new Collection<Site>();
-            MailingAddress = mailingAddress;
-            City = city;
-            Province = province;
-            PostalCode = postalCode;
+            MailingAddress = mailingAddress?.AddressLine;
+            City = mailingAddress?.City;
+            Province = mailingAddress?.Province;
+            PostalCode = mailingAddress?.PostalCode;
         }
 
         public Supplier AddSite(Site site)

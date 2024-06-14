@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Unity.Payments.Enums;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -40,22 +41,18 @@ namespace Unity.Payments.Domain.Suppliers
         public Site(Guid id,
         string number,
         PaymentGroup paymentMethod,
-        string? addressLine1 = default,
-        string? addressLine2 = default,
-        string? addressLine3 = default,
-        string? city = default,
-        string? province = default,
-        string? postalCode = default)
+        Address? address = default)
        : base(id)
         {
             Number = number;
             PaymentGroup = paymentMethod;
-            AddressLine1 = addressLine1;
-            AddressLine2 = addressLine2;
-            AddressLine3 = addressLine3;
-            City = city;
-            Province = province;
-            PostalCode = postalCode;
+            AddressLine1 = address?.AddressLine1;
+            AddressLine2 = address?.AddressLine2;
+            AddressLine3 = address?.AddressLine3;
+            Country = address?.Country;
+            City = address?.City;
+            Province = address?.Province;
+            PostalCode = address?.PostalCode;
         }
 
         public Site(
@@ -66,13 +63,7 @@ namespace Unity.Payments.Domain.Suppliers
             string? providerId = default,
             string? status = default,
             string? siteProtected = default,
-            string? addressLine1 = default,
-            string? addressLine2 = default,
-            string? addressLine3 = default,
-            string? country = default,
-            string? city = default,
-            string? province = default,
-            string? postalCode = default,
+            Address? address = default,
             Guid supplierId = default,
             DateTime? lastUpdatedInCas = default)
         {
@@ -84,13 +75,13 @@ namespace Unity.Payments.Domain.Suppliers
             Status = status;
             SiteProtected = siteProtected;
             PaymentGroup = paymentMethod;
-            AddressLine1 = addressLine1;
-            AddressLine2 = addressLine2;
-            AddressLine3 = addressLine3;
-            Country = country;
-            City = city;
-            Province = province;
-            PostalCode = postalCode;
+            AddressLine1 = address?.AddressLine1;
+            AddressLine2 = address?.AddressLine2;
+            AddressLine3 = address?.AddressLine3;
+            Country = address?.Country;
+            City = address?.City;
+            Province = address?.Province;
+            PostalCode = address?.PostalCode;
             LastUpdatedInCas = lastUpdatedInCas;
         }
 
