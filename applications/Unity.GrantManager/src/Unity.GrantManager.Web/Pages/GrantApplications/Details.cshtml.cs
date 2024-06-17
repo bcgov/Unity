@@ -101,9 +101,12 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 ApplicationFormId = applicationFormSubmission.ApplicationFormId;
                 ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
                 ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
-                ApplicationFormSubmissionData = applicationFormSubmission.Submission;
-                ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
                 HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
+                if(!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML)) {
+                    ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
+                } else {
+                    ApplicationFormSubmissionData = applicationFormSubmission.Submission;
+                }
             }
         }
 

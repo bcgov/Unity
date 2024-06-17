@@ -1,6 +1,6 @@
 $(function () {
     let selectedReviewDetails = null;
-    let hasRenderedHtml = "False";    
+    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
     function initializeDetailsPage() {
@@ -39,11 +39,34 @@ $(function () {
                 // Set Example Submission Object
                 form.submission = submissionData.submission.submission;
                 addEventListeners();
-                // fix, WIP - storeRenderedHtml();
+                form.resetValue();
+                form.refresh();
+                form.on('render', function() {
+                    storeRenderedHtml();
+                });
             });
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async function storeRenderedHtml() {
+        let innerHTML = document.getElementById('formio').innerHTML;
+        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
+        $.ajax(
+            {
+                url: "/api/app/submission",
+                data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
+                contentType: "application/json",
+                type: "POST",
+            success: function (data) {
+                    console.log(data);
+                },
+                error: function () {
+                    console.log('error');
+                }
+            },
+        );
     }
 
     // Wait for the DOM to be fully loaded
