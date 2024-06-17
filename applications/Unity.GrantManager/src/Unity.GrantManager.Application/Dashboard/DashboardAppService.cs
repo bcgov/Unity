@@ -172,6 +172,39 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         return applicationAssigneeDto;
     }
 
+    public virtual async Task<List<GetRequestedApprovedAmtDto>> GetRequestApprovedCountAsync(DashboardParametersDto dashboardParams)
+    {
+        var parameters = PrepareParameters(dashboardParams);
+
+        var requestApprovedAmtDto = await ExecuteWithDisabledTracking(async () =>
+        {
+            var baseQuery = await GetBaseQueryAsync(parameters);
+            var applicationQuery = baseQuery.Select(bq => bq.Application);
+
+            var applicationTags = await GetFilteredApplicationTags(applicationQuery, parameters);
+            var filteredApplications = applicationQuery.Where(app => applicationTags.Contains(app.Id));
+
+            var requestedAmount = filteredApplications.Sum(app => app.RequestedAmount);
+            var approvedAmount = filteredApplications.Sum(app => app.ApprovedAmount);
+
+            var data = new Dictionary<string, decimal?>
+            {
+                { "Requested Amount", requestedAmount },
+                { "Approved Amount", approvedAmount }
+            };
+
+            var queryResult = data.Select(kv => new GetRequestedApprovedAmtDto
+            {
+                Description = kv.Key,
+                Amount = kv.Value ?? 0
+            }).ToList();
+
+            return queryResult;
+        }); 
+
+        return requestApprovedAmtDto;
+    }
+
     private async Task<List<Guid>> GetFilteredApplicationTags(IQueryable<Application> applications, DashboardParameters parameters)
     {
         var tags = await _applicationTagsRepository.GetQueryableAsync();
