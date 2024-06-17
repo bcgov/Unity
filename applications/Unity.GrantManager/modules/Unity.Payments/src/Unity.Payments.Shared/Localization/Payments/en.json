@@ -42,7 +42,7 @@
     "ApplicationPaymentListTable:RequestedOn": "Requested On",
     "ApplicationPaymentListTable:UpdatedOn": "Updated On",
     "ApplicationPaymentListTable:PaidOn": "Paid On",
-    "ApplicationPaymentListTable:CASComments": "CAS Comments",
+    "ApplicationPaymentListTable:CASResponse": "CAS Response",
 
 
 
@@ -57,7 +57,37 @@
     "ApplicantInfoView:ApplicantInfo.SiteInfo:AddressLine3": "Address Line 3",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:City": "City",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:Province": "Province",
-    "ApplicantInfoView:ApplicantInfo.SiteInfo:PostalCode": "Postal Code"
+    "ApplicantInfoView:ApplicantInfo.SiteInfo:PostalCode": "Postal Code",
+
+    "PaymentInfoView:PaymentInfoTitle": "Payment Summary",
+    "PaymentInfoView:PaymentInfo.RequestedAmount": "Requested Amount",
+    "PaymentInfoView:PaymentInfo.RecommendedAmount": "Recommended Amount",
+    "PaymentInfoView:PaymentInfo.ApprovedAmount": "Approved Amount",
+    "PaymentInfoView:PaymentInfo.TotalPendingAmounts": "Total Pending Amounts",
+    "PaymentInfoView:PaymentInfo.TotalPaid": "Total Paid",
+    "PaymentInfoView:PaymentInfo.RemainingAmount": "Remaining Amount",
+
+    "PaymentInfoView:PaymentInfoTableTitle": "Payment List",
+    "PaymentInfoView:ApplicationPaymentListTable.PaymentID": "Payment ID",
+    "PaymentInfoView:ApplicationPaymentListTable.Amount": "Amount",
+    "PaymentInfoView:ApplicationPaymentListTable.Status": "Status",
+    "PaymentInfoView:ApplicationPaymentListTable.Description": "Description",
+    "PaymentInfoView:ApplicationPaymentListTable.RequestedOn": "Requested On",
+    "PaymentInfoView:ApplicationPaymentListTable.UpdatedOn": "Updated On",
+    "PaymentInfoView:ApplicationPaymentListTable.PaidOn": "Paid On",
+    "PaymentInfoView:ApplicationPaymentListTable.CASResponse": "CAS Response",
+
+    "ApplicationPaymentStatusRequest:ApproveTitle": "Approve Payments",
+    "ApplicationPaymentStatusRequest:DeclineTitle": "Decline Payments",
+    "ApplicationPaymentStatusRequest:Id": "Payment Id",
+    "ApplicationPaymentStatusRequest:Amount": "Amount",
+    "ApplicationPaymentStatusRequest:Description": "Description",
+    "ApplicationPaymentStatusRequest:CancelButtonText": "Cancel",
+    "ApplicationPaymentStatusRequest:ApproveButtonText": "Approve Payments",
+    "ApplicationPaymentStatusRequest:DeclineButtonText": "Decline Payments"
+
+
+
 
   }
 }

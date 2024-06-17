@@ -141,6 +141,24 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Assessments.SendBack,
                     GrantApplicationPermissions.Assessments.Confirm
              }, context.TenantId);
+
+
+            // -L1 Approver
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L1Approver,
+              new List<string>
+              {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+      
+                    GrantApplicationPermissions.Comments.Add,
+
+                    GrantApplicationPermissions.AssessmentResults.Default,
+
+                    GrantApplicationPermissions.Payments.Default,
+                    GrantApplicationPermissions.Payments.Approve,
+                    GrantApplicationPermissions.Payments.Decline,
+
+              }, context.TenantId);
         }
     }
 }

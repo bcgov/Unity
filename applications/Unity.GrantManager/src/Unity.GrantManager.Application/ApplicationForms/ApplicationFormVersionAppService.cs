@@ -99,7 +99,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
             catch (Exception ex)
             {
-                Logger.LogError("Exception: {ex.Message}", ex.Message);
+                Logger.LogError(ex, "Exception: {Exception}", ex);
             }
 
             return false;
@@ -127,7 +127,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
             catch (Exception ex)
             {
-                Logger.LogError("Initialization Exception: {ex.Message}", ex.Message);
+                Logger.LogError(ex, "Initialization Exception: {Exception}", ex);
             }
 
             return null;
@@ -155,7 +155,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
             catch (Exception ex)
             {
-                Logger.LogError("Initialization Exception: {ex.Message}", ex.Message);
+                Logger.LogError(ex, "Initialization Exception: {Exception}", ex);
             }
 
             return null;

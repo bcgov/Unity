@@ -1,17 +1,8 @@
-﻿namespace Unity.Flex.Worksheets
+﻿namespace Unity.Flex.Worksheets.Values
 {
-    public class NumericValue
+    public class NumericValue : CustomValueBase
     {
-        public NumericValue()
-        {
-            // Intentionally left blank
-        }
-
-        public NumericValue(string value)
-        {
-            Value = value;
-        }
-
-        public object? Value { get; set; }
+        public NumericValue() : base() { }
+        public NumericValue(object value) : base(value) { }
     }
 }

@@ -1,0 +1,20 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.CurrencyWidget;
+@using Unity.Flex.Web.Views.Shared.Components;
+
+@model CurrencyViewModel;
+
+@if (Model.Field != null)
+{
+    <div class="custom-input-group">
+        <span class="custom-input-prepend">$</span>
+        <input type="@Model.Field.Type.ConvertInputType()"
+               label="@Model.Field.Label"
+               value="@Model.Field.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type)"
+               class="@Model.Field.Type.ApplyCssClass()"
+               min="@Model.Field.Definition?.ConvertDefinition(Model.Field.Type)?.GetMinValueOrNull()"
+               max="@Model.Field.Definition?.ConvertDefinition(Model.Field.Type)?.GetMaxValueOrNull()"
+               id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+               name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+               onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+    </div>
+}

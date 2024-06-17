@@ -1,6 +1,4 @@
 ﻿$(function () {
-    $('.currency-input').maskMoney();
-
     $('body').on('click', '#saveProjectInfoBtn', function () {
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
@@ -14,6 +12,11 @@
             } else {
                buildFormData(projectInfoObj, input)
             }
+        });
+
+        // Update checkboxes which are serialized if unchecked
+        $(`#projectInfoForm input:checkbox`).each(function () {
+            projectInfoObj[this.name] = (this.checked).toString();
         });
 
         updateProjectInfo(applicationId, projectInfoObj);
@@ -80,7 +83,6 @@
     $('#startDate').on('apply.daterangepicker', function (event, picker) {
         console.log(event, picker);
     });
-
 
 
     $('#economicRegions').change(function () {
@@ -150,11 +152,13 @@
     );
 
     PubSub.subscribe(
-        'fields_ProjectInfo',
+        'fields_projectinfo',
         () => {
             enableProjectInfoSaveBtn();
         }
     );
+
+    $('.unity-currency-input').maskMoney();
 });
 
 
@@ -163,7 +167,6 @@ function enableProjectInfoSaveBtn(inputText) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
     }
-
 
     $('#saveProjectInfoBtn').prop('disabled', false);
 }

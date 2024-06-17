@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
@@ -23,6 +25,8 @@ namespace Unity.GrantManager.Intakes
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
+        private readonly CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper;
+        private static int OneMinuteMilliseconds = 60000;
 
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
             IApplicantRepository applicantRepository,
@@ -32,7 +36,8 @@ namespace Unity.GrantManager.Intakes
             IApplicationStatusRepository applicationStatusRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
-            IApplicationFormVersionRepository applicationFormVersionRepository)
+            IApplicationFormVersionRepository applicationFormVersionRepository,
+            CustomFieldsIntakeSubmissionMapper customFieldsIntakeSubmissionMapper)
         {
             _unitOfWorkManager = unitOfWorkManager;
             _applicantRepository = applicantRepository;
@@ -43,6 +48,7 @@ namespace Unity.GrantManager.Intakes
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _applicationFormVersionRepository = applicationFormVersionRepository;
+            _customFieldsIntakeSubmissionMapper = customFieldsIntakeSubmissionMapper;
         }
 
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
@@ -83,10 +89,96 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormId = applicationForm.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
                 ApplicationId = application.Id,
-                Submission = formSubmission.ToString()
+                Submission = ReplaceAdvancedFormIoControls(formSubmission)
             });
+
+            await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id, application.ApplicationFormId, formSubmission, formVersionSubmissionHeaderMapping);
+            
             await uow.SaveChangesAsync();
+
             return applicationFormSubmission.Id;
+        }
+
+        private static string ReplaceAdvancedFormIoControls(dynamic formSubmission)
+        {
+            string formSubmissionStr = formSubmission.ToString();
+            if (!string.IsNullOrEmpty(formSubmissionStr))
+            {
+                Dictionary<string, string> subPatterns = new Dictionary<string, string>();
+                subPatterns.Add(@"\borgbook\b", "select");
+                subPatterns.Add(@"\bsimpleaddressadvanced\b", "address");
+                subPatterns.Add(@"\bsimplebuttonadvanced\b", "button");
+                subPatterns.Add(@"\bsimplecheckboxadvanced\b", "checkbox");
+                subPatterns.Add(@"\bsimplecurrencyadvanced\b", "currency");
+                subPatterns.Add(@"\bsimpledatetimeadvanced\b", "datetime");
+                subPatterns.Add(@"\bsimpledayadvanced\b", "day");
+                subPatterns.Add(@"\bsimpleemailadvanced\b", "email");
+                subPatterns.Add(@"\bsimplenumberadvanced\b", "number");
+                subPatterns.Add(@"\bsimplepasswordadvanced\b", "password");
+                subPatterns.Add(@"\bsimplephonenumberadvanced\b", "phoneNumber");
+                subPatterns.Add(@"\bsimpleradioadvanced\b", "radio");
+                subPatterns.Add(@"\bsimpleselectadvanced\b", "select");
+                subPatterns.Add(@"\bsimpleselectboxesadvanced\b", "selectboxes");
+                subPatterns.Add(@"\bsimplesignatureadvanced\b", "signature");
+                subPatterns.Add(@"\bsimplesurveyadvanced\b", "survey");
+                subPatterns.Add(@"\bsimpletagsadvanced\b", "tags");
+                subPatterns.Add(@"\bsimpletextareaadvanced\b", "textarea");
+                subPatterns.Add(@"\bsimpletextfieldadvanced\b", "textfield");
+                subPatterns.Add(@"\bsimpletimeadvanced\b", "time");
+                subPatterns.Add(@"\bsimpleurladvanced\b", "url");
+
+                // Regular components
+                subPatterns.Add(@"\bsimplebcaddress\b", "address");
+                subPatterns.Add(@"\bbcaddress\b", "address");
+                subPatterns.Add(@"\bsimplebtnreset\b", "button");
+                subPatterns.Add(@"\bsimplebtnsubmit\b", "button");
+                subPatterns.Add(@"\bsimplecheckboxes\b", "selectboxes");
+                subPatterns.Add(@"\bsimplecheckbox\b", "checkbox");
+                subPatterns.Add(@"\bsimplecols2\b", "columns");
+                subPatterns.Add(@"\bsimplecols3\b", "columns");
+                subPatterns.Add(@"\bsimplecols4\b", "columns");
+                subPatterns.Add(@"\bsimplecontent\b", "content");
+                subPatterns.Add(@"\bsimpledatetime\b", "datetime");
+                subPatterns.Add(@"\bsimpleday\b", "day");
+                subPatterns.Add(@"\bsimpleemail\b", "email");
+                subPatterns.Add(@"\bsimplefile\b", "file");
+                subPatterns.Add(@"\bsimpleheading\b", "header");
+                subPatterns.Add(@"\bsimplefieldset\b", "fieldset");
+                subPatterns.Add(@"\bsimplenumber\b", "number");
+                subPatterns.Add(@"\bsimplepanel", "panel");
+                subPatterns.Add(@"\bsimpleparagraph\b", "textarea");
+                subPatterns.Add(@"\bsimplephonenumber\b", "phoneNumber");
+                subPatterns.Add(@"\bsimpleradios\b", "radio");
+                subPatterns.Add(@"\bsimpleselect\b", "select");
+                subPatterns.Add(@"\bsimpletabs\b", "tabs");
+                subPatterns.Add(@"\bsimpletextarea\b", "textarea");
+                subPatterns.Add(@"\bsimpletextfield\b", "textfield");
+                subPatterns.Add(@"\bsimpletime\b", "time");
+                string replacedString = formSubmissionStr;
+
+                //find the replacement
+                foreach (var subPattern in subPatterns)
+                {
+                    string patternKey = subPattern.Key;
+                    string replace = subPattern.Value;
+                    // Allow one minute timeout
+                    try
+                    {
+                        replacedString = Regex.Replace(replacedString, 
+                            patternKey, 
+                            replace, 
+                            RegexOptions.None, 
+                            TimeSpan.FromMilliseconds(OneMinuteMilliseconds));
+                    }
+                    catch (RegexMatchTimeoutException ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+                
+                formSubmissionStr = replacedString;
+            }
+            return formSubmissionStr;
         }
 
         private async Task<Application> CreateNewApplicationAsync(IntakeMapping intakeMap,
@@ -97,31 +189,31 @@ namespace Unity.GrantManager.Intakes
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = ResolveAndTruncateField(255, "{ProjectName}", intakeMap.ProjectName),
+                    ProjectName = ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
-                    ReferenceNo = intakeMap.ConfirmationId ?? "{Confirmation ID}",
-                    Acquisition = intakeMap.Acquisition ?? null,
-                    Forestry = intakeMap.Forestry ?? null,
-                    ForestryFocus = intakeMap.ForestryFocus ?? null,
-                    City = intakeMap.PhysicalCity ?? "{City}", // To be determined from the applicant
-                    EconomicRegion = intakeMap.EconomicRegion ?? "{Region}",
+                    ReferenceNo = intakeMap.ConfirmationId ?? string.Empty,
+                    Acquisition = intakeMap.Acquisition,
+                    Forestry = intakeMap.Forestry,
+                    ForestryFocus = intakeMap.ForestryFocus,
+                    City = intakeMap.PhysicalCity, // To be determined from the applicant
+                    EconomicRegion = intakeMap.EconomicRegion,
                     CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
                     RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
                     SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
                     ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
                     ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
                     TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
-                    Community = intakeMap.Community ?? "{Community}",
-                    ElectoralDistrict = intakeMap.ElectoralDistrict ?? "{ElectoralDistrict}",
-                    RegionalDistrict = intakeMap.RegionalDistrict ?? "{RegionalDistrict}",
-                    SigningAuthorityFullName = intakeMap.SigningAuthorityFullName ?? "{SigningAuthorityFullName}",
-                    SigningAuthorityTitle = intakeMap.SigningAuthorityTitle ?? "{SigningAuthorityTitle}",
-                    SigningAuthorityEmail = intakeMap.SigningAuthorityEmail ?? "{SigningAuthorityEmail}",
-                    SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone ?? "{SigningAuthorityBusinessPhone}",
-                    SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone ?? "{SigningAuthorityCellPhone}",
-                    Place = intakeMap.Place ?? "{Place}"
+                    Community = intakeMap.Community,
+                    ElectoralDistrict = intakeMap.ElectoralDistrict,
+                    RegionalDistrict = intakeMap.RegionalDistrict,
+                    SigningAuthorityFullName = intakeMap.SigningAuthorityFullName,
+                    SigningAuthorityTitle = intakeMap.SigningAuthorityTitle,
+                    SigningAuthorityEmail = intakeMap.SigningAuthorityEmail,
+                    SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone,
+                    SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone,
+                    Place = intakeMap.Place
                 }
             );
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
@@ -198,15 +290,15 @@ namespace Unity.GrantManager.Intakes
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = ResolveAndTruncateField(600, "{ApplicantName}", intakeMap.ApplicantName),
-                NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName ?? "{NonRegisteredBusinessName}",
-                OrgName = intakeMap.OrgName ?? "{OrgName}",
-                OrgNumber = intakeMap.OrgNumber ?? "{OrgNumber}",
-                OrganizationType = intakeMap.OrganizationType ?? "{OrganizationType}",
-                Sector = intakeMap.Sector ?? "{Sector}",
-                SubSector = intakeMap.SubSector ?? "{SubSector}",
-                SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc ?? "{SectorSubSectorIndustryDesc}",
-                ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees ?? "{ApproxNumberOfEmployees}",
+                ApplicantName = ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
+                NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
+                OrgName = intakeMap.OrgName,
+                OrgNumber = intakeMap.OrgNumber,
+                OrganizationType = intakeMap.OrganizationType,
+                Sector = intakeMap.Sector,
+                SubSector = intakeMap.SubSector,
+                SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc,
+                ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
             });
 
@@ -226,11 +318,11 @@ namespace Unity.GrantManager.Intakes
                 {
                     ApplicantId = applicant.Id,
                     ApplicationId = application.Id,
-                    Name = intakeMap.ContactName ?? "{ContactName}",
-                    Phone = intakeMap.ContactPhone ?? "{ContactPhone}",
-                    Phone2 = intakeMap.ContactPhone2 ?? "{ContactPhone2}",
-                    Email = intakeMap.ContactEmail ?? "{ContactEmail}",
-                    Title = intakeMap.ContactTitle ?? "{ContactTitle}",
+                    Name = intakeMap.ContactName ?? string.Empty,
+                    Phone = intakeMap.ContactPhone ?? string.Empty,
+                    Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
+                    Email = intakeMap.ContactEmail ?? string.Empty,
+                    Title = intakeMap.ContactTitle ?? string.Empty,
                 });
             }
 

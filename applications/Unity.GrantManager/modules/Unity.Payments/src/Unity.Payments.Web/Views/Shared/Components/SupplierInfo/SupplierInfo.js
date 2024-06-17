@@ -73,14 +73,14 @@ $(function () {
 
     setTimeout(function () { loadSiteInfoTable(); },1000);
     $('#nav-organization-info-tab').one('click', function () {
-        dataTable.columns.adjust();
+        dataTable?.columns?.adjust();
     });
 
     PubSub.subscribe(
         'refresh_sites_list',
         (msg, data) => {
             dataTable.ajax.reload();
-            dataTable.columns.adjust();
+            dataTable?.columns?.adjust();
         }
     );
 
