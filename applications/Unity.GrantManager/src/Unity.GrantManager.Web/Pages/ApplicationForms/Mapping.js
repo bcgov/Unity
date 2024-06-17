@@ -263,13 +263,26 @@
 
     function saveScoresheet() {
         let appFormId = $('#applicationFormId').val();
+        let originalValue = $('#originalScoresheetId').val();
         let scoresheetId = $('#scoresheet').val();
+        if (originalValue == scoresheetId) {
+            return;
+        }
         unity.grantManager.applicationForms.applicationForm.saveApplicationFormScoresheet({ applicationFormId: appFormId, scoresheetId: scoresheetId })
             .then(response => {
                 abp.notify.success(
                     'Scoresheet is successfully saved.',
                     'Application Form Scoresheet'
                 );
+                $('#originalScoresheetId').val(scoresheetId);
+                Swal.fire({
+                    title: "Note",
+                    text: "Please note that any changes made to the scoring sheet template will not impact assessments that have already been scored using the previous scoresheet template.",
+                    confirmButtonText: 'Ok',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    }
+                });
             });
     }
 
