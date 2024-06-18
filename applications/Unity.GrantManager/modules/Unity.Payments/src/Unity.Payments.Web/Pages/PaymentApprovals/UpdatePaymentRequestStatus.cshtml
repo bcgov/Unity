@@ -88,7 +88,7 @@
                                         <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPayment("@item.Id" + "_container", @group.GroupId)' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@item.CorrelationId" /></abp-column>
                                     </abp-row>
 
-                                    <input name="ApplicationPaymentApprovalForm.Index" type="hidden" value="@item.Id" />
+                                        <input name="ApplicationPaymentApprovalForm.Index" type="hidden" value="@uniqueIndex" />
                                     <input type="hidden" asp-for="@item.Id" />
                                     <input type="hidden" asp-for="@Model.IsApproval" />
                                     <abp-row class="m-0 p-3">
