@@ -89,10 +89,10 @@
     "ReviewerList:EndDate": "End Date",
     "ReviewerList:Status": "Status",
     "ReviewerList:Recommended": "Recommendation",
-    "ReviewerList:FinancialAnalysis": "Section Score 1", //We're renaming this
-    "ReviewerList:EconomicImpact": "Section Score 2", //We're renaming this
-    "ReviewerList:InclusiveGrowth": "Section Score 3", //We're renaming this
-    "ReviewerList:CleanGrowth": "Section Score 4", //We're renaming this
+    "ReviewerList:SectionScore1": "Section Score 1",
+    "ReviewerList:SectionScore2": "Section Score 2",
+    "ReviewerList:SectionScore3": "Section Score 3",
+    "ReviewerList:SectionScore4": "Section Score 4",
     "ReviewerList:Subtotal": "Subtotal",
 
     "AssessmentResultAttachments:Id": "#",

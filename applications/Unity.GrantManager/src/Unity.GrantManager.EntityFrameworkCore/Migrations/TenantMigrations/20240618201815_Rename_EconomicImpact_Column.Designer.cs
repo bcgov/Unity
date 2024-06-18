@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240618201815_Rename_EconomicImpact_Column")]
+    partial class Rename_EconomicImpact_Column
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1847,6 +1850,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("AssessorId")
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("CleanGrowth")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1870,6 +1876,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<int?>("InclusiveGrowth")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsComplete")
                         .HasColumnType("boolean");
 
@@ -1885,12 +1894,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("integer");
 
                     b.Property<int?>("SectionScore2")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SectionScore3")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SectionScore4")
                         .HasColumnType("integer");
 
                     b.Property<string>("Status")

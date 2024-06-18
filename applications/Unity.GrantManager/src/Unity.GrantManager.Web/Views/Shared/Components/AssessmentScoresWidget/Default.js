@@ -1,10 +1,10 @@
 ﻿function saveAssessmentScores() {
     try {        
         let data = {
-            "financialAnalysis": parseScoreValueInput("financialAnalysis"),
-            "economicImpact": parseScoreValueInput("economicImpact"),
-            "inclusiveGrowth": parseScoreValueInput("inclusiveGrowth"),
-            "cleanGrowth": parseScoreValueInput("cleanGrowth"),
+            "sectionScore1": parseScoreValueInput("sectionScore1"),
+            "sectionScore2": parseScoreValueInput("sectionScore2"),
+            "sectionScore3": parseScoreValueInput("sectionScore3"),
+            "sectionScore4": parseScoreValueInput("sectionScore4"),
             "assessmentId": $("#AssessmentId").val(),
         }        
         unity.grantManager.assessments.assessment.updateAssessmentScore(data)
@@ -37,11 +37,11 @@ function enableSaveButton(inputText) {
 }
 
 function updateSum() {
-    let financialAnalysis = $('#financialAnalysis').val() || 0;
-    let inclusiveGrowth = $('#inclusiveGrowth').val() || 0;
-    let cleanGrowth = $('#cleanGrowth').val() || 0;
-    let economicImpact = $('#economicImpact').val() || 0;
-    let sum = parseInt(financialAnalysis) + parseInt(inclusiveGrowth) + parseInt(cleanGrowth) + parseInt(economicImpact);
+    let sectionScore1 = $('#sectionScore1').val() || 0;
+    let sectionScore3 = $('#sectionScore3').val() || 0;
+    let sectionScore4 = $('#sectionScore4').val() || 0;
+    let sectionScore2 = $('#sectionScore2').val() || 0;
+    let sum = parseInt(sectionScore1) + parseInt(sectionScore3) + parseInt(sectionScore4) + parseInt(sectionScore2);
     $('#subTotal').val(sum);
 }
 

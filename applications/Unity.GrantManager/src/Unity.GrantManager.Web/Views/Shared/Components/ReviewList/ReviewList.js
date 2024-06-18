@@ -132,27 +132,27 @@ $(function () {
                     render: renderApproval,
                 },
                 {
-                    title: l('ReviewerList:FinancialAnalysis'),
+                    title: l('ReviewerList:SectionScore1'),
                     width: "60px",
-                    data: 'financialAnalysis',
+                    data: 'sectionScore1',
                     className: 'data-table-header',
                 },
                 {
-                    title: l('ReviewerList:EconomicImpact'),
+                    title: l('ReviewerList:SectionScore2'),
                     width: "60px",
-                    data: 'economicImpact',
+                    data: 'sectionScore2',
                     className: 'data-table-header',
                 },
                 {
-                    title: l('ReviewerList:InclusiveGrowth'),
+                    title: l('ReviewerList:SectionScore3'),
                     width: "60px",
-                    data: 'inclusiveGrowth',
+                    data: 'sectionScore3',
                     className: 'data-table-header',
                 },
                 {
-                    title: l('ReviewerList:CleanGrowth'),
+                    title: l('ReviewerList:SectionScore4'),
                     width: "60px",
-                    data: 'cleanGrowth',
+                    data: 'sectionScore4',
                     className: 'data-table-header',
                 },
                 {
@@ -161,7 +161,7 @@ $(function () {
                     className: 'data-table-header',
                     data: null,
                     render: function (data, type, row) {
-                        return parseInt(row.financialAnalysis ?? 0) + parseInt(row.economicImpact ?? 0) + parseInt(row.inclusiveGrowth ?? 0) + parseInt(row.cleanGrowth ?? 0);
+                        return parseInt(row.sectionScore1 ?? 0) + parseInt(row.sectionScore2 ?? 0) + parseInt(row.sectionScore3 ?? 0) + parseInt(row.sectionScore4 ?? 0);
                     }
                 
                 }
