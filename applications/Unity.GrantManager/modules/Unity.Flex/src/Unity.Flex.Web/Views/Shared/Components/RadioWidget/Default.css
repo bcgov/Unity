@@ -1,0 +1,9 @@
+﻿.custom-radio-button {
+    display: flex;
+    gap: 8px;
+}
+
+    .custom-radio-button input {
+        cursor: pointer;
+        transform: scale(1.3);
+    }

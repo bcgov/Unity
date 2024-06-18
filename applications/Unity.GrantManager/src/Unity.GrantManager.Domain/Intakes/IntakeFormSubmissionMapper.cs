@@ -59,19 +59,22 @@ namespace Unity.GrantManager.Intakes
                     dynamic? key = childToken["key"];
                     dynamic? label = childToken["label"];
 
-                    if (key != null && label != null && tokenType != null && tokenType.ToString() != "button" && !AllowableContainerTypes.Contains(tokenType.ToString()))
+                    if (key != null 
+                        && label != null 
+                        && tokenType != null 
+                        && tokenType.ToString() != "button"
+                        && !components.ContainsKey(key.ToString())
+                        && !AllowableContainerTypes.Contains(tokenType.ToString()))
                     {
                         var jsonValue = "{ \"type\": \"" + tokenType.ToString() + " \", \"label\":  \"" + label.ToString() + "\" }";
                         components.Add(key.ToString(), jsonValue);
                     }
-
                 }
             }
             catch (Exception ex)
-            {
-                // Duplicates are not an issue when adding the components 
-                // as it is a hash if it exists already it should be ok just continue on
-                Logger.LogException(ex);
+            {                
+                string ExceptionMessage = ex.Message;
+                Logger.LogInformation("An exception orccured adding components: {ExceptionMessage}", ExceptionMessage);
             }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }

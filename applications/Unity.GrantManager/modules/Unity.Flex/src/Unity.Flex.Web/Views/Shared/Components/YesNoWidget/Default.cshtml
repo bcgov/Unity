@@ -1,0 +1,16 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.YesNoWidget;
+@using Unity.Flex.Web.Views.Shared.Components;
+
+@model YesNoViewModel;
+
+@if (Model.Field != null)
+{
+    <select class="@Model.Field.Type.ApplyCssClass()"
+            id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+            name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+            onchange="@($"notifyFieldChange('{Model.Name}', this)")">
+        <option selected="@Model.Field.CurrentValue?.CompareSelectListValue("Please choose...")">Please choose...</option>
+        <option selected="@Model.Field.CurrentValue?.CompareSelectListValue("Yes")">Yes</option>
+        <option selected="@Model.Field.CurrentValue?.CompareSelectListValue("No")">No</option>
+    </select>
+}

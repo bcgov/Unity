@@ -2,3 +2,10 @@
     --bs-btn-active-color: var(--bc-colors-white-primary-500);
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
 }
+
+.spinner-text {
+    display: none; 
+    position:relative;
+    padding-left: 10px;
+    color: rgb(109, 109, 109);
+}

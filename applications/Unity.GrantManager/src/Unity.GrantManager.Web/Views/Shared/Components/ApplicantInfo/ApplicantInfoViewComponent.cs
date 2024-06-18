@@ -40,6 +40,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             ApplicantInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
+                ApplicationFormId = applicatInfoDto.ApplicationFormId,
                 ApplicationSectors = Sectors,
                 ApplicantId = applicatInfoDto.ApplicantId
             };
