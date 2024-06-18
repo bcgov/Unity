@@ -155,8 +155,9 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.AssessmentResults.Default,
 
                     GrantApplicationPermissions.Payments.Default,
-                    GrantApplicationPermissions.Payments.Approve,
-                    GrantApplicationPermissions.Payments.Decline,
+                    GrantApplicationPermissions.Payments.L1ApproveOrDecline,
+                    GrantApplicationPermissions.Payments.L2ApproveOrDecline,
+                    GrantApplicationPermissions.Payments.L3ApproveOrDecline,
 
               }, context.TenantId);
         }

@@ -10,6 +10,9 @@ using Volo.Abp.Features;
 using Volo.Abp.Users;
 using Volo.Abp.Domain.Repositories;
 using System.Linq;
+using Unity.Payments.Domain.Shared;
+using Unity.Payments.Domain.Services;
+using Unity.Payments.Enums;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -20,14 +23,16 @@ namespace Unity.Payments.PaymentRequests
         private readonly IPaymentRequestRepository _paymentRequestsRepository;
         private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
         private readonly ICurrentUser _currentUser;
+        private readonly IPaymentsManager _paymentsManager;
 
         public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
-            ICurrentUser currentUser)
+            ICurrentUser currentUser, IPaymentsManager paymentsManager)
         {            
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
+            _paymentsManager = paymentsManager;
         }
 
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
@@ -80,25 +85,44 @@ namespace Unity.Payments.PaymentRequests
         {
             List<PaymentRequestDto> updatedPayments = [];
 
-
+            var paymentThreshold = await GetPaymentThresholdAsync();
             foreach (var dto in paymentRequests)
             {
                 var payment = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
-              
-                payment.SetPaymentRequestStatus(dto.Status);
+                List<PaymentRequestStatus> level1Approvals = new List<PaymentRequestStatus>{
+                    PaymentRequestStatus.L1Pending,PaymentRequestStatus.L1Declined};
+                List<PaymentRequestStatus> level2Approvals = new List<PaymentRequestStatus>{
+                    PaymentRequestStatus.L2Pending,PaymentRequestStatus.L2Declined};
+                List<PaymentRequestStatus> level3Approvals = new List<PaymentRequestStatus>{
+                    PaymentRequestStatus.L3Pending,PaymentRequestStatus.L3Declined};
 
-                if(dto.Status == Enums.PaymentRequestStatus.L1Approved)
-                {
-                  var index =  payment.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
-                    payment.ExpenseApprovals[index].Approve();
-                  
 
-                }
-                else if(dto.Status == Enums.PaymentRequestStatus.L1Declined)
+                var triggerAction = PaymentApprovalAction.None;
+
+                if (_currentUser.IsInRole("l1_approver") && (payment.Status.IsIn(level1Approvals)))
                 {
-                    var index = payment.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
-                    payment.ExpenseApprovals[index].Decline();
+                    triggerAction = dto.isApprove ? PaymentApprovalAction.L1Approve : PaymentApprovalAction.L1Decline;
                 }
+
+
+                if (_currentUser.IsInRole("l2_approver") && (payment.Status.IsIn(level2Approvals)))
+                {
+                    if (payment.Amount > paymentThreshold)
+                    {
+                        triggerAction = dto.isApprove ? (PaymentApprovalAction.L2Approve) : PaymentApprovalAction.L2Decline;
+                    }
+                    else
+                    {
+                        triggerAction = dto.isApprove ? (PaymentApprovalAction.Submit) : PaymentApprovalAction.L2Decline;
+                    }
+                }
+
+                if (_currentUser.IsInRole("l3_approver") && payment.Status.IsIn(level3Approvals))
+                {
+                    triggerAction = dto.isApprove ? PaymentApprovalAction.Submit : PaymentApprovalAction.L3Decline;
+                }
+
+                await _paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
 
                 var result = await _paymentRequestsRepository.UpdateAsync(payment);
                 updatedPayments.Add(new PaymentRequestDto()

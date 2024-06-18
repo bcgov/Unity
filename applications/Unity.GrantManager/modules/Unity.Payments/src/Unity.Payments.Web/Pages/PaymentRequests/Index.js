@@ -18,7 +18,7 @@ $(function () {
         
         {
             text: 'Approve',
-            className: 'custom-table-btn flex-none btn btn-secondary payment-status-approve',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
                 paymentRequestStatusModal.open({
                     paymentIds: JSON.stringify(selectedPaymentIds),
@@ -29,7 +29,7 @@ $(function () {
         },
         {
             text: 'Decline',
-            className: 'custom-table-btn flex-none btn btn-secondary payment-status-decline',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
                 paymentRequestStatusModal.open({
                     paymentIds: JSON.stringify(selectedPaymentIds),
@@ -78,10 +78,9 @@ $(function () {
         defaultVisibleColumns,
         listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
-    let approve_buttons = dataTable.buttons(['.payment-status-approve']);
-    let decline_buttons = dataTable.buttons(['.payment-status-decline']);
-    approve_buttons.disable();
-    decline_buttons.disable();
+    let payment_approve_buttons = dataTable.buttons(['.payment-status']);
+ 
+    payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
@@ -112,17 +111,18 @@ $(function () {
    function checkActionButtons() {
 
        if (dataTable.rows({ selected: true }).indexes().length === 0) {
-           approve_buttons.disable();
-           decline_buttons.disable();
+           payment_approve_buttons.disable();
+       
        }
        else {
-           if(abp.auth.isGranted('GrantApplicationManagement.Payments.Approve')) {
-               approve_buttons.enable();
-              
+
+           if(abp.auth.isGranted('GrantApplicationManagement.Payments.L1ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L2ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L3ApproveOrDecline')) {
+               payment_approve_buttons.enable();
+
+           } else {
+               payment_approve_buttons.disable();
            }
-           if(abp.auth.isGranted('GrantApplicationManagement.Payments.Decline')) {
-               decline_buttons.enable();
-           }
+          
            
           
        }
@@ -265,34 +265,44 @@ $(function () {
             index: 9,
             render: function (data) {
                 switch (data) {
-                    case 1:
-                        return "Created";
-                    case 2:
-                        return "Submitted";
-                    case 3:
-                        return "Approved";
-                    case 4:
-                        return "Declined";
-                    case 5:
-                        return "Awaiting Approval";
-                    case 6:
+               
+                    case "L1Pending":
                         return "L1 Pending";
-                    case 7:
+
+                    case "L1Approved":
                         return "L1 Approved";
-                    case 8:
+
+                    case "L1Declined":
                         return "L1 Declined";
-                    case 9:
+
+                    case "L2Pending":
                         return "L2 Pending";
-                    case 10:
+
+                    case "L2Approved":
                         return "L2 Approved";
-                    case 11:
+
+                    case "L2Declined":
                         return "L2 Declined";
-                    case 12:
+
+                    case "L3Pending":
                         return "L3 Pending";
-                    case 13:
+
+                    case "L3Approved":
                         return "L3 Approved";
-                    case 14:
+
+                    case "L3Declined":
                         return "L3 Declined";
+
+                    case "Submitted":
+                        return "Submitted";
+
+                    case "Paid":
+                        return "Paid";
+
+                    case "PaymentFailed":
+                        return "Payment Failed"
+
+
                     default:
                         return "Created";
                 }
@@ -426,8 +436,8 @@ $(function () {
             'Payment Requests'
         );
         dataTable.ajax.reload(null, false);
-        approve_buttons.disable();
-        decline_buttons.disable();
+        payment_approve_buttons.disable();
+      
         selectedPaymentIds = [];
     });
 });

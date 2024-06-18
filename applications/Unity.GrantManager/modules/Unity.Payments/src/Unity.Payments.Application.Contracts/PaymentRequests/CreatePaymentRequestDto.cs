@@ -22,7 +22,9 @@ namespace Unity.Payments.PaymentRequests
     public class UpdatePaymentStatusRequestDto
     {
         public Guid PaymentRequestId { get; set; }
-        public PaymentRequestStatus Status { get; set; }
+      
+
+        public bool isApprove { get; set; }
     }
 #pragma warning restore CS8618
 }

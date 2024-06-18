@@ -1,9 +1,202 @@
-﻿using Volo.Abp.Domain.Services;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Stateless;
+using Stateless.Graph;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Unity.Payments.Domain.PaymentRequests;
+using Unity.Payments.Domain.Shared;
+using Unity.Payments.Domain.Workflow;
+using Unity.Payments.Enums;
+using Volo.Abp;
+using Volo.Abp.Domain.Services;
+using Volo.Abp.Uow;
+using Volo.Abp.Users;
 
 namespace Unity.Payments.Domain.Services
 {    
-    public class PaymentsManager : DomainService
+    public class PaymentsManager : DomainService, IPaymentsManager
     {
         /* To be implemented */
+        private readonly IPaymentRequestRepository _paymentRequestRepository;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
+        private readonly ICurrentUser _currentUser;
+
+        public PaymentsManager(
+       IPaymentRequestRepository paymentRequestRepository, IUnitOfWorkManager unitOfWorkManager, ICurrentUser currentUser)
+        {
+            _paymentRequestRepository = paymentRequestRepository;
+            _unitOfWorkManager = unitOfWorkManager;
+            _currentUser = currentUser;
+
+        }
+
+        private void ConfigureWorkflow(StateMachine<PaymentRequestStatus, PaymentApprovalAction> paymentStateMachine)
+        {
+
+
+            paymentStateMachine.Configure(PaymentRequestStatus.L1Pending)
+                .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => IsApprover("l1_approver"))
+                .PermitIf(PaymentApprovalAction.L1Decline, PaymentRequestStatus.L1Declined, () => IsApprover("l1_approver"));
+
+            paymentStateMachine.Configure(PaymentRequestStatus.L1Declined)
+                  .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => IsApprover("l1_approver"));
+
+            paymentStateMachine.Configure(PaymentRequestStatus.L2Pending)
+                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => IsApprover("l2_approver"))
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l2_approver"))
+                .PermitIf(PaymentApprovalAction.L2Decline, PaymentRequestStatus.L2Declined, () => IsApprover("l2_approver"));
+
+            paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
+                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => IsApprover("l2_approver"))
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l2_approver"));
+
+            paymentStateMachine.Configure(PaymentRequestStatus.L3Pending)
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l3_approver"))
+                .PermitIf(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => IsApprover("l3_approver"));
+
+            paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l2_approver"));
+    
+
+        }
+
+        private bool IsApprover(string role)
+        {
+            return _currentUser.IsInRole(role);
+        }
+
+
+        public async Task<List<PaymentActionResultItem>> GetActions(Guid paymentRequestsId)
+          
+        {
+          
+            var paymentRequest = await _paymentRequestRepository.GetAsync(paymentRequestsId, true);
+
+            // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
+            var Workflow = new PaymentsWorkflow<PaymentRequestStatus, PaymentApprovalAction>(
+                () => paymentRequest.Status,
+                s => paymentRequest.SetPaymentRequestStatus(s), ConfigureWorkflow);
+
+            var allActions = Workflow.GetAllActions().Distinct().ToList();
+            var permittedActions = Workflow.GetPermittedActions().ToList();
+
+            var actionsList = allActions
+                .Select(trigger =>
+                new PaymentActionResultItem
+                {
+                    PaymentApprovalAction  = trigger,
+                    IsPermitted = permittedActions.Contains(trigger),
+                    IsInternal = trigger.ToString().StartsWith("Internal_")
+                })
+                .OrderBy(x => (int)x.PaymentApprovalAction)
+                .ToList();
+
+            return actionsList;
+        }
+
+        public async Task<PaymentRequest> TriggerAction(Guid paymentRequestsId, PaymentApprovalAction triggerAction)
+        {
+            var paymentRequest = await _paymentRequestRepository.GetAsync(paymentRequestsId, true);
+
+            var statusChange = paymentRequest.Status;
+
+            //if (triggerAction == PaymentsAction.Decline && paymentRequest.DeclineRational.IsNullOrEmpty())
+            //{
+            //    throw new UserFriendlyException("The \"Decline Rationale\" is Required for application denial");
+            //}
+
+            //if ((triggerAction == PaymentsAction.Approve || triggerAction == PaymentsAction.Decline) && paymentRequest.d == null)
+            //{
+            //    throw new UserFriendlyException("The Decision Date is Required.");
+            //}
+
+            // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
+            // WARNING: DRAFT CODE - MAY NOT BE PERSISTING STATE TRANSITIONS CORRECTLY
+            var Workflow = new PaymentsWorkflow<PaymentRequestStatus, PaymentApprovalAction>(
+                () => statusChange,
+                s => statusChange = s,
+            ConfigureWorkflow);
+
+            await Workflow.ExecuteActionAsync(triggerAction);
+
+            var statusChangedTo = PaymentRequestStatus.L1Pending;
+
+            // NOTE: Is this required or can the navigation property be set on its own?
+          
+          
+
+            if (triggerAction == PaymentApprovalAction.L1Approve)
+            {
+                var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
+                paymentRequest.ExpenseApprovals[index].Approve();
+                statusChangedTo = PaymentRequestStatus.L2Pending;
+            }
+            else if(triggerAction == PaymentApprovalAction.L1Decline)
+            {
+                var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
+                paymentRequest.ExpenseApprovals[index].Decline();
+                statusChangedTo = PaymentRequestStatus.L1Declined;
+            } 
+            else if(triggerAction == PaymentApprovalAction.L2Approve)
+            {
+                var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
+                paymentRequest.ExpenseApprovals[index].Approve();
+                statusChangedTo = PaymentRequestStatus.L3Pending;
+                
+            }
+             else if(triggerAction == PaymentApprovalAction.L2Decline)
+            {
+                var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
+                paymentRequest.ExpenseApprovals[index].Decline();
+                statusChangedTo = PaymentRequestStatus.L2Declined;
+            }
+           
+             else if(triggerAction == PaymentApprovalAction.L3Decline)
+            {
+                var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level3);
+                paymentRequest.ExpenseApprovals[index].Decline();
+                statusChangedTo = PaymentRequestStatus.L3Declined;
+            }
+
+            else if (triggerAction == PaymentApprovalAction.Submit)
+            {
+                if (_currentUser.IsInRole("l2_approver"))
+                {
+                    var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
+                    paymentRequest.ExpenseApprovals[index].Approve();
+                }
+                else if (_currentUser.IsInRole("l3_approver"))
+                {
+                    var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level3);
+                    paymentRequest.ExpenseApprovals[index].Approve();
+                }
+
+                statusChangedTo = PaymentRequestStatus.Submitted;
+            }
+            paymentRequest.SetPaymentRequestStatus(statusChangedTo);
+
+            return await _paymentRequestRepository.UpdateAsync(paymentRequest);
+        }
+
+        public async Task UpdatePaymentStatusAsync(Guid paymentRequestId, PaymentApprovalAction triggerAction)
+        {
+            try
+            {
+                using var uow = _unitOfWorkManager.Begin();
+
+                await TriggerAction(paymentRequestId, triggerAction);
+
+                await uow.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+
+        }
+
+
     }
 }

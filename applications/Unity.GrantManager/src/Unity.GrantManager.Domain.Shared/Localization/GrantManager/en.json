@@ -322,8 +322,9 @@
 
 
     "Permission:GrantApplicationPermissions.Payments.Default": "Payments",
-    "Permission:GrantApplicationPermissions.Payments.Approve": "Approve Payments",
-    "Permission:GrantApplicationPermissions.Payments.Decline": "Decline Payments"
+    "Permission:GrantApplicationPermissions.Payments.L1ApproveOrDecline": "Approve/Decline L1 Payments",
+    "Permission:GrantApplicationPermissions.Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
+    "Permission:GrantApplicationPermissions.Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments"
   }
 }
 

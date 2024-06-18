@@ -84,7 +84,11 @@
     "ApplicationPaymentStatusRequest:Description": "Description",
     "ApplicationPaymentStatusRequest:CancelButtonText": "Cancel",
     "ApplicationPaymentStatusRequest:ApproveButtonText": "Approve Payments",
-    "ApplicationPaymentStatusRequest:DeclineButtonText": "Decline Payments"
+    "ApplicationPaymentStatusRequest:DeclineButtonText": "Decline Payments",
+
+    "ApplicationPaymentStatusRequest:L1ApproveOrDeclineTitle": "Approve/Decline L1 Payment Requests",
+    "ApplicationPaymentStatusRequest:L2ApproveOrDeclineTitle": "Approve/Decline L2 Payment Requests",
+    "ApplicationPaymentStatusRequest:L3ApproveOrDeclineTitle": "Approve/Decline L3 Payment Requests"
 
 
 

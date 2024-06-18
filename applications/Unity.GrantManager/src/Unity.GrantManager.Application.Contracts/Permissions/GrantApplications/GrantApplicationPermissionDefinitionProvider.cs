@@ -48,8 +48,10 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             // Payment Requests
             var paymentsPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Payments.Default, L("Permission:GrantApplicationPermissions.Payments.Default"));
-            paymentsPermissions.AddChild(GrantApplicationPermissions.Payments.Approve, L("Permission:GrantApplicationPermissions.Payments.Approve"));
-            paymentsPermissions.AddChild(GrantApplicationPermissions.Payments.Decline, L("Permission:GrantApplicationPermissions.Payments.Decline"));
+            paymentsPermissions.AddChild(GrantApplicationPermissions.Payments.L1ApproveOrDecline, L("Permission:GrantApplicationPermissions.Payments.L1ApproveOrDecline"));
+            paymentsPermissions.AddChild(GrantApplicationPermissions.Payments.L2ApproveOrDecline, L("Permission:GrantApplicationPermissions.Payments.L2ApproveOrDecline"));
+            paymentsPermissions.AddChild(GrantApplicationPermissions.Payments.L3ApproveOrDecline, L("Permission:GrantApplicationPermissions.Payments.L3ApproveOrDecline"));
+           
         }
 
         private static LocalizableString L(string name)

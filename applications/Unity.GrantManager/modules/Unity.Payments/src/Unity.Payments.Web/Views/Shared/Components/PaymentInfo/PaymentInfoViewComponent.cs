@@ -40,9 +40,9 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
             };
             var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
 
-           model.TotalPaid= paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Approved))
+           model.TotalPaid= paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Paid))
                                   .Sum(e => e.Amount);
-            model.TotalPendingAmounts = paymentRequests.Where(e => e.Status.Equals(PaymentRequestStatus.Created) || e.Status.Equals(PaymentRequestStatus.Submitted) || e.Status.Equals(PaymentRequestStatus.AwaitingApproval)).Sum(e => e.Amount);
+            model.TotalPendingAmounts = paymentRequests.Where(e => e.Status != PaymentRequestStatus.Paid).Sum(e => e.Amount);
             model.RemainingAmount = application.ApprovedAmount - model.TotalPaid;
 
             return View(model);
