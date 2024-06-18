@@ -40,6 +40,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             AssessmentResultsPageModel model = new()
             {
                 ApplicationId = applicationId,
+                ApplicationFormId = application.ApplicationForm.Id,
                 IsEditGranted = isEditGranted, 
                 IsPostEditFieldsAllowed = isPostEditFieldsAllowed,                
 

@@ -1,14 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
-using Unity.Payments.Suppliers;
 using Unity.Payments.PaymentRequests;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Unity.Payments.PaymentConfigurations;
-using Unity.GrantManager.GrantApplications;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Unity.Payment.Shared;
 using System.Text.Json;
 using Unity.Payments.Enums;
 
@@ -30,34 +25,22 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         public PaymentRequestStatus Status { get; set; }
         public List<Guid> SelectedPaymentIds { get; set; }
-        private readonly IGrantApplicationAppService _applicationService;
         private readonly IPaymentRequestAppService _paymentRequestService;
-        private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
-        private readonly ISupplierAppService _iSupplierAppService;
 
-        public UpdatePaymentRequestStatus(IGrantApplicationAppService applicationService,
-           ISupplierAppService iSupplierAppService,
-           IPaymentRequestAppService paymentRequestService,
-           IPaymentConfigurationAppService paymentConfigurationAppService)
+        public UpdatePaymentRequestStatus(IPaymentRequestAppService paymentRequestService)
         {
             SelectedPaymentIds = [];
-            _applicationService = applicationService;
             _paymentRequestService = paymentRequestService;
-            _paymentConfigurationAppService = paymentConfigurationAppService;
-            _iSupplierAppService = iSupplierAppService;
         }
 
         public async Task OnGetAsync(string paymentIds, bool isApprove)
         {
-
             IsApproval = isApprove;
             SelectedPaymentIds = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? [];
             var payments = await _paymentRequestService.GetListByPaymentIdsAsync(SelectedPaymentIds);
 
             foreach (var payment in payments)
             {
-               
-
                 PaymentsApprovalModel request = new()
                 {
                     Id = payment.Id,
@@ -66,26 +49,17 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                     Amount = payment.Amount,
                     Description = payment.Description,
                     InvoiceNumber = payment.InvoiceNumber,
-                   
                 };
-
 
                 ApplicationPaymentApprovalForm!.Add(request);
             }
-
         }
-
-      
-
-      
 
         public async Task<IActionResult> OnPostAsync()
         {
             if (ApplicationPaymentApprovalForm == null) return NoContent();
 
-            
-
-            if(IsApproval)
+            if (IsApproval)
             {
                 Status = PaymentRequestStatus.L1Approved;
             }
@@ -113,7 +87,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                     PaymentRequestId = payment.Id,
                     Status = status,
 
-                }) ;
+                });
             }
 
             return payments;

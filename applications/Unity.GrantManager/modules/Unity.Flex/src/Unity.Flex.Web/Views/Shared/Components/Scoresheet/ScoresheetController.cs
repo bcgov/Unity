@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Flex.Web.Views.Shared.Components.Scoresheet
@@ -9,9 +12,12 @@ namespace Unity.Flex.Web.Views.Shared.Components.Scoresheet
 	{
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult Scoresheet()
+        public IActionResult Scoresheet([FromQuery] string scoresheetIdsToLoad)
         {
-            return ViewComponent("Scoresheet");
+            var scoresheetIds = string.IsNullOrEmpty(scoresheetIdsToLoad)
+                ? []
+                : scoresheetIdsToLoad.Split(',').Select(Guid.Parse).ToList();
+            return ViewComponent("Scoresheet", new { scoresheetIdsToLoad = scoresheetIds });
         }
     }
 }

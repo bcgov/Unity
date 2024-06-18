@@ -17,6 +17,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public List<SelectListItem> SubStatusActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.SubStatusActionList);
 
         public Guid ApplicationId { get; set; }
+        public Guid ApplicationFormId { get; set; }
 
         public AssessmentResultsModel AssessmentResults { get; set; } = new();
         public bool IsEditGranted { get; set; }

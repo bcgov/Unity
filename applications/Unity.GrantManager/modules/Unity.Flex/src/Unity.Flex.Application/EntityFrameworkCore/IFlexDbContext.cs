@@ -2,6 +2,7 @@
 using Unity.Flex.Domain;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
@@ -13,6 +14,7 @@ public interface IFlexDbContext : IEfCoreDbContext
 {
     // Worksheets
     DbSet<Worksheet> Worksheets { get; set; }
+    DbSet<WorksheetLink> WorksheetLinks { get; set; }
     DbSet<WorksheetInstance> WorksheetsInstances { get; set; }
     DbSet<WorksheetSection> WorksheetsSections { get; set; }
     DbSet<CustomField> CustomFields { get; set; }

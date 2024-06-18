@@ -16,4 +16,11 @@ public class SiteDto : AuditedEntityDto<Guid>
     public string? Province { get; set; }
     public string? PostalCode { get; set; }
     public Guid SupplierId { get; set; }
+    public string? Country { get; set; }
+    public string? EmailAddress { get; set; }
+    public string? EFTAdvicePref { get; set; }
+    public string? ProviderId { get; set; }
+    public string? Status { get; set; }
+    public string? SiteProtected { get; set; }
+    public DateTime? LastUpdatedInCas { get; set; }
 }

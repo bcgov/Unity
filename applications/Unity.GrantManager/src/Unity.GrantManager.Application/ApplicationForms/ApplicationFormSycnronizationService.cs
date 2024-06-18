@@ -137,7 +137,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
             catch (Exception ex)
             {
-                Logger.LogError("ApplicationFormSycnronizationService->SynchronizeFormSubmissions Exception: {ex.Message}", ex.Message);
+                Logger.LogError(ex, "ApplicationFormSycnronizationService->SynchronizeFormSubmissions Exception: {Exception}", ex);
             }
         }
 
@@ -178,7 +178,7 @@ namespace Unity.GrantManager.ApplicationForms
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError("Exception: {ex.Message}", ex.Message);
+                        Logger.LogError(ex, "Exception: {Exception}", ex);
                     }
                 }
             }

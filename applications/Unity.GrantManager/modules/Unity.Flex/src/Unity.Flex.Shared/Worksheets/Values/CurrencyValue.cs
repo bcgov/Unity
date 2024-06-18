@@ -1,17 +1,8 @@
-﻿namespace Unity.Flex.Worksheets
+﻿namespace Unity.Flex.Worksheets.Values
 {
-    public class CurrencyValue
+    public class CurrencyValue : CustomValueBase
     {
-        public CurrencyValue()
-        {
-            // Intentionally left blank
-        }
-
-        public CurrencyValue(string value)
-        {
-            Value = value;
-        }
-
-        public object? Value { get; set; }
+        public CurrencyValue() : base() { }
+        public CurrencyValue(object value) : base(value) { }
     }
 }

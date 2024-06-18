@@ -22,9 +22,9 @@ public class ScoresheetViewComponent : AbpViewComponent
         _scoresheetService = scoresheetService;
     }
 
-    public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
+    public async Task<IViewComponentResult> InvokeAsync(List<Guid> scoresheetIdsToLoad)
     {
-        var scoresheets = await _scoresheetService.GetListAsync();
+        var scoresheets = await _scoresheetService.GetListAsync(scoresheetIdsToLoad);
         return View(new ScoresheetViewModel() { Scoresheets = scoresheets });
     }
 }
