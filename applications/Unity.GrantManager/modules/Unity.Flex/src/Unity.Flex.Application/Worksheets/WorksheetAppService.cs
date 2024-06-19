@@ -74,5 +74,10 @@ namespace Unity.Flex.Worksheets
 
             return ObjectMapper.Map<WorksheetSection, WorksheetSectionDto>(newWorksheetSection);
         }
+
+        public virtual async Task<List<WorksheetDto>> GetListAsync()
+        {            
+            return ObjectMapper.Map<List<Worksheet>, List<WorksheetDto>>(await worksheetRepository.GetListAsync(true));
+        }
     }
 }

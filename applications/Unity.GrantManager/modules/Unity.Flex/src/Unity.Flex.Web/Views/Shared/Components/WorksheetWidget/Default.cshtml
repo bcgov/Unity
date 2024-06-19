@@ -1,0 +1,82 @@
+﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.Worksheets;
+@using Volo.Abp.Authorization.Permissions;
+
+@inject IHtmlLocalizer<FlexResource> L
+@inject IPermissionChecker PermissionChecker
+@model Unity.Flex.Web.Views.Shared.Components.Worksheets.WorksheetWidgetViewModel;
+
+@section scripts {
+    <abp-script src="/libs/sortablejs/Sortable.js"></abp-script>
+}
+
+@{
+    var worksheet = @Model.Worksheet;
+    <div id="collapse-@worksheet.Id" class="accordion-collapse collapse" data-worksheet="@worksheet.Id" aria-labelledby="heading-@worksheet.Id" data-bs-parent="#worksheet-accordion">
+        <div class="accordion-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="p-3">
+                        <button id="edit_worksheet_btn" onclick="openWorksheetModal('@worksheet.Id','Edit Worksheet');" class="btn btn-light" type="button">
+                            <i class="fl fl-edit"></i> <span>@L["Worksheet:Configuration:EditWorksheetButtonText"].Value</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="sections-custom-fields" class="list-group col">
+                @foreach (var sect in worksheet.Sections)
+                {
+                    <div class="list-group-item row section-item" data-type="section" data-id="@sect.Id" data-scoresheetid="@worksheet.Id" data-label="@sect.Name">
+                        <div class="col">
+                            <i class="fl fl-draggable"></i>
+                            <span class="p-2"><b>Section:</b> @sect.Name</span>
+                            <button class="btn question-info-btn float-end" type="button" onclick="openSectionModal('@worksheet.Id','@sect.Id','Edit Section');">
+                                <i class="fl fl-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                    @foreach (var customField in sect.Fields)
+                    {
+                        <div class="list-group-item row" data-type="custom-field" data-id="@customField.Id" data-scoresheetid="@worksheet.Id">
+                            <div class="col">
+                                <i class="fl fl-draggable"></i>                                
+                                <span class="p-2">@customField.Label</span>
+                                <button class="btn custom-field-info-btn float-end" type="button" onclick="openCustomFieldModal('@worksheet.Id','@sect.Id','@customField.Id','Edit Custom Field');">
+                                    <i class="fl fl-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="p-3">
+                        <button id="add_custom_field_btn" onclick="openQuestionModal('@worksheet.Id',null, null,'Add Custom Field');" class="btn btn-light" type="button" disabled="@worksheet.Sections.IsNullOrEmpty()">
+                            <i class="fl fl-plus"></i> <span>@L["Worksheet:Configuration:AddCustomFieldButtonText"].Value</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3">
+                        <button id="add_section_btn" onclick="openSectionModal('@worksheet.Id',null,'Add Section');" class="btn btn-light" type="button">
+                            <i class="fl fl-plus"></i> <span>@L["Worksheet:Configuration:AddSectionButtonText"].Value</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    // </div>
+}
+
+
+
+
+
+
+
+
+

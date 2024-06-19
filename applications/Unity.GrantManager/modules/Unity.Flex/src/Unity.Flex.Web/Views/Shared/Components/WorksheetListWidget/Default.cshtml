@@ -1,0 +1,64 @@
+﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetList;
+@using Unity.Flex.Web.Views.Shared.Components.Worksheets
+@using Volo.Abp.Authorization.Permissions;
+
+@inject IHtmlLocalizer<FlexResource> L
+@inject IPermissionChecker PermissionChecker
+@model Unity.Flex.Web.Views.Shared.Components.WorksheetList.WorksheetListViewModel;
+
+@section scripts {
+    <abp-script src="/libs/sortablejs/Sortable.js"></abp-script>
+}
+
+<div class="accordion" id="worksheet-accordion">
+    @foreach (var worksheet in Model.Worksheets)
+    {
+        <div class="accordion-item">
+            <div class="accordion-header" id="heading-@worksheet.Id">
+                <div class="d-flex w-100 align-items-center">
+                    <button class="accordion-button collapsed flex-grow-1" id="accordion-button-@worksheet.Id" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@worksheet.Id" aria-expanded="false" aria-controls="collapse-@worksheet.Id">
+                        <span class="flex-grow-1 text-start"><b>@worksheet.Title</b></span>                        
+                        <span class="custom-field-anchor">(@worksheet.UiAnchor)</span>                                                   
+                        <div class="text-end d-flex align-items-center custom-field-count-info">                            
+                            <div class="custom-field-count-title"><b>Sections:</b></div>
+                            <div class="custom-field-count-value">@worksheet.TotalSections</div>
+                            <div class="custom-field-count-title"><b>Fields:</b></div>
+                            <div class="custom-field-count-value">@worksheet.TotalFields</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            @await Component.InvokeAsync(typeof(WorksheetWidget), new { worksheetDto = worksheet })
+        </div>
+    }
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="p-3">
+            <button id="save_order_btn" onclick="saveOrder();" class="btn btn-light" type="button" disabled>
+                <span>@L["Worksheet:Configuration:SaveChangesButtonText"].Value</span>
+            </button>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="p-3">
+            <button id="discard_order_btn" onclick="updateScoresheetAccordion();" class="btn btn-light" type="button" disabled>
+                <span>@L["Worksheet:Configuration:DiscardChangesButtonText"].Value</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+

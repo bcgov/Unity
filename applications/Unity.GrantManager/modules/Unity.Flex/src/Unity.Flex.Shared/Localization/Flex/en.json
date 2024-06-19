@@ -13,6 +13,12 @@
     "Scoresheet:Configuration:AddSectionButtonText": "ADD SECTION",
     "Scoresheet:Configuration:EditScoresheetButtonText": "EDIT SCORING SHEET",
     "Scoresheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
-    "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES"
+    "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
+    "Worksheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
+    "Worksheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
+    "Worksheet:Configuration:EditWorksheetButtonText": "EDIT WORKSHEET",
+    "Worksheet:Configuration:AddCustomFieldButtonText": "ADD FIELD",
+    "Worksheet:Configuration:AddSectionButtonText": "ADD SECTION",
+    "Worksheet:Configuration:AddWorksheetButtonText": "ADD WORKSHEET"
   }
 }

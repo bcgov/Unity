@@ -55,5 +55,12 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .Where(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider))
                 .OrderBy(s => s.Name).ToListAsync();
         }
+
+        public async Task<List<Worksheet>> GetListAsync(bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet.IncludeDetails(includeDetails).ToListAsync();
+        }
     }
 }

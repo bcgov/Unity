@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System.Linq;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
@@ -13,14 +14,21 @@ public class FlexApplicationAutoMapperProfile : Profile
 {
     public FlexApplicationAutoMapperProfile()
     {
-        CreateMap<Worksheet, WorksheetDto>();
+        CreateMap<Worksheet, WorksheetDto>()
+            .ForMember(dest => dest.TotalSections, opt => opt.MapFrom(s => s.Sections.Select(s => s.Id).Count()))
+            .ForMember(dest => dest.TotalFields, opt => opt.MapFrom(s => s.Sections.SelectMany(s => s.Fields).Count()));
+
         CreateMap<WorksheetLink, WorksheetLinkDto>();
         CreateMap<WorksheetSection, WorksheetSectionDto>();
         CreateMap<WorksheetInstance, WorksheetInstanceDto>();
         CreateMap<CustomFieldValue, CustomFieldValueDto>();
         CreateMap<CustomField, CustomFieldDto>();
-        CreateMap<Worksheet, WorksheetBasicDto>();
-        CreateMap<PersistWorksheetIntanceValuesDto, PersistWorksheetIntanceValuesEto>();
+
+        CreateMap<Worksheet, WorksheetBasicDto>()
+            .ForMember(dest => dest.TotalSections, opt => opt.MapFrom(s => s.Sections.Select(s => s.Id).Count()))
+            .ForMember(dest => dest.TotalFields, opt => opt.MapFrom(s => s.Sections.SelectMany(s => s.Fields).Count()));
+
+        CreateMap<PersistWorksheetIntanceValuesDto, PersistWorksheetIntanceValuesEto>();        
 
         CreateMap<Question, QuestionDto>()
             .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore());

@@ -30,6 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Pages\WorksheetConfiguration\Index.css" />
+    <None Remove="Pages\WorksheetConfiguration\Index.js" />
     <None Remove="Views\Shared\Components\CheckboxGroupWidget\Default.css" />
     <None Remove="Views\Shared\Components\CheckboxGroupWidget\Default.js" />
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.css" />
@@ -48,6 +50,10 @@
     <None Remove="Views\Shared\Components\SelectListWidget\Default.js" />
     <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
     <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.js" />
+    <None Remove="Views\Shared\Components\WorksheetListWidget\WorksheetList.css" />
+    <None Remove="Views\Shared\Components\WorksheetListWidget\WorksheetList.js" />
+    <None Remove="Views\Shared\Components\WorksheetWidget\Worksheet.css" />
+    <None Remove="Views\Shared\Components\WorksheetWidget\Worksheet.js" />
     <None Remove="Views\Shared\Components\YesNoWidget\Default.css" />
     <None Remove="Views\Shared\Components\YesNoWidget\Default.js" />
   </ItemGroup>
@@ -75,6 +81,10 @@
     <EmbeddedResource Include="Views\Shared\Components\SelectListWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\WorksheetListWidget\WorksheetList.css" />
+    <EmbeddedResource Include="Views\Shared\Components\WorksheetListWidget\WorksheetList.js" />
+    <EmbeddedResource Include="Views\Shared\Components\WorksheetWidget\Worksheet.css" />
+    <EmbeddedResource Include="Views\Shared\Components\WorksheetWidget\Worksheet.js" />
     <EmbeddedResource Include="Views\Shared\Components\YesNoWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\YesNoWidget\Default.js" />
   </ItemGroup>
