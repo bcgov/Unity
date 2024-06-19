@@ -16,121 +16,87 @@
 
 <form method="post" asp-page-handler="OnPostAsync" id="paymentRequestStatus">
     <abp-modal size="ExtraLarge" id="payment-modal">
-        @if(Model.IsApproval)
+        @if (Model.IsApproval)
         {
             <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentStatusRequest:ApproveTitle"].Value"></abp-modal-header>
         }
         else
         {
             <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentStatusRequest:DeclineTitle"].Value"></abp-modal-header>
-
         }
 
         <abp-modal-body>
             <abp-card>
                 <abp-card-body class="payment-card">
                     <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
-                    <abp-input id="ApplicationCount" type="hidden" asp-for="ApplicationPaymentApprovalForm.Count" />
+                    <abp-input id="ApplicationCount" type="hidden" asp-for="PaymentGroupings.Count" />
 
-                    @if (Model.ApplicationPaymentApprovalForm.Count >= 1)
+                    @if (Model.PaymentGroupings.Count >= 1)
                     {
-                     @*  @for (var i = 0; i < Model.ApplicationPaymentApprovalForm?.Count; i++)
-                         {
-                             <div id="@($"{Model.ApplicationPaymentApprovalForm[i].Id}_container")" class="single-payment">
-                                 <abp-row class="m-0 p-2">
-                                     <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@Model.ApplicationPaymentApprovalForm[i].ApplicantName (@Model.ApplicationPaymentApprovalForm[i].InvoiceNumber) </h6></abp-column>
-                                     <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPayment("@Model.ApplicationPaymentApprovalForm[i].Id" + "_container")' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@Model.ApplicationPaymentApprovalForm[i].CorrelationId" /></abp-column>
-                                 </abp-row>
-
-                                 <input name="ApplicationPaymentApprovalForm.Index" type="hidden" value="@i" />
-                                 <input type="hidden" asp-for="@Model.ApplicationPaymentApprovalForm[i].Id" />
-                                 <input type="hidden" asp-for="@Model.IsApproval" />
-                                 <abp-row class="m-0 p-3">
-                                     <abp-column size="_3" class="px-1">
-                                         <abp-input asp-for="@Model.ApplicationPaymentApprovalForm[i].Id" disabled />
-                                     </abp-column>
-                                     <abp-column size="_3" class="px-1">
-                                         <abp-input asp-for="@Model.ApplicationPaymentApprovalForm[i].Amount"
-                                                    class="amount unity-currency-input"
-                                                    disabled />
-                                     </abp-column>
-                                     <abp-column size="_3" class="px-1">
-                                         <abp-input asp-for="@Model.ApplicationPaymentApprovalForm[i].Description" disabled />
-                                     </abp-column>
-                                 </abp-row>
-                                 @for (var j = 0; j < Model.ApplicationPaymentApprovalForm[i].ErrorList?.Count; j++)
-                                 {
-                                     <abp-column size="_12" class="payment-error-column">
-                                         <span><b>Note: </b>@Model.ApplicationPaymentApprovalForm[i].ErrorList[j]</span>
-                                     </abp-column>
-                                 }
-                             </div>
-                         }
-                    *@
-
-                        @for (int k = 0; k < Model.GroupedItems.Count; k++)
+                        @for (int k = 0; k < Model.PaymentGroupings.Count; k++)
                         {
-                            var group = Model.GroupedItems[k];
-                           
-                              
-                            <abp-container id="@($"{group.GroupId}_container")">
-                                 <abp-input id="@($"{group.GroupId}_count")" type="hidden" asp-for="@group.Items.Count" />
-                            
-                            @for (int i = 0; i < group.Items.Count; i++)
-                            {
-                                var item = group.Items[i];
-                                
-                               
+                            <abp-container id="@($"{Model.PaymentGroupings[k].GroupId}_container")">
+                                <abp-input id="@($"{Model.PaymentGroupings[k].GroupId}_count")" type="hidden" asp-for="@Model.PaymentGroupings[k].Items.Count" />
 
-                                <div id="@($"{item.Id}_container")" class="single-payment">
-                                    <abp-row class="m-0 p-2">
-                                        <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@item.ApplicantName (@item.InvoiceNumber)</h6></abp-column>
-                                        <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPayment("@item.Id" + "_container", @group.GroupId)' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@item.CorrelationId" /></abp-column>
-                                    </abp-row>
+                                <input name="PaymentGroupings.Index" type="hidden" value="@Model.PaymentGroupings[k].GroupId" />
+                                <input type="hidden" asp-for="@Model.PaymentGroupings[k].GroupId" />
+                                <input type="hidden" asp-for="@Model.PaymentGroupings[k].ToStatus" />
 
-                                        <input name="ApplicationPaymentApprovalForm.Index" type="hidden" value="@uniqueIndex" />
-                                    <input type="hidden" asp-for="@item.Id" />
-                                    <input type="hidden" asp-for="@Model.IsApproval" />
-                                    <abp-row class="m-0 p-3">
-                                        <abp-column size="_3" class="px-1">
-                                            <abp-input asp-for="@item.Id" disabled />
-                                        </abp-column>
-                                        <abp-column size="_3" class="px-1">
-                                            <abp-input asp-for="@item.Amount"
-                                                       class="amount unity-currency-input"
-                                                       disabled />
-                                        </abp-column>
-                                        <abp-column size="_3" class="px-1">
-                                            <abp-input asp-for="@item.Description" disabled />
-                                        </abp-column>
-                                    </abp-row>
-                                   
+                                @for (int i = 0; i < Model.PaymentGroupings[k].Items.Count; i++)
+                                {
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Id" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Amount" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Description" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].InvoiceNumber" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].CorrelationId" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].ApplicantName" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Status" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].isPermitted" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].IsL3ApprovalRequired" />
+                                    <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].ToStatus" />
 
-                                </div>
+                                    <div id="@($"{@Model.PaymentGroupings[k].Items[i].Id}_container")" class="single-payment">
+                                        <abp-row class="m-0 p-2">
+                                            <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@Model.PaymentGroupings[k].Items[i].ApplicantName (@Model.PaymentGroupings[k].Items[i].InvoiceNumber)</h6></abp-column>
+                                            <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPayment("@Model.PaymentGroupings[k].Items[i].Id" + "_container", @Model.PaymentGroupings[k].GroupId)' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@Model.PaymentGroupings[k].Items[i].CorrelationId" /></abp-column>
+                                        </abp-row>
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Id" />
+                                        <input type="hidden" asp-for="@Model.IsApproval" />
+                                        <abp-row class="m-0 p-3">
+                                            <abp-column size="_3" class="px-1">
+                                                <abp-input asp-for="@Model.PaymentGroupings[k].Items[i].Id" disabled />
+                                            </abp-column>
+                                            <abp-column size="_3" class="px-1">
+                                                <abp-input asp-for="@Model.PaymentGroupings[k].Items[i].Amount"
+                                                           class="amount unity-currency-input"
+                                                           disabled />
+                                            </abp-column>
+                                            <abp-column size="_3" class="px-1">
+                                                <abp-input asp-for="@Model.PaymentGroupings[k].Items[i].Description" disabled />
+                                            </abp-column>
+                                        </abp-row>
+                                    </div>
 
-                               
-                              
-                                
-                                uniqueIndex++;
-                            }
+                                    uniqueIndex++;
+                                }
 
-                            <abp-row class="m-0 p-3 payment-status-transition">
-                                <abp-column size="_4" class="text-center">
-                                    @group.Items[0].Status
-                                </abp-column>
-                                <abp-column size="_4" class="text-center">
-                                    <span class="fa fa-chevron-right fa-solid fa-bold"></span> <span class="fa fa-chevron-right fa-solid fa-bold"></span> <span class="fa fa-chevron-right fa-solid fa-bold"></span>
-                                </abp-column>
-                                <abp-column size="_4" class="text-center">
-                                    @group.ToStatus
-                                </abp-column>
-                            </abp-row>
+                                <abp-row class="m-0 p-3 payment-status-transition">
+                                    <abp-column size="_4" class="text-center">
+                                        @Model.PaymentGroupings[k].Items[0].Status
+                                    </abp-column>
+                                    <abp-column size="_4" class="text-center">
+                                        <span class="fa fa-chevron-right fa-solid fa-bold"></span> <span class="fa fa-chevron-right fa-solid fa-bold"></span> <span class="fa fa-chevron-right fa-solid fa-bold"></span>
+                                    </abp-column>
+                                    <abp-column size="_4" class="text-center">
+                                        @Model.PaymentGroupings[k].ToStatus
+                                    </abp-column>
+                                </abp-row>
                             </abp-container>
                         }
                     }
                     else
                     {
-                        <abp-row class="m-0 p-2 g text-center" >
+                        <abp-row class="m-0 p-2 g text-center">
                             <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>
                         </abp-row>
                     }
@@ -142,7 +108,6 @@
             </abp-card>
         </abp-modal-body>
         <abp-modal-footer>
-            <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentStatusRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
             @if (Model.IsApproval)
             {
                 <abp-button id="btnSubmitPayment" class="btn btn-primary" text="@L["ApplicationPaymentStatusRequest:ApproveButtonText"].Value" onclick="submitPayments()" disabled="@Model.DisableSubmit" type="submit"></abp-button>
@@ -150,9 +115,8 @@
             else
             {
                 <abp-button id="btnSubmitPayment" class="btn btn-danger" text="@L["ApplicationPaymentStatusRequest:DeclineButtonText"].Value" type="submit"></abp-button>
-
             }
-           
+            <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentStatusRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
         </abp-modal-footer>
     </abp-modal>
 </form>
@@ -160,7 +124,10 @@
 <script defer>
     (function () {
         if (window.jQuery) {
-            $('.unity-currency-input').maskMoney();
+            let currencyInputs = $('.unity-currency-input');
+            if (currencyInputs && currencyInputs.maskMoney === 'function') {
+                currencyInputs.maskMoney();
+            }
         }
     })();
 </script>
