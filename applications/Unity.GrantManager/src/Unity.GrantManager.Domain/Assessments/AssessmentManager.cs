@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
-using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp;
