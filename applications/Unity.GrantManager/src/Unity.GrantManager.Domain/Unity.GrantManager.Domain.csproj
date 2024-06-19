@@ -6,9 +6,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <RootNamespace>Unity.GrantManager</RootNamespace>
-	  <!--SonarQubeSetting Include="sonar.projectKey" Value="UnityScanKey"/-->
-	  <!--SonarQubeSetting Include="sonar.projectName" Value="Unity"/-->
-	  <!--SonarQubeSetting Include="sonar.projectVersion" Value="1.0.20"/-->
   </PropertyGroup>
 
   <ItemGroup>
