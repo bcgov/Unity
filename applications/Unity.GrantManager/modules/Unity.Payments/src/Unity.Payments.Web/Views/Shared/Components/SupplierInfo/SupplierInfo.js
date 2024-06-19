@@ -57,14 +57,6 @@ $(function () {
                         render: function (data, type, full, meta) {
                             return nullToEmpty(full.addressLine1) + ' ' + nullToEmpty(full.addressLine2) + " " + nullToEmpty(full.addressLine3) + " " + nullToEmpty(full.city) + " " + nullToEmpty(full.province) + " " + nullToEmpty(full.postalCode);
                         },
-                    },
-                    {
-                        title: '',
-                        data: 'id',
-                        render: function (data) {
-                            return '<button class="btn site-info-btn" type="button" onclick="openSiteInfoModal(\'' + data + '\',\'Edit Site\');"><i class="fl fl-edit"></i></button>';
-                        },
-                        orderable: false
                     }
                 ],
             })
