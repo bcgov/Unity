@@ -9,12 +9,7 @@ namespace Unity.Flex.Domain.Scoresheets
     {
         [Column(TypeName = "jsonb")]
         public virtual string? CurrentValue { get; set; } = "{}";
-        [Column(TypeName = "jsonb")]
-        public virtual string? DefaultValue { get; set; } = "{}";
         public uint Version { get; set; }
-
-        public virtual double CurrentScore { get; set; }
-        public virtual double DefaultScore { get; set; } = double.NaN;
 
         // Navigation
         public Question? Question { get; }
@@ -33,6 +28,12 @@ namespace Unity.Flex.Domain.Scoresheets
         public Answer(Guid id)
         {
             Id = id;
+        }
+
+        public Answer SetValue(string currentValue)
+        {
+            CurrentValue = currentValue;
+            return this;
         }
     }
 }

@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Web.Views.Shared.Components;
+using Unity.Flex.Worksheets.Values;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
@@ -87,7 +89,8 @@ namespace Unity.GrantManager.Assessments
             }
             else
             {
-                return instance.Answers.Sum(a => a.CurrentScore);
+                return instance.Answers.Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
+                    
             }
         }
 
@@ -270,11 +273,11 @@ namespace Unity.GrantManager.Assessments
                 var ans = instance.Answers.FirstOrDefault(a => a.QuestionId == questionId);
                 if (ans != null)
                 {
-                    ans.CurrentScore = answer;
+                    ans.SetValue(ValueConverter.Convert(answer.ToString(), Unity.Flex.Worksheets.CustomFieldType.Numeric));
                 }
                 else
                 {
-                    ans = new Answer(Guid.NewGuid()) { CurrentScore = answer, QuestionId = questionId, ScoresheetInstanceId = instance.Id };
+                    ans = new Answer(Guid.NewGuid()) { CurrentValue = ValueConverter.Convert(answer.ToString(), Unity.Flex.Worksheets.CustomFieldType.Numeric), QuestionId = questionId, ScoresheetInstanceId = instance.Id };
                     instance.Answers.Add(ans);
                 }
 

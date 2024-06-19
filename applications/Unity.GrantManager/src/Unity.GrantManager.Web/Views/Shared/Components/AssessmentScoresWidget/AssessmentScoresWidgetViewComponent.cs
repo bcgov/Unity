@@ -10,6 +10,8 @@ using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets;
 using System.Linq;
+using Unity.Flex.Worksheets;
+using Unity.Flex.Web.Views.Shared.Components;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 {
@@ -53,7 +55,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                             var question = section.Fields.FirstOrDefault(q => q.Id == answer.QuestionId);
                             if (question != null)
                             {
-                                question.Answer = answer.CurrentScore;
+                                question.Answer = Convert.ToDouble(ValueResolver.Resolve(answer.CurrentValue!,CustomFieldType.Numeric)!.ToString());
                             }
                         }
                     }
