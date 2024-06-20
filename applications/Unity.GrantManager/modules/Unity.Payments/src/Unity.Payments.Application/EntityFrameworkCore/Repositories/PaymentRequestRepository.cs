@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.EntityFrameworkCore;
@@ -29,7 +30,7 @@ namespace Unity.Payments.Repositories
               // Don't include declined - right now we don't know how to set status
               .GroupBy(p => p.CorrelationId)
               .Select(p => p.Sum(q => q.Amount))
-              .First();
+              .FirstOrDefault();
 
             return applicationPaymentRequestsTotal;
         }
