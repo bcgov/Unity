@@ -1,0 +1,101 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Payments.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@model Unity.Payments.Web.Pages.Payments.CreatePaymentRequestsModel
+@inject IStringLocalizer<PaymentsResource> L
+
+@{
+    Layout = null;
+}
+<form method="post" asp-page-handler="OnPostAsync" id="paymentform">
+    <abp-modal size="ExtraLarge" id="payment-modal">
+        <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentRequest:Title"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-card>
+                <abp-card-body class="payment-card">
+                    <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
+                    <abp-input id="ApplicationCount" type="hidden" asp-for="ApplicationPaymentRequestForm.Count" />
+                    @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
+                    {
+                        <div id="@($"{Model.ApplicationPaymentRequestForm[i].CorrelationId}_container")" class="single-payment">
+                            <abp-row class="m-0 p-2">
+                                <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@Model.ApplicationPaymentRequestForm[i].ApplicantName/@Model.ApplicationPaymentRequestForm[i].InvoiceNumber</h6></abp-column>
+                                <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPayment("@Model.ApplicationPaymentRequestForm[i].CorrelationId" + "_container")' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@Model.ApplicationPaymentRequestForm[i].CorrelationId" /></abp-column>
+                            </abp-row>
+
+                            <input name="ApplicationPaymentRequestForm.Index" type="hidden" value="@i" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].CorrelationId" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ContractNumber" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ApplicantName" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SupplierNumber" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].RemainingAmount" />
+                            <abp-row class="m-0 p-3">
+                                <abp-column size="_3" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>
+                                </abp-column>
+                                <abp-column size="_3" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount" 
+                                            class="amount unity-currency-input" 
+                                            disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"
+                                               onchange='checkMaxValue("@Model.ApplicationPaymentRequestForm[i].CorrelationId",this, @Model.ApplicationPaymentRequestForm[i].RemainingAmount)' />
+                                </abp-column>
+                                <abp-column size="_3" class="px-1">
+                                    <abp-select id="site_select" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId"
+                                                disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"
+                                                asp-items="@Model.ApplicationPaymentRequestForm[i].SiteList">
+                                        <option value="null" disabled>Please choose...</option>
+                                    </abp-select>
+                                </abp-column>
+                                <abp-column size="_3" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" disabled="@Model.ApplicationPaymentRequestForm[i].DisableFields"/>
+                                </abp-column>
+
+                                <abp-column size="_12" class="payment-error-column" id="@($"column_{Model.ApplicationPaymentRequestForm[i].CorrelationId}_remaining_error")" style="display: none;">
+                                    <span><b>Note: </b>@L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @Model.ApplicationPaymentRequestForm[i].RemainingAmount</span>
+                                </abp-column>
+
+                                @for (var j = 0; j < Model.ApplicationPaymentRequestForm[i].ErrorList?.Count; j++)
+                                {
+                                <abp-column size="_12" class="payment-error-column">
+                                    <span><b>Note: </b>@Model.ApplicationPaymentRequestForm[i].ErrorList[j]</span>
+                                </abp-column>
+                                }
+
+                            </abp-row>
+                        </div>
+                    }
+                    <abp-row class="m-0 p-2 no-payment-msg text-center" id="no-payment-msg" style="display: none;">
+                        <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>
+                    </abp-row>
+                    
+                    @if (!Model.HasPaymentConfiguration)
+                    {
+                        <abp-row class="m-0 p-1 ">
+                            <abp-column size="_12">
+                                <span><b>Note: </b>
+                                <a href="~/PaymentConfigurations" style="text-decoration: none;color: var(--bc-colors-blue-primary);font-weight: 700;text-transform: uppercase;">
+                                Account Coding
+                                </a> is required for payments.</span>
+                            </abp-column>
+                        </abp-row>
+                    }
+
+                </abp-card-body>
+            </abp-card>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button id="btnSubmitPayment" class="btn btn-primary" text="@L["ApplicationPaymentRequest:SubmitButtonText"].Value"  onclick="submitPayments()" disabled="@Model.DisableSubmit" type="button"></abp-button>
+            <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney();
+        }
+    })();
+</script>

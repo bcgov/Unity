@@ -31,6 +31,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public List<SelectListItem> ElectoralDistrictList { get; set; } = new List<SelectListItem>();
         
         public Guid ApplicationId { get; set; }
+        public Guid ApplicationFormId { get; set; }
         public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
         public bool IsFinalDecisionMade { get; set; }
         public ProjectInfoViewModelModel ProjectInfo { get; set; } = new();
@@ -40,7 +41,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public List<SelectListItem> CommunityList { get; set; } = new List<SelectListItem>();
         public List<CommunityDto> Communities { get; set; } = new List<CommunityDto>();
         public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
-
+        public bool IsEditGranted { get; set; }
+        public bool IsPostEditFieldsAllowed { get; set; }
 
         public class ProjectInfoViewModelModel
         {
@@ -142,6 +144,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
             public DateTime? ContractExecutionDate { get; set; }
+            [Display(Name = "ProjectInfoView:ProjectInfo.Place")]
+            [StringLength(50)]
+            public string? Place { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(ImmutableDictionary<string, string> optionsList)

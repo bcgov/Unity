@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
-using Unity.Payments.Exceptions;
+using Unity.Payments.Domain.Exceptions;
+using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Features;
 
 namespace Unity.Payments.PaymentConfigurations
@@ -23,6 +24,25 @@ namespace Unity.Payments.PaymentConfigurations
             if (paymentConfiguration == null) { return null; }
 
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(paymentConfiguration);
+        }
+
+        public virtual async Task<string?> GetAccountDistributionCodeAsync()
+        {
+            PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync();
+            string accountDistributionCode = "";
+            if (paymentConfiguration != null
+				&& paymentConfiguration.Responsibility != null
+				&& paymentConfiguration.ServiceLine != null
+				&& paymentConfiguration.Stob != null
+				&& paymentConfiguration.MinistryClient != null
+				&& paymentConfiguration.ProjectNumber != null)
+            {
+                string accountDistributionPostFix = "000000.0000";
+                accountDistributionCode = 
+                 $"{paymentConfiguration.MinistryClient}.{paymentConfiguration.Responsibility}.{paymentConfiguration.ServiceLine}.{paymentConfiguration.Stob}.{paymentConfiguration.ProjectNumber}.{accountDistributionPostFix}"; 
+            }
+
+            return accountDistributionCode;
         }
 
         public virtual async Task<PaymentConfigurationDto> CreateAsync(CreatePaymentConfigurationDto createPaymentConfigurationDto)
@@ -66,6 +86,7 @@ namespace Unity.Payments.PaymentConfigurations
 
             return ObjectMapper.Map<PaymentConfiguration, PaymentConfigurationDto>(updatedConfiguration);
         }
+        
 
         protected virtual async Task<PaymentConfiguration?> FindPaymentConfigurationAsync()
         {

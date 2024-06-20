@@ -1,0 +1,18 @@
+{
+  "culture": "en",
+  "texts": {
+    "MyAccount": "My account",
+    "SamplePageMessage": "A sample page for the Flex module",
+    "Scoresheet:Configuration:ScoresheetModal.Name": "Name",
+    "Scoresheet:Configuration:SectionModal.Name": "Name",
+    "Scoresheet:Configuration:QuestionModal.Name": "Name",
+    "Scoresheet:Configuration:QuestionModal.Label": "Question",
+    "Scoresheet:Configuration:QuestionModal.Description": "Description",
+    "Scoresheet:Configuration:AddScoresheetButtonText": "ADD SCORING SHEET",
+    "Scoresheet:Configuration:AddQuestionButtonText": "ADD QUESTION",
+    "Scoresheet:Configuration:AddSectionButtonText": "ADD SECTION",
+    "Scoresheet:Configuration:EditScoresheetButtonText": "EDIT SCORING SHEET",
+    "Scoresheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
+    "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES"
+  }
+}

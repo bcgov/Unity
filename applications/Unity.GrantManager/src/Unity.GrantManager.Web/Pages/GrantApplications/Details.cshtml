@@ -1,40 +1,53 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
 @using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
 @using Unity.GrantManager.Web.Views.Shared.Components.UserInfoWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo;
+@using Unity.Modules.Shared.Correlation
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Microsoft.Extensions.Localization
+@using Volo.Abp.Features
+@using Volo.Abp.MultiTenancy
 
 @model DetailsModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
+@inject IFeatureChecker FeatureChecker
+@inject ICurrentTenant CurrentTenant
+
 @{
     PageLayout.Content.Title = L["Grants"].Value;
-    ViewBag.PageTitle = $"Applications / {Model.ApplicantName}({Model.ApplicationNumber}) - {Model.ApplicationStatus}";
 }
 @section styles
-    {
+{
     <abp-style src="/libs/formiojs/formio.form.css" />
     <abp-style src="/Pages/GrantApplications/Details.css" />
 }
 @section scripts
-    {
+{
     <abp-script src="/Pages/GrantApplications/Details.js" />
     <abp-script src="/libs/formiojs/formio.form.js" />
     <abp-script src="/libs/jspdf/dist/jspdf.umd.js" />
     <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
 }
 
+<div id="applicationBreadcrumbWidget">
+    @await Component.InvokeAsync("ApplicationBreadcrumbWidget", new { applicationId = @Model.ApplicationId })
+</div>
 @await Component.InvokeAsync(typeof(DetailsActionBar), new { applicationId = @Model.ApplicationId })
 
 <input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="ApplicationFormSubmissionId" value="@Model.ApplicationFormSubmissionId" />
+<input type="hidden" id="ChefsSubmissionId" value="@Model.ChefsSubmissionId" />
+<input type="hidden" id="ApplicationFormSubmissionData" value="@Model.ApplicationFormSubmissionData" />
+<input type="hidden" id="ApplicationFormId" value="@Model.ApplicationFormId" />
+<input type="hidden" id="HasRenderedHTML" value="@Model.HasRenderedHTML.ToString()" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
@@ -67,10 +80,8 @@
                     <div class="container-fluid">
                         <abp-row>
                             <abp-column size="_12">
-                               <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
-                                @*TODO: Put FormIO handler here!*@
-                                <div id="formio"></div>
-
+                                <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
+                                <div id="formio">@Html.Raw(@Model.ApplicationFormSubmissionHtml)</div>
                             </abp-column>
 
                         </abp-row>
@@ -124,18 +135,44 @@
                 <abp-tab name="nav-organization-info" title="Applicant Info">
                     <div class="w-100 px-2" id="ApplicantInfoWidget">
                         @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId })
-                     </div>
-                 </abp-tab>
+                    </div>
+                </abp-tab>
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Approval Section ---------*@
                 @* <abp-tab name="nav-approval" title="Approval">
-                    <div style="text-align:center">
-                        <img src="/images/under-construction.png" alt="under-construction">
-                    </div>
+                <div style="text-align:center">
+                <img src="/images/under-construction.png" alt="under-construction">
+                </div>
                 </abp-tab> *@
                 @*-------- Approval Section END ---------*@
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
+                {
+                    <abp-tab name="nav-payment-info" title="Payment Info">
+                        <div class="w-100 px-2" id="PaymentInfoWidget">
+                            @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId })
+                        </div>
+                    </abp-tab>
+                }
 
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                {
+                    @foreach (var customTab in Model.CustomTabs)
+                    {
+                        <abp-tab name="@customTab.Name" title="@customTab.Title">
+                            @await Component.InvokeAsync(typeof(CustomTabWidgetViewComponent), new
+                                {
+                                    instanceCorrelationId = Model.ApplicationId,
+                                    instanceCorrelationProvider = CorrelationConsts.Application,
+                                    sheetCorrelationId = Model.ApplicationFormId,
+                                    sheetCorrelationProvider = CorrelationConsts.Form,
+                                    uiAnchor = customTab.UiAnchor,
+                                    name = customTab.Name,
+                                    title = customTab.Title
+                                })
+                        </abp-tab>
+                    }
+                }
             </abp-tabs>
         </abp-card>
     </abp-column>
@@ -146,16 +183,16 @@
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
                 @* <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
                 </li> *@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                 </li>
-                @* <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="chefs_file_count">@Model.ApplicationChefsFileAttachmentList.Count</span>)</button>
-                </li> *@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
             </ul>
 
@@ -184,7 +221,7 @@
                         <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Scores</h6>
 
                         <div id="assessmentScoresWidgetArea">
-                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId})
+                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId })
                         </div>
 
                         <h6 class="fw-bold px-3 pt-4 pb-2">Scoring Attachments</h6>
@@ -237,12 +274,6 @@
                 </div>
                 @*-------- Comments Tab Section END ---------*@
 
-                @*-------- Links Tab Section ---------*@
-                <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab" style="text-align:center">
-                    <img src="/images/under-construction.png" alt="under-construction">
-                </div>
-                @*------- Links Tab Section END ---------*@
-
                 @*-------- Attachments Tab Section ---------*@
                 <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Assessment Attachments</h6>
@@ -261,6 +292,16 @@
                     @await Component.InvokeAsync("ChefsAttachments")
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
+
+                @*-------- Links Tab Section ---------*@
+                <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab">
+                    <h6 class="fw-bold px-3 pt-4 pb-3 m-0">Links</h6>
+                    <div class="px-3 pb-2" id="applicationRecordsWidget">
+                        @await Component.InvokeAsync("ApplicationLinksWidget", new { applicationId = Model.ApplicationId })
+                    </div>
+                </div>
+                @*------- Links Tab Section END ---------*@
+
             </div>
 
         </abp-card>

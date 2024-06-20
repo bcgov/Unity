@@ -11,7 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.Domain\Unity.Notifications.Domain.csproj" />
-    <ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Domain\Unity.Payments.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

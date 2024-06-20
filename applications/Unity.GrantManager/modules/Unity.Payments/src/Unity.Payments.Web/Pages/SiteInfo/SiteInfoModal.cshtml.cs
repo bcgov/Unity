@@ -18,10 +18,10 @@ public class SiteInfoModalModel : AbpPageModel
     [BindProperty]
     public SiteInfoModalModelModel Site { get; set; } = new();
 
-    private readonly SupplierAppService _supplierService;
-    private readonly SiteAppService _siteAppService;
+    private readonly ISupplierAppService _supplierService;
+    private readonly ISiteAppService _siteAppService;
 
-    public SiteInfoModalModel(SupplierAppService supplierService, SiteAppService siteAppService)
+    public SiteInfoModalModel(ISupplierAppService supplierService, ISiteAppService siteAppService)
     {
         _supplierService = supplierService;
         _siteAppService = siteAppService;
@@ -43,7 +43,7 @@ public class SiteInfoModalModel : AbpPageModel
         public Guid SupplierId { get; set; }
 
         [Display(Name = "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber")]
-        [MaxLength(21, ErrorMessage = "Must be a maximum of 21 characters")]
+        [MaxLength(15, ErrorMessage = "Must be a maximum of 15 characters")]
         public string SiteNumber { get; set; } = string.Empty;
         [Display(Name = "ApplicantInfoView:ApplicantInfo.SiteInfo:PayGroup")]
         [SelectItems(nameof(PayGroupOptionsList))]
@@ -60,6 +60,16 @@ public class SiteInfoModalModel : AbpPageModel
         public string? Province { get; set; }
         [Display(Name = "ApplicantInfoView:ApplicantInfo.SiteInfo:PostalCode")]
         public string? PostalCode { get; set; }
+        
+        [Display(Name = "Status")]
+        [ReadOnlyInput]
+        [DisabledInput]
+        public string Status { get; set; } = string.Empty;
+
+        [Display(Name = "Email")]
+        [ReadOnlyInput]
+        [DisabledInput]
+        public string Email { get; set; } = string.Empty;
     }
 
 
@@ -120,7 +130,7 @@ public class SiteInfoModalModel : AbpPageModel
             AddressLine3 = Site.AddressLine3,
             City = Site.City,
             Number = Site.SiteNumber,
-            PaymentGroup = (PaymentGroupDto)payGroup,
+            PaymentGroup = (PaymentGroup)payGroup,
             PostalCode = Site.PostalCode,
             Province = Site.Province
         });
@@ -136,7 +146,7 @@ public class SiteInfoModalModel : AbpPageModel
             AddressLine3 = Site.AddressLine3,
             City = Site.City,
             Number = Site.SiteNumber,
-            PaymentGroup = (PaymentGroupDto)payGroup,
+            PaymentGroup = (PaymentGroup)payGroup,
             PostalCode = Site.PostalCode,
             Province = Site.Province
         });

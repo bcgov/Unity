@@ -1,0 +1,7 @@
+﻿.control-render-error {
+    display: block;
+    background-color: red;
+    text-align: center;
+    padding: 5px;
+    color: #fff;
+}

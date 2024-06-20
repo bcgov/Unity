@@ -19,26 +19,24 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Permissions;
 using Unity.Payments.Suppliers;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
+using Microsoft.EntityFrameworkCore;
+using Unity.Modules.Shared.Correlation;
 using Unity.GrantManager.Payments;
+using Unity.Flex.WorksheetInstances;
+using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Flex;
+using Unity.Payments.Integrations.Cas;
 
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(GrantApplicationAppService), typeof(IGrantApplicationAppService))]
-public class GrantApplicationAppService :
-    CrudAppService<
-    Application,
-    GrantApplicationDto,
-    Guid,
-    PagedAndSortedResultRequestDto,
-    CreateUpdateGrantApplicationDto>,
-    IGrantApplicationAppService
+public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicationAppService
 {
 
     private readonly IApplicationRepository _applicationRepository;
@@ -49,17 +47,13 @@ public class GrantApplicationAppService :
     private readonly IApplicantRepository _applicantRepository;
     private readonly ICommentsManager _commentsManager;
     private readonly IApplicationFormRepository _applicationFormRepository;
-    private readonly IAssessmentRepository _assessmentRepository;
     private readonly IPersonRepository _personRepository;
     private readonly IApplicantAgentRepository _applicantAgentRepository;
-    private readonly IApplicationTagsRepository _applicationTagsRepository;
+    private readonly IApplicantAddressRepository _applicantAddressRepository;
     private readonly ILocalEventBus _localEventBus;
-    private readonly ISupplierAppService _supplierAppService;
+    private readonly ISupplierService _iSupplierService;
 
-
-#pragma warning disable IDE0290 // Use primary constructor
-    public GrantApplicationAppService(IRepository<Application, Guid> repository,
-#pragma warning restore IDE0290 // Use primary constructor
+    public GrantApplicationAppService(
         IApplicationManager applicationManager,
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatusRepository,
@@ -68,14 +62,11 @@ public class GrantApplicationAppService :
         IApplicantRepository applicantRepository,
         ICommentsManager commentsManager,
         IApplicationFormRepository applicationFormRepository,
-        IAssessmentRepository assessmentRepository,
         IPersonRepository personRepository,
         IApplicantAgentRepository applicantAgentRepository,
-        IApplicationTagsRepository applicationTagsRepository,
+        IApplicantAddressRepository applicantAddressRepository,
         ILocalEventBus localEventBus,
-        SupplierAppService supplierInfoAppService
-        )
-         : base(repository)
+        ISupplierService iSupplierService)
     {
         _applicationRepository = applicationRepository;
         _applicationManager = applicationManager;
@@ -85,84 +76,40 @@ public class GrantApplicationAppService :
         _applicantRepository = applicantRepository;
         _commentsManager = commentsManager;
         _applicationFormRepository = applicationFormRepository;
-        _assessmentRepository = assessmentRepository;
         _personRepository = personRepository;
         _applicantAgentRepository = applicantAgentRepository;
-        _applicationTagsRepository = applicationTagsRepository;
+        _applicantAddressRepository = applicantAddressRepository;
+        _iSupplierService = iSupplierService;
         _localEventBus = localEventBus;
-        _supplierAppService = supplierInfoAppService;
     }
 
-    public override async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+    public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        var query = from application in await _applicationRepository.GetQueryableAsync()
-                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                    join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
-                    join assessment in await _assessmentRepository.GetQueryableAsync() on application.Id equals assessment.ApplicationId into assessments
-                    join applicationTag in await _applicationTagsRepository.GetQueryableAsync() on application.Id equals applicationTag.ApplicationId into tags
-                    from tag in tags.DefaultIfEmpty()
-
-                    join userAssignment in await _applicationAssignmentRepository.GetQueryableAsync() on application.Id equals userAssignment.ApplicationId into userAssignments
-                    from applicationUserAssignment in userAssignments.DefaultIfEmpty()
-
-                    join person in await _personRepository.GetQueryableAsync() on applicationUserAssignment.AssigneeId equals person.Id into persons
-                    from applicationPerson in persons.DefaultIfEmpty()
-
-                    join owner in await _personRepository.GetQueryableAsync() on application.OwnerId equals owner.Id into owners
-                    from applicationOwner in owners.DefaultIfEmpty()
-
-                    join contact in await _applicantAgentRepository.GetQueryableAsync() on application.ApplicantId equals contact.ApplicantId into contacts
-                    from applicantAgent in contacts.DefaultIfEmpty()
-
-                    select new
-                    {
-                        application,
-                        appStatus,
-                        applicant,
-                        appForm,
-                        AssessmentCount = assessments.Count(),
-                        AssessmentReviewCount = assessments.Count(a => a.Status == AssessmentState.IN_REVIEW),
-                        tag,
-                        applicationUserAssignment,
-                        applicationPerson,
-                        applicationOwner,
-                        applicantAgent
-
-                    };
-
-        var result = query
-                .OrderBy(NormalizeSorting(input.Sorting ?? string.Empty))
-                .OrderBy(s => s.application.Id)
-                .GroupBy(s => s.application.Id)
-                .AsEnumerable()
-                .Skip(input.SkipCount)
-                .Take(input.MaxResultCount)
-                .ToList();
-
+        var groupedResult = await _applicationRepository.WithFullDetailsGroupedAsync(input.SkipCount, input.MaxResultCount);
         var appDtos = new List<GrantApplicationDto>();
         var rowCounter = 0;
-        foreach (var grouping in result)
-        {
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
-            appDto.Status = grouping.First().appStatus.InternalStatus;
 
-            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().applicant);
-            appDto.Category = grouping.First().appForm.Category ?? string.Empty;
-            appDto.AssessmentCount = grouping.First().AssessmentCount;
-            appDto.AssessmentReviewCount = grouping.First().AssessmentReviewCount;
-            appDto.ApplicationTag = grouping.First().tag?.Text ?? string.Empty;
-            appDto.Owner = BuildApplicationOwner(grouping.First().applicationOwner);
-            appDto.OrganizationName = grouping.First().applicant?.OrgName ?? string.Empty;
-            appDto.OrganizationType = grouping.First().applicant?.OrganizationType ?? string.Empty;
-            appDto.Assignees = BuildApplicationAssignees(grouping.Select(s => s.applicationUserAssignment).Where(e => e != null), grouping.Select(s => s.applicationPerson).Where(e => e != null)).ToList();
+        foreach (var grouping in groupedResult)
+        {
+            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First());
+            appDto.Status = grouping.First().ApplicationStatus.InternalStatus;
+
+            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().Applicant);
+            appDto.Category = grouping.First().ApplicationForm.Category ?? string.Empty;
+            appDto.AssessmentCount = grouping.First().Assessments?.Count ?? 0;
+            appDto.AssessmentReviewCount = grouping.First().Assessments?.Count(a => a.Status == AssessmentState.IN_REVIEW) ?? 0;
+            appDto.ApplicationTag = grouping.First().ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
+            appDto.Owner = BuildApplicationOwner(grouping.First().Owner);
+            appDto.OrganizationName = grouping.First().Applicant?.OrgName ?? string.Empty;
+            appDto.OrganizationType = grouping.First().Applicant?.OrganizationType ?? string.Empty;
+            appDto.Assignees = BuildApplicationAssignees(grouping.First().ApplicationAssignments);
             appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
             appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
-            appDto.ContactFullName = grouping.First().applicantAgent?.Name;
-            appDto.ContactEmail = grouping.First().applicantAgent?.Email;
-            appDto.ContactTitle = grouping.First().applicantAgent?.Title;
-            appDto.ContactBusinessPhone = grouping.First().applicantAgent?.Phone;
-            appDto.ContactCellPhone = grouping.First().applicantAgent?.Phone2;
+            appDto.ContactFullName = grouping.First().ApplicantAgent?.Name;
+            appDto.ContactEmail = grouping.First().ApplicantAgent?.Email;
+            appDto.ContactTitle = grouping.First().ApplicantAgent?.Title;
+            appDto.ContactBusinessPhone = grouping.First().ApplicantAgent?.Phone;
+            appDto.ContactCellPhone = grouping.First().ApplicantAgent?.Phone2;
             appDto.RowCount = rowCounter;
             appDtos.Add(appDto);
             rowCounter++;
@@ -193,22 +140,27 @@ public class GrantApplicationAppService :
             return string.Empty;
     }
 
-    private static IEnumerable<GrantApplicationAssigneeDto> BuildApplicationAssignees(IEnumerable<ApplicationAssignment> applicationAssignments, IEnumerable<Person> persons)
+    private static List<GrantApplicationAssigneeDto> BuildApplicationAssignees(IEnumerable<ApplicationAssignment>? applicationAssignments)
     {
-        foreach (var assignment in applicationAssignments)
+        var appAssignmentDtos = new List<GrantApplicationAssigneeDto>();
+        if (applicationAssignments != null)
         {
-            yield return new GrantApplicationAssigneeDto()
+            foreach (var assignment in applicationAssignments)
             {
-                ApplicationId = assignment.ApplicationId,
-                AssigneeId = assignment.AssigneeId,
-                FullName = persons.FirstOrDefault(s => s.Id == assignment.AssigneeId)?.FullName ?? string.Empty,
-                Id = assignment.Id,
-                Duty = assignment.Duty
-            };
+                appAssignmentDtos.Add(new GrantApplicationAssigneeDto()
+                {
+                    ApplicationId = assignment.ApplicationId,
+                    AssigneeId = assignment.AssigneeId,
+                    FullName = assignment.Assignee?.FullName ?? string.Empty,
+                    Id = assignment.Id,
+                    Duty = assignment.Duty
+                });
+            }
         }
+        return appAssignmentDtos;
     }
 
-    private static GrantApplicationAssigneeDto BuildApplicationOwner(Person applicationOwner)
+    private static GrantApplicationAssigneeDto BuildApplicationOwner(Person? applicationOwner)
     {
         if (applicationOwner != null)
         {
@@ -221,58 +173,40 @@ public class GrantApplicationAppService :
         return new GrantApplicationAssigneeDto();
     }
 
-    public override async Task<GrantApplicationDto> GetAsync(Guid id)
+    public async Task<GrantApplicationDto> GetAsync(Guid id)
     {
-        var query = from application in await _applicationRepository.GetQueryableAsync()
-                    join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
-                    join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
-                    where application.Id == id
-                    select new
-                    {
-                        application,
-                        applicant,
-                        appStatus
-                    };
+        var application = await _applicationRepository.GetAsync(id, true);
 
-        var queryResult = await AsyncExecuter.FirstOrDefaultAsync(query);
+        if (application == null) return new GrantApplicationDto();
 
-        if (queryResult != null)
+        var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(application);
+
+        appDto.StatusCode = application.ApplicationStatus.StatusCode;
+        appDto.Status = application.ApplicationStatus.InternalStatus;
+
+        if (application.ApplicantAgent != null)
         {
-            var dto = queryResult.application;
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(dto);
-            appDto.StatusCode = queryResult.appStatus.StatusCode;
-            appDto.Status = queryResult.appStatus.InternalStatus;
-            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(queryResult.applicant);
-            var contactInfo = await _applicantAgentRepository.FirstOrDefaultAsync(s => s.ApplicantId == dto.ApplicantId && s.ApplicationId == dto.Id);
-            if (contactInfo != null)
-            {
-                appDto.ContactFullName = contactInfo.Name;
-                appDto.ContactEmail = contactInfo.Email;
-                appDto.ContactTitle = contactInfo.Title;
-                appDto.ContactBusinessPhone = contactInfo.Phone;
-                appDto.ContactCellPhone = contactInfo.Phone2;
-
-            }
-
-            if (appDto.Applicant != null)
-            {
-                appDto.OrganizationName = appDto.Applicant.OrgName;
-                appDto.OrgNumber = appDto.Applicant.OrgNumber;
-                appDto.OrganizationSize = appDto.Applicant.OrganizationSize;
-                appDto.OrgStatus = appDto.Applicant.OrgStatus;
-                appDto.OrganizationName = appDto.Applicant.OrgName;
-                appDto.Sector = appDto.Applicant.Sector;
-                appDto.OrganizationType = appDto.Applicant.OrganizationType;
-                appDto.SubSector = appDto.Applicant.SubSector;
-                appDto.SectorSubSectorIndustryDesc = appDto.Applicant.SectorSubSectorIndustryDesc;
-            }
-
-            return appDto;
+            appDto.ContactFullName = application.ApplicantAgent.Name;
+            appDto.ContactEmail = application.ApplicantAgent.Email;
+            appDto.ContactTitle = application.ApplicantAgent.Title;
+            appDto.ContactBusinessPhone = application.ApplicantAgent.Phone;
+            appDto.ContactCellPhone = application.ApplicantAgent.Phone2;
         }
-        else
+
+        if (application.Applicant != null)
         {
-            return await Task.FromResult<GrantApplicationDto>(new GrantApplicationDto());
+            appDto.OrganizationName = application.Applicant.OrgName;
+            appDto.OrgNumber = application.Applicant.OrgNumber;
+            appDto.OrganizationSize = application.Applicant.OrganizationSize;
+            appDto.OrgStatus = application.Applicant.OrgStatus;
+            appDto.OrganizationName = application.Applicant.OrgName;
+            appDto.Sector = application.Applicant.Sector;
+            appDto.OrganizationType = application.Applicant.OrganizationType;
+            appDto.SubSector = application.Applicant.SubSector;
+            appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
+
+        return appDto;
     }
 
     public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
@@ -318,7 +252,7 @@ public class GrantApplicationAppService :
         }
         else
         {
-            return await Task.FromResult<GetSummaryDto>(new GetSummaryDto());
+            return await Task.FromResult(new GetSummaryDto());
         }
 
     }
@@ -327,14 +261,16 @@ public class GrantApplicationAppService :
     {
         var application = await _applicationRepository.GetAsync(id);
 
+        SanitizeAssessmentResultsDisabledInputs(input, application);
+
         application.ValidateAndChangeDueDate(input.DueDate);
-        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding);
+        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate);
 
         if (application.IsInFinalDecisionState())
         {
             if (await CurrentUserCanUpdateFieldsPostFinalDecisionAsync()) // User allowed to edit specific fields past approval
             {
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
             }
         }
         else
@@ -342,9 +278,8 @@ public class GrantApplicationAppService :
             if (await CurrentUsCanUpdateAssessmentFieldsAsync())
             {
                 application.ValidateAndChangeFinalDecisionDate(input.FinalDecisionDate);
-                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore, input.NotificationDate);
+                application.UpdateFieldsRequiringPostEditPermission(input.ApprovedAmount, input.RequestedAmount, input.TotalScore);
                 application.UpdateFieldsOnlyForPreFinalDecision(input.DueDiligenceStatus,
-                    input.TotalProjectBudget,
                     input.RecommendedAmount,
                     input.DeclineRational);
 
@@ -352,8 +287,21 @@ public class GrantApplicationAppService :
             }
         }
 
+        await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.AssessmentInfoUiAnchor, input.CustomFields);
+
         await _applicationRepository.UpdateAsync(application);
+
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private static void SanitizeAssessmentResultsDisabledInputs(CreateUpdateAssessmentResultsDto input, Application application)
+    {
+        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RecommendedAmount ??= application.RecommendedAmount;
+        input.ApprovedAmount ??= application.ApprovedAmount;
+        input.TotalScore ??= application.TotalScore;
+        input.RequestedAmount ??= application.RequestedAmount;
     }
 
     private async Task<bool> CurrentUsCanUpdateAssessmentFieldsAsync()
@@ -369,11 +317,15 @@ public class GrantApplicationAppService :
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
-        var percentageTotalProjectBudget = input.TotalProjectBudget == 0 ? 0 : decimal.Multiply(decimal.Divide(input.RequestedAmount ?? 0, input.TotalProjectBudget ?? 0), 100).To<double>();
+
+        SanitizeProjectInfoDisabledInputs(input, application);
+
+        var percentageTotalProjectBudget = (input.TotalProjectBudget == 0 || input.TotalProjectBudget == null) ? 0 : decimal.Multiply(decimal.Divide(input.RequestedAmount ?? 0, input.TotalProjectBudget ?? 0), 100).To<double>();
+
         if (application != null)
         {
             application.ProjectSummary = input.ProjectSummary;
-            application.ProjectName = input.ProjectName ?? String.Empty;
+            application.ProjectName = input.ProjectName ?? string.Empty;
             application.RequestedAmount = input.RequestedAmount ?? 0;
             application.TotalProjectBudget = input.TotalProjectBudget ?? 0;
             application.ProjectStartDate = input.ProjectStartDate;
@@ -390,17 +342,28 @@ public class GrantApplicationAppService :
             application.RegionalDistrict = input.RegionalDistrict;
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
+            application.Place = input.Place;
 
-            await _applicationRepository.UpdateAsync(application, autoSave: true);
+            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.ProjectInfoUiAnchor, input.CustomFields);
+
+            await _applicationRepository.UpdateAsync(application);
 
             return ObjectMapper.Map<Application, GrantApplicationDto>(application);
-
         }
         else
         {
             throw new EntityNotFoundException();
         }
     }
+
+    private static void SanitizeProjectInfoDisabledInputs(CreateUpdateProjectInfoDto input, Application application)
+    {
+        // Cater for disabled fields that are not serialized with post - fall back to the previous value, these should be 0 from the API call
+        input.TotalProjectBudget ??= application.TotalProjectBudget;
+        input.RequestedAmount ??= application.RequestedAmount;
+        input.ProjectFundingTotal ??= application.ProjectFundingTotal;
+    }
+
     public async Task<GrantApplicationDto> UpdateProjectApplicantInfoAsync(Guid id, CreateUpdateApplicantInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);
@@ -421,8 +384,18 @@ public class GrantApplicationAppService :
 
             _ = await _applicantRepository.UpdateAsync(applicant);
 
-            // Integrate with payments module
-            await UpsertSupplierAsync(input.SupplierNumber, input.ApplicantId);
+            // Integrate with payments module to update / insert supplier
+            // Check that the original supplier number has changed
+            if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+                && !string.IsNullOrEmpty(input.SupplierNumber)
+                && input.OriginalSupplierNumber != input.SupplierNumber)
+            {
+                dynamic casSupplierResponse = await _iSupplierService.GetCasSupplierInformationAsync(input.SupplierNumber);
+                UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(casSupplierResponse);
+                supplierEto.CorrelationId = applicant.Id;
+                supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+                await _localEventBus.PublishAsync(supplierEto);
+            }
 
             var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(agent => agent.ApplicantId == application.ApplicantId && agent.ApplicationId == application.Id);
             if (applicantAgent == null)
@@ -448,11 +421,15 @@ public class GrantApplicationAppService :
                 applicantAgent = await _applicantAgentRepository.UpdateAsync(applicantAgent);
             }
 
+            await UpdateApplicantAddresses(input);
+
             application.SigningAuthorityFullName = input.SigningAuthorityFullName ?? "";
             application.SigningAuthorityTitle = input.SigningAuthorityTitle ?? "";
             application.SigningAuthorityEmail = input.SigningAuthorityEmail ?? "";
             application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
             application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
+
+            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.ApplicantInfoUiAnchor, input.CustomFields);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -472,36 +449,146 @@ public class GrantApplicationAppService :
         }
     }
 
-    private async Task UpsertSupplierAsync(string? supplierNumber, Guid applicantId)
+    protected virtual async Task PublishCustomFieldUpdatesAsync(Guid instanceCorrelationId,
+        string instanceCorrelationProvider,
+        Guid sheetCorrelationId,
+        string sheetCorrelationProvider,
+        string uiAnchor,
+        dynamic? customFields)
     {
-        var existing = await _supplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
+        if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            CorrelationId = applicantId,
-            CorrelationProvider = PaymentConsts.ApplicantCorrelationProvider
-        });
-
-        // This is subject to some business rules and a domain implmentation
-        if (existing != null)
-        {
-            existing.Number = supplierNumber;
-            await _supplierAppService.UpdateAsync(existing.Id, new UpdateSupplierDto()
+            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
             {
-                Number = supplierNumber,
-                MailingAddress = existing.MailingAddress,
-                Name = existing.Name,
-                PostalCode = existing.PostalCode,
-                Province = existing.Province,
-                City = existing.City
+                InstanceCorrelationId = instanceCorrelationId,
+                InstanceCorrelationProvider = instanceCorrelationProvider,
+                SheetCorrelationId = sheetCorrelationId,
+                SheetCorrelationProvider = sheetCorrelationProvider,
+                UiAnchor = uiAnchor,
+                CustomFields = customFields
             });
+        }
+    }
+
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+    protected virtual UpsertSupplierEto GetEventDtoFromCasResponse(dynamic casSupplierResponse)
+    {
+        string lastUpdated = casSupplierResponse.GetProperty("lastupdated").ToString();
+        string suppliernumber = casSupplierResponse.GetProperty("suppliernumber").ToString();
+        string suppliername = casSupplierResponse.GetProperty("suppliername").ToString();
+        string subcategory = casSupplierResponse.GetProperty("subcategory").ToString();
+        string providerid = casSupplierResponse.GetProperty("providerid").ToString();
+        string businessnumber = casSupplierResponse.GetProperty("businessnumber").ToString();
+        string status = casSupplierResponse.GetProperty("status").ToString();
+        string supplierprotected = casSupplierResponse.GetProperty("supplierprotected").ToString();
+        string standardindustryclassification = casSupplierResponse.GetProperty("standardindustryclassification").ToString();
+
+        _ = DateTime.TryParse(lastUpdated, out DateTime lastUpdatedDate);
+        List<SiteEto> siteEtos = new List<SiteEto>();
+        JArray siteArray = JsonConvert.DeserializeObject<dynamic>(casSupplierResponse.GetProperty("supplieraddress").ToString());
+        foreach (dynamic site in siteArray)
+        {
+            siteEtos.Add(GetSiteEto(site));
+        }
+
+        return new UpsertSupplierEto
+        {
+            Number = suppliernumber,
+            Name = suppliername,
+            Subcategory = subcategory,
+            ProviderId = providerid,
+            BusinessNumber = businessnumber,
+            Status = status,
+            SupplierProtected = supplierprotected,
+            StandardIndustryClassification = standardindustryclassification,
+            LastUpdatedInCAS = lastUpdatedDate,
+            SiteEtos = siteEtos
+        };
+    }
+
+    protected static SiteEto GetSiteEto(dynamic site)
+    {
+        string supplierSiteCode = site["suppliersitecode"].ToString();
+        string addressLine1 = site["addressline1"].ToString();
+        string addressLine2 = site["addressline2"].ToString();
+        string city = site["city"].ToString();
+        string province = site["province"].ToString();
+        string country = site["country"].ToString();
+        string postalCode = site["postalcode"].ToString();
+        string emailAddress = site["emailaddress"].ToString();
+        string eftAdvicePref = site["eftadvicepref"].ToString();
+        string providerId = site["providerid"].ToString();
+        string siteStatus = site["status"].ToString();
+        string siteProtected = site["siteprotected"].ToString();
+        string siteLastUpdated = site["lastupdated"].ToString();
+
+        _ = DateTime.TryParse(siteLastUpdated, out DateTime siteLastUpdatedDate);
+        return new SiteEto
+        {
+            SupplierSiteCode = supplierSiteCode,
+            AddressLine1 = addressLine1,
+            AddressLine2 = addressLine2,
+            AddressLine3 = addressLine2,
+            City = city,
+            Province = province,
+            Country = country,
+            PostalCode = postalCode,
+            EmailAddress = emailAddress,
+            EFTAdvicePref = eftAdvicePref,
+            ProviderId = providerId,
+            Status = siteStatus,
+            SiteProtected = siteProtected,
+            LastUpdated = siteLastUpdatedDate
+        };
+    }
+#pragma warning restore CS8600
+
+    protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
+    {
+        var applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
+        await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+    }
+
+    protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId)
+    {
+        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType);
+
+        if (dbAddress != null)
+        {
+            MapApplicantAddress(input, applicantAddressType, dbAddress);
+            await _applicantAddressRepository.UpdateAsync(dbAddress);
         }
         else
         {
-            await _supplierAppService.CreateAsync(new CreateSupplierDto()
-            {
-                Number = supplierNumber,
-                CorrelationId = applicantId,
-                CorrelationProvider = PaymentConsts.ApplicantCorrelationProvider,
-            });
+            var newAddress = new ApplicantAddress() { AddressType = applicantAddressType, ApplicantId = applicantId };
+            MapApplicantAddress(input, applicantAddressType, newAddress);
+            await _applicantAddressRepository.InsertAsync(newAddress);
+        }
+    }
+
+    private static void MapApplicantAddress(CreateUpdateApplicantInfoDto input, AddressType applicantAddressType, ApplicantAddress address)
+    {
+        switch (applicantAddressType)
+        {
+            case AddressType.MailingAddress:
+                address.AddressType = AddressType.MailingAddress;
+                address.Street = input.MailingAddressStreet ?? "";
+                address.Street2 = input.MailingAddressStreet2 ?? "";
+                address.Unit = input.MailingAddressUnit ?? "";
+                address.City = input.MailingAddressCity ?? "";
+                address.Province = input.MailingAddressProvince ?? "";
+                address.Postal = input.MailingAddressPostalCode ?? "";
+                break;
+            case AddressType.PhysicalAddress:
+                address.AddressType = AddressType.PhysicalAddress;
+                address.Street = input.PhysicalAddressStreet ?? "";
+                address.Street2 = input.PhysicalAddressStreet2 ?? "";
+                address.Unit = input.PhysicalAddressUnit ?? "";
+                address.City = input.PhysicalAddressCity ?? "";
+                address.Province = input.PhysicalAddressProvince ?? "";
+                address.Postal = input.PhysicalAddressPostalCode ?? "";
+                break;
         }
     }
 
@@ -516,30 +603,26 @@ public class GrantApplicationAppService :
                         AssigneeId = userAssignment.AssigneeId,
                         FullName = user.FullName,
                         Duty = userAssignment.Duty,
+                        ApplicationId = applicationId
                     };
 
-        return query.ToList();
+        return await query.ToListAsync();
     }
 
     public async Task<GrantApplicationAssigneeDto> GetOwnerAsync(Guid ownerId)
     {
-        try
+        var owner = await _personRepository.FindAsync(ownerId);
+
+        if (owner != null)
         {
-            var owner = await _personRepository.GetAsync(ownerId, false);
-
-
             return new GrantApplicationAssigneeDto
             {
                 Id = owner.Id,
                 FullName = owner.FullName
             };
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine(ex.ToString());
+        else
             return new GrantApplicationAssigneeDto();
-        }
-
     }
 
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
@@ -548,7 +631,7 @@ public class GrantApplicationAppService :
         var application = await _applicationRepository.GetAsync(applicationId, false);
         if (application != null)
         {
-            IQueryable<ApplicationFormSubmission> queryableFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationFormSubmission> queryableFormSubmissions = await _applicationFormSubmissionRepository.GetQueryableAsync();
             if (queryableFormSubmissions != null)
             {
                 var dbResult = queryableFormSubmissions
@@ -561,16 +644,6 @@ public class GrantApplicationAppService :
             }
         }
         return applicationFormSubmission;
-    }
-
-    private static string NormalizeSorting(string sorting)
-    {
-        if (sorting.IsNullOrEmpty())
-        {
-            return $"application.{nameof(Application.ProjectName)}";
-        }
-
-        return $"application.{sorting}";
     }
 
     public async Task UpdateApplicationStatus(Guid[] applicationIds, Guid statusId)
@@ -595,7 +668,6 @@ public class GrantApplicationAppService :
 
     public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
     {
-
         try
         {
             var assignees = await GetAssigneesAsync(applicationId);
@@ -612,12 +684,10 @@ public class GrantApplicationAppService :
         {
             Debug.WriteLine(ex.ToString());
         }
-
     }
 
     public async Task DeleteAssigneeAsync(Guid applicationId, Guid assigneeId)
     {
-
         try
         {
             await _applicationManager.RemoveAssigneeAsync(applicationId, assigneeId);
@@ -626,27 +696,32 @@ public class GrantApplicationAppService :
         {
             Debug.WriteLine(ex.ToString());
         }
-
     }
+
     public async Task<IList<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
     {
+        var applications = await
+            (await _applicationRepository.WithDetailsAsync())
+            .OrderBy(s => s.Id)
+            .Where(s => applicationIds.Contains(s.Id))
+            .ToListAsync();
 
-        var applications = await _applicationRepository.GetListAsync(e => applicationIds.Contains(e.Id));
-
-        return ObjectMapper.Map<List<Application>, List<GrantApplicationDto>>(applications.OrderBy(t => t.Id).ToList());
-
+        return ObjectMapper.Map<List<Application>, List<GrantApplicationDto>>(applications);
     }
+
     public async Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds)
     {
         var query = from application in await _applicationRepository.GetQueryableAsync()
                     join appStatus in await _applicationStatusRepository.GetQueryableAsync() on application.ApplicationStatusId equals appStatus.Id
                     join applicant in await _applicantRepository.GetQueryableAsync() on application.ApplicantId equals applicant.Id
+                    join applicationForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals applicationForm.Id
                     where applicationIds.Contains(application.Id)
                     select new
                     {
                         application,
                         appStatus,
-                        applicant
+                        applicant,
+                        applicationForm
                     };
 
         var result = query
@@ -662,7 +737,9 @@ public class GrantApplicationAppService :
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(grouping.First().application);
             appDto.Status = grouping.First().appStatus.InternalStatus;
+            appDto.StatusCode = grouping.First().appStatus.StatusCode;
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().applicant);
+            appDto.ApplicationForm = ObjectMapper.Map<ApplicationForm, ApplicationFormDto>(grouping.First().applicationForm);
             appDtos.Add(appDto);
         }
 
@@ -671,7 +748,6 @@ public class GrantApplicationAppService :
 
     public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)
     {
-
         try
         {
             var application = await _applicationRepository.GetAsync(applicationId, false);
@@ -685,12 +761,10 @@ public class GrantApplicationAppService :
         {
             Debug.WriteLine(ex.ToString());
         }
-
     }
 
     public async Task DeleteOwnerAsync(Guid applicationId)
     {
-
         try
         {
             var application = await _applicationRepository.GetAsync(applicationId, false);
@@ -704,7 +778,6 @@ public class GrantApplicationAppService :
         {
             Debug.WriteLine(ex.ToString());
         }
-
     }
 
     [HttpPut]
@@ -771,13 +844,13 @@ public class GrantApplicationAppService :
             : ObjectMapper.Map<ApplicationComment, CommentDto>((ApplicationComment)comment);
     }
 
-    #region APPLICATION WORKFLOW
     public async Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id)
     {
         var application = await _applicationRepository.GetAsync(id, true);
         return ObjectMapper.Map<ApplicationStatus, ApplicationStatusDto>(await _applicationStatusRepository.GetAsync(application.ApplicationStatusId));
     }
 
+    #region APPLICATION WORKFLOW
     /// <summary>
     /// Fetches the list of actions and their status context for a given application.
     /// </summary>
@@ -818,7 +891,6 @@ public class GrantApplicationAppService :
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
-
         // AUTHORIZATION HANDLING
         var application = await _applicationRepository.GetAsync(applicationId, true);
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
@@ -839,4 +911,12 @@ public class GrantApplicationAppService :
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
     #endregion APPLICATION WORKFLOW    
+
+
+    public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
+    {
+        var applications = await _applicationRepository.GetListAsync();
+
+        return ObjectMapper.Map<List<Application>, List<GrantApplicationLiteDto>>(applications.ToList());
+    }
 }

@@ -1,23 +1,30 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.Suppliers;
+using Volo.Abp.Uow;
 using Xunit;
-
 
 namespace Unity.Payments.Suppliers;
 
 public class SupplierAppService_Tests : PaymentsApplicationTestBase
 {
     private readonly ISupplierAppService _supplierAppService;
+    private readonly ISupplierRepository _supplierRepository;
+    private readonly Volo.Abp.Uow.IUnitOfWorkManager _unitOfWorkManager;
+
     public SupplierAppService_Tests()
     {
         _supplierAppService = GetRequiredService<ISupplierAppService>();
+        _supplierRepository = GetRequiredService<ISupplierRepository>();
+        _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
     }
 
     [Fact]
-    public async Task CreateAsync()
+    [Trait("Category", "Integration")]
+    public async Task CreateAsync_CreatesSupplier()
     {
         // Arrange
-        CreateSupplierDto createSupplierDto = new CreateSupplierDto()
+        CreateSupplierDto createSupplierDto = new()
         {
             Name = "Supplier123",
             Number = "12345",
@@ -28,26 +35,45 @@ public class SupplierAppService_Tests : PaymentsApplicationTestBase
             Province = "BC",
             PostalCode = "12345",
         };
-        
+
 
         // Act
         SupplierDto supplier = await _supplierAppService.CreateAsync(createSupplierDto);
 
         // Assert
-        Assert.NotNull(supplier);
-        Assert.Equal(supplier.Name, createSupplierDto.Name);
-        Assert.Equal(supplier.Number, createSupplierDto.Number);
-        Assert.Equal(supplier.MailingAddress, createSupplierDto.MailingAddress);
-        Assert.Equal(supplier.City, createSupplierDto.City);
-        Assert.Equal(supplier.Province, createSupplierDto.Province);
-        Assert.Equal(supplier.PostalCode, createSupplierDto.PostalCode);
+        var dbSupplier = await _supplierRepository.GetAsync(supplier.Id);
+        
+        Assert.Equal(dbSupplier.Name, createSupplierDto.Name);
+        Assert.Equal(dbSupplier.Number, createSupplierDto.Number);
+        Assert.Equal(dbSupplier.MailingAddress, createSupplierDto.MailingAddress);
+        Assert.Equal(dbSupplier.City, createSupplierDto.City);
+        Assert.Equal(dbSupplier.Province, createSupplierDto.Province);
+        Assert.Equal(dbSupplier.PostalCode, createSupplierDto.PostalCode);
     }
 
     [Fact]
-    public async Task UpdateAsync()
+    [Trait("Category", "Integration")]
+    public async Task UpdateAsync_UpdatesSupplier()
     {
         // Arrange
-        CreateSupplierDto createSupplierDto = new CreateSupplierDto()
+        var updateSupplierDto = new UpdateSupplierDto()
+        {
+            Name = "Supplier456",
+            Number = "67890",
+            Subcategory = "",
+            ProviderId = "",
+            BusinessNumber = "",
+            Status = "",
+            SupplierProtected = "",
+            StandardIndustryClassification = "",
+            LastUpdatedInCAS = System.DateTime.Now,
+            MailingAddress = "890 Peatt Road",
+            City = "Langford",
+            Province = "BC",
+            PostalCode = "67890",
+        };
+        
+        CreateSupplierDto createSupplierDto = new()
         {
             Name = "Supplier123",
             Number = "12345",
@@ -58,28 +84,20 @@ public class SupplierAppService_Tests : PaymentsApplicationTestBase
             Province = "BC",
             PostalCode = "12345",
         };
-        UpdateSupplierDto updateSupplierDto = new UpdateSupplierDto()
-        {
-            Name = "Supplier456",
-            Number = "67890",
-            MailingAddress = "890 Peatt Road",
-            City = "Langford",
-            Province = "BC",
-            PostalCode = "67890",
-        };
-        SupplierDto insertedSupplier = await _supplierAppService.CreateAsync(createSupplierDto);
 
-
+        using var uow = _unitOfWorkManager.Begin();
         // Act
-        SupplierDto supplier = await _supplierAppService.UpdateAsync(insertedSupplier.Id,updateSupplierDto);
+        SupplierDto supplier = await _supplierAppService.CreateAsync(createSupplierDto);
+        SupplierDto updatedSupDto = await _supplierAppService.UpdateAsync(supplier.Id, updateSupplierDto);
 
         // Assert
-        Assert.NotNull(supplier);
-        Assert.Equal(supplier.Name, updateSupplierDto.Name);
-        Assert.Equal(supplier.Number, updateSupplierDto.Number);
-        Assert.Equal(supplier.MailingAddress, updateSupplierDto.MailingAddress);
-        Assert.Equal(supplier.City, updateSupplierDto.City);
-        Assert.Equal(supplier.Province, updateSupplierDto.Province);
-        Assert.Equal(supplier.PostalCode, updateSupplierDto.PostalCode);
+        var dbSupplier = await _supplierRepository.GetAsync(supplier.Id);
+        Assert.Equal(dbSupplier.Name, updateSupplierDto.Name);
+        Assert.Equal(dbSupplier.Number, updateSupplierDto.Number);
+        Assert.Equal(dbSupplier.MailingAddress, updateSupplierDto.MailingAddress);
+        Assert.Equal(dbSupplier.City, updateSupplierDto.City);
+        Assert.Equal(dbSupplier.Province, updateSupplierDto.Province);
+        Assert.Equal(dbSupplier.PostalCode, updateSupplierDto.PostalCode);            
+
     }
 }

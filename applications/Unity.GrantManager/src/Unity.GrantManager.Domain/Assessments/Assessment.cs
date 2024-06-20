@@ -1,6 +1,7 @@
 ﻿using Stateless;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.Workflow;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -10,6 +11,14 @@ namespace Unity.GrantManager.Assessments;
 public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentState, AssessmentAction>, IMultiTenant
 {
     public Guid ApplicationId { get; private set; }
+    public virtual Application Application
+    {
+        set => _application = value;
+        get => _application
+               ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Application));
+    }
+    private Application? _application;
+
     public Guid AssessorId { get; private set; }
 
     public DateTime? EndDate { get; private set; }

@@ -36,9 +36,15 @@
 <div class="container-fluid px-2">
     <div class="d-flex my-1 p-2">
         <abp-row class="m-0 assessment-result-form" >
-            <abp-column size="_12" class="px-1">
-             <abp-card-title class="label">@Model.ApplicationFormDto?.ApplicationFormName </abp-card-title>
-             </abp-column>
+            <abp-column size="_9" class="px-1 d-flex align-items-center">
+                <abp-card-title class="label">@Model.ApplicationFormDto?.ApplicationFormName </abp-card-title>
+            </abp-column>
+            <abp-column size="_3" class="px-1 d-flex align-items-center">
+                <label for="scoresheet" class="label">Scoring Sheet:&nbsp;&nbsp;</label>
+                <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet">
+                    <option value="">Please choose...</option>
+                </abp-select>
+            </abp-column>
         </abp-row>
     </div>
 
@@ -144,60 +150,53 @@
             <textarea id="jsonText" rows="15" cols="80">@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
         </abp-modal-body>
         <abp-modal-footer>
-           
+                <abp-button id="btn-save-mapping"
+                        text="Save Mapping JSON"
+                        icon-type="Other"
+                        abp-tooltip="Save the Mapping JSON"
+                        button-type="Primary" />
                 <abp-button id="btn-cancel-mapping"
                         text="Cancel"
                         icon-type="Other"
                         class="btn btn-secondary"
                         abp-tooltip="Cancel the Edit"
                         button-type="Secondary" />
-
-                <abp-button id="btn-save-mapping"
-                        text="Save Mapping JSON"
-                        icon-type="Other"
-                        icon="fl fl-save"
-                        abp-tooltip="Save the Mapping JSON"
-                        button-type="Primary" />
         </abp-modal-footer>
     </abp-modal>
 
     <div class="content-div">
         <div class="buttons">
             <div class="buttons-div">
-                &nbsp;&nbsp;
-            <abp-button id="btn-save"
-                        text="Save Mapping"
-                        icon-type="Other"
-                        icon="fl fl-save"
-                        style="pointer-events: all;"
-                        abp-tooltip="Save the Mapping of CHEFS fields to Unity Fields"
-                        button-type="Primary" />
-            &nbsp;&nbsp;
-            <abp-button id="btn-edit"
-                        text="Edit Mapping"
-                        icon-type="Other"
-                        data-target="#editMappingModal"
-                        icon="fl fl-edit"
-                        data-toggle="modal"
-                        style="pointer-events: all;"
-                        abp-tooltip="Edit the Mapping JSON Manually"
-                        button-type="Primary" />
-            
-            &nbsp;&nbsp;
-
-            <abp-button id="btn-reset"
-                        text="Reset Mapping"
-                        icon-type="Other"
-                        icon="fl fl-undo"
-                        abp-tooltip="This button resets the mapping to the last saved state"
-                        button-type="Light" />
-                &nbsp;&nbsp;
-            <abp-button id="btn-back"
-                        text="Back"
-                        icon-type="Other"
-                        icon="fl fl-open-pane"
-                        abp-tooltip="Navigate back to the Forms"
-                        button-type="Light" />
+                <abp-button id="btn-save"
+                            text="Save"
+                            icon-type="Other"
+                            icon="fl fl-save"
+                            class="mx-1"
+                            style="pointer-events: all;"
+                            abp-tooltip="Save the Scoring Sheet and the Mapping of CHEFS fields to Unity Fields"
+                            button-type="Primary" />
+                <abp-button id="btn-edit"
+                            text="Edit Mapping"
+                            icon-type="Other"
+                            data-target="#editMappingModal"
+                            icon="fl fl-edit"
+                            class="mx-1"
+                            data-toggle="modal"
+                            style="pointer-events: all;"
+                            abp-tooltip="Edit the Mapping JSON Manually"
+                            button-type="Primary" />
+                <abp-button id="btn-reset"
+                            text="Reset Mapping"
+                            icon-type="Other"
+                            icon="fl fl-undo"
+                            class="mx-1"
+                            abp-tooltip="This button resets the mapping to the last saved state"
+                            button-type="Light" />
+                <abp-button id="btn-back"
+                            text="Back"
+                            class="mx-1"
+                            abp-tooltip="Navigate back to the Forms"
+                            button-type="Light" />
             </div>
         </div>
     </div>

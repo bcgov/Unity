@@ -1,59 +1,78 @@
 ﻿$(function () {
     const formatter = createNumberFormatter();
     const l = abp.localization.getResource('GrantManager');
-    const maxRowsPerPage = 15;
     let dt = $('#GrantApplicationsTable');
     let dataTable;
-    /* let mapTitles = new Map(); = not used */
-    /* commented out clear filter functionality - needs to be looked at again or deleted */
 
-    const listColumns = getColumns(); //init columns before table init
-    dataTable = initializeDataTable();
+    const listColumns = getColumns();
+    const defaultVisibleColumns = ['select',
+        'applicantName',
+        'referenceNo',
+        'category',
+        'submissionDate',
+        'projectName',
+        'subsector',
+        'totalProjectBudget',
+        'assignees',
+        'status',
+        'requestedAmount',
+        'approvedAmount',
+        'economicRegion',
+        'regionalDistrict',
+        'community',
+        'orgNumber',
+        'orgBookStatus'];
+    let actionButtons = [
+        {
+            extend: 'csv',
+            text: 'Export',
+            className: 'custom-table-btn flex-none btn btn-secondary',
+            exportOptions: {
+                columns: ':visible:not(.notexport)',
+                orthogonal: 'fullName',
+            }
+        }
+    ];
 
-    // Add custom manage columns button that remains sorted alphabetically
-    dataTable.button().add(1, {
-        text: 'Manage Columns',
-        extend: 'collection',
-        buttons: getColumnToggleButtonsSorted(),
-        className: 'btn btn-light custom-table-btn cln-visible'
-    });
+    let responseCallback = function (result) {
+        return {
+            recordsTotal: result.totalCount,
+            recordsFiltered: result.items.length,
+            data: result.items
+        };
+    };
+    dataTable = initializeDataTable(dt,
+        defaultVisibleColumns,
+        listColumns,
+        15,
+        4,
+        unity.grantManager.grantApplications.grantApplication.getList,
+        {},
+        responseCallback,
+        actionButtons,
+        'dynamicButtonContainerId');
 
-    dataTable.buttons().container().prependTo('#dynamicButtonContainerId');
     dataTable.on('search.dt', () => handleSearch());
 
-    /* Removed for now - to be added/looked at later
-    $('#dynamicButtonContainerId').prepend($('.csv-download:eq(0)'));
-    $('#dynamicButtonContainerId').prepend($('.cln-visible:eq(0)'));
-    */
-
-    const UIElements = {
-        searchBar: $('#search-bar'),
-        btnToggleFilter: $('#btn-toggle-filter'),
-        /* ClearFilter filterIcon: $("i.fl.fl-filter"), */
-        /* ClearFilter clearFilter: $('#btn-clear-filter') */
-    };    
-    init();
-    function init() {
-        $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');
-        $('.csv-download').prepend('<i class="fl fl-export"></i>');
-        $('.cln-visible').prepend('<i class="fl fl-settings"></i>');
-        bindUIEvents();
-        /* ClearFilter UIElements.clearFilter.html("<span class='x-mark'>X</span>" + UIElements.clearFilter.html()); */
-        dataTable.search('').columns().search('').draw();
-    }
-
-    function bindUIEvents() {
-        UIElements.btnToggleFilter.on('click', toggleFilterRow);
-        /* ClearFilter UIElements.filterIcon.on('click', $('#dtFilterRow').toggleClass('hidden')); */
-        /* ClearFilter UIElements.clearFilter.on('click', clearFilter); */
-    }
-
     dataTable.on('select', function (e, dt, type, indexes) {
+        $("#row_" + indexes).prop("checked", true);
+        if ($(".chkbox:checked").length == $(".chkbox").length) {
+            $("#select-all").prop("checked", true);
+        }
         selectApplication(type, indexes, 'select_application');
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
         selectApplication(type, indexes, 'deselect_application');
+        $("#row_" + indexes).prop("checked", false);
+        if ($(".chkbox:checked").length != $(".chkbox").length) {
+            $("#select-all").prop("checked", false);
+        }
+    });
+
+    $('#search').keyup(function () {
+        let table = $('#GrantApplicationsTable').DataTable();
+        table.search($(this).val()).draw();
     });
 
     function selectApplication(type, indexes, action) {
@@ -63,200 +82,14 @@
         }
     }
 
-    function toggleFilterRow() {
-        $('#dtFilterRow').toggleClass('hidden');
-    }
-
-    /* Clear filter button removed - to review if needed again
-    function clearFilter() {        
-        $(".filter-input").each(function () {
-            if (this.value != "") {
-                this.value = "";
-                dataTable
-                    .columns(mapTitles.get(this.placeholder))
-                    .search(this.value)
-                    .draw();
-            }
-        });
-
-        $('#btn-clear-filter')[0].disabled = true;
-    }
-    */
-
     function handleSearch() {
-        let filterValue = $('.dataTables_filter input').val();
-        if (filterValue.length > 0) {
-            $('#externalLink').prop('disabled', true);
-            $('#applicationLink').prop('disabled', true);
-            Array.from(document.getElementsByClassName('selected')).forEach(
-                function (element, index, array) {
-                    element.classList.toggle('selected');
-                }
-            );
-            PubSub.publish("deselect_application", "reset_data");
-        }
-    }
-
-    function createNumberFormatter() {
-        return new Intl.NumberFormat('en-CA', {
-            style: 'currency',
-            currency: 'CAD',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
-    }
-
-    function initializeDataTable() {
-        return dt.DataTable(
-            abp.libs.datatables.normalizeConfiguration({
-                fixedHeader: {
-                    header: true,
-                    footer: false,
-                    headerOffset: 0
-                },
-                serverSide: false,
-                paging: true,
-                order: [[4, 'desc']],
-                searching: true,
-                pageLength: maxRowsPerPage,
-                scrollX: true,
-                ajax: abp.libs.datatables.createAjax(
-                    unity.grantManager.grantApplications.grantApplication.getList
-                ),
-                select: {
-                    style: 'multiple',
-                    selector: 'td:not(:nth-child(8))',
-                },
-                colReorder: true,
-                orderCellsTop: true,
-                //fixedHeader: true,
-                stateSave: true,
-                stateDuration: 0,
-                dom: 'Bfrtip',
-                buttons: [
-                    {
-                        extend: 'csv',
-                        text: 'Export',
-                        className: 'btn btn-light custom-table-btn csv-download',
-                        exportOptions: {
-                            columns: ':visible:not(.notexport)',
-                            orthogonal: 'fullName',
-                        }
-                    }
-                ],
-                drawCallback: function () {
-                    let $api = this.api();
-                    let pages = $api.page.info().pages;
-                    let rows = $api.data().length;
-
-                    // Tailor the settings based on the row count
-                    if (rows <= maxRowsPerPage) {
-                        $('.dataTables_info').css('display', 'none');
-                        $('.dataTables_paginate').css('display', 'none');
-                        $('.dataTables_length').css('display', 'none');
-                    } else if (pages === 1) {
-                        // With this current length setting, not more than 1 page, hide pagination
-                        $('.dataTables_info').css('display', 'none');
-                        $('.dataTables_paginate').css('display', 'none');
-                    } else {
-                        // SHow everything
-                        $('.dataTables_info').css('display', 'block');
-                        $('.dataTables_paginate').css('display', 'block');
-                    }
-                    setTableHeighDynamic();
-                },
-                initComplete: function () {
-                    updateFilter();
-                },
-                columns: listColumns,
-                columnDefs: [
-                    {
-                        targets: getColumnsVisibleByDefault(),
-                        visible: true
-                    },
-                    {
-                        targets: '_all',
-                        visible: false // Hide all other columns initially
-                    }
-                ],
-            })
-        );
-    }
-
-    function getColumnsVisibleByDefault() {
-        const columnNames = ['select',
-            'applicantName',
-            'referenceNo',
-            'category',
-            'submissionDate',
-            'projectName',
-            'subsector',
-            'totalProjectBudget',
-            'assignees',
-            'status',
-            'requestedAmount',
-            'approvedAmount',
-            'economicRegion',
-            'regionalDistrict',
-            'community',
-            'orgNumber',
-            'orgBookStatus'
-        ];
-        return columnNames
-            .map((name) => getColumnByName(name).index);        
-    }
-
-    function getColumnByName(name) {        
-        return listColumns.find(obj => obj.name === name);
-    }
-
-    function getColumnToggleButtonsSorted() {          
-        let exludeIndxs = [0];
-        return listColumns
-            .map((obj) => ({ title: obj.title, data: obj.data, visible: obj.visible, index: obj.index }))
-            .filter(obj => !exludeIndxs.includes(obj.index))
-            .sort((a, b) => a.title.localeCompare(b.title))
-            .map(a => ({
-                text: a.title,
-                id: 'managecols-' + a.index,
-                action: function (e, dt, node, config) {                      
-                    toggleManageColumnButton(config);
-                    if (isColumnVisToggled(a.title)) {
-                        node.addClass('dt-button-active');
-                    } else {
-                        node.removeClass('dt-button-active');
-                    }
-                    
-                },
-                className: 'dt-button dropdown-item buttons-columnVisibility' + isColumnVisToggled(a.title)
-            }));        
-    }
-
-    function isColumnVisToggled(title) {        
-        let column = findColumnByTitle(title);
-        if (column.visible())
-            return ' dt-button-active';
-        else
-            return null;
-    }
-
-    function toggleManageColumnButton(config) {        
-        let column = findColumnByTitle(config.text);
-        column.visible(!column.visible());
-    }
-
-    function findColumnByTitle(title) {
-        let columnIndex = dataTable
-            .columns()
-            .header()
-            .map(c => $(c).text())
-            .indexOf(title);
-        return dataTable.column(columnIndex);
+        let filter = $('.dataTables_filter input').val();
+        console.info(filter);
     }
 
     function getColumns() {
         return [
-            getSelectColumn(),
+            getSelectColumn('Select Application'),
             getApplicantNameColumn(),
             getApplicationNumberColumn(),
             getCategoryColumn(),
@@ -273,7 +106,7 @@
             getRegionalDistrictColumn(),
             getCommunityColumn(),
             getOrganizationNumberColumn(),
-            getOrgBookStatusColumn(),    
+            getOrgBookStatusColumn(),
             getProjectStartDateColumn(),
             getProjectEndDateColumn(),
             getProjectedFundingTotalColumn(),
@@ -283,7 +116,7 @@
             getForestryOrNonForestryColumn(),
             getForestryFocusColumn(),
             getAcquisitionColumn(),
-            getCityColumn(),   
+            getCityColumn(),
             getCommunityPopulationColumn(),
             getLikelihoodOfFundingColumn(),
             getSubStatusColumn(),
@@ -298,7 +131,7 @@
             getOrganizationTypeColumn(),
             getOrganizationNameColumn(),
             getDueDiligenceStatusColumn(),
-            getDeclineRationaleColumn(),         
+            getDeclineRationaleColumn(),
             getContactFullNameColumn(),
             getContactTitleColumn(),
             getContactEmailColumn(),
@@ -311,21 +144,7 @@
             getSigningAuthorityBusinessPhoneColumn(),
             getSigningAuthorityCellPhoneColumn(),
         ]
-        .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
-    }
-
-    function getSelectColumn() {
-        return {
-            title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
-            orderable: false,
-            className: 'notexport',
-            data: 'rowCount',
-            name: 'select',
-            render: function (data) {
-                return '<div class="select-checkbox" title="Select Application" ></div>';
-            },
-            index: 0
-        }
+            .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
 
     function getApplicantNameColumn() {
@@ -390,7 +209,7 @@
             data: 'applicant.sector',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Sector}';
+                return data ?? '';
             },
             index: 6
         }
@@ -403,7 +222,7 @@
             data: 'applicant.subSector',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SubSector}';
+                return data ?? '';
             },
             index: 7
         }
@@ -423,7 +242,7 @@
     }
 
     function getAssigneesColumn() {
-        return { 
+        return {
             title: l('Assignee'),
             data: 'assignees',
             name: 'assignees',
@@ -431,7 +250,7 @@
             render: function (data, type, row) {
                 let displayText = ' ';
 
-                if (data != null && data.length == 1) {                    
+                if (data != null && data.length == 1) {
                     displayText = type === 'fullName' ? getNames(data) : (data[0].fullName + getDutyText(data[0]));
                 } else if (data.length > 1) {
                     displayText = getNames(data);
@@ -466,7 +285,7 @@
     }
 
     function getRequestedAmountColumn() {
-        return { 
+        return {
             title: l('RequestedAmount'),
             data: 'requestedAmount',
             name: 'requestedAmount',
@@ -492,26 +311,26 @@
     }
 
     function getEconomicRegionColumn() {
-        return { 
+        return {
             title: 'Economic Region',
             name: 'economicRegion',
             data: 'economicRegion',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Region}';
+                return data ?? '';
             },
             index: 13
         }
     }
 
     function getRegionalDistrictColumn() {
-        return { 
+        return {
             title: 'Regional District',
             name: 'regionalDistrict',
             data: 'regionalDistrict',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Regional District}';
+                return data ?? '';
             },
             index: 14
         }
@@ -524,7 +343,7 @@
             data: 'community',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Community}';
+                return data ?? '';
             },
             index: 15
         }
@@ -538,7 +357,7 @@
             className: 'data-table-header',
             visible: false,
             render: function (data) {
-                return data ?? '{Organization Number}';
+                return data ?? '';
             },
             index: 16
         }
@@ -548,10 +367,16 @@
         return {
             title: 'Org Book Status',
             name: 'orgBookStatus',
-            data: 'orgBookStatus',
+            data: 'applicant.orgStatus',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Org Book Status}';
+                if (data != null && data == 'ACTIVE') {
+                    return 'Active';
+                } else if (data != null && data == 'HISTORICAL') {
+                    return 'Historical';
+                } else {
+                    return data ?? '';
+                }  
             },
             index: 17
         }
@@ -566,7 +391,7 @@
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '{Project Start Date}';
+                }).toUTC().toLocaleString() : '';
             },
             index: 18
         }
@@ -581,7 +406,7 @@
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '{Project End Date}';
+                }).toUTC().toLocaleString() : '';
             },
             index: 19
         }
@@ -594,7 +419,7 @@
             data: 'projectFundingTotal',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return formatter.format(data) ?? '{Projected Funding Total}';
+                return formatter.format(data) ?? '';
             },
             index: 20
         }
@@ -607,7 +432,7 @@
             data: 'percentageTotalProjectBudget',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{% of Total Project Budget}';
+                return data ?? '';
             },
             index: 21
         }
@@ -616,11 +441,11 @@
     function getTotalPaidAmountColumn() {
         return {
             title: 'Total Paid Amount $',
-            name: 'projectFundingTotal',
-            data: 'projectFundingTotal',
+            name: 'totalPaidAmount',
+            data: 'totalPaidAmount',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return formatter.format(data) ?? '{Total Paid Amount $}';
+                return '';
             },
             index: 22
         }
@@ -633,7 +458,7 @@
             data: 'electoralDistrict',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Electoral District}';
+                return data ?? '';
             },
             index: 23
         }
@@ -649,7 +474,7 @@
                 if (data != null)
                     return data == 'FORESTRY' ? 'Forestry' : 'Non Forestry';
                 else
-                    return '{Forestry or Non-Forestry}';
+                    return '';
             },
             index: 24
         }
@@ -671,14 +496,14 @@
                         return 'Secondary/Value-Added/Not Mass Timber'
                     } else if (data == 'MASS_TIMBER') {
                         return 'Mass Timber';
-                    } else if(data != ''){
+                    } else if (data != '') {
                         return data;
                     } else {
-                        return '{Forestry Focus}';
+                        return '';
                     }
                 }
                 else {
-                    return '{Forestry Focus}';
+                    return '';
                 }
 
             },
@@ -698,7 +523,7 @@
                     return titleCase(data);
                 }
                 else {
-                    return '{Acquisition}';
+                    return '';
                 }
 
             },
@@ -713,7 +538,7 @@
             data: 'city',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{city}';
+                return data ?? '';
 
             },
             index: 27
@@ -727,7 +552,7 @@
             data: 'communityPopulation',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Community Population}';
+                return data ?? '';
             },
             index: 28
         }
@@ -744,7 +569,7 @@
                     return titleCase(data);
                 }
                 else {
-                    return '{Likelihood of Funding}';
+                    return '';
                 }
             },
             index: 29
@@ -758,7 +583,7 @@
             data: 'subStatusDisplayValue',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SubStatus}';
+                return data ?? '';
             },
             index: 30
         }
@@ -771,7 +596,7 @@
             data: 'applicationTag',
             className: '',
             render: function (data) {
-                return data.replace(/,/g, ', ') ?? '{Tags}';
+                return data.replace(/,/g, ', ') ?? '';
             },
             index: 31
         }
@@ -784,7 +609,7 @@
             data: 'totalScore',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{Total Score}';
+                return data ?? '';
             },
             index: 32
         }
@@ -801,7 +626,7 @@
                     return titleCase(data);
                 }
                 else {
-                    return '{Assessment Result}';
+                    return '';
                 }
             },
             index: 33
@@ -815,7 +640,7 @@
             data: 'recommendedAmount',
             className: 'data-table-header currency-display',
             render: function (data) {
-                return formatter.format(data) ?? '{Recommended Amount}';
+                return formatter.format(data) ?? '';
             },
             index: 34
         }
@@ -830,7 +655,7 @@
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '{Due Date}';
+                }).toUTC().toLocaleString() : '';
             },
             index: 35
         }
@@ -843,7 +668,7 @@
             data: 'owner',
             className: 'data-table-header',
             render: function (data) {
-                return data != null ? data.fullName : '{Owner}';
+                return data != null ? data.fullName : '';
             },
             index: 36
         }
@@ -858,7 +683,7 @@
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '{Decision Date}';
+                }).toUTC().toLocaleString() : '';
             },
             index: 37
         }
@@ -871,7 +696,7 @@
             data: 'projectSummary',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ProjectSummary}';
+                return data ?? '';
             },
             index: 38
         }
@@ -897,7 +722,7 @@
             data: 'organizationName',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{OrgName}';
+                return data ?? '';
             },
             index: 40
         }
@@ -909,20 +734,20 @@
             data: 'dueDiligenceStatus',
             className: 'data-table-header',
             render: function (data) {
-                return titleCase(data ?? '') ?? '{DueDiligenceStatus}';
+                return titleCase(data ?? '') ?? '';
             },
             index: 41
         }
     }
 
     function getDeclineRationaleColumn() {
-        return { 
+        return {
             title: 'Decline Rationale',
             name: 'declineRationale',
             data: 'declineRational',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{DeclineRationale}';
+                return data ?? '';
             },
             index: 42
         }
@@ -935,7 +760,7 @@
             data: 'contactFullName',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactFullName}';
+                return data ?? '';
             },
             index: 43
         }
@@ -947,7 +772,7 @@
             data: 'contactTitle',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactTitle}';
+                return data ?? '';
             },
             index: 44
         }
@@ -959,7 +784,7 @@
             data: 'contactEmail',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactEmail}';
+                return data ?? '';
             },
             index: 45
         }
@@ -971,7 +796,7 @@
             data: 'contactBusinessPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactBusinessPhone}';
+                return data ?? '';
             },
             index: 46
         }
@@ -983,7 +808,7 @@
             data: 'contactCellPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{ContactCellPhone}';
+                return data ?? '';
             },
             index: 47
         }
@@ -996,7 +821,7 @@
             data: 'applicant.sectorSubSectorIndustryDesc',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SectorSubSectorIndustryDesc}';
+                return data ?? '';
             },
             index: 48
         }
@@ -1009,7 +834,7 @@
             data: 'signingAuthorityFullName',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SigningAuthorityFullName}';
+                return data ?? '';
             },
             index: 49
         }
@@ -1021,7 +846,7 @@
             data: 'signingAuthorityTitle',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SigningAuthorityTitle}';
+                return data ?? '';
             },
             index: 50
         }
@@ -1033,7 +858,7 @@
             data: 'signingAuthorityEmail',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SigningAuthorityEmail}';
+                return data ?? '';
             },
             index: 51
         }
@@ -1045,7 +870,7 @@
             data: 'signingAuthorityBusinessPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? '{SigningAuthorityBusinessPhone}';
+                return data ?? '';
             },
             index: 52
         }
@@ -1057,69 +882,14 @@
             data: 'signingAuthorityCellPhone',
             className: 'data-table-header',
             render: function (data) {
-                return data ?? 'S{igningAuthorityCellPhone}';
+                return data ?? '';
             },
             index: 53
         }
     }
-    window.addEventListener('resize', setTableHeighDynamic);
-    function setTableHeighDynamic() {
-        let tableHeight = $("#GrantApplicationsTable")[0].clientHeight;
-        let docHeight = document.body.clientHeight;
-        let tableOffset = 425;
 
-        if ((tableHeight + tableOffset) > docHeight) {
-            $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: docHeight - tableOffset });
-        } else {
-            $("#GrantApplicationsTable_wrapper .dataTables_scrollBody").css({ height: tableHeight + 10 });
-        }
-    }
-    dataTable.on('column-reorder.dt', function (e, settings) {
-        updateFilter();
+    window.addEventListener('resize', () => {
     });
-    dataTable.on('column-visibility.dt', function (e, settings, deselectedcolumn, state) {
-        updateFilter();
-    });
-
-    function updateFilter() {
-        let optionsOpen = false;
-        $("#tr-filter").each(function () {
-            if ($(this).is(":visible"))
-                optionsOpen = true;
-        })
-        $('.tr-toggle-filter').remove();
-        let newRow = $("<tr class='tr-toggle-filter' id='tr-filter'>");
-
-        dataTable
-            .columns()
-            .every(function () {
-                let column = this;
-                if (column.visible()) {
-                    let title = column.header().textContent;
-                    if (title) {
-                        let newCell = $("<td>").append("<input type='text' class='form-control input-sm custom-filter-input' placeholder='" + title + "'>");
-                        newCell.find("input").on("keyup", function () {
-                            if (column.search() !== this.value) {
-                                column.search(this.value).draw();
-                            }
-                        });
-
-                        newRow.append(newCell);
-
-                    }
-                    else {
-                        let newCell = $("<td>");
-                        newRow.append(newCell);
-                    }
-                }
-
-
-            });
-        $("#GrantApplicationsTable thead").after(newRow);
-        if (optionsOpen) {
-            $(".tr-toggle-filter").show();
-        }
-    }
 
     PubSub.subscribe(
         'refresh_application_list',
@@ -1131,7 +901,7 @@
 
     function getNames(data) {
         let name = '';
-        data.forEach((d, index) => {            
+        data.forEach((d, index) => {
             name = name + (' ' + d.fullName + getDutyText(d));
             if (index != (data.length - 1)) {
                 name = name + ',';

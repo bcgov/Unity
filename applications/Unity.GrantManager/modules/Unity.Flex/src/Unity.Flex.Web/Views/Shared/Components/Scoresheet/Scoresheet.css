@@ -1,0 +1,39 @@
+.blue-background {
+    background-color: lightblue;
+}
+
+.question-info-btn {
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
+}
+
+#preview .accordion-button::after {
+    -webkit-filter: grayscale(1) invert(1);
+    filter: grayscale(1) invert(1);
+}
+
+#preview .preview-btn:not(.collapsed) {
+    background-color: #007bff; 
+    color: #ffffff; 
+}
+
+#preview .preview-btn.collapsed::after {
+    -webkit-filter: grayscale(1) invert(0); 
+    filter: grayscale(1) invert(0); 
+}
+
+.accordion-button .question-info {
+    margin-right: 20px; 
+}
+
+.accordion-button .question-info .total-questions {
+    font-size: 0.75rem; 
+}
+
+.accordion-button .text-end {
+    margin-right: 1rem; 
+}
+
+
+
+

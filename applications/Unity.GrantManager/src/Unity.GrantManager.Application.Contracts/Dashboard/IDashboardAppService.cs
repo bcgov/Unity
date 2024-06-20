@@ -6,7 +6,10 @@ namespace Unity.GrantManager.Dashboard;
 
 public interface IDashboardAppService : IApplicationService
 {
-    Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync();
-    Task<List<GetSectorDto>> GetSectorCountAsync();
-    Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync();
+    Task<List<GetEconomicRegionDto>> GetEconomicRegionCountAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetApplicationStatusDto>> GetApplicationStatusCountAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetApplicationTagDto>> GetApplicationTagsCountAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetSubsectorRequestedAmtDto>> GetRequestedAmountPerSubsectorAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetApplicationAssigneeDto>> GetApplicationAssigneeCountAsync(DashboardParametersDto dashboardParams);
+    Task<List<GetRequestedApprovedAmtDto>> GetRequestApprovedCountAsync(DashboardParametersDto dashboardParams);
 }

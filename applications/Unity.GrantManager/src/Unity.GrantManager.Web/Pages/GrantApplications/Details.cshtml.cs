@@ -1,44 +1,65 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Users;
 using Microsoft.Extensions.Configuration;
+using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applications;
-
+using Unity.Modules.Shared.Correlation;
+using Volo.Abp.Features;
+using System.Linq;
+using Unity.GrantManager.Flex;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
     [Authorize]
     public class DetailsModel : AbpPageModel
-    {        
+    {
         private readonly GrantApplicationAppService _grantApplicationAppService;
+        private readonly IWorksheetListAppService _worksheetListAppService;
+        private readonly IFeatureChecker _featureChecker;
 
         [BindProperty(SupportsGet = true)]
-        public string SubmissionId { get; set; }
-        public string SelectedAction { get; set; }
+        public string? SubmissionId { get; set; } = null;
+        public string? SelectedAction { get; set; } = null;
         public IFormFile? Attachment { get; set; } = default;
-        public List<SelectListItem> ActionList { get; set; } = new List<SelectListItem>
-        {
-            new SelectListItem { Value = "true", Text = "Recommended for Approval"},
-            new SelectListItem { Value = "false", Text = "Recommended for Denial"}
-        };
+        public List<SelectListItem> ActionList { get; set; } =
+        [
+            new() { Value = "true", Text = "Recommended for Approval"},
+            new() { Value = "false", Text = "Recommended for Denial"}
+        ];
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
 
         [BindProperty(SupportsGet = true)]
+        public Guid ApplicationFormId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
         public Guid AssessmentId { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public string ApplicationFormSubmissionId { get; set; }
+        public string? ApplicationFormSubmissionId { get; set; } = null;
+
+        [BindProperty(SupportsGet = true)]
+        public string? ChefsSubmissionId { get; set; } = null;
         
+        [BindProperty(SupportsGet = true)]
+        public string? ApplicationFormSubmissionData { get; set; } = null;
+
+        [BindProperty(SupportsGet = true)]
+
+        public string? ApplicationFormSubmissionHtml { get; set; } = null;
+
+        [BindProperty(SupportsGet = true)]
+        public bool? HasRenderedHTML { get; set; } = false;
+
         [BindProperty(SupportsGet = true)]
         public Guid? CurrentUserId { get; set; }
 
@@ -47,36 +68,45 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
-        public string ApplicantName { get; set; } = "";
-        public string ApplicationStatus { get; set; } = "";
-        public string ApplicationNumber { get; set; } = "";
+        [BindProperty(SupportsGet = true)]
+        public List<WorksheetBasicDto> CustomTabs { get; set; } = [];
 
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DetailsModel(GrantApplicationAppService grantApplicationAppService, IFileAppService fileAppService, ICurrentUser currentUser, IConfiguration configuration)
-        {            
+        public DetailsModel(GrantApplicationAppService grantApplicationAppService,
+            IWorksheetListAppService worksheetListAppService,
+            IFeatureChecker featureChecker,
+            ICurrentUser currentUser,
+            IConfiguration configuration)
+        {
             _grantApplicationAppService = grantApplicationAppService;
+            _worksheetListAppService = worksheetListAppService;
+            _featureChecker = featureChecker;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
-            Extensions =  configuration["S3:DisallowedFileTypes"] ?? "";
+            Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
         }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        
+
         public async Task OnGetAsync()
         {
-            var applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
-            GrantApplicationDto application = await _grantApplicationAppService.GetAsync(ApplicationId);
+            ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
 
-            if(application != null) {
-                ApplicantName = application.Applicant.ApplicantName;
-                ApplicationStatus = application.Status.ToString();
-                ApplicationNumber = application.ReferenceNo.ToString();
+            if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+            {
+                var worksheets = await _worksheetListAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
+                CustomTabs = worksheets.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).ToList();
             }
-            
+
             if (applicationFormSubmission != null)
             {
-                ApplicationFormSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
+                ApplicationFormId = applicationFormSubmission.ApplicationFormId;
+                ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
+                ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
+                HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
+                if(!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML)) {
+                    ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
+                } else {
+                    ApplicationFormSubmissionData = applicationFormSubmission.Submission;
+                }
             }
         }
 
@@ -84,6 +114,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {
             await Task.CompletedTask;
             return Page();
-        }        
-    }    
+        }
+    }
 }

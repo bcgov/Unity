@@ -1,0 +1,57 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization
+@using Unity.Flex.Web.Pages.ScoresheetConfiguration
+@using Volo.Abp.Features
+@model Unity.Flex.Web.Pages.ScoresheetConfiguration.IndexModel
+@inject IStringLocalizer<FlexResource> L
+@inject IFeatureChecker FeatureChecker
+
+@section styles
+{
+    <abp-style src="/Pages/ScoresheetConfiguration/Index.css" />
+}
+@section scripts
+{
+    <abp-script src="/Pages/ScoresheetConfiguration/Index.js" />
+    <abp-script src="/libs/sortablejs/Sortable.js" />
+}
+
+@if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+            {
+    <div class="scoresheet-scrollable-content">
+
+        <abp-row class="m-0 h-100 scoresheet-configuration-container">
+            <abp-column class="p-0">
+                <abp-card>
+                    <abp-card-body>
+                        <h4><b>Scoring Sheets</b></h4>
+                        <div id="scoresheet-info-widget">
+                            @await Component.InvokeAsync("Scoresheet", new { scoresheetIdsToLoad = new List<Guid>() })
+                        </div>
+                        <div class="p-4">
+                            <abp-button text="@L["Scoresheet:Configuration:AddScoresheetButtonText"].Value"
+                                        id="add_scoresheet_btn"
+                                        icon-type="Other"
+                                        icon="fl fl-plus"
+                                        onclick="openScoresheetModal(null,'Add Scoring Sheet',null);"
+                                        button-type="Light" />
+                        </div>
+                
+                    </abp-card-body>
+                 </abp-card>
+            </abp-column>
+            <abp-column class="pe-0 ps-2">
+                <abp-card class="right-card">
+                    <abp-card-body>
+                        <h4><b>Preview</b></h4>
+                        <div id="preview">
+                        </div>
+                    </abp-card-body>
+                </abp-card>
+            </abp-column>
+        </abp-row>
+
+    </div>
+
+}

@@ -7,3 +7,30 @@
     margin-bottom: 0.25rem !important;
     border-radius: 15px !important;
 }
+
+.application-dashboard-dropdown {
+    min-width: 250px;
+    margin-top: 5px;
+}
+
+.dashboard-scrollable-content {
+    overflow-y: scroll;
+    height: calc(100vh - 110px);
+}
+
+.button-align-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.application-dashboard-dropdown select {
+    display: none !important;
+}
+
+.application-dashboard-date {
+    min-width: 250px;
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: bold;
+}

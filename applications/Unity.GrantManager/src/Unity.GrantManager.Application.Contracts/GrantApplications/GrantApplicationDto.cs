@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.GrantManager.ApplicationForms;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications;
@@ -9,6 +10,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public int RowCount { get; set; } = 0;
     public string ProjectName { get; set; } = string.Empty;
     public GrantApplicationApplicantDto Applicant { get; set; } = new();
+    public ApplicationFormDto ApplicationForm { get; set; } = new();
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
     public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
@@ -76,4 +78,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? SigningAuthorityCellPhone { get; set; }
     public string? ContractNumber { get; set; }
     public DateTime? ContractExecutionDate { get; set; }
+    public string? Place {  get; set; }
 }

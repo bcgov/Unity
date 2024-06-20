@@ -15,8 +15,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
     [Widget(
         RefreshUrl = "Widget/AssessmentResults/Refresh",
-        ScriptTypes = new[] { typeof(AssessmentResultsScriptBundleContributor) },
-        StyleTypes = new[] { typeof(AssessmentResultsStyleBundleContributor) },
+        ScriptTypes = [typeof(AssessmentResultsScriptBundleContributor)],
+        StyleTypes = [typeof(AssessmentResultsStyleBundleContributor)],
         AutoInitialize = true)]
     public class AssessmentResults : AbpViewComponent
     {
@@ -34,14 +34,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         {
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
             bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-            bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
+            bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;            
             bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
 
             AssessmentResultsPageModel model = new()
             {
                 ApplicationId = applicationId,
+                ApplicationFormId = application.ApplicationForm.Id,
                 IsEditGranted = isEditGranted, 
-                IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
+                IsPostEditFieldsAllowed = isPostEditFieldsAllowed,                
 
                 AssessmentResults = new()
                 {

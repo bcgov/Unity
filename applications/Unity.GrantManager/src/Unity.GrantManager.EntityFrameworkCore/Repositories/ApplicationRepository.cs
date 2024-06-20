@@ -14,34 +14,51 @@ namespace Unity.GrantManager.Repositories;
 
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(IApplicationRepository))]
-#pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
-// This pattern is an implementation ontop of ABP framework, will not change this
 public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Application, Guid>, IApplicationRepository
-#pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
 {
     public ApplicationRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
     {
     }
 
-    public async Task<List<Application>> GetListAsync(int skipCount, int maxResultCount, string sorting, string filter = "")
+    public async Task<List<IGrouping<Guid, Application>>> WithFullDetailsGroupedAsync(int skipCount, int maxResultCount, string? sorting = null)
     {
-        var dbSet = await GetDbSetAsync();
-        return await dbSet
-            .WhereIf(
-                !filter.IsNullOrWhiteSpace(),
-                application => application.ProjectName.Contains(filter)
-             )
-            .OrderBy(sorting)
-            .Skip(skipCount)
-            .Take(maxResultCount)
-            .ToListAsync();
+        var query = (await GetQueryableAsync())
+            .AsNoTracking()
+            .Include(s => s.ApplicationStatus)
+            .Include(s => s.ApplicationForm)
+            .Include(s => s.Assessments)
+            .Include(s => s.ApplicationTags)
+            .Include(s => s.Owner)
+            .Include(s => s.ApplicationAssignments!)
+                .ThenInclude(t => t.Assignee)
+            .Include(s => s.Applicant)
+            .Include(s => s.ApplicantAgent);
+
+        if (!string.IsNullOrEmpty(sorting))
+        {
+            query.OrderBy(sorting);
+        }
+
+        var groupBy = query
+           .OrderBy(s => s.Id)
+           .GroupBy(s => s.Id)
+           .AsEnumerable()
+           .Skip(skipCount)
+           .Take(maxResultCount)
+           .ToList();
+
+        return groupBy;
     }
 
-    public async Task<List<Application>> GetDetailsListAsync()
+    public async Task<Application> WithBasicDetailsAsync(Guid id)
     {
-        return await (await GetDbSetAsync())
-            .IncludeDetails()
-            .ToListAsync();
+        return await (await GetQueryableAsync())
+          .AsNoTracking()
+          .Include(s => s.Applicant)
+            .ThenInclude(s => s.ApplicantAddresses)
+          .Include(s => s.ApplicantAgent)
+          .Include(s => s.ApplicationStatus)          
+          .FirstAsync(s => s.Id == id);                   
     }
 
     /// <summary>

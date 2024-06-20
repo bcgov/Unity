@@ -6,7 +6,6 @@ using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
-using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 

@@ -1,5 +1,8 @@
 ﻿using AutoMapper;
-using Unity.Payments.BatchPaymentRequests;
+using Unity.Payments.PaymentRequests;
+using Unity.Payments.Domain.PaymentRequests;
+using Unity.Payments.Domain.PaymentConfigurations;
+using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Suppliers;
 
@@ -9,8 +12,8 @@ public class PaymentsApplicationAutoMapperProfile : Profile
 {
     public PaymentsApplicationAutoMapperProfile()
     {
-        CreateMap<BatchPaymentRequest, BatchPaymentRequestDto>();
         CreateMap<PaymentRequest, PaymentRequestDto>();
+        CreateMap<PaymentRequest, PaymentDetailsDto>();
         CreateMap<ExpenseApproval, ExpenseApprovalDto>();
         CreateMap<Site, SiteDto>()
             .ForMember(dest => dest.PaymentGroup, opt => opt.MapFrom(s => s.PaymentGroup.ToString()));

@@ -1,11 +1,16 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
+@using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Permissions;
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
+@using Unity.Modules.Shared.Correlation
+@using Volo.Abp.Features
 
 @inject IAuthorizationService AuthorizationService
 @inject IStringLocalizer<GrantManagerResource> L
+@inject IFeatureChecker FeatureChecker
 @model AssessmentResultsPageModel
 
 <input type="hidden" id="AssessmentResultViewApplicationId" value="@Model.ApplicationId" />
@@ -25,15 +30,15 @@
                     <abp-column size="_3" class="px-1">
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
-                            <abp-input asp-for="@Model.AssessmentResults.RequestedAmount"
+                            <abp-input asp-for="@Model.AssessmentResults.RequestedAmount" id="RequestedAmountInputAR"
                                        onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsPostEditFieldsAllowed)" />
                         </div>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
                         <div class="unity-input-group">
                             <span class="unity-input-prepend">$</span>
-                            <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget"
-                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" disabled="@(!Model.IsEditGranted)" />
+                            <abp-input asp-for="@Model.AssessmentResults.TotalProjectBudget" id="TotalBudgetInputAR"
+                                       onchange="enableResultSaveBtn(this)" class="unity-currency-input" />
                         </div>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
@@ -54,7 +59,7 @@
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.LikelihoodOfFunding" asp-items="@Model.FundingRiskList"
-                                    onchange="enableResultSaveBtn(this)" >
+                                    onchange="enableResultSaveBtn(this)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
@@ -79,7 +84,7 @@
                 </abp-row>
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
-                        <abp-input type="date" asp-for="@Model.AssessmentResults.NotificationDate" onchange="validateNotificationDate();" disabled="@(!Model.IsPostEditFieldsAllowed)" abp-data-datepicker="false">
+                        <abp-input type="date" asp-for="@Model.AssessmentResults.NotificationDate" onchange="validateNotificationDate();" abp-data-datepicker="false">
                         </abp-input>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
@@ -111,6 +116,20 @@
                 </abp-column>
             </abp-column>
         </abp-row>
+
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+        {
+            @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
+                     new
+                     {
+                         instanceCorrelationId = Model.ApplicationId,
+                         instanceCorrelationProvider = CorrelationConsts.Application,
+                         sheetCorrelationId = Model.ApplicationFormId,
+                         sheetCorrelationProvider = CorrelationConsts.Form,
+                         uiAnchor = FlexConsts.AssessmentInfoUiAnchor
+                     })
+        }
+
     </form>
 </abp-row>
 

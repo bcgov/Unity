@@ -1,0 +1,28 @@
+@page
+@using Microsoft.Extensions.Localization
+@using Unity.Payments.Localization
+@using Unity.Payments.Web.Pages.Payments
+@model Unity.Payments.Web.Pages.Payments.PaymentsPageModel
+@inject IStringLocalizer<PaymentsResource> L
+
+@{
+}
+@section scripts {
+    <abp-script-bundle>
+        <abp-script src="/Pages/PaymentRequests/Index.js" />
+        <abp-script src="/Pages/PaymentApprovals/UpdatePaymentRequestStatusModal.js" />
+    </abp-script-bundle>
+}
+@section styles {
+    <abp-style src="/Pages/PaymentRequests/Index.css" />
+}
+
+<div class="container-fluid px-2">
+    @await Component.InvokeAsync("PaymentActionBar")
+    <div class="d-flex my-1 p-2">
+        <abp-column size="_6">
+            <abp-card-title></abp-card-title>
+        </abp-column>
+    </div>
+    <abp-table id="PaymentRequestListTable"></abp-table>
+</div>
