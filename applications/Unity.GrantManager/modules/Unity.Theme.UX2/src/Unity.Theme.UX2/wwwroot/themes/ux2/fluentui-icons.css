@@ -185,6 +185,10 @@
     content: '\E721';
 }
 
+.fl-mapinfo:before {
+    content: '\E816';
+}
+
 .fl-add-to:before {
     content: '\ECC8';
 }
