@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AutoMapper.Internal;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -316,7 +317,10 @@ namespace Unity.GrantManager.Intakes
 
         private List<string> GetFileKeys(dynamic version)
         {
-            return FindFileKeys(version, "type", "simplefile");
+            var fileKeys = new List<string>();
+            fileKeys.AddRange(FindFileKeys(version, "type", "simplefile"));
+            fileKeys.AddRange(FindFileKeys(version, "type", "file"));
+            return fileKeys;
         }
 
         private static List<string> FindFileKeys(JToken json, string key, string value)
