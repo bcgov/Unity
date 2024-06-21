@@ -40,6 +40,7 @@
                 <abp-card-title class="label">@Model.ApplicationFormDto?.ApplicationFormName </abp-card-title>
             </abp-column>
             <abp-column size="_3" class="px-1 d-flex align-items-center">
+                <input type="hidden" id="originalScoresheetId" value="@Model.ScoresheetId" />
                 <label for="scoresheet" class="label">Scoring Sheet:&nbsp;&nbsp;</label>
                 <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet">
                     <option value="">Please choose...</option>
