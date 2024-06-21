@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using System;
 
 
 namespace Unity.Payments.Web.Pages.Payments
@@ -10,15 +11,10 @@ namespace Unity.Payments.Web.Pages.Payments
     {
 
         [BindProperty]
-        public string CasPaymentResponse { get; set; }
+        public string CasPaymentResponse { get; set; } = string.Empty;
         private static int OneMinuteMilliseconds = 60000;
-        
-        public DisplayCasPaymentRequestResponseModel()
-        {
-        }
 
-
-        public async Task OnGetAsync(string casResponse)
+        public ActionResult OnGet(string casResponse)
         {
             string pattern = ";";
             string replace = "<br>";
@@ -29,6 +25,7 @@ namespace Unity.Payments.Web.Pages.Payments
                             RegexOptions.None,
                             TimeSpan.FromMilliseconds(OneMinuteMilliseconds));
             CasPaymentResponse = formattedResponse;
+            return Page();
         }
     }
 }

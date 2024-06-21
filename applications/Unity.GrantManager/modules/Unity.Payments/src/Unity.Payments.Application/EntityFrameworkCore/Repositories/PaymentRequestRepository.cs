@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.EntityFrameworkCore;
