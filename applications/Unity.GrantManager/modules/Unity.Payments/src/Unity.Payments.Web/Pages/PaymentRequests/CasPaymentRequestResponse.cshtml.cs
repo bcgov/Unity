@@ -11,10 +11,12 @@ namespace Unity.Payments.Web.Pages.Payments
 
         [BindProperty]
         public string CasPaymentResponse { get; set; }
-
+        private static int OneMinuteMilliseconds = 60000;
+        
         public DisplayCasPaymentRequestResponseModel()
         {
         }
+
 
         public async Task OnGetAsync(string casResponse)
         {
@@ -24,7 +26,8 @@ namespace Unity.Payments.Web.Pages.Payments
             string formattedResponse = Regex.Replace(casResponse,
                             pattern,
                             replace,
-                            RegexOptions.None);
+                            RegexOptions.None,
+                            TimeSpan.FromMilliseconds(OneMinuteMilliseconds));
             CasPaymentResponse = formattedResponse;
         }
     }
