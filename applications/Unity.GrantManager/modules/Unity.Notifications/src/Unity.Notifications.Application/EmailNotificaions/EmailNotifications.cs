@@ -105,8 +105,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         }
         catch (Exception ex)
         {
-            string exceptionMessage = ex.Message;
-            Logger.LogError(ex, "EmailNotificationService->SendEmailNotification Exception: {exceptionMessage}", exceptionMessage);
+            string ExceptionMessage = ex.Message;
+            Logger.LogError(ex, "EmailNotificationService->SendEmailNotification Exception: {ExceptionMessage}", ExceptionMessage);
         }
         return response;
     }
@@ -117,20 +117,20 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="email">The email address to send to</param>
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
-    public async Task SendEmaiToQueue(string emailTo, string body, string subject, Guid applicationId)
+    public async Task SendEmaiToQueue(string email, string body, string subject, Guid applicationId)
     {
-        if (!string.IsNullOrEmpty(emailTo))
+        if (!string.IsNullOrEmpty(email))
         {            
-            var emailObject = GetEmailObject(emailTo, body, subject, applicationId);
-            EmailLog emailLog = GetMappedEmailLog(emailObject);            
+            var emailObject = GetEmailObject(email, body, subject, applicationId);
+            EmailLog emailLog = GetMappedEmailLog(emailObject);
             EmailLog loggedEmail = await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);
             await _emailQueueService.SendToEmailQueueAsync(loggedEmail);
         }
     }
 
-    protected virtual dynamic GetEmailObject(string emailTo, string body, string subject, Guid applicationId)
+    protected virtual dynamic GetEmailObject(string email, string body, string subject, Guid applicationId)
     {
-        List<string> toList = new() { emailTo };
+        List<string> toList = new() { email };
         var emailObject = new
         {
             body,

@@ -22,7 +22,7 @@ namespace Unity.Notifications.EmailNotifications;
 public class EmailConsumer : QuartzBackgroundWorkerBase
 {
     private readonly EmailQueueService _emailQueueService;
-    private int _retryAttemptMax;
+    private int _retryAttemptMax {get; set; } = 0;
     private readonly IEmailLogsRepository _emailLogsRepository;
     private readonly IOptions<RabbitMQOptions> _rabbitMQOptions;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
@@ -116,8 +116,8 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
                         }
                     } catch (Exception ex)
                     {
-                        string messageException = ex.Message;
-                        Logger.LogInformation(ex, "Process Delayed Email Exception: {messageException}", messageException);
+                        string ExceptionMessage = ex.Message;
+                        Logger.LogInformation(ex, "Process Delayed Email Exception: {ExceptionMessage}", ExceptionMessage);
                     }
                 }
 
