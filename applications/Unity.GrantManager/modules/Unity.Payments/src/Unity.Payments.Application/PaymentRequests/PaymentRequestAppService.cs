@@ -78,7 +78,7 @@ namespace Unity.Payments.PaymentRequests
                         Status = result.Status,
                     });
                 }
-                catch(Exception ex)
+                catch(Exception)
                 {
                     //Handle exception
                 }

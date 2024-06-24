@@ -256,21 +256,15 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             {
 
                 case "L1Pending":
+                case "L2Pending":
+                case "L3Pending":
+                default:
                     return "#053662";
 
                 case "L1Declined":
-                    return "#CE3E39";
-
-                case "L2Pending":
-                    return "#053662";
-
                 case "L2Declined":
-                    return "#CE3E39";
-
-                case "L3Pending":
-                    return "#053662";
-
                 case "L3Declined":
+                case "PaymentFailed":
                     return "#CE3E39";
 
                 case "Submitted":
@@ -278,12 +272,6 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
                 case "Paid":
                     return "#42814A";
-
-                case "PaymentFailed":
-                    return "#CE3E39";
-
-                default:
-                    return "#053662";
             }
         }
     }

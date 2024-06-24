@@ -22,11 +22,7 @@ public class PaymentsWorkflow<TStates, TTriggers>
 
     protected void Configure(Action<StateMachine<TStates, TTriggers>> configurationDelegateMethod)
     {
-        if (configurationDelegateMethod is null)
-        {
-            throw new ArgumentNullException(nameof(configurationDelegateMethod));
-        }
-
+        ArgumentNullException.ThrowIfNull(configurationDelegateMethod);
         configurationDelegateMethod(_stateMachine);
     }
 
