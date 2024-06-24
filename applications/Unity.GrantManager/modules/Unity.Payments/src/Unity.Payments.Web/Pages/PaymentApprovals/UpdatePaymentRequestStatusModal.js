@@ -36,19 +36,11 @@ function checkMaxValue(applicationId, input, amountRemaining) {
     }
 }
 
-function submitPayments() {
+function submitPaymentApprovals() {
     // check for error class divs
-    let validationFailed = $(".payment-error-column:visible").length > 0;
 
-    if (validationFailed) {
-        abp.notify.error(
-            '',
-            'There are payment requests that are in error please remove or fix them before submitting.'
-        );
-        return false;
-    } else {
-        $('#paymentform').submit();
-    }
+        $('#paymentRequestStatus').submit();
+    
 };
 
 function getStatusText(data) {

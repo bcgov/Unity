@@ -1,4 +1,4 @@
-$(function () {  
+$(function () {
     const l = abp.localization.getResource('Payments');
     let dt = $('#PaymentRequestListTable');
     let dataTable;
@@ -13,16 +13,16 @@ $(function () {
         viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
     });
     let selectedPaymentIds = [];
- 
+
     let actionButtons = [
-        
+
         {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
                 paymentRequestStatusModal.open({
                     paymentIds: JSON.stringify(selectedPaymentIds),
-                    isApprove : true
+                    isApprove: true
                 });
                 isApprove = true;
             }
@@ -64,7 +64,7 @@ $(function () {
                 orthogonal: 'fullName',
             }
         },
-       
+
     ];
     let responseCallback = function (result) {
         return {
@@ -79,7 +79,7 @@ $(function () {
         listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
- 
+
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
 
@@ -104,28 +104,28 @@ $(function () {
             }
 
             checkActionButtons();
-          
+
         }
     }
 
-   function checkActionButtons() {
+    function checkActionButtons() {
 
-       if (dataTable.rows({ selected: true }).indexes().length === 0) {
-           payment_approve_buttons.disable();
-       
-       }
-       else {
+        if (dataTable.rows({ selected: true }).indexes().length === 0) {
+            payment_approve_buttons.disable();
 
-           if(abp.auth.isGranted('GrantApplicationManagement.Payments.L1ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L2ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L3ApproveOrDecline')) {
-               payment_approve_buttons.enable();
+        }
+        else {
 
-           } else {
-               payment_approve_buttons.disable();
-           }
-          
-           
-          
-       }
+            if (abp.auth.isGranted('GrantApplicationManagement.Payments.L1ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L2ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L3ApproveOrDecline')) {
+                payment_approve_buttons.enable();
+
+            } else {
+                payment_approve_buttons.disable();
+            }
+
+
+
+        }
 
     }
 
@@ -211,7 +211,7 @@ $(function () {
             data: 'contractNumber',
             className: 'data-table-header',
             index: 5,
- 
+
         };
     }
 
@@ -264,48 +264,10 @@ $(function () {
             className: 'data-table-header',
             index: 9,
             render: function (data) {
-                switch (data) {
-               
-                    case "L1Pending":
-                        return "L1 Pending";
 
-                    case "L1Approved":
-                        return "L1 Approved";
-
-                    case "L1Declined":
-                        return "L1 Declined";
-
-                    case "L2Pending":
-                        return "L2 Pending";
-
-                    case "L2Approved":
-                        return "L2 Approved";
-
-                    case "L2Declined":
-                        return "L2 Declined";
-
-                    case "L3Pending":
-                        return "L3 Pending";
-
-                    case "L3Approved":
-                        return "L3 Approved";
-
-                    case "L3Declined":
-                        return "L3 Declined";
-
-                    case "Submitted":
-                        return "Submitted";
-
-                    case "Paid":
-                        return "Paid";
-
-                    case "PaymentFailed":
-                        return "Payment Failed"
-
-
-                    default:
-                        return "Created";
-                }
+                let statusText = getStatusText(data);
+                let statusColor = getStatusTextColor(data);
+                return '<span style="color:' + statusColor + ';">' + statusText + '</span>';
             }
         };
     }
@@ -437,7 +399,88 @@ $(function () {
         );
         dataTable.ajax.reload(null, false);
         payment_approve_buttons.disable();
-      
+
         selectedPaymentIds = [];
     });
+
+    function getStatusTextColor(status) {
+        switch (status) {
+
+            case "L1Pending":
+                return "#053662";
+
+            case "L1Declined":
+                return "#CE3E39";
+
+            case "L2Pending":
+                return "#053662";
+
+            case "L2Declined":
+                return "#CE3E39";
+
+            case "L3Pending":
+                return "#053662";
+
+            case "L3Declined":
+                return "#CE3E39";
+
+            case "Submitted":
+                return "#5595D9";
+
+            case "Paid":
+                return "#42814A";
+
+            case "PaymentFailed":
+                return "#CE3E39";
+
+            default:
+                return "#053662";
+        }
+    }
+
+    function getStatusText(status) {
+
+        switch (status) {
+
+            case "L1Pending":
+                return "L1 Pending";
+
+            case "L1Approved":
+                return "L1 Approved";
+
+            case "L1Declined":
+                return "L1 Declined";
+
+            case "L2Pending":
+                return "L2 Pending";
+
+            case "L2Approved":
+                return "L2 Approved";
+
+            case "L2Declined":
+                return "L2 Declined";
+
+            case "L3Pending":
+                return "L3 Pending";
+
+            case "L3Approved":
+                return "L3 Approved";
+
+            case "L3Declined":
+                return "L3 Declined";
+
+            case "Submitted":
+                return "Submitted to CAS";
+
+            case "Paid":
+                return "Paid";
+
+            case "PaymentFailed":
+                return "Payment Failed";
+
+
+            default:
+                return "Created";
+        }
+    }
 });

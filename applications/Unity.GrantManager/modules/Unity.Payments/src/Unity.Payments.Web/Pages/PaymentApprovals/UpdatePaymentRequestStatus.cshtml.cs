@@ -11,6 +11,7 @@ using Unity.Payments.Enums;
 using Volo.Abp.Users;
 using System.Linq;
 using Unity.Payments.Domain.Shared;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace Unity.Payments.Web.Pages.PaymentApprovals
@@ -43,6 +44,8 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
         public bool IsErrors { get; set; }
 
         public List<Guid> SelectedPaymentIds { get; set; }
+         
+        public string FromStatusText {  get; set; }
 
         private readonly IPaymentRequestAppService _paymentRequestService;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
@@ -59,6 +62,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             _paymentConfigurationAppService = paymentConfigurationAppService;
             _currentUser = currentUser;
             _permissionCheckerService = permissionCheckerService;
+            GetFromStateForUser();
         }
 
         public async Task OnGetAsync(string paymentIds, bool isApprove)
@@ -114,7 +118,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 indx++;
             }
 
-            IsErrors = paymentApprovals.Exists(p => !p.isPermitted);
+            DisableSubmit = !paymentApprovals.Any();
         }
 
         private PaymentsApprovalModel CheckUserPermissions(PaymentRequestStatus status, PermissionResult permissionResult, bool IsApproval, bool isExceedThreshold, PaymentsApprovalModel request)
@@ -123,6 +127,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             {
                 request.ToStatus = IsApproval ? PaymentRequestStatus.L2Pending : PaymentRequestStatus.L1Declined;
                 request.isPermitted = _currentUser.IsInRole("l1_approver") && permissionResult.HasPermission("GrantApplicationManagement.Payments.L1ApproveOrDecline");
+
             }
             else if (status.Equals(PaymentRequestStatus.L2Pending))
             {
@@ -161,6 +166,23 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             return NoContent();
         }
 
+        public void  GetFromStateForUser()
+        {
+            if (_currentUser.IsInRole("l1_approver"))
+            {
+                FromStatusText = GetStatusText(PaymentRequestStatus.L1Pending);
+            }
+            else if (_currentUser.IsInRole("l2_approver"))
+            {
+                FromStatusText = GetStatusText(PaymentRequestStatus.L2Pending);
+            }
+            else if(_currentUser.IsInRole("l3_approver"))
+            {
+                FromStatusText = GetStatusText(PaymentRequestStatus.L3Pending);
+            }
+            
+        }
+
         private List<UpdatePaymentStatusRequestDto> MapPaymentRequests(bool isApprove)
         {
             var payments = new List<UpdatePaymentStatusRequestDto>();
@@ -180,6 +202,89 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             }
 
             return payments;
+        }
+        public static string GetStatusText(PaymentRequestStatus status)
+        {
+            switch (status.ToString())
+            {
+
+                case "L1Pending":
+                    return "L1 Pending";
+
+                case "L1Approved":
+                    return "L1 Approved";
+
+                case "L1Declined":
+                    return "L1 Declined";
+
+                case "L2Pending":
+                    return "L2 Pending";
+
+                case "L2Approved":
+                    return "L2 Approved";
+
+                case "L2Declined":
+                    return "L2 Declined";
+
+                case "L3Pending":
+                    return "L3 Pending";
+
+                case "L3Approved":
+                    return "L3 Approved";
+
+                case "L3Declined":
+                    return "L3 Declined";
+
+                case "Submitted":
+                    return "Submitted to CAS";
+
+                case "Paid":
+                    return "Paid";
+
+                case "PaymentFailed":
+                    return "Payment Failed";
+
+
+                default:
+                    return "L1 Pending";
+            }
+        }
+
+        public static string GetStatusTextColor(PaymentRequestStatus status)
+        {
+            switch (status.ToString())
+            {
+
+                case "L1Pending":
+                    return "#053662";
+
+                case "L1Declined":
+                    return "#CE3E39";
+
+                case "L2Pending":
+                    return "#053662";
+
+                case "L2Declined":
+                    return "#CE3E39";
+
+                case "L3Pending":
+                    return "#053662";
+
+                case "L3Declined":
+                    return "#CE3E39";
+
+                case "Submitted":
+                    return "#5595D9";
+
+                case "Paid":
+                    return "#42814A";
+
+                case "PaymentFailed":
+                    return "#CE3E39";
+
+                default:
+                    return "#053662";
+            }
         }
     }
 }

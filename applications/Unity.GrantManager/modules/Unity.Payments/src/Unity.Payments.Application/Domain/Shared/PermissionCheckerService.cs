@@ -16,7 +16,7 @@ namespace Unity.Payments.Domain.Shared
         }
 
 
-        public virtual  async Task<PermissionResult> CheckPermissionsAsync(params string[] permissions)
+        public virtual async Task<PermissionResult> CheckPermissionsAsync(params string[] permissions)
         {
             var permissionResult = new PermissionResult();
 

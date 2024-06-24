@@ -15,7 +15,7 @@ using Volo.Abp.Uow;
 using Volo.Abp.Users;
 
 namespace Unity.Payments.Domain.Services
-{    
+{
     public class PaymentsManager : DomainService, IPaymentsManager
     {
         /* To be implemented */
@@ -58,7 +58,7 @@ namespace Unity.Payments.Domain.Services
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
                 .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l2_approver"));
-    
+
 
         }
 
@@ -69,12 +69,12 @@ namespace Unity.Payments.Domain.Services
 
 
         public async Task<List<PaymentActionResultItem>> GetActions(Guid paymentRequestsId)
-          
+
         {
-          
+
             var paymentRequest = await _paymentRequestRepository.GetAsync(paymentRequestsId, true);
 
-            // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
+    
             var Workflow = new PaymentsWorkflow<PaymentRequestStatus, PaymentApprovalAction>(
                 () => paymentRequest.Status,
                 s => paymentRequest.SetPaymentRequestStatus(s), ConfigureWorkflow);
@@ -86,7 +86,7 @@ namespace Unity.Payments.Domain.Services
                 .Select(trigger =>
                 new PaymentActionResultItem
                 {
-                    PaymentApprovalAction  = trigger,
+                    PaymentApprovalAction = trigger,
                     IsPermitted = permittedActions.Contains(trigger),
                     IsInternal = trigger.ToString().StartsWith("Internal_")
                 })
@@ -102,18 +102,6 @@ namespace Unity.Payments.Domain.Services
 
             var statusChange = paymentRequest.Status;
 
-            //if (triggerAction == PaymentsAction.Decline && paymentRequest.DeclineRational.IsNullOrEmpty())
-            //{
-            //    throw new UserFriendlyException("The \"Decline Rationale\" is Required for application denial");
-            //}
-
-            //if ((triggerAction == PaymentsAction.Approve || triggerAction == PaymentsAction.Decline) && paymentRequest.d == null)
-            //{
-            //    throw new UserFriendlyException("The Decision Date is Required.");
-            //}
-
-            // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
-            // WARNING: DRAFT CODE - MAY NOT BE PERSISTING STATE TRANSITIONS CORRECTLY
             var Workflow = new PaymentsWorkflow<PaymentRequestStatus, PaymentApprovalAction>(
                 () => statusChange,
                 s => statusChange = s,
@@ -123,9 +111,9 @@ namespace Unity.Payments.Domain.Services
 
             var statusChangedTo = PaymentRequestStatus.L1Pending;
 
-            // NOTE: Is this required or can the navigation property be set on its own?
-          
-          
+
+
+
 
             if (triggerAction == PaymentApprovalAction.L1Approve)
             {
@@ -133,27 +121,27 @@ namespace Unity.Payments.Domain.Services
                 paymentRequest.ExpenseApprovals[index].Approve();
                 statusChangedTo = PaymentRequestStatus.L2Pending;
             }
-            else if(triggerAction == PaymentApprovalAction.L1Decline)
+            else if (triggerAction == PaymentApprovalAction.L1Decline)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
                 paymentRequest.ExpenseApprovals[index].Decline();
                 statusChangedTo = PaymentRequestStatus.L1Declined;
-            } 
-            else if(triggerAction == PaymentApprovalAction.L2Approve)
+            }
+            else if (triggerAction == PaymentApprovalAction.L2Approve)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
                 paymentRequest.ExpenseApprovals[index].Approve();
                 statusChangedTo = PaymentRequestStatus.L3Pending;
-                
+
             }
-             else if(triggerAction == PaymentApprovalAction.L2Decline)
+            else if (triggerAction == PaymentApprovalAction.L2Decline)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
                 paymentRequest.ExpenseApprovals[index].Decline();
                 statusChangedTo = PaymentRequestStatus.L2Declined;
             }
-           
-             else if(triggerAction == PaymentApprovalAction.L3Decline)
+
+            else if (triggerAction == PaymentApprovalAction.L3Decline)
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level3);
                 paymentRequest.ExpenseApprovals[index].Decline();
@@ -184,11 +172,11 @@ namespace Unity.Payments.Domain.Services
         {
             try
             {
-                using var uow = _unitOfWorkManager.Begin();
+            using var uow = _unitOfWorkManager.Begin();
 
-                await TriggerAction(paymentRequestId, triggerAction);
+            await TriggerAction(paymentRequestId, triggerAction);
 
-                await uow.SaveChangesAsync();
+            await uow.SaveChangesAsync();
             }
             catch (Exception e)
             {

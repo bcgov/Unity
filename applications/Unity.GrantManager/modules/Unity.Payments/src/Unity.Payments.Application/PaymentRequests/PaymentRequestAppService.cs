@@ -47,36 +47,43 @@ namespace Unity.Payments.PaymentRequests
                 string format = "0000";
                 // Needs to be optimized
                 int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
-
-                // Create a new Payment entity from the DTO
-                var payment = new PaymentRequest(Guid.NewGuid(),
-                    dto.InvoiceNumber + $"-{applicationPaymentRequestCount.ToString(format)}",
-                    dto.Amount,
-                    dto.PayeeName,
-                    dto.ContractNumber,
-                    dto.SupplierNumber,
-                    dto.SiteId,
-                    dto.CorrelationId,
-                    dto.CorrelationProvider,
-                    dto.Description,
-                    paymentThreshold);
-
-                var result = await _paymentRequestsRepository.InsertAsync(payment);
-                createdPayments.Add(new PaymentRequestDto()
+                try
                 {
-                    Id = result.Id,
-                    InvoiceNumber = result.InvoiceNumber,
-                    InvoiceStatus = result.InvoiceStatus,
-                    Amount = result.Amount,
-                    PayeeName = result.PayeeName,
-                    SupplierNumber = result.SupplierNumber,
-                    ContractNumber = result.ContractNumber,
-                    CorrelationId = result.CorrelationId,
-                    CorrelationProvider = result.CorrelationProvider,
-                    Description = result.Description,
-                    CreationTime = result.CreationTime,
-                    Status = result.Status,
-                });
+                    var payment = new PaymentRequest(Guid.NewGuid(),
+                   dto.InvoiceNumber + $"-{applicationPaymentRequestCount.ToString(format)}",
+                   dto.Amount,
+                   dto.PayeeName,
+                   dto.ContractNumber,
+                   dto.SupplierNumber,
+                   dto.SiteId,
+                   dto.CorrelationId,
+                   dto.CorrelationProvider,
+                   dto.Description,
+                   paymentThreshold);
+
+                    var result = await _paymentRequestsRepository.InsertAsync(payment);
+                    createdPayments.Add(new PaymentRequestDto()
+                    {
+                        Id = result.Id,
+                        InvoiceNumber = result.InvoiceNumber,
+                        InvoiceStatus = result.InvoiceStatus,
+                        Amount = result.Amount,
+                        PayeeName = result.PayeeName,
+                        SupplierNumber = result.SupplierNumber,
+                        ContractNumber = result.ContractNumber,
+                        CorrelationId = result.CorrelationId,
+                        CorrelationProvider = result.CorrelationProvider,
+                        Description = result.Description,
+                        CreationTime = result.CreationTime,
+                        Status = result.Status,
+                    });
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+                // Create a new Payment entity from the DTO
+               
             }
 
             return createdPayments;
@@ -124,7 +131,7 @@ namespace Unity.Payments.PaymentRequests
 
                 await _paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
 
-                var result = await _paymentRequestsRepository.UpdateAsync(payment);
+                var result = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
                 updatedPayments.Add(new PaymentRequestDto()
                 {
                     Id = result.Id,

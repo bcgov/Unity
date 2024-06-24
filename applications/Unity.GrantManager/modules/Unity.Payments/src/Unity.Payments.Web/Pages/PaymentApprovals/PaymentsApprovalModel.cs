@@ -35,5 +35,9 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         public PaymentRequestStatus ToStatus { get; set; }
 
+        public string StatusText { get; set; } = string.Empty;
+
+        public string ToStatusText { get; set; } = string.Empty;
+
     }
 }

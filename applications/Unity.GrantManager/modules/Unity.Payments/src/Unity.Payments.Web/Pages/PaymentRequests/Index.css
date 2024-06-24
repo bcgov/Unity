@@ -17,7 +17,11 @@
     border-color: var(--bs-border-color);
 }
 .payment-status-transition {
-    background-color: antiquewhite;
-    margin-top :1rem;
-    margin-bottom:1rem;
+    background-color: #FFF8E9;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.payment-status-transition-arrow {
+    color: #42814A;
 }
