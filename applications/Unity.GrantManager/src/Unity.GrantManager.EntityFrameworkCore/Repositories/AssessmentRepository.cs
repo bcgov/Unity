@@ -57,10 +57,10 @@ public class AssessmentRepository : EfCoreRepository<GrantTenantDbContext, Asses
                     Status = assessment.Status,
                     IsComplete = assessment.IsComplete,
                     ApprovalRecommended = assessment.ApprovalRecommended,
-                    FinancialAnalysis = assessment.FinancialAnalysis,
-                    EconomicImpact = assessment.EconomicImpact,
-                    InclusiveGrowth = assessment.InclusiveGrowth,
-                    CleanGrowth = assessment.CleanGrowth
+                    SectionScore1 = assessment.SectionScore1,
+                    SectionScore2 = assessment.SectionScore2,
+                    SectionScore3 = assessment.SectionScore3,
+                    SectionScore4 = assessment.SectionScore4
                 });
 
         return await query.ToListAsync();
