@@ -25,6 +25,7 @@ namespace Unity.Payments.PaymentRequests
         public string ContractNumber { get; set; }
         public string SupplierNumber { get; set; }
         public  string CorrelationProvider { get;  set; } = string.Empty;
+        public string? CasResponse { get; set; }
 
         public  Collection<ExpenseApprovalDto> ExpenseApprovals { get;  set; }
 
