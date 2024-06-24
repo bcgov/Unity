@@ -46,7 +46,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         <br>
         We know that a lot of effort goes into developing a proposed project and we appreciate the time you took to prepare your application.<br>
         <br>
-        Program area staff are available to provide further details regarding the funding decision.<br>
+        If you have any questions or concerns, please reach out to program team members who will provide further details regarding the funding decision.<br>
         <br>
         Thank you again for your application.<br>
         <br>

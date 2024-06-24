@@ -21,7 +21,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<ScoresheetSectionDto> UpdateAsync(Guid id, EditSectionDto dto)
         {
-            var section = await _sectionRepository.GetAsync(dto.SectionId) ?? throw new AbpValidationException("Missing SectionId:" + dto.SectionId);
+            var section = await _sectionRepository.GetAsync(id) ?? throw new AbpValidationException("Missing SectionId:" + id);
             section.Name = dto.Name;
             return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(await _sectionRepository.UpdateAsync(section));
         }

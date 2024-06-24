@@ -7,8 +7,16 @@ namespace Unity.Payments.Suppliers
 #pragma warning disable CS8618
     public class SupplierDto : ExtensibleFullAuditedEntityDto<Guid>
     {        
-        public string? Name { get; set; } = string.Empty;
-        public string? Number { get; set; } = string.Empty;
+        public string? Number { get; set; }
+        public string? Name { get; set; }
+        public string? Subcategory { get; set; }
+        public string? SIN { get; set; }
+        public string? ProviderId { get; set; }
+        public string? BusinessNumber { get; set; }
+        public string? Status { get; set; }
+        public string? SupplierProtected { get; set; }
+        public string? StandardIndustryClassification { get; set; }
+        public DateTime? LastUpdatedInCAS { get; set; }
 
         /* Address */
         public string? MailingAddress { get; private set; }

@@ -318,6 +318,7 @@ $(function () {
         };
     }
     function getCASResponseColumn() {
+        // Add button to view response modal
         return {
             title: l('ApplicationPaymentListTable:CASResponse'),
             name: 'CASResponse',
@@ -325,7 +326,10 @@ $(function () {
             className: 'data-table-header',
             index: 14,
             render: function (data) {
-                return formatDate(data);
+                if(data+"" !== "undefined" && data.length > 0) {
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                }
+                return  '{Not Available}';
             }
         };
     }
@@ -484,3 +488,14 @@ $(function () {
         }
     }
 });
+
+
+let casPaymentResponseModal = new abp.ModalManager({
+    viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
+});
+
+function openCasResponseModal(casResponse) {
+    casPaymentResponseModal.open({
+        casResponse: casResponse
+    });
+}

@@ -57,14 +57,6 @@ $(function () {
                         render: function (data, type, full, meta) {
                             return nullToEmpty(full.addressLine1) + ' ' + nullToEmpty(full.addressLine2) + " " + nullToEmpty(full.addressLine3) + " " + nullToEmpty(full.city) + " " + nullToEmpty(full.province) + " " + nullToEmpty(full.postalCode);
                         },
-                    },
-                    {
-                        title: '',
-                        data: 'id',
-                        render: function (data) {
-                            return '<button class="btn site-info-btn" type="button" onclick="openSiteInfoModal(\'' + data + '\',\'Edit Site\');"><i class="fl fl-edit"></i></button>';
-                        },
-                        orderable: false
                     }
                 ],
             })
@@ -73,14 +65,14 @@ $(function () {
 
     setTimeout(function () { loadSiteInfoTable(); },1000);
     $('#nav-organization-info-tab').one('click', function () {
-        dataTable.columns.adjust();
+        dataTable?.columns?.adjust();
     });
 
     PubSub.subscribe(
         'refresh_sites_list',
         (msg, data) => {
             dataTable.ajax.reload();
-            dataTable.columns.adjust();
+            dataTable?.columns?.adjust();
         }
     );
 

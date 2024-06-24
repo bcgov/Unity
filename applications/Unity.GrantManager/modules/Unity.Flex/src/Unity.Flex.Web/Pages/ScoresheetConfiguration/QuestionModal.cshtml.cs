@@ -52,21 +52,34 @@ public class QuestionModalModel : FlexPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Question.ActionType.StartsWith("Edit"))
+        if (Question.ActionType.Equals("Edit Question On Current Version"))
         {
-            await EditQuestion();
-
+            await EditQuestionOnCurrentVersion();
             return NoContent();
         }
-        else if (Question.ActionType.StartsWith("Add"))
+        else if (Question.ActionType.Equals("Edit Question On New Version"))
         {
-            await CreateQuestion();
-
+            await EditQuestionOnNewVersion();
             return NoContent();
         }
-        else if (Question.ActionType.StartsWith("Delete"))
+        else if (Question.ActionType.Equals("Add Question On Current Version"))
         {
-            await DeleteQuestion();
+            await CreateQuestionOnCurrentVersion();
+            return NoContent();
+        }
+        else if (Question.ActionType.Equals("Add Question On New Version"))
+        {
+            await CreateQuestionOnNewVersion();
+            return NoContent();
+        }
+        else if (Question.ActionType.Equals("Delete Question On Current Version"))
+        {
+            await DeleteQuestionOnCurrentVersion();
+            return NoContent();
+        }
+        else if (Question.ActionType.Equals("Delete Question On New Version"))
+        {
+            await DeleteQuestionOnNewVersion();
             return NoContent();
         }
         else
@@ -75,18 +88,36 @@ public class QuestionModalModel : FlexPageModel
         }
     }
 
-    private async Task CreateQuestion()
+    private async Task CreateQuestionOnCurrentVersion()
     {
-        _ = await _scoresheetAppService.CreateQuestionAsync(Question.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, ScoresheetId = Question.ScoresheetId });
+        _ = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(Question.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description });
     }
 
-    private async Task EditQuestion()
+    private async Task CreateQuestionOnNewVersion()
     {
-        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionId = Question.Id });
+        var clone = await _scoresheetAppService.CloneScoresheetAsync(Question.ScoresheetId, Question.SectionId, Question.Id);
+        _ = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(clone.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description });
     }
 
-    private async Task DeleteQuestion()
+    private async Task EditQuestionOnCurrentVersion()
+    {
+        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description });
+    }
+
+    private async Task EditQuestionOnNewVersion()
+    {
+        var clone = await _scoresheetAppService.CloneScoresheetAsync(Question.ScoresheetId, Question.SectionId, Question.Id);
+        _ = await _questionAppService.UpdateAsync(clone.QuestionId ?? Guid.Empty, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description });
+    }
+
+    private async Task DeleteQuestionOnCurrentVersion()
     {
         await _questionAppService.DeleteAsync(Question.Id);
+    }
+
+    private async Task DeleteQuestionOnNewVersion()
+    {
+        var clone = await _scoresheetAppService.CloneScoresheetAsync(Question.ScoresheetId, Question.SectionId, Question.Id);
+        await _questionAppService.DeleteAsync(clone.QuestionId ?? Guid.Empty);
     }
 }

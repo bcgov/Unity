@@ -317,3 +317,7 @@ select.selected{
 #DetailsActionBarStart {
     margin-right: 0.5rem;
 }
+
+div#formio button {
+    display: none;
+}
