@@ -14,7 +14,7 @@ public class EmailQueueService : ApplicationService
 {
 
     private readonly IOptions<RabbitMQOptions> _rabbitMQOptions;
-    private const UNITY_EMAIL_QUEUE = "unity_emails";
+    public static string UNITY_EMAIL_QUEUE = "unity_emails";
 
     public EmailQueueService(IOptions<RabbitMQOptions> rabbitMQOptions) {
         _rabbitMQOptions = rabbitMQOptions;

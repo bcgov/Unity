@@ -92,7 +92,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         RestResponse response = new RestResponse();
         try
         {
-            if (!string.IsNullOrEmpty(emailTo))
+            if (!string.IsNullOrEmpty(email))
             {
                 var emailObject = GetEmailObject(email, body, subject, applicationId);
                 response = await _chesClientService.SendAsync(emailObject);
@@ -161,7 +161,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.Subject = emailDynamicObject.subject;
         emailLog.BodyType = emailDynamicObject.bodyType;
         emailLog.FromAddress = emailDynamicObject.from;
-        emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault();
+        emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault() ?? "";
         emailLog.ApplicantId = emailDynamicObject.applicationId;
         return emailLog;
     }

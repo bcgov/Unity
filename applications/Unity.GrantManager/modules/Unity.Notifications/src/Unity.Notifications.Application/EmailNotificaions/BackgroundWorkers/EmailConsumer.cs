@@ -38,7 +38,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
         _rabbitMQOptions = rabbitMQOptions;
         _emailQueueService = emailQueueService;
         JobDetail = JobBuilder.Create<EmailConsumer>().WithIdentity(nameof(EmailConsumer)).Build();
-        _retryAttemptMax = emailBackgroundJobsOptions.Value.EmailResend.RetryAttemptsMaximum ?? 0;
+        _retryAttemptMax = emailBackgroundJobsOptions.Value.EmailResend.RetryAttemptsMaximum;
         _emailLogsRepository = emailLogsRepository;
         _unitOfWorkManager = unitOfWorkManager;
 
@@ -67,7 +67,6 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
 
     public override async Task Execute(IJobExecutionContext context)
     {
-        Logger.LogInformation("Executing EmailConsumer...");
         ProcessDelayedEmailMessages();
         await Task.CompletedTask;
     }
@@ -78,7 +77,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
         IConnection connection = rabbitMQConnection.GetConnection();
         var channel = connection.CreateModel();
 
-        channel.QueueDeclare(queue: UNITY_EMAIL_QUEUE,
+        channel.QueueDeclare(queue: EmailQueueService.UNITY_EMAIL_QUEUE,
                      durable: true,
                      exclusive: false,
                      autoDelete: false,
@@ -117,7 +116,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
                         }
                     } catch (Exception ex)
                     {
-                        string messageException = ex.message;
+                        string messageException = ex.Message;
                         Logger.LogInformation(ex, "Process Delayed Email Exception: {messageException}", messageException);
                     }
                 }
@@ -126,7 +125,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
 
         };
 
-        channel.BasicConsume(queue: "unity_emails", autoAck: false, consumer: consumer);
+        channel.BasicConsume(queue: EmailQueueService.UNITY_EMAIL_QUEUE, autoAck: false, consumer: consumer);
     }
 
 }
