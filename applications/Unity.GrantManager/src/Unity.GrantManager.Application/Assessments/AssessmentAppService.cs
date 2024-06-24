@@ -237,10 +237,10 @@ namespace Unity.GrantManager.Assessments
                     {
                         throw new AbpValidationException("Error: This assessment is already completed.");
                     }
-                    assessment.FinancialAnalysis = dto.FinancialAnalysis;
-                    assessment.EconomicImpact = dto.EconomicImpact;
-                    assessment.InclusiveGrowth = dto.InclusiveGrowth;
-                    assessment.CleanGrowth = dto.CleanGrowth;
+                    assessment.SectionScore1 = dto.SectionScore1;
+                    assessment.SectionScore2 = dto.SectionScore2;
+                    assessment.SectionScore3 = dto.SectionScore3;
+                    assessment.SectionScore4 = dto.SectionScore4;
                     await _assessmentRepository.UpdateAsync(assessment);
                 }
                 else

@@ -22,19 +22,19 @@ namespace Unity.GrantManager.Components
             var assessmentRepository = Substitute.For<IAssessmentRepository>();
             var scoresheetRepository = Substitute.For<IScoresheetRepository>();
             var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
-            var expectedFinancialAnalysis = 1;
-            var expectedEconomicImpact = 2;
-            var expectedInclusiveGrowth = 3;
-            var expectedCleanGrowth = 4;
+            var expectedSectionScore1 = 1;
+            var expectedSectionScore2 = 2;
+            var expectedSectionScore3 = 3;
+            var expectedSectionScore4 = 4;
             var assessmentId = Guid.NewGuid();
             var currentUserId = Guid.NewGuid();
             var httpContext = new DefaultHttpContext();
             assessmentRepository.GetAsync(assessmentId).Returns(await Task.FromResult(new Assessment()
             {
-                FinancialAnalysis = expectedFinancialAnalysis,
-                EconomicImpact = expectedEconomicImpact,
-                InclusiveGrowth = expectedInclusiveGrowth,
-                CleanGrowth = expectedCleanGrowth
+                SectionScore1 = expectedSectionScore1,
+                SectionScore2 = expectedSectionScore2,
+                SectionScore3 = expectedSectionScore3,
+                SectionScore4 = expectedSectionScore4
             }));
 
             var viewContext = new ViewContext
@@ -58,10 +58,10 @@ namespace Unity.GrantManager.Components
             resultModel = result!.ViewData!.Model! as AssessmentScoresWidgetViewModel;
 
             //Assert
-            resultModel!.FinancialAnalysis.ShouldBe(expectedFinancialAnalysis);
-            resultModel!.EconomicImpact.ShouldBe(expectedEconomicImpact);
-            resultModel!.InclusiveGrowth.ShouldBe(expectedInclusiveGrowth);
-            resultModel!.CleanGrowth.ShouldBe(expectedCleanGrowth);
+            resultModel!.SectionScore1.ShouldBe(expectedSectionScore1);
+            resultModel!.SectionScore2.ShouldBe(expectedSectionScore2);
+            resultModel!.SectionScore3.ShouldBe(expectedSectionScore3);
+            resultModel!.SectionScore4.ShouldBe(expectedSectionScore4);
         }
     }
 }

@@ -64,14 +64,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             AssessmentScoresWidgetViewModel model = new()
             {
                 AssessmentId = assessmentId,
+                Scoresheet = scoresheetDto,
+                SectionScore1 = assessment.SectionScore1,
+                SectionScore2 = assessment.SectionScore2,
+                SectionScore3 = assessment.SectionScore3,
+                SectionScore4 = assessment.SectionScore4,
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
-                FinancialAnalysis = assessment.FinancialAnalysis,
-                EconomicImpact = assessment.EconomicImpact,
-                InclusiveGrowth = assessment.InclusiveGrowth,
-                CleanGrowth = assessment.CleanGrowth,
-                Scoresheet = scoresheetDto,
             };
 
             return View(model);
