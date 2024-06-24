@@ -10,7 +10,7 @@ public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public Guid Id { get; set; }
+    public new Guid Id { get; set; }
     public Guid? TenantId { get; set; }
     public Guid AssessmentId { get; set; }
     public Guid ApplicationId { get; set; }
