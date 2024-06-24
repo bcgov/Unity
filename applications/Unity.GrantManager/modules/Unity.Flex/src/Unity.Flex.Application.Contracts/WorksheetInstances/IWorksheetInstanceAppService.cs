@@ -6,7 +6,7 @@ namespace Unity.Flex.WorksheetInstances
 {
     public interface IWorksheetInstanceAppService : IApplicationService
     {
-        Task<WorksheetInstanceDto> GetByCorrelationAsync(Guid correlationId, string correlationProvider, string uiAnchor);
+        Task<WorksheetInstanceDto> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor);
         Task<WorksheetInstanceDto> CreateAsync(CreateWorksheetInstanceDto dto);
     }
 }

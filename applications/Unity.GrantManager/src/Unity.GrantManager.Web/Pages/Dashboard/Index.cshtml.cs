@@ -162,7 +162,8 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
                 Text = !string.IsNullOrEmpty(tag) ? tag : DashboardConsts.EmptyValue
             }).ToList();
 
-            Tags = TagsOptionsList.Select(tag => tag.Value).ToArray();
+            TagsOptionsList.Add(new SelectListItem { Value = string.Empty, Text = DashboardConsts.EmptyValue });
+            Tags = TagsOptionsList.Select(tag => tag.Value).Distinct().ToArray();
         }
 
         private sealed class IntakeQ

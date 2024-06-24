@@ -2,12 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
-using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
@@ -22,12 +20,18 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
         AutoInitialize = true)]
 public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInstanceAppService, IWorksheetAppService worksheetAppService) : AbpViewComponent
 {
-    public async Task<IViewComponentResult> InvokeAsync(Guid correlationId, string correlationProvider, string uiAnchor)
+    public async Task<IViewComponentResult> InvokeAsync(Guid instanceCorrelationId,
+        string instanceCorrelationProvider,
+        Guid sheetCorrelationId,
+        string sheetCorrelationProvider,
+        string uiAnchor)
     {
         WorksheetViewModel viewModel;
 
-        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAsync(correlationId, correlationProvider, uiAnchor);
-        var worksheet = await worksheetAppService.GetByUiAnchorAsync(uiAnchor);
+        if (instanceCorrelationId == Guid.Empty && sheetCorrelationId == Guid.Empty) return View(new WorksheetViewModel());
+
+        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, instanceCorrelationProvider, uiAnchor);
+        var worksheet = await worksheetAppService.GetByCorrelationAnchorAsync(sheetCorrelationId, sheetCorrelationProvider, uiAnchor);
 
         if (worksheet == null) return View(new WorksheetViewModel());
 
@@ -49,6 +53,7 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         {
             IsConfigured = true,
             UiAnchor = worksheetDto.UiAnchor,
+            Name = worksheetDto.Name
         };
 
         foreach (var section in worksheetDto.Sections.OrderBy(s => s.Order))
@@ -109,33 +114,4 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
     }
 }
 
-public static class InputExtensions
-{
-    public static string ConvertInputType(this CustomFieldType type)
-    {
-        return type switch
-        {
-            CustomFieldType.Text => "text",
-            CustomFieldType.Numeric => "number",
-            CustomFieldType.Currency => "number",
-            _ => "text",
-        };
-    }
-
-    public static object? ConvertInputValueOrNull(this string currentValue, CustomFieldType type)
-    {
-        return ValueResolver.Resolve(currentValue, type);
-    }
-
-    public static DefinitionBase? ConvertDefinition(this string definition, CustomFieldType type)
-    {
-        return type switch
-        {
-            CustomFieldType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
-            CustomFieldType.Numeric => JsonSerializer.Deserialize<NumericDefinition>(definition),
-            CustomFieldType.Currency => JsonSerializer.Deserialize<CurrencyDefinition>(definition),
-            _ => null,
-        };
-    }
-}
 

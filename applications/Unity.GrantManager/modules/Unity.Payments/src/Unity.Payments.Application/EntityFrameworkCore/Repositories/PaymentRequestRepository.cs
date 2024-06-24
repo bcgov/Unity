@@ -29,7 +29,7 @@ namespace Unity.Payments.Repositories
               // Don't include declined - right now we don't know how to set status
               .GroupBy(p => p.CorrelationId)
               .Select(p => p.Sum(q => q.Amount))
-              .First();
+              .FirstOrDefault();
 
             return applicationPaymentRequestsTotal;
         }
