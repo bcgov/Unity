@@ -2,16 +2,26 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Unity.Flex.Scoresheets;
+using Unity.Flex.Worksheets;
 
 namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
 
-public class UpsertSectionModalModel : FlexPageModel
+public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService) : FlexPageModel
 {
     [BindProperty]
     public Guid Id { get; set; }
 
     [BindProperty]
-    public string? Name { get; set; }
+    [MinLength(1)]
+    [MaxLength(25)]
+    public string Name { get; set; } = string.Empty;
+
+    [BindProperty]
+    public Guid WorksheetId { get; set; }
+
+    [BindProperty]
+    public Guid? SectionId { get; set; }
 
     [BindProperty]
     public uint Order { get; set; }
@@ -19,106 +29,66 @@ public class UpsertSectionModalModel : FlexPageModel
     [BindProperty]
     public WorksheetUpsertAction UpsertAction { get; set; }
 
-    public UpsertSectionModalModel(Guid sectionId, WorksheetUpsertAction action)
-    {        
-    }
-
-    [BindProperty]
-    public SectionModalModelModel Section { get; set; } = new();
-
-    public class SectionModalModelModel
+    public async Task OnGetAsync(Guid worksheetId, Guid sectionId, string actionType)
     {
-        public Guid SectionId { get; set; }
-        public Guid ScoresheetId { get; set; }
-        public string ActionType { get; set; } = string.Empty;
-        [Display(Name = "Worksheet:Configuration:SectionModal.Name")]
-        public string Name { get; set; } = string.Empty;
-        public uint Order { get; set; }
-    }
+        WorksheetId = worksheetId;
+        SectionId = sectionId;
+        UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
 
-    public async Task OnGetAsync(Guid sectionId, WorksheetUpsertAction action)
-    {
-        if (action == WorksheetUpsertAction.Update)
+        if (UpsertAction == WorksheetUpsertAction.Update)
         {
-         
-        }      
+
+        }
+
+        await Task.CompletedTask;
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         switch (UpsertAction)
         {
-
+            case WorksheetUpsertAction.Insert:
+                return MapModalResponse(await InsertSectionAsync());
+            case WorksheetUpsertAction.Update:
+                return MapModalResponse(await UpdateSectionAsync());
+            case WorksheetUpsertAction.VersionUp:
+                break;
+            default:
+                break;
         }
 
         return NoContent();
-
-        //if (Section.ActionType.Equals("Edit Section On Current Version"))
-        //{
-        //    await EditSectionOnCurrentVersion();
-        //    return NoContent();
-        //}
-        //else if (Section.ActionType.Equals("Edit Section On New Version"))
-        //{
-        //    await EditSectionOnNewVersion();
-        //    return NoContent();
-        //}
-        //else if (Section.ActionType.Equals("Add Section On Current Version"))
-        //{
-        //    await CreateSectionOnCurrentVersion();
-        //    return NoContent();
-        //}
-        //else if (Section.ActionType.Equals("Add Section On New Version"))
-        //{
-        //    await CreateSectionOnNewVersion();
-        //    return NoContent();
-        //}
-        //else if (Section.ActionType.Equals("Delete Section On Current Version"))
-        //{
-        //    await DeleteSectionOnCurrentVersion();
-        //    return NoContent();
-        //}
-        //else if (Section.ActionType.Equals("Delete Section On New Version"))
-        //{
-        //    await DeleteSectionOnNewVersion();
-        //    return NoContent();
-        //}
-        //else
-        //{
-        //    throw new AbpValidationException("Invalid ActionType!");
-        //}
     }
 
-    //private async Task CreateSectionOnCurrentVersion()
-    //{
-    //    _ = await _scoresheetAppService.CreateSectionAsync(Section.ScoresheetId, new CreateSectionDto() { Name = Section.Name });
-    //}
+    private OkObjectResult MapModalResponse(WorksheetSectionDto worksheetSectionDto)
+    {        
+        return new OkObjectResult(new ModalResponse()
+        {
+            Id = worksheetSectionDto.Id,
+            Name = worksheetSectionDto.Name,
+            WorksheetId = WorksheetId,
+            Order = worksheetSectionDto.Order
+        });
+    }
 
-    //private async Task CreateSectionOnNewVersion()
-    //{
-    //    var clone = await _scoresheetAppService.CloneScoresheetAsync(Section.ScoresheetId, null, null);
-    //    _ = await _scoresheetAppService.CreateSectionAsync(clone.ScoresheetId, new CreateSectionDto() { Name = Section.Name });
-    //}
+    private async Task<WorksheetSectionDto> InsertSectionAsync()
+    {
+        return await worksheetAppService.CreateSectionAsync(WorksheetId, new CreateSectionDto()
+        {
+            Name = Name ?? string.Empty
+        });
+    }
 
-    //private async Task EditSectionOnCurrentVersion()
-    //{
-    //    _ = await _sectionAppService.UpdateAsync(Section.SectionId, new EditSectionDto() { Name = Section.Name });
-    //}
+    private async Task<WorksheetSectionDto> UpdateSectionAsync()
+    {
+        return await worksheetAppService.CreateSectionAsync(WorksheetId, new CreateSectionDto()
+        {
+            Name = Name ?? string.Empty
+        });
+    }
 
-    //private async Task EditSectionOnNewVersion()
-    //{
-    //    var clone = await _scoresheetAppService.CloneScoresheetAsync(Section.ScoresheetId, Section.SectionId, null);
-    //    _ = await _sectionAppService.UpdateAsync(clone.SectionId ?? Guid.Empty, new EditSectionDto() { Name = Section.Name });
-    //}
-
-    //private async Task DeleteSectionOnCurrentVersion()
-    //{
-    //    await _sectionAppService.DeleteAsync(Section.SectionId);
-    //}
-
-    //private async Task DeleteSectionOnNewVersion()
-    //{
-    //    var clone = await _scoresheetAppService.CloneScoresheetAsync(Section.ScoresheetId, Section.SectionId, null);
-    //    await _sectionAppService.DeleteAsync(clone.SectionId ?? Guid.Empty);
-    //}
+    public class ModalResponse : WorksheetSectionDto
+    {
+        public Guid WorksheetId { get; set; }
+    }
 }

@@ -7,6 +7,7 @@ namespace Unity.Flex.Domain.Worksheets
 {
     public interface IWorksheetRepository : IBasicRepository<Worksheet, Guid>
     {
+        Task<Worksheet> GetAsync(Guid id, bool includeDetails = true);
         Task<List<Worksheet>> GetListAsync(bool includeDetails = false);
         Task<Worksheet?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails = false);
         Task<Worksheet?> GetByCorrelationByNameAsync(Guid correlationId, string correlationProvider, string name, bool includeDetails = false);

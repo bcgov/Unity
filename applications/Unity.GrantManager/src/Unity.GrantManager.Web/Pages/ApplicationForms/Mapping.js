@@ -48,7 +48,8 @@
         'simplecheckboxadvanced',
         'simplecurrencyadvanced',
         'simpletextarea',
-        'simpletextareaadvanced'];
+        'simpletextareaadvanced',
+        'bcaddress'];
 
     const UIElements = {
         btnBack: $('#btn-back'),
@@ -316,6 +317,7 @@
 
     function initializeIntakeMap(availableChefsFields) {
         try {
+            debugger;
             let intakeFields = JSON.parse(intakeFieldsString);
 
             for (let intakeField of intakeFields) {
@@ -355,6 +357,7 @@
             case 'Checkbox':
             case 'CheckboxGroup':
             case 'SelectList':
+            case 'BCAddress':
                 return `<i class="${setTypeIcon(intakeField)}"></i> `;
             case 'Number':
                 return setTypeIndicatorText('123');
@@ -382,9 +385,11 @@
             case 'Checkbox':
                 return 'fl fl-checkbox-checked';
             case 'CheckboxGroup':
-                return 'fl fl-multi-select'
+                return 'fl fl-multi-select';
             case 'SelectList':
                 return 'fl fl-list';
+            case 'BCAddress':
+                return 'fl fl-globe';
             default:
                 return '';
         }

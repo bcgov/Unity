@@ -19,9 +19,9 @@
             <div class="accordion-header" id="heading-@worksheet.Id">
                 <div class="d-flex w-100 align-items-center">
                     <button class="accordion-button collapsed flex-grow-1" id="accordion-button-@worksheet.Id" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@worksheet.Id" aria-expanded="false" aria-controls="collapse-@worksheet.Id">
-                        <span class="flex-grow-1 text-start"><b>@worksheet.Title</b></span>                        
-                        <span class="custom-field-anchor">(@worksheet.UiAnchor)</span>                                                   
-                        <div class="text-end d-flex align-items-center custom-field-count-info">                            
+                        <span class="flex-grow-1 text-start"><b>@worksheet.Title</b></span>
+                        <span class="custom-field-anchor">(@worksheet.UiAnchor)</span>
+                        <div class="text-end d-flex align-items-center custom-field-count-info">
                             <div class="custom-field-count-title"><b>Sections:</b></div>
                             <div class="custom-field-count-value">@worksheet.TotalSections</div>
                             <div class="custom-field-count-title"><b>Fields:</b></div>
@@ -30,25 +30,40 @@
                     </button>
                 </div>
             </div>
-            @await Component.InvokeAsync(typeof(WorksheetWidget), new { worksheetDto = worksheet })
+            <div id="collapse-@worksheet.Id" class="accordion-collapse collapse" data-worksheet="@worksheet.Id" aria-labelledby="heading-@worksheet.Id" data-bs-parent="#worksheet-accordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="p-3">
+                                <button id="edit_worksheet_btn" data-worksheet-id="@worksheet.Id" class="btn btn-light" type="button">
+                                    <i class="fl fl-edit"></i> <span>@L["Worksheet:Configuration:EditWorksheetButtonText"].Value</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3">
+                                <button id="link_worksheet_btn" onclick="openLinkWorksheetModal('@worksheet.Id','Link Worksheet');" class="btn btn-light" type="button">
+                                    <i class="fl fl-link"></i> <span>@L["Worksheet:Configuration:LinkWorksheetButtonText"].Value</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="worksheet-info-widget-@worksheet.Id">
+                        @await Component.InvokeAsync(typeof(WorksheetWidget), new { worksheetDto = worksheet })
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="p-3">
+                                <button id="add_worksheet_section_btn-@worksheet.Id" data-worksheet-id="@worksheet.Id" data-action="Insert" class="btn btn-light add-worksheet-section-btn" type="button">
+                                    <i class="fl fl-plus"></i> <span>@L["Worksheet:Configuration:AddSectionButtonText"].Value</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     }
-</div>
-<div class="row">
-    <div class="col-md-6">
-        <div class="p-3">
-            <button id="save_order_btn" onclick="saveOrder();" class="btn btn-light" type="button" disabled>
-                <span>@L["Worksheet:Configuration:SaveChangesButtonText"].Value</span>
-            </button>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="p-3">
-            <button id="discard_order_btn" onclick="updateScoresheetAccordion();" class="btn btn-light" type="button" disabled>
-                <span>@L["Worksheet:Configuration:DiscardChangesButtonText"].Value</span>
-            </button>
-        </div>
-    </div>
 </div>
 
 

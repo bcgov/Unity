@@ -288,7 +288,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
 
         await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.AssessmentInfoUiAnchor, input.CustomFields);
-
+        
         await _applicationRepository.UpdateAsync(application);
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);

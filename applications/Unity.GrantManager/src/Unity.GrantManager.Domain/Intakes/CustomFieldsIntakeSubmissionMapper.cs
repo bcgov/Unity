@@ -46,7 +46,7 @@ namespace Unity.GrantManager.Intakes
                                 var field = TrimTypeFromFieldName(dataKey);
                                 var token = data.SelectToken(property.Value.ToString());
                                 var fieldType = ResolveFieldType(dataKey);
-                                var value = ((JToken)token).ApplyTransformer(fieldType);
+                                var value = ((JToken)token).ApplyTransformer(fieldType);                                
                                 customIntakeValues.Add(new(field, value.ApplySerializer()));
                             }
                         }

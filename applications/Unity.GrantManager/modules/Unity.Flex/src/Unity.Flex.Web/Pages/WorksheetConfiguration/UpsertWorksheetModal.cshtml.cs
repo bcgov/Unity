@@ -47,6 +47,7 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
         {
             WorksheetDto worksheetDto = await worksheetAppService.GetAsync(worksheetId);
             UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
+            
             Name = worksheetDto.Name;
             UiAnchor = worksheetDto.UiAnchor;
             Id = worksheetDto.Id;
@@ -58,10 +59,9 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
         switch (UpsertAction)
         {
             case WorksheetUpsertAction.Insert:
-                _ = await worksheetAppService.CreateAsync(MapWorksheetModel());
-                break;
+                return MapModalResponse(await worksheetAppService.CreateAsync(MapWorksheetModel()));
             case WorksheetUpsertAction.Update:
-                break;
+                return MapModalResponse(await worksheetAppService.CreateAsync(MapWorksheetModel()));
             case WorksheetUpsertAction.VersionUp:
                 break;
         }
@@ -79,10 +79,22 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
         return new CreateWorksheetDto()
         {
             Name = Name,
-            Title = Title,
-            UIAnchor = UiAnchor ?? Name,
+            Title = Title,            
             Sections = [],
         };
+    }
+
+    private static OkObjectResult MapModalResponse(WorksheetDto worksheetDto)
+    {
+        return new OkObjectResult(new ModalResponse()
+        {
+            WorksheetId = worksheetDto.Id
+        });
+    }
+
+    public class ModalResponse
+    {
+        public Guid WorksheetId { get; set; }
     }
 
     //private async Task CreateScoresheet()

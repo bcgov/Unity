@@ -10,7 +10,7 @@ namespace Unity.Flex.Worksheets
     {
         public async Task<WorksheetLinkDto> CreateAsync(CreateWorksheetLinkDto dto)
         {
-            var worksheetLink = await worksheetsManager.CreateWorksheetLink(dto.WorksheetId, dto.CorrelationId, dto.CorrelationProvider);
+            var worksheetLink = await worksheetsManager.CreateWorksheetLink(dto.WorksheetId, dto.CorrelationId, dto.CorrelationProvider, dto.UiAnchor);
 
             return ObjectMapper.Map<WorksheetLink, WorksheetLinkDto>(worksheetLink);
         }

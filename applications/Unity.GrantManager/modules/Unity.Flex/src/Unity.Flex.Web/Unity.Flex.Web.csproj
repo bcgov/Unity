@@ -32,6 +32,8 @@
   <ItemGroup>
     <None Remove="Pages\WorksheetConfiguration\Index.css" />
     <None Remove="Pages\WorksheetConfiguration\Index.js" />
+    <None Remove="Views\Shared\Components\BCAddressWidget\Default.css" />
+    <None Remove="Views\Shared\Components\BCAddressWidget\Default.js" />
     <None Remove="Views\Shared\Components\CheckboxGroupWidget\Default.css" />
     <None Remove="Views\Shared\Components\CheckboxGroupWidget\Default.js" />
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.css" />
@@ -42,6 +44,8 @@
     <None Remove="Views\Shared\Components\CustomTabWidget\Default.js" />
     <None Remove="Views\Shared\Components\DateWidget\Default.css" />
     <None Remove="Views\Shared\Components\DateWidget\Default.js" />
+    <None Remove="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.css" />
+    <None Remove="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.js" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.css" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.js" />
     <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.css" />
@@ -59,6 +63,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Views\Shared\Components\BCAddressWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\BCAddressWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxGroupWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxGroupWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxWidget\Default.css" />
@@ -73,6 +79,8 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Views\Shared\Components\DateWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\DateWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.css" />
+    <EmbeddedResource Include="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.js" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.css" />

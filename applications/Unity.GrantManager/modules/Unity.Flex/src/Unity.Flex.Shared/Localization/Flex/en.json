@@ -19,6 +19,7 @@
     "Worksheet:Configuration:EditWorksheetButtonText": "EDIT WORKSHEET",
     "Worksheet:Configuration:AddCustomFieldButtonText": "ADD FIELD",
     "Worksheet:Configuration:AddSectionButtonText": "ADD SECTION",
-    "Worksheet:Configuration:AddWorksheetButtonText": "ADD WORKSHEET"
+    "Worksheet:Configuration:AddWorksheetButtonText": "ADD WORKSHEET",
+    "Worksheet:Configuration:LinkWorksheetButtonText": "LINK WORKSHEET"
   }
 }

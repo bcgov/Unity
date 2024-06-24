@@ -377,3 +377,7 @@
 .fl-multi-select:before {
     content: '\E762';
 }
+
+.fl-globe:before {
+    content: '\E774';
+}

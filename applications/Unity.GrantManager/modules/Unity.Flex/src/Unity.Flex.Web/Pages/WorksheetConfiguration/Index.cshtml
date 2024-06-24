@@ -27,15 +27,14 @@
                 <abp-card>
                     <abp-card-body>
                         <h4><b>Worksheets</b></h4>
-                        <div id="worksheet-info-widget">
+                        <div id="worksheet-info-widget-list">
                             @await Component.InvokeAsync(typeof(WorksheetListWidget))
                         </div>
                         <div class="p-4">
                             <abp-button text="@L["Worksheet:Configuration:AddWorksheetButtonText"].Value"
                                         id="add_worksheet_btn"
                                         icon-type="Other"
-                                        icon="fl fl-plus"
-                                        onclick="openWorksheetModal(null, 'Insert');"
+                                        icon="fl fl-plus"                                        
                                         button-type="Light" />
                         </div>
                     </abp-card-body>

@@ -175,6 +175,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 CustomFieldType.Checkbox => "Checkbox",
                 CustomFieldType.CheckboxGroup => "CheckboxGroup",
                 CustomFieldType.SelectList => "SelectList",
+                CustomFieldType.BCAddress => "BCAddress",
                 _ => "",
             };
         }

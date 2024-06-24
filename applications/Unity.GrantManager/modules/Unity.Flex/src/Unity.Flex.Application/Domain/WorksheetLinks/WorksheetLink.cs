@@ -11,6 +11,7 @@ namespace Unity.Flex.Domain.WorksheetLinks
         public Guid WorksheetId { get; set; }
         public Guid CorrelationId { get; private set; }
         public string CorrelationProvider { get; private set; } = string.Empty;
+        public string UiAnchor { get; private set; } = string.Empty;
 
         protected WorksheetLink()
         {
@@ -19,14 +20,16 @@ namespace Unity.Flex.Domain.WorksheetLinks
 
         public WorksheetLink(Guid id,
             Guid worksheetId,
-            Guid correlationId,            
-            string correlationProvider)
+            Guid correlationId,
+            string correlationProvider,
+            string uiAnchor)
       : base(id)
         {
             Id = id;
             CorrelationId = correlationId;
             CorrelationProvider = correlationProvider;
             WorksheetId = worksheetId;
+            UiAnchor = uiAnchor;
         }
     }
 }

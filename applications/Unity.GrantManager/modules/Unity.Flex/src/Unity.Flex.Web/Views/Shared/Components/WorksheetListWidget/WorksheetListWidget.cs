@@ -14,13 +14,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetList;
     ScriptTypes = [typeof(WorksheetListWidgetScriptBundleContributor)],
     StyleTypes = [typeof(WorksheetListWidgetStyleBundleContributor)],
     AutoInitialize = true)]
-public class WorksheetListWidget : AbpViewComponent
+public class WorksheetListWidget(IWorksheetAppService worksheetAppService) : AbpViewComponent
 {
-    private readonly IWorksheetAppService _worksheetAppService;
-    public WorksheetListWidget(IWorksheetAppService worksheetAppService)
-    {
-        _worksheetAppService = worksheetAppService;
-    }
+    private readonly IWorksheetAppService _worksheetAppService = worksheetAppService;
 
     public async Task<IViewComponentResult> InvokeAsync()
     {

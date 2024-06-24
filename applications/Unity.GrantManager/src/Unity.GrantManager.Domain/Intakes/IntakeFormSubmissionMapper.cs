@@ -316,7 +316,10 @@ namespace Unity.GrantManager.Intakes
 
         private List<string> GetFileKeys(dynamic version)
         {
-            return FindFileKeys(version, "type", "simplefile");
+            var fileKeys = new List<string>();
+            fileKeys.Add(FindFileKeys(version, "type", "simplefile"));
+            fileKeys.Add(FindFileKeys(version, "type", "file"));
+            return fileKeys;
         }
 
         private static List<string> FindFileKeys(JToken json, string key, string value)

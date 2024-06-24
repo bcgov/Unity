@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Scoresheets;
 using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
@@ -34,15 +35,16 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto)
         {
+            // move to domain manager class
             var worksheetName = dto.Name.SanitizeWorksheetName();
             var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, false);
 
             if (existingWorksheet != null)
             {
-                throw new BusinessException("Cannot have duplicate worksheet names");
+                throw new UserFriendlyException("Worksheet names must be unique");
             }
 
-            var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title, dto.UIAnchor);
+            var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {
@@ -66,9 +68,9 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<Worksheet, WorksheetDto>(dbWorksheet);
         }
 
-        public virtual async Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateCustomFieldDto dto)
+        public virtual async Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto)
         {
-            var worksheet = await worksheetRepository.GetAsync(id);
+            var worksheet = await worksheetRepository.GetAsync(id, true);
             var newWorksheetSection = new WorksheetSection(Guid.NewGuid(), dto.Name);
             worksheet.AddSection(newWorksheetSection);
 
@@ -78,6 +80,11 @@ namespace Unity.Flex.Worksheets
         public virtual async Task<List<WorksheetDto>> GetListAsync()
         {            
             return ObjectMapper.Map<List<Worksheet>, List<WorksheetDto>>(await worksheetRepository.GetListAsync(true));
+        }
+
+        public Task<WorksheetDto> EditAsync(EditWorksheetDto dto)
+        {
+            throw new NotImplementedException();
         }
     }
 }
