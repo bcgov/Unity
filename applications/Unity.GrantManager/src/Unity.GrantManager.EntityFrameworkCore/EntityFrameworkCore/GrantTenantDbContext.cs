@@ -11,7 +11,6 @@ using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Unity.GrantManager.Identity;
 using Unity.Payments.EntityFrameworkCore;
-using Unity.Notifications.Emails;
 using Unity.Flex.EntityFrameworkCore;
 
 namespace Unity.GrantManager.EntityFrameworkCore

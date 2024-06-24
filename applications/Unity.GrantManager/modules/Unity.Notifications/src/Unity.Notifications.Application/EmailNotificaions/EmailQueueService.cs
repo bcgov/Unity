@@ -14,6 +14,7 @@ public class EmailQueueService : ApplicationService
 {
 
     private readonly IOptions<RabbitMQOptions> _rabbitMQOptions;
+    private const UNITY_EMAIL_QUEUE = "unity_emails";
 
     public EmailQueueService(IOptions<RabbitMQOptions> rabbitMQOptions) {
         _rabbitMQOptions = rabbitMQOptions;
@@ -26,7 +27,7 @@ public class EmailQueueService : ApplicationService
         RabbitMQConnection rabbitMQConnection = new RabbitMQConnection(_rabbitMQOptions);
         IConnection connection = rabbitMQConnection.GetConnection();
         using var channel = connection.CreateModel();
-        channel.QueueDeclare(queue: "unity_emails",
+        channel.QueueDeclare(queue: UNITY_EMAIL_QUEUE,
                             durable: true,
                             exclusive: false,
                             autoDelete: false,
@@ -39,7 +40,7 @@ public class EmailQueueService : ApplicationService
         await Task.Delay(TimeSpan.FromMilliseconds(FiveMinutesInMilliSeconds * (emailLog.RetryAttempts+1)));
 
         channel.BasicPublish(exchange: string.Empty,
-                            routingKey: "unity_emails",
+                            routingKey:UNITY_EMAIL_QUEUE,
                             basicProperties: props,
                             body: bodyPublish);
 
@@ -51,7 +52,7 @@ public class EmailQueueService : ApplicationService
         RabbitMQConnection rabbitMQConnection = new RabbitMQConnection(_rabbitMQOptions);
         IConnection connection = rabbitMQConnection.GetConnection();
         using var channel = connection.CreateModel();
-        channel.QueueDeclare(queue: "unity_emails",
+        channel.QueueDeclare(queue: UNITY_EMAIL_QUEUE,
                             durable: true,
                             exclusive: false,
                             autoDelete: false,
@@ -61,7 +62,7 @@ public class EmailQueueService : ApplicationService
         var bodyPublish = Encoding.UTF8.GetBytes(json);
         IBasicProperties props = channel.CreateBasicProperties();
         channel.BasicPublish(exchange: string.Empty,
-                            routingKey: "unity_emails",
+                            routingKey: UNITY_EMAIL_QUEUE,
                             basicProperties: props,
                             body: bodyPublish);
 

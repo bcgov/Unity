@@ -21,8 +21,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
 {
     private readonly IChesClientService _chesClientService;
     private readonly IConfiguration _configuration;
-    private EmailQueueService _emailQueueService;
-    private IEmailLogsRepository _emailLogsRepository;
+    private readonly EmailQueueService _emailQueueService;
+    private readonly IEmailLogsRepository _emailLogsRepository;
 
     public EmailNotificationService(
         IEmailLogsRepository emailLogsRepository,
@@ -87,14 +87,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="email">The email address to send to</param>
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
-    public async Task<RestResponse> SendEmailNotification(string emailTo, string body, string subject, Guid applicationId)
+    public async Task<RestResponse> SendEmailNotification(string email, string body, string subject, Guid applicationId)
     {
         RestResponse response = new RestResponse();
         try
         {
             if (!string.IsNullOrEmpty(emailTo))
             {
-                var emailObject = GetEmailObject(emailTo, body, subject, applicationId);
+                var emailObject = GetEmailObject(email, body, subject, applicationId);
                 response = await _chesClientService.SendAsync(emailObject);
                 await LogEmailResponse(emailObject, response);
             }
@@ -105,7 +105,8 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         }
         catch (Exception ex)
         {
-            Logger.LogError("EmailNotificationService->SendEmailNotification Exception: {message}", ex.Message);
+            string exceptionMessage = ex.Message;
+            Logger.LogError(ex, "EmailNotificationService->SendEmailNotification Exception: {exceptionMessage}", exceptionMessage);
         }
         return response;
     }
@@ -160,7 +161,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.Subject = emailDynamicObject.subject;
         emailLog.BodyType = emailDynamicObject.bodyType;
         emailLog.FromAddress = emailDynamicObject.from;
-        emailLog.ToAddress = ((List<string>)emailDynamicObject.to).First();
+        emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault();
         emailLog.ApplicantId = emailDynamicObject.applicationId;
         return emailLog;
     }

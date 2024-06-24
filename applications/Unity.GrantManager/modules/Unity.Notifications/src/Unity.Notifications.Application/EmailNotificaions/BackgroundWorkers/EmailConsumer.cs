@@ -21,11 +21,9 @@ namespace Unity.Notifications.EmailNotifications;
 
 public class EmailConsumer : QuartzBackgroundWorkerBase
 {
-    private readonly IOptions<EmailBackgroundJobsOptions> _emailBackgroundJobsOptions;
-    private EmailQueueService _emailQueueService;
-
-    private int _retryAttemptMax = 0;
-    private IEmailLogsRepository _emailLogsRepository;
+    private readonly EmailQueueService _emailQueueService;
+    private int _retryAttemptMax;
+    private readonly IEmailLogsRepository _emailLogsRepository;
     private readonly IOptions<RabbitMQOptions> _rabbitMQOptions;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
@@ -37,21 +35,20 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
         IUnitOfWorkManager unitOfWorkManager
         )
     {
-        _emailBackgroundJobsOptions = emailBackgroundJobsOptions;
         _rabbitMQOptions = rabbitMQOptions;
         _emailQueueService = emailQueueService;
         JobDetail = JobBuilder.Create<EmailConsumer>().WithIdentity(nameof(EmailConsumer)).Build();
-        _retryAttemptMax = _emailBackgroundJobsOptions.Value.EmailResend.RetryAttemptsMaximum;
+        _retryAttemptMax = emailBackgroundJobsOptions.Value.EmailResend.RetryAttemptsMaximum ?? 0;
         _emailLogsRepository = emailLogsRepository;
         _unitOfWorkManager = unitOfWorkManager;
 
         Trigger = TriggerBuilder.Create().WithIdentity(nameof(EmailConsumer))
-            .WithSchedule(CronScheduleBuilder.CronSchedule(_emailBackgroundJobsOptions.Value.EmailResend.Expression)
+            .WithSchedule(CronScheduleBuilder.CronSchedule(emailBackgroundJobsOptions.Value.EmailResend.Expression)
             .WithMisfireHandlingInstructionIgnoreMisfires())
             .Build();
     }
 
-    private bool ReprocessBasedOnStatusCode(HttpStatusCode statusCode)
+    private static bool ReprocessBasedOnStatusCode(HttpStatusCode statusCode)
     {
         HttpStatusCode[] reprocessStatusCodes = new HttpStatusCode[] {
              HttpStatusCode.Unauthorized,
@@ -81,7 +78,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
         IConnection connection = rabbitMQConnection.GetConnection();
         var channel = connection.CreateModel();
 
-        channel.QueueDeclare(queue: "unity_emails",
+        channel.QueueDeclare(queue: UNITY_EMAIL_QUEUE,
                      durable: true,
                      exclusive: false,
                      autoDelete: false,
@@ -91,7 +88,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
 
         consumer.Received += async (model, ea) =>
         {
-            var body = ea.Body.ToArray(); ;
+            var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
             EmailLog? emailLog = JsonConvert.DeserializeObject<EmailLog>(message);
             using (var uow = _unitOfWorkManager.Begin(true, false))
@@ -120,7 +117,8 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
                         }
                     } catch (Exception ex)
                     {
-                        Logger.LogInformation(ex.Message);
+                        string messageException = ex.message;
+                        Logger.LogInformation(ex, "Process Delayed Email Exception: {messageException}", messageException);
                     }
                 }
 
