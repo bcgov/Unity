@@ -4,6 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Web.Views.Shared.Components;
+using Unity.Flex.Worksheets.Values;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
@@ -28,19 +32,22 @@ namespace Unity.GrantManager.Assessments
         private readonly IApplicationRepository _applicationRepository;
         private readonly IIdentityUserIntegrationService _userLookupProvider;
         private readonly ICommentsManager _commentsManager;
-
+        private readonly IScoresheetInstanceRepository _scoresheetInstanceRepository;
+        
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
             AssessmentManager assessmentManager,
             IApplicationRepository applicationRepository,
             IIdentityUserIntegrationService userLookupProvider,
-            ICommentsManager commentsManager)
+            ICommentsManager commentsManager,
+            IScoresheetInstanceRepository scoresheetInstanceRepository)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
             _applicationRepository = applicationRepository;
             _userLookupProvider = userLookupProvider;
             _commentsManager = commentsManager;
+            _scoresheetInstanceRepository = scoresheetInstanceRepository;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -61,10 +68,30 @@ namespace Unity.GrantManager.Assessments
 
         public async Task<List<AssessmentListItemDto>> GetDisplayList(Guid applicationId)
         {
-            return ObjectMapper.Map<
+            var assessmentList = ObjectMapper.Map<
                 List<AssessmentWithAssessorQueryResultItem>,
                 List<AssessmentListItemDto>>
                 (await _assessmentRepository.GetListWithAssessorsAsync(applicationId));
+            foreach(var assessment  in assessmentList)
+            {
+                assessment.SubTotal = await GetSubTotal(assessment);
+            }
+
+            return assessmentList;
+        }
+
+        private async Task<double> GetSubTotal(AssessmentListItemDto assessment)
+        {
+            var instance = await _scoresheetInstanceRepository.GetByCorrelationAsync(assessment.Id);
+            if(instance == null)
+            {
+                return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
+            }
+            else
+            {
+                return instance.Answers.Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
+                    
+            }
         }
 
         /// <summary>
@@ -226,6 +253,41 @@ namespace Unity.GrantManager.Assessments
                 throw new AbpValidationException(ex.Message, ex);
             }
             
+        }
+
+        public async Task SaveScoresheetAnswer(Guid assessmentId, Guid questionId, double answer)
+        {
+            var assessment = await _assessmentRepository.GetAsync(assessmentId);
+            if (assessment != null)
+            {
+                if (CurrentUser.GetId() != assessment.AssessorId)
+                {
+                    throw new AbpValidationException("Error: You do not own this assessment record.");
+                }
+                if (assessment.Status.Equals(AssessmentState.COMPLETED))
+                {
+                    throw new AbpValidationException("Error: This assessment is already completed.");
+                }
+
+                var instance = await _scoresheetInstanceRepository.GetByCorrelationAsync(assessmentId) ?? throw new AbpValidationException("Missing ScoresheetInstance.");
+                var ans = instance.Answers.FirstOrDefault(a => a.QuestionId == questionId);
+                if (ans != null)
+                {
+                    ans.SetValue(ValueConverter.Convert(answer.ToString(), Unity.Flex.Worksheets.CustomFieldType.Numeric));
+                }
+                else
+                {
+                    ans = new Answer(Guid.NewGuid()) { CurrentValue = ValueConverter.Convert(answer.ToString(), Unity.Flex.Worksheets.CustomFieldType.Numeric), QuestionId = questionId, ScoresheetInstanceId = instance.Id };
+                    instance.Answers.Add(ans);
+                }
+
+                await _scoresheetInstanceRepository.UpdateAsync(instance);
+            }
+            else
+            {
+                throw new AbpValidationException("AssessmentId Not Found: " + assessmentId + ".");
+            }
+
         }
     }
 }

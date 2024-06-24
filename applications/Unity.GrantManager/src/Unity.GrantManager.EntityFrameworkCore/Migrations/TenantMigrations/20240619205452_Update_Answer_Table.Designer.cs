@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240619205452_Update_Answer_Table")]
+    partial class Update_Answer_Table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1915,6 +1918,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("AssessorId")
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("CleanGrowth")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1930,6 +1936,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<int?>("EconomicImpact")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -1937,6 +1946,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
+
+                    b.Property<int?>("FinancialAnalysis")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InclusiveGrowth")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsComplete")
                         .HasColumnType("boolean");
@@ -1948,18 +1963,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
-
-                    b.Property<int?>("SectionScore1")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SectionScore2")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SectionScore3")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SectionScore4")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()

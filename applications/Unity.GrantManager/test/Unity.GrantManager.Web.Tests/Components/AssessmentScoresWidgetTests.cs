@@ -5,6 +5,8 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 using Xunit;
@@ -18,6 +20,8 @@ namespace Unity.GrantManager.Components
         {
             // Arrange
             var assessmentRepository = Substitute.For<IAssessmentRepository>();
+            var scoresheetRepository = Substitute.For<IScoresheetRepository>();
+            var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
             var expectedSectionScore1 = 1;
             var expectedSectionScore2 = 2;
             var expectedSectionScore3 = 3;
@@ -42,7 +46,7 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new AssessmentScoresWidgetViewComponent(assessmentRepository)
+            var viewComponent = new AssessmentScoresWidgetViewComponent(assessmentRepository, scoresheetRepository, instanceRepository)
             {
                 ViewComponentContext = viewComponentContext
             };

@@ -61,3 +61,60 @@ function positiveIntegersOnly(e) {
         return false;
     }
 }
+
+function handleInputChange(questionId) {
+    const inputField = document.getElementById('answer-' + questionId);
+    const saveButton = document.getElementById('save-' + questionId);
+    const originalValue = inputField.getAttribute('data-original-value');
+
+    if (inputField.value !== originalValue) {
+        saveButton.disabled = false;
+    } else {
+        saveButton.disabled = true;
+    }
+}
+
+function updateSubtotal() {
+    setTimeout(function () {
+        const answerInputs = document.querySelectorAll('.answer-input');
+        let subtotal = 0;
+        answerInputs.forEach(input => {
+            subtotal += parseFloat(input.value) || 0;
+        });
+
+        let subTotalField = document.getElementById('scoresheetSubtotal');
+        if (subTotalField) {
+            subTotalField.value = subtotal;
+        }
+    }, 500);
+}
+
+
+function saveChanges(questionId) {
+    const inputField = document.getElementById('answer-' + questionId);
+    const saveButton = document.getElementById('save-' + questionId);
+    const assessmentId = $("#AssessmentId").val();
+    const answerValue = inputField.value || 0;
+    unity.grantManager.assessments.assessment.saveScoresheetAnswer(assessmentId, questionId, answerValue)
+        .then(response => {
+            abp.notify.success(
+                'Answer is successfully saved.',
+                'Save Answer'
+            );
+            inputField.setAttribute('data-original-value', inputField.value);
+            saveButton.disabled = true;
+            updateSubtotal();
+            PubSub.publish('refresh_review_list_without_select', assessmentId);
+        });
+
+}
+
+function discardChanges(questionId) {
+    const inputField = document.getElementById('answer-' + questionId);
+    const saveButton = document.getElementById('save-' + questionId);
+
+    const originalValue = inputField.getAttribute('data-original-value');
+    inputField.value = originalValue;
+
+    saveButton.disabled = true;
+}

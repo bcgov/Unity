@@ -16,4 +16,5 @@ public interface IAssessmentAppService : IApplicationService, ICommentsService
     Task<AssessmentDto> ExecuteAssessmentAction(Guid assessmentId, AssessmentAction triggerAction);
     Task<Guid?> GetCurrentUserAssessmentId(Guid applicationId);
     Task UpdateAssessmentScore(AssessmentScoresDto dto);
+    Task SaveScoresheetAnswer(Guid assessmentId, Guid questionId, double answer);
 }

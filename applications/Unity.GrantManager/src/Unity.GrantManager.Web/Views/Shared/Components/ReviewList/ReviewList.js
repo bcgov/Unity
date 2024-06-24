@@ -132,38 +132,10 @@ $(function () {
                     render: renderApproval,
                 },
                 {
-                    title: l('ReviewerList:SectionScore1'),
-                    width: "60px",
-                    data: 'sectionScore1',
-                    className: 'data-table-header',
-                },
-                {
-                    title: l('ReviewerList:SectionScore2'),
-                    width: "60px",
-                    data: 'sectionScore2',
-                    className: 'data-table-header',
-                },
-                {
-                    title: l('ReviewerList:SectionScore3'),
-                    width: "60px",
-                    data: 'sectionScore3',
-                    className: 'data-table-header',
-                },
-                {
-                    title: l('ReviewerList:SectionScore4'),
-                    width: "60px",
-                    data: 'sectionScore4',
-                    className: 'data-table-header',
-                },
-                {
                     title: l('ReviewerList:Subtotal'),
                     width: "60px",
                     className: 'data-table-header',
-                    data: null,
-                    render: function (data, type, row) {
-                        return parseInt(row.sectionScore1 ?? 0) + parseInt(row.sectionScore2 ?? 0) + parseInt(row.sectionScore3 ?? 0) + parseInt(row.sectionScore4 ?? 0);
-                    }
-                
+                    data: 'subTotal',
                 }
             ],
         })

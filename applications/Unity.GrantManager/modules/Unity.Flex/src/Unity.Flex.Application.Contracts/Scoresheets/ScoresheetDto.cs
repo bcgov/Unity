@@ -11,5 +11,6 @@ namespace Unity.Flex.Scoresheets
         public uint Version { get; set; }
         public Collection<VersionDto> GroupVersions { get; set; } = [];
         public Collection<ScoresheetSectionDto> Sections { get; private set; } = [];
+
     }
 }

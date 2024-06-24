@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Unity.Flex.Scoresheets;
 using Unity.GrantManager.Assessments;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
@@ -23,7 +24,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 
         public Guid CurrentUserId { get; set; }
         public Guid AssessorId { get; set; }
-
+        public ScoresheetDto? Scoresheet { get; set; }
         public bool IsDisabled()
         {
             if(CurrentUserId != AssessorId)
