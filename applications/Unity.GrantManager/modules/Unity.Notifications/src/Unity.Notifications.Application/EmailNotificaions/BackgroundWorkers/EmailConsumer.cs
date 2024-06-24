@@ -15,6 +15,7 @@ using Volo.Abp.Uow;
 using RestSharp;
 using System.Net;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -24,13 +25,11 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
     private EmailQueueService _emailQueueService;
 
     private int _retryAttemptMax = 0;
-    private readonly IEmailNotificationService _emailNotificationService;
     private IEmailLogsRepository _emailLogsRepository;
     private readonly IOptions<RabbitMQOptions> _rabbitMQOptions;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public EmailConsumer(
-        IEmailNotificationService emailNotificationService,
         IEmailLogsRepository emailLogsRepository,
         IOptions<EmailBackgroundJobsOptions> emailBackgroundJobsOptions,
         IOptions<RabbitMQOptions> rabbitMQOptions,
@@ -38,7 +37,6 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
         IUnitOfWorkManager unitOfWorkManager
         )
     {
-        _emailNotificationService = emailNotificationService;
         _emailBackgroundJobsOptions = emailBackgroundJobsOptions;
         _rabbitMQOptions = rabbitMQOptions;
         _emailQueueService = emailQueueService;
@@ -106,6 +104,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
                         // Resend the email - Update the RetryCount
                         if (emailLog.RetryAttempts <= _retryAttemptMax)
                         {
+                            IEmailNotificationService _emailNotificationService = ServiceProvider.GetRequiredService<IEmailNotificationService>();
                             RestResponse response = await _emailNotificationService.SendEmailNotification(
                                                                                             emailLog.ToAddress, 
                                                                                             emailLog.Body, 

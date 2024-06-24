@@ -5,7 +5,6 @@ using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Unity.Notifications.EmailNotificaions;
 using Unity.Notifications.Emails;
@@ -13,12 +12,9 @@ using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Features;
-using Volo.Abp.Uow;
 
 namespace Unity.Notifications.EmailNotifications;
 
-[RequiresFeature("Unity.Notifications")]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(EmailNotificationService), typeof(IEmailNotificationService))]
 public class EmailNotificationService : ApplicationService, IEmailNotificationService
