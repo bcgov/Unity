@@ -1,0 +1,26 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Payments.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@model Unity.Payments.Web.Pages.Payments.DisplayCasPaymentRequestResponseModel
+@inject IStringLocalizer<PaymentsResource> L
+
+@{
+    Layout = null;
+}
+<form method="post" asp-page-handler="OnPostAsync" id="paymentform">
+    <abp-modal size="ExtraLarge" id="cas-payment-response-modal">
+        <abp-modal-header class="payment-modal-header" title="CAS Payment Request Response"></abp-modal-header>
+        <abp-modal-body>
+            <abp-card>
+                <abp-card-body class="payment-card">
+                    @Html.Raw(Model.CasPaymentResponse)
+                </abp-card-body>
+            </abp-card>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
