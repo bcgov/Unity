@@ -45,7 +45,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
 
         public List<Guid> SelectedPaymentIds { get; set; }
          
-        public string FromStatusText {  get; set; }
+        public string FromStatusText {  get; set; } = string.Empty;
 
         private readonly IPaymentRequestAppService _paymentRequestService;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
@@ -118,7 +118,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 indx++;
             }
 
-            DisableSubmit = !paymentApprovals.Any();
+            DisableSubmit = (paymentApprovals.Count == 0);
         }
 
         private PaymentsApprovalModel CheckUserPermissions(PaymentRequestStatus status, PermissionResult permissionResult, bool IsApproval, bool isExceedThreshold, PaymentsApprovalModel request)

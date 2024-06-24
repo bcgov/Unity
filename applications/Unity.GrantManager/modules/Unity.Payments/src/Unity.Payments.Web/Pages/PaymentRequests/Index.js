@@ -110,21 +110,16 @@ $(function () {
 
     function checkActionButtons() {
 
-        if (dataTable.rows({ selected: true }).indexes().length === 0) {
-            payment_approve_buttons.disable();
-
-        }
-        else {
-
+        if (dataTable.rows({ selected: true }).indexes().length > 0) {
             if (abp.auth.isGranted('GrantApplicationManagement.Payments.L1ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L2ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L3ApproveOrDecline')) {
                 payment_approve_buttons.enable();
 
             } else {
                 payment_approve_buttons.disable();
             }
-
-
-
+        }
+        else {       
+            payment_approve_buttons.disable();
         }
 
     }

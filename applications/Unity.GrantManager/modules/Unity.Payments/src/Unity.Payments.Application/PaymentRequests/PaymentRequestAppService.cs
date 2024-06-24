@@ -80,10 +80,10 @@ namespace Unity.Payments.PaymentRequests
                 }
                 catch(Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    //Handle exception
                 }
-                // Create a new Payment entity from the DTO
-               
+
+
             }
 
             return createdPayments;

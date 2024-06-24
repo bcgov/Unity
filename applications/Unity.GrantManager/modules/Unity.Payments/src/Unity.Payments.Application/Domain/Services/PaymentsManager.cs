@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Stateless;
-using Stateless.Graph;
+﻿using Stateless;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +7,6 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Shared;
 using Unity.Payments.Domain.Workflow;
 using Unity.Payments.Enums;
-using Volo.Abp;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
@@ -22,6 +19,9 @@ namespace Unity.Payments.Domain.Services
         private readonly IPaymentRequestRepository _paymentRequestRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly ICurrentUser _currentUser;
+        const string l1_approver = "l1_approver";
+        const string l2_approver = "l2_approver";
+        const string l3_approver = "l3_approver";
 
         public PaymentsManager(
        IPaymentRequestRepository paymentRequestRepository, IUnitOfWorkManager unitOfWorkManager, ICurrentUser currentUser)
@@ -34,30 +34,30 @@ namespace Unity.Payments.Domain.Services
 
         private void ConfigureWorkflow(StateMachine<PaymentRequestStatus, PaymentApprovalAction> paymentStateMachine)
         {
-
+           
 
             paymentStateMachine.Configure(PaymentRequestStatus.L1Pending)
-                .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => IsApprover("l1_approver"))
-                .PermitIf(PaymentApprovalAction.L1Decline, PaymentRequestStatus.L1Declined, () => IsApprover("l1_approver"));
+                .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => IsApprover(l1_approver))
+                .PermitIf(PaymentApprovalAction.L1Decline, PaymentRequestStatus.L1Declined, () => IsApprover(l1_approver));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L1Declined)
-                  .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => IsApprover("l1_approver"));
+                  .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => IsApprover(l1_approver));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Pending)
-                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => IsApprover("l2_approver"))
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l2_approver"))
-                .PermitIf(PaymentApprovalAction.L2Decline, PaymentRequestStatus.L2Declined, () => IsApprover("l2_approver"));
+                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => IsApprover(l2_approver))
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover(l2_approver))
+                .PermitIf(PaymentApprovalAction.L2Decline, PaymentRequestStatus.L2Declined, () => IsApprover(l2_approver));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
-                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => IsApprover("l2_approver"))
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l2_approver"));
+                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => IsApprover(l2_approver))
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover(l2_approver));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L3Pending)
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l3_approver"))
-                .PermitIf(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => IsApprover("l3_approver"));
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover(l3_approver))
+                .PermitIf(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => IsApprover(l3_approver));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover("l2_approver"));
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => IsApprover(l2_approver));
 
 
         }
@@ -150,12 +150,12 @@ namespace Unity.Payments.Domain.Services
 
             else if (triggerAction == PaymentApprovalAction.Submit)
             {
-                if (_currentUser.IsInRole("l2_approver"))
+                if (_currentUser.IsInRole(l2_approver))
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
                     paymentRequest.ExpenseApprovals[index].Approve();
                 }
-                else if (_currentUser.IsInRole("l3_approver"))
+                else if (_currentUser.IsInRole(l3_approver))
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level3);
                     paymentRequest.ExpenseApprovals[index].Approve();
@@ -170,18 +170,13 @@ namespace Unity.Payments.Domain.Services
 
         public async Task UpdatePaymentStatusAsync(Guid paymentRequestId, PaymentApprovalAction triggerAction)
         {
-            try
-            {
+          
             using var uow = _unitOfWorkManager.Begin();
 
             await TriggerAction(paymentRequestId, triggerAction);
 
             await uow.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
+           
 
         }
 
