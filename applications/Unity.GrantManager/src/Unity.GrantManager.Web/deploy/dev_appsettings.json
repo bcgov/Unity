@@ -1,0 +1,37 @@
+{
+    "AuthServer" : {
+        "Audience" : "unity-4899",
+        "IsBehindTlsTerminationProxy" : true,
+        "Realm" : "standard",
+        "ServerAddress" : "https://dev.loginproxy.gov.bc.ca/auth"
+    },
+    "BackgroundJobs" : {
+        "IntakeResync": {
+            "Expression" : "0 0 0/2 1/1 * ? *",
+            "NumDaysToCheck" : -2
+        }
+    },
+    "CssApi" : {
+        "Env" : "dev",
+        "TokenUrl" : "https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token",
+        "Url" : "https://api.loginproxy.gov.bc.ca/api/v1",
+        "BaseUri" : "https://chefs-dev.apps.silver.devops.gov.bc.ca/app/api/v1"
+    },
+    "Intake" : {
+        "BaseUri": "https://chefs-dev.apps.silver.devops.gov.bc.ca/app/api/v1"
+    },
+    "Notifications" : {
+        "ChesFromEmail" : "unity-noreply@gov.bc.ca",
+        "ChesTokenUrl" : "https://dev.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token",
+        "ChesUrl" : "https://ches-dev.api.gov.bc.ca/api/v1"
+    },
+    "Payments" : {
+        "CasBaseUrl" : "https://cfs-systws.cas.gov.bc.ca:7025/ords/cas"
+    }, 
+    "RabbitMQ" : {
+        "HostName" : "dev-unity-rabbitmq-1",
+        "Port" : 5672,
+        "UserName" : "isboperations",
+        "VirtualHost" : "/"
+    }
+}
