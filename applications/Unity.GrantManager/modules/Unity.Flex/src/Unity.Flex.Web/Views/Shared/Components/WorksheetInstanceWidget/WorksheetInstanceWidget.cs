@@ -52,7 +52,6 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         var worksheetVM = new WorksheetViewModel
         {
             IsConfigured = true,
-            UiAnchor = worksheetDto.UiAnchor,
             Name = worksheetDto.Name
         };
 

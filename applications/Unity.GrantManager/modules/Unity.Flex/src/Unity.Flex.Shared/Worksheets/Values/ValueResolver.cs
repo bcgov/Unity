@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Text.Json;
-using Unity.Flex.Worksheets;
-using Unity.Flex.Worksheets.Values;
 
-namespace Unity.Flex.Web.Views.Shared.Components
+namespace Unity.Flex.Worksheets.Values
 {
     public static class ValueResolver
     {
@@ -23,6 +21,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.Checkbox => ValueResolverHelpers.ConvertCheckbox(JsonSerializer.Deserialize<CheckboxValue>(currentValue)?.Value),
                 CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupValue>(currentValue)?.Value,
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListValue>(currentValue)?.Value,
+                CustomFieldType.BCAddress => ValueResolverHelpers.ConvertBCAddress(JsonSerializer.Deserialize<BCAddressValue>(currentValue)?.Value),
                 _ => throw new NotImplementedException()
             };
         }

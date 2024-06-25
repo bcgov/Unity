@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -8,7 +9,8 @@ using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Scoresheets
-{ 
+{
+    [Authorize]
     public class ScoresheetAppService : FlexAppService, IScoresheetAppService
     {
         private readonly IScoresheetRepository _scoresheetRepository;

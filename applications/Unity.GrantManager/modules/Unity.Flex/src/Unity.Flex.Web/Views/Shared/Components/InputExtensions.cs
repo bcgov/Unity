@@ -45,6 +45,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.Checkbox => JsonSerializer.Deserialize<CheckboxDefinition>(definition),
                 CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupDefinition>(definition),
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
+                CustomFieldType.BCAddress => JsonSerializer.Deserialize<BCAddressDefinition>(definition),
                 _ => null,
             };
         }
