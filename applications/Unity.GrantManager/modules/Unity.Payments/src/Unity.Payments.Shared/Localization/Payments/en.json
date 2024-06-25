@@ -44,8 +44,6 @@
     "ApplicationPaymentListTable:PaidOn": "Paid On",
     "ApplicationPaymentListTable:CASResponse": "CAS Response",
 
-
-
     "ApplicantInfoView:SupplierInfoTitle": "Payments",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
     "ApplicantInfoView:ApplicantInfo.SiteInfo:SiteNumber": "Site #",
@@ -88,10 +86,13 @@
 
     "ApplicationPaymentStatusRequest:L1ApproveOrDeclineTitle": "Approve/Decline L1 Payment Requests",
     "ApplicationPaymentStatusRequest:L2ApproveOrDeclineTitle": "Approve/Decline L2 Payment Requests",
-    "ApplicationPaymentStatusRequest:L3ApproveOrDeclineTitle": "Approve/Decline L3 Payment Requests"
+    "ApplicationPaymentStatusRequest:L3ApproveOrDeclineTitle": "Approve/Decline L3 Payment Requests",
 
 
-
-
+    "Permission:Payments": "Payments",
+    "Permission:Payments.Default": "Payments",
+    "Permission:Payments.L1ApproveOrDecline": "Approve/Decline L1 Payments",
+    "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
+    "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments"
   }
 }

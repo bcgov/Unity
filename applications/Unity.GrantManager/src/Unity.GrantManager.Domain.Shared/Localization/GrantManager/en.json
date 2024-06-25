@@ -319,12 +319,6 @@
     "ApplicationContact:MobilePhone": "Mobile Phone Number",
     "ApplicationContact:WorkPhone": "Work Phone Number",
     "ApplicationContact:Delete": "Delete This Contact",
-
-
-    "Permission:GrantApplicationPermissions.Payments.Default": "Payments",
-    "Permission:GrantApplicationPermissions.Payments.L1ApproveOrDecline": "Approve/Decline L1 Payments",
-    "Permission:GrantApplicationPermissions.Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
-    "Permission:GrantApplicationPermissions.Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments"
   }
 }
 

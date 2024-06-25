@@ -7,6 +7,5 @@ namespace Unity.Payments.Domain.Services
     public interface IPaymentsManager
     {
         Task UpdatePaymentStatusAsync(Guid paymentRequestId, PaymentApprovalAction triggerAction);
-
     }
 }

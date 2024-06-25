@@ -1,5 +1,4 @@
 ﻿using System;
-using Unity.Payments.Enums;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -15,7 +14,6 @@ namespace Unity.Payments.PaymentRequests
         public string PayeeName { get; set; }
         public string ContractNumber { get; set; }
         public string SupplierNumber { get; set; }
-
         public string CorrelationProvider { get; set; } = string.Empty;
     }
 
@@ -23,8 +21,7 @@ namespace Unity.Payments.PaymentRequests
     {
         public Guid PaymentRequestId { get; set; }
       
-
-        public bool isApprove { get; set; }
+        public bool IsApprove { get; set; }
     }
 #pragma warning restore CS8618
 }

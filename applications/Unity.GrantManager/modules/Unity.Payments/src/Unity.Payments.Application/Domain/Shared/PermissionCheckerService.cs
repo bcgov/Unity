@@ -1,8 +1,10 @@
 ﻿using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Authorization.Permissions;
 
 namespace Unity.Payments.Domain.Shared
 {
+    [RemoteService(false)]
     public class PermissionCheckerService : PaymentsAppService, IPermissionCheckerService
     {
         private readonly IPermissionChecker _permissionChecker;
@@ -10,7 +12,6 @@ namespace Unity.Payments.Domain.Shared
         {
             _permissionChecker = permissionChecker;
         }
-
 
         public virtual async Task<PermissionResult> CheckPermissionsAsync(params string[] permissions)
         {
@@ -24,6 +25,11 @@ namespace Unity.Payments.Domain.Shared
             }
 
             return permissionResult;
+        }
+
+        public virtual async Task<bool> IsGrantedAsync(string permission)
+        {
+            return await _permissionChecker.IsGrantedAsync(permission);
         }
     }
 }

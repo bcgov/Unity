@@ -4,20 +4,16 @@ namespace Unity.Payments.Domain.Shared;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PaymentsState
-
 {
- 
     CREATED = 1,
-    SUBMITTED  = 2,
-    APPROVED  = 3,
+    SUBMITTED = 2,
+    APPROVED = 3,
     DECLINED = 4,
     AWAITING_APPROVAL = 5,
-   
 }
 
 public enum PaymentApprovalSubState
 {
-
     NONE, // Default state when not in AwaitingApproval
     L1_PENDING,
     L1_APPROVED,
@@ -33,8 +29,8 @@ public enum PaymentApprovalSubState
 
 public static class PaymentsStateGroups
 {
-    public static readonly PaymentsState[] FinalDecisionStates =  {
+    public static readonly PaymentsState[] FinalDecisionStates = [
         PaymentsState.APPROVED,
         PaymentsState.DECLINED,
-    };
+    ];
 }

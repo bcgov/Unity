@@ -17,19 +17,12 @@ public enum PaymentsAction
 
 public enum PaymentApprovalAction
 {
-
     None,
-
     L1Approve,
     L1Decline,
-
-
     L2Approve,
     L2Decline,
-
-
     L3Approve,
     L3Decline,
-
     Submit
 }
