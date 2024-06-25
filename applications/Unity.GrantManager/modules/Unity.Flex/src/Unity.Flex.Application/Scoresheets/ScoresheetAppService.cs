@@ -204,5 +204,12 @@ namespace Unity.Flex.Scoresheets
             var result = await _scoresheetRepository.GetListAsync();
             return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
         }
+
+        public async Task<List<Guid>> GetNonDeletedQuestionIds(List<Guid> questionIdsToCheck)
+        {
+            var existingQuestions = await _questionRepository.GetListAsync();
+            return existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id)).Select(q => q.Id).ToList();
+
+        }
     }
 }

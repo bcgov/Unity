@@ -34,6 +34,7 @@ namespace Unity.GrantManager.Assessments
         private readonly IIdentityUserIntegrationService _userLookupProvider;
         private readonly ICommentsManager _commentsManager;
         private readonly IScoresheetInstanceAppService _scoresheetInstanceAppService;
+        private readonly IScoresheetAppService _scoresheetAppService;
         private readonly ILocalEventBus _localEventBus;
         private readonly IFeatureChecker _featureChecker;
 
@@ -45,7 +46,8 @@ namespace Unity.GrantManager.Assessments
             ICommentsManager commentsManager,
             IScoresheetInstanceAppService scoresheetInstanceAppService,
             IFeatureChecker featureChecker,
-            ILocalEventBus localEventBus)
+            ILocalEventBus localEventBus, 
+            IScoresheetAppService scoresheetAppService)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
@@ -53,6 +55,7 @@ namespace Unity.GrantManager.Assessments
             _userLookupProvider = userLookupProvider;
             _commentsManager = commentsManager;
             _scoresheetInstanceAppService = scoresheetInstanceAppService;
+            _scoresheetAppService = scoresheetAppService;
             _featureChecker = featureChecker;
             _localEventBus = localEventBus;
         }
@@ -91,7 +94,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task<double> GetSubTotal(AssessmentListItemDto assessment)
         {
-            if (await _featureChecker.IsEnabledAsync("Unit.Flex"))
+            if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
                 var instance = await _scoresheetInstanceAppService.GetByCorrelationAsync(assessment.Id);
 
@@ -101,7 +104,12 @@ namespace Unity.GrantManager.Assessments
                 }
                 else
                 {
-                    return instance.Answers.Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
+                    var questionIds = instance.Answers.Select(a => a.QuestionId).Distinct().ToList();
+                    var existingQuestionIds = await _scoresheetAppService.GetNonDeletedQuestionIds(questionIds);
+
+                    return instance.Answers.Where(a => existingQuestionIds.Contains(a.QuestionId))
+                        .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
+
                 }
             }
             else

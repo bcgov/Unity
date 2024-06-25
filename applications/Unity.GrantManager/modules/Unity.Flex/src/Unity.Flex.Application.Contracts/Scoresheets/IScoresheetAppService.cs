@@ -17,5 +17,6 @@ namespace Unity.Flex.Scoresheets
         Task<List<ScoresheetDto>> GetAllScoresheetsAsync();
         Task SaveOrder(List<ScoresheetItemDto> dto);
         Task UpdateAllAsync(Guid groupId, EditScoresheetsDto dto);
+        Task<List<Guid>> GetNonDeletedQuestionIds(List<Guid> questionIdsToCheck);
     }
 }
