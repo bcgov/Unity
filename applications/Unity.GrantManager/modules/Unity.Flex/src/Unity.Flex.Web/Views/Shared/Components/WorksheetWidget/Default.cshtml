@@ -14,14 +14,34 @@
 @{
     var worksheet = @Model.Worksheet;
 
+    <div class="row">
+        <div class="col-md-6">
+            <div class="p-3">
+                <button data-worksheet-id="@worksheet.Id" class="btn btn-light edit-worksheet-btn" type="button">
+                    <i class="fl fl-edit"></i> <span>@L["Worksheet:Configuration:EditWorksheetButtonText"].Value</span>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="p-3">
+                <button data-worksheet-id="@worksheet.Id" class="btn btn-light link-worksheet-btn" type="button">
+                    <i class="fl fl-link"></i> <span>@L["Worksheet:Configuration:LinkWorksheetButtonText"].Value</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="sections-custom-fields" class="list-group col">
         @foreach (var sect in worksheet.Sections)
         {
-            <div class="list-group-item row section-item" data-type="section" data-id="@sect.Id" data-scoresheetid="@worksheet.Id" data-label="@sect.Name">
+            <div class="list-group-item row section-item" data-type="section" data-id="@sect.Id" data-worksheet-id="@worksheet.Id" data-label="@sect.Name">
                 <div class="col">
                     <i class="fl fl-draggable"></i>
                     <span class="p-2"><b>Section:</b> @sect.Name</span>
-                    <button class="btn question-info-btn float-end" type="button" onclick="openSectionModal('@worksheet.Id','@sect.Id','Edit Section');">
+                    <button class="btn float-end add-custom-field-btn" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-action="Insert" type="button">
+                        <i class="fl fl-plus"></i>
+                    </button>
+                    <button class="btn float-end edit-section-btn" data-action="Update" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" type="button">
                         <i class="fl fl-edit"></i>
                     </button>
                 </div>
@@ -33,13 +53,23 @@
                     <div class="col">
                         <i class="fl fl-draggable"></i>
                         <span class="p-2">@customField.Label</span>
-                        <button class="btn custom-field-info-btn float-end" type="button" onclick="openCustomFieldModal('@worksheet.Id','@sect.Id','@customField.Id','Edit Custom Field');">
+                        <button class="btn float-end edit-custom-field-btn" type="button" onclick="openCustomFieldModal('@worksheet.Id','@sect.Id','@customField.Id','Edit Custom Field');">
                             <i class="fl fl-edit"></i>
                         </button>
                     </div>
                 </div>
             }
         }
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="p-3">
+                <button id="add_worksheet_section_btn-@worksheet.Id" data-worksheet-id="@worksheet.Id" data-action="Insert" class="btn btn-light add-worksheet-section-btn" type="button">
+                    <i class="fl fl-plus"></i> <span>@L["Worksheet:Configuration:AddSectionButtonText"].Value</span>
+                </button>
+            </div>
+        </div>
     </div>
 }
 

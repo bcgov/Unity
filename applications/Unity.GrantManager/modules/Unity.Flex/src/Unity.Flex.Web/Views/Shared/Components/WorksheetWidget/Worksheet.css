@@ -2,6 +2,11 @@
     background-color: lightblue;
 }
 
+.section-info-btn {
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
+}
+
 .custom-field-info-btn {
     --bs-btn-active-color: var(--bc-colors-white-primary-500);
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);

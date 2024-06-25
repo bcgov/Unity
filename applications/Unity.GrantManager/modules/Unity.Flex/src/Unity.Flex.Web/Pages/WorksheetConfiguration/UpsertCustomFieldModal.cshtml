@@ -14,10 +14,11 @@
 {
     <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
 }
-<form method="post" asp-page-handler="OnPostAsync" id="customFieldInfo">
+<form method="post" asp-page-handler="OnPostAsync" id="customFieldInfo" spellcheck="false">
     <abp-input type="hidden" id="CustomFieldId" asp-for="@Model.Id" />
     <abp-input type="hidden" id="Order" asp-for="@Model.Order" />
     <abp-input type="hidden" id="UpsertAction" asp-for="@Model.UpsertAction" />
+    <abp-input type="hidden" id="Definitions" asp-for="@Model.Definitions" />
     <abp-modal size="Large" id="custom-field-info-modal">
         <abp-modal-header class="custom-field-info-modal-header" title="@Model.UpsertAction"></abp-modal-header>
         <abp-modal-body>
@@ -31,42 +32,24 @@
                     <abp-input asp-for="@Model.Label" />
                 </abp-column>
             </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-select asp-for="@Model.FieldType" asp-items="@Model.FieldTypes"
+                            onchange="typeSelectionChanged(this)">
+                </abp-select>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <textarea id="jsonText" rows="15" cols="80">@Model.Definition</textarea>
+            </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" class="btn btn-primary" onclick="handleSaveQuestionButtonClick(event)">@AbpModalButtons.Save</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>            
+            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
         </abp-modal-footer>
     </abp-modal>
 </form>
 
 <script>
-    async function handleSaveQuestionButtonClick(event) {
-        event.preventDefault();
-        const action = await askToCreateNewVersion();
-        if (action) {
-            $('#ActionType').val($('#ActionType').val() + action);
-            $('#questionInfo').submit();
-        }
-    }
-
-    async function deleteQuestion() {
-        let result = await Swal.fire({
-            title: "Delete Question",
-            text: 'Are you sure you want to delete this question?',
-            showCancelButton: true,
-            confirmButtonText: 'Confirm',
-            customClass: {
-                confirmButton: 'btn btn-primary',
-                cancelButton: 'btn btn-secondary'
-            }
-        });
-
-        if (result.isConfirmed) {
-            const action = await askToCreateNewVersion();
-            if (action) {
-                $('#ActionType').val('Delete Question' + action);
-                $('#questionInfo').submit();
-            }
-        }
+    function typeSelectionChanged(event) {
+        console.log(event);
     }
 </script>

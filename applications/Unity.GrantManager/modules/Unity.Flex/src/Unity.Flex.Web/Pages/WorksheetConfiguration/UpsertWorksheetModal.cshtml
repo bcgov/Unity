@@ -12,7 +12,7 @@
 }
 @section scripts
 {
-    <abp-script src="/Pages/WorksheetConfiguration/Index.js" />   
+    <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
 }
 <form method="post" asp-page-handler="OnPostAsync" id="worksheetInfo">
     <abp-input type="hidden" id="WorksheetId" asp-for="@Model.Id" />
@@ -22,55 +22,25 @@
         <abp-modal-body>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.Title" id="worksheetTitle" onkeyup="updateWorksheetName()" />
+                    <abp-input asp-for="@Model.Title" id="worksheetTitle" onkeyup="updateWorksheetName('@Model.UpsertAction.ToString()')" />
                 </abp-column>
                 <abp-column size="_12" class="px-1">
                     <abp-input asp-for="@Model.Name" id="worksheetName" readonly="true" />
                 </abp-column>
-                <abp-column size="_12" class="px-1">
-                    <abp-select asp-for="@Model.UiAnchor" asp-items="@Model.UiAnchors" label="UiAnchors" id="uiAnchors">
-                        <option value="">-- Custom Tab --</option>
-                    </abp-select>                    
-                </abp-column>                
             </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
             <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>            
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
         </abp-modal-footer>
     </abp-modal>
 </form>
 <script>
-    // async function saveWorksheet(event) {
-    //      if ($('#UpsertAction').val() === 'Update') {
-    //          event.preventDefault();
-    //          const action = await askToCreateNewVersion();
-    //          if (action) {
-    //              $('#ActionType').val($('#ActionType').val() + action);
-    //              $('#scoresheetInfo').submit();
-    //          }
-    //      }
-    // }
+    function updateWorksheetName(action) {
+        if (action == 'Update') {
+            return;
+        }
 
-    // function deleteWorksheet() {
-    //     Swal.fire({
-    //         title: "Delete Scoresheet",
-    //         text: 'Are you sure you want to delete this scoresheet?',
-    //         showCancelButton: true,
-    //         confirmButtonText: 'Confirm',
-    //         customClass: {
-    //             confirmButton: 'btn btn-primary',
-    //             cancelButton: 'btn btn-secondary'
-    //         }
-    //     }).then((result) => {
-    //         if (result.isConfirmed) {
-    //             $('#ActionType').val('Delete Scoresheet');
-    //             $('#scoresheetInfo').submit();
-    //         }
-    //     });
-    // }
-
-    function updateWorksheetName() {        
         let src = $('#worksheetTitle');
         let dest = $('#worksheetName');
         let name = src.val().toLowerCase().trim() + '-v1';

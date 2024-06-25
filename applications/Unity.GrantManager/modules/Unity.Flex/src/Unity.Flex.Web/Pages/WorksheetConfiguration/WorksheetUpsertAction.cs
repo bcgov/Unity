@@ -3,7 +3,6 @@
     public enum WorksheetUpsertAction
     {
         Insert = 1,
-        Update = 2,
-        VersionUp = 3
+        Update = 2        
     }
 }

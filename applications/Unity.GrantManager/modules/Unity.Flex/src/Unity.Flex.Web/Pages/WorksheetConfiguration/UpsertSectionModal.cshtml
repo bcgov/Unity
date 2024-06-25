@@ -15,7 +15,7 @@
 {
     <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
 }
-<form method="post" asp-page-handler="OnPostAsync" id="sectionInfo">
+<form method="post" asp-page-handler="OnPostAsync" id="sectionInfo-@Model.SectionId">
     <abp-input type="hidden" id="WorksheetId" asp-for="@Model.WorksheetId" />
     <abp-input type="hidden" id="SectionId" asp-for="@Model.SectionId" />
     <abp-input type="hidden" id="UpsertAction" asp-for="@Model.UpsertAction" />

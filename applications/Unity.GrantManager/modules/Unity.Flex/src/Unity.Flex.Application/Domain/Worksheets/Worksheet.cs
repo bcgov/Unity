@@ -44,5 +44,22 @@ namespace Unity.Flex.Domain.Worksheets
             Sections.Add(section);
             return this;
         }
+
+        public void UpdateSection(WorksheetSection section, string name)
+        {
+            if (Sections.Any(s => s.Name == name))
+                throw new UserFriendlyException("Section names must be unique");
+
+            section.SetName(name);
+        }
+
+        public Worksheet SetTitle(string title)
+        {
+            if (string.IsNullOrEmpty(title))
+                throw new UserFriendlyException("Blank titles are not allowed");
+
+            Title = title;
+            return this;
+        }
     }
 }

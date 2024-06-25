@@ -2,12 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using Unity.Flex.Scoresheets;
 using Unity.Flex.Worksheets;
 
 namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
 
-public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService) : FlexPageModel
+public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService, IWorksheetSectionAppService worksheetSectionAppService) : FlexPageModel
 {
     [BindProperty]
     public Guid Id { get; set; }
@@ -15,7 +14,8 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService) :
     [BindProperty]
     [MinLength(1)]
     [MaxLength(25)]
-    public string Name { get; set; } = string.Empty;
+    [Required]
+    public string? Name { get; set; }
 
     [BindProperty]
     public Guid WorksheetId { get; set; }
@@ -37,10 +37,10 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService) :
 
         if (UpsertAction == WorksheetUpsertAction.Update)
         {
-
+            // Get the section 
+            var section = await worksheetSectionAppService.GetAsync(sectionId);
+            Name = section.Name;
         }
-
-        await Task.CompletedTask;
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -51,8 +51,6 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService) :
                 return MapModalResponse(await InsertSectionAsync());
             case WorksheetUpsertAction.Update:
                 return MapModalResponse(await UpdateSectionAsync());
-            case WorksheetUpsertAction.VersionUp:
-                break;
             default:
                 break;
         }
@@ -61,7 +59,7 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService) :
     }
 
     private OkObjectResult MapModalResponse(WorksheetSectionDto worksheetSectionDto)
-    {        
+    {
         return new OkObjectResult(new ModalResponse()
         {
             Id = worksheetSectionDto.Id,
@@ -81,9 +79,9 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService) :
 
     private async Task<WorksheetSectionDto> UpdateSectionAsync()
     {
-        return await worksheetAppService.CreateSectionAsync(WorksheetId, new CreateSectionDto()
+        return await worksheetSectionAppService.EditAsync(SectionId!.Value, new EditSectionDto()
         {
-            Name = Name ?? string.Empty
+            Name = Name ?? string.Empty            
         });
     }
 

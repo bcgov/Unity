@@ -78,13 +78,15 @@ namespace Unity.Flex.Worksheets
         }
 
         public virtual async Task<List<WorksheetDto>> GetListAsync()
-        {            
+        {
             return ObjectMapper.Map<List<Worksheet>, List<WorksheetDto>>(await worksheetRepository.GetListAsync(true));
         }
 
-        public Task<WorksheetDto> EditAsync(EditWorksheetDto dto)
+        public virtual async Task<WorksheetDto> EditAsync(Guid id, EditWorksheetDto dto)
         {
-            throw new NotImplementedException();
+            var worksheet = await worksheetRepository.GetAsync(id);
+            worksheet.SetTitle(dto.Title);
+            return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
         }
     }
 }

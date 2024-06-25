@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240624053117_MoveuiAnchorToLinking")]
+    partial class MoveuiAnchorToLinking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2742,13 +2745,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             modelBuilder.Entity("Unity.Flex.Domain.WorksheetLinks.WorksheetLink", b =>
                 {
-                    b.HasOne("Unity.Flex.Domain.Worksheets.Worksheet", "Worksheet")
+                    b.HasOne("Unity.Flex.Domain.Worksheets.Worksheet", null)
                         .WithMany("Links")
                         .HasForeignKey("WorksheetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Worksheet");
                 });
 
             modelBuilder.Entity("Unity.Flex.Domain.Worksheets.CustomField", b =>
