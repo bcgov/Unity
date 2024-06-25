@@ -43,6 +43,10 @@
                     <abp-select asp-for="@Model.Question.QuestionType" asp-items="@Model.QuestionTypeOptionsList" id="questionType" disabled="@Model.Question.HasAnswers">
                     </abp-select>
                 </abp-column>
+                @if (Model.Question.HasAnswers)
+                {
+                    <span class="message">Question Type is not allowed to be changed for question with answers.</span>
+                }
             </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
