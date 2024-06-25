@@ -317,8 +317,8 @@ namespace Unity.GrantManager.Intakes
         private List<string> GetFileKeys(dynamic version)
         {
             var fileKeys = new List<string>();
-            fileKeys.Add(FindFileKeys(version, "type", "simplefile"));
-            fileKeys.Add(FindFileKeys(version, "type", "file"));
+            fileKeys.AddRange(FindFileKeys(version, "type", "simplefile"));
+            fileKeys.AddRange(FindFileKeys(version, "type", "file"));
             return fileKeys;
         }
 

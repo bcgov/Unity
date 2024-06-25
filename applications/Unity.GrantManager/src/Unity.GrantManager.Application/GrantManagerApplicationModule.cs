@@ -41,7 +41,8 @@ namespace Unity.GrantManager;
     typeof(AbpBackgroundWorkersQuartzModule),
     typeof(AbpBackgroundWorkersQuartzModule),
     typeof(NotificationsApplicationModule),    
-    typeof(PaymentsApplicationModule)
+    typeof(PaymentsApplicationModule),
+    typeof(FlexApplicationModule)
     )]
 public class GrantManagerApplicationModule : AbpModule
 {

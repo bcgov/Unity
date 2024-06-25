@@ -33,7 +33,7 @@ namespace Unity.GrantManager.Assessments
         private readonly IApplicationRepository _applicationRepository;
         private readonly IIdentityUserIntegrationService _userLookupProvider;
         private readonly ICommentsManager _commentsManager;
-        //private readonly IScoresheetInstanceAppService _scoresheetInstanceAppService;
+        private readonly IScoresheetInstanceAppService _scoresheetInstanceAppService;
         private readonly ILocalEventBus _localEventBus;
         private readonly IFeatureChecker _featureChecker;
 
@@ -43,7 +43,7 @@ namespace Unity.GrantManager.Assessments
             IApplicationRepository applicationRepository,
             IIdentityUserIntegrationService userLookupProvider,
             ICommentsManager commentsManager,
-            //IScoresheetInstanceAppService scoresheetInstanceAppService)
+            IScoresheetInstanceAppService scoresheetInstanceAppService,
             IFeatureChecker featureChecker,
             ILocalEventBus localEventBus)
         {
@@ -52,7 +52,7 @@ namespace Unity.GrantManager.Assessments
             _applicationRepository = applicationRepository;
             _userLookupProvider = userLookupProvider;
             _commentsManager = commentsManager;
-            //_scoresheetInstanceAppService = scoresheetInstanceAppService;
+            _scoresheetInstanceAppService = scoresheetInstanceAppService;
             _featureChecker = featureChecker;
             _localEventBus = localEventBus;
         }
@@ -91,24 +91,23 @@ namespace Unity.GrantManager.Assessments
 
         private async Task<double> GetSubTotal(AssessmentListItemDto assessment)
         {
-            return 0;
-            //if (await _featureChecker.IsEnabledAsync("Unit.Flex"))
-            //{
-            //    var instance = await _scoresheetInstanceAppService.GetByCorrelationAsync(assessment.Id);
+            if (await _featureChecker.IsEnabledAsync("Unit.Flex"))
+            {
+                var instance = await _scoresheetInstanceAppService.GetByCorrelationAsync(assessment.Id);
 
-            //    if (instance == null)
-            //    {
-            //        return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
-            //    }
-            //    else
-            //    {
-            //        return instance.Answers.Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
-            //    }
-            //}
-            //else
-            //{
-            //    return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
-            //}
+                if (instance == null)
+                {
+                    return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
+                }
+                else
+                {
+                    return instance.Answers.Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
+                }
+            }
+            else
+            {
+                return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
+            }
         }
 
         /// <summary>
@@ -286,14 +285,15 @@ namespace Unity.GrantManager.Assessments
                     throw new AbpValidationException("Error: This assessment is already completed.");
                 }
 
-                //if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
-                //{
-                //    await _localEventBus.PublishAsync(new PersistScoresheetInstanceEto() { 
-                //        CorrelationId = assessmentId,
-                //        QuestionId = questionId,
-                //        Answer = answer
-                //    });
-                //}
+                if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+                {
+                    await _localEventBus.PublishAsync(new PersistScoresheetInstanceEto()
+                    {
+                        CorrelationId = assessmentId,
+                        QuestionId = questionId,
+                        Answer = answer
+                    });
+                }
             }
             else
             {
