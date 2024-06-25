@@ -19,6 +19,7 @@
     <abp-input type="hidden" id="SectionId" asp-for="@Model.Question.SectionId" />
     <abp-input type="hidden" id="QuestionId" asp-for="@Model.Question.Id" />
     <abp-input type="hidden" id="ActionType" asp-for="@Model.Question.ActionType" />
+    <abp-input type="hidden" id="HasAnswers" asp-for="@Model.Question.HasAnswers" />
     <abp-modal size="Large" id="question-info-modal">
         <abp-modal-header class="question-info-modal-header" title="@Model.Question.ActionType"></abp-modal-header>
         <abp-modal-body>
@@ -39,7 +40,7 @@
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="px-1">
-                    <abp-select asp-for="@Model.Question.QuestionType" asp-items="@Model.QuestionTypeOptionsList" id="questionType">
+                    <abp-select asp-for="@Model.Question.QuestionType" asp-items="@Model.QuestionTypeOptionsList" id="questionType" disabled="@Model.Question.HasAnswers">
                     </abp-select>
                 </abp-column>
             </abp-row>

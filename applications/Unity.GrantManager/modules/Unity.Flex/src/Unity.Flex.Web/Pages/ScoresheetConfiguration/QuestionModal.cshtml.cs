@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Scoresheets;
+using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.Validation;
 
@@ -49,6 +50,9 @@ public class QuestionModalModel : FlexPageModel
         [Display(Name = "Scoresheet:Configuration:QuestionModal.QuestionType")]
         [SelectItems(nameof(QuestionTypeOptionsList))]
         public string QuestionType { get; set; } = string.Empty;
+        [BindProperty]
+        public bool HasAnswers {  get; set; } = false;
+        public string OriginalQuestionType { get; set; } = string.Empty;
     }
     public async Task OnGetAsync(Guid scoresheetId, Guid sectionId, Guid questionId,
        string actionType)
@@ -64,6 +68,8 @@ public class QuestionModalModel : FlexPageModel
             Question.Label = question.Label ?? "";
             Question.Description = question.Description ?? "";
             Question.QuestionType = ((int)question.Type).ToString();
+            Question.OriginalQuestionType = Question.QuestionType;
+            Question.HasAnswers = question.HasAnswers;
         }
         else
         {
@@ -73,6 +79,11 @@ public class QuestionModalModel : FlexPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (Question.HasAnswers && Question.QuestionType != Question.OriginalQuestionType)
+        {
+            throw new UserFriendlyException("Question type cannot be changed because answers are already present.");
+        }
+
         if (Question.ActionType.Equals("Edit Question On Current Version"))
         {
             await EditQuestionOnCurrentVersion();
