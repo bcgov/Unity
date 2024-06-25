@@ -80,7 +80,7 @@ namespace Unity.GrantManager.Identity
 
             if (systemAdminRole == null)
             {
-                systemAdminRole = new IdentityRole(
+                systemAdminRole = new Volo.Abp.Identity.IdentityRole(
                     GuidGenerator.Create(),
                     roleName,
                     tenantId
