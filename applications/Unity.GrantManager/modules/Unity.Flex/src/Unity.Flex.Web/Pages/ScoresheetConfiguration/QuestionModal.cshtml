@@ -37,6 +37,12 @@
                     <abp-input asp-for="@Model.Question.Description" />
                 </abp-column>
             </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-select asp-for="@Model.Question.QuestionType" asp-items="@Model.QuestionTypeOptionsList" id="questionType">
+                    </abp-select>
+                </abp-column>
+            </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
             <button type="button" class="btn btn-primary" onclick="handleSaveQuestionButtonClick(event)">@AbpModalButtons.Save</button>

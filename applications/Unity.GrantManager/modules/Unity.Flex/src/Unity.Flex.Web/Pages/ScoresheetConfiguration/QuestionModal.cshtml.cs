@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Scoresheets;
+using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Web.Pages.ScoresheetConfiguration;
@@ -11,11 +15,19 @@ public class QuestionModalModel : FlexPageModel
 {
     private readonly IQuestionAppService _questionAppService;
     private readonly IScoresheetAppService _scoresheetAppService;
-
+    public List<SelectListItem> QuestionTypeOptionsList { get; set; }
     public QuestionModalModel(IQuestionAppService questionAppService, IScoresheetAppService scoresheetAppService)
     {
         _questionAppService = questionAppService;
         _scoresheetAppService = scoresheetAppService;
+        QuestionTypeOptionsList = Enum.GetValues(typeof(QuestionType))
+                                      .Cast<QuestionType>()
+                                      .Select(qt => new SelectListItem
+                                      {
+                                          Value = ((int)qt).ToString(),
+                                          Text = qt.ToString()
+                                      })
+                                      .ToList();
     }
 
     [BindProperty]
@@ -33,6 +45,10 @@ public class QuestionModalModel : FlexPageModel
         public string Label { get; set; } = string.Empty;
         [Display(Name = "Scoresheet:Configuration:QuestionModal.Description")]
         public string? Description { get; set; }
+
+        [Display(Name = "Scoresheet:Configuration:QuestionModal.QuestionType")]
+        [SelectItems(nameof(QuestionTypeOptionsList))]
+        public string QuestionType { get; set; } = string.Empty;
     }
     public async Task OnGetAsync(Guid scoresheetId, Guid sectionId, Guid questionId,
        string actionType)
@@ -47,6 +63,11 @@ public class QuestionModalModel : FlexPageModel
             Question.Name = question.Name ?? "";
             Question.Label = question.Label ?? "";
             Question.Description = question.Description ?? "";
+            Question.QuestionType = ((int)question.Type).ToString();
+        }
+        else
+        {
+            Question.QuestionType = ((int)QuestionType.Number).ToString();
         }
     }
 
@@ -90,24 +111,24 @@ public class QuestionModalModel : FlexPageModel
 
     private async Task CreateQuestionOnCurrentVersion()
     {
-        _ = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(Question.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description });
+        _ = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(Question.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType) });
     }
 
     private async Task CreateQuestionOnNewVersion()
     {
         var clone = await _scoresheetAppService.CloneScoresheetAsync(Question.ScoresheetId, Question.SectionId, Question.Id);
-        _ = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(clone.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description });
+        _ = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(clone.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType) });
     }
 
     private async Task EditQuestionOnCurrentVersion()
     {
-        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description });
+        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType) });
     }
 
     private async Task EditQuestionOnNewVersion()
     {
         var clone = await _scoresheetAppService.CloneScoresheetAsync(Question.ScoresheetId, Question.SectionId, Question.Id);
-        _ = await _questionAppService.UpdateAsync(clone.QuestionId ?? Guid.Empty, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description });
+        _ = await _questionAppService.UpdateAsync(clone.QuestionId ?? Guid.Empty, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType) });
     }
 
     private async Task DeleteQuestionOnCurrentVersion()

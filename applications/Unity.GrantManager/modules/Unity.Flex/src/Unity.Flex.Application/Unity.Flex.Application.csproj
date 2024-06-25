@@ -18,6 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Folder Include="Domain\Enums\" />
 		<Folder Include="Integration\" />
 	</ItemGroup>
 

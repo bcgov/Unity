@@ -25,6 +25,7 @@ namespace Unity.Flex.Scoresheets
             question.Name = dto.Name;
             question.Label = dto.Label;
             question.Description = dto.Description;
+            question.Type = (QuestionType)dto.QuestionType;
             return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.UpdateAsync(question));
         }
 
