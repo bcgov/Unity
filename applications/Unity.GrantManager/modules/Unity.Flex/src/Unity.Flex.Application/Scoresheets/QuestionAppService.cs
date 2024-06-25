@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Scoresheets
 {
+    [Authorize]
     public class QuestionAppService : FlexAppService, IQuestionAppService
     {
         private readonly IQuestionRepository _questionRepository;

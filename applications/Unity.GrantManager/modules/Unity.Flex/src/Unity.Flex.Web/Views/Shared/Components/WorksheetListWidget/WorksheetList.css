@@ -1,0 +1,14 @@
+#worksheet-accordion {
+    display: block;
+}
+
+.custom-field-count-value {
+    margin: 0.2rem;
+}
+
+.custom-field-anchor {
+    margin-right: 0.2rem;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    margin-top: 2px;
+}

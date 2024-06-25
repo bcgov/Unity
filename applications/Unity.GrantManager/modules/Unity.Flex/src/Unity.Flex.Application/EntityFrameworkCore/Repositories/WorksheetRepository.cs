@@ -16,16 +16,17 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
         {
             var dbSet = await GetDbSetAsync();
 
-            return await dbSet.IncludeDetails(includeDetails)
-                    .FirstOrDefaultAsync(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider)
-                    && s.UIAnchor == uiAnchor);
+            return await dbSet
+                    .IncludeDetails(includeDetails)
+                    .FirstOrDefaultAsync(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider && s.UiAnchor == uiAnchor));
         }
 
         public async Task<Worksheet?> GetByCorrelationByNameAsync(Guid correlationId, string correlationProvider, string name, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
 
-            return await dbSet.IncludeDetails(includeDetails)
+            return await dbSet
+                    .IncludeDetails(includeDetails)
                     .FirstOrDefaultAsync(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider)
                     && s.Name == name);
         }
@@ -35,15 +36,17 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
             var dbSet = await GetDbSetAsync();
             var sanitizedName = name.SanitizeWorksheetName();
 
-            return await dbSet.IncludeDetails(includeDetails)
-                .FirstOrDefaultAsync(s => s.Sections.Any(s => s.Name == sanitizedName));
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .FirstOrDefaultAsync(s => s.Name == name);
         }
 
         public async Task<Worksheet?> GetBySectionAsync(Guid id, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
 
-            return await dbSet.IncludeDetails(includeDetails)
+            return await dbSet
+                .IncludeDetails(includeDetails)
                 .FirstOrDefaultAsync(s => s.Sections.Any(s => s.Id == id));
         }
 
@@ -51,9 +54,28 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
         {
             var dbSet = await GetDbSetAsync();
 
-            return await dbSet.IncludeDetails(includeDetails)
+            return await dbSet
+                .IncludeDetails(includeDetails)
                 .Where(s => s.Links.Any(s => s.CorrelationId == correlationId && s.CorrelationProvider == correlationProvider))
                 .OrderBy(s => s.Name).ToListAsync();
+        }
+
+        public async Task<List<Worksheet>> GetListAsync(bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .ToListAsync();
+        }
+
+        public async Task<Worksheet> GetAsync(Guid id, bool includeDetails = true)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .FirstAsync(s => s.Id == id);
         }
     }
 }

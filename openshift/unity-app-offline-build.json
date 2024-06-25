@@ -18,19 +18,6 @@
   },
   "objects": [
     {
-      "kind": "ImageStream",
-      "apiVersion": "image.openshift.io/v1",
-      "metadata": {
-        "name": "${NAME}",
-        "labels": {
-          "app.kubernetes.io/part-of": "unity-tools"
-        },
-        "annotations": {
-          "description": "Keeps track of changes in the application image"
-        }
-      }
-    },
-    {
       "kind": "BuildConfig",
       "apiVersion": "build.openshift.io/v1",
       "metadata": {

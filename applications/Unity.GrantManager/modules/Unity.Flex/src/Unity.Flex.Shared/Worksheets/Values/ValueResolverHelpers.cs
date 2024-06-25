@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Text.Json;
 
-namespace Unity.Flex.Web.Views.Shared.Components
+namespace Unity.Flex.Worksheets.Values
 {
     internal static class ValueResolverHelpers
     {
@@ -23,6 +24,13 @@ namespace Unity.Flex.Web.Views.Shared.Components
             if (!currencyParse) { return null; }
             IFormatProvider caFormatProvider = new System.Globalization.CultureInfo("en-CA");
             return currency.ToString("#,##0.00", caFormatProvider);
+        }
+
+        internal static object? ConvertBCAddress(object? value)
+        {
+            if (value == null) return null;
+            // flip from dynamic /JNode to an object
+            return JsonSerializer.Deserialize<BCAddressLocationValue>(JsonSerializer.Serialize(value));
         }
     }
 }

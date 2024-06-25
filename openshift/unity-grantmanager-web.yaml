@@ -194,10 +194,6 @@ parameters:
   displayName: Registry location to pull from
   name: IMAGEPULL_REGISTRY
   value: image-registry.openshift-image-registry.svc:5000/
-- description: The DB Migrator ImageStream Name 
-  displayName: Registry dbmigrator imagestream name
-  name: DBMIGRATOR_NAME
-  value: unity-dbmigrator-build 
 # Resource limits control how much CPU and memory a container will consume
 - description: The minimum amount of CPU the Container is guaranteed.
   displayName: CPU Request
@@ -322,34 +318,6 @@ objects:
       termination: edge
       insecureEdgeTerminationPolicy: Redirect
     wildcardPolicy: None
-# Imagestream
-- apiVersion: image.openshift.io/v1
-  kind: ImageStream
-  metadata:
-    name: ${IMAGESTREAM_NAME}
-    labels:
-      app: ${APPLICATION_NAME}
-      app.kubernetes.io/component: ${APPLICATION_NAME}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-      app.kubernetes.io/name: ${APPLICATION_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  spec:
-    lookupPolicy:
-      local: true
-# Imagestream
-- apiVersion: image.openshift.io/v1
-  kind: ImageStream
-  metadata:
-    name: ${DBMIGRATOR_NAME}
-    labels:
-      app: ${APPLICATION_NAME}
-      app.kubernetes.io/component: ${APPLICATION_NAME}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-      app.kubernetes.io/name: ${APPLICATION_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  spec:
-    lookupPolicy:
-      local: true
 # Persistent storage for the application logfiles.
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -602,6 +570,21 @@ objects:
                 configMapKeyRef:
                   name: ${APPLICATION_NAME}
                   key: Notifications__ChesFromEmail        
+            - name: Payments__CasBaseUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Payments__CasBaseUrl
+            - name: Payments__CasClientId
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Payments__CasClientId
+            - name: Payments__CasClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: ${APPLICATION_NAME}
+                  key: Payments__CasClientSecret
           image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
           imagePullPolicy: Always
           name: ${APPLICATION_NAME}

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Scoresheets.Events;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.EventBus.Local;
+using Volo.Abp.Features;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Assessments;
@@ -14,13 +16,19 @@ public class AssessmentManager : DomainService
 {
     private readonly IAssessmentRepository _assessmentRepository;
     private readonly IApplicationFormRepository _applicationFormRepository;
-    private readonly IScoresheetInstanceRepository _scoresheetInstanceRepository;
+    private readonly ILocalEventBus _localEventBus;
+    private readonly IFeatureChecker _featureChecker;
+
     public AssessmentManager(
-        IAssessmentRepository assessmentRepository, IApplicationFormRepository applicationFormRepository, IScoresheetInstanceRepository scoresheetInstanceRepository)
+        IAssessmentRepository assessmentRepository,
+        IApplicationFormRepository applicationFormRepository,
+        ILocalEventBus localEventBus,
+        IFeatureChecker featureChecker)
     {
         _assessmentRepository = assessmentRepository;
-        _applicationFormRepository = applicationFormRepository; 
-        _scoresheetInstanceRepository = scoresheetInstanceRepository;
+        _applicationFormRepository = applicationFormRepository;
+        _localEventBus = localEventBus;
+        _featureChecker = featureChecker;
     }
 
     /// <summary>
@@ -57,9 +65,14 @@ public class AssessmentManager : DomainService
                 assessorUser.Id),
             autoSave: true);
 
-        if (form.ScoresheetId != null)
+        if (form.ScoresheetId != null && await _featureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            await _scoresheetInstanceRepository.InsertAsync(new ScoresheetInstance(Guid.NewGuid(), form.ScoresheetId ?? Guid.Empty, assessment.Id, "Assessment"));
+            await _localEventBus.PublishAsync(new CreateScoresheetInstanceEto()
+            {
+                ScoresheetId = form.ScoresheetId ?? Guid.Empty,
+                CorrelationId = assessment.Id,
+                CorrelationProvider = "Assessment"
+            });
         }
 
         return assessment;
