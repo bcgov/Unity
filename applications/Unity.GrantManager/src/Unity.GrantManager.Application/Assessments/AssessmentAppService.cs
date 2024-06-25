@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.EntityFrameworkCore.Repositories;
 using Unity.Flex.Web.Views.Shared.Components;
 using Unity.Flex.Worksheets.Values;
 using Unity.GrantManager.Applications;
@@ -33,14 +34,16 @@ namespace Unity.GrantManager.Assessments
         private readonly IIdentityUserIntegrationService _userLookupProvider;
         private readonly ICommentsManager _commentsManager;
         private readonly IScoresheetInstanceRepository _scoresheetInstanceRepository;
-        
+        private readonly IQuestionRepository _questionRepository;
+
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
             AssessmentManager assessmentManager,
             IApplicationRepository applicationRepository,
             IIdentityUserIntegrationService userLookupProvider,
             ICommentsManager commentsManager,
-            IScoresheetInstanceRepository scoresheetInstanceRepository)
+            IScoresheetInstanceRepository scoresheetInstanceRepository,
+            IQuestionRepository questionRepository)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
@@ -48,6 +51,7 @@ namespace Unity.GrantManager.Assessments
             _userLookupProvider = userLookupProvider;
             _commentsManager = commentsManager;
             _scoresheetInstanceRepository = scoresheetInstanceRepository;
+            _questionRepository = questionRepository;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -89,7 +93,12 @@ namespace Unity.GrantManager.Assessments
             }
             else
             {
-                return instance.Answers.Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
+                var questionIds = instance.Answers.Select(a => a.QuestionId).Distinct().ToList();
+                var existingQuestions = await _questionRepository.GetListAsync();
+                var existingQuestionIds = existingQuestions.Where(q => questionIds.Contains(q.Id)).Select(q => q.Id).ToList();
+                
+                return instance.Answers.Where(a => existingQuestionIds.Contains(a.QuestionId))
+                    .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
                     
             }
         }
