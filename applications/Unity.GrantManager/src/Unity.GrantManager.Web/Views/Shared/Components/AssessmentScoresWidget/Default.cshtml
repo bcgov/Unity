@@ -1,4 +1,5 @@
 ﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
+@using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
@@ -45,21 +46,21 @@
                                                             <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id" data-bs-parent="#questionsAccordion-@sec.Id">
                                                                 <div class="accordion-body">
                                                                     <p>@question.Description</p>
-                                                                    @try
+                                                                    
+                                                                    @switch (question.Type)
                                                                     {
-                                                                        @switch (question.Type)
-                                                                        {
-                                                                            case QuestionType.Number:
-                                                                                {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionNumberWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer })
-                                                                                    break;
-                                                                                }
-                                                                        }
+                                                                        case QuestionType.Number:
+                                                                            {
+                                                                                @await Component.InvokeAsync(typeof(QuestionNumberWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = Convert.ToDouble(question.Answer) })
+                                                                                break;
+                                                                            }
+                                                                        case QuestionType.YesNo:
+                                                                            {
+                                                                                @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer })
+                                                                                break;
+                                                                            }
                                                                     }
-                                                                    catch (Exception)
-                                                                    {
-                                                                        <span class="control-render-error">Error rendering component!</span>
-                                                                    }
+                                                                    
                                                                 </div>
                                                             </div>
                                                         </div>

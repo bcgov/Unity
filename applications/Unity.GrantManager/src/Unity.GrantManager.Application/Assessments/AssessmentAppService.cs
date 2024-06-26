@@ -105,7 +105,7 @@ namespace Unity.GrantManager.Assessments
                 else
                 {
                     var questionIds = instance.Answers.Select(a => a.QuestionId).Distinct().ToList();
-                    var existingQuestionIds = await _scoresheetAppService.GetNonDeletedQuestionIds(questionIds);
+                    var existingQuestionIds = await _scoresheetAppService.GetNonDeletedNumericQuestionIds(questionIds);
 
                     return instance.Answers.Where(a => existingQuestionIds.Contains(a.QuestionId))
                         .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
@@ -279,7 +279,7 @@ namespace Unity.GrantManager.Assessments
 
         }
 
-        public async Task SaveScoresheetAnswer(Guid assessmentId, Guid questionId, double answer)
+        public async Task SaveScoresheetAnswer(Guid assessmentId, Guid questionId, string? answer, int questionType)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
             if (assessment != null)
@@ -299,7 +299,8 @@ namespace Unity.GrantManager.Assessments
                     {
                         CorrelationId = assessmentId,
                         QuestionId = questionId,
-                        Answer = answer
+                        Answer = answer,
+                        QuestionType = questionType
                     });
                 }
             }
