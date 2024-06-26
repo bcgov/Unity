@@ -33,6 +33,14 @@ $(function () {
                 openCustomFieldModal(event.currentTarget.dataset.worksheetId, event.currentTarget.dataset.sectionId, event.currentTarget.dataset.fieldId, event.currentTarget.dataset.action);
             });
         }
+
+        let editCustomFieldButtons = $(".edit-custom-field-btn")
+
+        if (editCustomFieldButtons) {
+            editCustomFieldButtons.on("click", function (event) {
+                openCustomFieldModal(event.currentTarget.dataset.worksheetId, event.currentTarget.dataset.sectionId, event.currentTarget.dataset.fieldId, event.currentTarget.dataset.action);
+            });
+        }
     }
 
     function openSectionModal(worksheetId, sectionId, action) {
@@ -56,8 +64,8 @@ $(function () {
         });
     }
 
-    sectionModal.onResult(function (result, response) {
-        console.log(response);
+    customFieldModal.onResult(function (result, response) {
+        PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
     });
 
     function refreshWorksheetInfoWidget(worksheetId) {

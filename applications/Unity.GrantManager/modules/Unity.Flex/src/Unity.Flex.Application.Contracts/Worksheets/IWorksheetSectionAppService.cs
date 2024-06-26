@@ -6,7 +6,7 @@ namespace Unity.Flex.Worksheets
 {
     public interface IWorksheetSectionAppService : IApplicationService
     {
-        Task CreateCustomField(Guid id, CreateCustomFieldDto dto);
+        Task<CustomFieldDto> CreateCustomFieldAsync(Guid id, CreateCustomFieldDto dto);
         Task<WorksheetSectionDto> GetAsync(Guid id);
         Task<WorksheetSectionDto> EditAsync(Guid id, EditSectionDto dto);
     }

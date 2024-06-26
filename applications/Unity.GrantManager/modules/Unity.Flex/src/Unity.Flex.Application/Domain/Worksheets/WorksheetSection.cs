@@ -41,7 +41,7 @@ namespace Unity.Flex.Domain.Worksheets
         public WorksheetSection SetName(string name)
         {
             if (Worksheet.Sections.Any(s => s.Name == name))
-                throw new BusinessException("Cannot duplicate name");
+                throw new UserFriendlyException("Cannot duplicate field name");
 
             Name = name;
             return this;
@@ -50,7 +50,7 @@ namespace Unity.Flex.Domain.Worksheets
         public WorksheetSection AddField(CustomField field)
         {
             if (Fields.Any(s => s.Name == field.Name))
-                throw new BusinessException("Cannot duplicate name");
+                throw new UserFriendlyException("Cannot duplicate field name");
 
             field = field.SetOrder((uint)Fields.Count + 1);
 
