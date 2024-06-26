@@ -8,26 +8,37 @@ using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
-using Volo.Abp.Domain.Repositories;
 using System.Linq;
+using Unity.Payments.Domain.Shared;
+using Unity.Payments.Domain.Services;
+using Unity.Payments.Enums;
+using Microsoft.Extensions.Logging;
+using Volo.Abp.Authorization.Permissions;
+using Unity.Payments.Permissions;
 
 namespace Unity.Payments.PaymentRequests
 {
     [RequiresFeature("Unity.Payments")]
     [Authorize]
     public class PaymentRequestAppService : PaymentsAppService, IPaymentRequestAppService
-    {        
+    {
         private readonly IPaymentRequestRepository _paymentRequestsRepository;
         private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;
         private readonly ICurrentUser _currentUser;
+        private readonly IPaymentsManager _paymentsManager;
+        private readonly IPermissionChecker _permissionChecker;
 
         public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
-            ICurrentUser currentUser)
-        {            
+            ICurrentUser currentUser, 
+            IPaymentsManager paymentsManager,
+            IPermissionChecker permissionChecker)
+        {
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
+            _paymentsManager = paymentsManager;
+            _permissionChecker = permissionChecker;
         }
 
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
@@ -43,64 +54,87 @@ namespace Unity.Payments.PaymentRequests
                 // Needs to be optimized
                 int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
 
-                // Create a new Payment entity from the DTO
-                var payment = new PaymentRequest(Guid.NewGuid(),
-                    dto.InvoiceNumber + $"-{applicationPaymentRequestCount.ToString(format)}",
-                    dto.Amount,
-                    dto.PayeeName,
-                    dto.ContractNumber,
-                    dto.SupplierNumber,
-                    dto.SiteId,
-                    dto.CorrelationId,
-                    dto.CorrelationProvider,
-                    dto.Description,
-                    paymentThreshold);
-
-                var result = await _paymentRequestsRepository.InsertAsync(payment);
-                createdPayments.Add(new PaymentRequestDto()
+                try
                 {
-                    Id = result.Id,
-                    InvoiceNumber = result.InvoiceNumber,
-                    InvoiceStatus = result.InvoiceStatus,
-                    Amount = result.Amount,
-                    PayeeName = result.PayeeName,
-                    SupplierNumber = result.SupplierNumber,
-                    ContractNumber = result.ContractNumber,
-                    CorrelationId = result.CorrelationId,
-                    CorrelationProvider = result.CorrelationProvider,
-                    Description = result.Description,
-                    CreationTime = result.CreationTime,
-                    Status = result.Status,
-                });
-            }
+                    var payment = new PaymentRequest(Guid.NewGuid(),
+                   dto.InvoiceNumber + $"-{applicationPaymentRequestCount.ToString(format)}",
+                   dto.Amount,
+                   dto.PayeeName,
+                   dto.ContractNumber,
+                   dto.SupplierNumber,
+                   dto.SiteId,
+                   dto.CorrelationId,
+                   dto.CorrelationProvider,
+                   dto.Description,
+                   paymentThreshold);
 
+                    var result = await _paymentRequestsRepository.InsertAsync(payment);
+                    createdPayments.Add(new PaymentRequestDto()
+                    {
+                        Id = result.Id,
+                        InvoiceNumber = result.InvoiceNumber,
+                        InvoiceStatus = result.InvoiceStatus,
+                        Amount = result.Amount,
+                        PayeeName = result.PayeeName,
+                        SupplierNumber = result.SupplierNumber,
+                        ContractNumber = result.ContractNumber,
+                        CorrelationId = result.CorrelationId,
+                        CorrelationProvider = result.CorrelationProvider,
+                        Description = result.Description,
+                        CreationTime = result.CreationTime,
+                        Status = result.Status,
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogException(ex);
+                }
+            }
             return createdPayments;
         }
+
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
         {
             List<PaymentRequestDto> updatedPayments = [];
 
+            var paymentThreshold = await GetPaymentThresholdAsync();
 
             foreach (var dto in paymentRequests)
             {
                 var payment = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
-              
-                payment.SetPaymentRequestStatus(dto.Status);
 
-                if(dto.Status == Enums.PaymentRequestStatus.L1Approved)
-                {
-                  var index =  payment.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
-                    payment.ExpenseApprovals[index].Approve();
-                  
+                List<PaymentRequestStatus> level1Approvals = [PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined];
+                List<PaymentRequestStatus> level2Approvals = [PaymentRequestStatus.L2Pending, PaymentRequestStatus.L2Declined];
+                List<PaymentRequestStatus> level3Approvals = [PaymentRequestStatus.L3Pending, PaymentRequestStatus.L3Declined];
 
-                }
-                else if(dto.Status == Enums.PaymentRequestStatus.L1Declined)
+                var triggerAction = PaymentApprovalAction.None;
+
+                if (await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L1ApproveOrDecline) && (payment.Status.IsIn(level1Approvals)))
                 {
-                    var index = payment.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level1);
-                    payment.ExpenseApprovals[index].Decline();
+                    triggerAction = dto.IsApprove ? PaymentApprovalAction.L1Approve : PaymentApprovalAction.L1Decline;
                 }
 
-                var result = await _paymentRequestsRepository.UpdateAsync(payment);
+
+                if (await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L2ApproveOrDecline) && (payment.Status.IsIn(level2Approvals)))
+                {
+                    if (payment.Amount > paymentThreshold)
+                    {
+                        triggerAction = dto.IsApprove ? (PaymentApprovalAction.L2Approve) : PaymentApprovalAction.L2Decline;
+                    }
+                    else
+                    {
+                        triggerAction = dto.IsApprove ? (PaymentApprovalAction.Submit) : PaymentApprovalAction.L2Decline;
+                    }
+                }
+
+                if (await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && payment.Status.IsIn(level3Approvals))
+                {
+                    triggerAction = dto.IsApprove ? PaymentApprovalAction.Submit : PaymentApprovalAction.L3Decline;
+                }
+
+                await _paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
+
+                var result = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
                 updatedPayments.Add(new PaymentRequestDto()
                 {
                     Id = result.Id,
@@ -133,12 +167,10 @@ namespace Unity.Payments.PaymentRequests
             var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
 
             return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
-        } 
-        public async Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync (List<Guid> paymentIds)
+        }
+        public async Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds)
         {
-
             var payments = await _paymentRequestsRepository.GetListAsync(e => paymentIds.Contains(e.Id));
-           
 
             return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(payments));
         }
@@ -162,6 +194,7 @@ namespace Unity.Payments.PaymentRequests
                 var paymentConfig = paymentConfigs[0];
                 return paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
             }
+
             return PaymentSharedConsts.DefaultThresholdAmount;
         }
     }

@@ -25,7 +25,7 @@ namespace Unity.Payments.Domain.PaymentRequests
 
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
-        public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
+        public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.L1Pending;
         public virtual string? Description { get; private set; } = null;
 
         public virtual bool IsRecon { get; internal set; }
