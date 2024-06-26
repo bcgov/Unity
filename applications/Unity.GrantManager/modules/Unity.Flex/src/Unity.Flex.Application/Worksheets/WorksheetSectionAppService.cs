@@ -23,17 +23,21 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<WorksheetSection, WorksheetSectionDto>(section);
         }
 
-        public virtual async Task CreateCustomField(Guid id, CreateCustomFieldDto dto)
+        public virtual async Task<CustomFieldDto> CreateCustomFieldAsync(Guid id, CreateCustomFieldDto dto)
         {
             var worksheet = await worksheetRepository.GetBySectionAsync(id, true) ?? throw new EntityNotFoundException();
             var section = worksheet.Sections.First(s => s.Id == id);
 
-            section.AddField(new CustomField(Guid.NewGuid(),
-                dto.Name,
+            var customField = (new CustomField(Guid.NewGuid(),
+                dto.Field,
                 worksheet.Name,
                 dto.Label,
                 dto.Type,
                 dto.Definition));
+
+            section.AddField(customField);            
+
+            return ObjectMapper.Map<CustomField, CustomFieldDto>(customField);
         }
     }
 }

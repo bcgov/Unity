@@ -29,10 +29,6 @@ $(function () {
             $('*[data-selector="batch-payment-table-actions"]').prop('disabled', false);
             $('*[data-selector="batch-payment-table-actions"]').removeClass('action-bar-btn-unavailable');
             $('.action-bar').addClass('active');
-
-          
-
-
          
         }
     }

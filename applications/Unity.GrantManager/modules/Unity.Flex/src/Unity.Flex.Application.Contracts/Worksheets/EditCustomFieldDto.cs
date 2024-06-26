@@ -3,7 +3,7 @@
 namespace Unity.Flex.Worksheets
 {
     [Serializable]
-    public class CreateCustomFieldDto
+    public class EditCustomFieldDto
     {
         public string Field { get; set; } = string.Empty;
         public string Label { get; set; } = string.Empty;

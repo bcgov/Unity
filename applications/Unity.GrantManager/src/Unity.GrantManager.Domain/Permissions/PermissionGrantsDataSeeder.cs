@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
+using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -149,14 +150,30 @@ namespace Unity.GrantManager.Permissions
               {
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
-      
-                    GrantApplicationPermissions.Comments.Add,
+                    PaymentsPermissions.Payments.Default,
+                    PaymentsPermissions.Payments.L1ApproveOrDecline
 
-                    GrantApplicationPermissions.AssessmentResults.Default,
+              }, context.TenantId);
 
-                    GrantApplicationPermissions.Payments.Default,
-                    GrantApplicationPermissions.Payments.Approve,
-                    GrantApplicationPermissions.Payments.Decline,
+            // -L2 Approver
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L2Approver,
+              new List<string>
+              {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    PaymentsPermissions.Payments.Default,
+                    PaymentsPermissions.Payments.L2ApproveOrDecline
+
+              }, context.TenantId);
+
+            // -L3 Approver
+            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L3Approver,
+              new List<string>
+              {
+                    GrantManagerPermissions.Default,
+                    GrantApplicationPermissions.Applications.Default,
+                    PaymentsPermissions.Payments.Default,
+                    PaymentsPermissions.Payments.L3ApproveOrDecline
 
               }, context.TenantId);
         }
