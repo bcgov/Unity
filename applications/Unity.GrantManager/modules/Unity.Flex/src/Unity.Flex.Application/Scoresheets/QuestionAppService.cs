@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Scoresheets
 {
+    [Authorize]
     public class QuestionAppService : FlexAppService, IQuestionAppService
     {
         private readonly IQuestionRepository _questionRepository;
@@ -21,7 +23,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<QuestionDto> UpdateAsync(Guid id, EditQuestionDto dto)
         {
-            var question = await _questionRepository.GetAsync(dto.QuestionId) ?? throw new AbpValidationException("Missing QuestionId:" + dto.QuestionId);
+            var question = await _questionRepository.GetAsync(id) ?? throw new AbpValidationException("Missing QuestionId:" + id);
             question.Name = dto.Name;
             question.Label = dto.Label;
             question.Description = dto.Description;

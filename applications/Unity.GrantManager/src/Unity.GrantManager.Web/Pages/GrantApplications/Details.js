@@ -1,6 +1,6 @@
 $(function () {
     let selectedReviewDetails = null;
-    let hasRenderedHtml = "False";    
+    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
     function initializeDetailsPage() {
@@ -20,82 +20,16 @@ $(function () {
         }
     }
 
-    function formatChefComponents(data) {
-        // Advanced Components
-        replaceKey(data, "type", "orgbook", "select");
-        replaceKey(data, "type", "simpleaddressadvanced", "address");
-        replaceKey(data, "type", "simplebuttonadvanced", "button");
-        replaceKey(data, "type", "simplecheckboxadvanced", "checkbox");
-        replaceKey(data, "type", "simplecurrencyadvanced", "currency");
-        replaceKey(data, "type", "simpledatetimeadvanced", "datetime");
-        replaceKey(data, "type", "simpledayadvanced", "day");
-        replaceKey(data, "type", "simpleemailadvanced", "email");
-        replaceKey(data, "type", "simplenumberadvanced", "number");
-        replaceKey(data, "type", "simplepasswordadvanced", "password");
-        replaceKey(data, "type", "simplephonenumberadvanced", "phoneNumber");
-        replaceKey(data, "type", "simpleradioadvanced", "radio");
-        replaceKey(data, "type", "simpleselectadvanced", "select");
-        replaceKey(data, "type", "simpleselectboxesadvanced", "selectboxes");
-        replaceKey(data, "type", "simplesignatureadvanced", "signature");
-        replaceKey(data, "type", "simplesurveyadvanced", "survey");
-        replaceKey(data, "type", "simpletagsadvanced", "tags");
-        replaceKey(data, "type", "simpletextareaadvanced", "textarea");
-        replaceKey(data, "type", "simpletextfieldadvanced", "textfield");
-        replaceKey(data, "type", "simpletimeadvanced", "time");
-        replaceKey(data, "type", "simpleurladvanced", "url");
-
-        // Regular components
-        replaceKey(data, "type", "simplebcaddress", "address");
-        replaceKey(data, "type", "bcaddress", "address");
-        replaceKey(data, "type", "simplebtnreset", "button");
-        replaceKey(data, "type", "simplebtnsubmit", "button");
-        replaceKey(data, "type", "simplecheckboxes", "selectboxes");
-        replaceKey(data, "type", "simplecheckbox", "checkbox");
-        replaceKey(data, "type", "simplecols2", "columns");
-        replaceKey(data, "type", "simplecols3", "columns");
-        replaceKey(data, "type", "simplecols4", "columns");
-        replaceKey(data, "type", "simplecontent", "content");
-        replaceKey(data, "type", "simpledatetime", "datetime");
-        replaceKey(data, "type", "simpleday", "day");
-        replaceKey(data, "type", "simpleemail", "email");
-        replaceKey(data, "type", "simplefile", "file");
-        replaceKey(data, "type", "simpleheading", "header");
-        replaceKey(data, "type", "simplefieldset", "fieldset");
-        replaceKey(data, "type", "simplenumber", "number");
-        replaceKey(data, "type", "simplepanel", "panel");
-        replaceKey(data, "type", "simpleparagraph", "textarea");
-        replaceKey(data, "type", "simplephonenumber", "phoneNumber");
-        replaceKey(data, "type", "simpleradios", "radio");
-        replaceKey(data, "type", "simpleselect", "select");
-        replaceKey(data, "type", "simpletabs", "tabs");
-        replaceKey(data, "type", "simpletextarea", "textarea");
-        replaceKey(data, "type", "simpletextfield", "textfield");
-        replaceKey(data, "type", "simpletime", "time");
-
-        return data;
-    }
-
-    function replaceKey(obj, keyToReplace, matchValue, newValue ) {
-        for (let key in obj) {
-            if (key === keyToReplace && obj[key] === matchValue) {
-                obj[key] = newValue;
-            } else if (typeof obj[key] === 'object') {
-                replaceKey(obj[key], keyToReplace, matchValue, newValue ); 
-            }
-        }
-    }
-
     async function getSubmission() {
         try {
             $('.spinner-grow').hide();
             let submissionString = document.getElementById('ApplicationFormSubmissionData').value;
             let submissionData = JSON.parse(submissionString);
             Formio.icons = 'fontawesome';
-            let data = formatChefComponents(submissionData);
 
             Formio.createForm(
                 document.getElementById('formio'),
-                data.version.schema,
+                submissionData.version.schema,
                 {
                     readOnly: true,
                     renderMode: 'form',
@@ -103,13 +37,36 @@ $(function () {
                 }
             ).then(function (form) {
                 // Set Example Submission Object
-                form.submission = data.submission.submission;
+                form.submission = submissionData.submission.submission;
                 addEventListeners();
-                // fix, WIP - storeRenderedHtml();
+                form.resetValue();
+                form.refresh();
+                form.on('render', function() {
+                    storeRenderedHtml();
+                });
             });
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async function storeRenderedHtml() {
+        let innerHTML = document.getElementById('formio').innerHTML;
+        let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
+        $.ajax(
+            {
+                url: "/api/app/submission",
+                data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
+                contentType: "application/json",
+                type: "POST",
+            success: function (data) {
+                    console.log(data);
+                },
+                error: function () {
+                    console.log('error');
+                }
+            },
+        );
     }
 
     // Wait for the DOM to be fully loaded
@@ -184,7 +141,7 @@ $(function () {
     let assessmentUserDetailsWidgetManager = new abp.WidgetManager({
         wrapper: '#assessmentUserDetailsWidget',
         filterCallback: function () {
-            return {                
+            return {
                 'displayName': selectedReviewDetails.assessorDisplayName,
                 'badge': selectedReviewDetails.assessorBadge,
                 'title': 'Title, Role'
@@ -212,14 +169,15 @@ $(function () {
     PubSub.subscribe(
         'select_application_review',
         (msg, data) => {
-            if (data) {                
-                selectedReviewDetails = data; 
+            if (data) {
+                selectedReviewDetails = data;
                 setDetailsContext('assessment');
                 let selectElement = document.getElementById("recommendation_select");
                 selectElement.value = data.approvalRecommended;
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
                 assessmentUserDetailsWidgetManager.refresh();
                 assessmentScoresWidgetManager.refresh();
+                updateSubtotal()
                 checkCurrentUser(data);
             }
             else {
@@ -246,9 +204,7 @@ $(function () {
             .getSubmission(submissionId)
             .done(function (result) {
 
-                let data = formatChefComponents(result);
-
-
+                let data = result;
                 let newHiddenInput = $('<input>');
 
                 // Set attributes for the hidden input
@@ -283,13 +239,13 @@ $(function () {
                 newTab.document.write(inputToStore);
                 newTab.document.write(divToStore);
                 newTab.document.write('</body></html>');
-               
+
                 newTab.onload = function () {
                     let script = newTab.document.createElement('script');
                     script.src = '/Pages/GrantApplications/loadPrint.js';
                     script.onload = function () {
                         newTab.executeOperations(data);
-                        
+
                     };
 
                     newTab.document.head.appendChild(script);
@@ -302,7 +258,7 @@ $(function () {
 
     });
 
-     
+
     let applicationBreadcrumbWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationBreadcrumbWidget',
         filterCallback: function () {
@@ -338,7 +294,7 @@ $(function () {
     );
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
-            assessmentResultWidgetManager.refresh();                  
+            assessmentResultWidgetManager.refresh();
         }
     );
 
@@ -364,13 +320,13 @@ $(function () {
 
     PubSub.subscribe(
         'update_application_attachment_count',
-        (msg, data) => {            
+        (msg, data) => {
             if (data.files || data.files === 0) {
                 attachCounters.files = data.files;
-            } 
+            }
             if (data.chefs || data.chefs === 0) {
                 attachCounters.chefs = data.chefs;
-            } 
+            }
             $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
         }
     );
@@ -391,30 +347,111 @@ $(function () {
         }
     );
 
+    // custom fields
+    $('body').on('click', '.custom-tab-save', function (event) {
+        let id = $(this).attr('id');
+        let uiAnchor = $(this).attr('data-ui-anchor');
+        let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
+        let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
+        let formId = decodeURIComponent($("#ApplicationFormId").val());
+        let formData = $(`#${formDataName}`).serializeArray();        
+        let customFormObj = {};
+
+        $.each(formData, function (_, input) {
+            customFormObj[input.name] = input.value;
+        });
+        
+        $(`#${formDataName} input:checkbox`).each(function () {
+            customFormObj[this.name] = (this.checked).toString();
+        });
+
+        updateCustomForm(applicationId, formId, customFormObj, uiAnchor, id);
+    });
+
+    PubSub.subscribe(
+        'fields_tab',
+        (_, fieldId) => {
+            let saveBtn = $(`#save_${fieldId.split('.')[1]}_btn`);
+            saveBtn.prop('disabled', false);
+        }
+    );
 });
 
-function uploadApplicationFiles(inputId) {    
-    let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());    
-    let currentUserId = decodeURIComponent($("#CurrentUserId").val());  
-    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
-    let url = "/api/app/attachment/application/" + applicationId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
-    uploadFiles(inputId, url, 'refresh_application_attachment_list');     
+function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId) {
+    let customFormUpdate = {
+        instanceCorrelationId: applicationId,
+        instanceCorrelationProvider: 'Application',
+        sheetCorrelationId: formId,
+        sheetCorrelationProvider: 'Form',
+        uiAnchor: uiAnchor,
+        customFields: customFormObj
+    }     
+
+    $(`#${saveId}`).prop('disabled', true);
+    unity.flex.worksheetInstances.worksheetInstance.update(customFormUpdate)
+        .done(function () {
+            abp.notify.success(
+                'Information has been updated.'
+            );
+        });        
 }
 
-function uploadAssessmentFiles(inputId) {    
+// custom fields
+function notifyFieldChange(event, field) {
+    let value = document.getElementById(field.id).value;
+    if (PubSub) {
+        if (isKnownAnchor(event)) {
+            PubSub.publish('fields_' + event, value);
+        } else {
+            PubSub.publish('fields_tab', field.id);
+        }
+    }
+}
+
+function isKnownAnchor(event) {
+    if (event === 'projectinfo'
+        || event === 'applicantinfo'
+        || event === 'assessmentinfo') {
+        return true;
+    }
+}
+
+const Flex = class {
+    static isCustomField(input) {
+        return input.name.startsWith('custom_');
+    }
+
+    static includeCustomFieldObj(formObject, input) {
+        if (!formObject.CustomFields) {
+            formObject.CustomFields = {};
+        }
+
+        formObject.CustomFields[input.name] = input.value;
+    }
+}
+
+function uploadApplicationFiles(inputId) {
+    let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
+    let currentUserId = decodeURIComponent($("#CurrentUserId").val());
+    let currentUserName = decodeURIComponent($("#CurrentUserName").val());
+    let url = "/api/app/attachment/application/" + applicationId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
+    uploadFiles(inputId, url, 'refresh_application_attachment_list');
+}
+
+function uploadAssessmentFiles(inputId) {
     let assessmentId = decodeURIComponent($("#AssessmentId").val());
     let currentUserId = decodeURIComponent($("#CurrentUserId").val());
     let currentUserName = decodeURIComponent($("#CurrentUserName").val());
     let url = "/api/app/attachment/assessment/" + assessmentId + "/upload?userId=" + currentUserId + "&userName=" + currentUserName;
-    uploadFiles(inputId, url, 'refresh_assessment_attachment_list');        
+    uploadFiles(inputId, url, 'refresh_assessment_attachment_list');
 }
 
 function uploadFiles(inputId, urlStr, channel) {
-    let input = document.getElementById(inputId);    
+    let input = document.getElementById(inputId);
     let files = input.files;
     let formData = new FormData();
-    const disallowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val())); 
-    const maxFileSize = decodeURIComponent($("#MaxFileSize").val()); 
+    const disallowedTypes = JSON.parse(decodeURIComponent($("#Extensions").val()));
+    const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
 
     let isAllowedTypeError = false;
     let isMaxFileSizeError = false;
@@ -460,7 +497,7 @@ function uploadFiles(inputId, urlStr, channel) {
                     data.responseText,
                     'File Upload Is Successful'
 
-                ); 
+                );
                 PubSub.publish(channel);
                 input.value = null;
             },
@@ -509,7 +546,7 @@ function updateLinksCounters() {
 }
 
 function initCommentsWidget() {
-    const currentUserId = decodeURIComponent($("#CurrentUserId").val()); 
+    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
     let selectedReviewDetails;
     let applicationCommentsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationCommentsWidget',
@@ -568,7 +605,7 @@ function initCommentsWidget() {
             tagsWidgetManager.refresh();
         }
     );
-    
+
 }
 
 function setDetailsContext(context) {

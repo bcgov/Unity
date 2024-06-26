@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using Unity.Flex.Domain.Exceptions;
+using Unity.Flex.Domain.ScoresheetInstances;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -11,9 +12,12 @@ namespace Unity.Flex.Domain.Scoresheets
     public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public virtual string Name { get; set; } = string.Empty;
-        public virtual uint Version { get; private set; } = 1;
+        public virtual uint Version { get; set; } = 1;
+
+        public Guid GroupId { get; set; }
 
         public Guid? TenantId { get; set; }
+               
 
         public virtual Collection<ScoresheetSection> Sections { get; private set; } = [];
         public virtual Collection<ScoresheetInstance> Instances { get; private set; } = [];
@@ -24,11 +28,13 @@ namespace Unity.Flex.Domain.Scoresheets
         }
 
         public Scoresheet(Guid id,
-        string name)
+        string name,
+        Guid groupId)
         : base(id)
         {
             Id = id;
             Name = name;
+            GroupId = groupId;
         }
 
         public Scoresheet AddSection(string name, uint order)
@@ -37,8 +43,11 @@ namespace Unity.Flex.Domain.Scoresheets
             {
                 throw new BusinessException(ErrorConsts.DuplicateSectionName).WithData("duplicateName", name); // cannot have duplicate section names
             }
-
-            Sections.Add(new ScoresheetSection(Guid.NewGuid(), name, order));
+            ScoresheetSection newSection = new(Guid.NewGuid(), name, order)
+            {
+                ScoresheetId = this.Id
+            };
+            Sections.Add(newSection);
             return this;
         }
 

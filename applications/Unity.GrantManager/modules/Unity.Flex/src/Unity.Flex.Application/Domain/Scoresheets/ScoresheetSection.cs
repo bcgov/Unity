@@ -59,7 +59,7 @@ namespace Unity.Flex.Domain.Scoresheets
             {
                 throw new BusinessException(ErrorConsts.DuplicateSectionName).WithData("duplicateName", field.Name); // cannot have duplicate field names
             }
-
+            field.SectionId = this.Id;
             Fields.Add(field);
 
             return this;

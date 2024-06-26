@@ -79,7 +79,7 @@
         "annotations": {
           "description": "Defines how to deploy the application server",
           "template.alpha.openshift.io/wait-for-ready": "true", 
-          "image.openshift.io/triggers": "[{\"from\":{\"kind\":\"ImageStreamTag\",\"name\":\"unity-offline:latest\",\"namespace\":\"d18498-tools\"},\"fieldPath\":\"spec.template.spec.containers[?(@.name==\\\"unity-app-offline\\\")].image\",\"pause\":\"true\"}]"
+          "image.openshift.io/triggers": "[{\"from\":{\"kind\":\"ImageStreamTag\",\"name\":\"unity-offline:latest\",\"namespace\":\"${IMAGEPULL_REGISTRY}\"},\"fieldPath\":\"spec.template.spec.containers[?(@.name==\\\"unity-app-offline\\\")].image\",\"pause\":\"true\"}]"
         }
       },
       "spec": {
@@ -104,7 +104,7 @@
             "containers": [
               {
                 "name": "${NAME}",
-                "image": "image-registry.openshift-image-registry.svc:5000/d18498-tools/unity-app-offline:latest",
+                "image": "image-registry.openshift-image-registry.svc:5000/${IMAGEPULL_REGISTRY}/unity-app-offline:latest",
                 "ports": [
                   {
                     "containerPort": 8080
@@ -164,6 +164,12 @@
       "name": "APPLICATION_DOMAIN",
       "displayName": "Application Hostname",
       "description": "The exposed hostname that will route to the nginx service, if left blank a value will be defaulted.",
+      "value": ""
+    },
+    {
+      "name": "IMAGEPULL_REGISTRY",
+      "displayName": "Registry location to pull from",
+      "description": "The registry path of the container image used.",
       "value": ""
     }
   ]

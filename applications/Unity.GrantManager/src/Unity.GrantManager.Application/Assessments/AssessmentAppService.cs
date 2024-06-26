@@ -4,6 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.Scoresheets;
+using Unity.Flex.Scoresheets.Events;
+using Unity.Flex.Worksheets.Values;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
@@ -12,6 +15,8 @@ using Unity.GrantManager.Workflow;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.EventBus.Local;
+using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.Users;
 using Volo.Abp.Validation;
@@ -28,19 +33,28 @@ namespace Unity.GrantManager.Assessments
         private readonly IApplicationRepository _applicationRepository;
         private readonly IIdentityUserIntegrationService _userLookupProvider;
         private readonly ICommentsManager _commentsManager;
+        private readonly IScoresheetInstanceAppService _scoresheetInstanceAppService;
+        private readonly ILocalEventBus _localEventBus;
+        private readonly IFeatureChecker _featureChecker;
 
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
             AssessmentManager assessmentManager,
             IApplicationRepository applicationRepository,
             IIdentityUserIntegrationService userLookupProvider,
-            ICommentsManager commentsManager)
+            ICommentsManager commentsManager,
+            IScoresheetInstanceAppService scoresheetInstanceAppService,
+            IFeatureChecker featureChecker,
+            ILocalEventBus localEventBus)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
             _applicationRepository = applicationRepository;
             _userLookupProvider = userLookupProvider;
             _commentsManager = commentsManager;
+            _scoresheetInstanceAppService = scoresheetInstanceAppService;
+            _featureChecker = featureChecker;
+            _localEventBus = localEventBus;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -49,6 +63,8 @@ namespace Unity.GrantManager.Assessments
             IUserData currentUser = await _userLookupProvider.FindByIdAsync(CurrentUser.GetId());
 
             var result = await _assessmentManager.CreateAsync(application, currentUser);
+
+            // Fire the event
             return ObjectMapper.Map<Assessment, AssessmentDto>(result);
         }
 
@@ -61,10 +77,37 @@ namespace Unity.GrantManager.Assessments
 
         public async Task<List<AssessmentListItemDto>> GetDisplayList(Guid applicationId)
         {
-            return ObjectMapper.Map<
+            var assessmentList = ObjectMapper.Map<
                 List<AssessmentWithAssessorQueryResultItem>,
                 List<AssessmentListItemDto>>
                 (await _assessmentRepository.GetListWithAssessorsAsync(applicationId));
+            foreach (var assessment in assessmentList)
+            {
+                assessment.SubTotal = await GetSubTotal(assessment);
+            }
+
+            return assessmentList;
+        }
+
+        private async Task<double> GetSubTotal(AssessmentListItemDto assessment)
+        {
+            if (await _featureChecker.IsEnabledAsync("Unit.Flex"))
+            {
+                var instance = await _scoresheetInstanceAppService.GetByCorrelationAsync(assessment.Id);
+
+                if (instance == null)
+                {
+                    return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
+                }
+                else
+                {
+                    return instance.Answers.Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
+                }
+            }
+            else
+            {
+                return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
+            }
         }
 
         /// <summary>
@@ -202,7 +245,7 @@ namespace Unity.GrantManager.Assessments
                 var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
                 if (assessment != null)
                 {
-                    if(CurrentUser.GetId() != assessment.AssessorId)
+                    if (CurrentUser.GetId() != assessment.AssessorId)
                     {
                         throw new AbpValidationException("Error: You do not own this assessment record.");
                     }
@@ -210,10 +253,10 @@ namespace Unity.GrantManager.Assessments
                     {
                         throw new AbpValidationException("Error: This assessment is already completed.");
                     }
-                    assessment.FinancialAnalysis = dto.FinancialAnalysis;
-                    assessment.EconomicImpact = dto.EconomicImpact;
-                    assessment.InclusiveGrowth = dto.InclusiveGrowth;
-                    assessment.CleanGrowth = dto.CleanGrowth;
+                    assessment.SectionScore1 = dto.SectionScore1;
+                    assessment.SectionScore2 = dto.SectionScore2;
+                    assessment.SectionScore3 = dto.SectionScore3;
+                    assessment.SectionScore4 = dto.SectionScore4;
                     await _assessmentRepository.UpdateAsync(assessment);
                 }
                 else
@@ -225,7 +268,37 @@ namespace Unity.GrantManager.Assessments
             {
                 throw new AbpValidationException(ex.Message, ex);
             }
-            
+
+        }
+
+        public async Task SaveScoresheetAnswer(Guid assessmentId, Guid questionId, double answer)
+        {
+            var assessment = await _assessmentRepository.GetAsync(assessmentId);
+            if (assessment != null)
+            {
+                if (CurrentUser.GetId() != assessment.AssessorId)
+                {
+                    throw new AbpValidationException("Error: You do not own this assessment record.");
+                }
+                if (assessment.Status.Equals(AssessmentState.COMPLETED))
+                {
+                    throw new AbpValidationException("Error: This assessment is already completed.");
+                }
+
+                if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+                {
+                    await _localEventBus.PublishAsync(new PersistScoresheetInstanceEto()
+                    {
+                        CorrelationId = assessmentId,
+                        QuestionId = questionId,
+                        Answer = answer
+                    });
+                }
+            }
+            else
+            {
+                throw new AbpValidationException("AssessmentId Not Found: " + assessmentId + ".");
+            }
         }
     }
 }

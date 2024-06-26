@@ -1,6 +1,5 @@
 ﻿using Volo.Abp;
 using RestSharp;
-using RestSharp.Authenticators;
 using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
@@ -8,7 +7,6 @@ using System;
 using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using Unity.Payments.Enums;
 using Unity.Payments.Domain.Suppliers;
@@ -23,15 +21,14 @@ namespace Unity.Payments.Integrations.Cas
     [ExposeServices(typeof(InvoiceService), typeof(IInvoiceService))]
     public class InvoiceService : ApplicationService, IInvoiceService
     {
-
+        private readonly ITokenService _iTokenService;
         private readonly IPaymentRequestRepository _iPaymentRequestRepository;
         private readonly IResilientHttpRequest _resilientRestClient;
         private readonly ISiteRepository _iSiteRepository;
         private readonly ISupplierRepository _iSupplierRepository;
         private readonly IOptions<CasClientOptions> _casClientOptions;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
-        private readonly RestClient _restClient;
-        private const string OAUTH_PATH = "oauth/token";
+
         private const string CFS_APINVOICE = "cfs/apinvoice";
 
         private readonly Dictionary<int, string> CASPaymentGroup = new Dictionary<int, string>
@@ -41,21 +38,21 @@ namespace Unity.Payments.Integrations.Cas
         };
 
         public InvoiceService(
+            ITokenService iTokenService,
             IPaymentRequestRepository paymentRequestRepository,
             IPaymentConfigurationAppService paymentConfigurationAppService,
             IResilientHttpRequest resilientHttpRequest,
             IOptions<CasClientOptions> casClientOptions,
             ISupplierRepository iSupplierRepository,
-            ISiteRepository iSiteRepository,
-            RestClient restClient)
+            ISiteRepository iSiteRepository)
         {
+            _iTokenService = iTokenService;
             _iPaymentRequestRepository = paymentRequestRepository;
             _paymentConfigurationAppService = paymentConfigurationAppService;
             _resilientRestClient = resilientHttpRequest;
             _casClientOptions = casClientOptions;
             _iSupplierRepository = iSupplierRepository;
             _iSiteRepository = iSiteRepository;
-            _restClient = restClient;
         }
 
         protected virtual async Task<Invoice?> InitializeCASInvoice(PaymentRequest paymentRequest,
@@ -66,9 +63,9 @@ namespace Unity.Payments.Integrations.Cas
 
             if (site != null && site.Supplier != null && site.Supplier.Number != null && accountDistributionCode != null)
             {
-                var currentMonth = DateTime.Now.ToString("MMM").Trim('.');
-                var currentDay = DateTime.Now.ToString("dd");
-                var currentYear = DateTime.Now.ToString("yyyy");
+                var currentMonth = DateTime.UtcNow.ToString("MMM").Trim('.');
+                var currentDay = DateTime.UtcNow.ToString("dd");
+                var currentYear = DateTime.UtcNow.ToString("yyyy");
                 var dateStringDayMonYear = $"{currentDay}-{currentMonth}-{currentYear}";
 
                 casInvoice.SupplierNumber = site.Supplier.Number; // This is from each Applicant
@@ -134,7 +131,7 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
             var jsonString = JsonSerializer.Serialize(casAPInvoice);
-            var authHeaders = await GetAuthHeadersAsync();
+            var authHeaders = await _iTokenService.GetAuthHeadersAsync();
             var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/";						
             var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, jsonString);
 
@@ -163,7 +160,7 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode)
         {
-            var authHeaders = await GetAuthHeadersAsync();
+            var authHeaders = await _iTokenService.GetAuthHeadersAsync();
 			var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
             var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
 
@@ -183,7 +180,7 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string paymentId)
         {
-            var authHeaders = await GetAuthHeadersAsync();
+            var authHeaders = await _iTokenService.GetAuthHeadersAsync();
             var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/payment/{paymentId}";
             var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
 
@@ -200,51 +197,6 @@ namespace Unity.Payments.Integrations.Cas
                 return new CasPaymentSearchResult() { };
             }
         }
-
-        private async Task<Dictionary<string, string>> GetAuthHeadersAsync() {
-            var tokenResponse = await GetAccessTokenAsync();
-
-            Dictionary<string, string> authHeaders = new Dictionary<string, string>
-            {
-                { "Authorization", $"Bearer {tokenResponse.AccessToken}" }
-            };
-            return authHeaders;
-        }
-
- 		private async Task<TokenValidationResponse> GetAccessTokenAsync()
-        {
-            var grantType = "client_credentials";
-
-            var request = new RestRequest($"{_casClientOptions.Value.CasBaseUrl}/{OAUTH_PATH}")
-            {
-                Authenticator = new HttpBasicAuthenticator(_casClientOptions.Value.CasClientId, _casClientOptions.Value.CasClientSecret)
-            };
-
-            request.AddHeader("content-type", "application/x-www-form-urlencoded");
-            request.AddParameter("application/x-www-form-urlencoded", $"grant_type={grantType}", ParameterType.RequestBody);
-
-            var response = await _restClient.ExecuteAsync(request, Method.Post);
-
-            if (response.Content == null)
-            {
-                throw new UserFriendlyException($"Error fetching CAS API token - content empty {response.StatusCode} {response.ErrorMessage}");
-            }
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                Logger.LogError("Error fetching CAS API token {statusCode} {errorMessage} {errorException}", response.StatusCode, response.ErrorMessage, response.ErrorException);
-
-                if (response.StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    throw new UnauthorizedAccessException(response.ErrorMessage);
-                }
-            }
-
-            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
-            return tokenResponse;
-        }
-
-
     }
 
 #pragma warning disable S125 // Sections of code should not be commented out

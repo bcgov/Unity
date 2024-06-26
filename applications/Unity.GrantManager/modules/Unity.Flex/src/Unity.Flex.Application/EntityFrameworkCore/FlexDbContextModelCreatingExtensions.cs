@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Unity.Flex.Domain;
+using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
 using Volo.Abp.EntityFrameworkCore.Modeling;
@@ -74,6 +76,10 @@ public static class FlexDbContextModelCreatingExtensions
                 FlexDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+
+            b.HasMany(e => e.Answers)
+                .WithOne()
+                .HasForeignKey(x => x.ScoresheetInstanceId);
         });
     }
 
@@ -89,6 +95,22 @@ public static class FlexDbContextModelCreatingExtensions
             b.HasMany(e => e.Sections)
                 .WithOne(e => e.Worksheet)
                 .HasForeignKey(x => x.WorksheetId);
+
+            b.HasMany(e => e.Links)
+                .WithOne()
+                .HasForeignKey(x => x.WorksheetId);
+        });
+
+        modelBuilder.Entity<WorksheetLink>(b =>
+        {
+            b.ToTable(FlexDbProperties.DbTablePrefix + "WorksheetLinks",
+                FlexDbProperties.DbSchema);
+
+            b.HasOne(e => e.Worksheet)
+                .WithMany(e => e.Links)
+                .HasForeignKey(e => e.WorksheetId);
+
+            b.ConfigureByConvention();
         });
 
         modelBuilder.Entity<CustomField>(b =>

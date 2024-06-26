@@ -24,11 +24,18 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Unity.Flex.Domain.Scoresheets.Answer", b =>
+            modelBuilder.Entity("Unity.Flex.Domain.ScoresheetInstances.ScoresheetInstance", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
 
                     b.Property<Guid>("CorrelationId")
                         .HasColumnType("uuid");
@@ -45,16 +52,66 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<double>("CurrentScore")
-                        .HasColumnType("double precision");
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("ScoresheetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScoresheetId");
+
+                    b.ToTable("ScoresheetInstances", "Flex");
+                });
+
+            modelBuilder.Entity("Unity.Flex.Domain.Scoresheets.Answer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
 
                     b.Property<string>("CurrentValue")
-                        .HasColumnType("jsonb");
-
-                    b.Property<double>("DefaultScore")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("DefaultValue")
                         .HasColumnType("jsonb");
 
                     b.Property<Guid?>("DeleterId")
@@ -82,6 +139,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("QuestionId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("ScoresheetInstanceId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -92,6 +152,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("QuestionId");
+
+                    b.HasIndex("ScoresheetInstanceId");
 
                     b.ToTable("Answers", "Flex");
                 });
@@ -200,6 +262,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -228,79 +293,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.ToTable("Scoresheets", "Flex");
-                });
-
-            modelBuilder.Entity("Unity.Flex.Domain.Scoresheets.ScoresheetInstance", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<Guid>("CorrelationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CorrelationProvider")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid>("ScoresheetId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ScoresheetId");
-
-                    b.ToTable("ScoresheetInstances", "Flex");
                 });
 
             modelBuilder.Entity("Unity.Flex.Domain.Scoresheets.ScoresheetSection", b =>
@@ -492,6 +484,79 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("WorksheetInstances", "Flex");
                 });
 
+            modelBuilder.Entity("Unity.Flex.Domain.WorksheetLinks.WorksheetLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrelationProvider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("UiAnchor")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("WorksheetId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorksheetId");
+
+                    b.ToTable("WorksheetLinks", "Flex");
+                });
+
             modelBuilder.Entity("Unity.Flex.Domain.Worksheets.CustomField", b =>
                 {
                     b.Property<Guid>("Id")
@@ -520,6 +585,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -619,7 +688,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
 
-                    b.Property<string>("UIAnchor")
+                    b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -1450,6 +1519,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Payable")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("ScoresheetId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -1847,9 +1919,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("AssessorId")
                         .HasColumnType("uuid");
 
-                    b.Property<int?>("CleanGrowth")
-                        .HasColumnType("integer");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1865,9 +1934,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<int?>("EconomicImpact")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -1875,12 +1941,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
-
-                    b.Property<int?>("FinancialAnalysis")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("InclusiveGrowth")
-                        .HasColumnType("integer");
 
                     b.Property<bool>("IsComplete")
                         .HasColumnType("boolean");
@@ -1892,6 +1952,18 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<int?>("SectionScore1")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SectionScore2")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SectionScore3")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SectionScore4")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -2424,6 +2496,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("City")
                         .HasColumnType("text");
 
+                    b.Property<string>("Country")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("CreationTime");
@@ -2440,6 +2515,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("DeletionTime");
 
+                    b.Property<string>("EFTAdvicePref")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EmailAddress")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -2454,6 +2535,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<DateTime?>("LastUpdatedInCas")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("Number")
                         .IsRequired()
                         .HasColumnType("text");
@@ -2464,7 +2548,16 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("PostalCode")
                         .HasColumnType("text");
 
+                    b.Property<string>("ProviderId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Province")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SiteProtected")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
                         .HasColumnType("text");
 
                     b.Property<Guid>("SupplierId")
@@ -2486,6 +2579,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("BusinessNumber")
+                        .HasColumnType("text");
 
                     b.Property<string>("City")
                         .HasColumnType("text");
@@ -2539,6 +2635,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<DateTime?>("LastUpdatedInCAS")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("MailingAddress")
                         .HasColumnType("text");
 
@@ -2551,7 +2650,25 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("PostalCode")
                         .HasColumnType("text");
 
+                    b.Property<string>("ProviderId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Province")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SIN")
+                        .HasColumnType("text");
+
+                    b.Property<string>("StandardIndustryClassification")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Subcategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SupplierProtected")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("TenantId")
@@ -2563,11 +2680,28 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("Suppliers", "Payments");
                 });
 
+            modelBuilder.Entity("Unity.Flex.Domain.ScoresheetInstances.ScoresheetInstance", b =>
+                {
+                    b.HasOne("Unity.Flex.Domain.Scoresheets.Scoresheet", "Scoresheet")
+                        .WithMany("Instances")
+                        .HasForeignKey("ScoresheetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Scoresheet");
+                });
+
             modelBuilder.Entity("Unity.Flex.Domain.Scoresheets.Answer", b =>
                 {
                     b.HasOne("Unity.Flex.Domain.Scoresheets.Question", "Question")
                         .WithMany("Answers")
                         .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.Flex.Domain.ScoresheetInstances.ScoresheetInstance", null)
+                        .WithMany("Answers")
+                        .HasForeignKey("ScoresheetInstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2583,17 +2717,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
 
                     b.Navigation("Section");
-                });
-
-            modelBuilder.Entity("Unity.Flex.Domain.Scoresheets.ScoresheetInstance", b =>
-                {
-                    b.HasOne("Unity.Flex.Domain.Scoresheets.Scoresheet", "Scoresheet")
-                        .WithMany("Instances")
-                        .HasForeignKey("ScoresheetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Scoresheet");
                 });
 
             modelBuilder.Entity("Unity.Flex.Domain.Scoresheets.ScoresheetSection", b =>
@@ -2614,6 +2737,17 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasForeignKey("WorksheetInstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Unity.Flex.Domain.WorksheetLinks.WorksheetLink", b =>
+                {
+                    b.HasOne("Unity.Flex.Domain.Worksheets.Worksheet", "Worksheet")
+                        .WithMany("Links")
+                        .HasForeignKey("WorksheetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Worksheet");
                 });
 
             modelBuilder.Entity("Unity.Flex.Domain.Worksheets.CustomField", b =>
@@ -2893,6 +3027,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Navigation("Supplier");
                 });
 
+            modelBuilder.Entity("Unity.Flex.Domain.ScoresheetInstances.ScoresheetInstance", b =>
+                {
+                    b.Navigation("Answers");
+                });
+
             modelBuilder.Entity("Unity.Flex.Domain.Scoresheets.Question", b =>
                 {
                     b.Navigation("Answers");
@@ -2917,6 +3056,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             modelBuilder.Entity("Unity.Flex.Domain.Worksheets.Worksheet", b =>
                 {
+                    b.Navigation("Links");
+
                     b.Navigation("Sections");
                 });
 

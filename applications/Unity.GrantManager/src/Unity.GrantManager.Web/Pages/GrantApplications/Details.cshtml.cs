@@ -9,7 +9,12 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Users;
 using Microsoft.Extensions.Configuration;
+using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared.Correlation;
+using Volo.Abp.Features;
+using System.Linq;
+using Unity.GrantManager.Flex;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -17,6 +22,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
     public class DetailsModel : AbpPageModel
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
+        private readonly IWorksheetLinkAppService _worksheetLinkAppService;
+        private readonly IFeatureChecker _featureChecker;
 
         [BindProperty(SupportsGet = true)]
         public string? SubmissionId { get; set; } = null;
@@ -32,6 +39,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public Guid ApplicationId { get; set; }
 
         [BindProperty(SupportsGet = true)]
+        public Guid ApplicationFormId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
         public Guid AssessmentId { get; set; }
 
         [BindProperty(SupportsGet = true)]
@@ -39,7 +49,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public string? ChefsSubmissionId { get; set; } = null;
-        
+
         [BindProperty(SupportsGet = true)]
         public string? ApplicationFormSubmissionData { get; set; } = null;
 
@@ -58,9 +68,18 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
 
-        public DetailsModel(GrantApplicationAppService grantApplicationAppService, ICurrentUser currentUser, IConfiguration configuration)
+        [BindProperty(SupportsGet = true)]
+        public List<WorksheetBasicDto> CustomTabs { get; set; } = [];
+
+        public DetailsModel(GrantApplicationAppService grantApplicationAppService,
+            IWorksheetLinkAppService worksheetLinkAppService,
+            IFeatureChecker featureChecker,
+            ICurrentUser currentUser,
+            IConfiguration configuration)
         {
             _grantApplicationAppService = grantApplicationAppService;
+            _worksheetLinkAppService = worksheetLinkAppService;
+            _featureChecker = featureChecker;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
@@ -71,13 +90,26 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
 
+            if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+            {
+                var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
+                CustomTabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => s.Worksheet).ToList();
+            }
+
             if (applicationFormSubmission != null)
             {
+                ApplicationFormId = applicationFormSubmission.ApplicationFormId;
                 ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
                 ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
-                ApplicationFormSubmissionData = applicationFormSubmission.Submission;
-                ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
                 HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
+                if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML))
+                {
+                    ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
+                }
+                else
+                {
+                    ApplicationFormSubmissionData = applicationFormSubmission.Submission;
+                }
             }
         }
 

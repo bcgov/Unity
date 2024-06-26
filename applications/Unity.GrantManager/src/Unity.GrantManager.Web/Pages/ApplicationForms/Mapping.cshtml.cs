@@ -1,21 +1,28 @@
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.Flex.Worksheets;
+using Unity.Flex.Scoresheets;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Features;
+using Unity.Modules.Shared.Correlation;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationForms
 {
     [Authorize]
     public class MappingModel : AbpPageModel
     {
+        public List<SelectListItem> ScoresheetOptionsList { get; set; } = [];
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
@@ -25,6 +32,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
         private readonly IApplicationFormAppService _applicationFormAppService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
+        private readonly IWorksheetAppService _worksheetAppService;
+        private readonly IScoresheetAppService _scoresheetAppService;
+        private readonly IFeatureChecker _featureChecker;
 
         [BindProperty]
         public ApplicationFormDto? ApplicationFormDto { get; set; }
@@ -41,16 +51,27 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         [BindProperty]
         public string? IntakeProperties { get; set; }
 
+        [BindProperty]
+        [Display(Name = "")]
+        public Guid? ScoresheetId { get; set; }
+
         public MappingModel(IApplicationFormAppService applicationFormAppService,
-                            IApplicationFormVersionAppService applicationFormVersionAppService)
+                            IApplicationFormVersionAppService applicationFormVersionAppService,
+                            IWorksheetAppService worksheetAppService,
+                            IScoresheetAppService scoresheetAppService,
+                            IFeatureChecker featureChecker)
         {
             _applicationFormAppService = applicationFormAppService;
             _applicationFormVersionAppService = applicationFormVersionAppService;
+            _worksheetAppService = worksheetAppService;
+            _scoresheetAppService = scoresheetAppService;
+            _featureChecker = featureChecker;
         }
 
         public async Task OnGetAsync()
         {
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
+            ScoresheetId = ApplicationFormDto.ScoresheetId;
             ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
 
             if (ApplicationFormVersionDtoList != null)
@@ -84,16 +105,87 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 ApplicationFormVersionDtoString = JsonSerializer.Serialize(ApplicationFormVersionDto);
             }
 
+            IntakeProperties = JsonSerializer.Serialize(await GenerateMappingFieldsAsync());
+        }
 
+        private async Task<List<MapField>> GenerateMappingFieldsAsync()
+        {
+            IntakeMapping intakeMapping = new();
+            List<MapField> properties = [];
 
-            IntakeMapping intakeMapping = new IntakeMapping();
-            List<string> properties = new List<string>();
             foreach (var property in intakeMapping.GetType().GetProperties())
             {
-                properties.Add("{ \"Name\": \"" + property.Name + "\", \"Type\": \"" + property.PropertyType.Name + "\"}");
+                var displayName = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault();
+                var fieldType = property.GetCustomAttributes(typeof(MapFieldTypeAttribute), true).Cast<MapFieldTypeAttribute>().SingleOrDefault();
+
+                properties.Add(new MapField()
+                {
+                    Name = property.Name,
+                    Type = fieldType?.Type ?? "String",
+                    IsCustom = false,
+                    Label = displayName?.DisplayName ?? property.Name
+                });
             }
 
-            IntakeProperties = JsonSerializer.Serialize(properties);
+            if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+            {
+                var scoresheets = await _scoresheetAppService.GetAllScoresheetsAsync();
+                ScoresheetOptionsList = [];
+
+                foreach (var scoresheet in scoresheets)
+                {
+                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Name + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
+                }
+
+                ScoresheetOptionsList = [.. ScoresheetOptionsList.OrderBy(item => item.Text)];
+
+                // Get the available field from the worksheets for the current Form
+                var worksheets = await _worksheetAppService.GetListByCorrelationAsync(ApplicationFormDto?.Id ?? Guid.Empty, CorrelationConsts.Form);
+
+                var fields = worksheets.SelectMany(s => s.Sections).SelectMany(s => s.Fields).ToList();
+
+                foreach (var field in fields)
+                {
+                    properties.Add(new MapField()
+                    {
+                        Name = $"{field.Name}.{field.Type}",
+                        Type = ConvertCustomType(field.Type),
+                        IsCustom = true,
+                        Label = field.Label
+                    });
+                }
+            }
+
+            return [.. properties.OrderBy(s => s.Label)];
+        }
+
+        private static string ConvertCustomType(CustomFieldType type)
+        {
+            return type switch
+            {
+                CustomFieldType.Text => "String",
+                CustomFieldType.Date => "Date",
+                CustomFieldType.Email => "Email",
+                CustomFieldType.Phone => "Phone",
+                CustomFieldType.DateTime => "Date",
+                CustomFieldType.YesNo => "YesNo",
+                CustomFieldType.Currency => "Currency",
+                CustomFieldType.Numeric => "Number",
+                CustomFieldType.Radio => "Radio",
+                CustomFieldType.Checkbox => "Checkbox",
+                CustomFieldType.CheckboxGroup => "CheckboxGroup",
+                CustomFieldType.SelectList => "SelectList",
+                CustomFieldType.BCAddress => "BCAddress",
+                _ => "",
+            };
+        }
+
+        public class MapField
+        {
+            public string Name { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty;
+            public bool IsCustom { get; set; }
+            public string Label { get; set; } = string.Empty;
         }
     }
 }

@@ -6,6 +6,5 @@ namespace Unity.Flex.Scoresheets
     public class EditSectionDto
     {
         public string Name { get; set; } = string.Empty;
-        public Guid SectionId { get; set; }
     }
 }

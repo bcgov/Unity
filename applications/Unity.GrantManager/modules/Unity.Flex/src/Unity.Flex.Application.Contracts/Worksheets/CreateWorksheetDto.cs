@@ -7,7 +7,7 @@ namespace Unity.Flex.Worksheets
     public sealed class CreateWorksheetDto
     {
         public string Name { get; set; } = string.Empty;
-        public string UIAnchor { get; set; } = string.Empty;
-        public List<WorksheetSectionDto> Sections { get; set; } = [];
+        public string Title { get; set; } = string.Empty;        
+        public List<CreateWorksheetSectionDto> Sections { get; set; } = [];
     }
 }

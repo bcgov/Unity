@@ -1,15 +1,13 @@
-﻿using Unity.Flex.Worksheets.Definitions;
+﻿using System.Text.Json.Serialization;
 
-namespace Unity.Flex.Worksheets
+namespace Unity.Flex.Worksheets.Definitions
 {
-    public class CurrencyDefinition : DefinitionBase
+    public class CurrencyDefinition : CustomFieldDefinition
     {
-        public CurrencyDefinition()
-        {
-            Min = 0;
-            Max = 999999999999;
-            MinLength = null;
-            MaxLength = null;
-        }
+        [JsonPropertyName("min")]
+        public decimal Min { get; set; } = decimal.MinValue;
+
+        [JsonPropertyName("max")]
+        public decimal Max { get; set; } = decimal.MaxValue;
     }
 }

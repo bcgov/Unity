@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -49,10 +48,9 @@ namespace Unity.Flex.Domain.WorksheetInstances
             return this;
         }
 
-        public WorksheetInstance UpdateValue()
+        public WorksheetInstance SetValue(string currentValue)
         {
-            // this needs to dig and get the sheet + sections + field values
-            CurrentValue = JsonSerializer.Serialize(this);
+            CurrentValue = currentValue;
             return this;
         }
     }

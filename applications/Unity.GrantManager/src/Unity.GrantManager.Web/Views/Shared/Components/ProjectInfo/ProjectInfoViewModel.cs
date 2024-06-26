@@ -31,6 +31,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public List<SelectListItem> ElectoralDistrictList { get; set; } = new List<SelectListItem>();
         
         public Guid ApplicationId { get; set; }
+        public Guid ApplicationFormId { get; set; }
         public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
         public bool IsFinalDecisionMade { get; set; }
         public ProjectInfoViewModelModel ProjectInfo { get; set; } = new();

@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -11,6 +12,7 @@ namespace Unity.Flex.Domain.Worksheets
     public class CustomField : FullAuditedEntity<Guid>, IMultiTenant
     {
         public virtual string Name { get; private set; } = string.Empty;
+        public virtual string Field { get; private set; } = string.Empty;
         public virtual string Label { get; private set; } = string.Empty;
         public virtual CustomFieldType Type { get; private set; } = CustomFieldType.Undefined;
         public virtual uint Order { get; private set; }
@@ -36,20 +38,29 @@ namespace Unity.Flex.Domain.Worksheets
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public CustomField(Guid id, string name, string label, CustomFieldType type)
+        public CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type, object? definition)
         {
             Id = id;
-            Name = name;
+            Name = ConfigureName(field, worksheetName);
+            Field = field;
             Label = label;
             Type = type;
-            Definition = DefinitionResolver.Resolve(type);
+            Definition = DefinitionResolver.Resolve(type, definition);
         }
 
-        public CustomField SetName(string name)
+        private static string ConfigureName(string name, string worksheetName)
         {
-            if (Section.Fields.Any(s => s.Name == name))
-                throw new BusinessException("Cannot duplicate name");
+            return "custom_" + SanitizeNameField(worksheetName) + "_" + SanitizeNameField(name);
+        }
 
+        public CustomField SetField(string field, string worksheetName)
+        {
+            var name = ConfigureName(field, worksheetName);
+
+            if (Section.Fields.Any(s => s.Name == name && s.Id != this.Id))
+                throw new UserFriendlyException("Cannot duplicate name");
+
+            Field = field;
             Name = name;
             return this;
         }
@@ -70,6 +81,11 @@ namespace Unity.Flex.Domain.Worksheets
         {
             Order = order;
             return this;
+        }
+
+        private static string SanitizeNameField(string field)
+        {
+            return field.Trim().ToLower().Replace(" ", "");
         }
     }
 }

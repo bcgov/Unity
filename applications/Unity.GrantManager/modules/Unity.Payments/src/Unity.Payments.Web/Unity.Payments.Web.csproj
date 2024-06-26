@@ -36,12 +36,18 @@
   </ItemGroup>
 
   <ItemGroup>
+	<None Remove="Pages\PaymentApprovals\UpdatePaymentRequestStatus.css" />
+	<None Remove="Pages\PaymentApprovals\UpdatePaymentRequestStatusModal.js" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.css" />
 	<None Remove="Views\Shared\Components\PaymentActionBar\Default.js" />
+	<None Remove="Views\Shared\Components\PaymentInfo\Default.css" />
+	<None Remove="Views\Shared\Components\PaymentInfo\Default.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.js" />
 	<None Remove="Views\Shared\Components\SupplierInfo\SupplierInfo.css" />
 	<EmbeddedResource Include="Views\Shared\Components\PaymentActionBar\Default.css" />
 	<EmbeddedResource Include="Views\Shared\Components\PaymentActionBar\Default.js" />
+	<EmbeddedResource Include="Views\Shared\Components\PaymentInfo\Default.css" />
+	<EmbeddedResource Include="Views\Shared\Components\PaymentInfo\Default.js" />
 	<EmbeddedResource Include="Views\Shared\Components\SupplierInfo\SupplierInfo.js">
 		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</EmbeddedResource>
@@ -52,6 +58,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
     <ProjectReference Include="..\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
   </ItemGroup>
 

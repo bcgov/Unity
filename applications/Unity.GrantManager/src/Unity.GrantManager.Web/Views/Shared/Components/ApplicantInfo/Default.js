@@ -1,26 +1,41 @@
-﻿$(function () {    
-    $('.currency-input').maskMoney();
-
+﻿$(function () {
     $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
-        $.each(formData, function (key, input) {
-           
+
+        $.each(formData, function (_, input) {            
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {                
+                Flex.includeCustomFieldObj(ApplicantInfoObj, input);
+            }
+            else {
                 // This will not work if the culture is different and uses a different decimal separator
                 ApplicantInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
 
-                
                 if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
                     ApplicantInfoObj[input.name.split(".")[1]] = null;
                 }
 
-            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber') {
-                ApplicantInfoObj[input.name] = input.value;
+            if (input.name == 'ApplicantId' || input.name == 'SupplierNumber' || input.name == 'OriginalSupplierNumber') {
+                    ApplicantInfoObj[input.name] = input.value;
+                }
             }
-            
         });
+
+        // Update checkboxes which are serialized if unchecked
+        $(`#ApplicantInfoForm input:checkbox`).each(function () {
+            ApplicantInfoObj[this.name] = (this.checked).toString();
+        });
+
         try {
+
+            if (ApplicantInfoObj["SupplierNumber"]+"" != "undefined" 
+             && ApplicantInfoObj["SupplierNumber"]+"" != ""
+             && ApplicantInfoObj["SupplierNumber"]+"" != ApplicantInfoObj["OriginalSupplierNumber"]+"")
+            {
+                $('.cas-spinner').show();
+            }
+
             unity.grantManager.grantApplications.grantApplication
                 .updateProjectApplicantInfo(applicationId, ApplicantInfoObj)
                 .done(function () {
@@ -31,9 +46,15 @@
                     PubSub.publish("refresh_detail_panel_summary");
                     PubSub.publish('project_info_saved');
                     refreshSupplierInfoWidget();
+                })
+                .then(function () {
+                    $('.cas-spinner').hide();
+                }).catch(function(){
+                    $('.cas-spinner').hide();
                 });
         }
         catch (error) {
+            $('.cas-spinner').hide();
             console.log(error);
             $('#saveApplicantInfoBtn').prop('disabled', false);
         }
@@ -50,13 +71,13 @@
                     supplierInfo.innerHTML = data;
                     PubSub.publish('reload_sites_list');
                 }
+                $('.cas-spinner').hide();
             })
             .catch(error => {
+                $('.cas-spinner').hide();
                 console.error('Error refreshing supplier-info-widget:', error);
             });
     }
-
- 
 
     $('#orgSectorDropdown').change(function () {
         const selectedValue = $(this).val();
@@ -78,6 +99,14 @@
         });
     });
 
+    PubSub.subscribe(
+        'fields_applicantinfo',
+        () => {
+            enableSaveBtn();
+        }
+    );
+
+    $('.unity-currency-input').maskMoney();
 });
 
 

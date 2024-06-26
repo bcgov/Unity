@@ -1,0 +1,20 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Web.Views.Shared.Components.SelectListWidget;
+@using Unity.Flex.Worksheets.Definitions;
+
+@model SelectListViewModel;
+
+@if (Model.Field != null)
+{
+    <select class="@Model.Field.Type.ApplyCssClass()"
+            id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+            name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+            onchange="@($"notifyFieldChange('{Model.Name}', this)")">
+
+        @foreach (var item in ((SelectListDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Options ?? [])
+        {
+            <option selected="@Model.Field?.CurrentValue?.CompareSelectListValue(@item.Value)" value="@item.Value">@item.Key</option>
+        }
+
+    </select>
+}

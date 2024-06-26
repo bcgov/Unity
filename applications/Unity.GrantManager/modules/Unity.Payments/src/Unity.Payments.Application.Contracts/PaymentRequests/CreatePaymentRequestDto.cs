@@ -14,8 +14,14 @@ namespace Unity.Payments.PaymentRequests
         public string PayeeName { get; set; }
         public string ContractNumber { get; set; }
         public string SupplierNumber { get; set; }
-
         public string CorrelationProvider { get; set; } = string.Empty;
+    }
+
+    public class UpdatePaymentStatusRequestDto
+    {
+        public Guid PaymentRequestId { get; set; }
+      
+        public bool IsApprove { get; set; }
     }
 #pragma warning restore CS8618
 }

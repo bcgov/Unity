@@ -1,0 +1,145 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Payments.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@model Unity.Payments.Web.Pages.PaymentApprovals.UpdatePaymentRequestStatus
+@inject IStringLocalizer<PaymentsResource> L
+@using Unity.Payments.Web.Pages.PaymentApprovals;
+@{
+    Layout = null;
+}
+
+@{
+    int uniqueIndex = 0;
+}
+
+
+<form method="post" asp-page-handler="OnPostAsync" id="paymentRequestStatus">
+    <abp-modal size="ExtraLarge" id="payment-modal">
+        @if (Model.IsApproval)
+        {
+            <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentStatusRequest:ApproveTitle"].Value"></abp-modal-header>
+        }
+        else
+        {
+            <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentStatusRequest:DeclineTitle"].Value"></abp-modal-header>
+        }
+
+        <abp-modal-body>
+            <abp-card>
+                <abp-card-body class="payment-card">
+                    <abp-input id="PaymentThreshold" type="hidden" asp-for="PaymentThreshold" />
+                    <abp-input id="ApplicationCount" type="hidden" asp-for="PaymentGroupings.Count" />
+
+                    @if (Model.PaymentGroupings.Count >= 1)
+                    {
+                        @for (int k = 0; k < Model.PaymentGroupings.Count; k++)
+                        {
+                            <abp-container id="@($"{Model.PaymentGroupings[k].GroupId}_container")">
+                                <abp-input id="@($"{Model.PaymentGroupings[k].GroupId}_count")" type="hidden" asp-for="@Model.PaymentGroupings[k].Items.Count" />
+
+                                <input name="PaymentGroupings.Index" type="hidden" value="@Model.PaymentGroupings[k].GroupId" />
+                                <input type="hidden" asp-for="@Model.PaymentGroupings[k].GroupId" />
+                                <input type="hidden" asp-for="@Model.PaymentGroupings[k].ToStatus" />
+
+                                @for (int i = 0; i < Model.PaymentGroupings[k].Items.Count; i++)
+                                {
+                                    <div id="@($"{@Model.PaymentGroupings[k].Items[i].Id}_container")" class="single-payment">
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Id" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Amount" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Description" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].InvoiceNumber" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].CorrelationId" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].ApplicantName" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Status" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].isPermitted" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].IsL3ApprovalRequired" />
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].ToStatus" />
+                                        <abp-row class="m-0 p-2">
+                                            <abp-column size="_11" class="px-1"><h6 class="single-payment-card-application-name">@Model.PaymentGroupings[k].Items[i].ApplicantName (@Model.PaymentGroupings[k].Items[i].InvoiceNumber)</h6></abp-column>
+                                            <abp-column size="_1" class="px-1 remove-single-payment">  <abp-button onclick='removeApplicationPayment("@Model.PaymentGroupings[k].Items[i].Id" + "_container", @Model.PaymentGroupings[k].GroupId)' size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times" data-parameter="@Model.PaymentGroupings[k].Items[i].CorrelationId" /></abp-column>
+                                        </abp-row>
+                                        <input type="hidden" asp-for="@Model.PaymentGroupings[k].Items[i].Id" />
+                                        <input type="hidden" asp-for="@Model.IsApproval" />
+                                        <abp-row class="m-0 p-3">
+                                            <abp-column size="_3" class="px-1">
+                                                <abp-input asp-for="@Model.PaymentGroupings[k].Items[i].Id" disabled />
+                                            </abp-column>
+                                            <abp-column size="_3" class="px-1">
+                                                <abp-input asp-for="@Model.PaymentGroupings[k].Items[i].Amount"
+                                                           class="amount unity-currency-input"
+                                                           disabled />
+                                            </abp-column>
+                                            <abp-column size="_3" class="px-1">
+                                                <abp-input asp-for="@Model.PaymentGroupings[k].Items[i].Description" disabled />
+                                            </abp-column>
+                                        </abp-row>
+                                    </div>
+
+                                    uniqueIndex++;
+                                }
+
+                                <abp-row class="m-0 p-3 payment-status-transition">
+                                    <abp-column size="_4" class="text-center">
+                                        @{
+                                            var fromStatusText = UpdatePaymentRequestStatus.GetStatusText(@Model.PaymentGroupings[k].Items[0].Status);
+                                            var fromStatusTextColor = UpdatePaymentRequestStatus.GetStatusTextColor(@Model.PaymentGroupings[k].Items[0].Status);
+                                        }
+                                        <b style="color:@fromStatusTextColor ">@fromStatusText</b>
+
+                                    </abp-column>
+                                    <abp-column size="_4" class="text-center">
+                                        <span class="fa fa-chevron-right fa-solid fa-bold payment-status-transition-arrow"></span> <span class="fa fa-chevron-right fa-solid fa-bold payment-status-transition-arrow"></span> <span class="fa fa-chevron-right fa-solid fa-bold payment-status-transition-arrow"></span>
+                                    </abp-column>
+                                    <abp-column size="_4" class="text-center">
+                                        @{
+                                            var toStatusText = UpdatePaymentRequestStatus.GetStatusText(@Model.PaymentGroupings[k].ToStatus);
+                                            var toStatusTextColor = UpdatePaymentRequestStatus.GetStatusTextColor(@Model.PaymentGroupings[k].ToStatus);
+                                        }
+                                        <b style="color:@toStatusTextColor">@toStatusText</b>
+                                    </abp-column>
+                                </abp-row>
+                            </abp-container>
+                        }
+                    }
+                    else
+                    {
+                        <abp-row class="m-0 p-2 g text-center">
+                            <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>
+                        </abp-row>
+                    }
+                    <abp-column size="_12" class=" m-0 p-3 payment-error-column">
+                        <span><b>Note: </b>Only payments in   @Model.FromStatusText status will appear in this list</span>
+                    </abp-column>
+                    <abp-row class="m-0 p-2 no-payment-msg text-center" id="no-payment-msg" style="display: none;">
+                        <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>
+                    </abp-row>
+
+                </abp-card-body>
+            </abp-card>
+        </abp-modal-body>
+        <abp-modal-footer>
+            @if (Model.IsApproval)
+            {
+                <abp-button id="btnSubmitPayment" class="btn btn-primary" text="@L["ApplicationPaymentStatusRequest:ApproveButtonText"].Value" onclick="submitPaymentApprovals()" disabled="@Model.DisableSubmit" type="submit"></abp-button>
+            }
+            else
+            {
+                <abp-button id="btnSubmitPayment" class="btn btn-danger" text="@L["ApplicationPaymentStatusRequest:DeclineButtonText"].Value"  disabled="@Model.DisableSubmit" type="submit"></abp-button>
+            }
+            <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentStatusRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            let currencyInputs = $('.unity-currency-input');
+            if (currencyInputs && currencyInputs.maskMoney === 'function') {
+                currencyInputs.maskMoney();
+            }
+        }
+    })();
+</script>

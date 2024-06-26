@@ -1,43 +1,102 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
-@using Unity.Flex.Localization
-@using Microsoft.Extensions.Localization;
-@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
+@using Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
-@using Unity.Flex.Worksheets
+@using Unity.Flex.Worksheets;
+@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Web.Views.Shared.Components.CheckboxWidget;
+@using Unity.Flex.Web.Views.Shared.Components.YesNoWidget;
+@using Unity.Flex.Web.Views.Shared.Components.CurrencyWidget;
+@using Unity.Flex.Web.Views.Shared.Components.DateWidget;
+@using Unity.Flex.Web.Views.Shared.Components.RadioWidget;
+@using Unity.Flex.Web.Views.Shared.Components.SelectListWidget;
+@using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupWidget;
 
 @model WorksheetViewModel;
 
-@inject IStringLocalizer<FlexResource> L
 @inject IAuthorizationService AuthorizationService
 
 @if (Model.IsConfigured)
-{    
-    @foreach (var worksheetSection in Model.Sections)
-    {
-        <div class="@($"worksheet_section worksheet_section_{Model.UiAnchor}")">
-            <label class="@($"worksheet_section_label worksheet_section_label_{Model.UiAnchor}")">@worksheetSection.Name</label>
-
-            @foreach (var field in worksheetSection.Fields)
-            {
-                <div class="worksheet_field worksheet_field_@Model.UiAnchor">
-                    <label class="form-label">@field.Label</label>
-                    <input type="@field.Type.ConvertInputType()"
-                           label="@field.Label"                           
-                           value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
-                           class="form-control"
-                                                      
-                           min="@field.Definition?.ConvertDefinition(field.Type)?.Min"
-                           max="@field.Definition?.ConvertDefinition(field.Type)?.Max"                           
-                           
-                           minlength="@field.Definition?.ConvertDefinition(field.Type)?.MinLength"
-                           maxlength="@field.Definition?.ConvertDefinition(field.Type)?.MaxLength"
-
-                           id="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                           name="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")"
-                           onchange="@($"notifyFieldChange('{Model.UiAnchor}', this)")" />
-                    <span class="text-danger field-validation-valid" data-valmsg-for="@($"Custom_{field.Id}.{Model.UiAnchor}.{field.Name}")" data-valmsg-replace="true"></span>
+{
+    <div class="@($"worksheet worksheet_{Model.UiAnchor}")">
+        @foreach (var worksheetSection in Model.Sections)
+        {
+            <div class="@($"worksheet_section worksheet_section_{Model.UiAnchor}")">
+                <label class="@($"worksheet_section_label worksheet_section_label_{Model.UiAnchor}")">@worksheetSection.Name</label>
+                <div class="@($"worksheet_section_wrapper worksheet_section_wrapper_{Model.UiAnchor}")">
+                    @foreach (var field in worksheetSection.Fields.OrderBy(s => s.Order))
+                    {
+                        <div class="worksheet_field worksheet_field_@Model.UiAnchor">
+                            <label class="form-label">@field.Label</label>
+                            @try
+                            {
+                                @switch (field.Type)
+                                {
+                                    case CustomFieldType.YesNo:
+                                        {
+                                            @await Component.InvokeAsync(typeof(YesNoWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.Checkbox:
+                                        {
+                                            @await Component.InvokeAsync(typeof(CheckboxWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.Currency:
+                                        {
+                                            @await Component.InvokeAsync(typeof(CurrencyWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.Date:
+                                        {
+                                            @await Component.InvokeAsync(typeof(DateWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.Radio:
+                                        {
+                                            @await Component.InvokeAsync(typeof(RadioWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.SelectList:
+                                        {
+                                            @await Component.InvokeAsync(typeof(SelectListWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.CheckboxGroup:
+                                        {
+                                            @await Component.InvokeAsync(typeof(CheckboxGroupWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.BCAddress:
+                                        {
+                                            @await Component.InvokeAsync(typeof(BCAddressWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    default:
+                                        {
+                                            <input type="@field.Type.ConvertInputType()"
+                                                   label="@field.Label"
+                                                   value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
+                                                   class="@field.Type.ApplyCssClass()"
+                                                   min="@field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull()"
+                                                   max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
+                                                   minlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMinLengthValueOrNull()"
+                                                   maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()"
+                                                   id="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                   name="@($"{field.Name}.{Model.Name}.{field.Id}")"
+                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                                            break;
+                                        }
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                <span class="control-render-error">Error rendering component!</span>
+                            }
+                            <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field?.Name}.{Model.Name}.{field?.Id}")" data-valmsg-replace="true"></span>
+                        </div>
+                    }
                 </div>
-            }
-        </div>
-    }
+            </div>
+        }
+    </div>
 }
