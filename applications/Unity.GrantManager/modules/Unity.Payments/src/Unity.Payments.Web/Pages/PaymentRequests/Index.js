@@ -127,7 +127,7 @@ $(function () {
     function checkActionButtons() {
 
         if (dataTable.rows({ selected: true }).indexes().length > 0) {
-            if (abp.auth.isGranted('GrantApplicationManagement.Payments.L1ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L2ApproveOrDecline') || abp.auth.isGranted('GrantApplicationManagement.Payments.L3ApproveOrDecline')) {
+            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
                 payment_approve_buttons.enable();
 
             } else {
