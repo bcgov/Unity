@@ -91,7 +91,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task<double> GetSubTotal(AssessmentListItemDto assessment)
         {
-            if (await _featureChecker.IsEnabledAsync("Unit.Flex"))
+            if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
                 var instance = await _scoresheetInstanceAppService.GetByCorrelationAsync(assessment.Id);
 

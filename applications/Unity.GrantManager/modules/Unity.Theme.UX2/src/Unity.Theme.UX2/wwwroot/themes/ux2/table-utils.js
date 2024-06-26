@@ -27,7 +27,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             ajax: abp.libs.datatables.createAjax(
                 dataEndpoint,
                 data,
-                function (result) {
+                responseCallback ?? function (result) {
                     if (result.totalCount <= maxRowsPerPage) {
                         $('.dataTables_paginate').hide();
                     }
