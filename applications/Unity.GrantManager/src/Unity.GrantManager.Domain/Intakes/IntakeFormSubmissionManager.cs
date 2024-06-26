@@ -10,6 +10,8 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.TenantManagement;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Intakes
@@ -26,6 +28,10 @@ namespace Unity.GrantManager.Intakes
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper;
+        private readonly ITenantRepository _tenantRepository;
+        private readonly ICurrentTenant _currentTenant;
+
+
         private static int OneMinuteMilliseconds = 60000;
 
         public IntakeFormSubmissionManager(IUnitOfWorkManager unitOfWorkManager,
@@ -37,7 +43,9 @@ namespace Unity.GrantManager.Intakes
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IApplicationFormVersionRepository applicationFormVersionRepository,
-            CustomFieldsIntakeSubmissionMapper customFieldsIntakeSubmissionMapper)
+            CustomFieldsIntakeSubmissionMapper customFieldsIntakeSubmissionMapper,
+            ITenantRepository tenantRepository,
+            ICurrentTenant currentTenant)
         {
             _unitOfWorkManager = unitOfWorkManager;
             _applicantRepository = applicantRepository;
@@ -49,6 +57,8 @@ namespace Unity.GrantManager.Intakes
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _applicationFormVersionRepository = applicationFormVersionRepository;
             _customFieldsIntakeSubmissionMapper = customFieldsIntakeSubmissionMapper;
+            _tenantRepository = tenantRepository;
+            _currentTenant = currentTenant;
         }
 
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
@@ -89,7 +99,7 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormId = applicationForm.Id,
                 ChefsSubmissionGuid = intakeMap.SubmissionId ?? $"{Guid.Empty}",
                 ApplicationId = application.Id,
-                Submission = ReplaceAdvancedFormIoControls(formSubmission)
+                Submission = ReplaceAdvancedFormIoControls(formSubmission.ToString())
             });
 
             await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id, application.ApplicationFormId, formSubmission, formVersionSubmissionHeaderMapping);
@@ -99,9 +109,30 @@ namespace Unity.GrantManager.Intakes
             return applicationFormSubmission.Id;
         }
 
-        private static string ReplaceAdvancedFormIoControls(dynamic formSubmission)
+        public async Task UpdateFormSubmissionsFormIOAsync() {
+            
+            var tenants = await _tenantRepository.GetListAsync();
+
+            foreach (var tenant in tenants)
+            {
+                using (_currentTenant.Change(tenant.Id))
+                {
+                    try {
+                        List<ApplicationFormSubmission> submissionList = new List<ApplicationFormSubmission>();
+                        submissionList = await _applicationFormSubmissionRepository.GetListAsync();
+                        foreach (ApplicationFormSubmission applicationFormSubmission in submissionList) {
+                            applicationFormSubmission.Submission = ReplaceAdvancedFormIoControls(applicationFormSubmission.Submission);
+                            await _applicationFormSubmissionRepository.UpdateAsync(applicationFormSubmission, autoSave: true);
+                        }
+                    } catch (Exception ex) {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+            }
+        }
+
+        private static string ReplaceAdvancedFormIoControls(string formSubmissionStr)
         {
-            string formSubmissionStr = formSubmission.ToString();
             if (!string.IsNullOrEmpty(formSubmissionStr))
             {
                 Dictionary<string, string> subPatterns = new Dictionary<string, string>();
