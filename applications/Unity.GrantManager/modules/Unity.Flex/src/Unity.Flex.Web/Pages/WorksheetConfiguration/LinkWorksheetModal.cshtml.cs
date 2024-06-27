@@ -19,12 +19,14 @@ public class LinkWorksheetModalModel() : FlexPageModel
     public string? Name { get; set; }
 
     public async Task OnGetAsync(Guid worksheetId)
-    {
+    {        
         Id = worksheetId;
+        await Task.CompletedTask;
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        await Task.CompletedTask;
         return NoContent();
     }  
 }
