@@ -68,6 +68,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                                             question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.YesNo)!.ToString();
                                             break;
                                         }
+                                    case QuestionType.Text:
+                                        {
+                                            question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.Text)!.ToString();
+                                            break;
+                                        }
                                 }
                                 
                             }
