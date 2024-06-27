@@ -39,7 +39,7 @@ public class NotificationsWebModule : AbpModule
         var configuration = context.Services.GetConfiguration();
         Configure<AbpBackgroundJobOptions>(options =>
         {
-            options.IsJobExecutionEnabled = true;
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
         });
 
         Configure<AbpBackgroundWorkerQuartzOptions>(options =>
