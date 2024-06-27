@@ -9,6 +9,7 @@
             class="form-control answer-yesno-input"
             name="Answer-YesNo[@Model.QuestionId]"
             data-original-value="@Model.Answer"
+            disabled="@Model.IsDisabled"
             onchange="handleInputChange('@Model.QuestionId','answer-yesno-','save-yesno-')">
         <option value="">Please choose...</option>
         <!option value="Yes" @(Model.Answer == "Yes" ? "selected" : "")>Yes</!option>
