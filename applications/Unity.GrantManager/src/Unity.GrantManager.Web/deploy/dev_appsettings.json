@@ -31,7 +31,7 @@
     "RabbitMQ" : {
         "HostName" : "dev-unity-rabbitmq-1",
         "Port" : 5672,
-        "UserName" : "isboperations",
+        "UserName" : "guest",
         "VirtualHost" : "/"
     }
 }
