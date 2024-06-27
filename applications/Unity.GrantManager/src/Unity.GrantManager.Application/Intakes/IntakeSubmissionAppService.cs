@@ -3,13 +3,11 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
-using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intake;
 using Unity.GrantManager.Integration.Chefs;
 using Unity.Notifications.TeamsNotifications;
@@ -77,7 +75,7 @@ namespace Unity.GrantManager.Intakes
             if (tokenDraft != null && tokenDraft.ToString() == "True") {
                 string factName = "A draft submission was submitted and should not have been";
                 string factValue = $"FormId: {eventSubscriptionDto.FormId} SubmissionID: {eventSubscriptionDto.SubmissionId}";
-                SendTeamsNotification(factName, factValue);
+                await SendTeamsNotification(factName, factValue);
                 return false;
             }
 
@@ -85,23 +83,22 @@ namespace Unity.GrantManager.Intakes
             if (tokenDeleted != null && tokenDeleted.ToString() == "True") {
                 string factName = "A deleted submission was submitted - user navigated back and got a success message from chefs";
                 string factValue = $"FormId: {eventSubscriptionDto.FormId} SubmissionID: {eventSubscriptionDto.SubmissionId}";
-                SendTeamsNotification(factName, factValue);
+                await SendTeamsNotification(factName, factValue);
             }
 
             // If there are no mappings initialize the available
             bool formVersionExists = await _applicationFormVersionAppService.FormVersionExists(eventSubscriptionDto.FormVersion.ToString());
-            dynamic? formVersion = null;
 
             if (!formVersionExists)
             {
-                formVersion = await _formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(),
+                dynamic? formVersion = await _formsApiService.GetFormDataAsync(eventSubscriptionDto.FormId.ToString(),
                     eventSubscriptionDto.FormVersion.ToString());
 
                 if(formVersion == null)
                 {
                     string factName = "Application Form Version Not Registered - Unknown Version";
                     string factValue = $"FormId: {eventSubscriptionDto.FormId} FormVersion: {eventSubscriptionDto.FormVersion}";
-                    SendTeamsNotification(factName, factValue);
+                    await SendTeamsNotification(factName, factValue);
                     return false;
                 } else if(!_intakeClientOptions.Value.AllowUnregisteredVersions)
                 {
@@ -109,14 +106,14 @@ namespace Unity.GrantManager.Intakes
                     var published = ((JObject)formVersion!).SelectToken("published");
                     string factName = "Application Form Version Not Registered - Unknown Version";
                     string factValue = $"Application Form Version Not Registerd - Version: {version} Published: {published}";
-                    SendTeamsNotification(factName, factValue);
+                    await SendTeamsNotification(factName, factValue);
                     return false;
                 }
             }
             return true;
         }
 
-        private async void SendTeamsNotification(string factName, string factValue)
+        private async Task SendTeamsNotification(string factName, string factValue)
         {
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Chefs Submission Event Validation Error";

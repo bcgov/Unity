@@ -13,7 +13,7 @@ namespace Unity.Notifications.TeamsNotifications
     public class TeamsNotificationService
     {
         public TeamsNotificationService() : base() { }
-        private List<Fact> _facts = new List<Fact>();
+        private readonly List<Fact> _facts = new List<Fact>();
 
         public async Task PostFactsToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle)
         {
