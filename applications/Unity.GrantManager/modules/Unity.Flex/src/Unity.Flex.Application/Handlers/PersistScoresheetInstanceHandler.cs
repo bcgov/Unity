@@ -28,7 +28,7 @@ namespace Unity.Flex.Handlers
             {
                 ans = new Answer(Guid.NewGuid())
                 {
-                    CurrentValue = ValueConverter.Convert(eventData.Answer.ToString(), (Worksheets.CustomFieldType)eventData.QuestionType),
+                    CurrentValue = ValueConverter.Convert(eventData.Answer ?? "", (Worksheets.CustomFieldType)eventData.QuestionType),
                     QuestionId = eventData.QuestionId,
                     ScoresheetInstanceId = instance.Id
                 };

@@ -18,7 +18,7 @@ namespace Unity.Flex.Scoresheets
 
         public virtual async Task<QuestionDto> GetAsync(Guid id)
         {
-            var question = await _questionRepository.GetAsync(id);
+            var question = await _questionRepository.GetAsync(id) ?? throw new AbpValidationException("Missing QuestionId!");
             var questionDto = ObjectMapper.Map<Question, QuestionDto>(question);
             if(question.Answers.Count > 0)
             {
