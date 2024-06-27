@@ -15,17 +15,24 @@
     var worksheet = @Model.Worksheet;
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="p-3">
                 <button data-worksheet-id="@worksheet.Id" class="btn btn-light edit-worksheet-btn" type="button">
                     <i class="fl fl-edit"></i> <span>@L["Worksheet:Configuration:EditWorksheetButtonText"].Value</span>
                 </button>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="p-3">
                 <button data-worksheet-id="@worksheet.Id" class="btn btn-light link-worksheet-btn" type="button">
                     <i class="fl fl-link"></i> <span>@L["Worksheet:Configuration:LinkWorksheetButtonText"].Value</span>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3">
+                <button data-worksheet-id="@worksheet.Id" class="btn btn-light clone-worksheet-btn" type="button">
+                    <i class="fl fl-copy"></i> <span>@L["Worksheet:Configuration:CloneWorksheetButtonText"].Value</span>
                 </button>
             </div>
         </div>

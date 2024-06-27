@@ -177,6 +177,27 @@ namespace Unity.Flex.Domain.Services
             return await worksheetLinkRepository.InsertAsync(new WorksheetLink(Guid.NewGuid(), worksheetId, correlationId, correlationProvider, uiAnchor));
         }
 
+        public async Task<Worksheet> CloneWorksheetAsync(Guid id)
+        {
+            var worksheet = await worksheetRepository.GetAsync(id, true);
+            var versionSplit = worksheet.Name.Split('-');
+            var clonedWorksheet = new Worksheet(Guid.NewGuid(), $"{versionSplit[0]}-v{worksheet.Version + 1}", worksheet.Title);
+            clonedWorksheet.SetNextVersion(worksheet.Version);
+            foreach (var section in worksheet.Sections.OrderBy(s => s.Order))
+            {
+                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
+                foreach (var field in section.Fields.OrderBy(s => s.Order))
+                {
+                    var clonedField = new CustomField(Guid.NewGuid(), field.Field, worksheet.Name, field.Label, field.Type, field.Definition);
+                    clonedSection.AddField(clonedField);
+                }
+                clonedWorksheet.AddSection(clonedSection);
+            }
+
+            var result = await worksheetRepository.InsertAsync(clonedWorksheet);
+            return result;
+        }
+
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)
         {
             if (worksheet == null) return null;
