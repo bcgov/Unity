@@ -47,9 +47,6 @@ namespace Unity.Flex.Domain.Worksheets
 
         public void UpdateSection(WorksheetSection section, string name)
         {
-            if (Sections.Any(s => s.Name == name))
-                throw new UserFriendlyException("Section names must be unique");
-
             section.SetName(name);
         }
 
@@ -59,6 +56,12 @@ namespace Unity.Flex.Domain.Worksheets
                 throw new UserFriendlyException("Blank titles are not allowed");
 
             Title = title;
+            return this;
+        }
+
+        public Worksheet SetNextVersion(uint previousVersion)
+        {
+            Version = previousVersion + 1;
             return this;
         }
     }

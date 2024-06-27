@@ -1,58 +1,56 @@
 $(function () {
-    let upsertWorksheetModal = new abp.ModalManager({
+    let addWorksheetModal = new abp.ModalManager({
         viewUrl: 'WorksheetConfiguration/UpsertWorksheetModal'
     });
 
-    let linkWorksheetModal = new abp.ModalManager({
-        viewUrl: 'WorksheetConfiguration/LinkWorksheetModal'
+    let cloneWorksheetModal = new abp.ModalManager({
+        viewUrl: 'WorksheetConfiguration/CloneWorksheetModal'
     });
 
     bindActionButtons();
 
     function bindActionButtons() {
-        let addWorksheet = $("#add_worksheet_btn");
+        let addWorksheetButton = $("#add_worksheet_btn");
 
-        if (addWorksheet) {
-            addWorksheet.on("click", function (_) {
-                openWorksheetModal(null, 'Insert');
+        if (addWorksheetButton) {
+            addWorksheetButton.on("click", function (_) {
+                openAddWorksheetModal(null);
             });
         }
 
-        let editWorksheetButtons = $(".edit-worksheet-btn");
+        let cloneWorksheetButtons = $(".clone-worksheet-btn");
 
-        if (editWorksheetButtons) {
-            editWorksheetButtons.on("click", function (event) {
-                let worksheetId = event.currentTarget.dataset.worksheetId;
-                openWorksheetModal(worksheetId, 'Update');
+        if (cloneWorksheetButtons) {
+            cloneWorksheetButtons.on("click", function (event) {
+                openCloneWorksheetModal(event.currentTarget.dataset.worksheetId)
             });
         }
     }
 
-    upsertWorksheetModal.onResult(function (result, response) {
-        if (response.responseText.action == 'Insert') {
-            PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
-        } else {
-            PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
-        }
+    function openAddWorksheetModal(worksheetId) {
+        addWorksheetModal.open({
+            worksheetId: worksheetId,
+            actionType: 'Insert'
+        });
+    }
 
+    addWorksheetModal.onResult(function (result, response) {
+        PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
         abp.notify.success(
             'Operation completed successfully.',
             response.responseText.action + ' Worksheet'
         );
     });
 
-    function openWorksheetModal(worksheetId, actionType) {
-        upsertWorksheetModal.open({
-            worksheetId: worksheetId,
-            actionType: actionType
-        });
-    }
-
-    function openLinkWorksheetModal(worksheetId) {
-        linkWorksheetModal.open({
+    function openCloneWorksheetModal(worksheetId) {
+        cloneWorksheetModal.open({
             worksheetId: worksheetId
         });
     }
+
+    cloneWorksheetModal.onResult(function (result, response) {
+        PubSub.publish('refresh_worksheet_list');
+    });
 
     function refreshWorksheetListWidget() {
         const url = `../Flex/Widget/WorksheetList/Refresh`;
@@ -77,7 +75,14 @@ $(function () {
     PubSub.subscribe(
         'worksheet_list_refreshed',
         (msg, data) => {
-            bindActionButtons();
+            bindActionButtons();            
+        }
+    );
+
+    PubSub.subscribe(
+        'worksheet_refreshed',
+        (msg, data) => {
+            bindActionButtons();            
         }
     );
 
@@ -92,34 +97,5 @@ $(function () {
         const buttonId = 'accordion-button-' + scoresheetId;
         const accordionButton = document.getElementById(buttonId);
         accordionButton.classList.remove('collapsed');
-    }
-
-    async function askToCreateNewVersion() {
-        const result = await Swal.fire({
-            title: "Confirm changes made to scoring sheet",
-            text: "Do you want to save your changes on the current version or create a new score sheet version?",
-            showCancelButton: true,
-            confirmButtonText: 'Save changes to the current version',
-            cancelButtonText: 'Create a new version',
-            customClass: {
-                confirmButton: 'btn btn-primary',
-                cancelButton: 'btn btn-secondary'
-            }
-        });
-
-
-        if (result.isConfirmed) {
-            return " On Current Version";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-            await Swal.fire({
-                title: "Note",
-                text: "Note that to apply the new version of the scoresheet in the assessment process, you need to link the corresponding form to the updated version.",
-                confirmButtonText: 'Ok',
-                customClass: {
-                    confirmButton: 'btn btn-primary'
-                }
-            });
-            return " On New Version";
-        }
     }
 });

@@ -19,7 +19,10 @@
             <div class="accordion-header" id="heading-@worksheet.Id">
                 <div class="d-flex w-100 align-items-center">
                     <button class="accordion-button collapsed flex-grow-1" id="accordion-button-@worksheet.Id" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@worksheet.Id" aria-expanded="false" aria-controls="collapse-@worksheet.Id">
-                        <span class="flex-grow-1 text-start"><b><span id="worksheet-title-@worksheet.Id">@worksheet.Title</span></b></span>
+                        <span class="flex-grow-1 text-start">
+                            <span id="worksheet-title-@worksheet.Id" class="worksheet-title">@worksheet.Title</span>
+                            (<span id="worksheet-name-@worksheet.Id" class="worksheet-name">@worksheet.Name</span>)
+                        </span>
                         <div class="text-end d-flex align-items-center custom-field-count-info">
                             <div class="custom-field-count-title"><b>Sections:</b></div>
                             <div class="custom-field-count-value"><span id="worksheet-total-sections-@worksheet.Id">@worksheet.TotalSections</span></div>
