@@ -12,7 +12,17 @@ namespace Unity.Notifications.TeamsNotifications
 {
     public class TeamsNotificationService
     {
-        protected TeamsNotificationService() : base() { }
+        public TeamsNotificationService() : base() { }
+        private readonly List<Fact> _facts = new List<Fact>();
+
+        public async Task PostFactsToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle)
+        {
+            if (!teamsChannel.IsNullOrEmpty())
+            {
+                string messageCard = InitializeMessageCard(activityTitle, activitySubtitle, _facts);
+                await PostToTeamsChannelAsync(teamsChannel, messageCard);
+            }
+        }
 
         public static async Task PostToTeamsAsync(string teamsChannel, string activityTitle, string activitySubtitle, List<Fact> facts)
         {
@@ -20,6 +30,18 @@ namespace Unity.Notifications.TeamsNotifications
                 string messageCard = InitializeMessageCard(activityTitle, activitySubtitle, facts);
                 await PostToTeamsChannelAsync(teamsChannel, messageCard);
             }
+        }
+
+        public List<Fact> AddFact(string Name, string Value)
+        {
+            var fact = new Fact
+            {
+                Name = Name,
+                Value = Value
+            };
+
+            _facts.Add(fact);
+            return _facts;
         }
 
         private static class ChefsEventTypesConsts
