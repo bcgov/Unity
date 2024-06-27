@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.EntityFrameworkCore;
+using Unity.Payments.Enums;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -32,6 +34,12 @@ namespace Unity.Payments.Repositories
               .FirstOrDefault();
 
             return applicationPaymentRequestsTotal;
+        }
+
+        public async Task<List<PaymentRequest>> GetPaymentRequestsBySentToCasStatusAsync()
+        {
+            var dbSet = await GetDbSetAsync();
+            return dbSet.Where(p => p.InvoiceStatus.Equals(CasPaymentRequestStatus.SentToCas)).IncludeDetails().ToList();
         }
 
         public override async Task<IQueryable<PaymentRequest>> WithDetailsAsync()

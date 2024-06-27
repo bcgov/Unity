@@ -11,15 +11,22 @@ using Localization.Resources.AbpUi;
 using Volo.Abp.AspNetCore.Mvc;
 using Unity.Payments.EntityFrameworkCore;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.BackgroundJobs;
+using Microsoft.Extensions.Configuration;
+using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.Payments.PaymentRequests;
+
 
 namespace Unity.Payments;
 
 [DependsOn(
-    typeof(AbpVirtualFileSystemModule),    
+    typeof(AbpVirtualFileSystemModule),
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
     typeof(AbpVirtualFileSystemModule),
-    typeof(PaymentsApplicationContractsModule)
+    typeof(PaymentsApplicationContractsModule),
+    typeof(AbpBackgroundJobsModule),
+    typeof(AbpBackgroundWorkersQuartzModule)
     )]
 public class PaymentsApplicationModule : AbpModule
 {
@@ -31,9 +38,26 @@ public class PaymentsApplicationModule : AbpModule
         });
     }
 
-
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var configuration = context.Services.GetConfiguration();
+
+        Configure<CasPaymentRequestBackgroundJobsOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+            options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
+            options.PaymentRequestOptions.ConsumerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ConsumerExpression") ?? "";
+        });
+
+        Configure<RabbitMQOptions>(options =>
+        {
+            options.HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "";
+            options.Port = configuration.GetValue<int>("RabbitMQ:Port");
+            options.UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "";
+            options.Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "";
+            options.VirtualHost = configuration.GetValue<string>("RabbitMQ:VirtualHost") ?? "";
+        });
+
         Configure<AbpMultiTenancyOptions>(options =>
         {
             options.IsEnabled = true;

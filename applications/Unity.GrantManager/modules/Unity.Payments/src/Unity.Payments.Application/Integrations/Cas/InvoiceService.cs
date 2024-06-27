@@ -115,10 +115,10 @@ namespace Unity.Payments.Integrations.Cas
                         // Set the status - for the payment request
                         if (invoiceResponse.IsSuccess())
                         {
-                            paymentRequest.SetInvoiceStatus("SentToCas");
+                            paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.SentToCas);
                         } else
                         {
-                            paymentRequest.SetInvoiceStatus("ErrorFromCas");
+                            paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.ErrorFromCas);
                         }
                         await _iPaymentRequestRepository.UpdateAsync(paymentRequest, autoSave: true);
                     }
@@ -178,10 +178,10 @@ namespace Unity.Payments.Integrations.Cas
             }
         }
 
-        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string paymentId)
+        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string invoiceNumber, string supplierNumber, string siteNumber)
         {
             var authHeaders = await _iTokenService.GetAuthHeadersAsync();
-            var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/payment/{paymentId}";
+            var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
             var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
 
             if (response != null
