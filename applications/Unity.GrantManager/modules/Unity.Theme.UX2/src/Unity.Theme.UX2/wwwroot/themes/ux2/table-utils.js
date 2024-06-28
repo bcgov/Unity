@@ -22,7 +22,10 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             paging: true,
             order: [[defaultSortColumn, 'desc']],
             searching: true,
-            pageLength: maxRowsPerPage,
+           
+           
+            iDisplayLength: 25,
+            lengthMenu: [10, 25, 50, 100],
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
                 dataEndpoint,
@@ -47,7 +50,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             //fixedHeader: true,
             stateSave: true,
             stateDuration: 0,
-            dom: 'Bfrtip',
+            dom: 'Blfrtip',
             buttons: actionButtons,
             drawCallback: function () {
                 $(`#${dt[0].id}_previous a`).text("<");
@@ -82,7 +85,10 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
     });
 
     iDt.buttons().container().prependTo(`#${dynamicButtonContainerId}`);
+    $('.dataTables_wrapper').append('<div class="length-menu-footer"></div>');
 
+    // Move the length menu to the footer container
+    $('.dataTables_length').appendTo('.length-menu-footer');
     init(iDt);
 
     updateFilter(iDt, dt[0].id);

@@ -56,7 +56,7 @@
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 3, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 10, 3, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 

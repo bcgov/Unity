@@ -44,7 +44,7 @@
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
-        15,
+        10,
         4,
         unity.grantManager.grantApplications.grantApplication.getList,
         {},
