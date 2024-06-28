@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Notifications.EmailNotificaions;
 using Unity.Notifications.Emails;
+using Unity.Notifications.Events;
 using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.Application.Services;
@@ -47,8 +48,6 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         <br>
         *ATTENTION - Please do not reply to this email as it is an automated notification which is unable to receive replies.<br>";
 
-
-
     private const string declineBody =
         @"Hello,<br>
         <br>
@@ -66,9 +65,24 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     {
         return approvalBody;
     }
+
     public string GetDeclineBody()
     {
         return declineBody;
+    }
+
+    public async Task<EmailLog?> InitializeEmailLog(string email, string body, string subject, Guid applicationId)
+    {        
+        if (string.IsNullOrEmpty(email))
+        {
+            return null;
+        }
+        var emailObject = GetEmailObject(email, body, subject, applicationId);
+        EmailLog emailLog = GetMappedEmailLog(emailObject);
+        
+        // When being called here the current tenant is in context - verified by looking at the tenant id
+        EmailLog loggedEmail = await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);
+        return loggedEmail;
     }
 
     protected virtual async Task NotifyTeamsChannel(string chesEmailError)
@@ -87,6 +101,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="email">The email address to send to</param>
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
+    /// <param name="applicationId">Application Id GUID</param>
     public async Task<RestResponse> SendEmailNotification(string email, string body, string subject, Guid applicationId)
     {
         RestResponse response = new RestResponse();
@@ -114,18 +129,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <summary>
     /// Send Email To Queue
     /// </summary>
-    /// <param name="email">The email address to send to</param>
-    /// <param name="body">The body of the email</param>
-    /// <param name="subject">Subject Message</param>
-    public async Task SendEmaiToQueue(string email, string body, string subject, Guid applicationId)
-    {
-        if (!string.IsNullOrEmpty(email))
-        {            
-            var emailObject = GetEmailObject(email, body, subject, applicationId);
-            EmailLog emailLog = GetMappedEmailLog(emailObject);
-            EmailLog loggedEmail = await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);
-            await _emailQueueService.SendToEmailQueueAsync(loggedEmail);
-        }
+    /// <param name="EmailLog">The email log to send to q</param>
+    public async Task SendEmailToQueue(EmailLog emailLog)
+    {        
+        EmailNotificationEvent emailNotificationEvent = new EmailNotificationEvent();
+        emailNotificationEvent.Id = emailLog.Id;
+        emailNotificationEvent.TenantId = emailLog.TenantId;
+        emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
+        await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
     protected virtual dynamic GetEmailObject(string email, string body, string subject, Guid applicationId)

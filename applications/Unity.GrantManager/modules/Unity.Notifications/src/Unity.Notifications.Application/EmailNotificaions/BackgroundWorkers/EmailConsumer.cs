@@ -16,6 +16,9 @@ using RestSharp;
 using System.Net;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Unity.Notifications.Events;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -26,13 +29,16 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
     private readonly IEmailLogsRepository _emailLogsRepository;
     private readonly IOptions<RabbitMQOptions> _rabbitMQOptions;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
+    private readonly ICurrentTenant _currentTenant;
+#pragma warning restore S4487 // Unread "private" fields should be removed
 
     public EmailConsumer(
         IEmailLogsRepository emailLogsRepository,
         IOptions<EmailBackgroundJobsOptions> emailBackgroundJobsOptions,
         IOptions<RabbitMQOptions> rabbitMQOptions,
         EmailQueueService  emailQueueService,
-        IUnitOfWorkManager unitOfWorkManager
+        IUnitOfWorkManager unitOfWorkManager,
+        ICurrentTenant currentTenant
         )
     {
         _rabbitMQOptions = rabbitMQOptions;
@@ -41,6 +47,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
         _retryAttemptMax = emailBackgroundJobsOptions.Value.EmailResend.RetryAttemptsMaximum;
         _emailLogsRepository = emailLogsRepository;
         _unitOfWorkManager = unitOfWorkManager;
+        _currentTenant = currentTenant;
 
         Trigger = TriggerBuilder.Create().WithIdentity(nameof(EmailConsumer))
             .WithSchedule(CronScheduleBuilder.CronSchedule(emailBackgroundJobsOptions.Value.EmailResend.Expression)
@@ -50,28 +57,24 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
 
     private static bool ReprocessBasedOnStatusCode(HttpStatusCode statusCode)
     {
-        HttpStatusCode[] reprocessStatusCodes = new HttpStatusCode[] {
-             HttpStatusCode.Unauthorized,
-             HttpStatusCode.Forbidden,
-             HttpStatusCode.NotFound,
-             HttpStatusCode.Conflict,
-             HttpStatusCode.Locked,
+        HttpStatusCode[] reprocessStatusCodes = {
              HttpStatusCode.TooManyRequests,
              HttpStatusCode.InternalServerError,
              HttpStatusCode.BadGateway,
              HttpStatusCode.ServiceUnavailable,
              HttpStatusCode.GatewayTimeout,
         };
+
         return reprocessStatusCodes.Contains(statusCode);
     }
 
     public override async Task Execute(IJobExecutionContext context)
     {
-        ProcessDelayedEmailMessages();
+        ProcessEmailMessages();
         await Task.CompletedTask;
     }
 
-    public void ProcessDelayedEmailMessages()
+    public void ProcessEmailMessages()
     {
         RabbitMQConnection rabbitMQConnection = new RabbitMQConnection(_rabbitMQOptions);
         IConnection connection = rabbitMQConnection.GetConnection();
@@ -89,9 +92,17 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
         {
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
-            EmailLog? emailLog = JsonConvert.DeserializeObject<EmailLog>(message);
-            using (var uow = _unitOfWorkManager.Begin(true, false))
+            EmailNotificationEvent? emailNotificationEvent = JsonConvert.DeserializeObject<EmailNotificationEvent>(message);
+
+            if(emailNotificationEvent == null || emailNotificationEvent.TenantId == Guid.Empty || emailNotificationEvent.Id == Guid.Empty) {
+                throw new UserFriendlyException("Notification Event null or no Tenant ID or Email Id");
+            }
+
+            // Grab the tenant and switch db context
+            var uow = _unitOfWorkManager.Begin(true, false);
+            using (_currentTenant.Change(emailNotificationEvent.TenantId))
             {
+                EmailLog? emailLog = await _emailLogsRepository.GetAsync(emailNotificationEvent.Id);
                 if (emailLog != null && emailLog.Id != Guid.Empty && emailLog.ToAddress != null)
                 {
                     channel.BasicAck(ea.DeliveryTag, false);
@@ -111,7 +122,8 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
                                 emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
                                 EmailLog updatedEmailLog = await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
                                 await uow.SaveChangesAsync();
-                                await _emailQueueService.SendToEmailDelayedQueueAsync(updatedEmailLog);
+                                emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
+                                await _emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
                             }
                         }
                     } catch (Exception ex)
@@ -122,7 +134,6 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
                 }
 
             }
-
         };
 
         channel.BasicConsume(queue: EmailQueueService.UNITY_EMAIL_QUEUE, autoAck: false, consumer: consumer);

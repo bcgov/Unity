@@ -7,6 +7,7 @@ using Volo.Abp.BackgroundJobs;
 using Unity.Notifications.EmailNotifications;
 using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.Notifications;
 
@@ -41,6 +42,11 @@ public class NotificationsApplicationModule : AbpModule
             options.UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "";
             options.Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "";
             options.VirtualHost = configuration.GetValue<string>("RabbitMQ:VirtualHost") ?? "";
+        });
+
+        Configure<AbpMultiTenancyOptions>(options =>
+        {
+            options.IsEnabled = true;
         });
     }
 }
