@@ -1,8 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
-@using Newtonsoft.Json
-@using Unity.Flex.Localization;
-@using Microsoft.Extensions.Localization;
-@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
+@using Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 @using Unity.Flex.Worksheets;
 @using Unity.Flex.Web.Views.Shared.Components;
@@ -16,7 +13,6 @@
 
 @model WorksheetViewModel;
 
-@inject IStringLocalizer<FlexResource> L
 @inject IAuthorizationService AuthorizationService
 
 @if (Model.IsConfigured)
@@ -68,6 +64,11 @@
                                     case CustomFieldType.CheckboxGroup:
                                         {
                                             @await Component.InvokeAsync(typeof(CheckboxGroupWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.BCAddress:
+                                        {
+                                            @await Component.InvokeAsync(typeof(BCAddressWidget), new { fieldModel = field, modelName = Model.Name })
                                             break;
                                         }
                                     default:

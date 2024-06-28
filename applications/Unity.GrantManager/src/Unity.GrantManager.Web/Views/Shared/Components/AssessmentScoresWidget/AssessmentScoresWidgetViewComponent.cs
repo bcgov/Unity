@@ -6,6 +6,13 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Assessments;
+using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Scoresheets;
+using System.Linq;
+using Unity.Flex.Worksheets;
+using Unity.Flex.Web.Views.Shared.Components;
+using Unity.Flex.Worksheets.Values;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 {
@@ -17,26 +24,52 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
     public class AssessmentScoresWidgetViewComponent : AbpViewComponent
     {
         private readonly IAssessmentRepository _assessmentRepository;
-        public AssessmentScoresWidgetViewComponent(IAssessmentRepository assessmentRepository)
+        private readonly IScoresheetRepository _scoresheetRepository;
+        private readonly IScoresheetInstanceRepository _scoresheetInstanceRepository;
+        public AssessmentScoresWidgetViewComponent(IAssessmentRepository assessmentRepository, IScoresheetRepository scoresheetRepository, IScoresheetInstanceRepository scoresheetInstanceRepository)
         {
             _assessmentRepository = assessmentRepository;
+            _scoresheetRepository = scoresheetRepository;
+            _scoresheetInstanceRepository = scoresheetInstanceRepository;
         }
+        
 
         public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId)
         {
-            if(assessmentId == Guid.Empty)
+            if (assessmentId == Guid.Empty)
             {
                 return View(new AssessmentScoresWidgetViewModel());
             }
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
-
+            var scoresheetInstance = await _scoresheetInstanceRepository.GetByCorrelationAsync(assessment.Id);
+            ScoresheetDto? scoresheetDto = null;
+            if (scoresheetInstance != null)
+            {
+                var scoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetInstance.ScoresheetId);
+                if (scoresheet != null)
+                {
+                    scoresheetDto = ObjectMapper.Map<Scoresheet, ScoresheetDto?>(scoresheet);
+                    foreach (var answer in scoresheetInstance.Answers)
+                    {
+                        foreach (var section in scoresheetDto!.Sections)
+                        {
+                            var question = section.Fields.FirstOrDefault(q => q.Id == answer.QuestionId);
+                            if (question != null)
+                            {
+                                question.Answer = Convert.ToDouble(ValueResolver.Resolve(answer.CurrentValue!,CustomFieldType.Numeric)!.ToString());
+                            }
+                        }
+                    }
+                }
+            }
             AssessmentScoresWidgetViewModel model = new()
             {
                 AssessmentId = assessmentId,
-                FinancialAnalysis = assessment.FinancialAnalysis,
-                EconomicImpact = assessment.EconomicImpact,
-                InclusiveGrowth = assessment.InclusiveGrowth,
-                CleanGrowth = assessment.CleanGrowth,
+                Scoresheet = scoresheetDto,
+                SectionScore1 = assessment.SectionScore1,
+                SectionScore2 = assessment.SectionScore2,
+                SectionScore3 = assessment.SectionScore3,
+                SectionScore4 = assessment.SectionScore4,
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,

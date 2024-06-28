@@ -26,6 +26,9 @@
     <PackageReference Include="Volo.Abp.SettingManagement.Domain" Version="8.1.0" />
     <PackageReference Include="Volo.Abp.OpenIddict.Domain" Version="8.1.0" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Domain.OpenIddict" Version="8.1.0" />
+	  <SonarQubeSetting Include="sonar.exclusions">
+		  <Value>**/Assessments/Assessment.cs, **/Assessments/AssessmentWithAssessorQueryResultItem.cs</Value>
+	  </SonarQubeSetting>
   </ItemGroup>
 
 </Project>

@@ -38,10 +38,10 @@ $(function () {
             ).then(function (form) {
                 // Set Example Submission Object
                 form.submission = submissionData.submission.submission;
-                addEventListeners();
                 form.resetValue();
                 form.refresh();
                 form.on('render', function() {
+                    addEventListeners();
                     storeRenderedHtml();
                 });
             });

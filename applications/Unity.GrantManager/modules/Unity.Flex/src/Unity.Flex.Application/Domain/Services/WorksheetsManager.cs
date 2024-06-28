@@ -112,10 +112,11 @@ namespace Unity.Flex.Domain.Services
             return await worksheetInstanceRepository.InsertAsync(newWorksheetInstance);
         }
 
-        public async Task CreateWorksheetDataByFields(CreateWorksheetInstanceByFieldValuesEto eventData)
+        public async Task<List<(Worksheet, WorksheetInstance)>> CreateWorksheetDataByFields(CreateWorksheetInstanceByFieldValuesEto eventData)
         {
-            if (eventData.CustomFields.Count == 0) { return; }
+            if (eventData.CustomFields.Count == 0) { return []; }
             var worksheetNames = new List<string>();
+            var newWorksheetInstances = new List<(Worksheet, WorksheetInstance)>();
 
             // naming convention custom_worksheetname_fieldname
             foreach (var field in eventData.CustomFields)
@@ -134,27 +135,35 @@ namespace Unity.Flex.Domain.Services
 
                 if (worksheet != null)
                 {
-                    var newInstance = new WorksheetInstance(Guid.NewGuid(),
-                     worksheet.Id,
-                     eventData.InstanceCorrelationId,
-                     eventData.InstanceCorrelationProvider,
-                     worksheet.UIAnchor);
+                    var worksheetLink = await worksheetLinkRepository.GetExistingLinkAsync(worksheet.Id, eventData.SheetCorrelationId, eventData.SheetCorrelationProvider);
 
-                    var allFields = worksheet.Sections.SelectMany(s => s.Fields);
-
-                    foreach (var field in allFields)
+                    if (worksheetLink != null)
                     {
-                        var match = eventData.CustomFields.Find(s => s.Key == field.Name);
-                        newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
-                    }
+                        var newInstance = new WorksheetInstance(Guid.NewGuid(),
+                         worksheet.Id,
+                         eventData.InstanceCorrelationId,
+                         eventData.InstanceCorrelationProvider,
+                         worksheetLink.UiAnchor);
 
-                    var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);
-                    UpdateWorksheetInstanceValue(newWorksheetInstance);
+                        var allFields = worksheet.Sections.SelectMany(s => s.Fields);
+
+                        foreach (var field in allFields)
+                        {
+                            var match = eventData.CustomFields.Find(s => s.Key == field.Name);
+                            newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
+                        }
+
+                        var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);
+                        UpdateWorksheetInstanceValue(newWorksheetInstance);
+                        newWorksheetInstances.Add(new(worksheet, newWorksheetInstance));
+                    }
                 }
             }
+
+            return newWorksheetInstances;
         }
 
-        public async Task<WorksheetLink> CreateWorksheetLink(Guid worksheetId, Guid correlationId, string correlationProvider)
+        public async Task<WorksheetLink> CreateWorksheetLink(Guid worksheetId, Guid correlationId, string correlationProvider, string uiAnchor)
         {
             // Validate duplicates etc...
 
@@ -165,7 +174,7 @@ namespace Unity.Flex.Domain.Services
                 throw new BusinessException("Link already exists, use versioning to update links");
             }
 
-            return await worksheetLinkRepository.InsertAsync(new WorksheetLink(Guid.NewGuid(), worksheetId, correlationId, correlationProvider));
+            return await worksheetLinkRepository.InsertAsync(new WorksheetLink(Guid.NewGuid(), worksheetId, correlationId, correlationProvider, uiAnchor));
         }
 
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)

@@ -7,6 +7,8 @@ namespace Unity.Flex.Worksheets
 {
     public interface IWorksheetListAppService : IApplicationService
     {
-        Task<List<WorksheetBasicDto>> GetListByCorrelationAsync(Guid? correlationId, string correlationProvider);
+        Task<WorksheetBasicDto> GetAsync(Guid id);
+        Task<List<WorksheetBasicDto>> GetListByCorrelationAsync(Guid correlationId, string correlationProvider);
+        Task<List<WorksheetBasicDto>> GetListAsync();
     }
 }

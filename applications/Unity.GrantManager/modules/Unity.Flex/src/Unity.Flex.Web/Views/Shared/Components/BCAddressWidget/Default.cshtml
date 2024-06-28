@@ -1,0 +1,23 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.BCAddressWidget;
+@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Worksheets.Values;
+
+@model BCAddressViewModel;
+
+@if (Model.Field != null)
+{
+    BCAddressLocationValue? dataValue = (BCAddressLocationValue?)Model.Field.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type);
+
+    <div>
+        @dataValue?.Properties?.FullAddress
+    </div>
+    <div>
+        @dataValue?.GeoElectoralDistrict
+    </div>
+    <div>
+        @dataValue?.GeoRegionalDistrict
+    </div>
+    <div>
+        @dataValue?.GeoEconomicRegion
+    </div>
+}

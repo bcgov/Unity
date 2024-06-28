@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
     public class DetailsModel : AbpPageModel
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
-        private readonly IWorksheetListAppService _worksheetListAppService;
+        private readonly IWorksheetLinkAppService _worksheetLinkAppService;
         private readonly IFeatureChecker _featureChecker;
 
         [BindProperty(SupportsGet = true)]
@@ -49,7 +49,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public string? ChefsSubmissionId { get; set; } = null;
-        
+
         [BindProperty(SupportsGet = true)]
         public string? ApplicationFormSubmissionData { get; set; } = null;
 
@@ -72,13 +72,13 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public List<WorksheetBasicDto> CustomTabs { get; set; } = [];
 
         public DetailsModel(GrantApplicationAppService grantApplicationAppService,
-            IWorksheetListAppService worksheetListAppService,
+            IWorksheetLinkAppService worksheetLinkAppService,
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration)
         {
             _grantApplicationAppService = grantApplicationAppService;
-            _worksheetListAppService = worksheetListAppService;
+            _worksheetLinkAppService = worksheetLinkAppService;
             _featureChecker = featureChecker;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
@@ -92,8 +92,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                var worksheets = await _worksheetListAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
-                CustomTabs = worksheets.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).ToList();
+                var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
+                CustomTabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => s.Worksheet).ToList();
             }
 
             if (applicationFormSubmission != null)
@@ -102,9 +102,12 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
                 ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
                 HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
-                if(!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML)) {
+                if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML))
+                {
                     ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
-                } else {
+                }
+                else
+                {
                     ApplicationFormSubmissionData = applicationFormSubmission.Submission;
                 }
             }

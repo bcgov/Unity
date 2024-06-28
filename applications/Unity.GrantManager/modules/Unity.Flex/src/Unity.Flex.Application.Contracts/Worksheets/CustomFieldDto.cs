@@ -7,6 +7,7 @@ namespace Unity.Flex.Worksheets
     public class CustomFieldDto : EntityDto<Guid>
     {
         public string Name { get; set; } = string.Empty;
+        public string Field { get; set; } = string.Empty;
         public string Label { get; set; } = string.Empty;
         public CustomFieldType Type { get; set; }
         public uint Order { get; set; }

@@ -44,8 +44,11 @@
                     title: l('AssessmentResultAttachments:UploadedDate'),
                     data: 'time',
                     className: 'data-table-header',
-                    render: function (data) {
-                        return new Date(data).toDateString();
+                    render: function (data, type) {
+                        if (type === 'display') {
+                            return new Date(data).toDateString();
+                        }
+                        return data;
                     },
                 },
                 {

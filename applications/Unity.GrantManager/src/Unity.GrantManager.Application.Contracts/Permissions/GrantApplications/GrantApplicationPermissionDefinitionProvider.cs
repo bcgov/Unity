@@ -44,12 +44,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             // Assessment Results
             var assessmentResultPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.AssessmentResults.Default, L("Permission:GrantApplicationPermissions.AssessmentResults.Default"));
             assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.Edit, L("Permission:GrantApplicationPermissions.AssessmentResults.Edit"));
-            assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields, L("Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields"));
-
-            // Payment Requests
-            var paymentsPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Payments.Default, L("Permission:GrantApplicationPermissions.Payments.Default"));
-            paymentsPermissions.AddChild(GrantApplicationPermissions.Payments.Approve, L("Permission:GrantApplicationPermissions.Payments.Approve"));
-            paymentsPermissions.AddChild(GrantApplicationPermissions.Payments.Decline, L("Permission:GrantApplicationPermissions.Payments.Decline"));
+            assessmentResultPermissions.AddChild(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields, L("Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields"));           
         }
 
         private static LocalizableString L(string name)
