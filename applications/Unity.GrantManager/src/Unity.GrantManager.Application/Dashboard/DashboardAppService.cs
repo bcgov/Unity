@@ -178,7 +178,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
         var requestApprovedAmtDto = await ExecuteWithDisabledTracking(async () =>
         {
             var baseQuery = await GetBaseQueryAsync(parameters);
-            var applicationQuery = baseQuery.Select(bq => bq.Application);
+            var applicationQuery = baseQuery.Select(bq => bq.Application).Distinct();
 
             var applicationTags = await GetFilteredApplicationTags(applicationQuery, parameters);
             var filteredApplications = applicationQuery.Where(app => applicationTags.Contains(app.Id));
@@ -186,17 +186,11 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var requestedAmount = filteredApplications.Sum(app => app.RequestedAmount);
             var approvedAmount = filteredApplications.Sum(app => app.ApprovedAmount);
 
-            var data = new Dictionary<string, decimal?>
+            var queryResult = new List<GetRequestedApprovedAmtDto>
             {
-                { "Requested Amount", requestedAmount },
-                { "Approved Amount", approvedAmount }
+                new GetRequestedApprovedAmtDto { Description = "Requested Amount", Amount = requestedAmount },
+                new GetRequestedApprovedAmtDto { Description = "Approved Amount", Amount = approvedAmount }
             };
-
-            var queryResult = data.Select(kv => new GetRequestedApprovedAmtDto
-            {
-                Description = kv.Key,
-                Amount = kv.Value ?? 0
-            }).ToList();
 
             return queryResult;
         }); 
