@@ -1,4 +1,6 @@
-﻿using Volo.Abp.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Unity.Notifications.Emails;
+using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 
 namespace Unity.Notifications.EntityFrameworkCore;
@@ -7,4 +9,5 @@ namespace Unity.Notifications.EntityFrameworkCore;
 public interface INotificationsDbContext : IEfCoreDbContext
 {
     // Add DbSet for each Aggregate Root here.
+    public DbSet<EmailLog> EmailLogs { get; set; }
 }
