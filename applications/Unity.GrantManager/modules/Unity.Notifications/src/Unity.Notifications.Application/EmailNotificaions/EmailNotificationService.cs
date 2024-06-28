@@ -77,8 +77,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         {
             return null;
         }
-        var emailObject = GetEmailObject(email, body, subject, applicationId);
+        var emailObject = GetEmailObject(email, body, subject);
         EmailLog emailLog = GetMappedEmailLog(emailObject);
+        emailLog.ApplicationId = applicationId;
         
         // When being called here the current tenant is in context - verified by looking at the tenant id
         EmailLog loggedEmail = await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);
@@ -101,15 +102,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="email">The email address to send to</param>
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
-    /// <param name="applicationId">Application Id GUID</param>
-    public async Task<RestResponse> SendEmailNotification(string email, string body, string subject, Guid applicationId)
+    public async Task<RestResponse> SendEmailNotification(string email, string body, string subject)
     {
         RestResponse response = new RestResponse();
         try
         {
             if (!string.IsNullOrEmpty(email))
             {
-                var emailObject = GetEmailObject(email, body, subject, applicationId);
+                var emailObject = GetEmailObject(email, body, subject);
                 response = await _chesClientService.SendAsync(emailObject);
                 await LogEmailResponse(emailObject, response);
             }
@@ -126,6 +126,19 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return response;
     }
 
+    public async Task<EmailLog?> GetEmailLogById(Guid id)
+    {
+        EmailLog emailLog = new EmailLog();
+        try
+        {
+            emailLog = await _emailLogsRepository.GetAsync(id);
+        } 
+        catch (Exception ex) { 
+            Console.WriteLine(ex);
+        }
+        return emailLog;
+    }
+
     /// <summary>
     /// Send Email To Queue
     /// </summary>
@@ -139,7 +152,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
-    protected virtual dynamic GetEmailObject(string email, string body, string subject, Guid applicationId)
+    protected virtual dynamic GetEmailObject(string email, string body, string subject)
     {
         List<string> toList = new() { email };
         var emailObject = new
@@ -151,8 +164,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             priority = "normal",
             subject,
             tag = "tag",
-            to = toList,
-            applicationId
+            to = toList
         };
         return emailObject;
     }
@@ -173,7 +185,6 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.BodyType = emailDynamicObject.bodyType;
         emailLog.FromAddress = emailDynamicObject.from;
         emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault() ?? "";
-        emailLog.ApplicantId = emailDynamicObject.applicationId;
         return emailLog;
     }
 }

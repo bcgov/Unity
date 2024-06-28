@@ -99,10 +99,11 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
             }
 
             // Grab the tenant and switch db context
-            var uow = _unitOfWorkManager.Begin(true, false);
             using (_currentTenant.Change(emailNotificationEvent.TenantId))
             {
-                EmailLog? emailLog = await _emailLogsRepository.GetAsync(emailNotificationEvent.Id);
+                var uow = _unitOfWorkManager.Begin(true, false);
+                IEmailNotificationService _emailNotificationService = ServiceProvider.GetRequiredService<IEmailNotificationService>();
+                EmailLog? emailLog = await _emailNotificationService.GetEmailLogById(emailNotificationEvent.Id);   
                 if (emailLog != null && emailLog.Id != Guid.Empty && emailLog.ToAddress != null)
                 {
                     channel.BasicAck(ea.DeliveryTag, false);
@@ -111,12 +112,10 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
                         // Resend the email - Update the RetryCount
                         if (emailLog.RetryAttempts <= _retryAttemptMax)
                         {
-                            IEmailNotificationService _emailNotificationService = ServiceProvider.GetRequiredService<IEmailNotificationService>();
                             RestResponse response = await _emailNotificationService.SendEmailNotification(
                                                                                             emailLog.ToAddress, 
                                                                                             emailLog.Body, 
-                                                                                            emailLog.Subject, 
-                                                                                            emailLog.ApplicationId);
+                                                                                            emailLog.Subject);
                             if(ReprocessBasedOnStatusCode(response.StatusCode))
                             {
                                 emailLog.RetryAttempts = emailLog.RetryAttempts + 1;

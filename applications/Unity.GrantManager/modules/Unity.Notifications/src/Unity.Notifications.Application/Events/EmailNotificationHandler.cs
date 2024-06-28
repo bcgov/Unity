@@ -47,7 +47,7 @@ namespace Unity.GrantManager.Events
 
         private async Task EmailNotificationEventAsync(EmailNotificationEvent eventData)
         {
-            if (eventData == null || !string.IsNullOrEmpty(eventData.EmailAddress)) return;
+            if (eventData == null || string.IsNullOrEmpty(eventData.EmailAddress)) return;
 
             string email = eventData.EmailAddress;
             switch (eventData.Action)
