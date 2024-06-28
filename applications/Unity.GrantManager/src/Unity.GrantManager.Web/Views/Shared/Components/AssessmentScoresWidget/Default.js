@@ -62,9 +62,9 @@ function positiveIntegersOnly(e) {
     }
 }
 
-function handleInputChange(questionId) {
-    const inputField = document.getElementById('answer-' + questionId);
-    const saveButton = document.getElementById('save-' + questionId);
+function handleInputChange(questionId, inputFieldPrefix, saveButtonPrefix) {
+    const inputField = document.getElementById(inputFieldPrefix + questionId);
+    const saveButton = document.getElementById(saveButtonPrefix + questionId);
     const originalValue = inputField.getAttribute('data-original-value');
 
     if (inputField.value !== originalValue) {
@@ -76,7 +76,7 @@ function handleInputChange(questionId) {
 
 function updateSubtotal() {
     setTimeout(function () {
-        const answerInputs = document.querySelectorAll('.answer-input');
+        const answerInputs = document.querySelectorAll('.answer-number-input');
         let subtotal = 0;
         answerInputs.forEach(input => {
             subtotal += parseFloat(input.value) || 0;
@@ -90,12 +90,15 @@ function updateSubtotal() {
 }
 
 
-function saveChanges(questionId) {
-    const inputField = document.getElementById('answer-' + questionId);
-    const saveButton = document.getElementById('save-' + questionId);
+function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType) {
+    const inputField = document.getElementById(inputFieldPrefix + questionId);
+    const saveButton = document.getElementById(saveButtonPrefix + questionId);
     const assessmentId = $("#AssessmentId").val();
-    const answerValue = inputField.value || 0;
-    unity.grantManager.assessments.assessment.saveScoresheetAnswer(assessmentId, questionId, answerValue)
+    let answerValue = inputField.value;
+    if (questionType == 1 && !answerValue) {
+        answerValue = 0;
+    }
+    unity.grantManager.assessments.assessment.saveScoresheetAnswer(assessmentId, questionId, answerValue, questionType)
         .then(response => {
             abp.notify.success(
                 'Answer is successfully saved.',
@@ -109,9 +112,9 @@ function saveChanges(questionId) {
 
 }
 
-function discardChanges(questionId) {
-    const inputField = document.getElementById('answer-' + questionId);
-    const saveButton = document.getElementById('save-' + questionId);
+function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix) {
+    const inputField = document.getElementById(inputFieldPrefix + questionId);
+    const saveButton = document.getElementById(saveButtonPrefix + questionId);
 
     const originalValue = inputField.getAttribute('data-original-value');
     inputField.value = originalValue;

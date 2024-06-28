@@ -10,6 +10,13 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class QuestionRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Question, Guid>(dbContextProvider), IQuestionRepository
     {
+        public async Task<Question?> GetAsync(Guid questionId)
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Questions.Include(q => q.Answers)
+                             .FirstOrDefaultAsync(q => q.Id == questionId);
+        }
+
         public async Task<Question?> GetQuestionWithHighestOrderAsync(Guid sectionId)
         {
             var dbContext = await GetDbContextAsync();

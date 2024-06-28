@@ -1,6 +1,10 @@
-﻿@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
+﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
+@using Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
+@using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
+@using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
+@using Unity.Flex.Scoresheets;
 
 @model AssessmentScoresWidgetViewModel
 @{
@@ -43,14 +47,26 @@
                                                             <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id" data-bs-parent="#questionsAccordion-@sec.Id">
                                                                 <div class="accordion-body">
                                                                     <p>@question.Description</p>
-                                                                    <div class="mb-3">
-                                                                        <label for="answer-@question.Id" class="form-label">Answer</label>
-                                                                        <input type="number" class="form-control answer-input" disabled="@Model.IsDisabled()" id="answer-@question.Id" name="Answers[@question.Id]" value="@question.Answer" data-original-value="@question.Answer" oninput="handleInputChange('@question.Id')" />
-                                                                    </div>
-                                                                    <div class="btn-group">
-                                                                        <button type="button" class="btn btn-primary" disabled="@Model.IsDisabled()" id="save-@question.Id" onclick="saveChanges('@question.Id')">SAVE CHANGES</button>
-                                                                        <button type="button" class="btn btn-secondary" disabled="@Model.IsDisabled()" onclick="discardChanges('@question.Id')">DISCARD CHANGES</button>
-                                                                    </div>
+                                                                    
+                                                                    @switch (question.Type)
+                                                                    {
+                                                                        case QuestionType.Number:
+                                                                            {
+                                                                                @await Component.InvokeAsync(typeof(QuestionNumberWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = Convert.ToDouble(question.Answer) })
+                                                                                break;
+                                                                            }
+                                                                        case QuestionType.YesNo:
+                                                                            {
+                                                                                @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer })
+                                                                                break;
+                                                                            }
+                                                                        case QuestionType.Text:
+                                                                            {
+                                                                                @await Component.InvokeAsync(typeof(QuestionTextWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer })
+                                                                                break;
+                                                                            }
+                                                                    }
+                                                                    
                                                                 </div>
                                                             </div>
                                                         </div>

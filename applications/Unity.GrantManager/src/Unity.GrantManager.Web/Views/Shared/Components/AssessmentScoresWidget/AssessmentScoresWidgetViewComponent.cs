@@ -56,7 +56,25 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                             var question = section.Fields.FirstOrDefault(q => q.Id == answer.QuestionId);
                             if (question != null)
                             {
-                                question.Answer = Convert.ToDouble(ValueResolver.Resolve(answer.CurrentValue!,CustomFieldType.Numeric)!.ToString());
+                                switch (question.Type)
+                                {
+                                    case QuestionType.Number:
+                                        {
+                                            question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.Numeric)!.ToString();
+                                            break;
+                                        }
+                                    case QuestionType.YesNo:
+                                        {
+                                            question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.YesNo)!.ToString();
+                                            break;
+                                        }
+                                    case QuestionType.Text:
+                                        {
+                                            question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.Text)!.ToString();
+                                            break;
+                                        }
+                                }
+                                
                             }
                         }
                     }
