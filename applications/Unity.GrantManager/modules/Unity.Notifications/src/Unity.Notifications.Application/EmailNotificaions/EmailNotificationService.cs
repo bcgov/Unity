@@ -13,6 +13,7 @@ using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -133,8 +134,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         {
             emailLog = await _emailLogsRepository.GetAsync(id);
         } 
-        catch (Exception ex) { 
-            Console.WriteLine(ex);
+        catch (EntityNotFoundException ex) {
+            string ExceptionMessage = ex.Message;
+            Logger.LogInformation(ex, "Entity Not found for Email Log Must be in wrong context: {ExceptionMessage}", ExceptionMessage);
         }
         return emailLog;
     }

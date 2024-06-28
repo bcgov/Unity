@@ -119,7 +119,7 @@ public class EmailConsumer : QuartzBackgroundWorkerBase
                             if(ReprocessBasedOnStatusCode(response.StatusCode))
                             {
                                 emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
-                                EmailLog updatedEmailLog = await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                                await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
                                 await uow.SaveChangesAsync();
                                 emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
                                 await _emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
