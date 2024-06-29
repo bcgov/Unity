@@ -21,8 +21,9 @@
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
             id: "btn-toggle-filter",
-            action: function (e, dt, node, config) {
-                $(".tr-toggle-filter").toggle();
+            action: function (e, dt, node, config) {},
+            attr: {
+                id: 'btn-toggle-filter'
             }
         },
         {

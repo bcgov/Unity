@@ -607,9 +607,9 @@ div.dataTables_filter > label > input {
     border-color: var(--bc-colors-blue-primary);
 }
 
-    .tbl-search:focus-visible, :focus-within {
-        outline: var(--bc-colors-blue-primary);
-    }
+.tbl-search:focus-visible, :focus-within {
+    outline: var(--bc-colors-blue-primary);
+}
 
 .checkbox-select:not(:checked) {
     outline: 1px solid var(--bc-colors-blue-primary);
@@ -704,4 +704,20 @@ div.dataTables_wrapper div.dataTables_filter {
     margin-top: 8px;
     right: 8px;
     color: var(--bc-colors-grey-text-300);
+}
+
+.popover .popover-arrow {
+    display: none;
+}
+
+.custom-popover {
+    padding: 2px;
+    border: 2px solid;
+    border-color: var(--bc-colors-blue-primary);
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+#btnClearFilter {
+    background-color: var(--bc-colors-blue-background);
 }

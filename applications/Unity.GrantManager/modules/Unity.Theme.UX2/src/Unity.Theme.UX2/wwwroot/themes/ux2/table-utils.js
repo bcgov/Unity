@@ -11,6 +11,8 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
 
     let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
 
+    let filterData = {};
+
     let iDt = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
             fixedHeader: {
@@ -34,7 +36,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                     return {
                         recordsTotal: result.totalCount,
                         recordsFiltered: result.totalCount,
-                        data: result.items
+                        data: result?.items ?? result
                     };
                 }
             ),
@@ -70,6 +72,12 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                 }
             ],
             processing: true,
+            stateSaveParams: function (settings, data) {
+                updateFilterData(settings, data, filterData);
+            },
+            stateLoadParams: function (settings, data) {
+                updateFilterData(settings, data, filterData);
+            }
         })
     );
 
@@ -85,14 +93,16 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
 
     init(iDt);
 
-    updateFilter(iDt, dt[0].id);
+    updateFilter(iDt, dt[0].id, filterData);
 
     iDt.on('column-reorder.dt', function (e, settings) {
-        updateFilter(iDt, dt[0].id);
+        updateFilter(iDt, dt[0].id, filterData);
     });
     iDt.on('column-visibility.dt', function (e, settings, deselectedcolumn, state) {
-        updateFilter(iDt, dt[0].id);
+        updateFilter(iDt, dt[0].id, filterData);
     });
+
+    searchFilter(iDt);
 
     return iDt;
 }
@@ -125,21 +135,67 @@ function getSelectColumn(title) {
 
 function init(iDt) {
     $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');    
-    bindUIEvents();
+    bindUIEvents(iDt);
     iDt.search('').columns().search('').draw();
 }
 
-function bindUIEvents() {
+function bindUIEvents(iDt) {
 
     const UIElements = {
         searchBar: $('#search-bar'),
-        btnToggleFilter: $('#btn-toggle-filter'),
+        btnToggleFilter: $('#btn-toggle-filter')
     };
-    
-    UIElements.btnToggleFilter.on('click', toggleFilterRow);
+
+    initializeFilTerButtonPopover(UIElements, iDt);
 }
 
-function toggleFilterRow() {    
+function initializeFilTerButtonPopover(UIElements, iDt) {
+    UIElements.btnToggleFilter.on('click', function() {
+        UIElements.btnToggleFilter.popover('toggle');
+    });
+
+    UIElements.btnToggleFilter.popover({
+        html: true,
+        container: 'body',
+        sanitize: false,
+        template: `
+                    <div class="popover custom-popover" role="tooltip">
+                        <div class="popover-arrow"></div>
+                        <div class="popover-body"></div>
+                    </div>
+                  `,
+        content: function() {
+            return `
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showFilter">
+                        <label class="form-check-label" for="showFilter">Show Filter Row</label>
+                    </div>
+                    <abp-button id="btnClearFilter" class="btn btn-primary" text="Clear Filter" type="button">CLEAR FILTER</abp-button>
+                   `;
+        },
+        placement: 'bottom'
+    });
+
+    UIElements.btnToggleFilter.on('click', toggleFilterRow);
+
+    UIElements.btnToggleFilter.on('shown.bs.popover', function() {
+        let popoverElement = $('.popover.custom-popover');
+        $(popoverElement).find('#showFilter').on('click', function () {
+            $(".tr-toggle-filter").toggle();
+        });
+        $(popoverElement).find('#btnClearFilter').on('click', function () {
+            $('#btn-toggle-filter').text('Filter');
+            $('#search').val('');
+            $('.custom-filter-input').val('');
+            iDt.search('').columns().search('').draw();
+            iDt.order([]).draw();
+            iDt.ajax.reload();
+        });
+    });
+}
+
+function toggleFilterRow() {
+    $(this).popover('toggle');
     $('#dtFilterRow').toggleClass('hidden');
 }
 
@@ -198,7 +254,7 @@ function getColumnToggleButtonsSorted(listColumns, dataTable) {
         }));
 }
 
-function updateFilter(dt, dtName) {
+function updateFilter(dt, dtName, filterData) {
     let optionsOpen = false;
     $("#tr-filter").each(function () {
         if ($(this).is(":visible"))
@@ -212,15 +268,30 @@ function updateFilter(dt, dtName) {
             if (column.visible()) {
                 let title = column.header().textContent;
                 if (title) {
-                    let newCell = $("<td>").append("<input type='text' class='form-control input-sm custom-filter-input' placeholder='" + title + "'>");
+
+                    let filterValue = filterData[title] ? filterData[title] : '';
+
+                    let input = $("<input>", {
+                        type: 'text',
+                        class: 'form-control input-sm custom-filter-input',
+                        placeholder: title,
+                        value: filterValue
+                    });
+
+                    let newCell = $("<td>").append(input);
+
+                    if (column.search() !== filterValue) {
+                        column.search(filterValue).draw();
+                    }
+
                     newCell.find("input").on("keyup", function () {
                         if (column.search() !== this.value) {
                             column.search(this.value).draw();
+                            updateFilterButton(filterData);
                         }
                     });
 
                     newRow.append(newCell);
-
                 }
                 else {
                     let newCell = $("<td>");
@@ -228,7 +299,9 @@ function updateFilter(dt, dtName) {
                 }
             }
         });
-    
+
+    updateFilterButton(filterData);
+
     $(`#${dtName} thead`).after(newRow);
 
     if (optionsOpen) {
@@ -236,3 +309,29 @@ function updateFilter(dt, dtName) {
     }
 }
 
+function updateFilterData(settings, data, filterData) {
+    data.columns.forEach((column, index) => {
+        const title = settings.aoColumns[index].sTitle;
+        const filterValue = column.search.search;
+        filterData[title] = filterValue;
+    });
+
+    const searchValue = $('#search').val();
+    data.search.search = searchValue;
+
+    let hasFilter = Object.values(filterData).some(value => value !== '') || searchValue !== '';
+    $('#btn-toggle-filter').text(hasFilter ? 'Filter*' : 'Filter');
+}
+
+function searchFilter(iDt) {
+    let searchValue = $('#search').val();
+    if (searchValue) {
+        iDt.search(searchValue).draw();
+    }
+}
+
+function updateFilterButton(filterData) {
+    let searchValue = $('#search').val();
+    let hasFilter = Object.values(filterData).some(value => value !== '') || searchValue !== '';
+    $('#btn-toggle-filter').text(hasFilter ? 'Filter*' : 'Filter');
+}
