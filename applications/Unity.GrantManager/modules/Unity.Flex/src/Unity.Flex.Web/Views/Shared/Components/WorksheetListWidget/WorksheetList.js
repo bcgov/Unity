@@ -67,35 +67,22 @@ $(function () {
 
     PubSub.subscribe(
         'refresh_worksheet_list',
-        (msg, data) => {
+        () => {
             refreshWorksheetListWidget();
         }
     );
 
     PubSub.subscribe(
         'worksheet_list_refreshed',
-        (msg, data) => {
+        () => {
             bindActionButtons();            
         }
     );
 
     PubSub.subscribe(
         'worksheet_refreshed',
-        (msg, data) => {
+        () => {
             bindActionButtons();            
         }
     );
-
-    function showAccordion(scoresheetId) {
-        if (!scoresheetId) {
-            return;
-        }
-        const accordionId = 'collapse-' + scoresheetId;
-        const accordion = document.getElementById(accordionId);
-        accordion.classList.add('show');
-
-        const buttonId = 'accordion-button-' + scoresheetId;
-        const accordionButton = document.getElementById(buttonId);
-        accordionButton.classList.remove('collapsed');
-    }
 });

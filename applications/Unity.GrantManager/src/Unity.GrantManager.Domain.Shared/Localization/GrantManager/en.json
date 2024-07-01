@@ -148,6 +148,7 @@
     "ApplicationForms:DownloadAPIConfiguration": "Download API Configuration",
     "ApplicationForms:UpdateAPIToken": "Update API Token",
     "ApplicationForms:Payable": "Payable",
+    "ApplicationForms:ConfigureWorksheets": "Configure Worksheets",
 
     "Intakes": "Intakes",
 
@@ -318,7 +319,7 @@
     "ApplicationContact:Email": "Email",
     "ApplicationContact:MobilePhone": "Mobile Phone Number",
     "ApplicationContact:WorkPhone": "Work Phone Number",
-    "ApplicationContact:Delete": "Delete This Contact",
+    "ApplicationContact:Delete": "Delete This Contact"
   }
 }
 

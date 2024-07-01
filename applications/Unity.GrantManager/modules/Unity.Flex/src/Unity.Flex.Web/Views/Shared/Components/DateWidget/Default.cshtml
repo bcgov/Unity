@@ -13,6 +13,6 @@
                label="@Model.Field.Label"
                id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
                name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
-               onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+               onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")" />
     </div>
 }

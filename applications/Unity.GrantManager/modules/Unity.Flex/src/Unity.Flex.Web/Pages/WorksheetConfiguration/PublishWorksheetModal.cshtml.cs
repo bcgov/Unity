@@ -5,7 +5,7 @@ using Unity.Flex.Worksheets;
 
 namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
 
-public class CloneWorksheetModalModel(IWorksheetListAppService worksheetListAppService,
+public class PublishWorksheetModalModel(IWorksheetListAppService worksheetListAppService,
     IWorksheetAppService worksheetAppService) : FlexPageModel
 {
     [BindProperty]
@@ -28,7 +28,16 @@ public class CloneWorksheetModalModel(IWorksheetListAppService worksheetListAppS
 
     public async Task<IActionResult> OnPostAsync()
     {
-        _ = await worksheetAppService.CloneAsync(WorksheetId);
-        return NoContent();
+        _ = await worksheetAppService.PublishAsync(WorksheetId);
+
+        return new OkObjectResult(new ModalResponse()
+        {
+            WorksheetId = WorksheetId
+        });
+    }
+
+    public class ModalResponse : CustomFieldDto
+    {
+        public Guid WorksheetId { get; set; }
     }
 }

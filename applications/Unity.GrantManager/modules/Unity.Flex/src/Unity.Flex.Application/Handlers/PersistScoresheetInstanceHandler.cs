@@ -22,7 +22,7 @@ namespace Unity.Flex.Handlers
 
             if (ans != null)
             {
-                ans.SetValue(ValueConverter.Convert(eventData.Answer.ToString(), Unity.Flex.Worksheets.CustomFieldType.Numeric));
+                ans.SetValue(ValueConverter.Convert(eventData.Answer.ToString(), Worksheets.CustomFieldType.Numeric));
             }
             else
             {
