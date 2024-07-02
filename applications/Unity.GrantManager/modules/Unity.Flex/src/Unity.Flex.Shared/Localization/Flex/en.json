@@ -13,6 +13,7 @@
     "Scoresheet:Configuration:AddQuestionButtonText": "ADD QUESTION",
     "Scoresheet:Configuration:AddSectionButtonText": "ADD SECTION",
     "Scoresheet:Configuration:EditScoresheetButtonText": "EDIT SCORING SHEET",
+    "Scoresheet:Configuration:CloneScoresheetButtonText": "CLONE SCORING SHEET",
     "Scoresheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
     "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
     "Worksheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
@@ -22,6 +23,6 @@
     "Worksheet:Configuration:AddSectionButtonText": "ADD SECTION",
     "Worksheet:Configuration:AddWorksheetButtonText": "ADD WORKSHEET",
     "Worksheet:Configuration:LinkWorksheetButtonText": "LINK WORKSHEET",
-    "Worksheet:Configuration:CloneWorksheetButtonText": "CLONE WORKSHEET",    
+    "Worksheet:Configuration:CloneWorksheetButtonText": "CLONE WORKSHEET"
   }
 }

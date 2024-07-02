@@ -78,6 +78,14 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(await _scoresheetRepository.GetAsync(id));
         }
 
+        public virtual async Task<PreCloneScoresheetDto> GetPreCloneInformationAsync(Guid id)
+        {
+            var preCloneScoresheet = ObjectMapper.Map<Scoresheet, PreCloneScoresheetDto>(await _scoresheetRepository.GetAsync(id));
+            var highestVersionScoresheet = await _scoresheetRepository.GetHighestVersionAsync(preCloneScoresheet.GroupId) ?? throw new AbpValidationException("Scoresheet not found.");
+            preCloneScoresheet.HighestVersion = highestVersionScoresheet.Version;
+            return preCloneScoresheet;
+        }
+
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
             var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Name, Guid.NewGuid()));

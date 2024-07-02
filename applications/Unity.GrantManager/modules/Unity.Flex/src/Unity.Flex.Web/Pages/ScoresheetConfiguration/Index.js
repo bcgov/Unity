@@ -2,6 +2,10 @@ let scoresheetModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/ScoresheetModal'
 });
 
+let cloneScoresheetModal = new abp.ModalManager({
+    viewUrl: 'ScoresheetConfiguration/CloneScoresheetModal'
+});
+
 let scoresheetToEditId = null;
 
 scoresheetModal.onResult(function (response) {
@@ -19,11 +23,28 @@ scoresheetModal.onResult(function (response) {
         'Scoresheet'
     );
 });
+
+cloneScoresheetModal.onResult(function (response) {
+    const scoresheetIdsToLoad = getScoresheetIdsToLoad().filter(element => element !== scoresheetToEditId);
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: scoresheetIdsToLoad });
+    abp.notify.success(
+        'Scoring sheet cloning is successful.',
+        'Scoresheet'
+    );
+});
 function openScoresheetModal(scoresheetId, actionType, groupId) {
     scoresheetToEditId = scoresheetId;
     scoresheetModal.open({
         scoresheetId: scoresheetId,
         actionType: actionType,
+        groupId: groupId
+    });
+}
+
+function openCloneScoresheetModal(scoresheetId, groupId) {
+    scoresheetToEditId = scoresheetId;
+    cloneScoresheetModal.open({
+        scoresheetId: scoresheetId,
         groupId: groupId
     });
 }
