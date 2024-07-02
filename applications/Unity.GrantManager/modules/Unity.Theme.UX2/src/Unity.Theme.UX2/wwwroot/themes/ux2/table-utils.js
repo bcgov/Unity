@@ -1,3 +1,7 @@
+const FilterDesc = {
+    Default: 'Filter',
+    With_Filter: 'Filter*'
+};
 function createNumberFormatter() {
     return new Intl.NumberFormat('en-CA', {
         style: 'currency',
@@ -76,16 +80,16 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                 let searchValue = $('#search').val();
                 data.search.search = searchValue;
 
-                let hasFilter = data.columns.some(value => value.search !== '') || searchValue !== '';
-                $('#btn-toggle-filter').text(hasFilter ? 'Filter*' : 'Filter');
+                let hasFilter = data.columns.some(value => value.search.search !== '') || searchValue !== '';
+                $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
             },
             stateLoadParams: function (settings, data) {
                 $('#search').val(data.search.search);
 
                 data.columns.forEach((column, index) => {
                     const title = settings.aoColumns[index].sTitle;
-                    const dynamicValue = column.search.search;
-                    filterData[title] = dynamicValue;
+                    const value = column.search.search;
+                    filterData[title] = value;
                 });
             }
         })
@@ -150,12 +154,12 @@ function init(iDt) {
 }
 
 function bindUIEvents(iDt) {
-
     const UIElements = {
-        searchBar: $('#search-bar'),
+        search: $('#search'),
         btnToggleFilter: $('#btn-toggle-filter')
     };
 
+    UIElements.search.hide();
     initializeFilTerButtonPopover(UIElements, iDt);
 }
 
@@ -188,15 +192,33 @@ function initializeFilTerButtonPopover(UIElements, iDt) {
 
     UIElements.btnToggleFilter.on('click', toggleFilterRow);
 
-    UIElements.btnToggleFilter.on('shown.bs.popover', function() {
-        let popoverElement = $('.popover.custom-popover');
-        $(popoverElement).find('#showFilter').on('click', function () {
-            $(".tr-toggle-filter").toggle();
+    UIElements.btnToggleFilter.on('shown.bs.popover', function () {
+        const popoverElement = $('.popover.custom-popover');
+        const trToggleElement = $(".tr-toggle-filter");
+        const showFilterElement = $('#showFilter');
+        const searchElement = $('#search');
+        const customFilterElement = $('.custom-filter-input');
+
+        if ($(this).text() === FilterDesc.With_Filter) {
+            searchElement.show();
+            showFilterElement.prop('checked', true);
+            trToggleElement.toggle(true);
+        }
+
+        popoverElement.find('#showFilter').on('click', () => {
+            trToggleElement.toggle();
+            searchElement.toggle();
         });
-        $(popoverElement).find('#btnClearFilter').on('click', function () {
-            $('#btn-toggle-filter').text('Filter');
-            $('#search').val('');
-            $('.custom-filter-input').val('');
+
+        popoverElement.find('#btnClearFilter').on('click', () => {
+            searchElement.val('');
+            customFilterElement.val('');
+
+            $(this).text(FilterDesc.Default);
+            showFilterElement.prop('checked', false);
+            trToggleElement.hide();
+            searchElement.hide();
+
             iDt.search('').columns().search('').draw();
             iDt.order([]).draw();
             iDt.ajax.reload();
@@ -324,10 +346,16 @@ function searchFilter(iDt) {
     if (searchValue) {
         iDt.search(searchValue).draw();
     }
+
+    if ($('#btn-toggle-filter').text() === FilterDesc.With_Filter) {
+        $('#search').show();
+        $('#showFilter').prop('checked', true);
+        $(".tr-toggle-filter").show($('#showFilter').value);
+    }
 }
 
 function updateFilterButton(filterData) {
     let searchValue = $('#search').val();
     let hasFilter = Object.values(filterData).some(value => value !== '') || searchValue !== '';
-    $('#btn-toggle-filter').text(hasFilter ? 'Filter*' : 'Filter');
+    $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
 }
