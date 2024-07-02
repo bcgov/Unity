@@ -28,7 +28,7 @@
                         {
                             <div class="published-form draggable-card" draggable="true" data-worksheet-id="@worksheet.Id">
                                 <span class="published-form-title">
-                                    @worksheet.Title
+                                    @worksheet.Title (@worksheet.Name)
                                 </span>
                             </div>
                         }
@@ -41,7 +41,7 @@
                         {
                             <div class="draggable-card" draggable="true" data-worksheet-id="@Model.AssessmentInfoLink.WorksheetId">
                                 <span class="published-form-title">
-                                    @Model.AssessmentInfoLink.Worksheet.Title
+                                    @Model.AssessmentInfoLink.Worksheet.Title (@Model.AssessmentInfoLink.Worksheet.Name)
                                 </span>
                             </div>
                         }
@@ -52,7 +52,7 @@
                         {
                             <div class="draggable-card" draggable="true" data-worksheet-id="@Model.ProjectInfoLink.WorksheetId">
                                 <span class="published-form-title">
-                                    @Model.ProjectInfoLink.Worksheet.Title
+                                    @Model.ProjectInfoLink.Worksheet.Title (@Model.ProjectInfoLink.Worksheet.Name)
                                 </span>
                             </div>
                         }
@@ -63,7 +63,7 @@
                         {
                             <div class="draggable-card" draggable="true" data-worksheet-id="@Model.ApplicantInfoLink.WorksheetId">
                                 <span class="published-form-title">
-                                    @Model.ApplicantInfoLink.Worksheet.Title
+                                    @Model.ApplicantInfoLink.Worksheet.Title (@Model.ApplicantInfoLink.Worksheet.Name)
                                 </span>
                             </div>
                         }
@@ -76,7 +76,7 @@
                             {
                                 <div class="draggable-card" draggable="true" data-worksheet-id="@customTab.WorksheetId">
                                     <span class="published-form-title">
-                                        @customTab.Worksheet.Title
+                                        @customTab.Worksheet.Title (@customTab.Worksheet.Name)
                                     </span>
                                 </div>
                             }                            

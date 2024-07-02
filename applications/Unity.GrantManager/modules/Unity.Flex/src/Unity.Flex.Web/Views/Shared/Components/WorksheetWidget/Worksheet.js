@@ -140,13 +140,15 @@ $(function () {
                 let nameField = $("#worksheet-name-" + worksheetId);
                 let sectionCountField = $("#worksheet-total-sections-" + worksheetId);
                 let fieldsCountField = $("#worksheet-total-fields-" + worksheetId);
-                let worksheetPublished = $("#worksheet-published-" + worksheetId); 
-                
-                titleField?.text(result.title);                               
-                sectionCountField?.text(result.totalSections);               
-                fieldsCountField?.text(result.totalFields);               
+                let worksheetPublished = $("#worksheet-published-" + worksheetId);
+
+                titleField?.text(result.title);
+                sectionCountField?.text(result.totalSections);
+                fieldsCountField?.text(result.totalFields);
                 nameField?.text(result.name);
-                worksheetPublished?.removeClass('hidden');                
+                if (result.published) {
+                    worksheetPublished?.removeClass('hidden');
+                }
             });
     }
 
