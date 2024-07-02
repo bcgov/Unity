@@ -26,7 +26,7 @@ public class QuestionModalModel : FlexPageModel
                                       .Select(qt => new SelectListItem
                                       {
                                           Value = ((int)qt).ToString(),
-                                          Text = qt.ToString()
+                                          Text = qt == QuestionType.YesNo ? "Yes/No Select": qt.ToString()
                                       })
                                       .ToList();
     }
