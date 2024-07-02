@@ -13,6 +13,7 @@ namespace Unity.Flex.Domain.Worksheets
         public virtual string Name { get; private set; } = string.Empty;
         public virtual string Title { get; private set; } = string.Empty;
         public virtual uint Version { get; private set; } = 1;
+        public virtual bool Published { get; private set; } = false;
 
         public Guid? TenantId { get; set; }
 
@@ -45,9 +46,10 @@ namespace Unity.Flex.Domain.Worksheets
             return this;
         }
 
-        public void UpdateSection(WorksheetSection section, string name)
+        public Worksheet UpdateSection(WorksheetSection section, string name)
         {
             section.SetName(name);
+            return this;
         }
 
         public Worksheet SetTitle(string title)
@@ -62,6 +64,12 @@ namespace Unity.Flex.Domain.Worksheets
         public Worksheet SetNextVersion(uint previousVersion)
         {
             Version = previousVersion + 1;
+            return this;
+        }
+
+        public Worksheet SetPublished(bool published)
+        {
+            Published = published;
             return this;
         }
     }

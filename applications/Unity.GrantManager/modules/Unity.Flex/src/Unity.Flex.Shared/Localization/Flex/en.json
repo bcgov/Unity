@@ -23,6 +23,7 @@
     "Worksheet:Configuration:AddSectionButtonText": "ADD SECTION",
     "Worksheet:Configuration:AddWorksheetButtonText": "ADD WORKSHEET",
     "Worksheet:Configuration:LinkWorksheetButtonText": "LINK WORKSHEET",
-    "Worksheet:Configuration:CloneWorksheetButtonText": "CLONE WORKSHEET"
+    "Worksheet:Configuration:CloneWorksheetButtonText": "CLONE WORKSHEET",
+    "Worksheet:Configuration:PublishWorksheetButtonText": "PUBLISH WORKSHEET"
   }
 }

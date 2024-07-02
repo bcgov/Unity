@@ -11,11 +11,21 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class WorksheetLinkRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, WorksheetLink, Guid>(dbContextProvider), IWorksheetLinkRepository
     {
+        public async Task<List<WorksheetLink>> GetListByWorksheetAsync(Guid worksheetId, string correlationProvider)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet.Include(s => s.Worksheet)
+                .Where(s => s.WorksheetId == worksheetId
+                && s.CorrelationProvider == correlationProvider).ToListAsync();
+        }
+
         public async Task<WorksheetLink?> GetExistingLinkAsync(Guid worksheetId, Guid correlationId, string correlationProvider)
         {
             var dbSet = await GetDbSetAsync();
 
-            return await dbSet.FirstOrDefaultAsync(s => s.WorksheetId == worksheetId
+            return await dbSet.Include(s => s.Worksheet)
+                .FirstOrDefaultAsync(s => s.WorksheetId == worksheetId
                 && s.CorrelationId == correlationId
                 && s.CorrelationProvider == correlationProvider);
         }
@@ -24,9 +34,10 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
         {
             var dbSet = await GetDbSetAsync();
 
-            return await dbSet.Include(s => s.Worksheet).Where(s => s.CorrelationId == correlationId
-                && s.CorrelationProvider != correlationProvider)
-                .ToListAsync();
+            return await dbSet.Include(s => s.Worksheet)
+                .Where(s => s.CorrelationId == correlationId
+                    && s.CorrelationProvider == correlationProvider)
+                    .ToListAsync();
         }
     }
 }

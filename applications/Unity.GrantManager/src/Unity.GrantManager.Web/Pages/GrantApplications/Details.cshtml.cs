@@ -15,6 +15,7 @@ using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Features;
 using System.Linq;
 using Unity.GrantManager.Flex;
+using Unity.Flex.WorksheetLinks;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -69,7 +70,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string MaxFileSize { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public List<WorksheetBasicDto> CustomTabs { get; set; } = [];
+        public List<BoundWorksheet> CustomTabs { get; set; } = [];
 
         public DetailsModel(GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
@@ -92,8 +93,14 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
+                // TODO: worksheet instance check?
                 var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
-                CustomTabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => s.Worksheet).ToList();
+                var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor }).ToList();
+
+                foreach (var tab in tabs)
+                {
+                    CustomTabs.Add(new BoundWorksheet() { Worksheet = tab.worksheet, UiAnchor = tab.uiAnchor });
+                }
             }
 
             if (applicationFormSubmission != null)
@@ -118,5 +125,11 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             await Task.CompletedTask;
             return Page();
         }
+    }
+
+    public class BoundWorksheet
+    {
+        public WorksheetBasicDto? Worksheet { get; set; }
+        public string UiAnchor { get; set; } = string.Empty;
     }
 }
