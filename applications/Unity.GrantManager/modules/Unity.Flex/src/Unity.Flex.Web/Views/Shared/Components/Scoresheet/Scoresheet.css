@@ -30,6 +30,10 @@
     font-size: 0.75rem; 
 }
 
+.accordion-button .section-info .total-sections {
+    font-size: 0.75rem;
+}
+
 .accordion-button .text-end {
     margin-right: 1rem; 
 }
