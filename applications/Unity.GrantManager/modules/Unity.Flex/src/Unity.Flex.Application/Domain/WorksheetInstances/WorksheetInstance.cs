@@ -53,5 +53,11 @@ namespace Unity.Flex.Domain.WorksheetInstances
             CurrentValue = currentValue;
             return this;
         }
+
+        public WorksheetInstance SetAnchor(string uiAnchor)
+        {
+            UiAnchor = uiAnchor;
+            return this;
+        }
     }
 }

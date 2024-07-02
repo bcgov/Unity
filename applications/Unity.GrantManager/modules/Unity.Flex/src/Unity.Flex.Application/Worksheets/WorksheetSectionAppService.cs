@@ -19,7 +19,7 @@ namespace Unity.Flex.Worksheets
         {
             var worksheet = await worksheetRepository.GetBySectionAsync(id, true) ?? throw new EntityNotFoundException();
             var section = worksheet.Sections.FirstOrDefault(s => s.Id == id) ?? throw new EntityNotFoundException();
-            worksheet.UpdateSection(section, dto.Name.Trim());
+            _ = worksheet.UpdateSection(section, dto.Name.Trim());
             return ObjectMapper.Map<WorksheetSection, WorksheetSectionDto>(section);
         }
 

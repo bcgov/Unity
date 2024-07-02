@@ -7,12 +7,12 @@ $(function () {
         viewUrl: 'WorksheetConfiguration/UpsertCustomFieldModal'
     });
 
-    let linkWorksheetModal = new abp.ModalManager({
-        viewUrl: 'WorksheetConfiguration/LinkWorksheetModal'
-    });
-
     let editWorksheetModal = new abp.ModalManager({
         viewUrl: 'WorksheetConfiguration/UpsertWorksheetModal'
+    });
+
+    let publishWorksheetModal = new abp.ModalManager({
+        viewUrl: 'WorksheetConfiguration/PublishWorksheetModal'
     });
 
     bindActionButtons();
@@ -59,20 +59,14 @@ $(function () {
             });
         }
 
-        let linkWorksheetButtons = $(".link-worksheet-btn");
+        let publishWorksheetButtons = $(".publish-worksheet-btn");
 
-        if (linkWorksheetButtons) {
-            linkWorksheetButtons.on("click", function (event) {
+        if (publishWorksheetButtons) {
+            publishWorksheetButtons.on("click", function (event) {
                 let worksheetId = event.currentTarget.dataset.worksheetId;
-                openLinkWorksheetModal(worksheetId);
+                openPublishWorksheetModal(worksheetId);
             });
         }
-    }
-
-    function openLinkWorksheetModal(worksheetId) {
-        linkWorksheetModal.open({
-            worksheetId: worksheetId
-        });
     }
 
     function openEditWorksheetModal(worksheetId) {
@@ -115,6 +109,16 @@ $(function () {
         PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
     });
 
+    function openPublishWorksheetModal(worksheetId) {
+        publishWorksheetModal.open({
+            worksheetId: worksheetId
+        });
+    }
+
+    publishWorksheetModal.onResult(function (result, response) {
+        PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
+    });
+
     function refreshWorksheetInfoWidget(worksheetId) {
         const url = `../Flex/Widget/Worksheet/Refresh?worksheetId=${worksheetId}`;
         fetch(url)
@@ -136,28 +140,21 @@ $(function () {
                 let nameField = $("#worksheet-name-" + worksheetId);
                 let sectionCountField = $("#worksheet-total-sections-" + worksheetId);
                 let fieldsCountField = $("#worksheet-total-fields-" + worksheetId);
+                let worksheetPublished = $("#worksheet-published-" + worksheetId);
 
-                if (titleField) {
-                    titleField.text(result.title);
-                }
-
-                if (sectionCountField) {
-                    sectionCountField.text(result.totalSections);
-                }
-
-                if (fieldsCountField) {
-                    fieldsCountField.text(result.totalFields);
-                }
-
-                if (nameField) {
-                    nameField.text(result.name);
+                titleField?.text(result.title);
+                sectionCountField?.text(result.totalSections);
+                fieldsCountField?.text(result.totalFields);
+                nameField?.text(result.name);
+                if (result.published) {
+                    worksheetPublished?.removeClass('hidden');
                 }
             });
     }
 
     PubSub.subscribe(
         'worksheet_refreshed',
-        (msg, data) => {
+        (_, data) => {
             bindActionButtons();
             updateWorksheetAccordionButton(data);
         }
@@ -165,14 +162,14 @@ $(function () {
 
     PubSub.subscribe(
         'refresh_worksheet',
-        (msg, data) => {
+        (_, data) => {
             refreshWorksheetInfoWidget(data.worksheetId);
         }
     );
 
     PubSub.subscribe(
         'worksheet_list_refreshed',
-        (msg, data) => {
+        () => {
             bindActionButtons();
         }
     );
