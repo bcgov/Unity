@@ -73,10 +73,20 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             ],
             processing: true,
             stateSaveParams: function (settings, data) {
-                updateFilterData(settings, data, filterData);
+                let searchValue = $('#search').val();
+                data.search.search = searchValue;
+
+                let hasFilter = data.columns.some(value => value.search !== '') || searchValue !== '';
+                $('#btn-toggle-filter').text(hasFilter ? 'Filter*' : 'Filter');
             },
             stateLoadParams: function (settings, data) {
-                updateFilterData(settings, data, filterData);
+                $('#search').val(data.search.search);
+
+                data.columns.forEach((column, index) => {
+                    const title = settings.aoColumns[index].sTitle;
+                    const dynamicValue = column.search.search;
+                    filterData[title] = dynamicValue;
+                });
             }
         })
     );
@@ -307,20 +317,6 @@ function updateFilter(dt, dtName, filterData) {
     if (optionsOpen) {
         $(".tr-toggle-filter").show();
     }
-}
-
-function updateFilterData(settings, data, filterData) {
-    data.columns.forEach((column, index) => {
-        const title = settings.aoColumns[index].sTitle;
-        const filterValue = column.search.search;
-        filterData[title] = filterValue;
-    });
-
-    const searchValue = $('#search').val();
-    data.search.search = searchValue;
-
-    let hasFilter = Object.values(filterData).some(value => value !== '') || searchValue !== '';
-    $('#btn-toggle-filter').text(hasFilter ? 'Filter*' : 'Filter');
 }
 
 function searchFilter(iDt) {
