@@ -116,6 +116,8 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
         updateFilter(iDt, dt[0].id, filterData);
     });
 
+    initializeFilterButtonPopover(iDt);
+
     searchFilter(iDt);
 
     return iDt;
@@ -153,17 +155,21 @@ function init(iDt) {
     iDt.search('').columns().search('').draw();
 }
 
-function bindUIEvents(iDt) {
+function bindUIEvents() {
     const UIElements = {
         search: $('#search'),
         btnToggleFilter: $('#btn-toggle-filter')
     };
 
     UIElements.search.hide();
-    initializeFilTerButtonPopover(UIElements, iDt);
 }
 
-function initializeFilTerButtonPopover(UIElements, iDt) {
+function initializeFilterButtonPopover(iDt) {
+    const UIElements = {
+        search: $('#search'),
+        btnToggleFilter: $('#btn-toggle-filter')
+    };
+
     UIElements.btnToggleFilter.on('click', function() {
         UIElements.btnToggleFilter.popover('toggle');
     });
@@ -178,10 +184,11 @@ function initializeFilTerButtonPopover(UIElements, iDt) {
                         <div class="popover-body"></div>
                     </div>
                   `,
-        content: function() {
+        content: function () {
+            const isChecked = UIElements.btnToggleFilter.text() === FilterDesc.With_Filter;
             return `
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="showFilter">
+                        <input class="form-check-input" type="checkbox" id="showFilter" ${isChecked ? 'checked' : ''}>
                         <label class="form-check-label" for="showFilter">Show Filter Row</label>
                     </div>
                     <abp-button id="btnClearFilter" class="btn btn-primary" text="Clear Filter" type="button">CLEAR FILTER</abp-button>
@@ -348,8 +355,8 @@ function searchFilter(iDt) {
     }
 
     if ($('#btn-toggle-filter').text() === FilterDesc.With_Filter) {
-        $('#search').show();
         $('#showFilter').prop('checked', true);
+        $('#search').show($('#showFilter').value);
         $(".tr-toggle-filter").show($('#showFilter').value);
     }
 }
