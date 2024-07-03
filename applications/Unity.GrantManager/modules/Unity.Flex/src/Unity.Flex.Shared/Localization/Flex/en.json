@@ -18,12 +18,13 @@
     "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
     "Worksheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
     "Worksheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
-    "Worksheet:Configuration:EditWorksheetButtonText": "EDIT WORKSHEET",
-    "Worksheet:Configuration:AddCustomFieldButtonText": "ADD FIELD",
+    "Worksheet:Configuration:EditWorksheetButtonText": "Edit Worksheet",
+    "Worksheet:Configuration:AddCustomFieldButtonText": "Add Field",
     "Worksheet:Configuration:AddSectionButtonText": "ADD SECTION",
     "Worksheet:Configuration:AddWorksheetButtonText": "ADD WORKSHEET",
-    "Worksheet:Configuration:LinkWorksheetButtonText": "LINK WORKSHEET",
-    "Worksheet:Configuration:CloneWorksheetButtonText": "CLONE WORKSHEET",
-    "Worksheet:Configuration:PublishWorksheetButtonText": "PUBLISH WORKSHEET"
+    "Worksheet:Configuration:LinkWorksheetButtonText": "Link Worksheet",
+    "Worksheet:Configuration:CloneWorksheetButtonText": "Clone Worksheet",
+    "Worksheet:Configuration:PublishWorksheetButtonText": "Publish Worksheet",
+    "Worksheet:Configuration:DeleteWorksheetButtonText": "Delete Worksheet"
   }
 }

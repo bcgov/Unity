@@ -101,5 +101,10 @@ namespace Unity.Flex.Worksheets
             _ = worksheet.SetPublished(true);
             return await Task.FromResult(true);
         }
+
+        public virtual async Task DeleteAsync(Guid worksheetId)
+        {
+            await worksheetRepository.DeleteAsync(worksheetId);
+        }
     }
 }
