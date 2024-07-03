@@ -1,0 +1,223 @@
+{
+  "kind": "Template",
+  "apiVersion": "template.openshift.io/v1",
+  "metadata": {
+    "name": "unity-app-data-web",
+    "annotations": {
+      "openshift.io/display-name": "Nginx HTTP server and a reverse proxy",
+      "description": "An example Nginx HTTP server and a reverse proxy (nginx) application that serves static content.",
+      "tags": "${APPLICATION_NAME}",
+      "iconClass": "icon-nginx",
+      "openshift.io/long-description": "This template defines resources needed to develop a static application served by Nginx HTTP server and a reverse proxy (nginx), including a build configuration and application deployment configuration."
+    }
+  },
+  "message": "The following service(s) have been created in your project: ${APPLICATION_NAME}.",
+  "labels": {
+    "template": "${APPLICATION_NAME}",
+    "app": "${APPLICATION_NAME}"
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${APPLICATION_NAME}",
+        "labels": {
+          "app.kubernetes.io/part-of": "${APPLICATION_GROUP}"
+        },
+        "annotations": {
+          "description": "Exposes and load balances the application pods"
+        }
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "80-tcp",
+            "protocol": "TCP",
+            "port": 80,
+            "targetPort": 8080
+          }
+        ],
+        "selector": {
+          "name": "${APPLICATION_NAME}"
+        }
+      }
+    },
+    {
+      "kind": "Route",
+      "apiVersion": "route.openshift.io/v1",
+      "metadata": {
+        "name": "${APPLICATION_NAME}",
+        "labels": {
+          "app.kubernetes.io/part-of": "${APPLICATION_GROUP}"
+        },
+        "annotations": {
+          "template.openshift.io/expose-uri": "http://{.spec.host}{.spec.path}"
+        }
+      },
+      "spec": {
+        "host": "${APPLICATION_DOMAIN}",
+        "to": {
+          "kind": "Service",
+          "name": "${APPLICATION_NAME}"
+        },
+        "tls": {
+          "termination": "edge",
+          "insecureEdgeTerminationPolicy": "Redirect"
+        }        
+      }
+    },
+    {
+      "kind": "Deployment",
+      "apiVersion": "apps/v1",
+      "metadata": {
+        "name": "${APPLICATION_NAME}",
+        "labels": {
+          "app.openshift.io/runtime": "nginx",
+          "app.kubernetes.io/part-of": "${APPLICATION_GROUP}" 
+        },
+        "annotations": {
+          "description": "Defines how to deploy the application server",
+          "template.alpha.openshift.io/wait-for-ready": "true", 
+          "image.openshift.io/triggers": "[{\"from\":{\"kind\":\"ImageStreamTag\",\"name\":\"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}\",\"namespace\":\"${IMAGEPULL_NAMESPACE}\"},\"fieldPath\":\"spec.template.spec.containers[?(@.name==\\\"${APPLICATION_NAME}\\\")].image\",\"pause\":\"true\"}]"
+        }
+      },
+      "spec": {
+        "strategy": {
+          "type": "Recreate"
+        },
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "name": "${APPLICATION_NAME}",
+            "app": "${APPLICATION_NAME}"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "name": "${APPLICATION_NAME}",
+              "app": "${APPLICATION_NAME}"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "${APPLICATION_NAME}",
+                "image": "${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}",
+                "ports": [
+                  {
+                    "containerPort": 8080
+                  }
+                ],
+                "readinessProbe": {
+                  "timeoutSeconds": 3,
+                  "initialDelaySeconds": 3,
+                  "httpGet": {
+                    "path": "/",
+                    "port": 8080
+                  }
+                },
+                "livenessProbe": {
+                    "timeoutSeconds": 3,
+                    "initialDelaySeconds": 30,
+                    "httpGet": {
+                        "path": "/",
+                        "port": 8080
+                    }
+                },
+                "env": [
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "${CPU_LIMIT}",
+                    "memory": "${MEMORY_LIMIT}"
+                  },
+                  "requests": {
+                    "cpu": "${CPU_REQUEST}",
+                    "memory": "${MEMORY_REQUEST}"
+                }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+        "description": "The name of the application grouping.",
+        "displayName": "Application Group",
+        "name": "APPLICATION_GROUP",
+        "value": "unity-tools"
+    },
+    {
+        "description": "The name of the application.",
+        "displayName": "Application Name",
+        "name": "APPLICATION_NAME",
+        "required": true,
+        "value": "unity-app-data-web"
+    },
+    {
+      "name": "APPLICATION_DOMAIN",
+      "displayName": "Application Hostname",
+      "description": "The exposed hostname that will route to the nginx service, if left blank a value will be defaulted.",
+      "value": ""
+    },
+    {
+      "description": "The Namespace where the container image resides",
+      "displayName": "Registry Namespace",
+      "from": "[a-zA-Z0-9]{5}-tools",
+      "generate": "expression",
+      "name": "IMAGEPULL_NAMESPACE"
+    },
+    {
+        "description": "The ImageStream Name",
+        "displayName": "Registry imagestream name",
+        "name": "IMAGESTREAM_NAME",
+        "value": "unity-data-web"
+    },
+    {
+        "description": "The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.",
+        "displayName": "Application Version",
+        "name": "IMAGESTREAM_TAG",
+        "required": true,
+        "value": "latest"
+    },
+    {
+        "description": "The registry path of the container image used.",
+        "displayName": "Registry location to pull from",
+        "name": "IMAGEPULL_REGISTRY",
+        "value": "image-registry.openshift-image-registry.svc:5000"
+    },
+    {
+      "description": "The minimum amount of CPU the Container is guaranteed.",
+      "displayName": "CPU Request",
+      "name": "CPU_REQUEST",
+      "required": true,
+      "value": "50m"
+    },
+    {
+        "description": "The maximum amount of CPU the Container is allowed to use when running.",
+        "displayName": "CPU Limit",
+        "name": "CPU_LIMIT",
+        "required": true,
+        "value": "50m"
+    },
+    {
+        "description": "The minimum amount of Memory the Container is guaranteed.",
+        "displayName": "Memory Request",
+        "name": "MEMORY_REQUEST",
+        "required": true,
+        "value": "64Mi"
+    },
+    {
+        "description": "The maximum amount of Memory the Container is allowed to use when running.",
+        "displayName": "Memory Limit",
+        "name": "MEMORY_LIMIT",
+        "required": true,
+        "value": "128Mi"
+    }
+  ]
+}
