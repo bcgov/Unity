@@ -18,7 +18,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
     {
         public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer)
         {
-            return View(await Task.FromResult(new QuestionTextViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer }));
+            return View(await Task.FromResult(new QuestionTextViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty }));
         }
 
         public class QuestionTextWidgetStyleBundleContributor : BundleContributor
