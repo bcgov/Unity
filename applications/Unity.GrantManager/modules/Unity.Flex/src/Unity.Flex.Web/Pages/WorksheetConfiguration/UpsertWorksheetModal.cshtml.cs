@@ -21,6 +21,9 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
     public string? Name { get; set; }
 
     [BindProperty]
+    public bool Published { get; set; }
+
+    [BindProperty]
     public WorksheetUpsertAction UpsertAction { get; set; }
 
     public async Task OnGetAsync(Guid worksheetId, string actionType)
@@ -35,19 +38,35 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
             Name = worksheetDto.Name;
             Id = worksheetDto.Id;
             Title = worksheetDto.Title;
+            Published = worksheetDto.Published;
         }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        switch (UpsertAction)
+        var delete = Request.Form["deleteWorksheet"];
+        var save = Request.Form["saveWorksheet"];
+
+        if (delete == "delete")
         {
-            case WorksheetUpsertAction.Insert:
-                return MapModalResponse(await worksheetAppService.CreateAsync(MapCreateWorksheetModel()));
-            case WorksheetUpsertAction.Update:
-                return MapModalResponse(await worksheetAppService.EditAsync(Id, MapEditWorksheetModel()));
-            default:
-                break;
+            await worksheetAppService.DeleteAsync(Id);
+            return new OkObjectResult(new ModalResponse()
+            {
+                WorksheetId = Id,
+                Action = "Delete"
+            });
+        }
+        else if (save == "save")
+        {
+            switch (UpsertAction)
+            {
+                case WorksheetUpsertAction.Insert:
+                    return MapModalResponse(await worksheetAppService.CreateAsync(MapCreateWorksheetModel()));
+                case WorksheetUpsertAction.Update:
+                    return MapModalResponse(await worksheetAppService.EditAsync(Id, MapEditWorksheetModel()));
+                default:
+                    break;
+            }
         }
 
         return NoContent();

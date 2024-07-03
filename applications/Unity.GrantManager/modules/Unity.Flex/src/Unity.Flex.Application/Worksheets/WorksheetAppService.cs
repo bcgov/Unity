@@ -94,5 +94,17 @@ namespace Unity.Flex.Worksheets
             var worksheet = await worksheetsManager.CloneWorksheetAsync(id);
             return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
         }
+
+        public virtual async Task<bool> PublishAsync(Guid worksheetId)
+        {
+            var worksheet = await worksheetRepository.GetAsync(worksheetId);
+            _ = worksheet.SetPublished(true);
+            return await Task.FromResult(true);
+        }
+
+        public virtual async Task DeleteAsync(Guid worksheetId)
+        {
+            await worksheetRepository.DeleteAsync(worksheetId);
+        }
     }
 }

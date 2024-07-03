@@ -9,7 +9,7 @@ public class CloneWorksheetModalModel(IWorksheetListAppService worksheetListAppS
     IWorksheetAppService worksheetAppService) : FlexPageModel
 {
     [BindProperty]
-    public Guid Id { get; set; }
+    public Guid WorksheetId { get; set; }
 
     [BindProperty]
     public string? Title { get; set; }
@@ -21,14 +21,14 @@ public class CloneWorksheetModalModel(IWorksheetListAppService worksheetListAppS
     {
         var worksheetDto = await worksheetListAppService.GetAsync(worksheetId);
 
-        Id = worksheetId;
+        WorksheetId = worksheetId;
         Title = worksheetDto.Title;
         Name = worksheetDto.Name;
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        _ = await worksheetAppService.CloneAsync(Id);
+        _ = await worksheetAppService.CloneAsync(WorksheetId);
         return NoContent();
     }
 }

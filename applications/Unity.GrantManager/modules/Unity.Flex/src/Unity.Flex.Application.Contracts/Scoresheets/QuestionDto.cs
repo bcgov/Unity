@@ -10,10 +10,12 @@ namespace Unity.Flex.Scoresheets
         public virtual string Label { get; set; } = string.Empty;
         public virtual string? Description { get; set; }
         public virtual bool Enabled { get; private set; }
+        public virtual QuestionType Type { get; set; }
         public virtual uint Order { get; set; }
 
         public virtual Guid SectionId { get; }
 
-        public virtual double? Answer { get; set; }
+        public virtual string? Answer { get; set; }
+        public virtual bool HasAnswers {  get; set; } = false;
     }
 }

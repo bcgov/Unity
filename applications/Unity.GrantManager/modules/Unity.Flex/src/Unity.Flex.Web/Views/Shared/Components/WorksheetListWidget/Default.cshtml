@@ -22,12 +22,17 @@
                         <span class="flex-grow-1 text-start">
                             <span id="worksheet-title-@worksheet.Id" class="worksheet-title">@worksheet.Title</span>
                             (<span id="worksheet-name-@worksheet.Id" class="worksheet-name">@worksheet.Name</span>)
+                            <i id="worksheet-published-@worksheet.Id" class="worksheet-published-icon fl fl-upload @(@worksheet.Published ? "" : "hidden")"></i>                            
                         </span>
                         <div class="text-end d-flex align-items-center custom-field-count-info">
-                            <div class="custom-field-count-title"><b>Sections:</b></div>
-                            <div class="custom-field-count-value"><span id="worksheet-total-sections-@worksheet.Id">@worksheet.TotalSections</span></div>
-                            <div class="custom-field-count-title"><b>Fields:</b></div>
-                            <div class="custom-field-count-value"><span id="worksheet-total-fields-@worksheet.Id">@worksheet.TotalFields</span></div>
+                            <div class="custom-field-count-wrapper">
+                                <div class="custom-field-count-title"><b>Sections</b></div>
+                                <div class="custom-field-count-value"><span id="worksheet-total-sections-@worksheet.Id">@worksheet.TotalSections</span></div>
+                            </div>
+                            <div class="custom-field-count-wrapper">
+                                <div class="custom-field-count-title"><b>Fields</b></div>
+                                <div class="custom-field-count-value"><span id="worksheet-total-fields-@worksheet.Id">@worksheet.TotalFields</span></div>
+                            </div>
                         </div>
                     </button>
                 </div>
@@ -36,7 +41,7 @@
                 <div class="accordion-body">
                     <div id="worksheet-info-widget-@worksheet.Id">
                         @await Component.InvokeAsync(typeof(WorksheetWidget), new { worksheetDto = worksheet })
-                    </div>                    
+                    </div>
                 </div>
             </div>
         </div>

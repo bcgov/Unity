@@ -330,7 +330,6 @@
 
     function initializeIntakeMap(availableChefsFields) {
         try {
-            debugger;
             let intakeFields = JSON.parse(intakeFieldsString);
 
             for (let intakeField of intakeFields) {
@@ -418,7 +417,7 @@
         return tmp.textContent || tmp.innerText || "";
     }
 
-    document.addEventListener('dragstart', function (ev) {
+    document.addEventListener('dragstart', function (ev) {        
         if (ev.target.classList.contains('non-drag')) {
             ev.preventDefault();
             return;

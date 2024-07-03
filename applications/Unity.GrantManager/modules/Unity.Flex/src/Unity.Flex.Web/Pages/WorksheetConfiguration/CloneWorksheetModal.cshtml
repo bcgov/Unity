@@ -15,7 +15,7 @@
     <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
 }
 <form method="post" asp-page-handler="OnPostAsync" id="worksheetInfo">
-    <abp-input type="hidden" id="WorksheetId" asp-for="@Model.Id" />    
+    <abp-input type="hidden" id="WorksheetId" asp-for="@Model.WorksheetId" />    
     <abp-modal size="Large" id="worksheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="Clone Worksheet"></abp-modal-header>
         <abp-modal-body>

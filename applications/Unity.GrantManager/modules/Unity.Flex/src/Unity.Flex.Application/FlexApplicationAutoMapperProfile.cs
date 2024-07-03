@@ -7,6 +7,7 @@ using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.WorksheetInstances;
+using Unity.Flex.WorksheetLinks;
 using Unity.Flex.Worksheets;
 
 namespace Unity.Flex;
@@ -29,11 +30,12 @@ public class FlexApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.TotalSections, opt => opt.MapFrom(s => s.Sections.Select(s => s.Id).Count()))
             .ForMember(dest => dest.TotalFields, opt => opt.MapFrom(s => s.Sections.SelectMany(s => s.Fields).Count()));
 
-        CreateMap<PersistWorksheetIntanceValuesDto, PersistWorksheetIntanceValuesEto>();
+        CreateMap<PersistWorksheetIntanceValuesDto, PersistWorksheetIntanceValuesEto>();        
 
         CreateMap<Question, QuestionDto>()
             .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore())
-            .ForMember(dest => dest.Answer, opt => opt.Ignore());
+            .ForMember(dest => dest.Answer, opt => opt.Ignore())
+            .ForMember(dest => dest.HasAnswers, opt => opt.Ignore());
         CreateMap<ScoresheetSection, ScoresheetSectionDto>()
             .ForMember(dest => dest.Fields, opt => opt.MapFrom(src => src.Fields))
             .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore());
