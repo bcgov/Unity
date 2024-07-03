@@ -106,6 +106,10 @@ public static class FlexDbContextModelCreatingExtensions
             b.ToTable(FlexDbProperties.DbTablePrefix + "WorksheetLinks",
                 FlexDbProperties.DbSchema);
 
+            b.HasOne(e => e.Worksheet)
+                .WithMany(e => e.Links)
+                .HasForeignKey(e => e.WorksheetId);
+
             b.ConfigureByConvention();
         });
 

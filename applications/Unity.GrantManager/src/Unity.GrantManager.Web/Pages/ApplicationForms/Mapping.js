@@ -48,7 +48,8 @@
         'simplecheckboxadvanced',
         'simplecurrencyadvanced',
         'simpletextarea',
-        'simpletextareaadvanced'];
+        'simpletextareaadvanced',
+        'bcaddress'];
 
     const UIElements = {
         btnBack: $('#btn-back'),
@@ -368,6 +369,7 @@
             case 'Checkbox':
             case 'CheckboxGroup':
             case 'SelectList':
+            case 'BCAddress':
                 return `<i class="${setTypeIcon(intakeField)}"></i> `;
             case 'Number':
                 return setTypeIndicatorText('123');
@@ -395,9 +397,11 @@
             case 'Checkbox':
                 return 'fl fl-checkbox-checked';
             case 'CheckboxGroup':
-                return 'fl fl-multi-select'
+                return 'fl fl-multi-select';
             case 'SelectList':
                 return 'fl fl-list';
+            case 'BCAddress':
+                return 'fl fl-globe';
             default:
                 return '';
         }
@@ -413,7 +417,7 @@
         return tmp.textContent || tmp.innerText || "";
     }
 
-    document.addEventListener('dragstart', function (ev) {
+    document.addEventListener('dragstart', function (ev) {        
         if (ev.target.classList.contains('non-drag')) {
             ev.preventDefault();
             return;

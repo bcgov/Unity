@@ -12,6 +12,7 @@ namespace Unity.Flex.Domain.Worksheets
     public class CustomField : FullAuditedEntity<Guid>, IMultiTenant
     {
         public virtual string Name { get; private set; } = string.Empty;
+        public virtual string Field { get; private set; } = string.Empty;
         public virtual string Label { get; private set; } = string.Empty;
         public virtual CustomFieldType Type { get; private set; } = CustomFieldType.Undefined;
         public virtual uint Order { get; private set; }
@@ -37,13 +38,26 @@ namespace Unity.Flex.Domain.Worksheets
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public CustomField(Guid id, string name, string worksheetName, string label, CustomFieldType type, object? definition)
+        private CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type)
         {
             Id = id;
-            Name = ConfigureName(name, worksheetName);
+            Name = ConfigureName(field, worksheetName);
+            Field = field;
             Label = label;
             Type = type;
+        }
+
+        public CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type, object? definition)
+            : this(id, field, worksheetName, label, type)
+        {
+
             Definition = DefinitionResolver.Resolve(type, definition);
+        }
+
+        public CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type, string? definition)
+            : this(id, field, worksheetName, label, type)
+        {
+            Definition = definition ?? "{}";
         }
 
         private static string ConfigureName(string name, string worksheetName)
@@ -51,11 +65,14 @@ namespace Unity.Flex.Domain.Worksheets
             return "custom_" + SanitizeNameField(worksheetName) + "_" + SanitizeNameField(name);
         }
 
-        public CustomField SetName(string name)
+        public CustomField SetField(string field, string worksheetName)
         {
-            if (Section.Fields.Any(s => s.Name == name))
-                throw new BusinessException("Cannot duplicate name");
+            var name = ConfigureName(field, worksheetName);
 
+            if (Section.Fields.Any(s => s.Name == name && s.Id != Id))
+                throw new UserFriendlyException("Cannot duplicate name");
+
+            Field = field;
             Name = name;
             return this;
         }

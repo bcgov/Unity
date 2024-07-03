@@ -3,13 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
 {
     [Authorize]
-    public class WorksheetAppService(IWorksheetRepository worksheetRepository) : FlexAppService, IWorksheetAppService
+    public class WorksheetAppService(IWorksheetRepository worksheetRepository, WorksheetsManager worksheetsManager) : FlexAppService, IWorksheetAppService
     {
         public virtual async Task<WorksheetDto> GetAsync(Guid id)
         {
@@ -34,15 +35,16 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto)
         {
+            // move to domain manager class
             var worksheetName = dto.Name.SanitizeWorksheetName();
             var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, false);
 
             if (existingWorksheet != null)
             {
-                throw new BusinessException("Cannot have duplicate worksheet names");
+                throw new UserFriendlyException("Worksheet names must be unique");
             }
 
-            var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title, dto.UIAnchor);
+            var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {
@@ -53,7 +55,7 @@ namespace Unity.Flex.Worksheets
                     newWorksheet
                         .Sections[^1]
                         .AddField(new CustomField(Guid.NewGuid(),
-                            field.Name,
+                            field.Field,
                             newWorksheet.Name,
                             field.Label,
                             field.Type,
@@ -66,13 +68,43 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<Worksheet, WorksheetDto>(dbWorksheet);
         }
 
-        public virtual async Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateCustomFieldDto dto)
+        public virtual async Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto)
         {
-            var worksheet = await worksheetRepository.GetAsync(id);
+            var worksheet = await worksheetRepository.GetAsync(id, true);
             var newWorksheetSection = new WorksheetSection(Guid.NewGuid(), dto.Name);
             worksheet.AddSection(newWorksheetSection);
 
             return ObjectMapper.Map<WorksheetSection, WorksheetSectionDto>(newWorksheetSection);
+        }
+
+        public virtual async Task<List<WorksheetDto>> GetListAsync()
+        {
+            return ObjectMapper.Map<List<Worksheet>, List<WorksheetDto>>(await worksheetRepository.GetListAsync(true));
+        }
+
+        public virtual async Task<WorksheetDto> EditAsync(Guid id, EditWorksheetDto dto)
+        {
+            var worksheet = await worksheetRepository.GetAsync(id);
+            worksheet.SetTitle(dto.Title);
+            return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
+        }
+
+        public virtual async Task<WorksheetDto> CloneAsync(Guid id)
+        {
+            var worksheet = await worksheetsManager.CloneWorksheetAsync(id);
+            return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
+        }
+
+        public virtual async Task<bool> PublishAsync(Guid worksheetId)
+        {
+            var worksheet = await worksheetRepository.GetAsync(worksheetId);
+            _ = worksheet.SetPublished(true);
+            return await Task.FromResult(true);
+        }
+
+        public virtual async Task DeleteAsync(Guid worksheetId)
+        {
+            await worksheetRepository.DeleteAsync(worksheetId);
         }
     }
 }

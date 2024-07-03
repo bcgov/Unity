@@ -142,17 +142,24 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 // Get the available field from the worksheets for the current Form
                 var worksheets = await _worksheetAppService.GetListByCorrelationAsync(ApplicationFormDto?.Id ?? Guid.Empty, CorrelationConsts.Form);
 
-                var fields = worksheets.SelectMany(s => s.Sections).SelectMany(s => s.Fields).ToList();
-
-                foreach (var field in fields)
+                foreach (var worksheet in worksheets)
                 {
-                    properties.Add(new MapField()
+                    // Get worksheet name
+                    var fields = worksheet
+                        .Sections
+                            .SelectMany(f => f.Fields)
+                        .ToList();
+
+                    foreach (var field in fields)
                     {
-                        Name = $"{field.Name}.{field.Type}",
-                        Type = ConvertCustomType(field.Type),
-                        IsCustom = true,
-                        Label = field.Label
-                    });
+                        properties.Add(new MapField()
+                        {
+                            Name = $"{field.Name}.{field.Type}",
+                            Type = ConvertCustomType(field.Type),
+                            IsCustom = true,
+                            Label = $"{field.Label} ({worksheet.Name})"
+                        });
+                    }
                 }
             }
 
@@ -175,6 +182,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 CustomFieldType.Checkbox => "Checkbox",
                 CustomFieldType.CheckboxGroup => "CheckboxGroup",
                 CustomFieldType.SelectList => "SelectList",
+                CustomFieldType.BCAddress => "BCAddress",
                 _ => "",
             };
         }

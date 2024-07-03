@@ -13,7 +13,7 @@ namespace Unity.Flex.Domain.Worksheets
         public virtual string Name { get; private set; } = string.Empty;
         public virtual string Title { get; private set; } = string.Empty;
         public virtual uint Version { get; private set; } = 1;
-        public string UIAnchor { get; set; } = string.Empty;
+        public virtual bool Published { get; private set; } = false;
 
         public Guid? TenantId { get; set; }
 
@@ -27,24 +27,49 @@ namespace Unity.Flex.Domain.Worksheets
 
         public Worksheet(Guid id,
             string name,
-            string title,
-            string uiAnchor)
+            string title)
         : base(id)
         {
             Id = id;
             Name = name;
             Title = title;
-            UIAnchor = uiAnchor;
         }
 
         public Worksheet AddSection(WorksheetSection section)
         {
             if (Sections.Any(s => s.Name == section.Name))
-                throw new BusinessException("Cannot duplicate name");
+                throw new UserFriendlyException("Section names must be unique");
 
             section = section.SetOrder((uint)Sections.Count + 1);
 
             Sections.Add(section);
+            return this;
+        }
+
+        public Worksheet UpdateSection(WorksheetSection section, string name)
+        {
+            section.SetName(name);
+            return this;
+        }
+
+        public Worksheet SetTitle(string title)
+        {
+            if (string.IsNullOrEmpty(title))
+                throw new UserFriendlyException("Blank titles are not allowed");
+
+            Title = title;
+            return this;
+        }
+
+        public Worksheet SetNextVersion(uint previousVersion)
+        {
+            Version = previousVersion + 1;
+            return this;
+        }
+
+        public Worksheet SetPublished(bool published)
+        {
+            Published = published;
             return this;
         }
     }

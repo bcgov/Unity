@@ -8,24 +8,36 @@ using Volo.Abp.Domain.Entities;
 namespace Unity.Flex.Worksheets
 {
     [Authorize]
-    public class WorksheetSectionAppService(IWorksheetRepository worksheetRepository, IWorksheetSectionRepository worksheetSectionRepository) : FlexAppService, IWorksheeSectionAppService
+    public class WorksheetSectionAppService(IWorksheetSectionRepository worksheetSectionRepository, IWorksheetRepository worksheetRepository) : FlexAppService, IWorksheetSectionAppService
     {
         public virtual async Task<WorksheetSectionDto> GetAsync(Guid id)
         {
             return ObjectMapper.Map<WorksheetSection, WorksheetSectionDto>(await worksheetSectionRepository.GetAsync(id, true));
         }
 
-        public async Task CreateCustomField(Guid id, CreateCustomFieldDto dto)
+        public virtual async Task<WorksheetSectionDto> EditAsync(Guid id, EditSectionDto dto)
+        {
+            var worksheet = await worksheetRepository.GetBySectionAsync(id, true) ?? throw new EntityNotFoundException();
+            var section = worksheet.Sections.FirstOrDefault(s => s.Id == id) ?? throw new EntityNotFoundException();
+            _ = worksheet.UpdateSection(section, dto.Name.Trim());
+            return ObjectMapper.Map<WorksheetSection, WorksheetSectionDto>(section);
+        }
+
+        public virtual async Task<CustomFieldDto> CreateCustomFieldAsync(Guid id, CreateCustomFieldDto dto)
         {
             var worksheet = await worksheetRepository.GetBySectionAsync(id, true) ?? throw new EntityNotFoundException();
             var section = worksheet.Sections.First(s => s.Id == id);
 
-            section.AddField(new CustomField(Guid.NewGuid(),
-                dto.Name,
+            var customField = (new CustomField(Guid.NewGuid(),
+                dto.Field,
                 worksheet.Name,
                 dto.Label,
                 dto.Type,
                 dto.Definition));
+
+            section.AddField(customField);            
+
+            return ObjectMapper.Map<CustomField, CustomFieldDto>(customField);
         }
     }
 }

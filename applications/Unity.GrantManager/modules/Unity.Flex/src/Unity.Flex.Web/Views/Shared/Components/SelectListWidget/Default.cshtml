@@ -9,7 +9,7 @@
     <select class="@Model.Field.Type.ApplyCssClass()"
             id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
             name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
-            onchange="@($"notifyFieldChange('{Model.Name}', this)")">
+            onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")">
 
         @foreach (var item in ((SelectListDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Options ?? [])
         {

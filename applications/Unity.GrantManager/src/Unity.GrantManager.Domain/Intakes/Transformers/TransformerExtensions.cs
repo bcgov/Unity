@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
+using Unity.GrantManager.Intakes.Transformers;
 
 namespace Unity.GrantManager.Intakes
 {
@@ -25,6 +26,7 @@ namespace Unity.GrantManager.Intakes
                 CustomFieldType.Radio => new RadioValue(token),
                 CustomFieldType.SelectList => new SelectListValue(token),
                 CustomFieldType.Undefined => new TextValue(token),
+                CustomFieldType.BCAddress => new BCAddressTransformer().Transform(token),
                 _ => new TextValue(token),
             };
         }
@@ -33,7 +35,8 @@ namespace Unity.GrantManager.Intakes
         {
             return value switch
             {
-                CheckboxGroupValue => JsonSerializer.Serialize(value.Value),
+                CheckboxGroupValue => JsonSerializer.Serialize(value.Value),       
+                BCAddressValue => JsonSerializer.Serialize(value.Value),
                 _ => value?.Value?.ToString() ?? string.Empty,
             };
         }

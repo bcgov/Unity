@@ -15,6 +15,7 @@ using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Features;
 using System.Linq;
 using Unity.GrantManager.Flex;
+using Unity.Flex.WorksheetLinks;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -22,7 +23,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
     public class DetailsModel : AbpPageModel
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
-        private readonly IWorksheetListAppService _worksheetListAppService;
+        private readonly IWorksheetLinkAppService _worksheetLinkAppService;
         private readonly IFeatureChecker _featureChecker;
 
         [BindProperty(SupportsGet = true)]
@@ -49,7 +50,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public string? ChefsSubmissionId { get; set; } = null;
-        
+
         [BindProperty(SupportsGet = true)]
         public string? ApplicationFormSubmissionData { get; set; } = null;
 
@@ -69,16 +70,16 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string MaxFileSize { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public List<WorksheetBasicDto> CustomTabs { get; set; } = [];
+        public List<BoundWorksheet> CustomTabs { get; set; } = [];
 
         public DetailsModel(GrantApplicationAppService grantApplicationAppService,
-            IWorksheetListAppService worksheetListAppService,
+            IWorksheetLinkAppService worksheetLinkAppService,
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration)
         {
             _grantApplicationAppService = grantApplicationAppService;
-            _worksheetListAppService = worksheetListAppService;
+            _worksheetLinkAppService = worksheetLinkAppService;
             _featureChecker = featureChecker;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
@@ -92,8 +93,14 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                var worksheets = await _worksheetListAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
-                CustomTabs = worksheets.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).ToList();
+                // TODO: worksheet instance check?
+                var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
+                var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor }).ToList();
+
+                foreach (var tab in tabs)
+                {
+                    CustomTabs.Add(new BoundWorksheet() { Worksheet = tab.worksheet, UiAnchor = tab.uiAnchor });
+                }
             }
 
             if (applicationFormSubmission != null)
@@ -102,9 +109,12 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
                 ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
                 HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
-                if(!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML)) {
+                if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML))
+                {
                     ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
-                } else {
+                }
+                else
+                {
                     ApplicationFormSubmissionData = applicationFormSubmission.Submission;
                 }
             }
@@ -115,5 +125,11 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             await Task.CompletedTask;
             return Page();
         }
+    }
+
+    public class BoundWorksheet
+    {
+        public WorksheetBasicDto? Worksheet { get; set; }
+        public string UiAnchor { get; set; } = string.Empty;
     }
 }

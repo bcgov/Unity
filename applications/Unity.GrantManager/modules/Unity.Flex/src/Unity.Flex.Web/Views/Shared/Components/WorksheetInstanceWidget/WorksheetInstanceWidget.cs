@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
+using Unity.GrantManager.Flex;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
@@ -24,36 +25,46 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         string instanceCorrelationProvider,
         Guid sheetCorrelationId,
         string sheetCorrelationProvider,
-        string uiAnchor)
+        string uiAnchor,
+        Guid? worksheetId)
     {
-        WorksheetViewModel viewModel;
+        WorksheetViewModel? viewModel = null;
 
         if (instanceCorrelationId == Guid.Empty && sheetCorrelationId == Guid.Empty) return View(new WorksheetViewModel());
 
         var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, instanceCorrelationProvider, uiAnchor);
-        var worksheet = await worksheetAppService.GetByCorrelationAnchorAsync(sheetCorrelationId, sheetCorrelationProvider, uiAnchor);
+        WorksheetDto? worksheet;
+        if (uiAnchor == FlexConsts.CustomTab)
+        {
+            if (worksheetId == null) return View(viewModel);
+            worksheet = await worksheetAppService.GetAsync(worksheetId.Value);
+        }
+        else
+        {
+            worksheet = await worksheetAppService.GetByCorrelationAnchorAsync(sheetCorrelationId, sheetCorrelationProvider, uiAnchor);
+        }
 
         if (worksheet == null) return View(new WorksheetViewModel());
 
         if (worksheetInstance == null)
         {
-            viewModel = MapWorksheet(worksheet);
+            viewModel = MapWorksheet(worksheet, uiAnchor);
         }
         else
         {
-            viewModel = MapWorksheetInstance(worksheet, worksheetInstance);
+            viewModel = MapWorksheetInstance(worksheet, uiAnchor, worksheetInstance);
         }
 
         return View(viewModel);
     }
 
-    private static WorksheetViewModel MapWorksheet(WorksheetDto worksheetDto)
+    private static WorksheetViewModel MapWorksheet(WorksheetDto worksheetDto, string uiAnchor)
     {
         var worksheetVM = new WorksheetViewModel
         {
             IsConfigured = true,
-            UiAnchor = worksheetDto.UiAnchor,
-            Name = worksheetDto.Name
+            Name = worksheetDto.Name,
+            UiAnchor = uiAnchor
         };
 
         foreach (var section in worksheetDto.Sections.OrderBy(s => s.Order))
@@ -74,7 +85,8 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
                     Enabled = field.Enabled,
                     Order = field.Order,
                     Type = field.Type,
-                    CurrentValue = null
+                    CurrentValue = null,
+                    UiAnchor = uiAnchor
                 });
             }
         }
@@ -82,14 +94,15 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         return worksheetVM;
     }
 
-    private static WorksheetViewModel MapWorksheetInstance(WorksheetDto worksheet, WorksheetInstanceDto worksheetInstance)
+    private static WorksheetViewModel MapWorksheetInstance(WorksheetDto worksheet, string uiAnchor, WorksheetInstanceDto worksheetInstance)
     {
-        var worksheetViewModel = MapWorksheet(worksheet);
+        var worksheetViewModel = MapWorksheet(worksheet, uiAnchor);
 
         foreach (var field in worksheetViewModel.Sections.SelectMany(s => s.Fields))
         {
             var fieldValue = worksheetInstance.Values?.Find(s => s.CustomFieldId == field.Id)?.CurrentValue ?? "{}";
             field.CurrentValue = fieldValue;
+            field.UiAnchor = uiAnchor;
         }
 
         return worksheetViewModel;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -8,7 +9,8 @@ using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Scoresheets
-{ 
+{
+    [Authorize]
     public class ScoresheetAppService : FlexAppService, IScoresheetAppService
     {
         private readonly IScoresheetRepository _scoresheetRepository;
@@ -89,7 +91,7 @@ namespace Unity.Flex.Scoresheets
                 ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
                 Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
                 var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
-                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, Domain.Enums.QuestionType.Number, order, dto.Description, highestOrderSection.Id)).Result;
+                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id)).Result;
                 return Task.FromResult(ObjectMapper.Map<Question, QuestionDto>(result));
             }
         }
@@ -201,6 +203,13 @@ namespace Unity.Flex.Scoresheets
         {
             var result = await _scoresheetRepository.GetListAsync();
             return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
+        }
+
+        public async Task<List<Guid>> GetNonDeletedNumericQuestionIds(List<Guid> questionIdsToCheck)
+        {
+            var existingQuestions = await _questionRepository.GetListAsync();
+            return existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.Number).Select(q => q.Id).ToList();
+
         }
     }
 }
