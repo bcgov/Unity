@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Payments.Codes;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.EntityFrameworkCore;
-using Unity.Payments.Enums;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,14 +12,24 @@ namespace Unity.Payments.Repositories
 {
     public class PaymentRequestRepository : EfCoreRepository<PaymentsDbContext, PaymentRequest, Guid>, IPaymentRequestRepository
     {
+        private List<string> ReCheckStatusList { get; set; } = new List<string>();
+
         public PaymentRequestRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
         {
+            ReCheckStatusList.Add(CasPaymentRequestStatus.SentToCas);
+            ReCheckStatusList.Add(CasPaymentRequestStatus.NeverValidated);
         }
 
         public async Task<int> GetCountByCorrelationId(Guid correlationId)
         {
             var dbSet = await GetDbSetAsync();
             return dbSet.Count(s => s.CorrelationId == correlationId);
+        }
+
+        public async Task<PaymentRequest?> GetPaymentRequestByInvoiceNumber(string invoiceNumber)
+        {
+            var dbSet = await GetDbSetAsync();
+            return dbSet.Where(s => s.InvoiceNumber == invoiceNumber).FirstOrDefault();
         }
 
         public async Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId)
@@ -39,7 +49,7 @@ namespace Unity.Payments.Repositories
         public async Task<List<PaymentRequest>> GetPaymentRequestsBySentToCasStatusAsync()
         {
             var dbSet = await GetDbSetAsync();
-            return dbSet.Where(p => p.InvoiceStatus.Equals(CasPaymentRequestStatus.SentToCas)).IncludeDetails().ToList();
+            return dbSet.Where(p => p.InvoiceStatus != null && ReCheckStatusList.Contains(p.InvoiceStatus)).IncludeDetails().ToList();
         }
 
         public override async Task<IQueryable<PaymentRequest>> WithDetailsAsync()

@@ -5,10 +5,11 @@ using System.Text;
 using Unity.Payments.Integrations.RabbitMQ;
 using Microsoft.Extensions.Options;
 using System;
+using Volo.Abp.Application.Services;
 
 namespace Unity.Payments.PaymentRequests
 {
-    public class CasPaymentRequestCoordinator
+    public class CasPaymentRequestCoordinator : ApplicationService
     {        
         private readonly IPaymentRequestRepository _paymentRequestsRepository;
         private readonly IOptions<RabbitMQOptions> _rabbitMQOptions;
@@ -27,6 +28,7 @@ namespace Unity.Payments.PaymentRequests
             public string InvoiceNumber { get; set; } = string.Empty;
             public string SupplierNumber { get; set; }  = string.Empty;
             public string SiteNumber { get; set; } = string.Empty;
+            public Guid TenantId { get; set; } 
 
         }
 
@@ -34,14 +36,16 @@ namespace Unity.Payments.PaymentRequests
             Guid paymentRequestId, 
             string invoiceNumber, 
             string supplierNumber, 
-            string siteNumber)
+            string siteNumber,
+            Guid tenantId)
         {
             var paymentRequestObject = new
             {
                 paymentRequestId,
                 invoiceNumber,
                 supplierNumber,
-                siteNumber
+                siteNumber,
+                tenantId
             };
             return paymentRequestObject;
         }
@@ -53,14 +57,16 @@ namespace Unity.Payments.PaymentRequests
         /// <param name="invoiceNumber">The Invoice Number</param>
         /// <param name="supplierNumber">The Supplier Number</param>
         /// <param name="siteNumber">The Site Number</param>
+        /// <param name="tennantId">The Tenant Id</param>
         public Task SendPaymentToReconciliationQueue(Guid paymentRequestId, 
                                         string invoiceNumber, 
                                         string supplierNumber, 
-                                        string siteNumber)
+                                        string siteNumber,
+                                        Guid tennantId)
         {
             if (!string.IsNullOrEmpty(invoiceNumber))
             {
-                var prObject = GetPaymentRequestObject(paymentRequestId, invoiceNumber, supplierNumber, siteNumber);
+                var prObject = GetPaymentRequestObject(paymentRequestId, invoiceNumber, supplierNumber, siteNumber, tennantId);
                 RabbitMQConnection rabbitMQConnection = new RabbitMQConnection(_rabbitMQOptions);
                 IConnection connection = rabbitMQConnection.GetConnection();
                 IModel channel = connection.CreateModel();

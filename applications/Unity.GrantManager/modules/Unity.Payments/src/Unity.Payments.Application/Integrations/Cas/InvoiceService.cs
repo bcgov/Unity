@@ -13,6 +13,7 @@ using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
+using Unity.Payments.Codes;
 
 
 namespace Unity.Payments.Integrations.Cas
@@ -161,7 +162,7 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode)
         {
             var authHeaders = await _iTokenService.GetAuthHeadersAsync();
-			var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
+			var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
             var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
 
             if (response != null
@@ -181,8 +182,9 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string invoiceNumber, string supplierNumber, string siteNumber)
         {
             var authHeaders = await _iTokenService.GetAuthHeadersAsync();
-            var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
+            var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
             var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
+            CasPaymentSearchResult casPaymentSearchResult = new CasPaymentSearchResult();
 
             if (response != null
                 && response.Content != null
@@ -190,12 +192,14 @@ namespace Unity.Payments.Integrations.Cas
             {
                 string content = response.Content;
                 var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content);
-                return result ?? new CasPaymentSearchResult();
+                return result ?? casPaymentSearchResult;
             }
-            else
+            else if(response != null)
             {
-                return new CasPaymentSearchResult() { };
+                casPaymentSearchResult.InvoiceStatus = response.StatusCode.ToString();
             }
+
+            return casPaymentSearchResult;
         }
     }
 
