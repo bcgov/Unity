@@ -225,7 +225,7 @@
     "Summary:Application.City": "City",
     "Summary:Application.Community": "Community",
     "Summary:Application.RequestedAmount": "Requested Amount",
-    "Summary:Application.ProjectBudget": "Project Budget",
+    "Summary:Application.ProjectBudget": "Total Project Budget",
     "Summary:Application.Sector": "Sector",
     "Summary:Application.Owner": "Owner",
     "Summary:Application.Assignees": "Assignees",
