@@ -141,12 +141,12 @@ namespace Unity.Payments.Domain.Services
 
             else if (triggerAction == PaymentApprovalAction.Submit)
             {
-                if (_currentUser.IsInRole(PaymentsPermissions.Payments.L2ApproveOrDecline))
+                if (HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline))
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level2);
                     paymentRequest.ExpenseApprovals[index].Approve();
                 }
-                else if (_currentUser.IsInRole(PaymentsPermissions.Payments.L3ApproveOrDecline))
+                else if (HasPermission(PaymentsPermissions.Payments.L3ApproveOrDecline))
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == Enums.ExpenseApprovalType.Level3);
                     paymentRequest.ExpenseApprovals[index].Approve();
