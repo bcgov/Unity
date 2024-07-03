@@ -151,17 +151,7 @@ function getSelectColumn(title) {
 
 function init(iDt) {
     $('.custom-table-btn').removeClass('dt-button buttons-csv buttons-html5');    
-    bindUIEvents(iDt);
     iDt.search('').columns().search('').draw();
-}
-
-function bindUIEvents() {
-    const UIElements = {
-        search: $('#search'),
-        btnToggleFilter: $('#btn-toggle-filter')
-    };
-
-    UIElements.search.hide();
 }
 
 function initializeFilterButtonPopover(iDt) {
@@ -200,21 +190,17 @@ function initializeFilterButtonPopover(iDt) {
     UIElements.btnToggleFilter.on('click', toggleFilterRow);
 
     UIElements.btnToggleFilter.on('shown.bs.popover', function () {
-        const popoverElement = $('.popover.custom-popover');
-        const trToggleElement = $(".tr-toggle-filter");
-        const showFilterElement = $('#showFilter');
         const searchElement = $('#search');
+        const trToggleElement = $(".tr-toggle-filter");
+        const popoverElement = $('.popover.custom-popover');
         const customFilterElement = $('.custom-filter-input');
 
         if ($(this).text() === FilterDesc.With_Filter) {
-            searchElement.show();
-            showFilterElement.prop('checked', true);
             trToggleElement.toggle(true);
         }
 
         popoverElement.find('#showFilter').on('click', () => {
             trToggleElement.toggle();
-            searchElement.toggle();
         });
 
         popoverElement.find('#btnClearFilter').on('click', () => {
@@ -222,14 +208,34 @@ function initializeFilterButtonPopover(iDt) {
             customFilterElement.val('');
 
             $(this).text(FilterDesc.Default);
-            showFilterElement.prop('checked', false);
-            trToggleElement.hide();
-            searchElement.hide();
-
             iDt.search('').columns().search('').draw();
             iDt.order([]).draw();
             iDt.ajax.reload();
         });
+
+        $(document).on('click.popover', function (e) {
+            if (!$(e.target).closest(UIElements.btnToggleFilter.selector).length &&
+                !$(e.target).closest('.popover').length) {
+                UIElements.btnToggleFilter.popover('hide');
+            }
+        });
+
+        $(document).on('mouseenter.popover', function (e) {
+            if (!$(e.target).closest(UIElements.btnToggleFilter.selector).length &&
+                !$(e.target).closest('.popover').length) {
+                UIElements.btnToggleFilter.popover('hide');
+            }
+        });
+    });
+
+    UIElements.btnToggleFilter.on('hide.bs.popover', function () {
+        const popoverElement = $('.popover.custom-popover');
+        popoverElement.find('#showFilter').off('click');
+        popoverElement.find('#btnClearFilter').off('click');
+
+        // Remove document event listeners when popover is hidden
+        $(document).off('click.popover');
+        $(document).off('mouseenter.popover');
     });
 }
 
@@ -355,9 +361,7 @@ function searchFilter(iDt) {
     }
 
     if ($('#btn-toggle-filter').text() === FilterDesc.With_Filter) {
-        $('#showFilter').prop('checked', true);
-        $('#search').show($('#showFilter').value);
-        $(".tr-toggle-filter").show($('#showFilter').value);
+        $(".tr-toggle-filter").show();
     }
 }
 
