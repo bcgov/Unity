@@ -159,15 +159,17 @@
                 {
                     @foreach (var customTab in Model.CustomTabs)
                     {
-                        <abp-tab name="@customTab.Name" title="@customTab.Title">
+                        <abp-tab name="@customTab.Worksheet?.Name" title="@customTab.Worksheet?.Title">
                             @await Component.InvokeAsync(typeof(CustomTabWidgetViewComponent), new
                                 {
                                     instanceCorrelationId = Model.ApplicationId,
                                     instanceCorrelationProvider = CorrelationConsts.Application,
                                     sheetCorrelationId = Model.ApplicationFormId,
-                                    sheetCorrelationProvider = CorrelationConsts.Form,                                    
-                                    name = customTab.Name,
-                                    title = customTab.Title
+                                    sheetCorrelationProvider = CorrelationConsts.Form,
+                                    uiAnchor = customTab.UiAnchor,
+                                    name = customTab.Worksheet?.Name,
+                                    title = customTab.Worksheet?.Title,
+                                    worksheetId = customTab.Worksheet?.Id
                                 })
                         </abp-tab>
                     }

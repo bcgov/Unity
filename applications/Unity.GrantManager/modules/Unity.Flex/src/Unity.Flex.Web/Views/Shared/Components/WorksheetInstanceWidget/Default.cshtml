@@ -83,7 +83,7 @@
                                                    maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()"
                                                    id="@($"{field.Name}.{Model.Name}.{field.Id}")"
                                                    name="@($"{field.Name}.{Model.Name}.{field.Id}")"
-                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                                                   onchange="@($"notifyFieldChange('{Model.Name}', '{Model.UiAnchor}', this)")" />
                                             break;
                                         }
                                 }
