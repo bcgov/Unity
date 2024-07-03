@@ -16,5 +16,6 @@ namespace Unity.Flex.Worksheets
         Task<WorksheetDto> EditAsync(Guid id, EditWorksheetDto dto);
         Task<WorksheetDto> CloneAsync(Guid id);
         Task<bool> PublishAsync(Guid worksheetId);
+        Task DeleteAsync(Guid worksheetId);
     }
 }

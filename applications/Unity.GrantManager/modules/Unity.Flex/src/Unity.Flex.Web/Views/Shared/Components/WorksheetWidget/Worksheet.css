@@ -18,27 +18,31 @@
 }
 
 #preview .preview-btn:not(.collapsed) {
-    background-color: #007bff; 
-    color: #ffffff; 
+    background-color: #007bff;
+    color: #ffffff;
 }
 
 #preview .preview-btn.collapsed::after {
-    -webkit-filter: grayscale(1) invert(0); 
-    filter: grayscale(1) invert(0); 
+    -webkit-filter: grayscale(1) invert(0);
+    filter: grayscale(1) invert(0);
 }
 
 .accordion-button .custom-field-info {
-    margin-right: 20px; 
+    margin-right: 20px;
 }
 
-.accordion-button .custom-field-info .total-custom-fields {
-    font-size: 0.75rem; 
-}
+    .accordion-button .custom-field-info .total-custom-fields {
+        font-size: 0.75rem;
+    }
 
 .accordion-button .text-end {
-    margin-right: 1rem; 
+    margin-right: 1rem;
 }
 
 .custom-field-row {
     padding-left: 5rem;
+}
+
+.worksheet-btn {
+    text-transform: uppercase;
 }
