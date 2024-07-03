@@ -77,7 +77,12 @@ $(function () {
     }
 
     editWorksheetModal.onResult(function (result, response) {
-        PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
+        if (response.responseText.action === 'Delete') {
+            PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
+        }
+        else {
+            PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
+        }
         abp.notify.success(
             'Operation completed successfully.',
             response.responseText.action + ' Worksheet'
