@@ -22,13 +22,14 @@ namespace Unity.Flex.Handlers
 
             if (ans != null)
             {
-                ans.SetValue(ValueConverter.Convert(eventData.Answer.ToString(), Worksheets.CustomFieldType.Numeric));
+                ans.SetValue(ValueConverter.Convert(eventData.Answer ?? "", (Worksheets.CustomFieldType)eventData.QuestionType));
+             
             }
             else
             {
                 ans = new Answer(Guid.NewGuid())
                 {
-                    CurrentValue = ValueConverter.Convert(eventData.Answer.ToString(), Worksheets.CustomFieldType.Numeric),
+                    CurrentValue = ValueConverter.Convert(eventData.Answer.ToString(), (Worksheets.CustomFieldType)eventData.QuestionType),
                     QuestionId = eventData.QuestionId,
                     ScoresheetInstanceId = instance.Id
                 };

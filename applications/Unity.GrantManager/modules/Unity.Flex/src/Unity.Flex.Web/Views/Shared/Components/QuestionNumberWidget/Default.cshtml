@@ -1,0 +1,13 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget;
+@using Unity.Flex.Web.Views.Shared.Components;
+
+@model QuestionNumberViewModel;
+
+<div class="mb-3">
+    <label for="answer-number-@Model.QuestionId" class="form-label">Answer</label>
+    <input type="number" class="form-control answer-number-input" disabled="@Model.IsDisabled" id="answer-number-@Model.QuestionId" name="Answers[@Model.QuestionId]" value="@Model.Answer" data-original-value="@Model.Answer" oninput="handleInputChange('@Model.QuestionId','answer-number-','save-number-')" />
+</div>
+<div class="btn-group">
+    <button type="button" class="btn btn-primary" disabled="@Model.IsDisabled" disabled id="save-number-@Model.QuestionId" onclick="saveChanges('@Model.QuestionId','answer-number-','save-number-',1)">SAVE CHANGES</button>
+    <button type="button" class="btn btn-secondary" disabled="@Model.IsDisabled" onclick="discardChanges('@Model.QuestionId','answer-number-','save-number-')">DISCARD CHANGES</button>
+</div>

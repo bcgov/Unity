@@ -69,7 +69,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             SelectedPaymentIds = JsonSerializer.Deserialize<List<Guid>>(paymentIds) ?? [];
             var payments = await _paymentRequestService.GetListByPaymentIdsAsync(SelectedPaymentIds);
             var permissionsToCheck = new[] { PaymentsPermissions.Payments.L1ApproveOrDecline, PaymentsPermissions.Payments.L2ApproveOrDecline, PaymentsPermissions.Payments.L3ApproveOrDecline };
-            var permissionResult = await _permissionCheckerService.CheckPermissionsAsync(permissionsToCheck);
+            _ = await _permissionCheckerService.CheckPermissionsAsync(permissionsToCheck);
             var paymentConfiguration = await _paymentConfigurationAppService.GetAsync();
 
             PaymentThreshold = paymentConfiguration?.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount;
