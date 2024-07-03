@@ -27,5 +27,14 @@ namespace Unity.Flex.Worksheets
 
             return ObjectMapper.Map<CustomField, CustomFieldDto>(worksheetField);
         }
+
+        public async Task DeleteAsync(Guid id)
+        {
+            var field = await customFieldRepostitory.GetAsync(id) ?? throw new EntityNotFoundException();
+            var worksheet = await worksheetRepository.GetBySectionAsync(field.SectionId, true) ?? throw new EntityNotFoundException();
+            var section = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId) ?? throw new EntityNotFoundException();
+
+            section.RemoveField(field);
+        }
     }
 }
