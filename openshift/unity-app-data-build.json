@@ -2,28 +2,28 @@
   "kind": "Template",
   "apiVersion": "template.openshift.io/v1",
   "metadata": {
-    "name": "unity-app-offline-build",
+    "name": "unity-app-data-build",
     "annotations": {
       "openshift.io/display-name": "Nginx HTTP server and a reverse proxy",
       "description": "An example Nginx HTTP server and a reverse proxy (nginx) application that serves static content.",
-      "tags": "unity-app-offline",
+      "tags": "${APPLICATION_NAME}",
       "iconClass": "icon-nginx",
       "openshift.io/long-description": "This template defines resources needed to develop a static application served by Nginx HTTP server and a reverse proxy (nginx), including a build configuration and application deployment configuration."
     }
   },
-  "message": "The following service(s) have been created in your project: ${NAME}.",
+  "message": "The following service(s) have been created in your project: ${APPLICATION_NAME}.",
   "labels": {
-    "template": "${NAME}",
-    "app": "${NAME}"
+    "template": "${APPLICATION_NAME}",
+    "app": "${APPLICATION_NAME}"
   },
   "objects": [
     {
       "kind": "BuildConfig",
       "apiVersion": "build.openshift.io/v1",
       "metadata": {
-        "name": "${NAME}",
+        "name": "${APPLICATION_NAME}",
         "labels": {
-          "app.kubernetes.io/part-of": "unity-tools"
+          "app.kubernetes.io/part-of": "${APPLICATION_GROUP}"
         },
         "annotations": {
           "description": "Defines how to build the application",
@@ -52,7 +52,7 @@
         "output": {
           "to": {
             "kind": "ImageStreamTag",
-            "name": "${NAME}:latest"
+            "name": "${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}"
           }
         },
         "triggers": [
@@ -68,11 +68,17 @@
   ],
   "parameters": [
     {
-      "name": "NAME",
-      "displayName": "Name",
-      "description": "The name assigned to all of the frontend objects defined in this template.",
+      "description": "The name of the application grouping.",
+      "displayName": "Application Group",
+      "name": "APPLICATION_GROUP",
+      "value": "unity-tools"
+    },
+    {
+      "description": "The name of the application.",
+      "displayName": "Application Name",
+      "name": "APPLICATION_NAME",
       "required": true,
-      "value": "unity-app-offline"
+      "value": "unity-app-data-build"
     },
     {
       "name": "NAMESPACE",
@@ -86,7 +92,7 @@
       "displayName": "NGINX Version",
       "description": "Version of NGINX image to be used (1.20-ubi8 by default).",
       "required": true,
-      "value": "1.20-ubi8"
+      "value": "1.20-ubi9"
     },
     {
       "name": "SOURCE_REPOSITORY_URL",
@@ -98,13 +104,27 @@
     {
       "name": "SOURCE_REPOSITORY_REF",
       "displayName": "Git Reference",
-      "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch."
+      "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch.",
+      "value":"dev"
     },
     {
       "name": "CONTEXT_DIR",
       "displayName": "Context Directory",
       "description": "Set this to the relative path to your project if it is not in the root of your repository.",
       "value": "/applications/Unity.Tools"
+    },
+    {
+      "description": "The ImageStream Name",
+      "displayName": "Registry imagestream name",
+      "name": "IMAGESTREAM_NAME",
+      "value": "unity-app-data-build"
+    },
+    {
+        "description": "The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.",
+        "displayName": "Application Version",
+        "name": "IMAGESTREAM_TAG",
+        "required": true,
+        "value": "latest"
     }
   ]
 }
