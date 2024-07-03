@@ -23,6 +23,7 @@ namespace Unity.Flex.Handlers
             if (ans != null)
             {
                 ans.SetValue(ValueConverter.Convert(eventData.Answer ?? "", (Worksheets.CustomFieldType)eventData.QuestionType));
+             
             }
             else
             {

@@ -11,6 +11,7 @@ namespace Unity.Flex.WorksheetInstances
         public string SheetCorrelationProvider { get; set; } = string.Empty;
         public string UiAnchor { get; set; } = string.Empty;    
         public dynamic? CustomFields { get; set; }
+        public string FormDataName { get; set; } = string.Empty;
     }
 }
  

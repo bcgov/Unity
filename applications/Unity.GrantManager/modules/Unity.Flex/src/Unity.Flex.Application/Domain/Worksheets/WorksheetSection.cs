@@ -40,7 +40,7 @@ namespace Unity.Flex.Domain.Worksheets
 
         public WorksheetSection SetName(string name)
         {
-            if (Worksheet.Sections.Any(s => s.Name == name))
+            if (Worksheet.Sections.Any(s => s.Name == name && s.Id != Id))
                 throw new UserFriendlyException("Cannot duplicate field name");
 
             Name = name;

@@ -9,7 +9,6 @@ using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets.Values;
-using Volo.Abp;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
@@ -28,7 +27,16 @@ namespace Unity.Flex.Domain.Services
             if (dictionary == null || dictionary.Count == 0) return;
 
             var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationAnchorAsync(eventData.InstanceCorrelationId, eventData.InstanceCorrelationProvider, eventData.UiAnchor, true);
-            var worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(eventData.SheetCorrelationId, eventData.SheetCorrelationProvider, eventData.UiAnchor, true);
+
+            Worksheet? worksheet;
+            if (string.IsNullOrEmpty(eventData.FormDataName))
+            {
+                worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(eventData.SheetCorrelationId, eventData.SheetCorrelationProvider, eventData.UiAnchor, true);
+            }
+            else
+            {
+                worksheet = await worksheetRepository.GetByNameAsync(eventData.FormDataName[..eventData.FormDataName.IndexOf("_form")], true);
+            }
 
             var fields = dictionary
                     .BuildFields()
@@ -163,18 +171,25 @@ namespace Unity.Flex.Domain.Services
             return newWorksheetInstances;
         }
 
-        public async Task<WorksheetLink> CreateWorksheetLink(Guid worksheetId, Guid correlationId, string correlationProvider, string uiAnchor)
+        public async Task<Worksheet> CloneWorksheetAsync(Guid id)
         {
-            // Validate duplicates etc...
-
-            var existing = await worksheetLinkRepository.GetExistingLinkAsync(worksheetId, correlationId, correlationProvider);
-
-            if (existing != null)
+            var worksheet = await worksheetRepository.GetAsync(id, true);
+            var versionSplit = worksheet.Name.Split('-');
+            var clonedWorksheet = new Worksheet(Guid.NewGuid(), $"{versionSplit[0]}-v{worksheet.Version + 1}", worksheet.Title);
+            clonedWorksheet.SetNextVersion(worksheet.Version);
+            foreach (var section in worksheet.Sections.OrderBy(s => s.Order))
             {
-                throw new BusinessException("Link already exists, use versioning to update links");
+                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
+                foreach (var field in section.Fields.OrderBy(s => s.Order))
+                {
+                    var clonedField = new CustomField(Guid.NewGuid(), field.Field, worksheet.Name, field.Label, field.Type, field.Definition);
+                    clonedSection.AddField(clonedField);
+                }
+                clonedWorksheet.AddSection(clonedSection);
             }
 
-            return await worksheetLinkRepository.InsertAsync(new WorksheetLink(Guid.NewGuid(), worksheetId, correlationId, correlationProvider, uiAnchor));
+            var result = await worksheetRepository.InsertAsync(clonedWorksheet);
+            return result;
         }
 
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)

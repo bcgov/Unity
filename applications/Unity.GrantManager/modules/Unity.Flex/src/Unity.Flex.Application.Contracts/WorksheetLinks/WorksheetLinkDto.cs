@@ -1,8 +1,10 @@
 ﻿using System;
+using Unity.Flex.Worksheets;
 using Volo.Abp.Application.Dtos;
 
-namespace Unity.Flex.Worksheets
+namespace Unity.Flex.WorksheetLinks
 {
+    [Serializable]
     public class WorksheetLinkDto : EntityDto<Guid>
     {
         public Guid WorksheetId { get; set; }

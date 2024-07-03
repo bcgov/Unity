@@ -12,3 +12,11 @@
     font-size: 0.75rem;
     margin-top: 2px;
 }
+
+.worksheet-title {
+    font-weight: bold;
+}
+
+.worksheet-name {
+    font-size: 0.7rem;
+}

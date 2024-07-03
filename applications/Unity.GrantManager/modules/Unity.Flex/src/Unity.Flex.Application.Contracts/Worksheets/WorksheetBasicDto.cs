@@ -11,5 +11,6 @@ namespace Unity.Flex.Worksheets
         public uint TotalFields { get; set; } = 0;
         public uint TotalSections { get; set; } = 0;
         public uint Version { get; set; } = 0;
+        public bool Published { get; set; } = false;
     }
 }

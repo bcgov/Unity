@@ -3,14 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Worksheets;
-using Unity.Flex.Scoresheets;
 using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
 {
     [Authorize]
-    public class WorksheetAppService(IWorksheetRepository worksheetRepository) : FlexAppService, IWorksheetAppService
+    public class WorksheetAppService(IWorksheetRepository worksheetRepository, WorksheetsManager worksheetsManager) : FlexAppService, IWorksheetAppService
     {
         public virtual async Task<WorksheetDto> GetAsync(Guid id)
         {
@@ -87,6 +87,19 @@ namespace Unity.Flex.Worksheets
             var worksheet = await worksheetRepository.GetAsync(id);
             worksheet.SetTitle(dto.Title);
             return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
+        }
+
+        public virtual async Task<WorksheetDto> CloneAsync(Guid id)
+        {
+            var worksheet = await worksheetsManager.CloneWorksheetAsync(id);
+            return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
+        }
+
+        public virtual async Task<bool> PublishAsync(Guid worksheetId)
+        {
+            var worksheet = await worksheetRepository.GetAsync(worksheetId);
+            _ = worksheet.SetPublished(true);
+            return await Task.FromResult(true);
         }
     }
 }
