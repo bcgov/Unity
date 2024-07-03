@@ -11,12 +11,9 @@ let scoresheetToEditId = null;
 scoresheetModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
     if (actionType.startsWith('Delete')) {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
-    } else if (actionType == 'Edit Scoring Sheet On New Version') {
-        const scoresheetIdsToLoad = getScoresheetIdsToLoad().filter(element => element !== scoresheetToEditId);
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: scoresheetIdsToLoad });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
     } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
     }
     abp.notify.success(
         actionType + ' is successful.', 
@@ -25,8 +22,7 @@ scoresheetModal.onResult(function (response) {
 });
 
 cloneScoresheetModal.onResult(function (response) {
-    const scoresheetIdsToLoad = getScoresheetIdsToLoad().filter(element => element !== scoresheetToEditId);
-    PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: scoresheetIdsToLoad });
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
     abp.notify.success(
         'Scoring sheet cloning is successful.',
         'Scoresheet'
@@ -52,7 +48,7 @@ function openCloneScoresheetModal(scoresheetId, groupId) {
 PubSub.subscribe(
     'refresh_scoresheet_list',
     (msg, data) => {
-        refreshScoresheetInfoWidget(data.scoresheetId, data.scorsheetIdsToLoad);
+        refreshScoresheetInfoWidget(data.scoresheetId);
     }
 );
 
@@ -69,8 +65,8 @@ function showAccordion(scoresheetId) {
     accordionButton.classList.remove('collapsed');
 }
 
-function refreshScoresheetInfoWidget(scoresheetId, scorsheetIdsToLoad) {
-    const url = `../Flex/Widget/Scoresheet/Refresh?scoresheetIdsToLoad=${scorsheetIdsToLoad.join(',')}`;
+function refreshScoresheetInfoWidget(scoresheetId) {
+    const url = `../Flex/Widget/Scoresheet/Refresh`;
     fetch(url)
         .then(response => response.text())
         .then(data => {

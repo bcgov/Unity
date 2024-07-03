@@ -30,47 +30,10 @@ namespace Unity.Flex.Scoresheets
             _questionRepository = questionRepository;
         }
 
-        public async Task<List<ScoresheetDto>> GetListAsync(List<Guid> scoresheetIdsToLoad)
+        public async Task<List<ScoresheetDto>> GetListAsync()
         {
             var result = await _scoresheetRepository.GetListWithChildrenAsync();
-            var scoresheets = ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
-            var scoresheetsToLoad = scoresheets
-                    .Where(s => scoresheetIdsToLoad.Contains(s.Id))
-                    .ToList();
-            var scoresheetsToLoadByGroupId = scoresheetsToLoad
-                    .ToDictionary(s => s.GroupId, s => s);
-            var groupedScoresheets = scoresheets.GroupBy(s => s.GroupId);
-            var uniqueScoresheets = groupedScoresheets
-                    .Select(g => g.OrderBy(s => s.CreationTime).First())
-                    .OrderBy(s => s.CreationTime)
-                    .ToList();
-            var highestVersionScoresheetsByGroupId = groupedScoresheets
-                    .Select(g => g.OrderByDescending(s => s.CreationTime).First())
-                    .OrderBy(s => s.CreationTime)
-                    .ToList();
-            var highestVersionScoresheetToLoad = highestVersionScoresheetsByGroupId
-                    .ToDictionary(s => s.GroupId, s => s);
-            for (int i = 0; i < uniqueScoresheets.Count; i++)
-            {
-                if (scoresheetsToLoadByGroupId.TryGetValue(uniqueScoresheets[i].GroupId, out var replacement))
-                {
-                    uniqueScoresheets[i] = replacement;
-                }
-                else if(highestVersionScoresheetToLoad.TryGetValue(uniqueScoresheets[i].GroupId, out var highestVersionReplacement))
-                {
-                    uniqueScoresheets[i] = highestVersionReplacement;
-                }
-            }
-            foreach (var scoresheet in uniqueScoresheets)
-            {
-                var groupVersions = groupedScoresheets
-                    .First(g => g.Key == scoresheet.GroupId)
-                    .Select(s => new VersionDto { ScoresheetId = s.Id,Version = s.Version })
-                    .ToList();
-
-                scoresheet.GroupVersions = new Collection<VersionDto>(groupVersions);
-            }
-            return uniqueScoresheets;
+            return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
         }
 
         public virtual async Task<ScoresheetDto> GetAsync(Guid id)
