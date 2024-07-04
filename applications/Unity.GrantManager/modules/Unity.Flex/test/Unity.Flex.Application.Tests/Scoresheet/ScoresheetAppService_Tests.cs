@@ -118,7 +118,7 @@ namespace Unity.Flex.Scoresheet
             var scoresheetName = "Updated Test Scoresheet";
 
             // Act
-            await _scoresheetAppService.UpdateAllAsync(scoresheet.GroupId, new EditScoresheetsDto { Name = scoresheetName });
+            await _scoresheetAppService.UpdateAllAsync(scoresheet.GroupId, new EditScoresheetDto { Name = scoresheetName });
             var updatedScoresheet = await _scoresheetRepository.GetAsync(scoresheet.Id);
 
             // Assert

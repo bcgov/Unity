@@ -78,21 +78,17 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-        public async Task UpdateAllAsync(Guid groupId, EditScoresheetsDto dto)
+        public async Task UpdateAsync(Guid scoresheetId, EditScoresheetDto dto)
         {
-            var scoresheets = await _scoresheetRepository.GetScoresheetsByGroupId(groupId);
-            foreach (var scoresheet in scoresheets)
-            {
-                scoresheet.Name = dto.Name;
-                await _scoresheetRepository.UpdateAsync(scoresheet);
-            }
+            var scoresheet = await _scoresheetRepository.GetAsync(scoresheetId);
+            scoresheet.Name = dto.Name;
+            await _scoresheetRepository.UpdateAsync(scoresheet);
         }
 
-        public async Task<ClonedObjectDto> CloneScoresheetAsync(Guid scoresheetIdToClone, Guid? sectionIdToClone, Guid? questionIdToClone)
+        public async Task CloneScoresheetAsync(Guid scoresheetIdToClone)
         {
             using var unitOfWork = _unitOfWorkManager.Begin();
-            ScoresheetSection? clonedSectionToGet = null;
-            Question? clonedQuestionToGet = null;
+            
             var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
             var highestVersionScoresheet = await _scoresheetRepository.GetHighestVersionAsync(originalScoresheet.GroupId) ?? throw new AbpValidationException("Scoresheet not found.");
             var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Name, originalScoresheet.GroupId)
@@ -107,28 +103,18 @@ namespace Unity.Flex.Scoresheets
                     ScoresheetId = clonedScoresheet.Id,
                 };
 
-                if(sectionIdToClone != null && originalSection.Id == sectionIdToClone)
-                {
-                    clonedSectionToGet = clonedSection;
-                }
-
                 foreach (var originalQuestion in originalSection.Fields)
                 {
                     var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, clonedSection.Id);
                     clonedSection.Fields.Add(clonedQuestion);
-                    if(questionIdToClone != null && originalQuestion.Id == questionIdToClone)
-                    {
-                        clonedQuestionToGet = clonedQuestion;
-                    }
                 }
 
                 clonedScoresheet.Sections.Add(clonedSection);
             }
 
-            var newScoresheet = await _scoresheetRepository.InsertAsync(clonedScoresheet);
+            _ = await _scoresheetRepository.InsertAsync(clonedScoresheet);
             await unitOfWork.SaveChangesAsync();
             await unitOfWork.CompleteAsync();
-            return new ClonedObjectDto { ScoresheetId = newScoresheet.Id, SectionId = clonedSectionToGet?.Id, QuestionId = clonedQuestionToGet?.Id};
         }
 
         public async Task DeleteAsync(Guid id)

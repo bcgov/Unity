@@ -43,7 +43,7 @@ public class CloneScoresheetModalModel : FlexPageModel
     
     private async Task CloneScoresheet()
     {
-        await _scoresheetAppService.CloneScoresheetAsync(Scoresheet.Id, null, null);
+        await _scoresheetAppService.CloneScoresheetAsync(Scoresheet.Id);
     }
 
 }

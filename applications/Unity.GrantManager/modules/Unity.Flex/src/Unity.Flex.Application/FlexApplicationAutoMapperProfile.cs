@@ -34,8 +34,7 @@ public class FlexApplicationAutoMapperProfile : Profile
 
         CreateMap<Question, QuestionDto>()
             .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore())
-            .ForMember(dest => dest.Answer, opt => opt.Ignore())
-            .ForMember(dest => dest.HasAnswers, opt => opt.Ignore());
+            .ForMember(dest => dest.Answer, opt => opt.Ignore());
         CreateMap<ScoresheetSection, ScoresheetSectionDto>()
             .ForMember(dest => dest.Fields, opt => opt.MapFrom(src => src.Fields))
             .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore());
