@@ -27,6 +27,8 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             iDisplayLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
+            scrollY: '400px',
+            scrollCollapse: true,
             ajax: abp.libs.datatables.createAjax(
                 dataEndpoint,
                 data,
