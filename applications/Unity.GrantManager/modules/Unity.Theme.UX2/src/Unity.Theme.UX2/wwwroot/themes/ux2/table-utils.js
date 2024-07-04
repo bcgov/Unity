@@ -175,7 +175,8 @@ function initializeFilterButtonPopover(iDt) {
                     </div>
                   `,
         content: function () {
-            const isChecked = UIElements.btnToggleFilter.text() === FilterDesc.With_Filter;
+            const isChecked = $(".tr-toggle-filter").is(':visible') ||
+                UIElements.btnToggleFilter.text() === FilterDesc.With_Filter;
             return `
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="showFilter" ${isChecked ? 'checked' : ''}>
