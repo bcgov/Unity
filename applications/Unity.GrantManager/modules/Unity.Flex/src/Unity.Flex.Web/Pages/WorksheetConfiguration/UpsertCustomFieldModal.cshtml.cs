@@ -47,6 +47,9 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     [BindProperty]
     public WorksheetUpsertAction UpsertAction { get; set; }
 
+    [BindProperty]
+    public bool IsDelete { get; set; }
+
     [SelectItems(nameof(FieldTypes))]
     [Required]
     [BindProperty]
@@ -74,10 +77,10 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var delete = Request.Form["deleteCustomField"];
-        var save = Request.Form["saveCustomField"];
+        var delete = Request.Form["deleteCustomFieldBtn"];
+        var save = Request.Form["saveCustomFieldBtn"];
 
-        if (delete == "delete")
+        if (delete == "delete" || IsDelete == true)
         {
             await customFieldAppService.DeleteAsync(Id);
             return new OkObjectResult(new ModalResponse()
