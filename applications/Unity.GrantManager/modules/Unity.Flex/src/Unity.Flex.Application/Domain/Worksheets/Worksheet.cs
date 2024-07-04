@@ -72,5 +72,11 @@ namespace Unity.Flex.Domain.Worksheets
             Published = published;
             return this;
         }
+
+        public Worksheet RemoveSection(WorksheetSection section)
+        {
+            Sections.Remove(section);
+            return this;
+        }
     }
 }

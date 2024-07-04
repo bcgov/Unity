@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
 public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService) : FlexPageModel
 {
     [BindProperty]
-    public Guid Id { get; set; }
+    public Guid? WorksheetId { get; set; }
 
     [BindProperty]
     [MinLength(3)]
@@ -39,7 +39,7 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
             UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
 
             Name = worksheetDto.Name;
-            Id = worksheetDto.Id;
+            WorksheetId = worksheetDto.Id;
             Title = worksheetDto.Title;
             Published = worksheetDto.Published;
         }
@@ -50,12 +50,12 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
         var delete = Request.Form["deleteWorksheetBtn"];
         var save = Request.Form["saveWorksheetBtn"];
 
-        if (delete == "delete" || IsDelete == true)
+        if (delete == "delete" || IsDelete)
         {
-            await worksheetAppService.DeleteAsync(Id);
+            await worksheetAppService.DeleteAsync(WorksheetId!.Value);
             return new OkObjectResult(new ModalResponse()
             {
-                WorksheetId = Id,
+                WorksheetId = WorksheetId!.Value,
                 Action = "Delete"
             });
         }
@@ -66,7 +66,7 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
                 case WorksheetUpsertAction.Insert:
                     return MapModalResponse(await worksheetAppService.CreateAsync(MapCreateWorksheetModel()));
                 case WorksheetUpsertAction.Update:
-                    return MapModalResponse(await worksheetAppService.EditAsync(Id, MapEditWorksheetModel()));
+                    return MapModalResponse(await worksheetAppService.EditAsync(WorksheetId!.Value, MapEditWorksheetModel()));
                 default:
                     break;
             }
