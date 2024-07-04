@@ -26,6 +26,9 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
     [BindProperty]
     public WorksheetUpsertAction UpsertAction { get; set; }
 
+    [BindProperty]
+    public bool IsDelete { get; set; }
+
     public async Task OnGetAsync(Guid worksheetId, string actionType)
     {
         UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
@@ -44,10 +47,10 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var delete = Request.Form["deleteWorksheet"];
-        var save = Request.Form["saveWorksheet"];
+        var delete = Request.Form["deleteWorksheetBtn"];
+        var save = Request.Form["saveWorksheetBtn"];
 
-        if (delete == "delete")
+        if (delete == "delete" || IsDelete == true)
         {
             await worksheetAppService.DeleteAsync(Id);
             return new OkObjectResult(new ModalResponse()
