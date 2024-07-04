@@ -16,6 +16,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public List<SelectListItem> DeclineRationalActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList);
         public List<SelectListItem> SubStatusActionList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.SubStatusActionList);
 
+        public List<SelectListItem> RiskRankingList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.RiskRankingList);
         public Guid ApplicationId { get; set; }
         public Guid ApplicationFormId { get; set; }
 
@@ -81,6 +82,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             [Display(Name = "AssessmentResultsView:AssessmentResultsForm.NotificationDate")]
             public DateTime? NotificationDate { get; set; }
 
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.RiskRanking")]
+            [SelectItems(nameof(RiskRankingList))]
+            public string? RiskRanking { get; set; }
         }
 
         public static List<SelectListItem> FormatOptionsList(Dictionary<string, string> optionsList)

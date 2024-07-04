@@ -14,4 +14,5 @@ public static class AssessmentResultsOptionsList
 
     public static Dictionary<string, string> SubStatusActionList => new() { { "BATCH_FOR_DECISION", "Batch For Decision" }, { "COMPLETE", "Complete" }, { "MISSING_INFORMATION", "Missing Information" }, { "NOTIFIED", "Notified" }, { "REQUIRES_SECONDARY_REVIEW", "Requires Secondary Review" }, { "REQUIRES_TEAM_LEAD_REVIEW", "Requires Team Lead Review" } };
 
+    public static Dictionary<string, string> RiskRankingList => new() {  { "LOW", "Low" }, { "MEDIUM", "Medium" }, { "HIGH", "High" } };
 }

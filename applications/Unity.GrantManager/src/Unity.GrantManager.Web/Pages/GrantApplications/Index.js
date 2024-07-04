@@ -144,6 +144,7 @@
             getSigningAuthorityBusinessPhoneColumn(),
             getSigningAuthorityCellPhoneColumn(),
             getPlaceColumn(),
+            getRiskRankingColumn(),
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -898,6 +899,19 @@
                 return data ?? '';
             },
             index: 54
+        }
+    }
+
+    function getRiskRankingColumn() {
+        return {
+            title: 'Risk Ranking',
+            name: 'riskranking',
+            data: 'riskRanking',
+            className: 'data-table-header',
+            render: function (data) {
+                return titleCase(data ?? '') ?? '';
+            },
+            index: 55
         }
     }
 

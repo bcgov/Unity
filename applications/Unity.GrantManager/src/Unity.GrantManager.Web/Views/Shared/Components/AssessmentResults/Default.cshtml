@@ -25,7 +25,7 @@
     </abp-column>
     <form id="assessmentResultForm">
         <abp-row class="m-0 assessment-result-form">
-            <abp-column size="_10" class="px-0">
+            <abp-column size="_12" class="px-0">
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
                         <div class="unity-input-group">
@@ -64,6 +64,12 @@
                         </abp-select>
                     </abp-column>
                     <abp-column size="_3" class="px-1">
+                        <abp-select asp-for="@Model.AssessmentResults.RiskRanking" asp-items="@Model.RiskRankingList"
+                                    onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                    <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.DueDiligenceStatus" asp-items="@Model.DueDiligenceList"
                                     onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
                             <option value="">Please choose...</option>
@@ -75,13 +81,26 @@
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
+                   
+                </abp-row>
+                   <abp-row class="m-0">
+                    <abp-column size="_3" class="px-1">
+                        <abp-input type="number" asp-for="@Model.AssessmentResults.TotalScore"
+                                   onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsPostEditFieldsAllowed)" min="0" max="2147483647" />
+                    </abp-column>
                     <abp-column size="_3" class="px-1">
                         <abp-select asp-for="@Model.AssessmentResults.AssessmentResultStatus" asp-items="@Model.AssessmentResultStatusList"
                                     onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
                             <option value="">Please choose...</option>
                         </abp-select>
                     </abp-column>
-                </abp-row>
+                    <abp-column size="_3" class="px-1">
+                        <abp-select asp-for="@Model.AssessmentResults.DeclineRational" asp-items="@Model.DeclineRationalActionList"
+                                    onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
+                            <option value="">Please choose...</option>
+                        </abp-select>
+                    </abp-column>
+                   </abp-row>
                 <abp-row class="m-0">
                     <abp-column size="_3" class="px-1">
                         <abp-input type="date" asp-for="@Model.AssessmentResults.NotificationDate" onchange="validateNotificationDate();" abp-data-datepicker="false">
@@ -103,18 +122,7 @@
                     </abp-column>
                 </abp-row>
             </abp-column>
-            <abp-column size="_2" class="px-0">
-                <abp-column size="_12" class="px-1">
-                    <abp-input type="number" asp-for="@Model.AssessmentResults.TotalScore"
-                               onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsPostEditFieldsAllowed)" min="0" max="2147483647" />
-                </abp-column>
-                <abp-column size="_12" class="px-1">
-                    <abp-select asp-for="@Model.AssessmentResults.DeclineRational" asp-items="@Model.DeclineRationalActionList"
-                                onchange="enableResultSaveBtn(this)" disabled="@(!Model.IsEditGranted)">
-                        <option value="">Please choose...</option>
-                    </abp-select>
-                </abp-column>
-            </abp-column>
+            
         </abp-row>
 
         @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
