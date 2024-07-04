@@ -329,7 +329,7 @@ $(function () {
             className: 'data-table-header',
             index: 12,
             render: function (data) {
-                if(data+"" !== "undefined" && data.length > 0) {
+                if(data+"" !== "undefined" && data?.length > 0) {
                     return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return  '{Not Available}';
