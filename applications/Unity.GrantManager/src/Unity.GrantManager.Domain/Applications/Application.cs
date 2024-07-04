@@ -135,7 +135,7 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
     }
 
-    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, decimal? totalProjectBudget, DateTime? notificationDate, string riskRanking)
+    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, decimal? totalProjectBudget, DateTime? notificationDate, string? riskRanking)
     {
         Notes = notes;
         SubStatus = subStatus;
