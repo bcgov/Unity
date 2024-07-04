@@ -104,10 +104,12 @@
         (msg, data) => { 
             if (data.RequestedAmount) {
                 $('#RequestedAmountInputAR')?.prop("value", data?.RequestedAmount);
+                $('#RequestedAmountInputAR').maskMoney('mask');
             }
             if (data.TotalProjectBudget) {
                 $('#TotalBudgetInputAR')?.prop("value", data?.TotalProjectBudget);
-            }
+                $('#TotalBudgetInputAR').maskMoney('mask');
+            } 
         }
     );
 
