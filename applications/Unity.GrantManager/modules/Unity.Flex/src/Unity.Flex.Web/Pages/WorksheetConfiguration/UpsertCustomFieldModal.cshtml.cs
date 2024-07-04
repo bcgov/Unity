@@ -14,13 +14,13 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     IWorksheetListAppService worksheetListAppService) : FlexPageModel
 {
     [BindProperty]
-    public Guid Id { get; set; }
-
-    [BindProperty]
     public Guid WorksheetId { get; set; }
 
     [BindProperty]
     public Guid SectionId { get; set; }
+
+    [BindProperty]
+    public Guid? FieldId { get; set; }
 
     [DisplayName("Name")]
     [BindProperty]
@@ -70,7 +70,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
 
             Field = customField.Field;
             Label = customField.Label;
-            Id = fieldId;
+            FieldId = fieldId;
             Published = worksheet.Published;
         }
     }
@@ -80,12 +80,12 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
         var delete = Request.Form["deleteCustomFieldBtn"];
         var save = Request.Form["saveCustomFieldBtn"];
 
-        if (delete == "delete" || IsDelete == true)
+        if (delete == "delete" || IsDelete)
         {
-            await customFieldAppService.DeleteAsync(Id);
+            await customFieldAppService.DeleteAsync(FieldId!.Value);
             return new OkObjectResult(new ModalResponse()
             {
-                CustomFieldId = Id,
+                CustomFieldId = FieldId!.Value,
                 WorksheetId = WorksheetId,
                 Action = "Delete"
             });
@@ -119,7 +119,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
 
     private async Task<CustomFieldDto> UpdateCustomField()
     {
-        return await customFieldAppService.EditAsync(Id, new EditCustomFieldDto()
+        return await customFieldAppService.EditAsync(FieldId!.Value, new EditCustomFieldDto()
         {
             Definition = null, // use default definition
             Label = Label!,

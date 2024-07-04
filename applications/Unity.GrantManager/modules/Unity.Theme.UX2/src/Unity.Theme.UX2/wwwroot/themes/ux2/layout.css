@@ -9,9 +9,9 @@ html, body {
     font-family: 'BCSans', var(--bs-font-sans-serif) !important;
 }
 
-/*body {
+body {
     overflow: hidden;
-}*/
+}
 
 
 .btn {
