@@ -9,5 +9,6 @@ namespace Unity.Flex.Worksheets
         Task<CustomFieldDto> CreateCustomFieldAsync(Guid id, CreateCustomFieldDto dto);
         Task<WorksheetSectionDto> GetAsync(Guid id);
         Task<WorksheetSectionDto> EditAsync(Guid id, EditSectionDto dto);
+        Task DeleteAsync(Guid id);
     }
 }

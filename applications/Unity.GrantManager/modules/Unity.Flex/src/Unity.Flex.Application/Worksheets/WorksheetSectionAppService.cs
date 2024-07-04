@@ -17,16 +17,15 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task<WorksheetSectionDto> EditAsync(Guid id, EditSectionDto dto)
         {
-            var worksheet = await worksheetRepository.GetBySectionAsync(id, true) ?? throw new EntityNotFoundException();
-            var section = worksheet.Sections.FirstOrDefault(s => s.Id == id) ?? throw new EntityNotFoundException();
+            (Worksheet worksheet, WorksheetSection section) = await GetWorksheetAndSectionAsync(id);
+
             _ = worksheet.UpdateSection(section, dto.Name.Trim());
             return ObjectMapper.Map<WorksheetSection, WorksheetSectionDto>(section);
         }
 
         public virtual async Task<CustomFieldDto> CreateCustomFieldAsync(Guid id, CreateCustomFieldDto dto)
         {
-            var worksheet = await worksheetRepository.GetBySectionAsync(id, true) ?? throw new EntityNotFoundException();
-            var section = worksheet.Sections.First(s => s.Id == id);
+            (Worksheet worksheet, WorksheetSection section) = await GetWorksheetAndSectionAsync(id);
 
             var customField = (new CustomField(Guid.NewGuid(),
                 dto.Field,
@@ -35,9 +34,23 @@ namespace Unity.Flex.Worksheets
                 dto.Type,
                 dto.Definition));
 
-            section.AddField(customField);            
+            section.AddField(customField);
 
             return ObjectMapper.Map<CustomField, CustomFieldDto>(customField);
+        }
+
+        public async Task DeleteAsync(Guid id)
+        {
+            (Worksheet worksheet, WorksheetSection section) = await GetWorksheetAndSectionAsync(id);
+            worksheet.RemoveSection(section);
+        }
+
+        private async Task<(Worksheet worksheet, WorksheetSection section)> GetWorksheetAndSectionAsync(Guid sectionId)
+        {
+            var worksheet = await worksheetRepository.GetBySectionAsync(sectionId, true) ?? throw new EntityNotFoundException();
+            var section = worksheet.Sections.FirstOrDefault(s => s.Id == sectionId) ?? throw new EntityNotFoundException();
+
+            return (worksheet, section);
         }
     }
 }
