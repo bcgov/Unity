@@ -7,5 +7,6 @@ namespace Unity.Flex.Domain.Scoresheets
     public interface IQuestionRepository : IBasicRepository<Question, Guid>
     {
         public Task<Question?> GetQuestionWithHighestOrderAsync(Guid sectionId);
+        public Task<Question?> GetAsync(Guid questionId);
     }
 }

@@ -40,7 +40,7 @@ namespace Unity.Flex.Domain.Worksheets
 
         public WorksheetSection SetName(string name)
         {
-            if (Worksheet.Sections.Any(s => s.Name == name))
+            if (Worksheet.Sections.Any(s => s.Name == name && s.Id != Id))
                 throw new UserFriendlyException("Cannot duplicate field name");
 
             Name = name;
@@ -61,6 +61,12 @@ namespace Unity.Flex.Domain.Worksheets
         public WorksheetSection SetOrder(uint order)
         {
             Order = order;
+            return this;
+        }
+
+        public WorksheetSection RemoveField(CustomField field)
+        {
+            Fields.Remove(field);
             return this;
         }
     }

@@ -38,14 +38,26 @@ namespace Unity.Flex.Domain.Worksheets
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type, object? definition)
+        private CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type)
         {
             Id = id;
             Name = ConfigureName(field, worksheetName);
             Field = field;
             Label = label;
             Type = type;
+        }
+
+        public CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type, object? definition)
+            : this(id, field, worksheetName, label, type)
+        {
+
             Definition = DefinitionResolver.Resolve(type, definition);
+        }
+
+        public CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type, string? definition)
+            : this(id, field, worksheetName, label, type)
+        {
+            Definition = definition ?? "{}";
         }
 
         private static string ConfigureName(string name, string worksheetName)
@@ -57,7 +69,7 @@ namespace Unity.Flex.Domain.Worksheets
         {
             var name = ConfigureName(field, worksheetName);
 
-            if (Section.Fields.Any(s => s.Name == name && s.Id != this.Id))
+            if (Section.Fields.Any(s => s.Name == name && s.Id != Id))
                 throw new UserFriendlyException("Cannot duplicate name");
 
             Field = field;

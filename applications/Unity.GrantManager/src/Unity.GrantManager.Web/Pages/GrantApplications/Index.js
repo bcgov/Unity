@@ -44,7 +44,7 @@
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
-        15,
+        10,
         4,
         unity.grantManager.grantApplications.grantApplication.getList,
         {},
@@ -143,6 +143,7 @@
             getSigningAuthorityEmailColumn(),
             getSigningAuthorityBusinessPhoneColumn(),
             getSigningAuthorityCellPhoneColumn(),
+            getPlaceColumn(),
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -885,6 +886,18 @@
                 return data ?? '';
             },
             index: 53
+        }
+    }
+    function getPlaceColumn() {
+        return {
+            title: 'Place',
+            name: 'place',
+            data: 'place',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 54
         }
     }
 

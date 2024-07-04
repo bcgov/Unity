@@ -18,7 +18,7 @@
                         <input type="@Model.Field?.Type.ConvertInputType()"
                                id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
                                name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
-                               onchange="@($"notifyFieldChange('{Model.Name}', this)")"
+                               onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")"
                                checked />
                     }
                     else
@@ -26,7 +26,7 @@
                         <input type="@Model.Field?.Type.ConvertInputType()"
                                id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
                                name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}.{option.Key}")"
-                               onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                               onchange="@($"notifyFieldChange('{Model.Name}','{Model.Field?.UiAnchor}', this)")" />
                     }
                     <label for="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")">@($"{option.Label}")</label>
                 </div>

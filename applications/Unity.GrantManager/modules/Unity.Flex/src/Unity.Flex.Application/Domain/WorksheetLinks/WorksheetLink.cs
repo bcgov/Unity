@@ -6,7 +6,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.WorksheetLinks
 {
-    public class WorksheetLink : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
+    public class WorksheetLink : AuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         public Guid? TenantId { get; set; }
         public Guid WorksheetId { get; set; }
@@ -39,6 +39,12 @@ namespace Unity.Flex.Domain.WorksheetLinks
             CorrelationProvider = correlationProvider;
             WorksheetId = worksheetId;
             UiAnchor = uiAnchor;
+        }
+
+        public WorksheetLink SetAnchor(string uiAnchor)
+        {
+            UiAnchor = uiAnchor;
+            return this;
         }
     }
 }

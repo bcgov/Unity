@@ -20,7 +20,7 @@ public class WorksheetListWidget(IWorksheetAppService worksheetAppService) : Abp
 
     public async Task<IViewComponentResult> InvokeAsync()
     {
-        var worksheets = (await _worksheetAppService.GetListAsync()).OrderBy(s => s.Title);
+        var worksheets = (await _worksheetAppService.GetListAsync()).OrderBy(s => s.Title).ThenBy(s => s.Version);
         return View(new WorksheetListViewModel() { Worksheets = [.. worksheets] });
     }
 }

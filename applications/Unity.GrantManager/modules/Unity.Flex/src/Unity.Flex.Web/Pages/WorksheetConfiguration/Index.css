@@ -1,5 +1,5 @@
 ﻿.worksheet-configuration-container {
-    width: 100%;    
+    width: 100%;
 }
 
 .worksheet-scrollable-content {
@@ -7,3 +7,4 @@
     height: calc(100vh - 120px);
     margin-top: 10px;
 }
+

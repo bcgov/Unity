@@ -8,6 +8,7 @@
     "Scoresheet:Configuration:QuestionModal.Name": "Name",
     "Scoresheet:Configuration:QuestionModal.Label": "Question",
     "Scoresheet:Configuration:QuestionModal.Description": "Description",
+    "Scoresheet:Configuration:QuestionModal.QuestionType": "Question Type",
     "Scoresheet:Configuration:AddScoresheetButtonText": "ADD SCORING SHEET",
     "Scoresheet:Configuration:AddQuestionButtonText": "ADD QUESTION",
     "Scoresheet:Configuration:AddSectionButtonText": "ADD SECTION",
@@ -16,10 +17,13 @@
     "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
     "Worksheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
     "Worksheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
-    "Worksheet:Configuration:EditWorksheetButtonText": "EDIT WORKSHEET",
-    "Worksheet:Configuration:AddCustomFieldButtonText": "ADD FIELD",
+    "Worksheet:Configuration:EditWorksheetButtonText": "Edit Worksheet",
+    "Worksheet:Configuration:AddCustomFieldButtonText": "Add Field",
     "Worksheet:Configuration:AddSectionButtonText": "ADD SECTION",
     "Worksheet:Configuration:AddWorksheetButtonText": "ADD WORKSHEET",
-    "Worksheet:Configuration:LinkWorksheetButtonText": "LINK WORKSHEET"
+    "Worksheet:Configuration:LinkWorksheetButtonText": "Link Worksheet",
+    "Worksheet:Configuration:CloneWorksheetButtonText": "Clone Worksheet",
+    "Worksheet:Configuration:PublishWorksheetButtonText": "Publish Worksheet",
+    "Worksheet:Configuration:DeleteWorksheetButtonText": "Delete Worksheet"
   }
 }

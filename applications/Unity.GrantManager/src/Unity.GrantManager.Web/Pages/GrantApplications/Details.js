@@ -347,7 +347,7 @@ $(function () {
     );
 
     // custom fields
-    $('body').on('click', '.custom-tab-save', function (event) {
+    $('body').on('click', '.custom-tab-save', function (event) {        
         let id = $(this).attr('id');
         let uiAnchor = $(this).attr('data-ui-anchor');
         let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
@@ -364,7 +364,7 @@ $(function () {
             customFormObj[this.name] = (this.checked).toString();
         });
 
-        updateCustomForm(applicationId, formId, customFormObj, uiAnchor, id);
+        updateCustomForm(applicationId, formId, customFormObj, uiAnchor, id, formDataName);
     });
 
     PubSub.subscribe(
@@ -376,14 +376,15 @@ $(function () {
     );
 });
 
-function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId) {
+function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId, formDataName) {
     let customFormUpdate = {
         instanceCorrelationId: applicationId,
         instanceCorrelationProvider: 'Application',
         sheetCorrelationId: formId,
         sheetCorrelationProvider: 'Form',
         uiAnchor: uiAnchor,
-        customFields: customFormObj
+        customFields: customFormObj,
+        formDataName: formDataName
     }     
 
     $(`#${saveId}`).prop('disabled', true);
@@ -396,21 +397,22 @@ function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId
 }
 
 // custom fields
-function notifyFieldChange(event, field) {
+function notifyFieldChange(_, uianchor, field) {
     let value = document.getElementById(field.id).value;
+    let anchor = uianchor.toLowerCase();
     if (PubSub) {
-        if (isKnownAnchor(event)) {
-            PubSub.publish('fields_' + event, value);
+        if (isKnownAnchor(anchor)) {
+            PubSub.publish('fields_' + anchor, value);
         } else {
             PubSub.publish('fields_tab', field.id);
         }
     }
 }
 
-function isKnownAnchor(event) {
-    if (event === 'projectinfo'
-        || event === 'applicantinfo'
-        || event === 'assessmentinfo') {
+function isKnownAnchor(anchor) {    
+    if (anchor === 'projectinfo'
+        || anchor === 'applicantinfo'
+        || anchor === 'assessmentinfo') {
         return true;
     }
 }

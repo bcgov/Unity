@@ -1,7 +1,8 @@
 ﻿using System;
 
-namespace Unity.Flex.Worksheets
+namespace Unity.Flex.WorksheetLinks
 {
+    [Serializable]
     public class CreateWorksheetLinkDto
     {
         public Guid WorksheetId { get; set; }

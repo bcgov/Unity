@@ -1,0 +1,36 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@using Unity.Flex.Web.Pages.WorksheetConfiguration;
+@model Unity.Flex.Web.Pages.WorksheetConfiguration.CloneWorksheetModalModel
+
+@inject IStringLocalizer<FlexResource> L
+
+@{
+    Layout = null;
+}
+@section scripts
+{
+    <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
+}
+<form method="post" asp-page-handler="OnPostAsync" id="worksheetInfo">
+    <abp-input type="hidden" id="WorksheetId" asp-for="@Model.WorksheetId" />    
+    <abp-modal size="Large" id="worksheet-info-modal">
+        <abp-modal-header class="site-info-modal-header" title="Clone Worksheet"></abp-modal-header>
+        <abp-modal-body>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input disabled asp-for="@Model.Title" id="worksheetTitle" readonly="true" />
+                </abp-column>
+                <abp-column size="_12" class="px-1">
+                    <abp-input disabled asp-for="@Model.Name" id="worksheetName" readonly="true" />
+                </abp-column>
+            </abp-row>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

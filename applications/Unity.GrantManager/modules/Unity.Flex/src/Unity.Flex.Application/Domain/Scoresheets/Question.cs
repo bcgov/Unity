@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using Unity.Flex.Domain.Enums;
+using Unity.Flex.Scoresheets;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -12,7 +12,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual string Label { get; set; } = string.Empty;
         public virtual string? Description { get; set; }
         public virtual uint Order { get; set; }
-        public virtual QuestionType Type { get; private set; }
+        public virtual QuestionType Type { get; set; }
         public virtual bool Enabled { get; private set; }
 
         public virtual Collection<Answer> Answers { get; private set; } = [];

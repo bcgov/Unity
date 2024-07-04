@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
 public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService) : FlexPageModel
 {
     [BindProperty]
-    public Guid Id { get; set; }
+    public Guid? WorksheetId { get; set; }
 
     [BindProperty]
     [MinLength(3)]
@@ -21,7 +21,13 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
     public string? Name { get; set; }
 
     [BindProperty]
+    public bool Published { get; set; }
+
+    [BindProperty]
     public WorksheetUpsertAction UpsertAction { get; set; }
+
+    [BindProperty]
+    public bool IsDelete { get; set; }
 
     public async Task OnGetAsync(Guid worksheetId, string actionType)
     {
@@ -33,21 +39,37 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
             UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
 
             Name = worksheetDto.Name;
-            Id = worksheetDto.Id;
+            WorksheetId = worksheetDto.Id;
             Title = worksheetDto.Title;
+            Published = worksheetDto.Published;
         }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        switch (UpsertAction)
+        var delete = Request.Form["deleteWorksheetBtn"];
+        var save = Request.Form["saveWorksheetBtn"];
+
+        if (delete == "delete" || IsDelete)
         {
-            case WorksheetUpsertAction.Insert:
-                return MapModalResponse(await worksheetAppService.CreateAsync(MapCreateWorksheetModel()));
-            case WorksheetUpsertAction.Update:
-                return MapModalResponse(await worksheetAppService.EditAsync(Id, MapEditWorksheetModel()));
-            default:
-                break;
+            await worksheetAppService.DeleteAsync(WorksheetId!.Value);
+            return new OkObjectResult(new ModalResponse()
+            {
+                WorksheetId = WorksheetId!.Value,
+                Action = "Delete"
+            });
+        }
+        else if (save == "save")
+        {
+            switch (UpsertAction)
+            {
+                case WorksheetUpsertAction.Insert:
+                    return MapModalResponse(await worksheetAppService.CreateAsync(MapCreateWorksheetModel()));
+                case WorksheetUpsertAction.Update:
+                    return MapModalResponse(await worksheetAppService.EditAsync(WorksheetId!.Value, MapEditWorksheetModel()));
+                default:
+                    break;
+            }
         }
 
         return NoContent();
