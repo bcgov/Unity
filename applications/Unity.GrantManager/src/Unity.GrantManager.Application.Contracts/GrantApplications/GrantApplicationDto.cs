@@ -79,4 +79,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? ContractNumber { get; set; }
     public DateTime? ContractExecutionDate { get; set; }
     public string? Place {  get; set; }
+    public string? RiskRanking  { get; set;}
 }

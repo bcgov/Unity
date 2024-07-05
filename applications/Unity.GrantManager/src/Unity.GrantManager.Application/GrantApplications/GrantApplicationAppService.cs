@@ -264,7 +264,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         SanitizeAssessmentResultsDisabledInputs(input, application);
 
         application.ValidateAndChangeDueDate(input.DueDate);
-        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate);
+        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate, input.RiskRanking);
 
         if (application.IsInFinalDecisionState())
         {
