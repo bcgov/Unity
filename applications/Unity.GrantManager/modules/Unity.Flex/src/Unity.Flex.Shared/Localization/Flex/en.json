@@ -3,7 +3,7 @@
   "texts": {
     "MyAccount": "My account",
     "SamplePageMessage": "A sample page for the Flex module",
-    "Scoresheet:Configuration:ScoresheetModal.Name": "Name",
+    "Scoresheet:Configuration:ScoresheetModal.Title": "Title",
     "Scoresheet:Configuration:SectionModal.Name": "Name",
     "Scoresheet:Configuration:QuestionModal.Name": "Name",
     "Scoresheet:Configuration:QuestionModal.Label": "Question",

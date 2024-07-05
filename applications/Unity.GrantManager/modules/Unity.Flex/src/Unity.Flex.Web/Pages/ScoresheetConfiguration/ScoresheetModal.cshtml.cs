@@ -24,8 +24,8 @@ public class ScoresheetModalModel : FlexPageModel
         public Guid Id { get; set; }
         public Guid GroupId { get; set; }
         public string ActionType { get; set; } = string.Empty;
-        [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Name")]
-        public string Name { get; set; } = string.Empty;
+        [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Title")]
+        public string Title { get; set; } = string.Empty;
     }
     public async Task OnGetAsync(Guid scoresheetId,
        string actionType, Guid groupId)
@@ -36,7 +36,7 @@ public class ScoresheetModalModel : FlexPageModel
         if (Scoresheet.ActionType.Contains("Edit"))
         {
             ScoresheetDto scoresheet = await _scoresheetAppService.GetAsync(scoresheetId);
-            Scoresheet.Name = scoresheet.Name ?? "";
+            Scoresheet.Title = scoresheet.Title ?? "";
         }
     }
 
@@ -65,12 +65,12 @@ public class ScoresheetModalModel : FlexPageModel
 
     private async Task CreateScoresheet()
     {
-        _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Name = Scoresheet.Name });
+        _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Title = Scoresheet.Title });
     }
 
     private async Task EditScoresheets()
     {
-        await _scoresheetAppService.UpdateAsync(Scoresheet.Id, new EditScoresheetDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType });
+        await _scoresheetAppService.UpdateAsync(Scoresheet.Id, new EditScoresheetDto() { Title = Scoresheet.Title, ActionType = Scoresheet.ActionType });
     }    
 
     private async Task DeleteScoresheet()

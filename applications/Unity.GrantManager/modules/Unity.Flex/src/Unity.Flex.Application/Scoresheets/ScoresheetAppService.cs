@@ -51,7 +51,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
-            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Name, Guid.NewGuid()));
+            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Title, Guid.NewGuid()));
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
@@ -81,7 +81,7 @@ namespace Unity.Flex.Scoresheets
         public async Task UpdateAsync(Guid scoresheetId, EditScoresheetDto dto)
         {
             var scoresheet = await _scoresheetRepository.GetAsync(scoresheetId);
-            scoresheet.Name = dto.Name;
+            scoresheet.Title = dto.Title;
             await _scoresheetRepository.UpdateAsync(scoresheet);
         }
 
@@ -91,7 +91,7 @@ namespace Unity.Flex.Scoresheets
             
             var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
             var highestVersionScoresheet = await _scoresheetRepository.GetHighestVersionAsync(originalScoresheet.GroupId) ?? throw new AbpValidationException("Scoresheet not found.");
-            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Name, originalScoresheet.GroupId)
+            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, originalScoresheet.GroupId)
             {
                 Version = highestVersionScoresheet.Version + 1,
             };

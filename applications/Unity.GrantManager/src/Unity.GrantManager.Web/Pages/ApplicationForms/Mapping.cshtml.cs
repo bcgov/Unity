@@ -134,7 +134,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
                 foreach (var scoresheet in scoresheets)
                 {
-                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Name + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
+                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Title + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
                 }
 
                 ScoresheetOptionsList = [.. ScoresheetOptionsList.OrderBy(item => item.Text)];

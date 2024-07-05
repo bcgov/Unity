@@ -1,8 +1,4 @@
 ﻿using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets;
@@ -28,8 +24,8 @@ namespace Unity.Flex.Scoresheet
         public async Task CreateScoresheet()
         {
             // Arrange
-            var scoresheetName = "Test Scoresheet";
-            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Name = scoresheetName });
+            var scoresheetTitle = "Test Scoresheet";
+            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Title = scoresheetTitle });
 
             // Act
             var scoresheetFromRepo = await _scoresheetRepository.GetAsync(scoresheet.Id);
@@ -43,7 +39,7 @@ namespace Unity.Flex.Scoresheet
         public async Task CreateQuestion()
         {
             // Arrange
-            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Name = "Test Scoresheet"});
+            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Title = "Test Scoresheet"});
             _ = await _scoresheetAppService.CreateSectionAsync(scoresheet.Id, new CreateSectionDto { Name = "Test Section" });
             var questionName = "Test Question";
             var questionLabel = "Test Label";
@@ -61,7 +57,7 @@ namespace Unity.Flex.Scoresheet
         public async Task CreateSection()
         {
             // Arrange
-            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Name = "Test Scoresheet" });
+            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Title = "Test Scoresheet" });
             var sectionName = "Test Section";
 
             // Act
@@ -76,7 +72,7 @@ namespace Unity.Flex.Scoresheet
         public async Task UpdateSection()
         {
             // Arrange
-            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Name = "Test Scoresheet" });
+            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Title = "Test Scoresheet" });
             var sectionName = "Test Section";
             var section = await _scoresheetAppService.CreateSectionAsync(scoresheet.Id, new CreateSectionDto { Name = sectionName });
             var newSectionName = "New Test Section";
@@ -94,7 +90,7 @@ namespace Unity.Flex.Scoresheet
         public async Task UpdateQuestion()
         {
             // Arrange
-            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Name = "Test Scoresheet" });
+            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Title = "Test Scoresheet" });
             _ = await _scoresheetAppService.CreateSectionAsync(scoresheet.Id, new CreateSectionDto { Name = "Test Section" });
             var question = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(scoresheet.Id, new CreateQuestionDto { Name = "Test Question", Label = "Test Label" });
             var questionName = "Updated Test Question";
@@ -114,17 +110,17 @@ namespace Unity.Flex.Scoresheet
         public async Task UpdateScoresheet()
         {
             // Arrange
-            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Name = "Scoresheet" });
-            var scoresheetName = "Updated Test Scoresheet";
+            var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Title = "Scoresheet" });
+            var scoresheetTitle = "Updated Test Scoresheet";
 
             // Act
-            await _scoresheetAppService.UpdateAllAsync(scoresheet.GroupId, new EditScoresheetDto { Name = scoresheetName });
+            await _scoresheetAppService.UpdateAsync(scoresheet.Id, new EditScoresheetDto { Title = scoresheetTitle });
             var updatedScoresheet = await _scoresheetRepository.GetAsync(scoresheet.Id);
 
             // Assert
             updatedScoresheet.ShouldNotBeNull();
             updatedScoresheet.Id.ShouldBeEquivalentTo(scoresheet.Id);
-            updatedScoresheet.Name.ShouldBeEquivalentTo(scoresheetName);
+            updatedScoresheet.Title.ShouldBeEquivalentTo(scoresheetTitle);
         }
     }
 }

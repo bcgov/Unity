@@ -6,7 +6,7 @@ namespace Unity.Flex.Scoresheets
     [Serializable]
     public class PreCloneScoresheetDto : ExtensibleFullAuditedEntityDto<Guid>
     {
-        public string Name { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
         public Guid GroupId { get; set; }
         public uint HighestVersion { get; set; }
 

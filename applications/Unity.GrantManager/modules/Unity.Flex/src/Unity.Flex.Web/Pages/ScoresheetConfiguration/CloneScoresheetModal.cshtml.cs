@@ -23,7 +23,7 @@ public class CloneScoresheetModalModel : FlexPageModel
     {
         public Guid Id { get; set; }
         public Guid GroupId { get; set; }
-        public string Name { get; set; } = string.Empty;        
+        public string Title { get; set; } = string.Empty;        
         public string Version {  get; set; } = string.Empty;
     }
     public async Task OnGetAsync(Guid scoresheetId, Guid groupId)
@@ -31,7 +31,7 @@ public class CloneScoresheetModalModel : FlexPageModel
         Scoresheet.Id = scoresheetId;
         Scoresheet.GroupId = groupId;
         PreCloneScoresheetDto scoresheet = await _scoresheetAppService.GetPreCloneInformationAsync(scoresheetId);
-        Scoresheet.Name = scoresheet.Name;
+        Scoresheet.Title = scoresheet.Title;
         Scoresheet.Version = "V"+ (scoresheet.HighestVersion + 1) + ".0";
     }
 

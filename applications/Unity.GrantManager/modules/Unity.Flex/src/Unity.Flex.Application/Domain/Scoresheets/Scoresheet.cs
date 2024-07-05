@@ -11,7 +11,7 @@ namespace Unity.Flex.Domain.Scoresheets
 {
     public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
-        public virtual string Name { get; set; } = string.Empty;
+        public virtual string Title { get; set; } = string.Empty;
         public virtual uint Version { get; set; } = 1;
 
         public Guid GroupId { get; set; }
@@ -28,12 +28,12 @@ namespace Unity.Flex.Domain.Scoresheets
         }
 
         public Scoresheet(Guid id,
-        string name,
+        string title,
         Guid groupId)
         : base(id)
         {
             Id = id;
-            Name = name;
+            Title = title;
             GroupId = groupId;
         }
 
