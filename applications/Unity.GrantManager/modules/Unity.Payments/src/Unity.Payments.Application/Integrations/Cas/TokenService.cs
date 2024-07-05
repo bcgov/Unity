@@ -1,6 +1,4 @@
 ﻿using Volo.Abp;
-using RestSharp;
-using RestSharp.Authenticators;
 using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
@@ -11,6 +9,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using Volo.Abp.DependencyInjection;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Microsoft.Extensions.Caching.Memory;
 
 
 namespace Unity.Payments.Integrations.Cas
@@ -18,59 +19,108 @@ namespace Unity.Payments.Integrations.Cas
     [IntegrationService]
     [ExposeServices(typeof(TokenService), typeof(ITokenService))]
     public class TokenService : ApplicationService, ITokenService
-    {   private readonly IOptions<CasClientOptions> _casClientOptions;
-        private readonly RestClient _restClient;
+    {
+        private readonly IOptions<CasClientOptions> _casClientOptions;
+        private IHttpClientFactory _httpClientFactory;
         private const string OAUTH_PATH = "oauth/token";
+        private readonly IMemoryCache _memoryCache;
+        private const int ONE_MINUTE_SECONDS = 60;
 
         public TokenService(
             IOptions<CasClientOptions> casClientOptions,
-            RestClient restClient)
+            IHttpClientFactory httpClientFactory,
+            IMemoryCache memoryCache)
         {
             _casClientOptions = casClientOptions;
-            _restClient = restClient;
+            _httpClientFactory = httpClientFactory;
+            _memoryCache = memoryCache;
         }
 
-        public async Task<Dictionary<string, string>> GetAuthHeadersAsync() {
-            var tokenResponse = await GetAccessTokenAsync();
-
-            Dictionary<string, string> authHeaders = new Dictionary<string, string>
-            {
-                { "Authorization", $"Bearer {tokenResponse.AccessToken}" }
-            };
-            return authHeaders;
-        }
-
- 		private async Task<TokenValidationResponse> GetAccessTokenAsync()
+        public async Task<string> GetAuthTokenAsync()
         {
-            var grantType = "client_credentials";
+            var tokenResponse = await GetAccessTokenAsync() ?? throw new UserFriendlyException("GetAuthTokenAsync: Error retrieving Token");
+            return tokenResponse.AccessToken ?? throw new UserFriendlyException("GetAuthTokenAsync: Error retrieving Access Token");
+        }
 
-            var request = new RestRequest($"{_casClientOptions.Value.CasBaseUrl}/{OAUTH_PATH}")
+        private async Task<TokenValidationResponse?> GetAccessTokenAsync()
+        {
+            TokenValidationResponse? tokenResponse = null;
+
+            try
             {
-                Authenticator = new HttpBasicAuthenticator(_casClientOptions.Value.CasClientId, _casClientOptions.Value.CasClientSecret)
-            };
-
-            request.AddHeader("content-type", "application/x-www-form-urlencoded");
-            request.AddParameter("application/x-www-form-urlencoded", $"grant_type={grantType}", ParameterType.RequestBody);
-
-            var response = await _restClient.ExecuteAsync(request, Method.Post);
-
-            if (response.Content == null)
-            {
-                throw new UserFriendlyException($"Error fetching CAS API token - content empty {response.StatusCode} {response.ErrorMessage}");
-            }
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                Logger.LogError("Error fetching CAS API token");
-
-                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                if (_memoryCache.TryGetValue("CasAuthToken", out string? authToken))
                 {
-                    throw new UnauthorizedAccessException(response.ErrorMessage);
+                    tokenResponse = new TokenValidationResponse();
+                    tokenResponse.AccessToken = authToken;
+                    return tokenResponse;
                 }
+
+                string url = $"{_casClientOptions.Value.CasBaseUrl}/{OAUTH_PATH}";
+                HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, url) { Version = new Version(3, 0) };
+                List<KeyValuePair<string, string>> values = new List<KeyValuePair<string, string>>
+                {
+                    new KeyValuePair<string, string>("grant_type", "client_credentials")
+                };
+
+                FormUrlEncodedContent content = new FormUrlEncodedContent(values);
+                string authenticationString = $"{_casClientOptions.Value.CasClientId}:{_casClientOptions.Value.CasClientSecret}";
+                string base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(authenticationString));
+                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
+                requestMessage.Content = content;
+
+                //specify to use TLS 1.2 as default connection
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+                HttpClient client = _httpClientFactory.CreateClient();
+                client.BaseAddress = new Uri(url);               
+                client.DefaultRequestHeaders.Accept.Clear();     
+                client.DefaultRequestHeaders.Clear();
+                client.DefaultRequestHeaders.ConnectionClose = true;
+
+                HttpResponseMessage response = await client.SendAsync(requestMessage);
+                var responseBody = response.Content.ReadAsStringAsync();
+                string responseMessage = response.RequestMessage != null ? response.RequestMessage.ToString() : "";
+                if (response.Content == null)
+                {
+                    throw new UserFriendlyException($"Error fetching CAS API token - content empty {response.StatusCode} {response.RequestMessage}");
+                }
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    Logger.LogError("Error fetching CAS API token");
+
+                    if (response.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        throw new UnauthorizedAccessException(responseMessage);
+                    }
+                }
+
+                tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(responseBody.Result)
+                    ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {responseMessage}");
+                SetupTokenCacheMemory(tokenResponse);
+            }
+            catch (Exception ex)
+            {
+                string exceptionMessage = ex.Message;
+                Logger.LogInformation(ex, "Token Service Exception: {exceptionMessage}", exceptionMessage);
             }
 
-            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
             return tokenResponse;
+        }
+
+        private void SetupTokenCacheMemory(TokenValidationResponse tokenResponse)
+        {
+            if (!_memoryCache.TryGetValue("CasAuthToken", out string? newAuthToken))
+            {
+                DateTime now = DateTime.Now;
+                // Subrtact one minute from expiry for buffer
+                int expiresInSeconds = tokenResponse.ExpiresIn - ONE_MINUTE_SECONDS;
+                TimeSpan timeSpanExpires = TimeSpan.FromSeconds(expiresInSeconds);
+
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(timeSpanExpires);
+
+                _memoryCache.Set("CasAuthToken", tokenResponse.AccessToken, cacheEntryOptions);
+            }
         }
     }
 }

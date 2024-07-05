@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.CircuitBreaker;
 using Polly.Retry;
-using RestSharp;
-using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 
@@ -15,94 +15,116 @@ namespace Unity.Payments.Integrations.Http
     [IntegrationService]
     public class ResilientHttpRequest : PaymentsAppService, IResilientHttpRequest
     {
-        private readonly RestClient _restClient;
+        private IHttpClientFactory _httpClientFactory;
         private static int _maxRetryAttempts = 3;
-        private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(10);
+        private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
+        private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(20);
 
-        public ResilientHttpRequest(RestClient restClient)
+        public ResilientHttpRequest(IHttpClientFactory httpClientFactory)
         {
-            _restClient = restClient;
+            _httpClientFactory = httpClientFactory;
         }
 
-        public static void SetMaxRetryAttemptsAndPauseBetweenFailures(int maxRetryAttempts, TimeSpan pauseBetweenFailures)
+        public static void SetPipelineOptions(
+            int maxRetryAttempts, 
+            TimeSpan pauseBetweenFailures,
+            TimeSpan httpRequestTimeout
+            )
         {
             _maxRetryAttempts = maxRetryAttempts;
             _pauseBetweenFailures = pauseBetweenFailures;
+            _httpRequestTimeout = httpRequestTimeout;
         }
 
-        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, Dictionary<string, string>? headers = null, object? requestObject = null, IAuthenticator? authenticator = null)
+        private static bool ReprocessBasedOnStatusCode(HttpStatusCode statusCode)
         {
-            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, null, null, authenticator);
+            HttpStatusCode[] reprocessStatusCodes = {
+                 HttpStatusCode.TooManyRequests,
+                 HttpStatusCode.InternalServerError,
+                 HttpStatusCode.BadGateway,
+                 HttpStatusCode.ServiceUnavailable,
+                 HttpStatusCode.GatewayTimeout,
+            };
+
+            return reprocessStatusCodes.Contains(statusCode);
         }
 
-        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, AsyncRetryPolicy<RestResponse> retryPolicy, Dictionary<string, string>? headers = null, object? requestObject = null, IAuthenticator? authenticator = null)
+        private static ResiliencePipeline<HttpResponseMessage> _pipeline =
+                new ResiliencePipelineBuilder<HttpResponseMessage>()
+                   .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
+                   {
+                       ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                           .Handle<HttpRequestException>()
+                           .HandleResult(result => ReprocessBasedOnStatusCode(result.StatusCode)),
+                       Delay = _pauseBetweenFailures,
+                       MaxRetryAttempts = _maxRetryAttempts,
+                       UseJitter = true,
+                       BackoffType = DelayBackoffType.Exponential,
+                       OnRetry = args =>
+                       {
+                           Console.WriteLine($"Retry Attempt Number : {args.AttemptNumber} after {args.RetryDelay.TotalSeconds} seconds.");
+                           return default;
+                       }
+                   })
+                   .AddTimeout(_httpRequestTimeout)
+                   .Build();
+
+        public async Task<HttpResponseMessage> HttpAsync(HttpMethod httpVerb, string resource, string? authToken = null)
         {
-            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, retryPolicy, null, authenticator);
+            return await ExecuteRequestAsync(httpVerb, resource, null, authToken);
         }
 
-        public async Task<RestResponse> HttpAsync(Method httpVerb, string resource, AsyncRetryPolicy<RestResponse> retryPolicy, AsyncCircuitBreakerPolicy<RestResponse> circuitBreakerPolicy, Dictionary<string, string>? headers = null, object? requestObject = null, IAuthenticator? authenticator = null)
+        public async Task<HttpResponseMessage> HttpAsync(HttpMethod httpVerb, string resource, string? body, string? authToken = null)
         {
-            return await ExecuteRequestAsync(httpVerb, resource, headers, requestObject, retryPolicy, circuitBreakerPolicy, authenticator);
+            return await ExecuteRequestAsync(httpVerb, resource, body, authToken);
         }
 
-        private async Task<RestResponse> ExecuteRequestAsync(Method httpVerb, string resource, Dictionary<string, string>? headers, object? requestObject, AsyncRetryPolicy<RestResponse>? retryPolicy = null, AsyncCircuitBreakerPolicy<RestResponse>? circuitBreakerPolicy = null, IAuthenticator? authenticator = null)
+        public static string ContentToString(HttpContent httpContent)
         {
-            RestResponse? restResponse;
+            var readAsStringAsync = httpContent.ReadAsStringAsync();
+            return readAsStringAsync.Result;
+        }
+
+        private async Task<HttpResponseMessage> ExecuteRequestAsync(
+            HttpMethod httpVerb, 
+            string resource,
+            string? body,
+            string? authToken)
+        {
+            HttpResponseMessage restResponse = new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.ServiceUnavailable
+            };
 
             try
             {
-                var restRequest = new RestRequest(resource, httpVerb);
-                if (authenticator != null)
-                {
-                    restRequest.Authenticator = authenticator;
-                }
-                restRequest.AddHeader("cache-control", "no-cache");
-                if (headers != null && headers.Count > 0)
-                    foreach (var header in headers)
-                        restRequest.AddHeader(header.Key, header.Value);
+                //specify to use TLS 1.2 as default connection
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+                HttpRequestMessage requestMessage = new HttpRequestMessage(httpVerb, resource) { Version = new Version(3, 0) };
+                using HttpClient httpClient = _httpClientFactory.CreateClient();
+                httpClient.DefaultRequestHeaders.Accept.Clear();
+                httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.ConnectionClose = true;
 
-                if (httpVerb != Method.Get && requestObject != null)
+                if (!authToken.IsNullOrEmpty())
                 {
-                    restRequest.RequestFormat = DataFormat.Json;
-                    restRequest.AddJsonBody(requestObject);
+                    httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {authToken}");
                 }
-                restResponse = await RestResponseWithPolicyAsync(restRequest, retryPolicy, circuitBreakerPolicy);
+
+                if (httpVerb != HttpMethod.Get && body != null)
+                {
+                    requestMessage.Content = new StringContent(body, Encoding.UTF8, "application/json");
+                }
+
+                restResponse = await _pipeline.ExecuteAsync(async ct => await httpClient.SendAsync(requestMessage));
             }
             catch (Exception ex)
             {
-                restResponse = new RestResponse
-                {
-                    Content = ex.Message,
-                    ErrorMessage = ex.Message,
-                    ResponseStatus = ResponseStatus.TimedOut,
-                    StatusCode = HttpStatusCode.ServiceUnavailable
-                };
+                string exceptionMessage = ex.Message;
+                Logger.LogInformation(ex, "An Exception was thrown from ExecuteRequestAsync: {exceptionMessage}", exceptionMessage);
             }
 
             return await Task.FromResult(restResponse);
-        }
-
-        private async Task<RestResponse> RestResponseWithPolicyAsync(RestRequest restRequest, AsyncRetryPolicy<RestResponse>? retryPolicy = null, AsyncCircuitBreakerPolicy<RestResponse>? circuitBreakerPolicy = null)
-        {
-            retryPolicy ??= Policy
-                    .HandleResult<RestResponse>(x => !x.IsSuccessful)
-                    .WaitAndRetryAsync(_maxRetryAttempts, x => _pauseBetweenFailures, async (iRestResponse, timeSpan, retryCount, context) =>
-                    {
-                        await Task.Run(() => Logger.LogError("The request failed. HttpStatusCode={statusCode}. Waiting {timeSpan} seconds before retry. Number attempt {retryCount}. Uri={responseUri}; RequestResponse={responseContent}", iRestResponse.Result.StatusCode, timeSpan, retryCount, iRestResponse.Result.ResponseUri, iRestResponse.Result.Content));
-                    });
-
-            circuitBreakerPolicy ??= Policy
-                .HandleResult<RestResponse>(x => x.StatusCode == HttpStatusCode.ServiceUnavailable || x.StatusCode == HttpStatusCode.TooManyRequests)
-                .CircuitBreakerAsync(1, TimeSpan.FromSeconds(30), onBreak: async (iRestResponse, timespan, context) =>
-                {
-                    await Task.Run(() => Logger.LogError("Circuit went into a fault state. Reason: {resultContent}", iRestResponse.Result.Content));
-                },
-                onReset: async (context) =>
-                {
-                    await Task.Run(() => Logger.LogError($"Circuit left the fault state."));
-                });
-
-            return await retryPolicy.WrapAsync(circuitBreakerPolicy).ExecuteAsync(async () => await _restClient.ExecuteAsync(restRequest));
         }
 
     }

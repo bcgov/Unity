@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using static Unity.Payments.PaymentRequests.CasPaymentRequestCoordinator;
 using Volo.Abp.MultiTenancy;
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.Payments.PaymentRequests;
 
@@ -92,7 +93,7 @@ public class ReconciliationConsumer : QuartzBackgroundWorkerBase
             }
         };
 
-        channel.BasicConsume(queue: CAS_PAYMENT_REQUEST_QUEUE, autoAck: false, consumer: consumer);
+        channel.BasicConsume(queue: CAS_PAYMENT_REQUEST_QUEUE, autoAck: true, consumer: consumer);
     }
 
     private async Task<PaymentRequest?> UpdatePaymentRequestStatus(ReconcilePaymentRequest reconcilePayment, CasPaymentSearchResult result)
@@ -102,16 +103,25 @@ public class ReconciliationConsumer : QuartzBackgroundWorkerBase
         {
             using (_currentTenant.Change(reconcilePayment.TenantId))
             {
-                using var uow = _unitOfWorkManager.Begin(true, false);
-                paymentReqeust = await _paymentRequestRepository.GetAsync(reconcilePayment.PaymentRequestId);
-                if (paymentReqeust != null)
+                try
                 {
-                    paymentReqeust.SetInvoiceStatus(result.InvoiceStatus ?? "");
-                    paymentReqeust.SetPaymentStatus(result.PaymentStatus ?? "");
-                    paymentReqeust.SetPaymentDate(result.PaymentDate ?? "");
-                    paymentReqeust.SetPaymentNumber(result.PaymentNumber ?? "");
-                    await _paymentRequestRepository.UpdateAsync(paymentReqeust, autoSave: false);
-                    await uow.SaveChangesAsync();
+                    using var uow = _unitOfWorkManager.Begin(true, false);
+                    paymentReqeust = await _paymentRequestRepository.GetAsync(reconcilePayment.PaymentRequestId);
+                    if (paymentReqeust != null)
+                    {
+                        paymentReqeust.SetInvoiceStatus(result.InvoiceStatus ?? "");
+                        paymentReqeust.SetPaymentStatus(result.PaymentStatus ?? "");
+                        paymentReqeust.SetPaymentDate(result.PaymentDate ?? "");
+                        paymentReqeust.SetPaymentNumber(result.PaymentNumber ?? "");
+
+                        await _paymentRequestRepository.UpdateAsync(paymentReqeust, autoSave: false);
+                        await uow.SaveChangesAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    string exceptionMessage = ex.Message;
+                    Logger.LogInformation(ex, "UpdatePaymentRequestStatus: Error updating payment request: {exceptionMessage}", exceptionMessage);
                 }
             }
         }
