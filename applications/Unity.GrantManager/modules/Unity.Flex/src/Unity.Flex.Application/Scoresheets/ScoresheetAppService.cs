@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
@@ -41,17 +40,9 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(await _scoresheetRepository.GetAsync(id));
         }
 
-        public virtual async Task<PreCloneScoresheetDto> GetPreCloneInformationAsync(Guid id)
-        {
-            var preCloneScoresheet = ObjectMapper.Map<Scoresheet, PreCloneScoresheetDto>(await _scoresheetRepository.GetAsync(id));
-            var highestVersionScoresheet = await _scoresheetRepository.GetHighestVersionAsync(preCloneScoresheet.GroupId) ?? throw new AbpValidationException("Scoresheet not found.");
-            preCloneScoresheet.HighestVersion = highestVersionScoresheet.Version;
-            return preCloneScoresheet;
-        }
-
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
-            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Title, Guid.NewGuid()));
+            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Title, Guid.NewGuid(), dto.Name));
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
@@ -90,10 +81,10 @@ namespace Unity.Flex.Scoresheets
             using var unitOfWork = _unitOfWorkManager.Begin();
             
             var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
-            var highestVersionScoresheet = await _scoresheetRepository.GetHighestVersionAsync(originalScoresheet.GroupId) ?? throw new AbpValidationException("Scoresheet not found.");
-            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, originalScoresheet.GroupId)
+            var versionSplit = originalScoresheet.Name.Split('-');
+            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, originalScoresheet.GroupId, $"{versionSplit[0]}-v{originalScoresheet.Version + 1}")
             {
-                Version = highestVersionScoresheet.Version + 1,
+                Version = originalScoresheet.Version + 1,
             };
 
             foreach (var originalSection in originalScoresheet.Sections)

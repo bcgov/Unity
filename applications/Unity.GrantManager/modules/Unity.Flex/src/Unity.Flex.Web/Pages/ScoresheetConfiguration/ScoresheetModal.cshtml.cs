@@ -26,6 +26,7 @@ public class ScoresheetModalModel : FlexPageModel
         public string ActionType { get; set; } = string.Empty;
         [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Title")]
         public string Title { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
     public async Task OnGetAsync(Guid scoresheetId,
        string actionType, Guid groupId)
@@ -37,6 +38,7 @@ public class ScoresheetModalModel : FlexPageModel
         {
             ScoresheetDto scoresheet = await _scoresheetAppService.GetAsync(scoresheetId);
             Scoresheet.Title = scoresheet.Title ?? "";
+            Scoresheet.Name = scoresheet.Name ?? "";
         }
     }
 
@@ -65,7 +67,7 @@ public class ScoresheetModalModel : FlexPageModel
 
     private async Task CreateScoresheet()
     {
-        _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Title = Scoresheet.Title });
+        _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Title = Scoresheet.Title, Name = Scoresheet.Name });
     }
 
     private async Task EditScoresheets()

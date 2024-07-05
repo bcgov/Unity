@@ -23,7 +23,10 @@
         <abp-modal-body>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.Scoresheet.Title" />
+                    <abp-input asp-for="@Model.Scoresheet.Title" id="scoresheetTitle" onkeyup="updateScoresheetName('@Model.Scoresheet.ActionType')" />
+                </abp-column>
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Scoresheet.Name" id="scoresheetName" readonly="true" />
                 </abp-column>
             </abp-row>
         </abp-modal-body>
@@ -56,5 +59,16 @@
                 $('#scoresheetInfo').submit();
             }
         });
+    }
+
+    function updateScoresheetName(action) {
+        if (action == 'Edit Scoring Sheet') {
+            return;
+        }
+
+        let src = $('#scoresheetTitle');
+        let dest = $('#scoresheetName');
+        let name = src.val().toLowerCase().trim() + '-v1';
+        dest.val(name.replace(/\s+/g, ""));
     }
 </script>

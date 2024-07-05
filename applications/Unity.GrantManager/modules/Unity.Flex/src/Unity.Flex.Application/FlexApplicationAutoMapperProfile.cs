@@ -40,8 +40,6 @@ public class FlexApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.ExtraProperties, opt => opt.Ignore());
         CreateMap<Scoresheet, ScoresheetDto>()
             .ForMember(dest => dest.Sections, opt => opt.MapFrom(src => src.Sections));
-        CreateMap<Scoresheet, PreCloneScoresheetDto>()
-            .ForMember(dest => dest.HighestVersion, opt => opt.Ignore());
         CreateMap<ScoresheetInstance, ScoresheetInstanceDto>();
         CreateMap<Answer, AnswerDto>();
     }
