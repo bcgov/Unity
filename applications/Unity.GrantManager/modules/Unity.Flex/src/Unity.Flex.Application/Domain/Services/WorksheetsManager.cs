@@ -174,9 +174,11 @@ namespace Unity.Flex.Domain.Services
         public async Task<Worksheet> CloneWorksheetAsync(Guid id)
         {
             var worksheet = await worksheetRepository.GetAsync(id, true);
-            var versionSplit = worksheet.Name.Split('-');
-            var clonedWorksheet = new Worksheet(Guid.NewGuid(), $"{versionSplit[0]}-v{worksheet.Version + 1}", worksheet.Title);
-            clonedWorksheet.SetNextVersion(worksheet.Version);
+            var versionSplit = worksheet.Name.Split('-');            
+            var worksheetVersions = await worksheetRepository.GetByNameStartsWithAsync($"{versionSplit[0]}-v", false);
+            var highestVersion = worksheetVersions.Max(s => s.Version);
+            var clonedWorksheet = new Worksheet(Guid.NewGuid(), $"{versionSplit[0]}-v{highestVersion + 1}", worksheet.Title);
+            clonedWorksheet.SetVersion(highestVersion + 1);
             foreach (var section in worksheet.Sections.OrderBy(s => s.Order))
             {
                 var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);

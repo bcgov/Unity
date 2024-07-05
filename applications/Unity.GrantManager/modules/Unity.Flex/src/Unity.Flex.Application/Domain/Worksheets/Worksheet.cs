@@ -61,9 +61,9 @@ namespace Unity.Flex.Domain.Worksheets
             return this;
         }
 
-        public Worksheet SetNextVersion(uint previousVersion)
+        public Worksheet SetVersion(uint version)
         {
-            Version = previousVersion + 1;
+            Version = version;
             return this;
         }
 
@@ -77,6 +77,6 @@ namespace Unity.Flex.Domain.Worksheets
         {
             Sections.Remove(section);
             return this;
-        }
+        }        
     }
 }

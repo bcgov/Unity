@@ -41,42 +41,45 @@
         }
     </div>
 
-    <div id="sections-custom-fields" class="list-group col">
+    <div id="sections-custom-fields" class="list-group col sections-wrapper-outer" data-worksheet-id="@worksheet.Id">
         @foreach (var sect in worksheet.Sections)
         {
-            <div class="list-group-item row section-item" data-type="section" data-id="@sect.Id" data-worksheet-id="@worksheet.Id" data-label="@sect.Name">
-
-                <div class="col">
-                    <i class="fl fl-draggable"></i>
-                    <span class="p-2"><b>Section:</b> @sect.Name</span>
-                    @if (!Model.Worksheet.Published)
-                    {
-                        <button class="btn float-end add-custom-field-btn worksheet-btn" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-action="Insert" type="button">
-                            <i class="fl fl-plus"></i>
-                        </button>
-                        <button class="btn float-end edit-section-btn worksheet-btn" data-action="Update" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" type="button">
-                            <i class="fl fl-edit"></i>
-                        </button>
-                    }
-                </div>
-            </div>
-
-            @foreach (var customField in sect.Fields)
-            {
-                <div class="list-group-item row custom-field-row" data-type="custom-field" data-id="@customField.Id" data-worksheet-id="@worksheet.Id">
+            <div class="sections-wrapper-inner">
+                <div class="list-group-item row section-item" data-type="section" data-id="@sect.Id" data-worksheet-id="@worksheet.Id" data-label="@sect.Name">
                     <div class="col">
                         <i class="fl fl-draggable"></i>
-                        <span class="p-2">@customField.Label</span>
-                        <span class="p-2">(@customField.Type)</span>
+                        <span class="p-2"><b>Section:</b> @sect.Name</span>
                         @if (!Model.Worksheet.Published)
                         {
-                            <button class="btn float-end edit-custom-field-btn worksheet-btn" type="button" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-field-id="@customField.Id" data-action="Update">
+                            <button class="btn float-end add-custom-field-btn worksheet-btn" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-action="Insert" type="button">
+                                <i class="fl fl-plus"></i>
+                            </button>
+                            <button class="btn float-end edit-section-btn worksheet-btn" data-action="Update" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" type="button">
                                 <i class="fl fl-edit"></i>
                             </button>
                         }
                     </div>
                 </div>
-            }
+
+                <div id="custom-fields-wrapper-@sect-id" data-section-id="@sect.Id" class="custom-fields-wrapper">
+                    @foreach (var customField in sect.Fields)
+                    {
+                        <div class="list-group-item row custom-field-row" data-type="custom-field" data-id="@customField.Id" data-worksheet-id="@worksheet.Id">
+                            <div class="col">
+                                <i class="fl fl-draggable"></i>
+                                <span class="p-2">@customField.Label</span>
+                                <span class="p-2">(@customField.Type)</span>
+                                @if (!Model.Worksheet.Published)
+                                {
+                                    <button class="btn float-end edit-custom-field-btn worksheet-btn" type="button" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-field-id="@customField.Id" data-action="Update">
+                                        <i class="fl fl-edit"></i>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         }
     </div>
 

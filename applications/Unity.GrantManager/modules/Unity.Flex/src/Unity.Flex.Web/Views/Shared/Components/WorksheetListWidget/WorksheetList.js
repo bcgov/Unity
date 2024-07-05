@@ -7,7 +7,8 @@ $(function () {
         viewUrl: 'WorksheetConfiguration/CloneWorksheetModal'
     });
 
-    bindActionButtons();
+    bindActionButtons();    
+    makeSectionsAndFieldsSortable();
 
     function bindActionButtons() {
         let addWorksheetButton = $("#add_worksheet_btn");
@@ -65,24 +66,98 @@ $(function () {
             });
     }
 
+    function makeSectionsAndFieldsSortable() {
+        makeCustomFieldsSortable();
+        makeSectionsSortable();
+    }
+
+    function makeCustomFieldsSortable() {
+        document.querySelectorAll('.custom-fields-wrapper').forEach(function (div) {
+            _ = new Sortable(div, {
+                animation: 150,
+                onEnd: function (evt) {
+                    updateCustomFieldsSequence(evt);
+                    updatePreview(evt);
+                },
+                ghostClass: 'blue-background',
+                onMove: function (_) {
+                    return true;
+                }
+            });
+        });
+    }
+
+    function makeSectionsSortable() {
+        document.querySelectorAll('.sections-wrapper-outer').forEach(function (div) {
+            _ = new Sortable(div, {
+                animation: 150,
+                onEnd: function (evt) {
+                    updateSectionSequence(evt);
+                    updatePreview(evt);
+                },
+                ghostClass: 'blue-background',
+                onMove: function (_) {
+                    return true;
+                }
+            });
+        });
+    }
+
+    function updateCustomFieldsSequence(evt) {
+        let sectionId = evt.target.dataset.sectionId;
+        let oldIndex = evt.oldIndex;
+        let newIndex = evt.newIndex;
+        
+        unity.flex.worksheets.worksheetSection
+            .resequenceCustomFields(sectionId, oldIndex, newIndex, {})
+            .done(function () {
+                abp.notify.success(
+                    'Custom fields order updated.'
+                );
+            });
+    }
+
+    function updateSectionSequence(evt) {        
+        let worksheetId = evt.target.dataset.worksheetId;
+        let oldIndex = evt.oldIndex;
+        let newIndex = evt.newIndex;
+
+        console.log({ worksheetId: worksheetId, oldIndex: oldIndex, newIndex: newIndex });
+
+        unity.flex.worksheets.worksheet
+            .resequenceSections(worksheetId, oldIndex, newIndex, {})
+            .done(function () {
+                abp.notify.success(
+                    'Sections fields order updated.'
+                );
+            });     
+    }
+
+    function updatePreview(evt) {
+        console.log(evt);
+    }
+
     PubSub.subscribe(
         'refresh_worksheet_list',
         () => {
             refreshWorksheetListWidget();
+            makeSectionsAndFieldsSortable();
         }
     );
 
     PubSub.subscribe(
         'worksheet_list_refreshed',
         () => {
-            bindActionButtons();            
+            bindActionButtons();
+            makeSectionsAndFieldsSortable(); 
         }
     );
 
     PubSub.subscribe(
         'worksheet_refreshed',
         () => {
-            bindActionButtons();            
+            bindActionButtons();
+            makeSectionsAndFieldsSortable();
         }
     );
 });
