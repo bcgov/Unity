@@ -15,6 +15,9 @@ using Volo.Abp.BackgroundJobs;
 using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Unity.Payments.PaymentRequests;
+using Volo.Abp.Quartz;
+using System;
+using Volo.Abp.TenantManagement;
 
 
 namespace Unity.Payments;
@@ -26,7 +29,8 @@ namespace Unity.Payments;
     typeof(AbpVirtualFileSystemModule),
     typeof(PaymentsApplicationContractsModule),
     typeof(AbpBackgroundJobsModule),
-    typeof(AbpBackgroundWorkersQuartzModule)
+    typeof(AbpBackgroundWorkersQuartzModule),
+    typeof(AbpTenantManagementDomainModule)
     )]
 public class PaymentsApplicationModule : AbpModule
 {
@@ -35,6 +39,14 @@ public class PaymentsApplicationModule : AbpModule
         PreConfigure<IMvcBuilder>(mvcBuilder =>
         {
             mvcBuilder.AddApplicationPartIfNotExists(typeof(PaymentsApplicationModule).Assembly);
+        });
+
+        PreConfigure<AbpQuartzOptions>(options =>
+        {
+            options.Configurator = configure =>
+            {
+                configure.SchedulerName = Guid.NewGuid().ToString();
+            };
         });
     }
 
@@ -89,6 +101,7 @@ public class PaymentsApplicationModule : AbpModule
         context.Services.AddAbpDbContext<PaymentsDbContext>(options =>
         {
             /* Add custom repositories here. */
+            options.AddDefaultRepositories(includeAllEntities: true);
         });
     }
 }
