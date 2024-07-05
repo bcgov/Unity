@@ -28,20 +28,18 @@ cloneScoresheetModal.onResult(function (response) {
         'Scoresheet'
     );
 });
-function openScoresheetModal(scoresheetId, actionType, groupId) {
+function openScoresheetModal(scoresheetId, actionType) {
     scoresheetToEditId = scoresheetId;
     scoresheetModal.open({
         scoresheetId: scoresheetId,
-        actionType: actionType,
-        groupId: groupId
+        actionType: actionType
     });
 }
 
-function openCloneScoresheetModal(scoresheetId, groupId) {
+function openCloneScoresheetModal(scoresheetId) {
     scoresheetToEditId = scoresheetId;
     cloneScoresheetModal.open({
-        scoresheetId: scoresheetId,
-        groupId: groupId
+        scoresheetId: scoresheetId
     });
 }
 

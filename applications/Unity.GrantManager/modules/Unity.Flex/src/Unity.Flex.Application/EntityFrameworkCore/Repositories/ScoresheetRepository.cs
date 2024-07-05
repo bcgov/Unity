@@ -20,12 +20,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .ThenInclude(sec => sec.Fields.OrderBy(q => q.Order))
                 .OrderBy(s => s.CreationTime)
                 .ToListAsync();    
-        }
-
-        public async Task<List<Scoresheet>> GetScoresheetsByGroupId(Guid groupId)
-        {
-            return (await GetListWithChildrenAsync()).Where(s => s.GroupId == groupId).ToList();
-        }
+        }        
 
         public async Task<Scoresheet?> GetWithChildrenAsync(Guid id)
         {

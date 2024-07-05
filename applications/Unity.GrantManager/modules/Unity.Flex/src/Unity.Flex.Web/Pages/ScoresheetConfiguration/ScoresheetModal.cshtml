@@ -17,7 +17,7 @@
 <form method="post" asp-page-handler="OnPostAsync" id="scoresheetInfo">
     <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Scoresheet.Id" />
     <abp-input type="hidden" id="ActionType" asp-for="@Model.Scoresheet.ActionType" />
-    <abp-input type="hidden" id="GroupId" asp-for="@Model.Scoresheet.GroupId" />
+    
     <abp-modal size="Large" id="scoresheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="@Model.Scoresheet.ActionType"></abp-modal-header>
         <abp-modal-body>

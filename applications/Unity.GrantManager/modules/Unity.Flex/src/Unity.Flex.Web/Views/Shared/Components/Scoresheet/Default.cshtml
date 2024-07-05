@@ -37,14 +37,14 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="p-3">
-                                <button id="edit_scoresheet_btn" onclick="openScoresheetModal('@scoresheet.Id','Edit Scoring Sheet','@scoresheet.GroupId');" class="btn btn-light" type="button">
+                                <button id="edit_scoresheet_btn" onclick="openScoresheetModal('@scoresheet.Id','Edit Scoring Sheet');" class="btn btn-light" type="button">
                                     <i class="fl fl-edit"></i> <span>@L["Scoresheet:Configuration:EditScoresheetButtonText"].Value</span>
                                 </button>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="p-3">
-                                <button id="clone_scoresheet_btn" onclick="openCloneScoresheetModal('@scoresheet.Id', '@scoresheet.GroupId');" class="btn btn-light" type="button">
+                                <button id="clone_scoresheet_btn" onclick="openCloneScoresheetModal('@scoresheet.Id');" class="btn btn-light" type="button">
                                     <i class="fl fl-copy"></i> <span>@L["Scoresheet:Configuration:CloneScoresheetButtonText"].Value</span>
                                 </button>
                             </div>

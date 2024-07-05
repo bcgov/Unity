@@ -14,9 +14,6 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual string Title { get; set; } = string.Empty;
         public virtual string Name { get; private set; } = string.Empty;
         public virtual uint Version { get; set; } = 1;
-
-        public Guid GroupId { get; set; }
-
         public Guid? TenantId { get; set; }
                
 
@@ -30,13 +27,11 @@ namespace Unity.Flex.Domain.Scoresheets
 
         public Scoresheet(Guid id,
         string title,
-        Guid groupId,
         string name)
         : base(id)
         {
             Id = id;
             Title = title;
-            GroupId = groupId;
             Name = name;
         }
 

@@ -42,7 +42,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
-            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Title, Guid.NewGuid(), dto.Name));
+            var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Title, dto.Name));
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
@@ -82,7 +82,7 @@ namespace Unity.Flex.Scoresheets
             
             var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
             var versionSplit = originalScoresheet.Name.Split('-');
-            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, originalScoresheet.GroupId, $"{versionSplit[0]}-v{originalScoresheet.Version + 1}")
+            var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, $"{versionSplit[0]}-v{originalScoresheet.Version + 1}")
             {
                 Version = originalScoresheet.Version + 1,
             };

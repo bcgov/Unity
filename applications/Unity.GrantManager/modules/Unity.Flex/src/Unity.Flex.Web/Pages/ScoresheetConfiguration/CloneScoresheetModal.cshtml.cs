@@ -22,14 +22,12 @@ public class CloneScoresheetModalModel : FlexPageModel
     public class CloneScoresheetModalModelModel
     {
         public Guid Id { get; set; }
-        public Guid GroupId { get; set; }
         public string Title { get; set; } = string.Empty;        
         public string Name {  get; set; } = string.Empty;
     }
-    public async Task OnGetAsync(Guid scoresheetId, Guid groupId)
+    public async Task OnGetAsync(Guid scoresheetId)
     {
         Scoresheet.Id = scoresheetId;
-        Scoresheet.GroupId = groupId;
         var scoresheet = await _scoresheetAppService.GetAsync(scoresheetId);
         Scoresheet.Title = scoresheet.Title;
         Scoresheet.Name = scoresheet.Name;
