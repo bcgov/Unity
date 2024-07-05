@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Flex.Web.Views.Shared.Components.Scoresheet
