@@ -2,6 +2,10 @@
     background-color: lightblue;
 }
 
+.blue-background * {
+    background-color: lightblue;
+}
+
 .section-info-btn {
     --bs-btn-active-color: var(--bc-colors-white-primary-500);
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
@@ -41,8 +45,17 @@
 
 .custom-field-row {
     padding-left: 5rem;
+    cursor: grab;
 }
 
 .worksheet-btn {
     text-transform: uppercase;
+}
+
+.sections-wrapper-outer {
+    cursor: grab;
+}
+
+.float-end.worksheet-btn {
+    margin-top: -5px;
 }

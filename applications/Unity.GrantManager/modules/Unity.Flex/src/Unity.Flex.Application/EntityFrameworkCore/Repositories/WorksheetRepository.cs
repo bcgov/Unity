@@ -75,5 +75,15 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .IncludeDetails(includeDetails)
                 .FirstAsync(s => s.Id == id);
         }
+
+        public async Task<List<Worksheet>> GetByNameStartsWithAsync(string name, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .Where(s => s.Name.StartsWith(name))
+                .ToListAsync();
+        }
     }
 }

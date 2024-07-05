@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Worksheets;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
 namespace Unity.Flex.Worksheets
@@ -26,6 +27,7 @@ namespace Unity.Flex.Worksheets
         public virtual async Task<CustomFieldDto> CreateCustomFieldAsync(Guid id, CreateCustomFieldDto dto)
         {
             (Worksheet worksheet, WorksheetSection section) = await GetWorksheetAndSectionAsync(id);
+            if (worksheet.Published) { throw new UserFriendlyException("Cannot add fields to a published worksheet"); }
 
             var customField = (new CustomField(Guid.NewGuid(),
                 dto.Field,
@@ -39,10 +41,34 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<CustomField, CustomFieldDto>(customField);
         }
 
-        public async Task DeleteAsync(Guid id)
+        public virtual async Task DeleteAsync(Guid id)
         {
             (Worksheet worksheet, WorksheetSection section) = await GetWorksheetAndSectionAsync(id);
             worksheet.RemoveSection(section);
+        }
+
+        public virtual async Task ResequenceCustomFieldsAsync(Guid id, uint oldIndex, uint newIndex)
+        {
+            (Worksheet _, WorksheetSection section) = await GetWorksheetAndSectionAsync(id);
+
+            var fields = section.Fields.OrderBy(s => s.Order).ToList();
+            var movedField = fields[(int)oldIndex];
+            movedField.SetOrder(newIndex + 1);
+
+            if (oldIndex < newIndex)
+            {
+                foreach (var field in fields[(int)oldIndex..((int)newIndex + 1)].Where(s => s.Id != movedField.Id))
+                {
+                    field.SetOrder(field.Order - 1);
+                }
+            }
+            else if (oldIndex > newIndex)
+            {
+                foreach (var field in fields[(int)newIndex..(int)oldIndex].Where(s => s.Id != movedField.Id))
+                {
+                    field.SetOrder(field.Order + 1);
+                }
+            }            
         }
 
         private async Task<(Worksheet worksheet, WorksheetSection section)> GetWorksheetAndSectionAsync(Guid sectionId)

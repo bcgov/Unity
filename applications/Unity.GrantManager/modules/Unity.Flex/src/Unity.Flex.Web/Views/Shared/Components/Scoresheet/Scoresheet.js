@@ -11,6 +11,7 @@ $(function () {
                 },
                 ghostClass: 'blue-background',
                 onMove: function (evt) {
+                    debugger;
                     const draggedItem = evt.dragged;
                     const targetItem = evt.related;
                     const topItem = evt.from.children[0];
