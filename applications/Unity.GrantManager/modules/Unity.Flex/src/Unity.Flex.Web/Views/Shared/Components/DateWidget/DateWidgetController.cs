@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.DateWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("GrantApplications/Widgets/Date")]
+    [Route("Flex/Widgets/Date")]
     public class DateWidgetController : AbpController
     {
         [HttpGet]

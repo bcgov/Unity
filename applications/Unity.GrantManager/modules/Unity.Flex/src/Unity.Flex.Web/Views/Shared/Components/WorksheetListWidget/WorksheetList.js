@@ -7,7 +7,7 @@ $(function () {
         viewUrl: 'WorksheetConfiguration/CloneWorksheetModal'
     });
 
-    bindActionButtons();    
+    bindActionButtons();
     makeSectionsAndFieldsSortable();
 
     function bindActionButtons() {
@@ -24,6 +24,14 @@ $(function () {
         if (cloneWorksheetButtons) {
             cloneWorksheetButtons.on("click", function (event) {
                 openCloneWorksheetModal(event.currentTarget.dataset.worksheetId)
+            });
+        }
+
+        let worksheetSections = $(".accordion-button");
+
+        if (worksheetSections) {
+            worksheetSections.on("click", function (_) {
+                updatePreview();
             });
         }
     }
@@ -54,7 +62,7 @@ $(function () {
     });
 
     function refreshWorksheetListWidget() {
-        const url = `../Flex/Widget/WorksheetList/Refresh`;
+        const url = `../Flex/Widgets/WorksheetList/Refresh`;
         fetch(url)
             .then(response => response.text())
             .then(data => {
@@ -77,7 +85,6 @@ $(function () {
                 animation: 150,
                 onEnd: function (evt) {
                     updateCustomFieldsSequence(evt);
-                    updatePreview(evt);
                 },
                 ghostClass: 'blue-background',
                 onMove: function (_) {
@@ -92,8 +99,7 @@ $(function () {
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: function (evt) {
-                    updateSectionSequence(evt);
-                    updatePreview(evt);
+                    updateSectionSequence(evt);                    
                 },
                 ghostClass: 'blue-background',
                 onMove: function (_) {
@@ -107,34 +113,58 @@ $(function () {
         let sectionId = evt.target.dataset.sectionId;
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
-        
+
         unity.flex.worksheets.worksheetSection
             .resequenceCustomFields(sectionId, oldIndex, newIndex, {})
             .done(function () {
+                updatePreview();
                 abp.notify.success(
                     'Custom fields order updated.'
                 );
             });
     }
 
-    function updateSectionSequence(evt) {        
+    function updateSectionSequence(evt) {
         let worksheetId = evt.target.dataset.worksheetId;
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
 
-        console.log({ worksheetId: worksheetId, oldIndex: oldIndex, newIndex: newIndex });
-
         unity.flex.worksheets.worksheet
             .resequenceSections(worksheetId, oldIndex, newIndex, {})
             .done(function () {
+                updatePreview();
                 abp.notify.success(
                     'Sections fields order updated.'
                 );
-            });     
+            });
     }
 
-    function updatePreview(evt) {
-        console.log(evt);
+    function updatePreview() {
+        let worksheets = $('button.accordion-button[aria-expanded=true]');
+        const previewPane = $('#preview');
+
+        if (worksheets?.length > 0) {
+            let worksheetId = worksheets[0].dataset.worksheetId;
+            const url = `../Flex/Widgets/WorksheetInstance/Refresh?`
+                + `instanceCorrelationId=00000000-0000-0000-0000-000000000000&`
+                + `instanceCorrelationProvider=Preview&`
+                + `sheetCorrelationId=00000000-0000-0000-0000-000000000000&`
+                + `sheetCorrelationProvider=Preview&`
+                + `uiAnchor=Preview&`
+                + `worksheetId=${worksheetId}`;
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    previewPane.html(data);
+                    $("#preview :input").prop("readonly", true);
+                })
+                .catch(error => {
+                    console.error('Error generating preview:', error);
+                });
+
+        } else {
+            previewPane?.html('<p>No sections to display.</p>');
+        }
     }
 
     PubSub.subscribe(
@@ -142,6 +172,7 @@ $(function () {
         () => {
             refreshWorksheetListWidget();
             makeSectionsAndFieldsSortable();
+            updatePreview();
         }
     );
 
@@ -149,7 +180,8 @@ $(function () {
         'worksheet_list_refreshed',
         () => {
             bindActionButtons();
-            makeSectionsAndFieldsSortable(); 
+            makeSectionsAndFieldsSortable();
+            updatePreview();
         }
     );
 
@@ -158,6 +190,7 @@ $(function () {
         () => {
             bindActionButtons();
             makeSectionsAndFieldsSortable();
+            updatePreview();
         }
     );
 });

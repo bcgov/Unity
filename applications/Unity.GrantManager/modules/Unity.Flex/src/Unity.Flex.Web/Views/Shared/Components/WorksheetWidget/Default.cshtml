@@ -64,7 +64,7 @@
                 <div id="custom-fields-wrapper-@sect-id" data-section-id="@sect.Id" class="custom-fields-wrapper">
                     @foreach (var customField in sect.Fields)
                     {
-                        <div class="list-group-item row custom-field-row" data-type="custom-field" data-id="@customField.Id" data-worksheet-id="@worksheet.Id">
+                        <div class="list-group-item row custom-field-row" data-type="custom-field" data-id="@customField.Id" data-section-id="@sect.Id" data-worksheet-id="@worksheet.Id">
                             <div class="col">
                                 <i class="fl fl-draggable"></i>
                                 <span class="p-2">@customField.Label</span>
