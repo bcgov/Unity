@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Unity.Payments.Integrations.Cas;
 using RabbitMQ.Client.Events;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -109,7 +110,7 @@ namespace Unity.Payments.PaymentRequests
         public async Task AddPaymentRequestsToReconciliationQueue()
         {
             var tenants = await _tenantRepository.GetListAsync();
-            foreach (var tenantId in tenants.Select(teanant => teanant.id))
+            foreach (var tenantId in tenants.Select(tenant => tenant.Id))
             {
                 using (_currentTenant.Change(tenantId))
                 {
