@@ -121,16 +121,16 @@ namespace Unity.Flex.Scoresheets
 
         public async Task SaveOrder(List<ScoresheetItemDto> dto)
         {
-            foreach(var dtoItem in dto)
-            {
-                await ValidateChangeableScoresheet(dtoItem.Scoresheetid);
-            }
-
             uint sectionOrder = 0;
             uint questionOrder = 0;
             ScoresheetSection? currentSection = null;
             foreach (var item in dto)
             {
+                var scoresheet = await _scoresheetRepository.GetAsync(item.Scoresheetid);
+                if (scoresheet.Published)
+                {
+                    continue;
+                }
                 if (item.Type == "section")
                 {
                     var section = await _sectionRepository.GetAsync(item.Id) ?? throw new AbpValidationException("SectionId not found.");
