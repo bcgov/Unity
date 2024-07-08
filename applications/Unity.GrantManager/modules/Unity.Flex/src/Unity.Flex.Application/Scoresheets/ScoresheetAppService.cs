@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
+using Volo.Abp;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
@@ -46,32 +47,36 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
 
-        public virtual Task<QuestionDto> CreateQuestionInHighestOrderSectionAsync(Guid scoresheetId, CreateQuestionDto dto)
+        public virtual async Task<QuestionDto> CreateQuestionInHighestOrderSectionAsync(Guid scoresheetId, CreateQuestionDto dto)
         {
+            _ = await ValidateChangeableScoresheet(scoresheetId);
+
             lock (_questionLockObject)
             {
                 ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
                 Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
                 var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
                 var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id)).Result;
-                return Task.FromResult(ObjectMapper.Map<Question, QuestionDto>(result));
+                return ObjectMapper.Map<Question, QuestionDto>(result);
             }
         }
 
-        public virtual Task<ScoresheetSectionDto> CreateSectionAsync(Guid scoresheetId, CreateSectionDto dto)
+        public virtual async Task<ScoresheetSectionDto> CreateSectionAsync(Guid scoresheetId, CreateSectionDto dto)
         {
+            _ = await ValidateChangeableScoresheet(scoresheetId);
+
             lock (_sectionLockObject)
             {
                 ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result;
                 var order = highestOrderSection == null ? 0 : highestOrderSection.Order + 1;
                 var result = _sectionRepository.InsertAsync(new ScoresheetSection(Guid.NewGuid(), dto.Name, order, scoresheetId)).Result;
-                return Task.FromResult(ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(result));
+                return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(result);
             }
         }
 
         public async Task UpdateAsync(Guid scoresheetId, EditScoresheetDto dto)
         {
-            var scoresheet = await _scoresheetRepository.GetAsync(scoresheetId);
+            var scoresheet = await ValidateChangeableScoresheet(scoresheetId);
             scoresheet.Title = dto.Title;
             await _scoresheetRepository.UpdateAsync(scoresheet);
         }
@@ -110,11 +115,17 @@ namespace Unity.Flex.Scoresheets
 
         public async Task DeleteAsync(Guid id)
         {
+            _ = await ValidateChangeableScoresheet(id);
             await _scoresheetRepository.DeleteAsync(id);
         }
 
         public async Task SaveOrder(List<ScoresheetItemDto> dto)
         {
+            foreach(var dtoItem in dto)
+            {
+                _ = await ValidateChangeableScoresheet(dtoItem.Scoresheetid);
+            }
+
             uint sectionOrder = 0;
             uint questionOrder = 0;
             ScoresheetSection? currentSection = null;
@@ -147,9 +158,9 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
-        public async Task<List<ScoresheetDto>> GetAllScoresheetsAsync()
+        public async Task<List<ScoresheetDto>> GetAllPublishedScoresheetsAsync()
         {
-            var result = await _scoresheetRepository.GetListAsync();
+            var result = await _scoresheetRepository.GetPublishedListAsync();
             return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
         }
 
@@ -158,6 +169,16 @@ namespace Unity.Flex.Scoresheets
             var existingQuestions = await _questionRepository.GetListAsync();
             return existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.Number).Select(q => q.Id).ToList();
 
+        }
+
+        public async Task<Scoresheet> ValidateChangeableScoresheet(Guid scoresheetId)
+        {
+            var scoresheet = await _scoresheetRepository.GetAsync(scoresheetId);
+            if (scoresheet.Published)
+            {
+                throw new UserFriendlyException("Cannot change scoresheet.  Scoresheet is already published.");
+            }
+            return scoresheet;
         }
     }
 }

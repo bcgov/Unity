@@ -14,6 +14,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual string Title { get; set; } = string.Empty;
         public virtual string Name { get; private set; } = string.Empty;
         public virtual uint Version { get; set; } = 1;
+        public virtual bool Published {  get; set; } = false;
         public Guid? TenantId { get; set; }
                
 

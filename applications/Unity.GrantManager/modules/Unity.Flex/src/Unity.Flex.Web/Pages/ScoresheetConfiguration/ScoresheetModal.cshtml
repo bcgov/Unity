@@ -17,7 +17,7 @@
 <form method="post" asp-page-handler="OnPostAsync" id="scoresheetInfo">
     <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Scoresheet.Id" />
     <abp-input type="hidden" id="ActionType" asp-for="@Model.Scoresheet.ActionType" />
-    
+    <abp-input type="hidden" id="Published" asp-for="@Model.Scoresheet.Published" />
     <abp-modal size="Large" id="scoresheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="@Model.Scoresheet.ActionType"></abp-modal-header>
         <abp-modal-body>
@@ -33,7 +33,7 @@
         <abp-modal-footer>
             <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
-            @if (!Model.Scoresheet.ActionType.StartsWith("Add"))
+            @if (!Model.Scoresheet.ActionType.StartsWith("Add") && !Model.Scoresheet.Published)
             {
                 <button type="button" class="btn btn-danger" onclick="deleteScoresheet()">Delete</button>
             }

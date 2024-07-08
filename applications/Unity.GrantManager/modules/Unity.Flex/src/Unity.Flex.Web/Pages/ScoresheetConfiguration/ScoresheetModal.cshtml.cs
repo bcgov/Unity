@@ -26,6 +26,7 @@ public class ScoresheetModalModel : FlexPageModel
         [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Title")]
         public string Title { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public bool Published {  get; set; } 
     }
     public async Task OnGetAsync(Guid scoresheetId,
        string actionType)
@@ -37,6 +38,7 @@ public class ScoresheetModalModel : FlexPageModel
             ScoresheetDto scoresheet = await _scoresheetAppService.GetAsync(scoresheetId);
             Scoresheet.Title = scoresheet.Title ?? "";
             Scoresheet.Name = scoresheet.Name ?? "";
+            Scoresheet.Published = scoresheet.Published;
         }
     }
 

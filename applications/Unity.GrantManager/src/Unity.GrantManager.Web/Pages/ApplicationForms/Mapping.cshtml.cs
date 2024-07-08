@@ -129,7 +129,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                var scoresheets = await _scoresheetAppService.GetAllScoresheetsAsync();
+                var scoresheets = await _scoresheetAppService.GetAllPublishedScoresheetsAsync();
                 ScoresheetOptionsList = [];
 
                 foreach (var scoresheet in scoresheets)
