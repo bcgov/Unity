@@ -38,6 +38,13 @@
     margin-right: 1rem; 
 }
 
+.scoresheet-published-icon {
+    border: 2px solid;
+    border-radius: 5px;
+    padding: 5px;
+    color: var(--bc-colors-grey-text-100, light-gray);
+    font-size: 0.6rem;
+}
 
 
 

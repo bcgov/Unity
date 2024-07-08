@@ -5,19 +5,19 @@ using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Web.Pages.ScoresheetConfiguration;
 
-public class CloneScoresheetModalModel : FlexPageModel
+public class PublishScoresheetModalModel : FlexPageModel
 {
     private readonly IScoresheetAppService _scoresheetAppService;
 
-    public CloneScoresheetModalModel(IScoresheetAppService scoresheetAppService)
+    public PublishScoresheetModalModel(IScoresheetAppService scoresheetAppService)
     {
         _scoresheetAppService = scoresheetAppService;
     }
 
     [BindProperty]
-    public CloneScoresheetModalModelModel Scoresheet { get; set; } = new();
+    public PublishScoresheetModalModelModel Scoresheet { get; set; } = new();
 
-    public class CloneScoresheetModalModelModel
+    public class PublishScoresheetModalModelModel
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;        
@@ -33,13 +33,13 @@ public class CloneScoresheetModalModel : FlexPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        await CloneScoresheet();
+        await PublishScoresheet();
         return NoContent();
     }
     
-    private async Task CloneScoresheet()
+    private async Task PublishScoresheet()
     {
-        await _scoresheetAppService.CloneScoresheetAsync(Scoresheet.Id);
+        await _scoresheetAppService.PublishScoresheetAsync(Scoresheet.Id);
     }
 
 }

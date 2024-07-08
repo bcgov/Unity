@@ -74,11 +74,13 @@ public class SectionModalModel : FlexPageModel
 
     private async Task EditSection()
     {
+        await _scoresheetAppService.ValidateChangeableScoresheet(Section.ScoresheetId);
         _ = await _sectionAppService.UpdateAsync(Section.SectionId, new EditSectionDto() { Name = Section.Name });
     }
 
     private async Task DeleteSection()
     {
+        await _scoresheetAppService.ValidateChangeableScoresheet(Section.ScoresheetId);
         await _sectionAppService.DeleteAsync(Section.SectionId);
     }
 

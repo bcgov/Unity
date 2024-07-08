@@ -49,7 +49,7 @@ namespace Unity.Flex.Scoresheets
 
         public virtual async Task<QuestionDto> CreateQuestionInHighestOrderSectionAsync(Guid scoresheetId, CreateQuestionDto dto)
         {
-            _ = await ValidateChangeableScoresheet(scoresheetId);
+            await ValidateChangeableScoresheet(scoresheetId);
 
             lock (_questionLockObject)
             {
@@ -63,7 +63,7 @@ namespace Unity.Flex.Scoresheets
 
         public virtual async Task<ScoresheetSectionDto> CreateSectionAsync(Guid scoresheetId, CreateSectionDto dto)
         {
-            _ = await ValidateChangeableScoresheet(scoresheetId);
+            await ValidateChangeableScoresheet(scoresheetId);
 
             lock (_sectionLockObject)
             {
@@ -76,7 +76,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task UpdateAsync(Guid scoresheetId, EditScoresheetDto dto)
         {
-            var scoresheet = await ValidateChangeableScoresheet(scoresheetId);
+            var scoresheet = await _scoresheetRepository.GetAsync(scoresheetId);
             scoresheet.Title = dto.Title;
             await _scoresheetRepository.UpdateAsync(scoresheet);
         }
@@ -115,7 +115,7 @@ namespace Unity.Flex.Scoresheets
 
         public async Task DeleteAsync(Guid id)
         {
-            _ = await ValidateChangeableScoresheet(id);
+            await ValidateChangeableScoresheet(id);
             await _scoresheetRepository.DeleteAsync(id);
         }
 
@@ -123,7 +123,7 @@ namespace Unity.Flex.Scoresheets
         {
             foreach(var dtoItem in dto)
             {
-                _ = await ValidateChangeableScoresheet(dtoItem.Scoresheetid);
+                await ValidateChangeableScoresheet(dtoItem.Scoresheetid);
             }
 
             uint sectionOrder = 0;
@@ -171,14 +171,20 @@ namespace Unity.Flex.Scoresheets
 
         }
 
-        public async Task<Scoresheet> ValidateChangeableScoresheet(Guid scoresheetId)
+        public async Task ValidateChangeableScoresheet(Guid scoresheetId)
         {
             var scoresheet = await _scoresheetRepository.GetAsync(scoresheetId);
             if (scoresheet.Published)
             {
                 throw new UserFriendlyException("Cannot change scoresheet.  Scoresheet is already published.");
             }
-            return scoresheet;
+        }
+
+        public async Task PublishScoresheetAsync(Guid id)
+        {
+            var scoresheet = await _scoresheetRepository.GetAsync(id);
+            scoresheet.Published = true;
+            await _scoresheetRepository.UpdateAsync(scoresheet);
         }
     }
 }
