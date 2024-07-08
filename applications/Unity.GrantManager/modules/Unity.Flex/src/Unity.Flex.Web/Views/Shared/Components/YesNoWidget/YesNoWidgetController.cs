@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.YesNoWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("GrantApplications/Widgets/YesNo")]
+    [Route("Flex/Widgets/YesNo")]
     public class YesNoWidgetController : AbpController
     {
         [HttpGet]

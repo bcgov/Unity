@@ -6,6 +6,7 @@
         public const string ApplicantInfoUiAnchor = "ApplicantInfo";
         public const string AssessmentInfoUiAnchor = "AssessmentInfo";
         public const string CustomTab = "CustomTab";
+        public const string Preview = "Preview";
 
         public static readonly string[] UiAnchors = [ProjectInfoUiAnchor, ApplicantInfoUiAnchor, AssessmentInfoUiAnchor];
     }

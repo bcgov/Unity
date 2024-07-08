@@ -28,9 +28,30 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         string uiAnchor,
         Guid? worksheetId)
     {
-        WorksheetViewModel? viewModel = null;
+        if (instanceCorrelationProvider == FlexConsts.Preview
+            && sheetCorrelationProvider == FlexConsts.Preview
+            && uiAnchor == FlexConsts.Preview
+            && worksheetId != null)
+        {
+            return await RenderPreviewAsync(worksheetId.Value);
+        }
 
-        if (instanceCorrelationId == Guid.Empty && sheetCorrelationId == Guid.Empty) return View(new WorksheetViewModel());
+        // Invalid render
+        if (instanceCorrelationId == Guid.Empty
+            && sheetCorrelationId == Guid.Empty) return View(new WorksheetViewModel());
+
+        // Render instance or worksheet
+        return await RenderViewAsync(instanceCorrelationId, instanceCorrelationProvider, sheetCorrelationId, sheetCorrelationProvider, uiAnchor, worksheetId);
+    }
+
+    private async Task<IViewComponentResult> RenderViewAsync(Guid instanceCorrelationId,
+        string instanceCorrelationProvider,
+        Guid sheetCorrelationId,
+        string sheetCorrelationProvider,
+        string uiAnchor,
+        Guid? worksheetId)
+    {
+        WorksheetViewModel? viewModel = null;
 
         var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, instanceCorrelationProvider, uiAnchor);
         WorksheetDto? worksheet;
@@ -55,6 +76,13 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
             viewModel = MapWorksheetInstance(worksheet, uiAnchor, worksheetInstance);
         }
 
+        return View(viewModel);
+    }
+
+    private async Task<IViewComponentResult> RenderPreviewAsync(Guid worksheetId)
+    {
+        var worksheet = await worksheetAppService.GetAsync(worksheetId);
+        WorksheetViewModel? viewModel = MapWorksheet(worksheet, "Preview");
         return View(viewModel);
     }
 

@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("GrantApplications/Widgets/CheckboxGroup")]
+    [Route("Flex/Widgets/CheckboxGroup")]
     public class CheckboxGroupWidgetController : AbpController
     {
         [HttpGet]
