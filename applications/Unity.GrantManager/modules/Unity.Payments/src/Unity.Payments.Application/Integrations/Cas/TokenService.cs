@@ -21,9 +21,9 @@ namespace Unity.Payments.Integrations.Cas
     public class TokenService : ApplicationService, ITokenService
     {
         private readonly IOptions<CasClientOptions> _casClientOptions;
-        private IHttpClientFactory _httpClientFactory;
-        private const string OAUTH_PATH = "oauth/token";
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IMemoryCache _memoryCache;
+        private const string OAUTH_PATH = "oauth/token";
         private const int ONE_MINUTE_SECONDS = 60;
 
         public TokenService(
@@ -111,7 +111,6 @@ namespace Unity.Payments.Integrations.Cas
         {
             if (!_memoryCache.TryGetValue("CasAuthToken", out string? newAuthToken))
             {
-                DateTime now = DateTime.Now;
                 // Subrtact one minute from expiry for buffer
                 int expiresInSeconds = tokenResponse.ExpiresIn - ONE_MINUTE_SECONDS;
                 TimeSpan timeSpanExpires = TimeSpan.FromSeconds(expiresInSeconds);

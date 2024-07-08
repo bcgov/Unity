@@ -15,7 +15,7 @@ namespace Unity.Payments.Integrations.Http
     [IntegrationService]
     public class ResilientHttpRequest : PaymentsAppService, IResilientHttpRequest
     {
-        private IHttpClientFactory _httpClientFactory;
+        private readonly IHttpClientFactory _httpClientFactory;
         private static int _maxRetryAttempts = 3;
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
         private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(20);
@@ -62,7 +62,6 @@ namespace Unity.Payments.Integrations.Http
                        BackoffType = DelayBackoffType.Exponential,
                        OnRetry = args =>
                        {
-                           Console.WriteLine($"Retry Attempt Number : {args.AttemptNumber} after {args.RetryDelay.TotalSeconds} seconds.");
                            return default;
                        }
                    })
@@ -120,8 +119,8 @@ namespace Unity.Payments.Integrations.Http
             }
             catch (Exception ex)
             {
-                string exceptionMessage = ex.Message;
-                Logger.LogInformation(ex, "An Exception was thrown from ExecuteRequestAsync: {exceptionMessage}", exceptionMessage);
+                string ExceptionMessage = ex.Message;
+                Logger.LogInformation(ex, "An Exception was thrown from ExecuteRequestAsync: {ExceptionMessage}", ExceptionMessage);
             }
 
             return await Task.FromResult(restResponse);

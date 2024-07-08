@@ -26,7 +26,7 @@ namespace Unity.Payments.PaymentRequests
         private readonly ICurrentTenant _currentTenant;
         private readonly InvoiceService _invoiceService;
 
-        public static string CAS_PAYMENT_REQUEST_QUEUE = "cas_reconcile_pr";
+        public const string CAS_PAYMENT_REQUEST_QUEUE = "cas_reconcile_pr";
 
         public CasPaymentRequestCoordinator(
             InvoiceService invoiceService,
@@ -109,10 +109,9 @@ namespace Unity.Payments.PaymentRequests
         public async Task AddPaymentRequestsToReconciliationQueue()
         {
             var tenants = await _tenantRepository.GetListAsync();
-
-            foreach (var tenant in tenants)
+            foreach (var tenantId in tenants.Select(teanant => teanant.id))
             {
-                using (_currentTenant.Change(tenant.Id))
+                using (_currentTenant.Change(tenantId))
                 {
                     List<PaymentRequest> paymentRequests = await _paymentRequestsRepository.GetPaymentRequestsBySentToCasStatusAsync();
                     foreach (PaymentRequest paymentRequest in paymentRequests)
@@ -122,7 +121,7 @@ namespace Unity.Payments.PaymentRequests
                             paymentRequest.InvoiceNumber,
                             paymentRequest.SupplierNumber,
                             paymentRequest.Site.Number,
-                            tenant.Id);
+                            tenantId);
                     }
                 }
             }
@@ -156,14 +155,10 @@ namespace Unity.Payments.PaymentRequests
                         reconcilePayment.SupplierNumber,
                         reconcilePayment.SiteNumber);
 
-                    if (result != null)
+                    if (result != null && result.InvoiceStatus != null && result.InvoiceStatus != "")
                     {
-                        if (result.InvoiceStatus != null && result.InvoiceStatus != "")
-                        {
-                            await UpdatePaymentRequestStatus(reconcilePayment, result);
-                        }
+                        await UpdatePaymentRequestStatus(reconcilePayment, result);
                     }
-
                 }
             };
 
@@ -194,8 +189,8 @@ namespace Unity.Payments.PaymentRequests
                     }
                     catch (Exception ex)
                     {
-                        string exceptionMessage = ex.Message;
-                        Logger.LogInformation(ex, "UpdatePaymentRequestStatus: Error updating payment request: {exceptionMessage}", exceptionMessage);
+                        string ExceptionMessage = ex.Message;
+                        Logger.LogInformation(ex, "UpdatePaymentRequestStatus: Error updating payment request: {ExceptionMessage}", ExceptionMessage);
                     }
                 }
             }

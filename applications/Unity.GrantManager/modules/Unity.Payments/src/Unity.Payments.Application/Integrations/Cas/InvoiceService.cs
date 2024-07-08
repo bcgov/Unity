@@ -14,7 +14,6 @@ using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
 using Unity.Payments.Codes;
 using System.Net.Http;
-using Microsoft.AspNetCore.Http;
 
 
 namespace Unity.Payments.Integrations.Cas
