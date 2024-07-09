@@ -15,8 +15,9 @@
     <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
 }
 <form method="post" asp-page-handler="OnPostAsync" id="worksheetInfo">
-    <abp-input type="hidden" id="WorksheetId" asp-for="@Model.Id" />
+    <abp-input type="hidden" id="WorksheetId" asp-for="@Model.WorksheetId" />
     <abp-input type="hidden" id="UpsertAction" asp-for="@Model.UpsertAction" />
+    <abp-input type="hidden" id="DeleteAction" asp-for="@Model.IsDelete" />
     <abp-modal size="Large" id="worksheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="@Model.UpsertAction.ToString()"></abp-modal-header>
         <abp-modal-body>
@@ -30,11 +31,11 @@
             </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" class="btn btn-primary" name="saveWorksheet" value="save">@AbpModalButtons.Save</button>
+            <button type="submit" class="btn btn-primary" name="saveWorksheetBtn" value="save">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
             @if (Model.UpsertAction == WorksheetUpsertAction.Update && !Model.Published)
             {
-                <button type="submit" class="btn btn-danger" name="deleteWorksheet" value="delete">Delete</button>
+                <button type="button" class="btn btn-danger" name="deleteWorksheetBtn" value="delete" onclick="deleteWorksheet()">Delete</button>
             }
         </abp-modal-footer>
     </abp-modal>
@@ -49,5 +50,23 @@
         let dest = $('#worksheetName');
         let name = src.val().toLowerCase().trim() + '-v1';
         dest.val(name.replace(/\s+/g, ""));
+    }
+
+    function deleteWorksheet() {
+        Swal.fire({
+            title: "Delete Worksheet?",
+            text: 'Are you sure you want to delete this worksheet?',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#DeleteAction').val(true);
+                $('#worksheetInfo').submit();
+            }
+        });
     }
 </script>

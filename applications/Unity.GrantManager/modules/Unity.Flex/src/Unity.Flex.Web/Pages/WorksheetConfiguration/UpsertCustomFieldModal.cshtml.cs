@@ -10,16 +10,17 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 
 namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
 public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppService,
-    IWorksheetSectionAppService worksheetSectionAppService) : FlexPageModel
+    IWorksheetSectionAppService worksheetSectionAppService,
+    IWorksheetListAppService worksheetListAppService) : FlexPageModel
 {
-    [BindProperty]
-    public Guid Id { get; set; }
-
     [BindProperty]
     public Guid WorksheetId { get; set; }
 
     [BindProperty]
     public Guid SectionId { get; set; }
+
+    [BindProperty]
+    public Guid? FieldId { get; set; }
 
     [DisplayName("Name")]
     [BindProperty]
@@ -41,7 +42,13 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     public string? Definition { get; set; }
 
     [BindProperty]
+    public bool Published { get; set; }
+
+    [BindProperty]
     public WorksheetUpsertAction UpsertAction { get; set; }
+
+    [BindProperty]
+    public bool IsDelete { get; set; }
 
     [SelectItems(nameof(FieldTypes))]
     [Required]
@@ -59,22 +66,41 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
         if (UpsertAction == WorksheetUpsertAction.Update)
         {
             CustomFieldDto customField = await customFieldAppService.GetAsync(fieldId);
+            var worksheet = await worksheetListAppService.GetAsync(worksheetId);
+
             Field = customField.Field;
             Label = customField.Label;
-            Id = fieldId;
+            FieldId = fieldId;
+            Published = worksheet.Published;
         }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        switch (UpsertAction)
+        var delete = Request.Form["deleteCustomFieldBtn"];
+        var save = Request.Form["saveCustomFieldBtn"];
+
+        if (delete == "delete" || IsDelete)
         {
-            case WorksheetUpsertAction.Insert:
-                return MapModalResponse(await InsertCustomField());
-            case WorksheetUpsertAction.Update:
-                return MapModalResponse(await UpdateCustomField());
-            default:
-                break;
+            await customFieldAppService.DeleteAsync(FieldId!.Value);
+            return new OkObjectResult(new ModalResponse()
+            {
+                CustomFieldId = FieldId!.Value,
+                WorksheetId = WorksheetId,
+                Action = "Delete"
+            });
+        }
+        else if (save == "save")
+        {
+            switch (UpsertAction)
+            {
+                case WorksheetUpsertAction.Insert:
+                    return MapModalResponse(await InsertCustomField());
+                case WorksheetUpsertAction.Update:
+                    return MapModalResponse(await UpdateCustomField());
+                default:
+                    break;
+            }
         }
 
         return NoContent();
@@ -93,7 +119,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
 
     private async Task<CustomFieldDto> UpdateCustomField()
     {
-        return await customFieldAppService.EditAsync(Id, new EditCustomFieldDto()
+        return await customFieldAppService.EditAsync(FieldId!.Value, new EditCustomFieldDto()
         {
             Definition = null, // use default definition
             Label = Label!,
@@ -139,5 +165,6 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     {
         public Guid WorksheetId { get; set; }
         public Guid CustomFieldId { get; set; }
+        public string Action { get; set; } = string.Empty;
     }
 }

@@ -11,7 +11,6 @@ using Volo.Abp.DependencyInjection;
 using RestSharp;
 using Unity.GrantManager.Integration.Css;
 using RestSharp.Authenticators;
-using Unity.Notifications.Integration.Ches;
 using Unity.Notifications.Integrations.Http;
 
 namespace Unity.Notifications.Integrations.Ches
@@ -34,7 +33,21 @@ namespace Unity.Notifications.Integrations.Ches
 
         }
 
-        public async Task SendAsync(Object emailRequest)
+        public async Task<RestResponse> HealthCheckAsync()
+        {
+            // Ches Tokens Expire Immediately After use but we could use bulk send
+            var tokenResponse = await GetAccessTokenAsync();
+            var resource = $"{_chesClientOptions.Value.ChesUrl}/health";
+            var authHeaders = new Dictionary<string, string>
+            {
+               { "Authorization", $"Bearer {tokenResponse.AccessToken}" }
+            };
+
+            var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
+            return response;
+        }
+
+        public async Task<RestResponse> SendAsync(Object emailRequest)
         {
             // Ches Tokens Expire Immediately After use but we could use bulk send
             var tokenResponse = await GetAccessTokenAsync();
@@ -45,11 +58,7 @@ namespace Unity.Notifications.Integrations.Ches
             };
    
             var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, emailRequest);
-
-            if (response != null && response.ErrorMessage != null)
-            {
-               throw new UserFriendlyException("ChesClientService SendAsync Exception: " + response.ErrorMessage);
-            }
+            return response;
         }
 
         private async Task<TokenValidationResponse> GetAccessTokenAsync()

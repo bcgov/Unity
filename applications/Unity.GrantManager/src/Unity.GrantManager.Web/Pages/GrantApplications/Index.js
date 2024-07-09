@@ -44,7 +44,7 @@
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
-        15,
+        10,
         4,
         unity.grantManager.grantApplications.grantApplication.getList,
         {},
@@ -143,6 +143,8 @@
             getSigningAuthorityEmailColumn(),
             getSigningAuthorityBusinessPhoneColumn(),
             getSigningAuthorityCellPhoneColumn(),
+            getPlaceColumn(),
+            getRiskRankingColumn(),
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -885,6 +887,31 @@
                 return data ?? '';
             },
             index: 53
+        }
+    }
+    function getPlaceColumn() {
+        return {
+            title: 'Place',
+            name: 'place',
+            data: 'place',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 54
+        }
+    }
+
+    function getRiskRankingColumn() {
+        return {
+            title: 'Risk Ranking',
+            name: 'riskranking',
+            data: 'riskRanking',
+            className: 'data-table-header',
+            render: function (data) {
+                return titleCase(data ?? '') ?? '';
+            },
+            index: 55
         }
     }
 

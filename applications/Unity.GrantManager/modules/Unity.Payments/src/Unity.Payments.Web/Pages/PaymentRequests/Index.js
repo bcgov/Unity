@@ -92,7 +92,7 @@ $(function () {
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
 
@@ -329,7 +329,7 @@ $(function () {
             className: 'data-table-header',
             index: 12,
             render: function (data) {
-                if(data+"" !== "undefined" && data.length > 0) {
+                if(data+"" !== "undefined" && data?.length > 0) {
                     return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return  '{Not Available}';

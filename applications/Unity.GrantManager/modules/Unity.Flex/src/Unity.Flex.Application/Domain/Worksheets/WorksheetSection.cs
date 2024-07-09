@@ -63,5 +63,11 @@ namespace Unity.Flex.Domain.Worksheets
             Order = order;
             return this;
         }
+
+        public WorksheetSection RemoveField(CustomField field)
+        {
+            Fields.Remove(field);
+            return this;
+        }
     }
 }

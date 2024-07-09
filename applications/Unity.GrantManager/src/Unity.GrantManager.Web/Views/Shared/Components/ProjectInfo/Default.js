@@ -144,9 +144,11 @@
         (msg, data) => {
             if (data.RequestedAmount) {
                 $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
+                $('#RequestedAmountInputPI').maskMoney('mask');
             }
             if (data.TotalProjectBudget) {
                 $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
+                $('#TotalBudgetInputPI').maskMoney('mask');
             }
         }
     );
