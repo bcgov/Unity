@@ -137,7 +137,7 @@ function setTableHeighDynamic(tableName) {
 
 function getSelectColumn(title) {
     return {
-        title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter"></span>',
+        title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter-heading"></span>',
         orderable: false,
         className: 'notexport text-center',
         data: 'rowCount',
@@ -175,8 +175,7 @@ function initializeFilterButtonPopover(iDt) {
                     </div>
                   `,
         content: function () {
-            const isChecked = $(".tr-toggle-filter").is(':visible') ||
-                UIElements.btnToggleFilter.text() === FilterDesc.With_Filter;
+            const isChecked = $(".tr-toggle-filter").is(':visible');
             return `
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="showFilter" ${isChecked ? 'checked' : ''}>
@@ -188,7 +187,7 @@ function initializeFilterButtonPopover(iDt) {
         placement: 'bottom'
     });
 
-    UIElements.btnToggleFilter.on('click', toggleFilterRow);
+    
 
     UIElements.btnToggleFilter.on('shown.bs.popover', function () {
         const searchElement = $('#search');
@@ -196,9 +195,7 @@ function initializeFilterButtonPopover(iDt) {
         const popoverElement = $('.popover.custom-popover');
         const customFilterElement = $('.custom-filter-input');
 
-        if ($(this).text() === FilterDesc.With_Filter) {
-            trToggleElement.toggle(true);
-        }
+       
 
         popoverElement.find('#showFilter').on('click', () => {
             trToggleElement.toggle();
@@ -333,7 +330,7 @@ function updateFilter(dt, dtName, filterData) {
                     newCell.find("input").on("keyup", function () {
                         if (column.search() !== this.value) {
                             column.search(this.value).draw();
-                            updateFilterButton(filterData);
+                            updateFilterButton(dt);
                         }
                     });
 
@@ -346,7 +343,7 @@ function updateFilter(dt, dtName, filterData) {
             }
         });
 
-    updateFilterButton(filterData);
+    updateFilterButton(dt);
 
     $(`#${dtName} thead`).after(newRow);
 
@@ -366,8 +363,16 @@ function searchFilter(iDt) {
     }
 }
 
-function updateFilterButton(filterData) {
+function updateFilterButton(dt) {
     let searchValue = $('#search').val();
-    let hasFilter = Object.values(filterData).some(value => value !== '') || searchValue !== '';
+    let columnFiltersApplied = false;
+    dt.columns().every(function () {
+        let search = this.search();
+        if (search) {
+            columnFiltersApplied = true;
+        }
+    });
+
+    let hasFilter = columnFiltersApplied || searchValue !== '';
     $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
 }

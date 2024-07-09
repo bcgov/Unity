@@ -486,7 +486,7 @@ tr.filter th.sorting_asc:after {
     top: 4px;
 }
 
-th #btn-toggle-filter {
+th #btn-toggle-filter-heading {
     display: none;
 }
 
