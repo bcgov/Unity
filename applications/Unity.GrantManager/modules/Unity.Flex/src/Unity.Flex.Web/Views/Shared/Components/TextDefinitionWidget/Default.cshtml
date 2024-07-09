@@ -1,0 +1,15 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget;
+@using Unity.Flex.Worksheets.Definitions;
+
+@model TextDefinitionViewModel;
+
+<abp-row class="m-0 p-0">
+    <abp-column size="_12" class="px-1">
+        <abp-input asp-for="@Model.MinLength" />
+    </abp-column>
+    <abp-column size="_12" class="px-1">
+        <abp-input asp-for="@Model.MaxLength" />
+    </abp-column>
+</abp-row>
+

@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DateWidget
 {
     [ViewComponent(Name = "DateWidget")]
     [Widget(
-        RefreshUrl = "Widgets/Date/Refresh",
+        RefreshUrl = "../Flex/Widgets/Date/Refresh",
         ScriptTypes = [typeof(DateWidgetScriptBundleContributor)],
         StyleTypes = [typeof(DateWidgetStyleBundleContributor)],
         AutoInitialize = true)]

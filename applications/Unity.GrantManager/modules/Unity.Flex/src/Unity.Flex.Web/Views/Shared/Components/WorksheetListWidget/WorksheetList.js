@@ -44,7 +44,7 @@ $(function () {
     }
 
     addWorksheetModal.onResult(function (result, response) {
-        PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
+        PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });        
         abp.notify.success(
             'Operation completed successfully.',
             response.responseText.action + ' Worksheet'
@@ -66,8 +66,10 @@ $(function () {
         fetch(url)
             .then(response => response.text())
             .then(data => {
-                document.getElementById('worksheet-info-widget-list').innerHTML = data;
-                PubSub.publish('worksheet_list_refreshed');
+                document.getElementById('worksheet-info-widget-list').innerHTML = data;   
+                setTimeout(() => {
+                    PubSub.publish('worksheet_list_refreshed');
+                }, 100);
             })
             .catch(error => {
                 console.error('Error refreshing worksheet-info-list-widget:', error);
@@ -169,16 +171,17 @@ $(function () {
 
     PubSub.subscribe(
         'refresh_worksheet_list',
-        () => {
+        () => {            
             refreshWorksheetListWidget();
             makeSectionsAndFieldsSortable();
-            updatePreview();
+            updatePreview();            
         }
     );
 
     PubSub.subscribe(
         'worksheet_list_refreshed',
         () => {
+            console.log('ws list');
             bindActionButtons();
             makeSectionsAndFieldsSortable();
             updatePreview();

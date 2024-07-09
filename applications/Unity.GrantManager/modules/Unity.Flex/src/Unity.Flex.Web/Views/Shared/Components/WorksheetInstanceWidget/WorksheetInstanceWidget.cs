@@ -13,9 +13,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
 
-[ViewComponent(Name = "WorksheetInstanceWidget")]
 [Widget(
-        RefreshUrl = "Widgets/WorksheetInstance/Refresh",
+        RefreshUrl = "../Flex/Widgets/WorksheetInstance/Refresh",
         ScriptTypes = [typeof(WorksheetInstanceWidgetScriptBundleContributor)],
         StyleTypes = [typeof(WorksheetInstanceWidgetStyleBundleContributor)],
         AutoInitialize = true)]

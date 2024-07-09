@@ -8,9 +8,8 @@ using System.Collections.Generic;
 
 namespace Unity.Flex.Web.Views.Shared.Components.SelectListWidget
 {
-    [ViewComponent(Name = "SelectListWidget")]
     [Widget(
-        RefreshUrl = "Widgets/SelectList/Refresh",
+        RefreshUrl = "../Flex/Widgets/SelectList/Refresh",
         ScriptTypes = [typeof(SelectListWidgetScriptBundleContributor)],
         StyleTypes = [typeof(SelectListWidgetStyleBundleContributor)],
         AutoInitialize = true)]

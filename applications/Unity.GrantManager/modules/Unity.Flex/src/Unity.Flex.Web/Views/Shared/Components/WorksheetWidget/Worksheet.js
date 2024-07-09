@@ -125,7 +125,7 @@ $(function () {
     });
 
     function refreshWorksheetInfoWidget(worksheetId) {
-        const url = `../Flex/Widget/Worksheet/Refresh?worksheetId=${worksheetId}`;
+        const url = `../Flex/Widgets/Worksheet/Refresh?worksheetId=${worksheetId}`;
         fetch(url)
             .then(response => response.text())
             .then(data => {
@@ -175,6 +175,7 @@ $(function () {
     PubSub.subscribe(
         'worksheet_list_refreshed',
         () => {
+            console.log('ws item');
             bindActionButtons();
         }
     );

@@ -6,13 +6,14 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using Unity.Flex.Worksheets;
 using System.Linq;
+using Unity.Flex.Web.Views.Shared.Components.Worksheets;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetList;
 
 [Widget(
-    RefreshUrl = "Widget/WorksheetList/Refresh",
-    ScriptTypes = [typeof(WorksheetListWidgetScriptBundleContributor)],
-    StyleTypes = [typeof(WorksheetListWidgetStyleBundleContributor)],
+    RefreshUrl = "../Flex/Widgets/WorksheetList/Refresh",
+    ScriptTypes = [typeof(WorksheetListWidgetScriptBundleContributor), typeof(WorksheetWidgetScriptBundleContributor)],
+    StyleTypes = [typeof(WorksheetListWidgetStyleBundleContributor), typeof(WorksheetWidgetStyleBundleContributor)],
     AutoInitialize = true)]
 public class WorksheetListWidget(IWorksheetAppService worksheetAppService) : AbpViewComponent
 {
