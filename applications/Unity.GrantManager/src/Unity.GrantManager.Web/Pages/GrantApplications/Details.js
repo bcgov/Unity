@@ -40,7 +40,7 @@ $(function () {
                 form.submission = submissionData.submission.submission;
                 form.resetValue();
                 form.refresh();
-                form.on('render', function() {
+                form.on('render', function () {
                     addEventListeners();
                     storeRenderedHtml();
                 });
@@ -59,7 +59,7 @@ $(function () {
                 data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
                 contentType: "application/json",
                 type: "POST",
-            success: function (data) {
+                success: function (data) {
                     console.log(data);
                 },
                 error: function () {
@@ -347,19 +347,19 @@ $(function () {
     );
 
     // custom fields
-    $('body').on('click', '.custom-tab-save', function (event) {        
+    $('body').on('click', '.custom-tab-save', function (event) {
         let id = $(this).attr('id');
         let uiAnchor = $(this).attr('data-ui-anchor');
         let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
         let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
         let formId = decodeURIComponent($("#ApplicationFormId").val());
-        let formData = $(`#${formDataName}`).serializeArray();        
+        let formData = $(`#${formDataName}`).serializeArray();
         let customFormObj = {};
 
         $.each(formData, function (_, input) {
             customFormObj[input.name] = input.value;
         });
-        
+
         $(`#${formDataName} input:checkbox`).each(function () {
             customFormObj[this.name] = (this.checked).toString();
         });
@@ -369,9 +369,15 @@ $(function () {
 
     PubSub.subscribe(
         'fields_tab',
-        (_, fieldId) => {
-            let saveBtn = $(`#save_${fieldId.split('.')[1]}_btn`);
-            saveBtn.prop('disabled', false);
+        (_, data) => {                 
+            let formDataName = data.worksheet + '_form';
+            let formValid = $(`form#${formDataName}`).valid();               
+            let saveBtn = $(`#save_${data.worksheet}_btn`);
+            if (formValid) {                
+                saveBtn.prop('disabled', false);
+            } else {
+                saveBtn.prop('disabled', true);
+            }
         }
     );
 });
@@ -385,7 +391,7 @@ function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId
         uiAnchor: uiAnchor,
         customFields: customFormObj,
         formDataName: formDataName
-    }     
+    }
 
     $(`#${saveId}`).prop('disabled', true);
     unity.flex.worksheetInstances.worksheetInstance.update(customFormUpdate)
@@ -393,23 +399,23 @@ function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId
             abp.notify.success(
                 'Information has been updated.'
             );
-        });        
+        });
 }
 
 // custom fields
-function notifyFieldChange(_, uianchor, field) {
+function notifyFieldChange(worksheet, uianchor, field) {
     let value = document.getElementById(field.id).value;
     let anchor = uianchor.toLowerCase();
     if (PubSub) {
         if (isKnownAnchor(anchor)) {
             PubSub.publish('fields_' + anchor, value);
         } else {
-            PubSub.publish('fields_tab', field.id);
+            PubSub.publish('fields_tab', { worksheet: worksheet, fieldId: field.id });
         }
     }
 }
 
-function isKnownAnchor(anchor) {    
+function isKnownAnchor(anchor) {
     if (anchor === 'projectinfo'
         || anchor === 'applicantinfo'
         || anchor === 'assessmentinfo') {

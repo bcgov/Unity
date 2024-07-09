@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxWidget
 {
     [ViewComponent(Name = "CheckboxWidget")]
     [Widget(
-        RefreshUrl = "Widgets/Checkbox/Refresh",
+        RefreshUrl = "../Flex/Widgets/Checkbox/Refresh",
         ScriptTypes = [typeof(CheckboxWidgetScriptBundleContributor)],
         StyleTypes = [typeof(CheckboxWidgetStyleBundleContributor)],
         AutoInitialize = true)]

@@ -9,7 +9,7 @@ using System;
 namespace Unity.Flex.Web.Views.Shared.Components.Worksheets;
 
 [Widget(
-    RefreshUrl = "Widget/LinkWorksheet/Refresh",
+    RefreshUrl = "../Flex/Widget/LinkWorksheet/Refresh",
     ScriptTypes = [typeof(LinkWorksheetWidgetScriptBundleContributor)],
     StyleTypes = [typeof(LinkWorksheetWidgetStyleBundleContributor)],
     AutoInitialize = true)]

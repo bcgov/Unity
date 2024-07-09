@@ -55,7 +55,7 @@ namespace Unity.Flex.Worksheets
                     newWorksheet
                         .Sections[^1]
                         .AddField(new CustomField(Guid.NewGuid(),
-                            field.Field,
+                            field.Key,
                             newWorksheet.Name,
                             field.Label,
                             field.Type,
