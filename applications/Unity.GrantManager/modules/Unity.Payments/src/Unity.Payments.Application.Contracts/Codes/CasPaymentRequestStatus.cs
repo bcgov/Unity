@@ -1,6 +1,6 @@
 ﻿namespace Unity.Payments.Codes
 {
-    public class CasPaymentRequestStatus
+    public static class CasPaymentRequestStatus
     {
         // Unity Status
         public const string SentToCas = "SentToCas";

@@ -73,7 +73,7 @@ namespace Unity.Payments.Integrations.Http
             return await ExecuteRequestAsync(httpVerb, resource, null, authToken);
         }
 
-        public async Task<HttpResponseMessage> HttpAsync(HttpMethod httpVerb, string resource, string? body, string? authToken = null)
+        public async Task<HttpResponseMessage> HttpAsyncWithBody(HttpMethod httpVerb, string resource, string? body = "", string? authToken = null)
         {
             return await ExecuteRequestAsync(httpVerb, resource, body, authToken);
         }
@@ -115,7 +115,7 @@ namespace Unity.Payments.Integrations.Http
                     requestMessage.Content = new StringContent(body, Encoding.UTF8, "application/json");
                 }
 
-                restResponse = await _pipeline.ExecuteAsync(async ct => await httpClient.SendAsync(requestMessage));
+                restResponse = await _pipeline.ExecuteAsync(async ct => await httpClient.SendAsync(requestMessage, ct));
             }
             catch (Exception ex)
             {

@@ -100,8 +100,8 @@ namespace Unity.Payments.Integrations.Cas
             }
             catch (Exception ex)
             {
-                string exceptionMessage = ex.Message;
-                Logger.LogInformation(ex, "Token Service Exception: {exceptionMessage}", exceptionMessage);
+                string ExceptionMessage = ex.Message;
+                Logger.LogInformation(ex, "Token Service Exception: {ExceptionMessage}", ExceptionMessage);
             }
 
             return tokenResponse;

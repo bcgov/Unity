@@ -6,7 +6,7 @@ namespace Unity.Payments.Integrations.Http
 {
     public interface IResilientHttpRequest : IApplicationService
     {
-        Task<HttpResponseMessage> HttpAsync(HttpMethod httpVerb, string resource, string? body = null, string? authToken = null);
+        Task<HttpResponseMessage> HttpAsyncWithBody(HttpMethod httpVerb, string resource, string? body = null, string? authToken = null);
         Task<HttpResponseMessage> HttpAsync(HttpMethod httpVerb, string resource, string? authToken = null);
     }
 }
