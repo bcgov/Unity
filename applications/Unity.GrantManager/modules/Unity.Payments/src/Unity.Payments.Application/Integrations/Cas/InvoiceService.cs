@@ -134,7 +134,7 @@ namespace Unity.Payments.Integrations.Cas
             string jsonString = JsonSerializer.Serialize(casAPInvoice);
             var authToken = await _iTokenService.GetAuthTokenAsync();
             var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/";						
-            var response = await _resilientRestClient.HttpAsyncWithBody(HttpMethod.Post, resource,jsonString, authToken);
+            var response = await _resilientRestClient.HttpAsyncWithBody(HttpMethod.Post, resource, jsonString, authToken);
 
             if (response != null)
             {

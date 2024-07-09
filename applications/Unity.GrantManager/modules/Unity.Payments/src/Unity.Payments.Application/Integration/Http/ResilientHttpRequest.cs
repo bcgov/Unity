@@ -73,7 +73,7 @@ namespace Unity.Payments.Integrations.Http
             return await ExecuteRequestAsync(httpVerb, resource, null, authToken);
         }
 
-        public async Task<HttpResponseMessage> HttpAsyncWithBody(HttpMethod httpVerb, string resource, string? body = "", string? authToken = null)
+        public async Task<HttpResponseMessage> HttpAsyncWithBody(HttpMethod httpVerb, string resource, string? body = null, string? authToken = null)
         {
             return await ExecuteRequestAsync(httpVerb, resource, body, authToken);
         }
