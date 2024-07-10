@@ -90,25 +90,25 @@ else
                 <div class="scores-block">
                     <div class="scores-block-left">
                         <div class="scores-block-score">
-                            <label class="form-label" for="sectionScore1">Section Score 1</label>
-                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="SectionScore1" id="sectionScore1" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.SectionScore1" />
+                            <label class="form-label" for="financialAnalysis">Financial Analysis</label>
+                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="FinancialAnalysis" id="financialAnalysis" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.FinancialAnalysis" />
                         </div>
 
                         <div class="scores-block-score">
-                            <label class="form-label" for="sectionScore3">Section Score 3</label>
-                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="SectionScore3" id="sectionScore3" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.SectionScore3" />
+                            <label class="form-label" for="inclusiveGrowth">Inclusive Growth</label>
+                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="InclusiveGrowth" id="inclusiveGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.InclusiveGrowth" />
                         </div>
                     </div>
 
                     <div class="scores-block-right">
                         <div class="scores-block-score">
-                            <label class="form-label" for="sectionScore2">Section Score 2</label>
-                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="SectionScore2" id="sectionScore2" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.SectionScore2" />
+                            <label class="form-label" for="economicImpact">Economic Impact</label>
+                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="EconomicImpact" id="economicImpact" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.EconomicImpact" />
                         </div>
 
                         <div class="scores-block-score">
-                            <label class="form-label" for="SectionScore4">Section Score 4</label>
-                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="SectionScore4" id="sectionScore4" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.SectionScore4" />
+                            <label class="form-label" for="CleanGrowth">Clean Growth</label>
+                            <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
                         </div>
                     </div>
                 </div>

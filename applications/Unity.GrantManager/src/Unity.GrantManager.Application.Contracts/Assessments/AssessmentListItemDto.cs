@@ -21,9 +21,9 @@ public class AssessmentListItemDto
     
     public double SubTotal {  get; set; }
 
-    public int? SectionScore1 { get; set; }
-    public int? SectionScore2 { get; set; }
-    public int? SectionScore3 { get; set; }
-    public int? SectionScore4 { get; set; }
+    public int? FinancialAnalysis { get; set; }
+    public int? EconomicImpact { get; set; }
+    public int? InclusiveGrowth { get; set; }
+    public int? CleanGrowth { get; set; }
 
 }
