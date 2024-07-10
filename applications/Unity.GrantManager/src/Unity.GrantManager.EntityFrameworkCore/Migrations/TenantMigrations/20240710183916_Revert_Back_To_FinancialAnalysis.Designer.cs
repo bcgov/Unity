@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240710183916_Revert_Back_To_FinancialAnalysis")]
+    partial class Revert_Back_To_FinancialAnalysis
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -512,10 +515,24 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
@@ -572,15 +589,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("IsDeleted");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("Label")
                         .IsRequired()
@@ -669,9 +686,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<bool>("Published")
-                        .HasColumnType("boolean");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -1143,9 +1157,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<decimal>("RequestedAmount")
                         .HasColumnType("numeric");
-
-                    b.Property<string>("RiskRanking")
-                        .HasColumnType("text");
 
                     b.Property<string>("SigningAuthorityBusinessPhone")
                         .HasColumnType("text");
@@ -1911,9 +1922,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("AssessorId")
                         .HasColumnType("uuid");
 
-                    b.Property<int?>("CleanGrowth")
-                        .HasColumnType("integer");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1929,9 +1937,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<int?>("EconomicImpact")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -1941,9 +1946,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnName("ExtraProperties");
 
                     b.Property<int?>("FinancialAnalysis")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("InclusiveGrowth")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsComplete")
@@ -1956,6 +1958,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<int?>("SectionScore2")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SectionScore3")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SectionScore4")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -2215,114 +2226,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.ToTable("Intakes", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.Notifications.Emails.EmailLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AssessmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("BCC")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("BodyType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("CC")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("ChesMsgId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ChesResponse")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ChesStatus")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("FromAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("RetryAttempts")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("SendOnDateTime")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<DateTime?>("SentDateTime")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Tag")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.Property<string>("ToAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("EmailLogs", "Notifications");
                 });
 
             modelBuilder.Entity("Unity.Payments.Domain.PaymentConfigurations.PaymentConfiguration", b =>
