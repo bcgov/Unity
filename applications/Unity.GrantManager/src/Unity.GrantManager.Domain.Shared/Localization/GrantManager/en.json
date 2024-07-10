@@ -89,10 +89,10 @@
     "ReviewerList:EndDate": "End Date",
     "ReviewerList:Status": "Status",
     "ReviewerList:Recommended": "Recommendation",
-    "ReviewerList:SectionScore1": "Section Score 1",
-    "ReviewerList:SectionScore2": "Section Score 2",
-    "ReviewerList:SectionScore3": "Section Score 3",
-    "ReviewerList:SectionScore4": "Section Score 4",
+    "ReviewerList:FinancialAnalysis": "Financial Analysis",
+    "ReviewerList:EconomicImpact": "Economic Impact",
+    "ReviewerList:InclusiveGrowth": "Inclusive Growth",
+    "ReviewerList:CleanGrowth": "Clean Growth",
     "ReviewerList:Subtotal": "Subtotal",
 
     "AssessmentResultAttachments:Id": "#",
@@ -318,7 +318,7 @@
     "ApplicationContact:Email": "Email",
     "ApplicationContact:MobilePhone": "Mobile Phone Number",
     "ApplicationContact:WorkPhone": "Work Phone Number",
-    "ApplicationContact:Delete": "Delete This Contact",
+    "ApplicationContact:Delete": "Delete This Contact"
   }
 }
 
