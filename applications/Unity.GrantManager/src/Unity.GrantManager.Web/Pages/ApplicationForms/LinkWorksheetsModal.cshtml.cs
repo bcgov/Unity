@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetLinks;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Flex;
@@ -14,7 +15,7 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     IWorksheetLinkAppService worksheetLinkAppService) : GrantManagerPageModel
 {
     [BindProperty]
-    public Guid FormId { get; set; }
+    public Guid FormVersionId { get; set; }
 
     [BindProperty]
     public string? FormName { get; set; }
@@ -49,12 +50,12 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     [BindProperty]
     public List<WorksheetLinkDto>? CustomTabLinks { get; set; }
 
-    public async Task OnGetAsync(Guid formId, string formName)
+    public async Task OnGetAsync(Guid formVersionId, string formName)
     {
-        FormId = formId;
+        FormVersionId = formVersionId;
         FormName = formName;
 
-        WorksheetLinks = await worksheetLinkAppService.GetListByCorrelationAsync(formId, CorrelationConsts.Form);
+        WorksheetLinks = await worksheetLinkAppService.GetListByCorrelationAsync(formVersionId, CorrelationConsts.FormVersion);
 
         PublishedWorksheets = [.. (await worksheetListAppService.GetListAsync())
             .Where(s => s.Published && !WorksheetLinks.Select(s => s.WorksheetId).Contains(s.Id))
@@ -100,12 +101,12 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
             }
         }
 
-        _ = await worksheetLinkAppService.UpdateWorksheetLinksAsync(FormId, CorrelationConsts.Form, new UpdateWorksheetLinksDto()
+        _ = await worksheetLinkAppService.UpdateWorksheetLinksAsync(FormVersionId, CorrelationConsts.FormVersion, new UpdateWorksheetLinksDto()
         {
             WorksheetAnchors = tabLinks
         });
 
-        return NoContent();
+        return new OkObjectResult(new { FormVersionId });
     }
 }
 

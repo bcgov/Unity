@@ -30,6 +30,7 @@ using Unity.Flex.WorksheetInstances;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Flex;
 using Unity.Payments.Integrations.Cas;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -287,8 +288,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
 
-        await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.AssessmentInfoUiAnchor, input.CustomFields);
-        
+        await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, FlexConsts.AssessmentInfoUiAnchor, input.CustomFields);
+
         await _applicationRepository.UpdateAsync(application);
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
@@ -344,7 +345,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
 
-            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.ProjectInfoUiAnchor, input.CustomFields);
+            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, FlexConsts.ProjectInfoUiAnchor, input.CustomFields);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -429,7 +430,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
             application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
 
-            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.ApplicantInfoUiAnchor, input.CustomFields);
+            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, FlexConsts.ApplicantInfoUiAnchor, input.CustomFields);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -451,22 +452,32 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid instanceCorrelationId,
         string instanceCorrelationProvider,
-        Guid sheetCorrelationId,
-        string sheetCorrelationProvider,
         string uiAnchor,
         dynamic? customFields)
     {
         if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+            var applicationFormSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(instanceCorrelationId);
+            JObject submission = JObject.Parse(applicationFormSubmission.Submission);
+            JToken? tokenFormVersionId = submission.SelectToken("submission.formVersionId");
+            Guid applicationFormVersionId = Guid.Parse(tokenFormVersionId?["formVersionId"]?.ToString() ?? string.Empty);
+
+            if (applicationFormVersionId != Guid.Empty)
             {
-                InstanceCorrelationId = instanceCorrelationId,
-                InstanceCorrelationProvider = instanceCorrelationProvider,
-                SheetCorrelationId = sheetCorrelationId,
-                SheetCorrelationProvider = sheetCorrelationProvider,
-                UiAnchor = uiAnchor,
-                CustomFields = customFields
-            });
+                await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+                {
+                    InstanceCorrelationId = instanceCorrelationId,
+                    InstanceCorrelationProvider = instanceCorrelationProvider,
+                    SheetCorrelationId = applicationFormVersionId,
+                    SheetCorrelationProvider = CorrelationConsts.FormVersion,
+                    UiAnchor = uiAnchor,
+                    CustomFields = customFields
+                });
+            }
+            else
+            {
+                Logger.LogError("Unable to resolve for version");
+            }
         }
     }
 

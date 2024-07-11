@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Intakes
         ILocalEventBus localEventBus) : DomainService
     {
         public async Task MapAndPersistCustomFields(Guid applicationId,
-            Guid formId,
+            Guid formVersionId,
             dynamic formSubmission,
             string? formVersionSubmissionHeaderMapping)
         {
@@ -59,8 +59,8 @@ namespace Unity.GrantManager.Intakes
 
                 await localEventBus.PublishAsync(new CreateWorksheetInstanceByFieldValuesEto()
                 {
-                    SheetCorrelationId = formId,
-                    SheetCorrelationProvider = CorrelationConsts.Form,
+                    SheetCorrelationId = formVersionId,
+                    SheetCorrelationProvider = CorrelationConsts.FormVersion,
                     InstanceCorrelationId = applicationId,
                     InstanceCorrelationProvider = CorrelationConsts.Application,
                     CustomFields = customIntakeValues

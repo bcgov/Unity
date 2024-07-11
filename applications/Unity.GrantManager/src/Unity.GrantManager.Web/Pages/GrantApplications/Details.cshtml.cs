@@ -16,6 +16,8 @@ using Volo.Abp.Features;
 using System.Linq;
 using Unity.GrantManager.Flex;
 using Unity.Flex.WorksheetLinks;
+using Newtonsoft.Json.Linq;
+using Unity.GrantManager.ApplicationForms;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
 {
@@ -24,6 +26,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
         private readonly IWorksheetLinkAppService _worksheetLinkAppService;
+        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
         private readonly IFeatureChecker _featureChecker;
 
         [BindProperty(SupportsGet = true)]
@@ -38,6 +41,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public Guid ApplicationFormVersionId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationFormId { get; set; }
@@ -68,12 +74,14 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? CurrentUserName { get; set; }
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
+        public Guid ChefsFormVersionId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public List<BoundWorksheet> CustomTabs { get; set; } = [];
 
         public DetailsModel(GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
+            IApplicationFormVersionAppService applicationFormVersionAppService,
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration)
@@ -81,6 +89,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             _grantApplicationAppService = grantApplicationAppService;
             _worksheetLinkAppService = worksheetLinkAppService;
             _featureChecker = featureChecker;
+            _applicationFormVersionAppService = applicationFormVersionAppService;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
@@ -92,9 +101,14 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
-            {
-                // TODO: worksheet instance check?
-                var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(applicationFormSubmission.ApplicationFormId, CorrelationConsts.Form);
+            {                
+                // Need to look at finding another way to extract / store this info on intake
+                JObject submission = JObject.Parse(applicationFormSubmission.Submission);
+                JToken? tokenFormVersionId = submission.SelectToken("submission.formVersionId");
+                ChefsFormVersionId = Guid.Parse(tokenFormVersionId?["formVersionId"]?.ToString() ?? string.Empty);
+
+                var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionId);
+                var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
                 var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor }).ToList();
 
                 foreach (var tab in tabs)

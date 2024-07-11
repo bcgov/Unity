@@ -52,6 +52,7 @@
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+<input type="hidden" id="ChefsFormVersionId" value="@Model.ChefsFormVersionId" />
 @functions
 {
     public string GetInitials(string name)
@@ -99,7 +100,7 @@
                 @*-------- Review & Assessment Section ---------*@
                 <abp-tab name="nav-review-and-assessment" title="Review & Assessment">
                     <div class="w-100 px-2" id="assessmentResultWidget">
-                        @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId })
+                        @await Component.InvokeAsync("AssessmentResults", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                     </div>
                     <div class="w-100 px-2" id="assessmentMainView">
                         @await Component.InvokeAsync("ReviewList")
@@ -126,7 +127,7 @@
                 @*-------- Project Info Section ---------*@
                 <abp-tab name="nav-project-info" title="Project Info">
                     <div class="w-100 px-2" id="assessmentResultWidget">
-                        @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId })
+                        @await Component.InvokeAsync("ProjectInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                     </div>
                 </abp-tab>
                 @*-------- Project Info Section END ---------*@
@@ -134,7 +135,7 @@
                 @*-------- Applicant Info Section ---------*@
                 <abp-tab name="nav-organization-info" title="Applicant Info">
                     <div class="w-100 px-2" id="ApplicantInfoWidget">
-                        @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId })
+                        @await Component.InvokeAsync("ApplicantInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                     </div>
                 </abp-tab>
                 @*-------- Applicant Info Section END ---------*@
@@ -164,8 +165,8 @@
                                 {
                                     instanceCorrelationId = Model.ApplicationId,
                                     instanceCorrelationProvider = CorrelationConsts.Application,
-                                    sheetCorrelationId = Model.ApplicationFormId,
-                                    sheetCorrelationProvider = CorrelationConsts.Form,
+                                    sheetCorrelationId = Model.ApplicationFormVersionId,
+                                    sheetCorrelationProvider = CorrelationConsts.FormVersion,
                                     uiAnchor = customTab.UiAnchor,
                                     name = customTab.Worksheet?.Name,
                                     title = customTab.Worksheet?.Title,

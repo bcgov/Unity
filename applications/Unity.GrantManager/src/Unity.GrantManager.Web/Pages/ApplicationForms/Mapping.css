@@ -264,10 +264,6 @@ input.form-control {
     margin-left: -74px;
 }
 
-#btn-sync {
-    margin-top:10px;
-}
-
 .unity-app-main-container {
     min-width: 2020px;
 }
@@ -308,4 +304,41 @@ textarea {
     text-align: center;
     vertical-align: middle;
     margin-right: 2px;
+}
+
+.published-tick {
+    background-color: var(--bs-btn-bg, #198754);
+    border-radius: 35px;
+    padding: 7px;
+    color: #fff;
+    width: 35px;
+    height: 35px;
+    margin-left: 5px;
+    padding-left: 9px;
+}
+
+.select-icon-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.form-label {
+    color: var(--bc-colors-blue-background, #38598A);
+    margin-bottom: 0.1rem;
+}
+
+.input-width {
+    width: 400px !important;
+}
+
+.input-button-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;    
+    justify-content: flex-start;
+    align-items: center;
+    gap: 5px;
 }
