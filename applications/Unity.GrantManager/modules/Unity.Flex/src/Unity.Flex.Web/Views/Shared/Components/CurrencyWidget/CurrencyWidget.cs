@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CurrencyWidget
 {
     [ViewComponent(Name = "CurrencyWidget")]
     [Widget(
-        RefreshUrl = "Widgets/Currency/Refresh",
+        RefreshUrl = "../Flex/Widgets/Currency/Refresh",
         ScriptTypes = [typeof(CurrencyWidgetScriptBundleContributor)],
         StyleTypes = [typeof(CurrencyWidgetStyleBundleContributor)],
         AutoInitialize = true)]

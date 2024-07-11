@@ -576,15 +576,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Field")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("IsDeleted");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Label")
                         .IsRequired()
@@ -1915,6 +1915,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("AssessorId")
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("CleanGrowth")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1930,6 +1933,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<int?>("EconomicImpact")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -1937,6 +1943,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
+
+                    b.Property<int?>("FinancialAnalysis")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InclusiveGrowth")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsComplete")
                         .HasColumnType("boolean");
@@ -1948,18 +1960,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
-
-                    b.Property<int?>("SectionScore1")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SectionScore2")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SectionScore3")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SectionScore4")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()

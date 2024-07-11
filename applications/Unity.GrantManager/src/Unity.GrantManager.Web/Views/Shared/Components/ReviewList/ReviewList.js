@@ -132,6 +132,30 @@ $(function () {
                     render: renderApproval,
                 },
                 {
+                    title: l('ReviewerList:FinancialAnalysis'),
+                    width: "60px",
+                    data: 'financialAnalysis',
+                    className: 'data-table-header',
+                },
+                {
+                    title: l('ReviewerList:EconomicImpact'),
+                    width: "60px",
+                    data: 'economicImpact',
+                    className: 'data-table-header',
+                },
+                {
+                    title: l('ReviewerList:InclusiveGrowth'),
+                    width: "60px",
+                    data: 'inclusiveGrowth',
+                    className: 'data-table-header',
+                },
+                {
+                    title: l('ReviewerList:CleanGrowth'),
+                    width: "60px",
+                    data: 'cleanGrowth',
+                    className: 'data-table-header',
+                },
+                {
                     title: l('ReviewerList:Subtotal'),
                     width: "60px",
                     className: 'data-table-header',

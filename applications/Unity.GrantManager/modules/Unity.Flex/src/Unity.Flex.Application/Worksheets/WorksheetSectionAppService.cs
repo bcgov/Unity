@@ -30,7 +30,7 @@ namespace Unity.Flex.Worksheets
             if (worksheet.Published) { throw new UserFriendlyException("Cannot add fields to a published worksheet"); }
 
             var customField = (new CustomField(Guid.NewGuid(),
-                dto.Field,
+                dto.Key,
                 worksheet.Name,
                 dto.Label,
                 dto.Type,

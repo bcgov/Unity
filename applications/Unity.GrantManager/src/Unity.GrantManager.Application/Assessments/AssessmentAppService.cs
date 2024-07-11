@@ -100,7 +100,7 @@ namespace Unity.GrantManager.Assessments
 
                 if (instance == null)
                 {
-                    return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
+                    return (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
                 }
                 else
                 {
@@ -114,7 +114,7 @@ namespace Unity.GrantManager.Assessments
             }
             else
             {
-                return (assessment.SectionScore1 ?? 0) + (assessment.SectionScore2 ?? 0) + (assessment.SectionScore3 ?? 0) + (assessment.SectionScore4 ?? 0);
+                return (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
             }
         }
 
@@ -261,10 +261,10 @@ namespace Unity.GrantManager.Assessments
                     {
                         throw new AbpValidationException("Error: This assessment is already completed.");
                     }
-                    assessment.SectionScore1 = dto.SectionScore1;
-                    assessment.SectionScore2 = dto.SectionScore2;
-                    assessment.SectionScore3 = dto.SectionScore3;
-                    assessment.SectionScore4 = dto.SectionScore4;
+                    assessment.FinancialAnalysis = dto.FinancialAnalysis;
+                    assessment.EconomicImpact = dto.EconomicImpact;
+                    assessment.InclusiveGrowth = dto.InclusiveGrowth;
+                    assessment.CleanGrowth = dto.CleanGrowth;
                     await _assessmentRepository.UpdateAsync(assessment);
                 }
                 else

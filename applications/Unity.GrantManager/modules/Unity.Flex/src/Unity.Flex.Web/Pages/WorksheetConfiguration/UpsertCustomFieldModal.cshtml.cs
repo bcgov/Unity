@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget;
 using Unity.Flex.Worksheets;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 
@@ -22,12 +23,13 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     [BindProperty]
     public Guid? FieldId { get; set; }
 
-    [DisplayName("Name")]
+    [DisplayName("Name (Key)")]
     [BindProperty]
     [MinLength(1)]
     [MaxLength(25)]
+    [RegularExpression("^([a-zA-Z0-9 .&'-]+)$", ErrorMessage = "Illegal character found in name. Please enter a valid name")]
     [Required]
-    public string? Field { get; set; }
+    public string? Key { get; set; }
 
     [BindProperty]
     [MinLength(1)]
@@ -62,16 +64,19 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
         SectionId = sectionId;
         FieldTypes = GetAvailableFieldTypes();
         UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
+        FieldType = "Text";
 
         if (UpsertAction == WorksheetUpsertAction.Update)
         {
             CustomFieldDto customField = await customFieldAppService.GetAsync(fieldId);
             var worksheet = await worksheetListAppService.GetAsync(worksheetId);
 
-            Field = customField.Field;
+            Key = customField.Key;
             Label = customField.Label;
             FieldId = fieldId;
             Published = worksheet.Published;
+            FieldType = customField.Type.ToString();
+            Definition = customField.Definition;
         }
     }
 
@@ -110,9 +115,9 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     {
         return await worksheetSectionAppService.CreateCustomFieldAsync(SectionId, new CreateCustomFieldDto()
         {
-            Definition = null, // use default definition
+            Definition = ExtractDefinition(),
             Label = Label!,
-            Field = Field!,
+            Key = Key!,
             Type = (CustomFieldType)Enum.Parse(typeof(CustomFieldType), FieldType!)
         });
     }
@@ -121,11 +126,18 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     {
         return await customFieldAppService.EditAsync(FieldId!.Value, new EditCustomFieldDto()
         {
-            Definition = null, // use default definition
+            Definition = ExtractDefinition(),
             Label = Label!,
-            Field = Field!,
+            Key = Key!,
             Type = (CustomFieldType)Enum.Parse(typeof(CustomFieldType), FieldType!)
         });
+    }
+
+    private object? ExtractDefinition()
+    {
+        var fieldType = Enum.TryParse(FieldType, out CustomFieldType type);
+        if (!fieldType) return null;
+        return CustomFieldDefinitionWidget.ParseFormValues(type, Request.Form);
     }
 
     private OkObjectResult MapModalResponse(CustomFieldDto customFieldDto)
