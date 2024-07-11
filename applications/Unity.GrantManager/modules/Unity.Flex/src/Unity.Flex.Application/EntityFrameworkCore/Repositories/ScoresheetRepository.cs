@@ -11,14 +11,6 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class ScoresheetRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Scoresheet, Guid>(dbContextProvider), IScoresheetRepository
     {
-        public async Task<Scoresheet?> GetHighestVersionAsync(Guid groupId)
-        {
-            var dbContext = await GetDbContextAsync();
-            return await dbContext.Scoresheets
-                .Where(s => s.GroupId == groupId)
-                .OrderByDescending(s => s.Version)
-                .FirstOrDefaultAsync();
-        }
 
         public async Task<List<Scoresheet>> GetListWithChildrenAsync()
         {
@@ -30,9 +22,12 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .ToListAsync();    
         }
 
-        public async Task<List<Scoresheet>> GetScoresheetsByGroupId(Guid groupId)
+        public async Task<List<Scoresheet>> GetPublishedListAsync()
         {
-            return (await GetListWithChildrenAsync()).Where(s => s.GroupId == groupId).ToList();
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Scoresheets
+                .Where(scoresheet => scoresheet.Published)
+                .ToListAsync();
         }
 
         public async Task<Scoresheet?> GetWithChildrenAsync(Guid id)
