@@ -126,11 +126,6 @@ namespace Unity.Flex.Scoresheets
             ScoresheetSection? currentSection = null;
             foreach (var item in dto)
             {
-                var scoresheet = await _scoresheetRepository.GetAsync(item.Scoresheetid);
-                if (scoresheet.Published)
-                {
-                    continue;
-                }
                 if (item.Type == "section")
                 {
                     var section = await _sectionRepository.GetAsync(item.Id) ?? throw new AbpValidationException("SectionId not found.");

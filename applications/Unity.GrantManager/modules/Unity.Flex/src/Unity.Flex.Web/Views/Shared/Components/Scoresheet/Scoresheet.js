@@ -2,10 +2,7 @@ $(function () {
 
     function makeSectionsAndQuestionsSortable() {
         document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
-            const isPublished = div.getAttribute('data-published') === 'True';
-            if (isPublished) {
-                return;
-            }
+            
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: function (evt) {
