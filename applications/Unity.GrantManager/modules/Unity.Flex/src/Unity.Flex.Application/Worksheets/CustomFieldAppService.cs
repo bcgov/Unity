@@ -24,7 +24,7 @@ namespace Unity.Flex.Worksheets
             var worksheetField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Id == id) ?? throw new EntityNotFoundException();
 
             worksheetField.SetLabel(dto.Label);
-            worksheetField.SetField(dto.Key, worksheet.Name);
+            worksheetField.SetKey(dto.Key, worksheet.Name);
             worksheetField.SetType(dto.Type);
             worksheetField.SetDefinition(DefinitionResolver.Resolve(dto.Type, dto.Definition));
             

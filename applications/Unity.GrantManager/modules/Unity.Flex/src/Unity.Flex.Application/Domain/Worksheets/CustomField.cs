@@ -65,12 +65,13 @@ namespace Unity.Flex.Domain.Worksheets
             return "custom_" + SanitizeNameField(worksheetName) + "_" + SanitizeNameField(name);
         }
 
-        public CustomField SetField(string key, string worksheetName)
+        public CustomField SetKey(string key, string worksheetName)
         {
             var name = ConfigureName(key, worksheetName);
+            var worksheet = Section.Worksheet;
 
-            if (Section.Fields.Any(s => s.Name == name && s.Id != Id))
-                throw new UserFriendlyException("Cannot duplicate name");
+            if (worksheet.Sections.SelectMany(s => s.Fields).Any(s => s.Name == name && s.Id != Id))
+                throw new UserFriendlyException("Cannot duplicate field names for a worksheet.");
 
             Key = key;
             Name = name;

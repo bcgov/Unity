@@ -6,5 +6,5 @@ namespace Unity.GrantManager.Applications;
 
 public interface IApplicationFormVersionRepository : IRepository<ApplicationFormVersion, Guid>
 {
-    Task<ApplicationFormVersion> GetByChefsFormVersionAsync(Guid chefsFormVersionId);
+    Task<ApplicationFormVersion?> GetByChefsFormVersionAsync(Guid chefsFormVersionId);
 }

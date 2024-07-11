@@ -286,6 +286,7 @@ namespace Unity.GrantManager.ApplicationForms
         public async Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId)
         {
             var applicationFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(chefsFormVersionId);
+            if (applicationFormVersion == null) return null;
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
         }
     }

@@ -18,12 +18,12 @@ namespace Unity.GrantManager.Repositories
         {
         }
 
-        public async Task<ApplicationFormVersion> GetByChefsFormVersionAsync(Guid chefsFormVersionId)
+        public async Task<ApplicationFormVersion?> GetByChefsFormVersionAsync(Guid chefsFormVersionId)
         {
             var dbContext = await GetDbContextAsync();
 
             return await dbContext.ApplicationFormVersions
-                .FirstAsync(s => s.ChefsFormVersionGuid == chefsFormVersionId.ToString());
+                .FirstOrDefaultAsync(s => s.ChefsFormVersionGuid == chefsFormVersionId.ToString());
         }
     }
 }

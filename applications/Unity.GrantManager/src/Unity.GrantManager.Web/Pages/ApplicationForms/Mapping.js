@@ -68,9 +68,8 @@
 
     init();
 
-    worksheetsModal.onResult(function (_, response) {
-        let formVersionId = response.responseText.formVersionId;        
-        navigateToVersion(formVersionId);
+    worksheetsModal.onResult(function (_, response) {           
+        navigateToVersion(response.responseText.chefsFormVersionId);
     });
 
     function init() {
@@ -126,7 +125,7 @@
 
             setTimeout(function () {
                 window.location.href = location.href;
-            }, 2000);
+            }, 500);
 
         }
         catch (err) {
@@ -167,7 +166,7 @@
             } else {
                 location.href = location.href + "&ChefsFormVersionGuid=" + chefsFormVersionGuid;
             }
-        }, 2000);
+        }, 500);
     }
 
     function bindExistingMaps() {

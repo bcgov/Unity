@@ -98,7 +98,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 {
                     CreateUpdateApplicationFormVersionDto appFormVersion = new CreateUpdateApplicationFormVersionDto();
                     appFormVersion.ApplicationFormId = ApplicationFormDto.Id;
-                    appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;
+                    appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;                    
                     ApplicationFormVersionDto = await _applicationFormVersionAppService.CreateAsync(appFormVersion);
                 }
                 else if (ApplicationFormVersionDto == null)
@@ -144,7 +144,8 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 ScoresheetOptionsList = [.. ScoresheetOptionsList.OrderBy(item => item.Text)];
 
                 // Get the available field from the worksheets for the current Form
-                var worksheets = await _worksheetAppService.GetListByCorrelationAsync(Guid.Parse(ApplicationFormDto?.ChefsFormVersionGuid ?? Guid.Empty.ToString()), CorrelationConsts.FormVersion);
+                var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionGuid);
+                var worksheets = await _worksheetAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
 
                 foreach (var worksheet in worksheets)
                 {

@@ -73,8 +73,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public string? CurrentUserName { get; set; }
         public string Extensions { get; set; }
-        public string MaxFileSize { get; set; }
-        public Guid ChefsFormVersionId { get; set; }
+        public string MaxFileSize { get; set; }                
 
         [BindProperty(SupportsGet = true)]
         public List<BoundWorksheet> CustomTabs { get; set; } = [];
@@ -105,10 +104,11 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 // Need to look at finding another way to extract / store this info on intake
                 JObject submission = JObject.Parse(applicationFormSubmission.Submission);
                 JToken? tokenFormVersionId = submission.SelectToken("submission.formVersionId");
-                ChefsFormVersionId = Guid.Parse(tokenFormVersionId?["formVersionId"]?.ToString() ?? string.Empty);
+                var sformVersionId = Guid.Parse(tokenFormVersionId?.Value<string>() ?? Guid.Empty.ToString());                
 
-                var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionId);
-                var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
+                var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(sformVersionId);
+                ApplicationFormVersionId = formVersion?.Id ?? Guid.Empty;
+                var worksheetLinks = await _worksheetLinkAppService.GetListByCorrelationAsync(ApplicationFormVersionId, CorrelationConsts.FormVersion);
                 var tabs = worksheetLinks.Where(s => !FlexConsts.UiAnchors.Contains(s.UiAnchor)).Select(s => new { worksheet = s.Worksheet, uiAnchor = s.UiAnchor }).ToList();
 
                 foreach (var tab in tabs)

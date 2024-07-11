@@ -288,7 +288,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
 
-        await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, FlexConsts.AssessmentInfoUiAnchor, input.CustomFields);
+        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, input.CorrelationId, input.CustomFields);
 
         await _applicationRepository.UpdateAsync(application);
 
@@ -345,7 +345,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
 
-            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, FlexConsts.ProjectInfoUiAnchor, input.CustomFields);
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.CorrelationId, input.CustomFields);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -430,7 +430,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
             application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
 
-            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, FlexConsts.ApplicantInfoUiAnchor, input.CustomFields);
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input.CorrelationId, input.CustomFields);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -450,24 +450,19 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    protected virtual async Task PublishCustomFieldUpdatesAsync(Guid instanceCorrelationId,
-        string instanceCorrelationProvider,
+    protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
         string uiAnchor,
+        Guid applicationFormVersionId,
         dynamic? customFields)
     {
         if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            var applicationFormSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(instanceCorrelationId);
-            JObject submission = JObject.Parse(applicationFormSubmission.Submission);
-            JToken? tokenFormVersionId = submission.SelectToken("submission.formVersionId");
-            Guid applicationFormVersionId = Guid.Parse(tokenFormVersionId?["formVersionId"]?.ToString() ?? string.Empty);
-
             if (applicationFormVersionId != Guid.Empty)
             {
                 await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
                 {
-                    InstanceCorrelationId = instanceCorrelationId,
-                    InstanceCorrelationProvider = instanceCorrelationProvider,
+                    InstanceCorrelationId = applicationId,
+                    InstanceCorrelationProvider = CorrelationConsts.Application,
                     SheetCorrelationId = applicationFormVersionId,
                     SheetCorrelationProvider = CorrelationConsts.FormVersion,
                     UiAnchor = uiAnchor,
