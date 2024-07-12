@@ -107,17 +107,17 @@ objects:
                 valueFrom:
                   secretKeyRef:
                     name: ${DATABASE_SERVICE_NAME}
-                    key: database-name
+                    key: UNITY_POSTGRES_DB
               - name: UNITY_POSTGRES_USER
                 valueFrom:
                   secretKeyRef:
                     name: ${DATABASE_SERVICE_NAME}
-                    key: database-user
+                    key: UNITY_POSTGRES_USER
               - name: UNITY_POSTGRES_PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: ${DATABASE_SERVICE_NAME}
-                    key: database-password
+                    key: UNITY_POSTGRES_PASSWORD
               - name: UNITY_TENANT_DB
                 value: ${UNITY_TENANT_DB}
               - name: ConnectionStrings__Default
