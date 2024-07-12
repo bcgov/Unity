@@ -133,12 +133,12 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                var scoresheets = await _scoresheetAppService.GetAllScoresheetsAsync();
+                var scoresheets = await _scoresheetAppService.GetAllPublishedScoresheetsAsync();
                 ScoresheetOptionsList = [];
 
                 foreach (var scoresheet in scoresheets)
                 {
-                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Name + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
+                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Title + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
                 }
 
                 ScoresheetOptionsList = [.. ScoresheetOptionsList.OrderBy(item => item.Text)];
