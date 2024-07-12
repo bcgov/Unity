@@ -59,6 +59,7 @@ public class PaymentsApplicationModule : AbpModule
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
             options.PaymentRequestOptions.ConsumerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ConsumerExpression") ?? "";
+            options.InvoiceRequestOptions.ConsumerExpression = configuration.GetValue<string>("BackgroundJobs:CasInvoiceRequest:ConsumerExpression") ?? "";
         });
 
         Configure<RabbitMQOptions>(options =>

@@ -14,6 +14,8 @@ using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
 using Unity.Payments.Codes;
 using System.Net.Http;
+using Volo.Abp.Uow;
+using Microsoft.Extensions.Logging;
 
 
 namespace Unity.Payments.Integrations.Cas
@@ -29,6 +31,7 @@ namespace Unity.Payments.Integrations.Cas
         private readonly ISupplierRepository _iSupplierRepository;
         private readonly IOptions<CasClientOptions> _casClientOptions;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         private const string CFS_APINVOICE = "cfs/apinvoice";
 
@@ -45,7 +48,8 @@ namespace Unity.Payments.Integrations.Cas
             IResilientHttpRequest resilientHttpRequest,
             IOptions<CasClientOptions> casClientOptions,
             ISupplierRepository iSupplierRepository,
-            ISiteRepository iSiteRepository)
+            ISiteRepository iSiteRepository,
+            IUnitOfWorkManager unitOfWorkManager)
         {
             _iTokenService = iTokenService;
             _iPaymentRequestRepository = paymentRequestRepository;
@@ -54,6 +58,7 @@ namespace Unity.Payments.Integrations.Cas
             _casClientOptions = casClientOptions;
             _iSupplierRepository = iSupplierRepository;
             _iSiteRepository = iSiteRepository;
+            _unitOfWorkManager = unitOfWorkManager;
         }
 
         protected virtual async Task<Invoice?> InitializeCASInvoice(PaymentRequest paymentRequest,
@@ -100,30 +105,36 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(PaymentRequest paymentRequest)
         {
             InvoiceResponse invoiceResponse = new();
-            string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
-
-            if (accountDistributionCode != null)
+            try
             {
-                Invoice? invoice = await InitializeCASInvoice(paymentRequest, accountDistributionCode);
-                
-                if (invoice != null)
+                string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
+                if (accountDistributionCode != null)
                 {
-                    invoiceResponse = await CreateInvoiceAsync(invoice);
-                    if(invoiceResponse != null)
+                    Invoice? invoice = await InitializeCASInvoice(paymentRequest, accountDistributionCode);
+
+                    if (invoice != null)
                     {
-                        paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
-                        paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
-                        // Set the status - for the payment request
-                        if (invoiceResponse.IsSuccess())
+                        invoiceResponse = await CreateInvoiceAsync(invoice);
+                        if (invoiceResponse != null)
                         {
-                            paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.SentToCas);
-                        } else
-                        {
-                            paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.ErrorFromCas);
+                            paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
+                            paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
+                            // Set the status - for the payment request
+                            if (invoiceResponse.IsSuccess())
+                            {
+                                paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.SentToCas);
+                            }
+                            else
+                            {
+                                paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.ErrorFromCas);
+                            }
+                            await _iPaymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
                         }
-                        await _iPaymentRequestRepository.UpdateAsync(paymentRequest, autoSave: true);
                     }
                 }
+            } catch (Exception ex) {
+                string ExceptionMessage = ex.Message;
+                Logger.LogError(ex, "CreateInvoiceByPaymentRequestAsync Exception: {ExceptionMessage}", ExceptionMessage);
             }
 
             return invoiceResponse;
