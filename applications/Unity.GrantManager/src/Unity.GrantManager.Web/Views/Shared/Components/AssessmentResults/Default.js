@@ -4,6 +4,7 @@
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
+        let formVersionId = $("#ApplicationFormVersionId").val();        
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -31,6 +32,7 @@
         });
 
         try {
+            assessmentResultObj['correlationId'] = formVersionId;
             unity.grantManager.grantApplications.grantApplication
                 .updateAssessmentResults(applicationId, assessmentResultObj)
                 .done(function () {

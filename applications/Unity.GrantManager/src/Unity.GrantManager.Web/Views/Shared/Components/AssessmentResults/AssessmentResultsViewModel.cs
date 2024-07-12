@@ -19,6 +19,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public List<SelectListItem> RiskRankingList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.RiskRankingList);
         public Guid ApplicationId { get; set; }
         public Guid ApplicationFormId { get; set; }
+        public Guid ApplicationFormVersionId { get; set; }
 
         public AssessmentResultsModel AssessmentResults { get; set; } = new();
         public bool IsEditGranted { get; set; }

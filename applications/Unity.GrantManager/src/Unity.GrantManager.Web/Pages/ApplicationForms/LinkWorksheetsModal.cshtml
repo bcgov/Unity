@@ -11,7 +11,7 @@
 }
 
 <form method="post" asp-page-handler="OnPostAsync" id="formInfo">
-    <abp-input type="hidden" id="FormId" asp-for="@Model.FormId" />
+    <abp-input type="hidden" id="ChefsFormVersionId" asp-for="@Model.ChefsFormVersionId" />
     <abp-input type="hidden" id="AssessmentInfoSlotId" asp-for="@Model.AssessmentInfoSlotId" />
     <abp-input type="hidden" id="ApplicantInfoSlotId" asp-for="@Model.ApplicantInfoSlotId" />
     <abp-input type="hidden" id="ProjectInfoSlotId" asp-for="@Model.ProjectInfoSlotId" />
@@ -82,7 +82,12 @@
                         }
                     </div>
                 </div>
-            </div>            
+            </div>
+            <div class="save-note">
+                <p>
+                    <b>Note:</b> Saving will cause the mapping screen to refresh, please make sure you have saved all your mapping changes.
+                </p>
+            </div>
         </abp-modal-body>
         <abp-modal-footer>
             <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>

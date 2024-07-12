@@ -352,9 +352,9 @@ $(function () {
         let uiAnchor = $(this).attr('data-ui-anchor');
         let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
         let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
-        let formId = decodeURIComponent($("#ApplicationFormId").val());
         let formData = $(`#${formDataName}`).serializeArray();
         let customFormObj = {};
+        let formVersionId = $("#ApplicationFormVersionId").val();        
 
         $.each(formData, function (_, input) {
             customFormObj[input.name] = input.value;
@@ -364,7 +364,7 @@ $(function () {
             customFormObj[this.name] = (this.checked).toString();
         });
 
-        updateCustomForm(applicationId, formId, customFormObj, uiAnchor, id, formDataName);
+        updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, id, formDataName);
     });
 
     PubSub.subscribe(
@@ -382,15 +382,15 @@ $(function () {
     );
 });
 
-function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId, formDataName) {
+function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, saveId, formDataName, ) {
     let customFormUpdate = {
         instanceCorrelationId: applicationId,
         instanceCorrelationProvider: 'Application',
-        sheetCorrelationId: formId,
-        sheetCorrelationProvider: 'Form',
+        sheetCorrelationId: formVersionId,
+        sheetCorrelationProvider: 'FormVersion',
         uiAnchor: uiAnchor,
         customFields: customFormObj,
-        formDataName: formDataName
+        formDataName: formDataName        
     }
 
     $(`#${saveId}`).prop('disabled', true);

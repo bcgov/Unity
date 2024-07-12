@@ -60,7 +60,7 @@ namespace Unity.GrantManager.Components
             };
 
             //Act
-            var result = await viewComponent.InvokeAsync(Guid.NewGuid()) as ViewViewComponentResult;
+            var result = await viewComponent.InvokeAsync(Guid.NewGuid(), Guid.NewGuid()) as ViewViewComponentResult;
             ProjectInfoViewModel? resultModel;
 
             resultModel = result!.ViewData!.Model! as ProjectInfoViewModel;
