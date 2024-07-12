@@ -14,7 +14,6 @@ using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
 using Unity.Payments.Codes;
 using System.Net.Http;
-using Volo.Abp.Uow;
 using Microsoft.Extensions.Logging;
 
 
@@ -31,7 +30,6 @@ namespace Unity.Payments.Integrations.Cas
         private readonly ISupplierRepository _iSupplierRepository;
         private readonly IOptions<CasClientOptions> _casClientOptions;
         private readonly IPaymentConfigurationAppService _paymentConfigurationAppService;
-        private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         private const string CFS_APINVOICE = "cfs/apinvoice";
 
@@ -48,8 +46,7 @@ namespace Unity.Payments.Integrations.Cas
             IResilientHttpRequest resilientHttpRequest,
             IOptions<CasClientOptions> casClientOptions,
             ISupplierRepository iSupplierRepository,
-            ISiteRepository iSiteRepository,
-            IUnitOfWorkManager unitOfWorkManager)
+            ISiteRepository iSiteRepository)
         {
             _iTokenService = iTokenService;
             _iPaymentRequestRepository = paymentRequestRepository;
@@ -58,7 +55,6 @@ namespace Unity.Payments.Integrations.Cas
             _casClientOptions = casClientOptions;
             _iSupplierRepository = iSupplierRepository;
             _iSiteRepository = iSiteRepository;
-            _unitOfWorkManager = unitOfWorkManager;
         }
 
         protected virtual async Task<Invoice?> InitializeCASInvoice(PaymentRequest paymentRequest,

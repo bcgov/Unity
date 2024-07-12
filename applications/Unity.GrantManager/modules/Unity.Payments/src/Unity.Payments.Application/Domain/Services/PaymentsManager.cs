@@ -13,7 +13,6 @@ using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 
 namespace Unity.Payments.Domain.Services
 {
@@ -23,7 +22,6 @@ namespace Unity.Payments.Domain.Services
         private readonly IPaymentRequestRepository _paymentRequestRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IPermissionChecker _permissionChecker;
-        private readonly IInvoiceService _invoiceService;
         private readonly CasPaymentRequestCoordinator _casPaymentRequestCoordinator;
 
         public PaymentsManager(
@@ -34,7 +32,6 @@ namespace Unity.Payments.Domain.Services
             IPermissionChecker permissionChecker)
         {
             _casPaymentRequestCoordinator = casPaymentRequestCoordinator;
-            _invoiceService = invoiceService;
             _paymentRequestRepository = paymentRequestRepository;
             _unitOfWorkManager = unitOfWorkManager;
             _permissionChecker = permissionChecker;
