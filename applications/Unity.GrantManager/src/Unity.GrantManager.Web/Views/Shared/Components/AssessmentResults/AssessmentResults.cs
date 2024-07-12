@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
     public class AssessmentResults : AbpViewComponent
     {
         private readonly GrantApplicationAppService _grantApplicationAppService;
-        private readonly IAuthorizationService _authorizationService;        
+        private readonly IAuthorizationService _authorizationService;
 
         public AssessmentResults(GrantApplicationAppService grantApplicationAppService,
             IAuthorizationService authorizationService)
@@ -30,19 +30,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             _authorizationService = authorizationService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
             bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-            bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;            
+            bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
             bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
 
             AssessmentResultsPageModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationFormId = application.ApplicationForm.Id,
-                IsEditGranted = isEditGranted, 
-                IsPostEditFieldsAllowed = isPostEditFieldsAllowed,                
+                ApplicationFormVersionId = applicationFormVersionId,
+                IsEditGranted = isEditGranted,
+                IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
 
                 AssessmentResults = new()
                 {
@@ -60,7 +61,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                     AssessmentResultStatus = application.AssessmentResultStatus,
                     FinalDecisionDate = application.FinalDecisionDate,
                     DueDate = application.DueDate,
-                    NotificationDate = application.NotificationDate
+                    NotificationDate = application.NotificationDate,
+                    RiskRanking = application.RiskRanking,
                 }
             };
 

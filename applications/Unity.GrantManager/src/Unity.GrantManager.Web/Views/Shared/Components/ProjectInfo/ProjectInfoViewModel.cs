@@ -32,6 +32,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         
         public Guid ApplicationId { get; set; }
         public Guid ApplicationFormId { get; set; }
+        public Guid ApplicationFormVersionId { get; set; }
         public List<SectorDto> ApplicationSectors { get; set; } = new List<SectorDto>();
         public bool IsFinalDecisionMade { get; set; }
         public ProjectInfoViewModelModel ProjectInfo { get; set; } = new();

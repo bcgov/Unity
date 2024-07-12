@@ -11,7 +11,6 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -60,7 +59,8 @@ namespace Unity.GrantManager.ApplicationForms
             return dto;
         }
 
-        private static JToken? GetFormVersionToken(dynamic chefsForm) {
+        private static JToken? GetFormVersionToken(dynamic chefsForm)
+        {
             if (chefsForm == null) return null;
             JObject formObject = JObject.Parse(chefsForm.ToString());
             if (formObject == null) return null;
@@ -77,15 +77,16 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 JToken? versionsToken = GetFormVersionToken(chefsForm);
                 if (versionsToken == null) return false;
-                
+
                 foreach (JToken childToken in versionsToken.Children().Where(t => t.Type == JTokenType.Object))
                 {
-                    if (TryParsePublished(childToken, out var formVersionId, out var published) 
-                            && formVersionId != null 
+                    if (TryParsePublished(childToken, out var formVersionId, out var published)
+                            && formVersionId != null
                             && await FormVersionDoesNotExist(formVersionId))
                     {
                         ApplicationFormVersionDto? applicationFormVersion = new ApplicationFormVersionDto();
-                        if ((initializePublishedOnly && published) || !initializePublishedOnly) {
+                        if ((initializePublishedOnly && published) || !initializePublishedOnly)
+                        {
                             applicationFormVersion = await TryInitializeApplicationFormVersionWithToken(childToken, applicationFormId, formVersionId, published);
                         }
 
@@ -123,7 +124,7 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 string? formId = token.Value<string>("formId");
                 int version = token.Value<int>("version");
-                return await TryInitializeApplicationFormVersion(formId, version, applicationFormId,formVersionId, published);
+                return await TryInitializeApplicationFormVersion(formId, version, applicationFormId, formVersionId, published);
             }
             catch (Exception ex)
             {
@@ -279,6 +280,13 @@ namespace Unity.GrantManager.ApplicationForms
                 applicationFormVersion = await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
             }
 
+            return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
+        }
+
+        public async Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId)
+        {
+            var applicationFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(chefsFormVersionId);
+            if (applicationFormVersion == null) return null;
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
         }
     }

@@ -25,14 +25,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
         public ApplicantInfoViewComponent(
             IApplicationApplicantAppService applicationAppicantService,
-            ISectorService applicationSectorAppService
-            )
+            ISectorService applicationSectorAppService)
         {
             _applicationAppicantService = applicationAppicantService;
             _applicationSectorAppService = applicationSectorAppService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
             var applicatInfoDto = await _applicationAppicantService.GetByApplicationIdAsync(applicationId);
             List<SectorDto> Sectors = [.. (await _applicationSectorAppService.GetListAsync())];
@@ -41,6 +40,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             {
                 ApplicationId = applicationId,
                 ApplicationFormId = applicatInfoDto.ApplicationFormId,
+                ApplicationFormVersionId = applicationFormVersionId,
                 ApplicationSectors = Sectors,
                 ApplicantId = applicatInfoDto.ApplicantId
             };

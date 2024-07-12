@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.RadioWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("GrantApplications/Widgets/Radio")]
+    [Route("Flex/Widgets/Radio")]
     public class RadioWidgetController : AbpController
     {
         [HttpGet]

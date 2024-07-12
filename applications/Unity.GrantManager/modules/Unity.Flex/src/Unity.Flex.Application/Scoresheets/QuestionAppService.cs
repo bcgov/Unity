@@ -20,12 +20,9 @@ namespace Unity.Flex.Scoresheets
         public virtual async Task<QuestionDto> GetAsync(Guid id)
         {
             var question = await _questionRepository.GetAsync(id) ?? throw new EntityNotFoundException();
-            var questionDto = ObjectMapper.Map<Question, QuestionDto>(question);
-            if(question.Answers.Count > 0)
-            {
-                questionDto.HasAnswers = true;
-            }
-            return questionDto;
+
+            return ObjectMapper.Map<Question, QuestionDto>(question);
+            
         }
 
         public async Task<QuestionDto> UpdateAsync(Guid id, EditQuestionDto dto)

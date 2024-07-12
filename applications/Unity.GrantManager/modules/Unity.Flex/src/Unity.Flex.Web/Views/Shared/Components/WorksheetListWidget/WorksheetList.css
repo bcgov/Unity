@@ -40,3 +40,7 @@
     color: var(--bc-colors-grey-text-100, light-gray);
     font-size: 0.6rem;
 }
+
+.hidden-widget {
+    display: none;
+}

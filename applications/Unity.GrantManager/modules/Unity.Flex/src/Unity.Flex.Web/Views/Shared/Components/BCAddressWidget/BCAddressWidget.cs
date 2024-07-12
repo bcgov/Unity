@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
 {
     [ViewComponent(Name = "BCAddressWidget")]
     [Widget(
-        RefreshUrl = "Widgets/BCAddress/Refresh",
+        RefreshUrl = "../Flex/Widgets/BCAddress/Refresh",
         ScriptTypes = [typeof(BCAddressWidgetScriptBundleContributor)],
         StyleTypes = [typeof(BCAddressWidgetStyleBundleContributor)],
         AutoInitialize = true)]

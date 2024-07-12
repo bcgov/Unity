@@ -63,3 +63,13 @@
 .dragging {
     opacity: 0.5;
 }
+
+
+.save-note {
+    border: 2px solid;
+    border-color: var(--bc-colors-blue-primary);
+    text-align: center;
+    padding-top: 1rem;
+    background-color: var(--bc-colors-blue-hover);
+    border-radius: 5px;
+}

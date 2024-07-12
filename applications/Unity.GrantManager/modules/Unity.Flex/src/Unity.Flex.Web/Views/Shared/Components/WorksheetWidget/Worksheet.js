@@ -76,7 +76,7 @@ $(function () {
         });
     }
 
-    editWorksheetModal.onResult(function (result, response) {
+    editWorksheetModal.onResult(function (_, response) {
         if (response.responseText.action === 'Delete') {
             PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
         }
@@ -97,7 +97,7 @@ $(function () {
         });
     }
 
-    sectionModal.onResult(function (result, response) {
+    sectionModal.onResult(function (_, response) {        
         PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
     });
 
@@ -110,7 +110,7 @@ $(function () {
         });
     }
 
-    customFieldModal.onResult(function (result, response) {
+    customFieldModal.onResult(function (_, response) {
         PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
     });
 
@@ -120,12 +120,12 @@ $(function () {
         });
     }
 
-    publishWorksheetModal.onResult(function (result, response) {
+    publishWorksheetModal.onResult(function (_, response) {
         PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
     });
 
     function refreshWorksheetInfoWidget(worksheetId) {
-        const url = `../Flex/Widget/Worksheet/Refresh?worksheetId=${worksheetId}`;
+        const url = `../Flex/Widgets/Worksheet/Refresh?worksheetId=${worksheetId}`;
         fetch(url)
             .then(response => response.text())
             .then(data => {
@@ -175,6 +175,7 @@ $(function () {
     PubSub.subscribe(
         'worksheet_list_refreshed',
         () => {
+            console.log('ws item');
             bindActionButtons();
         }
     );

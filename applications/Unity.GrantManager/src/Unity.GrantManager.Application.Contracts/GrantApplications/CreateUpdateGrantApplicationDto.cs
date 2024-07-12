@@ -23,6 +23,7 @@ namespace Unity.GrantManager.GrantApplications
         public string? ForestryFocus { get; set; }
         public int? CommunityPopulation { get; set; }
         public DateTime? ProjectStartDate { get; set; }
-        public DateTime? ProjectEndDate { get; set; }
+        public DateTime? ProjectEndDate { get; set; } 
+        public string? RiskRanking { get; set;}
     }
 }

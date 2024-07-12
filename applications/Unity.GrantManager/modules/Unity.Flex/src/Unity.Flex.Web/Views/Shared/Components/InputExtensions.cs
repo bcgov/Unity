@@ -20,6 +20,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.Radio => "radio",
                 CustomFieldType.Checkbox => "checkbox",
                 CustomFieldType.CheckboxGroup => "checkbox",
+                CustomFieldType.Email => "email",
                 _ => "text",
             };
         }
@@ -77,22 +78,22 @@ namespace Unity.Flex.Web.Views.Shared.Components
 
         public static string? GetMinValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMin(field);                                    
         }
 
         public static string? GetMaxValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMax(field);
         }
 
         public static string? GetMinLengthValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMinLength(field);
         }
 
         public static string? GetMaxLengthValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMaxLength(field);
         }
     }
 }

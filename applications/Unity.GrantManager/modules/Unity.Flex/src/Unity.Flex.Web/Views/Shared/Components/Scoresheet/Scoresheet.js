@@ -2,6 +2,7 @@ $(function () {
 
     function makeSectionsAndQuestionsSortable() {
         document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
+            
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: function (evt) {
@@ -11,6 +12,7 @@ $(function () {
                 },
                 ghostClass: 'blue-background',
                 onMove: function (evt) {
+                    debugger;
                     const draggedItem = evt.dragged;
                     const targetItem = evt.related;
                     const topItem = evt.from.children[0];
@@ -75,44 +77,94 @@ $(function () {
         let currentSectionItem = null;
         let sectionNumber = 1;
         let questionNumber = 1;
+        let parentAccordionId = `accordion-preview`;
+
         sortedItems.forEach(item => {
             if (item.classList.contains('section-item')) {
                 if (currentSectionItem) {
-                    accordionHTML += '</div></div></div>'; 
+                    accordionHTML += '</div></div></div></div>';
                     sectionNumber++;
                 }
+                parentAccordionId = `nested-accordion-${hashCode(item.innerText)}`;
                 accordionHTML += `
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="panel-${hashCode(item.innerText)}">
-                        <button class="accordion-button preview-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="collapse-${hashCode(item.innerText)}">
-                            ${sectionNumber}.  ${item.dataset.label}
-                        </button>
-                    </h2>
-                    <div id="collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item.innerText)}">
-                        <div class="accordion-body">
-                            <div class="list-group col">`;
-                currentSectionItem = item;                
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="panel-${hashCode(item.innerText)}">
+                    <button class="accordion-button preview-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="collapse-${hashCode(item.innerText)}">
+                        ${sectionNumber}.  ${item.dataset.label}
+                    </button>
+                </h2>
+                <div id="collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item.innerText)}">
+                    <div class="accordion-body">
+                        <div class="accordion" id="${parentAccordionId}">`; // Start a new nested accordion
+                currentSectionItem = item;
                 questionNumber = 1;
             } else {
-                accordionHTML += `
-                <div class="list-group-item row">
-                    <div class="col">
-                        ${sectionNumber}.${questionNumber}  ${item.innerText}
+                let questionBody = '';
+                if (item.dataset.questiontype === "Text") {
+                    questionBody = `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label class="form-label">Answer</label>
+                        <input type="text" class="form-control answer-text-input"/>
                     </div>
-                </div>`;
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" >SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" >DISCARD CHANGES</button>
+                    </div>`;
+                } else if (item.dataset.questiontype === "YesNo") {
+                    questionBody = `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label class="form-label">Answer</label>
+                        <select class="form-control answer-yesno-input">
+                            <option value="">Please choose...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" >SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" >DISCARD CHANGES</button>
+                    </div>`;
+                } else if (item.dataset.questiontype === "Number") {
+                    questionBody = `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label class="form-label">Answer</label>
+                        <input type="number" class="form-control answer-number-input" />
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" >SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" >DISCARD CHANGES</button>
+                    </div>`;
+                }
+
+                accordionHTML += `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="nested-panel-${hashCode(item.innerText)}">
+                            <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse-${hashCode(item.innerText)}">
+                                ${sectionNumber}.${questionNumber}  ${item.innerText}
+                            </button>
+                        </h2>
+                        <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}" data-bs-parent="#${parentAccordionId}">
+                            <div class="accordion-body">
+                                ${questionBody}
+                            </div>
+                        </div>
+                    </div>`;
                 questionNumber++;
             }
         });
 
         if (currentSectionItem) {
-            accordionHTML += '</div></div></div>';
+            accordionHTML += '</div></div></div></div>';
         }
 
         previewDiv.innerHTML = `
-        <div class="accordion" id="accordion-preview">
-            ${accordionHTML}
-        </div>
-    `;
+            <div class="accordion" id="accordion-preview">
+                ${accordionHTML}
+            </div>
+        `;
     }
 
 
@@ -152,12 +204,8 @@ let questionModal = new abp.ModalManager({
 
 questionModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
-    if (actionType.includes('On New Version')) {
-        const scoresheetIdsToLoad = getScoresheetIdsToLoad().filter(element => element !== selectedScoresheetId);
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: scoresheetIdsToLoad });
-    } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
-    }
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
+
     abp.notify.success(
         actionType + ' is successful.',
         'Question'
@@ -182,12 +230,7 @@ let sectionModal = new abp.ModalManager({
 
 sectionModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
-    if (actionType.includes('On New Version')) {
-        const scoresheetIdsToLoad = getScoresheetIdsToLoad().filter(element => element !== selectedScoresheetId);
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: scoresheetIdsToLoad });
-    } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
-    }
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
     
     abp.notify.success(
         actionType + ' is successful.',
@@ -237,19 +280,12 @@ function updateScoresheetAccordion() {
     const nonCollapsedAccordion = document.querySelector('.accordion-collapse.show');
     if (nonCollapsedAccordion) {
         const scoresheetId = nonCollapsedAccordion.getAttribute('data-scoresheet');
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId });
     } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
     }
 }
 
-function handleVersionChange(event) {
-    const selectedScoresheet = event.target.value;
-    const scorsheetIdsToLoad = getScoresheetIdsToLoad();
-    PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheet, scorsheetIdsToLoad: scorsheetIdsToLoad });
-}
 
-function getScoresheetIdsToLoad() {
-    let selectElements = document.querySelectorAll('[id^="version-selector"]');
-    return Array.from(selectElements).map(select => select.value);
-}
+
+

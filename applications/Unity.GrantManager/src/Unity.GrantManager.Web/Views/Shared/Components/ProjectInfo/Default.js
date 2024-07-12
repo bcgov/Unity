@@ -2,7 +2,9 @@
     $('body').on('click', '#saveProjectInfoBtn', function () {
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
-        let projectInfoObj = {};        
+        let projectInfoObj = {};       
+        let formVersionId = $("#ApplicationFormVersionId").val();         
+
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(projectInfoObj, input);
@@ -19,6 +21,7 @@
             projectInfoObj[this.name] = (this.checked).toString();
         });
 
+        projectInfoObj['correlationId'] = formVersionId;
         updateProjectInfo(applicationId, projectInfoObj);
     });
 
@@ -144,9 +147,11 @@
         (msg, data) => {
             if (data.RequestedAmount) {
                 $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
+                $('#RequestedAmountInputPI').maskMoney('mask');
             }
             if (data.TotalProjectBudget) {
                 $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
+                $('#TotalBudgetInputPI').maskMoney('mask');
             }
         }
     );

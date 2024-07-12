@@ -16,6 +16,5 @@ namespace Unity.Flex.Scoresheets
         public virtual Guid SectionId { get; }
 
         public virtual string? Answer { get; set; }
-        public virtual bool HasAnswers {  get; set; } = false;
     }
 }

@@ -23,7 +23,6 @@ namespace Unity.Flex.Handlers
             if (ans != null)
             {
                 ans.SetValue(ValueConverter.Convert(eventData.Answer ?? "", (Worksheets.CustomFieldType)eventData.QuestionType));
-             
             }
             else
             {
@@ -35,7 +34,6 @@ namespace Unity.Flex.Handlers
                         QuestionId = eventData.QuestionId,
                         ScoresheetInstanceId = instance.Id
                     };
-
                     instance.Answers.Add(ans);
                 }
             }

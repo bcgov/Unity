@@ -8,9 +8,8 @@ using System.Collections.Generic;
 
 namespace Unity.Flex.Web.Views.Shared.Components.YesNoWidget
 {
-    [ViewComponent(Name = "YesNoWidget")]
     [Widget(
-        RefreshUrl = "Widgets/YesNo/Refresh",
+        RefreshUrl = "../Flex/Widgets/YesNo/Refresh",
         ScriptTypes = [typeof(YesNoWidgetScriptBundleContributor)],
         StyleTypes = [typeof(YesNoWidgetStyleBundleContributor)],
         AutoInitialize = true)]
