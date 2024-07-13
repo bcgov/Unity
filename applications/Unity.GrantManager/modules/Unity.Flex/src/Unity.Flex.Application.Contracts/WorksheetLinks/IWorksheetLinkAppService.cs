@@ -7,8 +7,7 @@ namespace Unity.Flex.WorksheetLinks
 {
     public interface IWorksheetLinkAppService : IApplicationService
     {
-        Task<WorksheetLinkDto> CreateAsync(CreateWorksheetLinkDto dto);
-        Task<List<WorksheetLinkDto>> UpdateWorksheetLinksAsync(Guid correlationId, string correlationProvider, UpdateWorksheetLinksDto dto);
+        Task<List<WorksheetLinkDto>> UpdateWorksheetLinksAsync(UpdateWorksheetLinksDto dto);
         Task<List<WorksheetLinkDto>> GetListByCorrelationAsync(Guid correlationId, string correlationProvider);
         Task<List<WorksheetLinkDto>> GetListByWorksheetAsync(Guid worksheetId, string correlationProvider);
     }

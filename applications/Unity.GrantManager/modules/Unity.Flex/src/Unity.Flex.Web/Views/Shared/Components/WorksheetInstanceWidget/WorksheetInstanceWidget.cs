@@ -26,7 +26,7 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         string sheetCorrelationProvider,
         string uiAnchor,
         Guid? worksheetId)
-    {
+    {        
         if (instanceCorrelationProvider == FlexConsts.Preview
             && sheetCorrelationProvider == FlexConsts.Preview
             && uiAnchor == FlexConsts.Preview
@@ -46,13 +46,17 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
     private async Task<IViewComponentResult> RenderViewAsync(Guid instanceCorrelationId,
         string instanceCorrelationProvider,
         Guid sheetCorrelationId,
-        string sheetCorrelationProvider,
+        string sheetCorrelationProvider,        
         string uiAnchor,
         Guid? worksheetId)
     {
         WorksheetViewModel? viewModel = null;
 
-        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, instanceCorrelationProvider, uiAnchor);
+        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, 
+            instanceCorrelationProvider, 
+            worksheetId, 
+            uiAnchor);
+
         WorksheetDto? worksheet;
         if (uiAnchor == FlexConsts.CustomTab)
         {
@@ -80,6 +84,12 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
 
     private async Task<IViewComponentResult> RenderPreviewAsync(Guid worksheetId)
     {
+        // make sure not deleted and was selected preview
+        if (!await worksheetAppService.ExistsAsync(worksheetId))
+        {
+            return View(new WorksheetViewModel());
+        }
+
         var worksheet = await worksheetAppService.GetAsync(worksheetId);
         WorksheetViewModel? viewModel = MapWorksheet(worksheet, "Preview");
         return View(viewModel);
@@ -91,7 +101,8 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         {
             IsConfigured = true,
             Name = worksheetDto.Name,
-            UiAnchor = uiAnchor
+            UiAnchor = uiAnchor,
+            WorksheetId = worksheetDto.Id
         };
 
         foreach (var section in worksheetDto.Sections.OrderBy(s => s.Order))

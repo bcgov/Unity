@@ -27,7 +27,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     [BindProperty]
     [MinLength(1)]
     [MaxLength(25)]
-    [RegularExpression("^([a-zA-Z0-9 .&'-]+)$", ErrorMessage = "Illegal character found in name. Please enter a valid name")]
+    [RegularExpression("^([a-zA-Z0-9]*)$", ErrorMessage = "Illegal character found in name. Please enter a valid name")]
     [Required]
     public string? Key { get; set; }
 

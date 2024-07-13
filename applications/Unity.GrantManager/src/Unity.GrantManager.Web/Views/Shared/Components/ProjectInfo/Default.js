@@ -3,7 +3,8 @@
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
         let projectInfoObj = {};       
-        let formVersionId = $("#ApplicationFormVersionId").val();         
+        let formVersionId = $("#ApplicationFormVersionId").val();
+        let worksheetId = $("#WorksheetId").val();
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -22,6 +23,7 @@
         });
 
         projectInfoObj['correlationId'] = formVersionId;
+        projectInfoObj['worksheetId'] = worksheetId;
         updateProjectInfo(applicationId, projectInfoObj);
     });
 
