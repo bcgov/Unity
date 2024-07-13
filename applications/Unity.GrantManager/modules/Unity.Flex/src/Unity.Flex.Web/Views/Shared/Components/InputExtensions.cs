@@ -14,7 +14,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
             {
                 CustomFieldType.Text => "text",
                 CustomFieldType.Numeric => "number",
-                CustomFieldType.Currency => "text",
+                CustomFieldType.Currency => "number",
                 CustomFieldType.DateTime => "datetime-local",
                 CustomFieldType.Date => "date",
                 CustomFieldType.Radio => "radio",
@@ -70,7 +70,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
         {
             return type switch
             {
-                CustomFieldType.Currency => "form-control unity-currency-input",
+                CustomFieldType.Currency => "form-control custom-currency-input",
                 CustomFieldType.YesNo => "form-select form-control",
                 _ => "form-control",
             };

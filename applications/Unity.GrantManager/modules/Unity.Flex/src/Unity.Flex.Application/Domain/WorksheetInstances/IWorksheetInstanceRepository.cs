@@ -7,7 +7,8 @@ namespace Unity.Flex.Domain.WorksheetInstances
 {
     public interface IWorksheetInstanceRepository : IBasicRepository<WorksheetInstance, Guid>
     {
-        Task<WorksheetInstance?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails);
-        Task<List<WorksheetInstance>> GetByWorksheetAnchorAsync(Guid worksheetId, string uiAnchor);
+        Task<WorksheetInstance?> GetByCorrelationAnchorWorksheetAsync(Guid correlationId, string correlationProvider, Guid worksheetId, string uiAnchor, bool includeDetails);
+        Task<WorksheetInstance?> GetByCorrelationAnchorAsync(Guid correlationId, string correlationProvider, string uiAnchor, bool includeDetails);        
+        Task<List<WorksheetInstance>> GetByWorksheetCorrelationAsync(Guid worksheetId, string uiAnchor, Guid worksheetCorrelationId, string worksheetCorrelationProvider);
     }
 }

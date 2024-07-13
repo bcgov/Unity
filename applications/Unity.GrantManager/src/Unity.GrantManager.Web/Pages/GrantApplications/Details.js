@@ -350,6 +350,7 @@ $(function () {
     $('body').on('click', '.custom-tab-save', function (event) {
         let id = $(this).attr('id');
         let uiAnchor = $(this).attr('data-ui-anchor');
+        let worksheetId = $(this).attr('data-ui-worksheetId');
         let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
         let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
         let formData = $(`#${formDataName}`).serializeArray();
@@ -364,12 +365,12 @@ $(function () {
             customFormObj[this.name] = (this.checked).toString();
         });
 
-        updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, id, formDataName);
+        updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, id, formDataName, worksheetId);
     });
 
     PubSub.subscribe(
         'fields_tab',
-        (_, data) => {                 
+        (_, data) => {          
             let formDataName = data.worksheet + '_form';
             let formValid = $(`form#${formDataName}`).valid();               
             let saveBtn = $(`#save_${data.worksheet}_btn`);
@@ -382,7 +383,7 @@ $(function () {
     );
 });
 
-function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, saveId, formDataName, ) {
+function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, saveId, formDataName, worksheetId) {
     let customFormUpdate = {
         instanceCorrelationId: applicationId,
         instanceCorrelationProvider: 'Application',
@@ -390,7 +391,8 @@ function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor,
         sheetCorrelationProvider: 'FormVersion',
         uiAnchor: uiAnchor,
         customFields: customFormObj,
-        formDataName: formDataName        
+        formDataName: formDataName,
+        worksheetId: worksheetId
     }
 
     $(`#${saveId}`).prop('disabled', true);

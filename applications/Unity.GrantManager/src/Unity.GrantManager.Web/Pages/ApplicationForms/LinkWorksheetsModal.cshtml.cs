@@ -104,8 +104,11 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
         }
 
         var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionId);
-        _ = await worksheetLinkAppService.UpdateWorksheetLinksAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion, new UpdateWorksheetLinksDto()
+        _ = await worksheetLinkAppService
+            .UpdateWorksheetLinksAsync(new UpdateWorksheetLinksDto()
         {
+            CorrelationId = formVersion?.Id ?? Guid.Empty,
+            CorrelationProvider = CorrelationConsts.FormVersion,            
             WorksheetAnchors = tabLinks
         });
 

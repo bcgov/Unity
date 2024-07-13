@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.WorksheetLinks;
-using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
 {
@@ -13,19 +12,7 @@ namespace Unity.Flex.Worksheets
     public class WorksheetLinkAppService(IWorksheetLinkRepository worksheetLinkRepository,
         IWorksheetInstanceRepository worksheetInstanceRepository) : FlexAppService, IWorksheetLinkAppService
     {
-        public virtual async Task<WorksheetLinkDto> CreateAsync(CreateWorksheetLinkDto dto)
-        {
-            var existing = await worksheetLinkRepository.GetExistingLinkAsync(dto.WorksheetId, dto.CorrelationId, dto.CorrelationProvider);
-
-            if (existing != null)
-            {
-                throw new UserFriendlyException("Link already exists, use versioning to update links");
-            }
-
-            var worksheetLink = await worksheetLinkRepository.InsertAsync(new WorksheetLink(Guid.NewGuid(), dto.WorksheetId, dto.CorrelationId, dto.CorrelationProvider, dto.UiAnchor));
-
-            return ObjectMapper.Map<WorksheetLink, WorksheetLinkDto>(worksheetLink);
-        }
+        const string ORPHANED = "Orphaned";
 
         public virtual async Task<List<WorksheetLinkDto>> GetListByCorrelationAsync(Guid correlationId, string correlationProvider)
         {
@@ -41,19 +28,51 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<List<WorksheetLink>, List<WorksheetLinkDto>>(worksheetLinks);
         }
 
-        public async Task<List<WorksheetLinkDto>> UpdateWorksheetLinksAsync(Guid correlationId, string correlationProvider, UpdateWorksheetLinksDto dto)
+        public async Task<List<WorksheetLinkDto>> UpdateWorksheetLinksAsync(UpdateWorksheetLinksDto dto)
         {
-            var worksheetLinks = await worksheetLinkRepository.GetListByCorrelationAsync(correlationId, correlationProvider);
+            var worksheetLinks = await worksheetLinkRepository.GetListByCorrelationAsync(dto.CorrelationId, dto.CorrelationProvider);
             var refreshedLinks = new List<WorksheetLinkDto>();
+            
+            await UpdateAndDeleteLinksAsync(worksheetLinkRepository, worksheetInstanceRepository, dto, worksheetLinks, refreshedLinks);
+            await AddAndUnorphanLinksAsync(worksheetLinkRepository, worksheetInstanceRepository, dto, worksheetLinks, refreshedLinks);
 
+            return refreshedLinks;
+        }
+
+        private static async Task AddAndUnorphanLinksAsync(IWorksheetLinkRepository worksheetLinkRepository, IWorksheetInstanceRepository worksheetInstanceRepository, UpdateWorksheetLinksDto dto, List<WorksheetLink> worksheetLinks, List<WorksheetLinkDto> refreshedLinks)
+        {
+            // Add new
+            foreach (var wsAnchor in dto.WorksheetAnchors)
+            {
+                if (worksheetLinks.Find(s => s.CorrelationId == dto.CorrelationId
+                    && s.CorrelationProvider == dto.CorrelationProvider
+                        && s.WorksheetId == wsAnchor.Key) == null)
+                {
+                    var newLink = new WorksheetLink(Guid.NewGuid(), wsAnchor.Key, dto.CorrelationId, dto.CorrelationProvider, wsAnchor.Value);
+
+                    var worksheetInstances = await worksheetInstanceRepository.GetByWorksheetCorrelationAsync(wsAnchor.Key, ORPHANED, dto.CorrelationId, dto.CorrelationProvider);
+                    foreach (var worksheetInstance in worksheetInstances)
+                    {
+                        worksheetInstance.SetAnchor(wsAnchor.Value);
+                    }
+
+                    refreshedLinks.Add(MapWorksheetLink(newLink));
+                    await worksheetLinkRepository.InsertAsync(newLink);
+                }
+            }
+        }
+
+        private static async Task UpdateAndDeleteLinksAsync(IWorksheetLinkRepository worksheetLinkRepository, IWorksheetInstanceRepository worksheetInstanceRepository, UpdateWorksheetLinksDto dto, List<WorksheetLink> worksheetLinks, List<WorksheetLinkDto> refreshedLinks)
+        {
             // Update or delete
             foreach (var link in worksheetLinks)
             {
+                var worksheetInstances = await worksheetInstanceRepository.GetByWorksheetCorrelationAsync(link.WorksheetId, link.UiAnchor, dto.CorrelationId, dto.CorrelationProvider);
+
                 if (dto.WorksheetAnchors.TryGetValue(link.WorksheetId, out string? value))
                 {
                     if (link.UiAnchor != value)
                     {
-                        var worksheetInstances = await worksheetInstanceRepository.GetByWorksheetAnchorAsync(link.WorksheetId, link.UiAnchor);
                         foreach (var worksheetInstance in worksheetInstances)
                         {
                             worksheetInstance.SetAnchor(value);
@@ -65,27 +84,17 @@ namespace Unity.Flex.Worksheets
                 }
                 else
                 {
+                    foreach (var worksheetInstance in worksheetInstances)
+                    {
+                        worksheetInstance.SetAnchor(ORPHANED);
+                    }
+
                     await worksheetLinkRepository.DeleteAsync(link);
                 }
             }
-
-            // Add new
-            foreach (var wsAnchor in dto.WorksheetAnchors)
-            {
-                if (worksheetLinks.Find(s => s.CorrelationId == correlationId
-                    && s.CorrelationProvider == correlationProvider
-                        && s.WorksheetId == wsAnchor.Key) == null)
-                {
-                    var newLink = new WorksheetLink(Guid.NewGuid(), wsAnchor.Key, correlationId, correlationProvider, wsAnchor.Value);
-                    refreshedLinks.Add(MapWorksheetLink(newLink));
-                    await worksheetLinkRepository.InsertAsync(newLink);
-                }
-            }
-
-            return refreshedLinks;
         }
 
-        private WorksheetLinkDto MapWorksheetLink(WorksheetLink link)
+        private static WorksheetLinkDto MapWorksheetLink(WorksheetLink link)
         {
             return new WorksheetLinkDto()
             {
