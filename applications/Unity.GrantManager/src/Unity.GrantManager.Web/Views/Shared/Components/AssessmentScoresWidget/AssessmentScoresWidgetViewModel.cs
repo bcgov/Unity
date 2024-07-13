@@ -10,16 +10,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         public Guid AssessmentId { get; set; }
         
         [Range(0, 99)]
-        public int? SectionScore1 { get; set; }
+        public int? FinancialAnalysis { get; set; }
 
         [Range(0, 99)]
-        public int? SectionScore2 { get; set; }
+        public int? EconomicImpact { get; set; }
 
         [Range(0, 99)]
-        public int? SectionScore3 { get; set; } 
+        public int? InclusiveGrowth { get; set; } 
         
         [Range(0, 99)]
-        public int? SectionScore4 { get; set; }
+        public int? CleanGrowth { get; set; }
         public AssessmentState? Status { get; set; }
 
         public Guid CurrentUserId { get; set; }
@@ -43,7 +43,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 
         public int? ScoreTotal()
         {
-            return SectionScore1 + SectionScore2 + SectionScore3 + SectionScore4;
+            return FinancialAnalysis + EconomicImpact + InclusiveGrowth + CleanGrowth;
         }
     }
 }

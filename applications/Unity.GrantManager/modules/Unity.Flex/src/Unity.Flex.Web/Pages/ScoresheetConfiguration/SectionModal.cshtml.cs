@@ -46,34 +46,19 @@ public class SectionModalModel : FlexPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Section.ActionType.Equals("Edit Section On Current Version"))
+        if (Section.ActionType.StartsWith("Edit"))
         {
-            await EditSectionOnCurrentVersion();
+            await EditSection();
             return NoContent();
         }
-        else if (Section.ActionType.Equals("Edit Section On New Version"))
+        else if (Section.ActionType.StartsWith("Add"))
         {
-            await EditSectionOnNewVersion();
+            await CreateSection();
             return NoContent();
-        }
-        else if (Section.ActionType.Equals("Add Section On Current Version"))
+        }        
+        else if (Section.ActionType.StartsWith("Delete"))
         {
-            await CreateSectionOnCurrentVersion();
-            return NoContent();
-        }
-        else if (Section.ActionType.Equals("Add Section On New Version"))
-        {
-            await CreateSectionOnNewVersion();
-            return NoContent();
-        }
-        else if (Section.ActionType.Equals("Delete Section On Current Version"))
-        {
-            await DeleteSectionOnCurrentVersion();
-            return NoContent();
-        }
-        else if (Section.ActionType.Equals("Delete Section On New Version"))
-        {
-            await DeleteSectionOnNewVersion();
+            await DeleteSection();
             return NoContent();
         }
         else
@@ -82,36 +67,22 @@ public class SectionModalModel : FlexPageModel
         }
     }
 
-    private async Task CreateSectionOnCurrentVersion()
+    private async Task CreateSection()
     {
         _ = await _scoresheetAppService.CreateSectionAsync(Section.ScoresheetId, new CreateSectionDto() { Name = Section.Name });
     }
 
-    private async Task CreateSectionOnNewVersion()
+    private async Task EditSection()
     {
-        var clone = await _scoresheetAppService.CloneScoresheetAsync(Section.ScoresheetId, null, null);
-        _ = await _scoresheetAppService.CreateSectionAsync(clone.ScoresheetId, new CreateSectionDto() { Name = Section.Name });
-    }
-
-    private async Task EditSectionOnCurrentVersion()
-    {
+        await _scoresheetAppService.ValidateChangeableScoresheet(Section.ScoresheetId);
         _ = await _sectionAppService.UpdateAsync(Section.SectionId, new EditSectionDto() { Name = Section.Name });
     }
 
-    private async Task EditSectionOnNewVersion()
+    private async Task DeleteSection()
     {
-        var clone = await _scoresheetAppService.CloneScoresheetAsync(Section.ScoresheetId, Section.SectionId, null);
-        _ = await _sectionAppService.UpdateAsync(clone.SectionId ?? Guid.Empty, new EditSectionDto() { Name = Section.Name });
-    }
-
-    private async Task DeleteSectionOnCurrentVersion()
-    {
+        await _scoresheetAppService.ValidateChangeableScoresheet(Section.ScoresheetId);
         await _sectionAppService.DeleteAsync(Section.SectionId);
     }
 
-    private async Task DeleteSectionOnNewVersion()
-    {
-        var clone = await _scoresheetAppService.CloneScoresheetAsync(Section.ScoresheetId, Section.SectionId, null);
-        await _sectionAppService.DeleteAsync(clone.SectionId ?? Guid.Empty);
-    }
+    
 }

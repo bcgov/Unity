@@ -2,36 +2,71 @@ let scoresheetModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/ScoresheetModal'
 });
 
+let cloneScoresheetModal = new abp.ModalManager({
+    viewUrl: 'ScoresheetConfiguration/CloneScoresheetModal'
+});
+
+let publishScoresheetModal = new abp.ModalManager({
+    viewUrl: 'ScoresheetConfiguration/PublishScoresheetModal'
+});
+
 let scoresheetToEditId = null;
 
 scoresheetModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
     if (actionType.startsWith('Delete')) {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
-    } else if (actionType == 'Edit Scoring Sheet On New Version') {
-        const scoresheetIdsToLoad = getScoresheetIdsToLoad().filter(element => element !== scoresheetToEditId);
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null, scorsheetIdsToLoad: scoresheetIdsToLoad });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
     } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId, scorsheetIdsToLoad: getScoresheetIdsToLoad() });
+        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
     }
     abp.notify.success(
         actionType + ' is successful.', 
         'Scoresheet'
     );
 });
-function openScoresheetModal(scoresheetId, actionType, groupId) {
+
+cloneScoresheetModal.onResult(function (response) {
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+    abp.notify.success(
+        'Scoring sheet cloning is successful.',
+        'Scoresheet'
+    );
+});
+
+publishScoresheetModal.onResult(function (response) {
+    PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
+    abp.notify.success(
+        'Scoring sheet publishing is successful.',
+        'Scoresheet'
+    );
+});
+
+function openScoresheetModal(scoresheetId, actionType) {
     scoresheetToEditId = scoresheetId;
     scoresheetModal.open({
         scoresheetId: scoresheetId,
-        actionType: actionType,
-        groupId: groupId
+        actionType: actionType
+    });
+}
+
+function openCloneScoresheetModal(scoresheetId) {
+    scoresheetToEditId = scoresheetId;
+    cloneScoresheetModal.open({
+        scoresheetId: scoresheetId
+    });
+}
+
+function openPublishScoresheetModal(scoresheetId) {
+    scoresheetToEditId = scoresheetId;
+    publishScoresheetModal.open({
+        scoresheetId: scoresheetId
     });
 }
 
 PubSub.subscribe(
     'refresh_scoresheet_list',
     (msg, data) => {
-        refreshScoresheetInfoWidget(data.scoresheetId, data.scorsheetIdsToLoad);
+        refreshScoresheetInfoWidget(data.scoresheetId);
     }
 );
 
@@ -48,8 +83,8 @@ function showAccordion(scoresheetId) {
     accordionButton.classList.remove('collapsed');
 }
 
-function refreshScoresheetInfoWidget(scoresheetId, scorsheetIdsToLoad) {
-    const url = `../Flex/Widget/Scoresheet/Refresh?scoresheetIdsToLoad=${scorsheetIdsToLoad.join(',')}`;
+function refreshScoresheetInfoWidget(scoresheetId) {
+    const url = `../Flex/Widget/Scoresheet/Refresh`;
     fetch(url)
         .then(response => response.text())
         .then(data => {
@@ -62,32 +97,3 @@ function refreshScoresheetInfoWidget(scoresheetId, scorsheetIdsToLoad) {
         });
 }
 
-async function askToCreateNewVersion() {
-    const result = await Swal.fire({
-        title: "Confirm changes made to scoring sheet",
-        text: "Do you want to save your changes on the current version or create a new score sheet version?",
-        showCancelButton: true,
-        confirmButtonText: 'Save changes to the current version',
-        cancelButtonText: 'Create a new version',
-        customClass: {
-            confirmButton: 'btn btn-primary',
-            cancelButton: 'btn btn-secondary'
-        }
-    });
-    
-    
-    if (result.isConfirmed) {
-        return " On Current Version";
-    } else if (result.dismiss === Swal.DismissReason.cancel) {
-        await Swal.fire({
-            title: "Note",
-            text: "Note that to apply the new version of the scoresheet in the assessment process, you need to link the corresponding form to the updated version.",
-            confirmButtonText: 'Ok',
-            customClass: {
-                confirmButton: 'btn btn-primary'
-            }
-        });
-        return " On New Version";
-    }
-    
-}
