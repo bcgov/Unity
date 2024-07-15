@@ -15,6 +15,7 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
     [BindProperty]
     [MinLength(3)]
     [MaxLength(25)]
+    [RegularExpression("^[A-Za-z0-9- ]+$", ErrorMessage = "Illegal character found in name. Please enter a valid name")]
     public string? Title { get; set; }
 
     [BindProperty]
