@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Unity.Flex.Scoresheet
 {
@@ -12,7 +13,7 @@ namespace Unity.Flex.Scoresheet
         private readonly IScoresheetAppService _scoresheetAppService;
         private readonly ISectionAppService _sectionAppService;
         private readonly IScoresheetRepository _scoresheetRepository;
-        public ScoresheetAppService_Tests() 
+        public ScoresheetAppService_Tests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
             _scoresheetRepository = GetRequiredService<IScoresheetRepository>();
             _sectionAppService = GetRequiredService<ISectionAppService>();
