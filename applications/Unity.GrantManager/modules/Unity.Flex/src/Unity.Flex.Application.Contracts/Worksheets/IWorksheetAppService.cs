@@ -18,5 +18,6 @@ namespace Unity.Flex.Worksheets
         Task<bool> PublishAsync(Guid id);
         Task DeleteAsync(Guid id);
         Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex);
+        Task<bool> ExistsAsync(Guid worksheetId);
     }
 }

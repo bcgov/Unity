@@ -17,6 +17,7 @@
 
 @if (Model.IsConfigured)
 {
+    <input type="hidden" id="WorksheetId" value="@Model.WorksheetId" />    
     <div class="@($"worksheet worksheet_{Model.UiAnchor}")">
         @foreach (var worksheetSection in Model.Sections)
         {

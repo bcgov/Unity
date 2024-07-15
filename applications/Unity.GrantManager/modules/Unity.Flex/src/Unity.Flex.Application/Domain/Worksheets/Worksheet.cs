@@ -5,6 +5,7 @@ using Unity.Flex.Domain.WorksheetLinks;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using Unity.Flex.Worksheets;
 
 namespace Unity.Flex.Domain.Worksheets
 {
@@ -31,7 +32,7 @@ namespace Unity.Flex.Domain.Worksheets
         : base(id)
         {
             Id = id;
-            Name = name;
+            Name = name.SanitizeWorksheetName();
             Title = title;
         }
 

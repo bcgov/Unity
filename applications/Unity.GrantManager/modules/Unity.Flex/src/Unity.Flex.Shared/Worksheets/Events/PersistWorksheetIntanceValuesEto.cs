@@ -12,6 +12,7 @@ namespace Unity.Flex.WorksheetInstances
         public string UiAnchor { get; set; } = string.Empty;    
         public dynamic? CustomFields { get; set; }
         public string FormDataName { get; set; } = string.Empty;
+        public Guid WorksheetId { get; set; }
     }
 }
  

@@ -132,5 +132,10 @@ namespace Unity.Flex.Worksheets
                 }
             }
         }
+
+        public async Task<bool> ExistsAsync(Guid worksheetId)
+        {
+            return await worksheetRepository.FindAsync(worksheetId, false) != null;
+        }
     }
 }
