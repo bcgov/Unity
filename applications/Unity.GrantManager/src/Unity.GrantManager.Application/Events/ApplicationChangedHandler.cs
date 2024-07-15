@@ -2,9 +2,12 @@
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailNotifications;
+using Unity.Notifications.Emails;
+using Unity.Notifications.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Events
@@ -15,13 +18,16 @@ namespace Unity.GrantManager.Events
         private readonly IEmailNotificationService _emailNotificationService;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly IFeatureChecker _featureChecker;
+        private readonly ILocalEventBus _localEventBus;
 
         public ApplicationChangedHandler(IEmailNotificationService emailNotificationService,
             IApplicantAgentRepository applicantAgentRepository,
+            ILocalEventBus localEventBus,
             IFeatureChecker featureChecker)
         {
             _emailNotificationService = emailNotificationService;
             _applicantAgentRepository = applicantAgentRepository;
+            _localEventBus = localEventBus;
             _featureChecker = featureChecker;
         }
 
@@ -39,7 +45,6 @@ namespace Unity.GrantManager.Events
             if (applicantAgent == null) return;
 
             string email = applicantAgent.Email;
-            string subject = "Grant Application Update";
 
             if (!string.IsNullOrEmpty(email))
             {
@@ -47,12 +52,28 @@ namespace Unity.GrantManager.Events
                 {
                     case GrantApplicationAction.Approve:
                         {
-                            await _emailNotificationService.SendEmailNotification(email, _emailNotificationService.GetApprovalBody(), subject);
+                            await _localEventBus.PublishAsync(
+                                new EmailNotificationEvent
+                                {
+                                    Action = EmailAction.SendApproval,
+                                    ApplicationId = eventData.ApplicationId,
+                                    RetryAttempts = 0,
+                                    EmailAddress = email
+                                }
+                            );
                             break;
                         }
                     case GrantApplicationAction.Deny:
                         {
-                            await _emailNotificationService.SendEmailNotification(email, _emailNotificationService.GetDeclineBody(), subject);
+                            await _localEventBus.PublishAsync(
+                                new EmailNotificationEvent
+                                {
+                                    Action = EmailAction.SendDecline,
+                                    ApplicationId = eventData.ApplicationId,
+                                    RetryAttempts = 0,
+                                    EmailAddress = email
+                                }
+                            );
                             break;
                         }
                     default: break;

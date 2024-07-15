@@ -15,7 +15,9 @@ namespace Unity.Flex.Worksheets
         Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto);
         Task<WorksheetDto> EditAsync(Guid id, EditWorksheetDto dto);
         Task<WorksheetDto> CloneAsync(Guid id);
-        Task<bool> PublishAsync(Guid worksheetId);
-        Task DeleteAsync(Guid worksheetId);
+        Task<bool> PublishAsync(Guid id);
+        Task DeleteAsync(Guid id);
+        Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex);
+        Task<bool> ExistsAsync(Guid worksheetId);
     }
 }

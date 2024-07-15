@@ -5,16 +5,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetLinks;
 using Unity.Flex.Worksheets;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Flex;
 using Unity.Modules.Shared.Correlation;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationForms;
 
 public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppService,
-    IWorksheetLinkAppService worksheetLinkAppService) : GrantManagerPageModel
+    IWorksheetLinkAppService worksheetLinkAppService,
+    IApplicationFormVersionAppService applicationFormVersionAppService) : GrantManagerPageModel
 {
     [BindProperty]
-    public Guid FormId { get; set; }
+    public Guid ChefsFormVersionId { get; set; }
 
     [BindProperty]
     public string? FormName { get; set; }
@@ -49,12 +51,13 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     [BindProperty]
     public List<WorksheetLinkDto>? CustomTabLinks { get; set; }
 
-    public async Task OnGetAsync(Guid formId, string formName)
+    public async Task OnGetAsync(Guid formVersionId, string formName)
     {
-        FormId = formId;
+        ChefsFormVersionId = formVersionId;
         FormName = formName;
 
-        WorksheetLinks = await worksheetLinkAppService.GetListByCorrelationAsync(formId, CorrelationConsts.Form);
+        var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(formVersionId);
+        WorksheetLinks = await worksheetLinkAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
 
         PublishedWorksheets = [.. (await worksheetListAppService.GetListAsync())
             .Where(s => s.Published && !WorksheetLinks.Select(s => s.WorksheetId).Contains(s.Id))
@@ -100,12 +103,16 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
             }
         }
 
-        _ = await worksheetLinkAppService.UpdateWorksheetLinksAsync(FormId, CorrelationConsts.Form, new UpdateWorksheetLinksDto()
+        var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionId);
+        _ = await worksheetLinkAppService
+            .UpdateWorksheetLinksAsync(new UpdateWorksheetLinksDto()
         {
+            CorrelationId = formVersion?.Id ?? Guid.Empty,
+            CorrelationProvider = CorrelationConsts.FormVersion,            
             WorksheetAnchors = tabLinks
         });
 
-        return NoContent();
+        return new OkObjectResult(new { ChefsFormVersionId });
     }
 }
 

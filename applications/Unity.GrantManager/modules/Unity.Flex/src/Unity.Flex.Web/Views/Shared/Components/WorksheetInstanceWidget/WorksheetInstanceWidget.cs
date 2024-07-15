@@ -13,9 +13,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
 
-[ViewComponent(Name = "WorksheetInstanceWidget")]
 [Widget(
-        RefreshUrl = "Widgets/WorksheetInstance/Refresh",
+        RefreshUrl = "../Flex/Widgets/WorksheetInstance/Refresh",
         ScriptTypes = [typeof(WorksheetInstanceWidgetScriptBundleContributor)],
         StyleTypes = [typeof(WorksheetInstanceWidgetStyleBundleContributor)],
         AutoInitialize = true)]
@@ -27,12 +26,37 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         string sheetCorrelationProvider,
         string uiAnchor,
         Guid? worksheetId)
+    {        
+        if (instanceCorrelationProvider == FlexConsts.Preview
+            && sheetCorrelationProvider == FlexConsts.Preview
+            && uiAnchor == FlexConsts.Preview
+            && worksheetId != null)
+        {
+            return await RenderPreviewAsync(worksheetId.Value);
+        }
+
+        // Invalid render
+        if (instanceCorrelationId == Guid.Empty
+            && sheetCorrelationId == Guid.Empty) return View(new WorksheetViewModel());
+
+        // Render instance or worksheet
+        return await RenderViewAsync(instanceCorrelationId, instanceCorrelationProvider, sheetCorrelationId, sheetCorrelationProvider, uiAnchor, worksheetId);
+    }
+
+    private async Task<IViewComponentResult> RenderViewAsync(Guid instanceCorrelationId,
+        string instanceCorrelationProvider,
+        Guid sheetCorrelationId,
+        string sheetCorrelationProvider,        
+        string uiAnchor,
+        Guid? worksheetId)
     {
         WorksheetViewModel? viewModel = null;
 
-        if (instanceCorrelationId == Guid.Empty && sheetCorrelationId == Guid.Empty) return View(new WorksheetViewModel());
+        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, 
+            instanceCorrelationProvider, 
+            worksheetId, 
+            uiAnchor);
 
-        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, instanceCorrelationProvider, uiAnchor);
         WorksheetDto? worksheet;
         if (uiAnchor == FlexConsts.CustomTab)
         {
@@ -58,13 +82,27 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         return View(viewModel);
     }
 
+    private async Task<IViewComponentResult> RenderPreviewAsync(Guid worksheetId)
+    {
+        // make sure not deleted and was selected preview
+        if (!await worksheetAppService.ExistsAsync(worksheetId))
+        {
+            return View(new WorksheetViewModel());
+        }
+
+        var worksheet = await worksheetAppService.GetAsync(worksheetId);
+        WorksheetViewModel? viewModel = MapWorksheet(worksheet, "Preview");
+        return View(viewModel);
+    }
+
     private static WorksheetViewModel MapWorksheet(WorksheetDto worksheetDto, string uiAnchor)
     {
         var worksheetVM = new WorksheetViewModel
         {
             IsConfigured = true,
             Name = worksheetDto.Name,
-            UiAnchor = uiAnchor
+            UiAnchor = uiAnchor,
+            WorksheetId = worksheetDto.Id
         };
 
         foreach (var section in worksheetDto.Sections.OrderBy(s => s.Order))

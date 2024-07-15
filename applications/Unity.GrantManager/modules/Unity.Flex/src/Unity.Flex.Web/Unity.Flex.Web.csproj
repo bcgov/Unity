@@ -40,18 +40,26 @@
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.js" />
     <None Remove="Views\Shared\Components\CurrencyWidget\Default.css" />
     <None Remove="Views\Shared\Components\CurrencyWidget\Default.js" />
+    <None Remove="Views\Shared\Components\CustomFieldDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\CustomFieldDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\CustomTabWidget\Default.css" />
     <None Remove="Views\Shared\Components\CustomTabWidget\Default.js" />
     <None Remove="Views\Shared\Components\DateWidget\Default.css" />
     <None Remove="Views\Shared\Components\DateWidget\Default.js" />
     <None Remove="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.css" />
     <None Remove="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.js" />
+    <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.css" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.js" />
     <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.css" />
     <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.js" />
     <None Remove="Views\Shared\Components\SelectListWidget\Default.css" />
     <None Remove="Views\Shared\Components\SelectListWidget\Default.js" />
+    <None Remove="Views\Shared\Components\CurrencyDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\CurrencyDefinitionWidget\Default.js" />
+    <None Remove="Views\Shared\Components\TextDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\TextDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
     <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.js" />
     <None Remove="Views\Shared\Components\WorksheetListWidget\WorksheetList.css" />
@@ -71,6 +79,8 @@
     <EmbeddedResource Include="Views\Shared\Components\CheckboxWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\CustomFieldDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\CustomFieldDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CustomTabWidget\Default.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
@@ -81,12 +91,18 @@
     <EmbeddedResource Include="Views\Shared\Components\DateWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.css" />
     <EmbeddedResource Include="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.js" />
+    <EmbeddedResource Include="Views\Shared\Components\NumericDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.css" />
     <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.js" />
     <EmbeddedResource Include="Views\Shared\Components\SelectListWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\SelectListWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\CurrencyDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\CurrencyDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\TextDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\TextDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetListWidget\WorksheetList.css" />

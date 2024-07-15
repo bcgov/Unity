@@ -29,7 +29,7 @@
             </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="button" class="btn btn-primary" onclick="handleSaveSectionButtonClick(event)">@AbpModalButtons.Save</button>
+            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
             @if (!Model.Section.ActionType.StartsWith("Add"))
             {
@@ -40,15 +40,6 @@
 </form>
 
 <script>
-    async function handleSaveSectionButtonClick(event) {
-        event.preventDefault();
-        const action = await askToCreateNewVersion();
-        if (action) {
-            $('#ActionType').val($('#ActionType').val() + action);
-            $('#sectionInfo').submit();
-        }
-        
-    }    
 
     async function deleteSection() {
         let result = await Swal.fire({
@@ -63,12 +54,9 @@
         });
         
         if (result.isConfirmed) {
-            const action = await askToCreateNewVersion();
-            if (action) {
-                $('#ActionType').val('Delete Section' + action);
-                $('#sectionInfo').submit();
-            }
+            $('#ActionType').val('Delete Section');
+            $('#sectionInfo').submit();
         }
-        
+
     }
 </script>

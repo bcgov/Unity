@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.RadioWidget
 {
     [ViewComponent(Name = "RadioWidget")]
     [Widget(
-        RefreshUrl = "Widgets/Radio/Refresh",
+        RefreshUrl = "../Flex/Widgets/Radio/Refresh",
         ScriptTypes = [typeof(RadioWidgetScriptBundleContributor)],
         StyleTypes = [typeof(RadioWidgetStyleBundleContributor)],
         AutoInitialize = true)]

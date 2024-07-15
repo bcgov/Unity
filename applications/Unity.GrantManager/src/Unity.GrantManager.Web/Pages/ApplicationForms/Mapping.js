@@ -1,5 +1,5 @@
 ﻿$(function () {
-
+    let worksheetsModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/LinkWorksheetsModal');
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
@@ -63,9 +63,14 @@
         inputSearchBar: $('#search-bar'),
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
+        linkWorksheets: $('#btn-link-worksheets')
     };
 
     init();
+
+    worksheetsModal.onResult(function (_, response) {           
+        navigateToVersion(response.responseText.chefsFormVersionId);
+    });
 
     function init() {
         bindUIEvents();
@@ -73,6 +78,13 @@
         let availableChefsFields = JSON.parse(availableChefFieldsString)
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
+        setupTooltips();        
+    }
+
+    function setupTooltips() {
+        $('[data-toggle="tooltip"]').tooltip({
+            placement: 'top'
+        });
     }
 
     function bindUIEvents() {
@@ -86,6 +98,11 @@
         UIElements.btnClose.on('click', handleCancelMapping);
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
         UIElements.selectVersionList.on('change', handleSelectVersion);
+        UIElements.linkWorksheets.on('click', handleLinkWorksheets);
+    }
+
+    function handleLinkWorksheets() {
+        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val() });        
     }
 
     function handleEdit() {
@@ -108,7 +125,7 @@
 
             setTimeout(function () {
                 window.location.href = location.href;
-            }, 2000);
+            }, 500);
 
         }
         catch (err) {
@@ -149,8 +166,7 @@
             } else {
                 location.href = location.href + "&ChefsFormVersionGuid=" + chefsFormVersionGuid;
             }
-        }, 2000);
-
+        }, 500);
     }
 
     function bindExistingMaps() {
@@ -160,7 +176,7 @@
                 let keys = Object.keys(existingMapping);
                 for (let key of keys) {
                     let intakeProperty = key;
-                    let chefsMappingProperty = existingMapping[intakeProperty];                    
+                    let chefsMappingProperty = existingMapping[intakeProperty];
                     let intakeMappingCard = document.getElementById("unity_" + intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
                     if (chefsMappingDiv != null) {
@@ -375,8 +391,8 @@
                 return setTypeIndicatorText('123');
             case 'Currency':
                 return setTypeIndicatorText('$');
-            case 'YesNo':                            
-                return setTypeIndicatorText('Y/N');                  
+            case 'YesNo':
+                return setTypeIndicatorText('Y/N');
             default:
                 return '';
         }
@@ -417,7 +433,7 @@
         return tmp.textContent || tmp.innerText || "";
     }
 
-    document.addEventListener('dragstart', function (ev) {        
+    document.addEventListener('dragstart', function (ev) {
         if (ev.target.classList.contains('non-drag')) {
             ev.preventDefault();
             return;
@@ -569,5 +585,4 @@
             prettyJson.push(TAB);
         }
     }
-
 });

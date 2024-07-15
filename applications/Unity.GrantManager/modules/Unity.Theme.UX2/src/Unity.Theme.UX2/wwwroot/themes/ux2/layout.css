@@ -722,4 +722,17 @@ input[type=number]::-webkit-outer-spin-button {
         border-left: 4px solid #003366;
         border-radius: 4px;
     }
+.dataTables_scrollBody {
+    margin-bottom: 5px;
+}
+.dataTables_wrapper .dataTables_length {
+    display: inline-block;
+    margin-right: 10px; /* Adjust margin as needed */
+}
 
+.dataTables_wrapper .length-menu-footer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: 10px;
+}

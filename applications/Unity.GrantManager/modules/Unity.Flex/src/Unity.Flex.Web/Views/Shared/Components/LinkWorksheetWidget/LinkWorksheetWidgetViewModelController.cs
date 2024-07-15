@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.Worksheets
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("Flex/Widget/LinkWorksheet")]
+    [Route("Flex/Widgets/LinkWorksheet")]
     public class LinkWorksheetWidgetViewModelController : AbpController
     {
         [HttpGet]

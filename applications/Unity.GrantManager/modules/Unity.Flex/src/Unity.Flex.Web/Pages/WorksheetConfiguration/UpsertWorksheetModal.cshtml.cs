@@ -10,11 +10,12 @@ namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
 public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService) : FlexPageModel
 {
     [BindProperty]
-    public Guid Id { get; set; }
+    public Guid? WorksheetId { get; set; }
 
     [BindProperty]
     [MinLength(3)]
     [MaxLength(25)]
+    [RegularExpression("^[A-Za-z0-9- ]+$", ErrorMessage = "Illegal character found in name. Please enter a valid name")]
     public string? Title { get; set; }
 
     [BindProperty]
@@ -26,6 +27,9 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
     [BindProperty]
     public WorksheetUpsertAction UpsertAction { get; set; }
 
+    [BindProperty]
+    public bool IsDelete { get; set; }
+
     public async Task OnGetAsync(Guid worksheetId, string actionType)
     {
         UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
@@ -36,7 +40,7 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
             UpsertAction = (WorksheetUpsertAction)Enum.Parse(typeof(WorksheetUpsertAction), actionType);
 
             Name = worksheetDto.Name;
-            Id = worksheetDto.Id;
+            WorksheetId = worksheetDto.Id;
             Title = worksheetDto.Title;
             Published = worksheetDto.Published;
         }
@@ -44,15 +48,15 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var delete = Request.Form["deleteWorksheet"];
-        var save = Request.Form["saveWorksheet"];
+        var delete = Request.Form["deleteWorksheetBtn"];
+        var save = Request.Form["saveWorksheetBtn"];
 
-        if (delete == "delete")
+        if (delete == "delete" || IsDelete)
         {
-            await worksheetAppService.DeleteAsync(Id);
+            await worksheetAppService.DeleteAsync(WorksheetId!.Value);
             return new OkObjectResult(new ModalResponse()
             {
-                WorksheetId = Id,
+                WorksheetId = WorksheetId!.Value,
                 Action = "Delete"
             });
         }
@@ -63,7 +67,7 @@ public class UpsertWorksheetModalModel(IWorksheetAppService worksheetAppService)
                 case WorksheetUpsertAction.Insert:
                     return MapModalResponse(await worksheetAppService.CreateAsync(MapCreateWorksheetModel()));
                 case WorksheetUpsertAction.Update:
-                    return MapModalResponse(await worksheetAppService.EditAsync(Id, MapEditWorksheetModel()));
+                    return MapModalResponse(await worksheetAppService.EditAsync(WorksheetId!.Value, MapEditWorksheetModel()));
                 default:
                     break;
             }

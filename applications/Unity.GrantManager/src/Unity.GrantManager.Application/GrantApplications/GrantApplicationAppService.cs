@@ -30,6 +30,8 @@ using Unity.Flex.WorksheetInstances;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Flex;
 using Unity.Payments.Integrations.Cas;
+using Microsoft.Extensions.Logging;
+using Unity.Flex.Worksheets;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -264,7 +266,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         SanitizeAssessmentResultsDisabledInputs(input, application);
 
         application.ValidateAndChangeDueDate(input.DueDate);
-        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate);
+        application.UpdateAlwaysChangeableFields(input.Notes, input.SubStatus, input.LikelihoodOfFunding, input.TotalProjectBudget, input.NotificationDate, input.RiskRanking);
 
         if (application.IsInFinalDecisionState())
         {
@@ -287,8 +289,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
 
-        await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.AssessmentInfoUiAnchor, input.CustomFields);
-        
+        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, input);
+
         await _applicationRepository.UpdateAsync(application);
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
@@ -344,7 +346,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
 
-            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.ProjectInfoUiAnchor, input.CustomFields);
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -429,7 +431,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
             application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
 
-            await PublishCustomFieldUpdatesAsync(application.Id, CorrelationConsts.Application, application.ApplicationFormId, CorrelationConsts.Form, FlexConsts.ApplicantInfoUiAnchor, input.CustomFields);
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -449,24 +451,29 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    protected virtual async Task PublishCustomFieldUpdatesAsync(Guid instanceCorrelationId,
-        string instanceCorrelationProvider,
-        Guid sheetCorrelationId,
-        string sheetCorrelationProvider,
+    protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
         string uiAnchor,
-        dynamic? customFields)
+        CustomDataFieldDto input)
     {
         if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+            if (input.CorrelationId != Guid.Empty)
             {
-                InstanceCorrelationId = instanceCorrelationId,
-                InstanceCorrelationProvider = instanceCorrelationProvider,
-                SheetCorrelationId = sheetCorrelationId,
-                SheetCorrelationProvider = sheetCorrelationProvider,
-                UiAnchor = uiAnchor,
-                CustomFields = customFields
-            });
+                await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
+                {
+                    InstanceCorrelationId = applicationId,
+                    InstanceCorrelationProvider = CorrelationConsts.Application,
+                    SheetCorrelationId = input.CorrelationId,
+                    SheetCorrelationProvider = CorrelationConsts.FormVersion,
+                    UiAnchor = uiAnchor,
+                    CustomFields = input.CustomFields,
+                    WorksheetId = input.WorksheetId                    
+                });
+            }
+            else
+            {
+                Logger.LogError("Unable to resolve for version");
+            }
         }
     }
 

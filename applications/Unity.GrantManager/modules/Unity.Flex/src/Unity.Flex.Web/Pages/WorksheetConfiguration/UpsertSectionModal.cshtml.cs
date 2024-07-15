@@ -6,15 +6,14 @@ using Unity.Flex.Worksheets;
 
 namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
 
-public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService, IWorksheetSectionAppService worksheetSectionAppService) : FlexPageModel
+public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService,
+    IWorksheetSectionAppService worksheetSectionAppService) : FlexPageModel
 {
-    [BindProperty]
-    public Guid Id { get; set; }
-
     [BindProperty]
     [MinLength(1)]
     [MaxLength(25)]
     [Required]
+    [RegularExpression("^[A-Za-z0-9- ]+$", ErrorMessage = "Illegal character found in name. Please enter a valid name")]    
     public string? Name { get; set; }
 
     [BindProperty]
@@ -28,6 +27,12 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService, I
 
     [BindProperty]
     public WorksheetUpsertAction UpsertAction { get; set; }
+
+    [BindProperty]
+    public bool IsDelete { get; set; }
+
+    [BindProperty]
+    public bool Published { get; set; }
 
     public async Task OnGetAsync(Guid worksheetId, Guid sectionId, string actionType)
     {
@@ -45,14 +50,30 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService, I
 
     public async Task<IActionResult> OnPostAsync()
     {
-        switch (UpsertAction)
+        var delete = Request.Form["deleteSectionBtn"];
+        var save = Request.Form["saveSectionBtn"];
+
+
+        if (delete == "delete" || IsDelete)
         {
-            case WorksheetUpsertAction.Insert:
-                return MapModalResponse(await InsertSectionAsync());
-            case WorksheetUpsertAction.Update:
-                return MapModalResponse(await UpdateSectionAsync());
-            default:
-                break;
+            await worksheetSectionAppService.DeleteAsync(SectionId!.Value);
+            return new OkObjectResult(new ModalResponse()
+            {
+                WorksheetId = WorksheetId,
+                Action = "Delete"
+            });
+        }
+        else if (save == "save")
+        {
+            switch (UpsertAction)
+            {
+                case WorksheetUpsertAction.Insert:
+                    return MapModalResponse(await InsertSectionAsync());
+                case WorksheetUpsertAction.Update:
+                    return MapModalResponse(await UpdateSectionAsync());
+                default:
+                    break;
+            }
         }
 
         return NoContent();
@@ -81,12 +102,13 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService, I
     {
         return await worksheetSectionAppService.EditAsync(SectionId!.Value, new EditSectionDto()
         {
-            Name = Name ?? string.Empty            
+            Name = Name ?? string.Empty
         });
     }
 
     public class ModalResponse : WorksheetSectionDto
     {
         public Guid WorksheetId { get; set; }
+        public string Action { get; set; } = string.Empty;
     }
 }

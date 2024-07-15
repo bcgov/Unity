@@ -11,5 +11,6 @@ namespace Unity.Flex.WorksheetInstances
         public Guid InstanceCorrelationId { get; set; }
         public string InstanceCorrelationProvider { get; set; } = string.Empty;
         public List<KeyValuePair<string, object?>> CustomFields { get; set; } = [];
+        public Guid? VersionId { get; set; }
     }
 }

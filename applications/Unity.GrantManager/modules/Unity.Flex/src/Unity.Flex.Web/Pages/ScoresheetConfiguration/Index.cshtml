@@ -27,14 +27,14 @@
                     <abp-card-body>
                         <h4><b>Scoring Sheets</b></h4>
                         <div id="scoresheet-info-widget">
-                            @await Component.InvokeAsync("Scoresheet", new { scoresheetIdsToLoad = new List<Guid>() })
+                            @await Component.InvokeAsync("Scoresheet")
                         </div>
                         <div class="p-4">
                             <abp-button text="@L["Scoresheet:Configuration:AddScoresheetButtonText"].Value"
                                         id="add_scoresheet_btn"
                                         icon-type="Other"
                                         icon="fl fl-plus"
-                                        onclick="openScoresheetModal(null,'Add Scoring Sheet',null);"
+                                        onclick="openScoresheetModal(null,'Add Scoring Sheet');"
                                         button-type="Light" />
                         </div>
                 

@@ -5,6 +5,7 @@ using Unity.Flex.Domain.WorksheetLinks;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using Unity.Flex.Worksheets;
 
 namespace Unity.Flex.Domain.Worksheets
 {
@@ -31,7 +32,7 @@ namespace Unity.Flex.Domain.Worksheets
         : base(id)
         {
             Id = id;
-            Name = name;
+            Name = name.SanitizeWorksheetName();
             Title = title;
         }
 
@@ -61,9 +62,9 @@ namespace Unity.Flex.Domain.Worksheets
             return this;
         }
 
-        public Worksheet SetNextVersion(uint previousVersion)
+        public Worksheet SetVersion(uint version)
         {
-            Version = previousVersion + 1;
+            Version = version;
             return this;
         }
 
@@ -72,5 +73,11 @@ namespace Unity.Flex.Domain.Worksheets
             Published = published;
             return this;
         }
+
+        public Worksheet RemoveSection(WorksheetSection section)
+        {
+            Sections.Remove(section);
+            return this;
+        }        
     }
 }

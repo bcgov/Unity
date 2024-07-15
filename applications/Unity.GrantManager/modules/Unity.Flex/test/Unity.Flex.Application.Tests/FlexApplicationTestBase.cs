@@ -1,4 +1,4 @@
-﻿using Volo.Abp.Modularity;
+﻿using Xunit.Abstractions;
 
 namespace Unity.Flex;
 
@@ -7,5 +7,7 @@ namespace Unity.Flex;
  */
 public abstract class FlexApplicationTestBase : FlexTestBase<FlexApplicationTestModule>
 {
-
+    protected FlexApplicationTestBase(ITestOutputHelper _)
+    {       
+    }
 }

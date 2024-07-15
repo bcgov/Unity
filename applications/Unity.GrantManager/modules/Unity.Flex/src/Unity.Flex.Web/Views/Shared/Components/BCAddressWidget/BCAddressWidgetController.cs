@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("GrantApplications/Widgets/BCAddress")]
+    [Route("Flex/Widgets/BCAddress")]
     public class BCAddressWidgetController : AbpController
     {
         [HttpGet]

@@ -21,8 +21,9 @@
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
             id: "btn-toggle-filter",
-            action: function (e, dt, node, config) {
-                $(".tr-toggle-filter").toggle();
+            action: function (e, dt, node, config) {},
+            attr: {
+                id: 'btn-toggle-filter'
             }
         },
         {
@@ -56,7 +57,7 @@
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 3, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 10, 3, unity.payments.paymentRequests.paymentRequest.getListByApplicationId, inputAction, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     dataTable.on('search.dt', () => handleSearch());
 

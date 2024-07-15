@@ -55,7 +55,7 @@ namespace Unity.Flex.Worksheets
                     newWorksheet
                         .Sections[^1]
                         .AddField(new CustomField(Guid.NewGuid(),
-                            field.Field,
+                            field.Key,
                             newWorksheet.Name,
                             field.Label,
                             field.Type,
@@ -71,6 +71,8 @@ namespace Unity.Flex.Worksheets
         public virtual async Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto)
         {
             var worksheet = await worksheetRepository.GetAsync(id, true);
+            if (worksheet.Published) { throw new UserFriendlyException("Cannot add sections to a published worksheet"); }
+
             var newWorksheetSection = new WorksheetSection(Guid.NewGuid(), dto.Name);
             worksheet.AddSection(newWorksheetSection);
 
@@ -95,16 +97,45 @@ namespace Unity.Flex.Worksheets
             return ObjectMapper.Map<Worksheet, WorksheetDto>(worksheet);
         }
 
-        public virtual async Task<bool> PublishAsync(Guid worksheetId)
+        public virtual async Task<bool> PublishAsync(Guid id)
         {
-            var worksheet = await worksheetRepository.GetAsync(worksheetId);
+            var worksheet = await worksheetRepository.GetAsync(id);
             _ = worksheet.SetPublished(true);
             return await Task.FromResult(true);
         }
 
-        public virtual async Task DeleteAsync(Guid worksheetId)
+        public virtual async Task DeleteAsync(Guid id)
         {
-            await worksheetRepository.DeleteAsync(worksheetId);
+            await worksheetRepository.DeleteAsync(id);
+        }
+
+        public virtual async Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex)
+        {
+            var worksheet = await worksheetRepository.GetAsync(id);            
+
+            var sections = worksheet.Sections.OrderBy(s => s.Order).ToList();
+            var movedSection = sections[(int)oldIndex];
+            movedSection.SetOrder(newIndex + 1);
+
+            if (oldIndex < newIndex)
+            {
+                foreach (var field in sections[(int)oldIndex..((int)newIndex + 1)].Where(s => s.Id != movedSection.Id))
+                {
+                    field.SetOrder(movedSection.Order - 1);
+                }
+            }
+            else if (oldIndex > newIndex)
+            {
+                foreach (var field in sections[(int)newIndex..(int)oldIndex].Where(s => s.Id != movedSection.Id))
+                {
+                    field.SetOrder(movedSection.Order + 1);
+                }
+            }
+        }
+
+        public async Task<bool> ExistsAsync(Guid worksheetId)
+        {
+            return await worksheetRepository.FindAsync(worksheetId, false) != null;
         }
     }
 }

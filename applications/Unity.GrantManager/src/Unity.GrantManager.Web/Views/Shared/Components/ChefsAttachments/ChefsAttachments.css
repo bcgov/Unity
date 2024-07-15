@@ -15,3 +15,8 @@
     align-items: flex-end;
     margin-bottom: 8px;
 }
+
+.sorting_disabled:before,
+.sorting_disabled:after {
+    content: "" !important;
+}

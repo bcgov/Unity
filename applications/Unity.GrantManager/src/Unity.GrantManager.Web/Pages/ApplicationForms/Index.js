@@ -2,7 +2,6 @@
     const l = abp.localization.getResource('GrantManager');
     let createModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/CreateModal');
     let updateModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/UpdateModal');
-    let worksheetsModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/LinkWorksheetsModal');
     let tokenModal = new abp.ModalManager({
         viewUrl: '/ApplicationForms/TokenModal',
         modalClass: 'ManageTokens'
@@ -37,14 +36,6 @@
                                     text: l('ApplicationForms:Mapping'),
                                     action: function (data) {
                                         location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id
-                                    }
-                                },
-                                {
-                                    text: l('ApplicationForms:ConfigureWorksheets'),
-                                    visible: abp.features.isEnabled('Unity.Flex'),
-                                    action: function (data) {
-                                        worksheetsModal.open({ formId: data.record.id });
-                                        PubSub.publish('refresh_configure_worksheets');
                                     }
                                 }
                             ]

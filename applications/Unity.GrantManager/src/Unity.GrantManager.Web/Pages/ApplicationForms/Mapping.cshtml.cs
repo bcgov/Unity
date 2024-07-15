@@ -55,6 +55,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         [Display(Name = "")]
         public Guid? ScoresheetId { get; set; }
 
+        [BindProperty]
+        public bool FlexEnabled { get; set; }
+
         public MappingModel(IApplicationFormAppService applicationFormAppService,
                             IApplicationFormVersionAppService applicationFormVersionAppService,
                             IWorksheetAppService worksheetAppService,
@@ -73,6 +76,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
             ApplicationFormDto = await _applicationFormAppService.GetAsync(ApplicationId);
             ScoresheetId = ApplicationFormDto.ScoresheetId;
             ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?)await _applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
+            FlexEnabled = await _featureChecker.IsEnabledAsync("Unity.Flex");
 
             if (ApplicationFormVersionDtoList != null)
             {
@@ -94,7 +98,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 {
                     CreateUpdateApplicationFormVersionDto appFormVersion = new CreateUpdateApplicationFormVersionDto();
                     appFormVersion.ApplicationFormId = ApplicationFormDto.Id;
-                    appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;
+                    appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;                    
                     ApplicationFormVersionDto = await _applicationFormVersionAppService.CreateAsync(appFormVersion);
                 }
                 else if (ApplicationFormVersionDto == null)
@@ -129,18 +133,19 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
-                var scoresheets = await _scoresheetAppService.GetAllScoresheetsAsync();
+                var scoresheets = await _scoresheetAppService.GetAllPublishedScoresheetsAsync();
                 ScoresheetOptionsList = [];
 
                 foreach (var scoresheet in scoresheets)
                 {
-                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Name + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
+                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Title + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
                 }
 
                 ScoresheetOptionsList = [.. ScoresheetOptionsList.OrderBy(item => item.Text)];
 
                 // Get the available field from the worksheets for the current Form
-                var worksheets = await _worksheetAppService.GetListByCorrelationAsync(ApplicationFormDto?.Id ?? Guid.Empty, CorrelationConsts.Form);
+                var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionGuid);
+                var worksheets = await _worksheetAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
 
                 foreach (var worksheet in worksheets)
                 {

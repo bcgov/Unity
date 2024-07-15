@@ -9,7 +9,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 namespace Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 {
     [Widget(
-        RefreshUrl = "Widgets/CustomTab/RefreshCustomTab",
+        RefreshUrl = "../Flex/Widgets/CustomTab/RefreshCustomTab",
         ScriptTypes = [typeof(CustomTabWidgetScriptBundleContributor)],
         StyleTypes = [typeof(CustomTabWidgetStyleBundleContributor)],
         AutoInitialize = true)]
