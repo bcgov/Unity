@@ -64,6 +64,7 @@ using Unity.Payments;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 using Unity.Flex.Web;
+using Microsoft.AspNetCore.Identity;
 
 namespace Unity.GrantManager.Web;
 
@@ -137,7 +138,7 @@ public class GrantManagerWebModule : AbpModule
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
-            options.TokenCookie.Expiration = TimeSpan.FromDays(365);
+            options.TokenCookie.Expiration = TimeSpan.FromMinutes(2);
             options.TokenCookie.SecurePolicy = CookieSecurePolicy.Always;
             options.TokenCookie.SameSite = SameSiteMode.Lax;
             options.TokenCookie.HttpOnly = false;
@@ -179,6 +180,7 @@ public class GrantManagerWebModule : AbpModule
         {
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
+        Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(2));
 
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
@@ -211,13 +213,22 @@ public class GrantManagerWebModule : AbpModule
 
     private static void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        context.Services.AddAuthentication(options =>
+        context.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromMinutes(2); // Set the session timeout to 2 hours
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+        })
+      
+            .AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
         })
         .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(2);
+            options.SlidingExpiration = true;
             options.Events.OnSigningOut = async e =>
             {
                 // revoke refresh token on sign-out
@@ -240,7 +251,11 @@ public class GrantManagerWebModule : AbpModule
             options.ClaimActions.MapClaimTypes();
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                RoleClaimType = UnityClaimsTypes.Role
+                RoleClaimType = UnityClaimsTypes.Role,
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
             };
 
             options.Events.OnTokenResponseReceived = async (tokenReceivedContext) =>
@@ -266,6 +281,17 @@ public class GrantManagerWebModule : AbpModule
                     tokenValidatedContext.Response.Redirect("Account/NoGrantPrograms");
                 }
             };
+           
+
+            options.Events.OnAuthenticationFailed =  (tokenValidatedContext) =>
+            {
+                if (tokenValidatedContext.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                {
+                    //tokenValidatedContext.Response.Headers.Add("Token-Expired", "true");one
+                }
+                return Task.CompletedTask;
+            };
+
 
             if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
             {
@@ -441,7 +467,7 @@ public class GrantManagerWebModule : AbpModule
                 }
             });
         }
-
+        app.UseSession();
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
