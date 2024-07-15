@@ -14,5 +14,6 @@ namespace Unity.Flex.Domain.Worksheets
         Task<Worksheet?> GetByNameAsync(string name, bool includeDetails = false);
         Task<Worksheet?> GetBySectionAsync(Guid id, bool includeDetails = false);
         Task<List<Worksheet>> GetListOrderedAsync(Guid correlationId, string correlationProvider, bool includeDetails = false);        
+        Task<List<Worksheet>> GetByNameStartsWithAsync(string name, bool includeDetails = false);
     }
 }

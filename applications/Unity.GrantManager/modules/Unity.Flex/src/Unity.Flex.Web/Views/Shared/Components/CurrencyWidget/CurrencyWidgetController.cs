@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.CurrencyWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("GrantApplications/Widgets/Currency")]
+    [Route("Flex/Widgets/Currency")]
     public class CurrencyWidgetController : AbpController
     {
         [HttpGet]

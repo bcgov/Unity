@@ -10,9 +10,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 	{
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult AssessmentResults(Guid applicationId)
+        public IActionResult AssessmentResults(Guid applicationId, Guid applicationFormVersionId)
         {
-            return ViewComponent("AssessmentResults", new { applicationId });
+            return ViewComponent("AssessmentResults", new { applicationId, applicationFormVersionId });
         }
     }
 }

@@ -10,9 +10,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 	{
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult ApplicantInfo(Guid applicationId)
+        public IActionResult ApplicantInfo(Guid applicationId, Guid applicationFormVersionId)
         {
-            return ViewComponent("ApplicantInfo", new { applicationId });
+            return ViewComponent("ApplicantInfo", new { applicationId, applicationFormVersionId });
         }
     }
 }

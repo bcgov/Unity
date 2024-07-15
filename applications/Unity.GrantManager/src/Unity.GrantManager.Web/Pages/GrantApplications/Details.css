@@ -321,3 +321,9 @@ select.selected{
 div#formio button {
     display: none;
 }
+
+
+form label.error {
+    color: #dc3545 !important;
+    font-size: 0.8em;
+}

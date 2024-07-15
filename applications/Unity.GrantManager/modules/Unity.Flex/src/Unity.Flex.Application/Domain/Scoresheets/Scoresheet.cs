@@ -11,11 +11,10 @@ namespace Unity.Flex.Domain.Scoresheets
 {
     public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
-        public virtual string Name { get; set; } = string.Empty;
+        public virtual string Title { get; set; } = string.Empty;
+        public virtual string Name { get; private set; } = string.Empty;
         public virtual uint Version { get; set; } = 1;
-
-        public Guid GroupId { get; set; }
-
+        public virtual bool Published {  get; set; } = false;
         public Guid? TenantId { get; set; }
                
 
@@ -28,13 +27,13 @@ namespace Unity.Flex.Domain.Scoresheets
         }
 
         public Scoresheet(Guid id,
-        string name,
-        Guid groupId)
+        string title,
+        string name)
         : base(id)
         {
             Id = id;
+            Title = title;
             Name = name;
-            GroupId = groupId;
         }
 
         public Scoresheet AddSection(string name, uint order)

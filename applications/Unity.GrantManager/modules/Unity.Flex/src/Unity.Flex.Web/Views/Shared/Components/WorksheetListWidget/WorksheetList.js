@@ -1,125 +1,199 @@
 $(function () {
-    let upsertWorksheetModal = new abp.ModalManager({
+    let addWorksheetModal = new abp.ModalManager({
         viewUrl: 'WorksheetConfiguration/UpsertWorksheetModal'
     });
 
-    let linkWorksheetModal = new abp.ModalManager({
-        viewUrl: 'WorksheetConfiguration/LinkWorksheetModal'
+    let cloneWorksheetModal = new abp.ModalManager({
+        viewUrl: 'WorksheetConfiguration/CloneWorksheetModal'
     });
 
     bindActionButtons();
+    makeSectionsAndFieldsSortable();
 
     function bindActionButtons() {
-        let addWorksheet = $("#add_worksheet_btn");
+        let addWorksheetButton = $("#add_worksheet_btn");
 
-        if (addWorksheet) {
-            addWorksheet.on("click", function (_) {
-                openWorksheetModal(null, 'Insert');
+        if (addWorksheetButton) {
+            addWorksheetButton.on("click", function (_) {
+                openAddWorksheetModal(null);
             });
         }
 
-        let editWorksheetButtons = $(".edit-worksheet-btn");
+        let cloneWorksheetButtons = $(".clone-worksheet-btn");
 
-        if (editWorksheetButtons) {
-            editWorksheetButtons.on("click", function (event) {
-                let worksheetId = event.currentTarget.dataset.worksheetId;
-                openWorksheetModal(worksheetId, 'Update');
+        if (cloneWorksheetButtons) {
+            cloneWorksheetButtons.on("click", function (event) {
+                openCloneWorksheetModal(event.currentTarget.dataset.worksheetId)
+            });
+        }
+
+        let worksheetSections = $(".accordion-button");
+
+        if (worksheetSections) {
+            worksheetSections.on("click", function (_) {
+                updatePreview();
             });
         }
     }
 
-    upsertWorksheetModal.onResult(function (result, response) {
-        if (response.responseText.action == 'Insert') {
-            PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
-        } else {
-            PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
-        }
+    function openAddWorksheetModal(worksheetId) {
+        addWorksheetModal.open({
+            worksheetId: worksheetId,
+            actionType: 'Insert'
+        });
+    }
 
+    addWorksheetModal.onResult(function (result, response) {
+        PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });        
         abp.notify.success(
             'Operation completed successfully.',
             response.responseText.action + ' Worksheet'
         );
     });
 
-    function openWorksheetModal(worksheetId, actionType) {
-        upsertWorksheetModal.open({
-            worksheetId: worksheetId,
-            actionType: actionType
-        });
-    }
-
-    function openLinkWorksheetModal(worksheetId) {
-        linkWorksheetModal.open({
+    function openCloneWorksheetModal(worksheetId) {
+        cloneWorksheetModal.open({
             worksheetId: worksheetId
         });
     }
 
+    cloneWorksheetModal.onResult(function (result, response) {
+        PubSub.publish('refresh_worksheet_list');
+    });
+
     function refreshWorksheetListWidget() {
-        const url = `../Flex/Widget/WorksheetList/Refresh`;
+        const url = `../Flex/Widgets/WorksheetList/Refresh`;
         fetch(url)
             .then(response => response.text())
             .then(data => {
-                document.getElementById('worksheet-info-widget-list').innerHTML = data;
-                PubSub.publish('worksheet_list_refreshed');
+                document.getElementById('worksheet-info-widget-list').innerHTML = data;   
+                setTimeout(() => {
+                    PubSub.publish('worksheet_list_refreshed');
+                }, 100);
             })
             .catch(error => {
                 console.error('Error refreshing worksheet-info-list-widget:', error);
             });
     }
 
+    function makeSectionsAndFieldsSortable() {
+        makeCustomFieldsSortable();
+        makeSectionsSortable();
+    }
+
+    function makeCustomFieldsSortable() {
+        document.querySelectorAll('.custom-fields-wrapper').forEach(function (div) {
+            _ = new Sortable(div, {
+                animation: 150,
+                onEnd: function (evt) {
+                    updateCustomFieldsSequence(evt);
+                },
+                ghostClass: 'blue-background',
+                onMove: function (_) {
+                    return true;
+                }
+            });
+        });
+    }
+
+    function makeSectionsSortable() {
+        document.querySelectorAll('.sections-wrapper-outer').forEach(function (div) {
+            _ = new Sortable(div, {
+                animation: 150,
+                onEnd: function (evt) {
+                    updateSectionSequence(evt);                    
+                },
+                ghostClass: 'blue-background',
+                onMove: function (_) {
+                    return true;
+                }
+            });
+        });
+    }
+
+    function updateCustomFieldsSequence(evt) {
+        let sectionId = evt.target.dataset.sectionId;
+        let oldIndex = evt.oldIndex;
+        let newIndex = evt.newIndex;
+
+        unity.flex.worksheets.worksheetSection
+            .resequenceCustomFields(sectionId, oldIndex, newIndex, {})
+            .done(function () {
+                updatePreview();
+                abp.notify.success(
+                    'Custom fields order updated.'
+                );
+            });
+    }
+
+    function updateSectionSequence(evt) {
+        let worksheetId = evt.target.dataset.worksheetId;
+        let oldIndex = evt.oldIndex;
+        let newIndex = evt.newIndex;
+
+        unity.flex.worksheets.worksheet
+            .resequenceSections(worksheetId, oldIndex, newIndex, {})
+            .done(function () {
+                updatePreview();
+                abp.notify.success(
+                    'Sections fields order updated.'
+                );
+            });
+    }
+
+    function updatePreview() {
+        let worksheets = $('button.accordion-button[aria-expanded=true]');
+        const previewPane = $('#preview');
+
+        if (worksheets?.length > 0) {
+            let worksheetId = worksheets[0].dataset.worksheetId;
+            const url = `../Flex/Widgets/WorksheetInstance/Refresh?`
+                + `instanceCorrelationId=00000000-0000-0000-0000-000000000000&`
+                + `instanceCorrelationProvider=Preview&`
+                + `sheetCorrelationId=00000000-0000-0000-0000-000000000000&`
+                + `sheetCorrelationProvider=Preview&`
+                + `uiAnchor=Preview&`
+                + `worksheetId=${worksheetId}`;
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    previewPane.html(data);
+                    $("#preview :input").prop("readonly", true);
+                })
+                .catch(error => {
+                    console.error('Error generating preview:', error);
+                });
+
+        } else {
+            previewPane?.html('<p>No sections to display.</p>');
+        }
+    }
+
     PubSub.subscribe(
         'refresh_worksheet_list',
-        (msg, data) => {
+        () => {            
             refreshWorksheetListWidget();
+            makeSectionsAndFieldsSortable();
+            updatePreview();            
         }
     );
 
     PubSub.subscribe(
         'worksheet_list_refreshed',
-        (msg, data) => {
+        () => {
+            console.log('ws list');
             bindActionButtons();
+            makeSectionsAndFieldsSortable();
+            updatePreview();
         }
     );
 
-    function showAccordion(scoresheetId) {
-        if (!scoresheetId) {
-            return;
+    PubSub.subscribe(
+        'worksheet_refreshed',
+        () => {
+            bindActionButtons();
+            makeSectionsAndFieldsSortable();
+            updatePreview();
         }
-        const accordionId = 'collapse-' + scoresheetId;
-        const accordion = document.getElementById(accordionId);
-        accordion.classList.add('show');
-
-        const buttonId = 'accordion-button-' + scoresheetId;
-        const accordionButton = document.getElementById(buttonId);
-        accordionButton.classList.remove('collapsed');
-    }
-
-    async function askToCreateNewVersion() {
-        const result = await Swal.fire({
-            title: "Confirm changes made to scoring sheet",
-            text: "Do you want to save your changes on the current version or create a new score sheet version?",
-            showCancelButton: true,
-            confirmButtonText: 'Save changes to the current version',
-            cancelButtonText: 'Create a new version',
-            customClass: {
-                confirmButton: 'btn btn-primary',
-                cancelButton: 'btn btn-secondary'
-            }
-        });
-
-
-        if (result.isConfirmed) {
-            return " On Current Version";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-            await Swal.fire({
-                title: "Note",
-                text: "Note that to apply the new version of the scoresheet in the assessment process, you need to link the corresponding form to the updated version.",
-                confirmButtonText: 'Ok',
-                customClass: {
-                    confirmButton: 'btn btn-primary'
-                }
-            });
-            return " On New Version";
-        }
-    }
+    );
 });

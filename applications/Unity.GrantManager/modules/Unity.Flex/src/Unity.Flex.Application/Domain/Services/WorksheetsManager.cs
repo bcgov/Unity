@@ -9,7 +9,6 @@ using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets.Values;
-using Volo.Abp;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
@@ -27,8 +26,21 @@ namespace Unity.Flex.Domain.Services
 
             if (dictionary == null || dictionary.Count == 0) return;
 
-            var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationAnchorAsync(eventData.InstanceCorrelationId, eventData.InstanceCorrelationProvider, eventData.UiAnchor, true);
-            var worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(eventData.SheetCorrelationId, eventData.SheetCorrelationProvider, eventData.UiAnchor, true);
+            var worksheetInstance = await worksheetInstanceRepository.GetByCorrelationAnchorWorksheetAsync(eventData.InstanceCorrelationId,
+                eventData.InstanceCorrelationProvider,
+                eventData.WorksheetId,
+                eventData.UiAnchor,
+                true);
+
+            Worksheet? worksheet;
+            if (string.IsNullOrEmpty(eventData.FormDataName))
+            {
+                worksheet = await worksheetRepository.GetByCorrelationAnchorAsync(eventData.SheetCorrelationId, eventData.SheetCorrelationProvider, eventData.UiAnchor, true);
+            }
+            else
+            {
+                worksheet = await worksheetRepository.GetByNameAsync(eventData.FormDataName[..eventData.FormDataName.IndexOf("_form")], true);
+            }
 
             var fields = dictionary
                     .BuildFields()
@@ -73,7 +85,8 @@ namespace Unity.Flex.Domain.Services
                             var wsField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Name == field.FieldName);
                             if (wsField != null)
                             {
-                                worksheetInstance.AddValue(wsField.Id, wsField.Definition ?? "{}", ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type));
+                                worksheetInstance.AddValue(wsField.Id,
+                                    ValueConverter.Convert(field.Value ?? string.Empty, wsField.Type));
                             }
                         }
                     }
@@ -85,12 +98,17 @@ namespace Unity.Flex.Domain.Services
             }
         }
 
-        private async Task<WorksheetInstance> CreateNewWorksheetInstanceAsync(IWorksheetInstanceRepository worksheetInstanceRepository, PersistWorksheetIntanceValuesEto eventData, Worksheet worksheet, List<ValueFieldContainer> fields)
+        private async Task<WorksheetInstance> CreateNewWorksheetInstanceAsync(IWorksheetInstanceRepository worksheetInstanceRepository,
+            PersistWorksheetIntanceValuesEto eventData,
+            Worksheet worksheet,
+            List<ValueFieldContainer> fields)
         {
             var newWorksheetInstance = new WorksheetInstance(Guid.NewGuid(),
                    worksheet.Id,
                    eventData.InstanceCorrelationId,
                    eventData.InstanceCorrelationProvider,
+                   eventData.SheetCorrelationId,
+                   eventData.SheetCorrelationProvider,
                    eventData.UiAnchor);
 
             foreach (var field in fields)
@@ -100,7 +118,8 @@ namespace Unity.Flex.Domain.Services
                     var customField = FindCustomFieldByName(worksheet, field.FieldName);
                     if (customField != null && field.Value != null)
                     {
-                        newWorksheetInstance.AddValue(customField.Id, customField.Definition ?? "{}", ValueConverter.Convert(field.Value, customField.Type));
+                        newWorksheetInstance.AddValue(customField.Id,
+                            ValueConverter.Convert(field.Value, customField.Type));
                     }
                 }
                 catch (JsonException ex)
@@ -143,6 +162,8 @@ namespace Unity.Flex.Domain.Services
                          worksheet.Id,
                          eventData.InstanceCorrelationId,
                          eventData.InstanceCorrelationProvider,
+                         eventData.SheetCorrelationId,
+                         eventData.SheetCorrelationProvider,
                          worksheetLink.UiAnchor);
 
                         var allFields = worksheet.Sections.SelectMany(s => s.Fields);
@@ -150,7 +171,8 @@ namespace Unity.Flex.Domain.Services
                         foreach (var field in allFields)
                         {
                             var match = eventData.CustomFields.Find(s => s.Key == field.Name);
-                            newInstance.AddValue(field.Id, field.Definition ?? "{}", ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
+                            newInstance.AddValue(field.Id,
+                                ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
                         }
 
                         var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);
@@ -163,18 +185,27 @@ namespace Unity.Flex.Domain.Services
             return newWorksheetInstances;
         }
 
-        public async Task<WorksheetLink> CreateWorksheetLink(Guid worksheetId, Guid correlationId, string correlationProvider, string uiAnchor)
+        public async Task<Worksheet> CloneWorksheetAsync(Guid id)
         {
-            // Validate duplicates etc...
-
-            var existing = await worksheetLinkRepository.GetExistingLinkAsync(worksheetId, correlationId, correlationProvider);
-
-            if (existing != null)
+            var worksheet = await worksheetRepository.GetAsync(id, true);
+            var versionSplit = worksheet.Name.Split('-');
+            var worksheetVersions = await worksheetRepository.GetByNameStartsWithAsync($"{versionSplit[0]}-v", false);
+            var highestVersion = worksheetVersions.Max(s => s.Version);
+            var clonedWorksheet = new Worksheet(Guid.NewGuid(), $"{versionSplit[0]}-v{highestVersion + 1}", worksheet.Title);
+            clonedWorksheet.SetVersion(highestVersion + 1);
+            foreach (var section in worksheet.Sections.OrderBy(s => s.Order))
             {
-                throw new BusinessException("Link already exists, use versioning to update links");
+                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
+                foreach (var field in section.Fields.OrderBy(s => s.Order))
+                {
+                    var clonedField = new CustomField(Guid.NewGuid(), field.Key, worksheet.Name, field.Label, field.Type, field.Definition);
+                    clonedSection.AddField(clonedField);
+                }
+                clonedWorksheet.AddSection(clonedSection);
             }
 
-            return await worksheetLinkRepository.InsertAsync(new WorksheetLink(Guid.NewGuid(), worksheetId, correlationId, correlationProvider, uiAnchor));
+            var result = await worksheetRepository.InsertAsync(clonedWorksheet);
+            return result;
         }
 
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)

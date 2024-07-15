@@ -1,7 +1,7 @@
 ﻿$(function () {
     const l = abp.localization.getResource('GrantManager');
     let createModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/CreateModal');
-    let updateModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/UpdateModal');        
+    let updateModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/UpdateModal');
     let tokenModal = new abp.ModalManager({
         viewUrl: '/ApplicationForms/TokenModal',
         modalClass: 'ManageTokens'
@@ -37,7 +37,7 @@
                                     action: function (data) {
                                         location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id
                                     }
-                                },
+                                }
                             ]
                     }
                 },

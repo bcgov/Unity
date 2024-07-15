@@ -15,11 +15,11 @@
 {
     <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
 }
-<form method="post" asp-page-handler="OnPostAsync" id="sectionInfo-@Model.SectionId">
+<form method="post" asp-page-handler="OnPostAsync" id="sectionInfo">
     <abp-input type="hidden" id="WorksheetId" asp-for="@Model.WorksheetId" />
     <abp-input type="hidden" id="SectionId" asp-for="@Model.SectionId" />
     <abp-input type="hidden" id="UpsertAction" asp-for="@Model.UpsertAction" />
-    
+    <abp-input type="hidden" id="DeleteAction" asp-for="@Model.IsDelete" />
     <abp-modal size="Large" id="worksheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="@Model.UpsertAction"></abp-modal-header>
         <abp-modal-body>
@@ -30,8 +30,33 @@
             </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" id="save_worksheet_section_btn" class="btn btn-primary">@AbpModalButtons.Save</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>           
+            <button type="submit" id="save_worksheet_section_btn" name="saveSectionBtn" class="btn btn-primary" value="save">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+            @if (Model.UpsertAction == WorksheetUpsertAction.Update && !Model.Published)
+            {
+                <button type="button" class="btn btn-danger" name="deleteSectionBtn" value="delete" onclick="deleteSection()">Delete</button>
+            }
         </abp-modal-footer>
     </abp-modal>
 </form>
+
+
+<script>
+    function deleteSection() {
+        Swal.fire({
+            title: "Delete Section?",
+            text: 'Are you sure you want to delete this section?',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#DeleteAction').val(true);
+                $('#sectionInfo').submit();
+            }
+        });
+    }
+</script>

@@ -2,6 +2,10 @@
     background-color: lightblue;
 }
 
+.blue-background * {
+    background-color: lightblue;
+}
+
 .section-info-btn {
     --bs-btn-active-color: var(--bc-colors-white-primary-500);
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
@@ -12,33 +16,31 @@
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
 }
 
-#preview .accordion-button::after {
-    -webkit-filter: grayscale(1) invert(1);
-    filter: grayscale(1) invert(1);
-}
-
-#preview .preview-btn:not(.collapsed) {
-    background-color: #007bff; 
-    color: #ffffff; 
-}
-
-#preview .preview-btn.collapsed::after {
-    -webkit-filter: grayscale(1) invert(0); 
-    filter: grayscale(1) invert(0); 
-}
-
 .accordion-button .custom-field-info {
-    margin-right: 20px; 
+    margin-right: 20px;
 }
 
-.accordion-button .custom-field-info .total-custom-fields {
-    font-size: 0.75rem; 
-}
+    .accordion-button .custom-field-info .total-custom-fields {
+        font-size: 0.75rem;
+    }
 
 .accordion-button .text-end {
-    margin-right: 1rem; 
+    margin-right: 1rem;
 }
 
 .custom-field-row {
     padding-left: 5rem;
+    cursor: grab;
+}
+
+.worksheet-btn {
+    text-transform: uppercase;
+}
+
+.sections-wrapper-outer {
+    cursor: grab;
+}
+
+.float-end.worksheet-btn {
+    margin-top: -5px;
 }

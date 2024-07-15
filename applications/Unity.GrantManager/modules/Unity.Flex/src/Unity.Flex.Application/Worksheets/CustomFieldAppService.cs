@@ -4,6 +4,7 @@ using System;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp.Domain.Entities;
 using System.Linq;
+using Unity.Flex.Worksheets.Definitions;
 
 namespace Unity.Flex.Worksheets
 {
@@ -23,9 +24,20 @@ namespace Unity.Flex.Worksheets
             var worksheetField = worksheet.Sections.SelectMany(s => s.Fields).FirstOrDefault(s => s.Id == id) ?? throw new EntityNotFoundException();
 
             worksheetField.SetLabel(dto.Label);
-            worksheetField.SetField(dto.Field, worksheet.Name);
-
+            worksheetField.SetKey(dto.Key, worksheet.Name);
+            worksheetField.SetType(dto.Type);
+            worksheetField.SetDefinition(DefinitionResolver.Resolve(dto.Type, dto.Definition));
+            
             return ObjectMapper.Map<CustomField, CustomFieldDto>(worksheetField);
+        }
+
+        public async Task DeleteAsync(Guid id)
+        {
+            var field = await customFieldRepostitory.GetAsync(id) ?? throw new EntityNotFoundException();
+            var worksheet = await worksheetRepository.GetBySectionAsync(field.SectionId, true) ?? throw new EntityNotFoundException();
+            var section = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId) ?? throw new EntityNotFoundException();
+
+            section.RemoveField(field);
         }
     }
 }

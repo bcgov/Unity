@@ -27,7 +27,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
         private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
         private readonly ICommunityService _applicationCommunityAppService;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly IAuthorizationService _authorizationService;        
 
         public ProjectInfoViewComponent(
             IGrantApplicationAppService grantApplicationAppService,
@@ -35,8 +35,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             IElectoralDistrictService applicationElectoralDistrictAppService,
             IRegionalDistrictService applicationRegionalDistrictAppService,
             ICommunityService applicationCommunityAppService,
-            IAuthorizationService authorizationService
-            )
+            IAuthorizationService authorizationService)
         {
             _grantApplicationAppService = grantApplicationAppService;
             _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
@@ -46,7 +45,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             _authorizationService = authorizationService;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
             const decimal ProjectFundingMax = 10000000;
             const decimal ProjectFundingMultiply = 0.2M;
@@ -62,12 +61,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             List<RegionalDistrictDto> RegionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
 
-            List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();
+            List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();           
 
             ProjectInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationFormId = application.ApplicationForm.Id,
+                ApplicationFormVersionId = applicationFormVersionId,
                 RegionalDistricts = RegionalDistricts,
                 Communities = Communities,
                 EconomicRegions = EconomicRegions,

@@ -17,6 +17,7 @@
 
 @if (Model.IsConfigured)
 {
+    <input type="hidden" id="WorksheetId" value="@Model.WorksheetId" />    
     <div class="@($"worksheet worksheet_{Model.UiAnchor}")">
         @foreach (var worksheetSection in Model.Sections)
         {
@@ -83,7 +84,7 @@
                                                    maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()"
                                                    id="@($"{field.Name}.{Model.Name}.{field.Id}")"
                                                    name="@($"{field.Name}.{Model.Name}.{field.Id}")"
-                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                                                   onchange="@($"notifyFieldChange('{Model.Name}', '{Model.UiAnchor}', this)")" />
                                             break;
                                         }
                                 }

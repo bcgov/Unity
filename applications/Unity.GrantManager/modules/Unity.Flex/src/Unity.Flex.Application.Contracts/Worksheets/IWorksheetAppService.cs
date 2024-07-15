@@ -2,7 +2,6 @@
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
-using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Worksheets
 {
@@ -15,5 +14,10 @@ namespace Unity.Flex.Worksheets
         Task<WorksheetDto> CreateAsync(CreateWorksheetDto dto);
         Task<WorksheetSectionDto> CreateSectionAsync(Guid id, CreateSectionDto dto);
         Task<WorksheetDto> EditAsync(Guid id, EditWorksheetDto dto);
+        Task<WorksheetDto> CloneAsync(Guid id);
+        Task<bool> PublishAsync(Guid id);
+        Task DeleteAsync(Guid id);
+        Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex);
+        Task<bool> ExistsAsync(Guid worksheetId);
     }
 }

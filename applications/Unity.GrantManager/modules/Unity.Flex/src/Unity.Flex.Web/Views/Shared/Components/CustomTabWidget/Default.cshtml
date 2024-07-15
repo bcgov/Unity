@@ -1,4 +1,5 @@
 @using Unity.Flex.Localization
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @model CustomTabWidgetViewModel
@@ -12,11 +13,11 @@
         <div id="@($"custom-tab-title_{Model.Name}")" class="d-flex align-items-stretch justify-content-start" data-worksheet-name="{Model.Name}">
             <h6 class="ps-1 fw-bold">@($"{Model.Title}")</h6>
         </div>
-        <abp-button text="Save" id="@($"save_{Model.Name}_btn")" data-ui-anchor="@($"{Model.UiAnchor}")" class="floating-save-btn custom-tab-save" icon-type="Other"
+        <abp-button text="Save" id="@($"save_{Model.Name}_btn")" data-ui-worksheetId="@($"{Model.WorksheetId}")" data-ui-anchor="@($"{Model.UiAnchor}")" class="floating-save-btn custom-tab-save" icon-type="Other"
                     icon="fl fl-save" button-type="Primary" disabled="true" />
     </abp-column>
     <form id="@($"{Model.Name}_form")">
-        @await Component.InvokeAsync("WorksheetInstanceWidget",
+        @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
                  new
                  {                     
                      instanceCorrelationId = Model.InstanceCorrelationId,
@@ -24,8 +25,7 @@
                      sheetCorrelationId = Model.SheetCorrelationId,
                      sheetCorrelationProvider = Model.SheetCorrelationProvider,                     
                      uiAnchor = Model.UiAnchor,
-                     name = Model.Name,
-                     title = Model.Title
+                     worksheetId = Model.WorksheetId
                  })
     </form>
 </abp-row>                                 

@@ -14,12 +14,13 @@ namespace Unity.Flex.Web.Views.Shared.Components
             {
                 CustomFieldType.Text => "text",
                 CustomFieldType.Numeric => "number",
-                CustomFieldType.Currency => "text",
+                CustomFieldType.Currency => "number",
                 CustomFieldType.DateTime => "datetime-local",
                 CustomFieldType.Date => "date",
                 CustomFieldType.Radio => "radio",
                 CustomFieldType.Checkbox => "checkbox",
                 CustomFieldType.CheckboxGroup => "checkbox",
+                CustomFieldType.Email => "email",
                 _ => "text",
             };
         }
@@ -69,7 +70,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
         {
             return type switch
             {
-                CustomFieldType.Currency => "form-control unity-currency-input",
+                CustomFieldType.Currency => "form-control custom-currency-input",
                 CustomFieldType.YesNo => "form-select form-control",
                 _ => "form-control",
             };
@@ -77,22 +78,22 @@ namespace Unity.Flex.Web.Views.Shared.Components
 
         public static string? GetMinValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMin(field);                                    
         }
 
         public static string? GetMaxValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMax(field);
         }
 
         public static string? GetMinLengthValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMinLength(field);
         }
 
         public static string? GetMaxLengthValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMaxLength(field);
         }
     }
 }
