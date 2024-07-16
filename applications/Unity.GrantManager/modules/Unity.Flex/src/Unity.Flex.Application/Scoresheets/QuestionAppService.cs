@@ -2,6 +2,8 @@
 using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Validation;
 
@@ -32,6 +34,7 @@ namespace Unity.Flex.Scoresheets
             question.Label = dto.Label;
             question.Description = dto.Description;
             question.Type = (QuestionType)dto.QuestionType;
+            question.Definition = DefinitionResolver.Resolve(question.Type, dto.Definition);
             return ObjectMapper.Map<Question, QuestionDto>(await _questionRepository.UpdateAsync(question));
         }
 

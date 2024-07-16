@@ -1,6 +1,7 @@
 ﻿@page
 @using Microsoft.Extensions.Localization
 @using Unity.Flex.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
 @using Unity.Flex.Web.Pages.ScoresheetConfiguration;
 @model Unity.Flex.Web.Pages.ScoresheetConfiguration.QuestionModalModel
@@ -40,10 +41,13 @@
             </abp-row>
             <abp-row class="m-0 p-0">
                 <abp-column size="_12" class="px-1">
-                    <abp-select asp-for="@Model.Question.QuestionType" asp-items="@Model.QuestionTypeOptionsList" id="questionType">
+                    <abp-select asp-for="@Model.Question.QuestionType" asp-items="@Model.QuestionTypeOptionsList" id="questionType" onchange="typeSelectionChanged(this)">
                     </abp-select>
                 </abp-column>
             </abp-row>
+            <div id="question-definition-editor">
+                @await Component.InvokeAsync(typeof(CustomFieldDefinitionWidget), new { type = Model.Question.QuestionType, definition = Model.Question.Definition })
+            </div>
         </abp-modal-body>
         <abp-modal-footer>
             <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
@@ -57,6 +61,21 @@
 </form>
 
 <script>
+    function typeSelectionChanged(event) {
+        let customFieldWidget;
+        if (typeof customFieldWidget === 'undefined') {
+            customFieldWidget = new abp.WidgetManager({
+                wrapper: '#question-definition-editor',
+                filterCallback: function () {
+                    return {
+                        'type': $('#questionType').val(),
+                    };
+                },
+            })
+            customFieldWidget.refresh();
+        }
+    }
+
     async function deleteQuestion() {
         let result = await Swal.fire({
             title: "Delete Question",

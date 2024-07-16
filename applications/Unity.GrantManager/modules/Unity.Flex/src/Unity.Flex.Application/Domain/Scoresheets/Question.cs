@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using Unity.Flex.Scoresheets;
+using System.ComponentModel.DataAnnotations.Schema;
+using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -23,12 +26,15 @@ namespace Unity.Flex.Domain.Scoresheets
 
         public Guid? TenantId { get; set; }
 
+        [Column(TypeName = "jsonb")]
+        public virtual string Definition { get; set; } = "{}";
+
         protected Question()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public Question(Guid id, string name, string label, QuestionType type, uint order, string? description, Guid sectionId)
+        public Question(Guid id, string name, string label, QuestionType type, uint order, string? description, Guid sectionId, object? definition)
         {
             Id = id;
             Name = name;
@@ -38,6 +44,7 @@ namespace Unity.Flex.Domain.Scoresheets
             Description = description;
             SectionId = sectionId;
             Enabled = true;
+            Definition = DefinitionResolver.Resolve(type, definition);
         }
 
         public Question AddAnswer(Answer answer)

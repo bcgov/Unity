@@ -16,5 +16,6 @@ namespace Unity.Flex.Scoresheets
         public virtual Guid SectionId { get; }
 
         public virtual string? Answer { get; set; }
+        public virtual string? Definition { get; set; } = "{}";
     }
 }

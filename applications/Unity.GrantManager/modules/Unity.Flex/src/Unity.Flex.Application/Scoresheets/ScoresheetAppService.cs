@@ -56,7 +56,7 @@ namespace Unity.Flex.Scoresheets
                 ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
                 Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
                 var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
-                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id)).Result;
+                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition)).Result;
                 return ObjectMapper.Map<Question, QuestionDto>(result);
             }
         }
@@ -101,7 +101,7 @@ namespace Unity.Flex.Scoresheets
 
                 foreach (var originalQuestion in originalSection.Fields)
                 {
-                    var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, clonedSection.Id);
+                    var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, clonedSection.Id, originalQuestion.Definition);
                     clonedSection.Fields.Add(clonedQuestion);
                 }
 
