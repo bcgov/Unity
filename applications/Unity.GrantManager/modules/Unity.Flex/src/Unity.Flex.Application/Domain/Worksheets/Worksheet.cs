@@ -5,6 +5,8 @@ using Unity.Flex.Domain.WorksheetLinks;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using Unity.Flex.Worksheets;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Unity.Flex.Domain.Worksheets
 {
@@ -31,7 +33,7 @@ namespace Unity.Flex.Domain.Worksheets
         : base(id)
         {
             Id = id;
-            Name = name;
+            Name = name.SanitizeWorksheetName();
             Title = title;
         }
 
@@ -43,6 +45,14 @@ namespace Unity.Flex.Domain.Worksheets
             section = section.SetOrder((uint)Sections.Count + 1);
 
             Sections.Add(section);
+            return this;
+        }
+
+        internal Worksheet CloneSection(WorksheetSection clonedSection)
+        {
+            clonedSection = clonedSection.SetOrder((uint)Sections.Count + 1);
+
+            Sections.Add(clonedSection);
             return this;
         }
 
@@ -77,6 +87,6 @@ namespace Unity.Flex.Domain.Worksheets
         {
             Sections.Remove(section);
             return this;
-        }        
+        }
     }
 }

@@ -31,6 +31,7 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Flex;
 using Unity.Payments.Integrations.Cas;
 using Microsoft.Extensions.Logging;
+using Unity.Flex.Worksheets;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -288,7 +289,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             }
         }
 
-        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, input.CorrelationId, input.CustomFields);
+        await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.AssessmentInfoUiAnchor, input);
 
         await _applicationRepository.UpdateAsync(application);
 
@@ -345,7 +346,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.ContractExecutionDate = input.ContractExecutionDate;
             application.Place = input.Place;
 
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input.CorrelationId, input.CustomFields);
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -430,7 +431,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.SigningAuthorityBusinessPhone = input.SigningAuthorityBusinessPhone ?? "";
             application.SigningAuthorityCellPhone = input.SigningAuthorityCellPhone ?? "";
 
-            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input.CorrelationId, input.CustomFields);
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ApplicantInfoUiAnchor, input);
 
             await _applicationRepository.UpdateAsync(application);
 
@@ -452,21 +453,21 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,
         string uiAnchor,
-        Guid applicationFormVersionId,
-        dynamic? customFields)
+        CustomDataFieldDto input)
     {
         if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            if (applicationFormVersionId != Guid.Empty)
+            if (input.CorrelationId != Guid.Empty)
             {
                 await _localEventBus.PublishAsync(new PersistWorksheetIntanceValuesEto()
                 {
                     InstanceCorrelationId = applicationId,
                     InstanceCorrelationProvider = CorrelationConsts.Application,
-                    SheetCorrelationId = applicationFormVersionId,
+                    SheetCorrelationId = input.CorrelationId,
                     SheetCorrelationProvider = CorrelationConsts.FormVersion,
                     UiAnchor = uiAnchor,
-                    CustomFields = customFields
+                    CustomFields = input.CustomFields,
+                    WorksheetId = input.WorksheetId                    
                 });
             }
             else
