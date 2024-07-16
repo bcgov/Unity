@@ -150,22 +150,22 @@ objects:
                     valueFrom:
                       configMapKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: Rest-Endpoint
+                        key: S3__Endpoint
                   - name: AccessKeyID
                     valueFrom:
                       secretKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: Access-Key-ID
+                        key: S3__AccessKeyId
                   - name: BucketDisplayName
                     valueFrom:
                       secretKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: Bucket-Display-Name
+                        key: S3__Bucket
                   - name: SecretKey
                     valueFrom:
                       secretKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: Secret-Key                        
+                        key: S3__SecretAccessKey                        
                   - name: DATABASE_BACKUP_KEEP
                     value: ${DATABASE_BACKUP_KEEP}
                   - name: TZ

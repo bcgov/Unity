@@ -35,10 +35,6 @@ parameters:
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
-- description: Name of the default tenant database.
-  displayName: PostgreSQL Tenant Database Name
-  name: UNITY_TENANT_DB
-  value: UnityGrantTenant
 - description: The name of the storage object.
   displayName: Object Storage Name
   name: STORAGE_OBJECT_NAME
@@ -176,6 +172,10 @@ parameters:
   displayName: RabbitMQ__UserName
   value: 'unity-rabbitmq-user-dev'
   name: RabbitMQ__UserName
+- description: RabbitMQ__VirtualHost
+  displayName: RabbitMQ__VirtualHost
+  value: 'dev'
+  name: RabbitMQ__VirtualHost
 # Base image location
 - description: The Namespace where the container image resides
   displayName: Registry Namespace
@@ -205,7 +205,7 @@ parameters:
   displayName: CPU Limit
   name: CPU_LIMIT
   required: true
-  value: 250m
+  value: 1000m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
@@ -215,7 +215,7 @@ parameters:
   displayName: Memory Limit
   name: MEMORY_LIMIT
   required: true
-  value: 512Mi
+  value: 1Gi
 # Template objects to instantiate the project application.
 objects:
 # Secrets 
@@ -242,6 +242,7 @@ objects:
     Payments__CasClientSecret: ${Payments__CasClientSecret}
     Payments__CasClientId: ${Payments__CasClientId}
     RabbitMQ__Password: ${RabbitMQ__Password}
+    RabbitMQ__VirtualHost: ${RabbitMQ__VirtualHost}
   type: Opaque
 # Configmap
 - apiVersion: v1 
@@ -269,7 +270,7 @@ objects:
     BackgroundJobs__IsJobExecutionEnabled: 'true'
     BackgroundJobs__Quartz__IsAutoRegisterEnabled: 'true'
     BackgroundJobs__IntakeResync__NumDaysToCheck: '-2'
-    BackgroundJobs__IntakeResync__Expression: '0 0 0/2 1/1 * ? *'
+    BackgroundJobs__IntakeResync__Expression: '0 0 23 1/1 * ? *'
     CssApi__TokenUrl: ${CssApi__TokenUrl}
     CssApi__Url: ${CssApi__Url}
     CssApi__Env: ${CssApi__Env}

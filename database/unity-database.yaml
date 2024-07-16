@@ -66,6 +66,10 @@ parameters:
   name: POSTGRESQL_DATABASE
   required: true
   value: UnityGrantManager
+- description: Name of the default tenant database.
+  displayName: PostgreSQL Tenant Database Name
+  name: UNITY_TENANT_DB
+  value: UnityGrantTenant
 - description: Volume space available for data, e.g. 512Mi, 2Gi.
   displayName: Volume Capacity
   name: VOLUME_CAPACITY
@@ -154,6 +158,7 @@ objects:
     # Configuration values can be set as key-value properties
     UNITY_DB_HOST: ${DATABASE_SERVICE_NAME}
     UNITY_DB_PORT: ${DATABASE_PORT}
+    UNITY_TENANT_DB: ${UNITY_TENANT_DB}
 # Service
 - apiVersion: v1
   kind: Service
