@@ -58,6 +58,14 @@ namespace Unity.Flex.Domain.Worksheets
             return this;
         }
 
+        internal WorksheetSection CloneField(CustomField clonedField)
+        {
+            clonedField = clonedField.SetOrder((uint)Fields.Count + 1);
+
+            Fields.Add(clonedField);
+            return this;
+        }
+
         public WorksheetSection SetOrder(uint order)
         {
             Order = order;
@@ -68,6 +76,6 @@ namespace Unity.Flex.Domain.Worksheets
         {
             Fields.Remove(field);
             return this;
-        }
+        }        
     }
 }

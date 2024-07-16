@@ -199,9 +199,9 @@ namespace Unity.Flex.Domain.Services
                 foreach (var field in section.Fields.OrderBy(s => s.Order))
                 {
                     var clonedField = new CustomField(Guid.NewGuid(), field.Key, worksheet.Name, field.Label, field.Type, field.Definition);
-                    clonedSection.AddField(clonedField);
+                    clonedSection.CloneField(clonedField);
                 }
-                clonedWorksheet.AddSection(clonedSection);
+                clonedWorksheet.CloneSection(clonedSection);
             }
 
             var result = await worksheetRepository.InsertAsync(clonedWorksheet);
