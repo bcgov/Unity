@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.Domain.PaymentConfigurations;
 using Volo.Abp.Features;
@@ -7,7 +6,6 @@ using Volo.Abp.Features;
 namespace Unity.Payments.PaymentConfigurations
 {
     [RequiresFeature("Unity.Payments")]
-    [Authorize]
     public class PaymentConfigurationAppService : PaymentsAppService, IPaymentConfigurationAppService
     {
         private readonly IPaymentConfigurationRepository _paymentConfigurationRepository;

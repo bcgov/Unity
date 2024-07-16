@@ -1,5 +1,4 @@
 ﻿using Volo.Abp;
-using RestSharp;
 using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
@@ -13,6 +12,9 @@ using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.PaymentConfigurations;
 using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.DependencyInjection;
+using Unity.Payments.Codes;
+using System.Net.Http;
+using Microsoft.Extensions.Logging;
 
 
 namespace Unity.Payments.Integrations.Cas
@@ -99,30 +101,36 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(PaymentRequest paymentRequest)
         {
             InvoiceResponse invoiceResponse = new();
-            string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
-
-            if (accountDistributionCode != null)
+            try
             {
-                Invoice? invoice = await InitializeCASInvoice(paymentRequest, accountDistributionCode);
-                
-                if (invoice != null)
+                string? accountDistributionCode = await _paymentConfigurationAppService.GetAccountDistributionCodeAsync();
+                if (accountDistributionCode != null)
                 {
-                    invoiceResponse = await CreateInvoiceAsync(invoice);
-                    if(invoiceResponse != null)
+                    Invoice? invoice = await InitializeCASInvoice(paymentRequest, accountDistributionCode);
+
+                    if (invoice != null)
                     {
-                        paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
-                        paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
-                        // Set the status - for the payment request
-                        if (invoiceResponse.IsSuccess())
+                        invoiceResponse = await CreateInvoiceAsync(invoice);
+                        if (invoiceResponse != null)
                         {
-                            paymentRequest.SetInvoiceStatus("SentToCas");
-                        } else
-                        {
-                            paymentRequest.SetInvoiceStatus("ErrorFromCas");
+                            paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
+                            paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
+                            // Set the status - for the payment request
+                            if (invoiceResponse.IsSuccess())
+                            {
+                                paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.SentToCas);
+                            }
+                            else
+                            {
+                                paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.ErrorFromCas);
+                            }
+                            await _iPaymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
                         }
-                        await _iPaymentRequestRepository.UpdateAsync(paymentRequest, autoSave: true);
                     }
                 }
+            } catch (Exception ex) {
+                string ExceptionMessage = ex.Message;
+                Logger.LogError(ex, "CreateInvoiceByPaymentRequestAsync Exception: {ExceptionMessage}", ExceptionMessage);
             }
 
             return invoiceResponse;
@@ -130,23 +138,24 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
-            var jsonString = JsonSerializer.Serialize(casAPInvoice);
-            var authHeaders = await _iTokenService.GetAuthHeadersAsync();
+            string jsonString = JsonSerializer.Serialize(casAPInvoice);
+            var authToken = await _iTokenService.GetAuthTokenAsync();
             var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/";						
-            var response = await _resilientRestClient.HttpAsync(Method.Post, resource, authHeaders, jsonString);
+            var response = await _resilientRestClient.HttpAsyncWithBody(HttpMethod.Post, resource, jsonString, authToken);
 
             if (response != null)
             {
                 if(response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                 {
-                    var result = JsonSerializer.Deserialize<InvoiceResponse>(response.Content)
+                    var contentString = ResilientHttpRequest.ContentToString(response.Content);
+                    var result = JsonSerializer.Deserialize<InvoiceResponse>(contentString)
                         ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
                     result.CASHttpStatusCode = response.StatusCode;
                     return result;
                 }
-                else if (response.ErrorMessage != null)
+                else if (response.RequestMessage != null)
                 {
-                    throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response.ErrorMessage);
+                    throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response.RequestMessage);
                 } else
                 {
                     throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
@@ -160,16 +169,16 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode)
         {
-            var authHeaders = await _iTokenService.GetAuthHeadersAsync();
-			var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
-            var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
+            var authToken = await _iTokenService.GetAuthTokenAsync();
+			var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
+            var response = await _resilientRestClient.HttpAsync(HttpMethod.Get, resource, authToken);
 
             if (response != null
                 && response.Content != null
                 && response.IsSuccessStatusCode)
             {
-                string content = response.Content;
-                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content);
+                string contentString = ResilientHttpRequest.ContentToString(response.Content);
+                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(contentString);
                 return result ?? new CasPaymentSearchResult();
             }
             else
@@ -178,24 +187,27 @@ namespace Unity.Payments.Integrations.Cas
             }
         }
 
-        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string paymentId)
+        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(string invoiceNumber, string supplierNumber, string siteNumber)
         {
-            var authHeaders = await _iTokenService.GetAuthHeadersAsync();
-            var resource = $"{_casClientOptions.Value.CasBaseUrl}{CFS_APINVOICE}/payment/{paymentId}";
-            var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
+            var authToken = await _iTokenService.GetAuthTokenAsync();
+            var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{siteNumber}";
+            var response = await _resilientRestClient.HttpAsync(HttpMethod.Get, resource, authToken);
+            CasPaymentSearchResult casPaymentSearchResult = new CasPaymentSearchResult();
 
             if (response != null
                 && response.Content != null
                 && response.IsSuccessStatusCode)
             {
-                string content = response.Content;
-                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content);
-                return result ?? new CasPaymentSearchResult();
+                var content = response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content.Result);
+                return result ?? casPaymentSearchResult;
             }
-            else
+            else if(response != null)
             {
-                return new CasPaymentSearchResult() { };
+                casPaymentSearchResult.InvoiceStatus = response.StatusCode.ToString();
             }
+
+            return casPaymentSearchResult;
         }
     }
 
