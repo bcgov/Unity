@@ -59,7 +59,7 @@ namespace Unity.Flex.Worksheets
             {
                 foreach (var field in fields[(int)oldIndex..((int)newIndex + 1)].Where(s => s.Id != movedField.Id))
                 {
-                    field.SetOrder(field.Order - 1);
+                    field.SetOrder(movedField.Order - 1);
                 }
             }
             else if (oldIndex > newIndex)
