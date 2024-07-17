@@ -116,6 +116,7 @@ $(function () {
             'Application Tags'
         );
         PubSub.publish("ApplicationTags_refresh");
+        PubSub.publish("refresh_application_list");
 
     });
 
