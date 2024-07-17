@@ -176,6 +176,10 @@ parameters:
   displayName: RabbitMQ__VirtualHost
   value: 'dev'
   name: RabbitMQ__VirtualHost
+- description: RabbitMQ__HostName
+  displayName: RabbitMQ__HostName
+  value: 'unity-rabbitmq'
+  name: RabbitMQ__HostName
 # Base image location
 - description: The Namespace where the container image resides
   displayName: Registry Namespace
@@ -242,7 +246,6 @@ objects:
     Payments__CasClientSecret: ${Payments__CasClientSecret}
     Payments__CasClientId: ${Payments__CasClientId}
     RabbitMQ__Password: ${RabbitMQ__Password}
-    RabbitMQ__VirtualHost: ${RabbitMQ__VirtualHost}
   type: Opaque
 # Configmap
 - apiVersion: v1 
@@ -280,6 +283,8 @@ objects:
     Notifications__ChesFromEmail: ${Notifications__ChesFromEmail}
     Payments__CasBaseUrl: ${Payments__CasBaseUrl}
     RabbitMQ__UserName: ${RabbitMQ__UserName}
+    RabbitMQ__VirtualHost: ${RabbitMQ__VirtualHost}
+    RabbitMQ__HostName: ${RabbitMQ__HostName}
 # Service
 - apiVersion: v1
   kind: Service
