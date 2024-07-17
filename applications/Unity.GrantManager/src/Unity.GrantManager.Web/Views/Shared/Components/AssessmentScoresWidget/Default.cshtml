@@ -64,7 +64,7 @@
                                                                                 }
                                                                             case CustomFieldType.Text:
                                                                                 {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionTextWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer })
+                                                                                    @await Component.InvokeAsync(typeof(QuestionTextWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, MinLength = question.Definition?.ConvertDefinition(question.Type)?.GetMinLengthValueOrNull(), MaxLength = question.Definition?.ConvertDefinition(question.Type)?.GetMaxLengthValueOrNull() })
                                                                                     break;
                                                                                 }
                                                                         }

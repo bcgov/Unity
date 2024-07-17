@@ -71,13 +71,28 @@ function handleInputChange(questionId, inputFieldPrefix, saveButtonPrefix) {
     let valid = true;   
 
     if (inputFieldPrefix == 'answer-number-') {
-        valid = validateNumericField(inputField,errorMessage);
-    }       
+        valid = validateNumericField(inputField, errorMessage);
+    } else if (inputFieldPrefix == 'answer-text-') {
+        valid = validateTextField(inputField, errorMessage);
+    }      
 
     if (inputField.value !== originalValue && valid) {
         saveButton.disabled = false;
     } else {
         saveButton.disabled = true;
+    }
+}
+
+function validateTextField(textInputField, errorMessage) {
+    if (textInputField.validity.tooShort) {
+        errorMessage.textContent = 'The answer is too short. Minimum length is ' + textInputField.minLength + ' characters.';
+        return false;
+    } else if (textInputField.validity.tooLong) {
+        errorMessage.textContent = 'The answer is too long. Maximum length is ' + textInputField.maxLength + ' characters.';
+        return false;
+    } else {
+        errorMessage.textContent = ''; 
+        return true;
     }
 }
 
@@ -141,8 +156,8 @@ function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix) {
 
     saveButton.disabled = true;
 
-    if (inputFieldPrefix == 'answer-number-') {
+    if (inputFieldPrefix == 'answer-number-' || inputFieldPrefix == 'answer-text-') {
         const errorMessage = document.getElementById('error-message-' + questionId);
         errorMessage.textContent = '';
-    }
+    } 
 }
