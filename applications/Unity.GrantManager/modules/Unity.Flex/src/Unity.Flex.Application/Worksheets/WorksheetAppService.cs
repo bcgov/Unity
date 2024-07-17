@@ -111,6 +111,7 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex)
         {
+            if (oldIndex == newIndex) return;
             var worksheet = await worksheetRepository.GetAsync(id);            
 
             var sections = worksheet.Sections.OrderBy(s => s.Order).ToList();
