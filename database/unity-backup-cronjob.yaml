@@ -36,20 +36,14 @@ parameters:
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
-- description: The port exposed for the database.
-  displayName: Database Service Port
-  name: DATABASE_PORT
-  required: true
-  value: "5432"
 - description: Password for the PostgreSQL connection user.
   displayName: PostgreSQL Connection Password
   name: POSTGRESQL_PASSWORD
-  required: true
   from: '[a-zA-Z0-9]{26}'
   generate: expression
 - name: DATABASE_BACKUP_KEEP
   description: 'Number of backups to keep'
-  value: '7'
+  value: '2'
 - name: DATABASE_BACKUP_SCHEDULE
   description: 'Cron-like schedule expression m h D M DayOfWeek add +7/8 hours for UTC conversions'
   required: true
@@ -118,8 +112,8 @@ objects:
       app.kubernetes.io/name: ${BACKUP_APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   # Cronjob script works with both database or instance backup commands
-  # pg_dump --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean --create ${DATABASE_SERVICE_NAME} 
-  # pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean
+  # pg_dump --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean --create ${DATABASE_SERVICE_NAME} 
+  # pg_dumpall --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean
   spec:
     schedule: ${DATABASE_BACKUP_SCHEDULE}
     concurrencyPolicy: Forbid
@@ -145,58 +139,43 @@ objects:
                     trap "echo Backup failed; exit 0" ERR; date;
                     FILENAME=dumpall-${DATABASE_SERVICE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
                     time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_SERVICE_NAME}-*"  -exec ls -1tr "{}" + | head -n -$DATABASE_BACKUP_KEEP | xargs rm -fr; 
-                    PGPASSWORD="$DATABASE_PASSWORD" pg_dumpall --username=$DATABASE_USER --host=$DATABASE_HOST --port=$DATABASE_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME); 
+                    PGPASSWORD="$UNITY_POSTGRES_PASSWORD" pg_dumpall --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME); 
                     echo "";
                     echo "Backup successful"; du -h /var/lib/pgsql/backups/$FILENAME; 
-                    echo "to restore the backup to the serviced host use: $ psql --username=$DATABASE_USER --password --host=$DATABASE_HOST --port=$DATABASE_PORT postgres < /var/lib/pgsql/backups/<backupfile> (unpacked with gunzip)";
+                    echo "to restore the backup to the serviced host use: $ psql --username=$UNITY_POSTGRES_USER --password --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT postgres < /var/lib/pgsql/backups/<backupfile> (unpacked with gunzip)";
                     echo ""; du -hs /var/lib/pgsql/backups;/var/lib/pgsql/backups/bin/mc alias set $AccessKeyID $RestEndpoint $AccessKeyID $SecretKey;/var/lib/pgsql/backups/bin/mc cp /var/lib/pgsql/backups/$FILENAME $AccessKeyID/$BucketDisplayName/Unity/Backups
+                ## Add single and mapped environment values
                 env:
-                  - name: DATABASE_PORT
-                    valueFrom:
-                      configMapKeyRef:
-                        name: ${DATABASE_SERVICE_NAME}
-                        key: UNITY_DB_PORT
-                  - name: DATABASE_HOST
-                    value: ${DATABASE_SERVICE_NAME}
-                  - name: DATABASE_SERVICE_NAME
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${DATABASE_SERVICE_NAME}
-                        key: database-name
-                  - name: DATABASE_USER
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${DATABASE_SERVICE_NAME}
-                        key: database-user
-                  - name: DATABASE_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${DATABASE_SERVICE_NAME}
-                        key: database-password
                   - name: RestEndpoint
                     valueFrom:
                       configMapKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: Rest-Endpoint
+                        key: S3__Endpoint
                   - name: AccessKeyID
                     valueFrom:
                       secretKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: Access-Key-ID
+                        key: S3__AccessKeyId
                   - name: BucketDisplayName
                     valueFrom:
                       secretKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: Bucket-Display-Name
+                        key: S3__Bucket
                   - name: SecretKey
                     valueFrom:
                       secretKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: Secret-Key                        
+                        key: S3__SecretAccessKey                        
                   - name: DATABASE_BACKUP_KEEP
                     value: ${DATABASE_BACKUP_KEEP}
                   - name: TZ
                     value: Canada/Pacific
+                envFrom:
+                  ## Add all from ${DATABASE_SERVICE_NAME}
+                  - configMapRef:
+                      name: ${DATABASE_SERVICE_NAME}
+                  - secretRef:
+                      name: ${DATABASE_SERVICE_NAME}
                 volumeMounts:
                   - name: ${BACKUP_APPLICATION_NAME}
                     mountPath: /var/lib/pgsql/backups
