@@ -49,6 +49,7 @@ namespace Unity.Flex.Worksheets
 
         public virtual async Task ResequenceCustomFieldsAsync(Guid id, uint oldIndex, uint newIndex)
         {
+            if (oldIndex == newIndex) return;
             (Worksheet _, WorksheetSection section) = await GetWorksheetAndSectionAsync(id);
 
             var fields = section.Fields.OrderBy(s => s.Order).ToList();
@@ -59,16 +60,16 @@ namespace Unity.Flex.Worksheets
             {
                 foreach (var field in fields[(int)oldIndex..((int)newIndex + 1)].Where(s => s.Id != movedField.Id))
                 {
-                    field.SetOrder(field.Order - 1);
+                    field.SetOrder(movedField.Order - 1);
                 }
             }
             else if (oldIndex > newIndex)
             {
                 foreach (var field in fields[(int)newIndex..(int)oldIndex].Where(s => s.Id != movedField.Id))
                 {
-                    field.SetOrder(field.Order + 1);
+                    field.SetOrder(movedField.Order + 1);
                 }
-            }            
+            }
         }
 
         private async Task<(Worksheet worksheet, WorksheetSection section)> GetWorksheetAndSectionAsync(Guid sectionId)

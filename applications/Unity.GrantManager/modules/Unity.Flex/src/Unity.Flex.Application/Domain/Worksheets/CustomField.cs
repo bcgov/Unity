@@ -47,15 +47,15 @@ namespace Unity.Flex.Domain.Worksheets
             Type = type;
         }
 
-        public CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type, object? definition)
-            : this(id, field, worksheetName, label, type)
+        public CustomField(Guid id, string key, string worksheetName, string label, CustomFieldType type, object? definition)
+            : this(id, key, worksheetName, label, type)
         {
 
             Definition = DefinitionResolver.Resolve(type, definition);
         }
 
-        public CustomField(Guid id, string field, string worksheetName, string label, CustomFieldType type, string? definition)
-            : this(id, field, worksheetName, label, type)
+        public CustomField(Guid id, string key, string worksheetName, string label, CustomFieldType type, string? definition)
+            : this(id, key, worksheetName, label, type)
         {
             Definition = definition ?? "{}";
         }
