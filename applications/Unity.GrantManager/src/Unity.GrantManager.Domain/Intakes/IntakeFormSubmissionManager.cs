@@ -213,7 +213,8 @@ namespace Unity.GrantManager.Intakes
                     SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone,
                     SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone,
                     Place = intakeMap.Place,
-                    RiskRanking = intakeMap.RiskRanking
+                    RiskRanking = intakeMap.RiskRanking,
+                    ProjectSummary = intakeMap.ProjectSummary,
                 }
             );
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
