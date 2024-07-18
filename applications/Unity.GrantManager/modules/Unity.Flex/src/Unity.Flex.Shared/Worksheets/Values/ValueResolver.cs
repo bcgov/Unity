@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json;
+using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Worksheets.Values
 {
@@ -22,6 +23,17 @@ namespace Unity.Flex.Worksheets.Values
                 CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupValue>(currentValue)?.Value,
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListValue>(currentValue)?.Value,
                 CustomFieldType.BCAddress => ValueResolverHelpers.ConvertBCAddress(JsonSerializer.Deserialize<BCAddressValue>(currentValue)?.Value),
+                _ => throw new NotImplementedException()
+            };
+        }
+
+        public static object? Resolve(string currentValue, QuestionType type)
+        {
+            return type switch
+            {
+                QuestionType.Text => JsonSerializer.Deserialize<TextValue>(currentValue)?.Value,
+                QuestionType.Number => JsonSerializer.Deserialize<NumericValue>(currentValue)?.Value,
+                QuestionType.YesNo => JsonSerializer.Deserialize<YesNoValue>(currentValue)?.Value,
                 _ => throw new NotImplementedException()
             };
         }

@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Scoresheets;
-using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget;
+using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 using Unity.Flex.Worksheets;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.Validation;
@@ -119,8 +119,8 @@ public class QuestionModalModel : FlexPageModel
 
     private object? ExtractDefinition()
     {
-        var questionType = Enum.TryParse(Question.QuestionType, out CustomFieldType type);
+        var questionType = Enum.TryParse(Question.QuestionType, out QuestionType type);
         if (!questionType) return null;
-        return CustomFieldDefinitionWidget.ParseFormValues(type, Request.Form);
+        return QuestionDefinitionWidget.ParseFormValues(type, Request.Form);
     }
 }

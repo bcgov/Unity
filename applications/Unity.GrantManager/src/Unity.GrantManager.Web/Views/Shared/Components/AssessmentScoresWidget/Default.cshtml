@@ -52,17 +52,17 @@
 
                                                                         @switch (question.Type)
                                                                         {
-                                                                            case CustomFieldType.Numeric:
+                                                                            case QuestionType.Number:
                                                                                 {
                                                                                     @await Component.InvokeAsync(typeof(QuestionNumberWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = Convert.ToDouble(question.Answer), Min = question.Definition?.ConvertDefinition(question.Type)?.GetMinValueOrNull(), Max = question.Definition?.ConvertDefinition(question.Type)?.GetMaxValueOrNull() })
                                                                                     break;
                                                                                 }
-                                                                            case CustomFieldType.YesNo:
+                                                                            case QuestionType.YesNo:
                                                                                 {
                                                                                     @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer })
                                                                                     break;
                                                                                 }
-                                                                            case CustomFieldType.Text:
+                                                                            case QuestionType.Text:
                                                                                 {
                                                                                     @await Component.InvokeAsync(typeof(QuestionTextWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, MinLength = question.Definition?.ConvertDefinition(question.Type)?.GetMinLengthValueOrNull(), MaxLength = question.Definition?.ConvertDefinition(question.Type)?.GetMaxLengthValueOrNull() })
                                                                                     break;
