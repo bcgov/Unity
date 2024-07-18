@@ -127,7 +127,8 @@
 
         @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
+            <div id="assessmentResultsCustomWidget">
+             @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
                      new
                      {
                          instanceCorrelationId = Model.ApplicationId,
@@ -136,6 +137,7 @@
                          sheetCorrelationProvider = CorrelationConsts.FormVersion,
                          uiAnchor = FlexConsts.AssessmentInfoUiAnchor
                      })
+            </div>
         }
 
     </form>

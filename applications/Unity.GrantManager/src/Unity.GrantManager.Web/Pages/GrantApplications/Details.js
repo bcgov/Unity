@@ -282,18 +282,31 @@ $(function () {
             };
         }
     });
+    let assessmentResultCustomWidgetManager = new abp.WidgetManager({
+        wrapper: '#"assessmentResultsCustomWidget',
+        filterCallback: function () {
+            return {
+                'instanceCorrelationId': $('#DetailsViewApplicationId').val(),
+                'instanceCorrelationProvider': 'Application',
+                'sheetCorrelationId': $('#ApplicationFormVersionId').val(),
+                'sheetCorrelationProvider': 'FormVersion',
+                'uiAnchor': 'AssessmentInfo'
+            }
+        }
+    })
     PubSub.subscribe(
         'application_status_changed',
         (msg, data) => {
             console.log(msg, data);
             applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
-            assessmentResultWidgetManager.refresh();
+            assessmentResultWidgetManager.refresh();            
         }
     );
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
             assessmentResultWidgetManager.refresh();
+            assessmentResultCustomWidgetManager.refresh();
         }
     );
 
