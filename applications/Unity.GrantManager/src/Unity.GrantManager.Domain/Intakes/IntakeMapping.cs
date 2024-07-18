@@ -215,5 +215,9 @@ namespace Unity.GrantManager.Intakes
         [DisplayName("Risk Ranking")]
         [MapFieldType("String")]
         public string? RiskRanking  { get; set; }
+
+        [DisplayName("Project Summary")]
+        [MapFieldType("String")]
+        public string? ProjectSummary { get; set; }
     }
 }

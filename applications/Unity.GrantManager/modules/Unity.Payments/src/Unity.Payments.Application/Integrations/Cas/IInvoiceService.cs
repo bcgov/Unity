@@ -10,6 +10,5 @@ namespace Unity.Payments.Integrations.Cas
         Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(PaymentRequest paymentRequest);
         Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice);
         Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode);
-        Task<CasPaymentSearchResult> GetCasPaymentAsync(string paymentId);
     }
 }

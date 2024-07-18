@@ -7,11 +7,12 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Shared;
 using Unity.Payments.Domain.Workflow;
 using Unity.Payments.Enums;
+using Unity.Payments.Integrations.Cas;
+using Unity.Payments.PaymentRequests;
 using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 
 namespace Unity.Payments.Domain.Services
 {
@@ -20,17 +21,19 @@ namespace Unity.Payments.Domain.Services
         /* To be implemented */
         private readonly IPaymentRequestRepository _paymentRequestRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
-        private readonly ICurrentUser _currentUser;
         private readonly IPermissionChecker _permissionChecker;
+        private readonly CasPaymentRequestCoordinator _casPaymentRequestCoordinator;
 
-        public PaymentsManager(IPaymentRequestRepository paymentRequestRepository,
+        public PaymentsManager(
+            CasPaymentRequestCoordinator casPaymentRequestCoordinator,
+            IInvoiceService invoiceService,
+            IPaymentRequestRepository paymentRequestRepository,
             IUnitOfWorkManager unitOfWorkManager,
-            ICurrentUser currentUser,
             IPermissionChecker permissionChecker)
         {
+            _casPaymentRequestCoordinator = casPaymentRequestCoordinator;
             _paymentRequestRepository = paymentRequestRepository;
             _unitOfWorkManager = unitOfWorkManager;
-            _currentUser = currentUser;
             _permissionChecker = permissionChecker;
         }
 
@@ -153,6 +156,7 @@ namespace Unity.Payments.Domain.Services
                 }
 
                 statusChangedTo = PaymentRequestStatus.Submitted;
+                await _casPaymentRequestCoordinator.AddPaymentRequestsToInvoiceQueue(paymentRequest);
             }
             paymentRequest.SetPaymentRequestStatus(statusChangedTo);
 
