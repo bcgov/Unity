@@ -1,5 +1,4 @@
 ﻿$(function () {
-   
     $('body').on('click', '#saveAssessmentResultBtn', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
@@ -183,7 +182,24 @@ function flaggedFieldIsValid(flag, name) {
     return true;
 }
 
+function hasInvalidCustomFields() {        
+    let invalidFieldsFound = false;
+    $("input[id^='custom']:visible").each(function (i, el) {
+        let fieldValidity = document.getElementById(el.id).validity.valid;        
+        if (!fieldValidity) {
+            invalidFieldsFound = true;
+        }
+    });
+    
+    return invalidFieldsFound;
+}
+
 function enableResultSaveBtn() {
+    if (hasInvalidCustomFields()) {
+        $('#saveAssessmentResultBtn').prop('disabled', true);
+        return;
+    }
+
     if (hasInvalidExplicitValidations()) {
         $('#saveAssessmentResultBtn').prop('disabled', true);
         return;
