@@ -65,8 +65,10 @@ namespace Unity.Payments.PaymentRequests
                    dto.SiteId,
                    dto.CorrelationId,
                    dto.CorrelationProvider,
+                   await GeneratePaymentNumberAsync(),
                    dto.Description,
-                   paymentThreshold);
+                   paymentThreshold
+                  );
 
                     var result = await _paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
@@ -83,6 +85,7 @@ namespace Unity.Payments.PaymentRequests
                         Description = result.Description,
                         CreationTime = result.CreationTime,
                         Status = result.Status,
+                        ReferenceNumber  = result.ReferenceNumber,
                     });
                 }
                 catch (Exception ex)
@@ -196,6 +199,39 @@ namespace Unity.Payments.PaymentRequests
             }
 
             return PaymentSharedConsts.DefaultThresholdAmount;
+        }
+        public async Task<string> GeneratePaymentNumberAsync()
+        {
+            var currentYear = DateTime.UtcNow.Year;
+            var prefix = "UP-";
+            var yearPart = currentYear.ToString();
+
+            // Get the next sequence number and reset it if it's a new year
+            var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
+            var sequencePart = sequenceNumber.ToString("D6");
+
+            return $"{prefix}{yearPart}-{sequencePart}";
+        }
+
+        private async Task<int> GetNextSequenceNumberAsync(int currentYear)
+        {
+            // Retrieve all payment requests and filter for the current year
+            var payments = await _paymentRequestsRepository.GetListAsync();
+            var latestPayment = payments
+                .Where(p => p.CreationTime.Year == currentYear)
+                .OrderByDescending(p => p.ReferenceNumber)
+                .FirstOrDefault();
+
+            if (latestPayment != null)
+            {
+                var latestSequenceNumber = int.Parse(latestPayment.ReferenceNumber.Split('-').Last());
+                return latestSequenceNumber + 1;
+            }
+            else
+            {
+                // First request of the year
+                return 1;
+            }
         }
     }
 }

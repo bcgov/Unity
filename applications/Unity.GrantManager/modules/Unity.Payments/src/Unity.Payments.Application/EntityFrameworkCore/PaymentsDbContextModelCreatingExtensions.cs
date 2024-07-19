@@ -30,6 +30,8 @@ public static class PaymentsDbContextModelCreatingExtensions
                 .WithMany()
                 .HasForeignKey(x => x.SiteId)
                 .OnDelete(DeleteBehavior.NoAction);
+          
+            b.HasIndex(e => e.ReferenceNumber).IsUnique();
         });
 
 

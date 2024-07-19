@@ -5,7 +5,7 @@ $(function () {
     let isApprove = false;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
-        'id',
+        'referenceNumber',
         'applicantName',
         'supplierNumber',
         'creationTime',
@@ -156,7 +156,7 @@ $(function () {
 
     function getColumns() {
         return [
-            getPaymentIdColumn(),
+            getPaymenReferenceColumn(),
             getApplicantNameColumn(),
             getSupplierNumberColumn(),
             getSiteNumberColumn(),
@@ -176,11 +176,11 @@ $(function () {
         ]
     }
 
-    function getPaymentIdColumn() {
+    function getPaymenReferenceColumn() {
         return {
             title: l('ApplicationPaymentListTable:PaymentID'),
-            name: 'id',
-            data: 'id',
+            name: 'referenceNumber',
+            data: 'referenceNumber',
             className: 'data-table-header',
             index: 0,
         };
