@@ -108,7 +108,7 @@ namespace Unity.GrantManager.Assessments
                     var existingQuestionIds = await _scoresheetAppService.GetNonDeletedNumericQuestionIds(questionIds);
 
                     return instance.Answers.Where(a => existingQuestionIds.Contains(a.QuestionId))
-                        .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Worksheets.CustomFieldType.Numeric)!.ToString()));
+                        .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.Number)!.ToString()));
 
                 }
             }

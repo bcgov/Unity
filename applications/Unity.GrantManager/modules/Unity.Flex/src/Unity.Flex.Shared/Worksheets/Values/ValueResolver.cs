@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json;
+using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Worksheets.Values
 {
@@ -24,6 +25,27 @@ namespace Unity.Flex.Worksheets.Values
                 CustomFieldType.BCAddress => ValueResolverHelpers.ConvertBCAddress(JsonSerializer.Deserialize<BCAddressValue>(currentValue)?.Value),
                 _ => throw new NotImplementedException()
             };
+        }
+
+        public static object? Resolve(string currentValue, QuestionType type)
+        {
+            return type switch
+            {
+                QuestionType.Text => JsonSerializer.Deserialize<TextValue>(currentValue)?.Value,
+                QuestionType.Number => ResolveNumber(currentValue),
+                QuestionType.YesNo => JsonSerializer.Deserialize<YesNoValue>(currentValue)?.Value,
+                _ => throw new NotImplementedException()
+            };
+
+            static object ResolveNumber(string currentValue)
+            {
+                var numericValue = JsonSerializer.Deserialize<NumericValue>(currentValue)?.Value;
+                if (numericValue == null || string.IsNullOrEmpty(numericValue.ToString()))
+                {
+                    return 0;
+                }
+                return numericValue;
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Scoresheets;
+using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 using Volo.Abp.Validation;
 
@@ -49,7 +50,8 @@ public class QuestionModalModel : FlexPageModel
         [Display(Name = "Scoresheet:Configuration:QuestionModal.QuestionType")]
         [SelectItems(nameof(QuestionTypeOptionsList))]
         public string QuestionType { get; set; } = string.Empty;
-                
+        public string? Definition { get; set; }
+
     }
     public async Task OnGetAsync(Guid scoresheetId, Guid sectionId, Guid questionId,
        string actionType)
@@ -65,6 +67,7 @@ public class QuestionModalModel : FlexPageModel
             Question.Label = question.Label ?? "";
             Question.Description = question.Description ?? "";
             Question.QuestionType = ((int)question.Type).ToString();
+            Question.Definition = question.Definition;
         }
         else
         {
@@ -98,13 +101,13 @@ public class QuestionModalModel : FlexPageModel
 
     private async Task CreateQuestion()
     {
-        _ = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(Question.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType) });
+        _ = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(Question.ScoresheetId, new CreateQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType), Definition = ExtractDefinition() });
     }    
 
     private async Task EditQuestion()
     {
         await _scoresheetAppService.ValidateChangeableScoresheet(Question.ScoresheetId);
-        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType) });
+        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType), Definition = ExtractDefinition() });
     }
     
     private async Task DeleteQuestion()
@@ -113,5 +116,10 @@ public class QuestionModalModel : FlexPageModel
         await _questionAppService.DeleteAsync(Question.Id);
     }
 
-    
+    private object? ExtractDefinition()
+    {
+        var questionType = Enum.TryParse(Question.QuestionType, out QuestionType type);
+        if (!questionType) return null;
+        return QuestionDefinitionWidget.ParseFormValues(type, Request.Form);
+    }
 }

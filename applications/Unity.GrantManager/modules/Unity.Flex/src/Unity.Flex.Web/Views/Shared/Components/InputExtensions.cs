@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text.Json;
+using Unity.Flex.Scoresheets;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
 using Unity.Flex.Worksheets.Values;
@@ -47,6 +48,17 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupDefinition>(definition),
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
                 CustomFieldType.BCAddress => JsonSerializer.Deserialize<BCAddressDefinition>(definition),
+                _ => null,
+            };
+        }
+
+        public static CustomFieldDefinition? ConvertDefinition(this string definition, QuestionType type)
+        {
+            return type switch
+            {
+                QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
+                QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
+                QuestionType.YesNo => JsonSerializer.Deserialize<YesNoDefinition>(definition),                
                 _ => null,
             };
         }

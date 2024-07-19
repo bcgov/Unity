@@ -50,6 +50,8 @@
     <None Remove="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.js" />
     <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
+    <None Remove="Views\Shared\Components\QuestionDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\QuestionDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.css" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.js" />
     <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.css" />
@@ -93,6 +95,8 @@
     <EmbeddedResource Include="Views\Shared\Components\LinkWorksheetWidget\LinkWorksheet.js" />
     <EmbeddedResource Include="Views\Shared\Components\NumericDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\QuestionDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\QuestionDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.css" />
