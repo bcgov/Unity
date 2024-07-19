@@ -32,10 +32,16 @@ namespace Unity.Flex.Worksheets.Values
             return type switch
             {
                 QuestionType.Text => JsonSerializer.Deserialize<TextValue>(currentValue)?.Value,
-                QuestionType.Number => JsonSerializer.Deserialize<NumericValue>(currentValue)?.Value,
+                QuestionType.Number => ResolveNumber(currentValue),
                 QuestionType.YesNo => JsonSerializer.Deserialize<YesNoValue>(currentValue)?.Value,
                 _ => throw new NotImplementedException()
             };
+
+            static object ResolveNumber(string currentValue)
+            {
+                var numericValue = JsonSerializer.Deserialize<NumericValue>(currentValue)?.Value;
+                return string.IsNullOrEmpty(numericValue?.ToString()) ? 0 : numericValue;
+            }
         }
     }
 }

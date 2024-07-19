@@ -54,7 +54,7 @@
                                                                         {
                                                                             case QuestionType.Number:
                                                                                 {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionNumberWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = Convert.ToDouble(question.Answer), Min = question.Definition?.ConvertDefinition(question.Type)?.GetMinValueOrNull(), Max = question.Definition?.ConvertDefinition(question.Type)?.GetMaxValueOrNull() })
+                                                                                    @await Component.InvokeAsync(typeof(QuestionNumberWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = Convert.ToDouble(string.IsNullOrEmpty(question.Answer) ? 0 : question.Answer), Min = question.Definition?.ConvertDefinition(question.Type)?.GetMinValueOrNull(), Max = question.Definition?.ConvertDefinition(question.Type)?.GetMaxValueOrNull() })
                                                                                     break;
                                                                                 }
                                                                             case QuestionType.YesNo:
