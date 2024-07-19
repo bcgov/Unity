@@ -9,5 +9,7 @@ namespace Unity.Payments.Domain.PaymentRequests
     {
         Task<int> GetCountByCorrelationId(Guid correlationId);
         Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId);
+        Task<List<PaymentRequest>> GetPaymentRequestsBySentToCasStatusAsync();
+        Task<PaymentRequest?> GetPaymentRequestByInvoiceNumber(string invoiceNumber);
     }
 }
