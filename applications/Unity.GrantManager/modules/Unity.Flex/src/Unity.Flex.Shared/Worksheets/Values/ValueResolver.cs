@@ -40,7 +40,11 @@ namespace Unity.Flex.Worksheets.Values
             static object ResolveNumber(string currentValue)
             {
                 var numericValue = JsonSerializer.Deserialize<NumericValue>(currentValue)?.Value;
-                return string.IsNullOrEmpty(numericValue?.ToString()) ? 0 : numericValue;
+                if (numericValue == null || string.IsNullOrEmpty(numericValue.ToString()))
+                {
+                    return 0;
+                }
+                return numericValue;
             }
         }
     }
