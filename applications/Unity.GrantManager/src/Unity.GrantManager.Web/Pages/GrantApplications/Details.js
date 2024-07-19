@@ -278,22 +278,22 @@ $(function () {
         wrapper: '#assessmentResultWidget',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val()
+                'applicationId': $('#DetailsViewApplicationId').val(),
+                'applicationFormVersionId': $('#AssessmentResultViewApplicationFormVersionId').val()
             };
         }
     });
     PubSub.subscribe(
         'application_status_changed',
-        (msg, data) => {
-            console.log(msg, data);
+        (msg, data) => {            
             applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
-            assessmentResultWidgetManager.refresh();
+            assessmentResultWidgetManager.refresh();            
         }
     );
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
-            assessmentResultWidgetManager.refresh();
+            assessmentResultWidgetManager.refresh();        
         }
     );
 
