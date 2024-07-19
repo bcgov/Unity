@@ -91,8 +91,12 @@ namespace Unity.GrantManager.Intakes
                 Submission = ReplaceAdvancedFormIoControls(formSubmission)
             });
 
-            await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id, application.ApplicationFormId, formSubmission, formVersionSubmissionHeaderMapping);
-            
+            var localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
+            await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id,
+                localFormVersion?.Id ?? Guid.Empty,
+                formSubmission,
+                formVersionSubmissionHeaderMapping);
+
             await uow.SaveChangesAsync();
 
             return applicationFormSubmission.Id;
@@ -163,10 +167,10 @@ namespace Unity.GrantManager.Intakes
                     // Allow one minute timeout
                     try
                     {
-                        replacedString = Regex.Replace(replacedString, 
-                            patternKey, 
-                            replace, 
-                            RegexOptions.None, 
+                        replacedString = Regex.Replace(replacedString,
+                            patternKey,
+                            replace,
+                            RegexOptions.None,
                             TimeSpan.FromMilliseconds(OneMinuteMilliseconds));
                     }
                     catch (RegexMatchTimeoutException ex)
@@ -174,7 +178,7 @@ namespace Unity.GrantManager.Intakes
                         Console.WriteLine(ex.Message);
                     }
                 }
-                
+
                 formSubmissionStr = replacedString;
             }
             return formSubmissionStr;
