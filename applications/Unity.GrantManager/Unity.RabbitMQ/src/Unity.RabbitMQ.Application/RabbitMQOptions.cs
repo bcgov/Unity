@@ -1,4 +1,4 @@
-namespace Unity.Payments.PaymentRequests
+﻿namespace Unity.RabbitMQ
 {
     public class RabbitMQOptions
     {
@@ -9,3 +9,5 @@ namespace Unity.Payments.PaymentRequests
         public string VirtualHost { get; set; } = "/";
     }
 }
+
+

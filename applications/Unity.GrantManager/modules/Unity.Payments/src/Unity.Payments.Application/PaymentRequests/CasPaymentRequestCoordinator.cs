@@ -2,8 +2,7 @@
 using Unity.Payments.Domain.PaymentRequests;
 using RabbitMQ.Client;
 using System.Text;
-using Unity.Payments.Integrations.RabbitMQ;
-using Microsoft.Extensions.Options;
+using Unity.RabbitMQ;
 using System;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
@@ -15,44 +14,37 @@ using Unity.Payments.Integrations.Cas;
 using RabbitMQ.Client.Events;
 using Newtonsoft.Json;
 using System.Linq;
+using Unity.Payments.RabbitMQ.QueueMessages;
+using Unity.Notifications.Integrations.RabbitMQ;
 
 namespace Unity.Payments.PaymentRequests
 {
     public class CasPaymentRequestCoordinator : ApplicationService
     {
-        private readonly IPaymentRequestRepository _paymentRequestsRepository;
-        private readonly IOptions<RabbitMQOptions> _rabbitMQOptions;
+        private readonly IPaymentRequestRepository _paymentRequestsRepository;        
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
+        private readonly PaymentQueueService _paymentQueueService;
         private readonly InvoiceService _invoiceService;
-        public const string CAS_PAYMENT_REQUEST_QUEUE = "cas_reconcile_pr";
-        public const string CAS_INVOICES_QUEUE = "cas_invoices";
+
+
+        private static int FiveMinutes = 5;
 
         public CasPaymentRequestCoordinator(
             InvoiceService invoiceService,
+            PaymentQueueService paymentQueueService,
             IPaymentRequestRepository paymentRequestsRepository,
             IUnitOfWorkManager unitOfWorkManager,
             ITenantRepository tenantRepository,
-            ICurrentTenant currentTenant,
-            IOptions<RabbitMQOptions> rabbitMQOptions)
+            ICurrentTenant currentTenant)
         {
             _invoiceService = invoiceService;
+            _paymentQueueService = paymentQueueService;
             _paymentRequestsRepository = paymentRequestsRepository;
-            _rabbitMQOptions = rabbitMQOptions;
             _tenantRepository = tenantRepository;
             _currentTenant = currentTenant;
             _unitOfWorkManager = unitOfWorkManager;
-        }
-
-        public class QueuePaymentRequest()
-        {
-            public Guid PaymentRequestId { get; set; }
-            public string InvoiceNumber { get; set; } = string.Empty;
-            public string SupplierNumber { get; set; } = string.Empty;
-            public string SiteNumber { get; set; } = string.Empty;
-            public Guid TenantId { get; set; }
-
         }
 
         protected virtual dynamic GetPaymentRequestObject(
@@ -73,62 +65,29 @@ namespace Unity.Payments.PaymentRequests
             return paymentRequestObject;
         }
 
-        /// <summary>
-        /// Send Payment To the named Queue
-        /// </summary>
-        /// <param name="paymentRequestId">The Payment Request Id</param>
-        /// <param name="invoiceNumber">The Invoice Number</param>
-        /// <param name="supplierNumber">The Supplier Number</param>
-        /// <param name="siteNumber">The Site Number</param>
-        /// <param name="tennantId">The Tenant Id</param>
-        /// /// <param name="queue">The Queue name</param>
-        public Task SendPaymentToQueue(Guid paymentRequestId,
-                                        string invoiceNumber,
-                                        string supplierNumber,
-                                        string siteNumber,
-                                        Guid tenantId,
-                                        string queue)
+        public async Task AddPaymentRequestsToInvoiceQueue(PaymentRequest paymentRequest)
         {
             try
             {
-                if (!string.IsNullOrEmpty(invoiceNumber) && tenantId != Guid.Empty)
+                if (!string.IsNullOrEmpty(paymentRequest.InvoiceNumber) && (Guid)_currentTenant.Id != Guid.Empty)
                 {
-                    var prObject = GetPaymentRequestObject(paymentRequestId, invoiceNumber, supplierNumber, siteNumber, tenantId);
-                    RabbitMQConnection rabbitMQConnection = new RabbitMQConnection(_rabbitMQOptions);
-                    IConnection connection = rabbitMQConnection.GetConnection();
-                    IModel channel = connection.CreateModel();
-                    channel.QueueDeclare(queue: queue,
-                                        durable: true,
-                                        exclusive: false,
-                                        autoDelete: false,
-                                        arguments: null);
+                    InvoiceMessages message = new InvoiceMessages
+                    {
+                        TimeToLive = TimeSpan.FromMinutes(FiveMinutes),
+                        PaymentRequestId = paymentRequest.Id,
+                        InvoiceNumber = paymentRequest.InvoiceNumber,
+                        SupplierNumber = paymentRequest.SupplierNumber,
+                        SiteNumber = paymentRequest.Site.Number,
+                        TenantId = (Guid)_currentTenant.Id
+                    };
 
-                    var json = JsonConvert.SerializeObject(prObject);
-                    var bodyPublish = Encoding.UTF8.GetBytes(json);
-                    IBasicProperties props = channel.CreateBasicProperties();
-                    channel.BasicPublish("", queue, true, props, bodyPublish);
+                    await _paymentQueueService.SendPaymentToInvoiceQueueAsync(message);
                 }
             }
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                Logger.LogError(ex, "SendPaymentToQueue Exception: {ExceptionMessage}", ExceptionMessage);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public async Task AddPaymentRequestsToInvoiceQueue(PaymentRequest paymentRequest)
-        {
-            if (_currentTenant != null && _currentTenant.Id != null)
-            {
-                await SendPaymentToQueue(
-                                    paymentRequest.Id,
-                                    paymentRequest.InvoiceNumber,
-                                    paymentRequest.SupplierNumber,
-                                    paymentRequest.Site.Number,
-                                    (Guid)_currentTenant.Id,
-                                    CAS_INVOICES_QUEUE);
+                Logger.LogError(ex, "AddPaymentRequestsToInvoiceQueue Exception: {ExceptionMessage}", ExceptionMessage);
             }
         }
 
@@ -142,112 +101,24 @@ namespace Unity.Payments.PaymentRequests
                     List<PaymentRequest> paymentRequests = await _paymentRequestsRepository.GetPaymentRequestsBySentToCasStatusAsync();
                     foreach (PaymentRequest paymentRequest in paymentRequests)
                     {
-                        await SendPaymentToQueue(
-                            paymentRequest.Id,
-                            paymentRequest.InvoiceNumber,
-                            paymentRequest.SupplierNumber,
-                            paymentRequest.Site.Number,
-                            tenantId,
-                            CAS_PAYMENT_REQUEST_QUEUE);
+                        ReconcilePaymentMessages reconcilePaymentMessage = new ReconcilePaymentMessages
+                        {
+                            TimeToLive = TimeSpan.FromMinutes(FiveMinutes),
+                            PaymentRequestId = paymentRequest.Id,
+                            InvoiceNumber = paymentRequest.InvoiceNumber,
+                            SupplierNumber = paymentRequest.SupplierNumber,
+                            SiteNumber = paymentRequest.Site.Number,
+                            TenantId = (Guid)_currentTenant.Id
+                        };
+
+                        await _paymentQueueService.SendPaymentToReconciliationQueueAsync(reconcilePaymentMessage);
                     }
                 }
             }
         }
 
-        public void ReconciliationPaymentsFromCas()
-        {
-            try
-            {
-                RabbitMQConnection rabbitMQConnection = new RabbitMQConnection(_rabbitMQOptions);
-                IConnection connection = rabbitMQConnection.GetConnection();
-                var channel = connection.CreateModel();
 
-                channel.QueueDeclare(queue: CAS_PAYMENT_REQUEST_QUEUE,
-                             durable: true,
-                             exclusive: false,
-                             autoDelete: false,
-                             arguments: null);
-
-                var consumer = new EventingBasicConsumer(channel);
-
-                consumer.Received += async (model, ea) =>
-                {
-                    var body = ea.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
-                    QueuePaymentRequest? reconcilePayment = JsonConvert.DeserializeObject<QueuePaymentRequest>(message);
-                    if (reconcilePayment != null)
-                    {
-                        // string invoiceNumber, string supplierNumber, string siteNumber)
-                        // Go to CAS retrieve the status of the payment
-                        CasPaymentSearchResult result = await _invoiceService.GetCasPaymentAsync(
-                            reconcilePayment.InvoiceNumber,
-                            reconcilePayment.SupplierNumber,
-                            reconcilePayment.SiteNumber);
-
-                        if (result != null && result.InvoiceStatus != null && result.InvoiceStatus != "")
-                        {
-                            await UpdatePaymentRequestStatus(reconcilePayment, result);
-                        }
-                    }
-                };
-
-                channel.BasicConsume(queue: CAS_PAYMENT_REQUEST_QUEUE, autoAck: true, consumer: consumer);
-            }
-            catch (Exception ex)
-            {
-                string ExceptionMessage = ex.Message;
-                Logger.LogError(ex, "ReconciliationPaymentsFromCas Exception: {ExceptionMessage}", ExceptionMessage);
-            }
-        }
-
-        public void SendInvoicesToCas()
-        {
-            try
-            {
-                RabbitMQConnection rabbitMQConnection = new RabbitMQConnection(_rabbitMQOptions);
-                IConnection connection = rabbitMQConnection.GetConnection();
-                var channel = connection.CreateModel();
-
-                channel.QueueDeclare(queue: CAS_INVOICES_QUEUE,
-                             durable: true,
-                             exclusive: false,
-                             autoDelete: false,
-                             arguments: null);
-
-                var consumer = new EventingBasicConsumer(channel);
-
-                consumer.Received += async (model, ea) =>
-                {
-                    var body = ea.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
-                    QueuePaymentRequest? invoicePayment = JsonConvert.DeserializeObject<QueuePaymentRequest>(message);
-                    if (invoicePayment != null && !invoicePayment.InvoiceNumber.IsNullOrEmpty() && invoicePayment.TenantId != Guid.Empty)
-                    {
-                        using (_currentTenant.Change(invoicePayment.TenantId))
-                        {
-                            using var uow = _unitOfWorkManager.Begin();
-
-                            PaymentRequest? paymentRequest = await _paymentRequestsRepository.GetPaymentRequestByInvoiceNumber(invoicePayment.InvoiceNumber);
-                            if (paymentRequest != null)
-                            {
-                                await _invoiceService.CreateInvoiceByPaymentRequestAsync(paymentRequest);
-                            }
-
-                            await uow.SaveChangesAsync();    
-                        }
-                    }
-                };
-
-                channel.BasicConsume(queue: CAS_INVOICES_QUEUE, autoAck: true, consumer: consumer);
-            }
-            catch (Exception ex)
-            {
-                string ExceptionMessage = ex.Message;
-                Logger.LogError(ex, "SendInvoicesToCas Exception: {ExceptionMessage}", ExceptionMessage);
-            }
-        }
-
-        private async Task<PaymentRequest?> UpdatePaymentRequestStatus(QueuePaymentRequest reconcilePayment, CasPaymentSearchResult result)
+        public async Task<PaymentRequest?> UpdatePaymentRequestStatus(ReconcilePaymentMessages reconcilePayment, CasPaymentSearchResult result)
         {
             PaymentRequest? paymentReqeust = null;
             if (reconcilePayment.TenantId != Guid.Empty)

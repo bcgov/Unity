@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Application\Unity.TenantManagement.Application.csproj" />
+    <ProjectReference Include="..\..\Unity.RabbitMQ\Unity.RabbitMQ.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
     <ProjectReference Include="..\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
   </ItemGroup>

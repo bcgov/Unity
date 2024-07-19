@@ -35,9 +35,7 @@ public class PaymentsTestBaseModule : AbpModule
             options.IsJobExecutionEnabled = false;
             options.PaymentRequestOptions.ProducerExpression = "0 0 12 * * ? *";
             options.PaymentRequestOptions.ConsumerExpression = "0 0 12 * * ? *";
-            options.InvoiceRequestOptions.ConsumerExpression = "0 0 12 * * ? *";
         });
-
     }
 
     public override void PreConfigureServices(ServiceConfigurationContext context)
