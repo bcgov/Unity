@@ -278,9 +278,6 @@ namespace Unity.GrantManager.ApplicationForms
             return jsonResponse;
         }
 
-
-
-
         private void AddFact(string Name, string Value)
         {
             var fact = new Fact
