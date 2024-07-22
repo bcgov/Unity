@@ -36,11 +36,14 @@ namespace Unity.RabbitMQ
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Stop {nameof(QueueConsumerRegistratorService<TMessageConsumer, TQueueMessage>)}: Canceling {typeof(TMessageConsumer).Name} as Consumer for Queue {typeof(TQueueMessage).Name}");
-
-            _consumerHandler.CancelQueueConsumer();
-
-            _scope.Dispose();
-
+            try
+            {
+                _consumerHandler.CancelQueueConsumer();
+                _scope.Dispose();
+            } catch (Exception ex) {
+                var ExceptionMessage = ex.Message;
+                _logger.LogError(ex, "QueueConsumerRegistratorService StopAsync Exception: {ExceptionMessage}", ExceptionMessage);
+            }
             return Task.CompletedTask;
         }
     }

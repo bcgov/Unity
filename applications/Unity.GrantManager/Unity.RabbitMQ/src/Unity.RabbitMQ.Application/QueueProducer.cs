@@ -16,9 +16,15 @@ namespace Unity.RabbitMQ
 
         public QueueProducer(IQueueChannelProvider<TQueueMessage> channelProvider, ILogger<QueueProducer<TQueueMessage>> logger)
         {
-            _logger = logger;
-            _channel = channelProvider.GetChannel();
-            _queueName = typeof(TQueueMessage).Name;
+             _logger = logger;
+
+            try{
+                _channel = channelProvider.GetChannel();
+                _queueName = typeof(TQueueMessage).Name;
+            } catch (Exception ex) {
+                var ExceptionMessage = ex.Message;
+                _logger.LogError(ex, "QueueProducer Constructor issue: {ExceptionMessage}", ExceptionMessage);
+            }
         }
 
         public void PublishMessage(TQueueMessage message)
