@@ -29,7 +29,10 @@ namespace Unity.RabbitMQ
                 _scope = _serviceProvider.CreateScope();
 
                 _consumerHandler = _scope.ServiceProvider.GetRequiredService<IQueueConsumerHandler<TMessageConsumer, TQueueMessage>>();
-                _consumerHandler.RegisterQueueConsumer();
+                if (_consumerHandler != null)
+                {
+                    _consumerHandler.RegisterQueueConsumer();
+                }
             }
             catch (Exception ex)
             {
@@ -43,14 +46,19 @@ namespace Unity.RabbitMQ
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Stop {nameof(QueueConsumerRegistratorService<TMessageConsumer, TQueueMessage>)}: Canceling {typeof(TMessageConsumer).Name} as Consumer for Queue {typeof(TQueueMessage).Name}");
-            try
-            {
-                _consumerHandler.CancelQueueConsumer();
-                _scope.Dispose();
-            } catch (Exception ex) {
-                var ExceptionMessage = ex.Message;
-                _logger.LogError(ex, "QueueConsumerRegistratorService StopAsync Exception: {ExceptionMessage}", ExceptionMessage);
+            if(_consumerHandler != null ) {
+                try
+                {
+                    _consumerHandler.CancelQueueConsumer();
+                    _scope.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    var ExceptionMessage = ex.Message;
+                    _logger.LogError(ex, "QueueConsumerRegistratorService StopAsync Exception: {ExceptionMessage}", ExceptionMessage);
+                }
             }
+
             return Task.CompletedTask;
         }
     }

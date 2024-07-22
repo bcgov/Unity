@@ -9,7 +9,7 @@ namespace Unity.RabbitMQ
     {
         private readonly ILogger<ConnectionProvider> _logger;
         private readonly IAsyncConnectionFactory _connectionFactory;
-        private IConnection _connection;
+        private IConnection? _connection;
 
         public ConnectionProvider(ILogger<ConnectionProvider> logger, IAsyncConnectionFactory connectionFactory)
         {

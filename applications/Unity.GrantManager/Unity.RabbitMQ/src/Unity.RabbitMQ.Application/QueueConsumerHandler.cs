@@ -59,17 +59,19 @@ namespace Unity.RabbitMQ
 
         public void CancelQueueConsumer()
         {
-            _logger.LogInformation($"Canceling QueueConsumer registration for {_consumerName}");
-            try
-            {
-                _consumerRegistrationChannel.BasicCancel(_consumerTag);
-            }
-            catch (Exception ex)
-            {
-                var message = $"Error canceling QueueConsumer registration for {_consumerName}";
-                _logger.LogError(message, ex);
+            if(_consumerRegistrationChannel != null) {
+                _logger.LogInformation($"Canceling QueueConsumer registration for {_consumerName}");
+                try
+                {
+                    _consumerRegistrationChannel.BasicCancel(_consumerTag);
+                }
+                catch (Exception ex)
+                {
+                    var message = $"Error canceling QueueConsumer registration for {_consumerName}";
+                    _logger.LogError(message, ex);
 
-                throw new QueueingException(message, ex);
+                    throw new QueueingException(message, ex);
+                }
             }
         }
 
