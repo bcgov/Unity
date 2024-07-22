@@ -6,9 +6,8 @@ $(function () {
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: function (evt) {
+                    saveOrder();
                     updatePreview(evt);
-                    document.getElementById('save_order_btn').disabled = false;
-                    document.getElementById('discard_order_btn').disabled = false;
                 },
                 ghostClass: 'blue-background',
                 onMove: function (evt) {
