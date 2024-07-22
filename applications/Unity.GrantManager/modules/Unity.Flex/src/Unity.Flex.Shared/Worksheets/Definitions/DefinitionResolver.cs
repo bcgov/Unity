@@ -13,6 +13,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 return type switch
                 {
                     CustomFieldType.Undefined => "{}",
+                    CustomFieldType.BCAddress => "{}",
                     CustomFieldType.Numeric => JsonSerializer.Serialize(new NumericDefinition()),
                     CustomFieldType.Text => JsonSerializer.Serialize(new TextDefinition()),
                     CustomFieldType.Date => JsonSerializer.Serialize(new DateDefinition()),
@@ -24,7 +25,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize(new RadioDefinition()),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize(new CheckboxDefinition()),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupDefinition()),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),
+                    CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),                    
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -33,6 +34,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 return type switch
                 {
                     CustomFieldType.Undefined => "{}",
+                    CustomFieldType.BCAddress => "{}",
                     CustomFieldType.Numeric => JsonSerializer.Serialize((NumericDefinition)definition),
                     CustomFieldType.Text => JsonSerializer.Serialize((TextDefinition)definition),
                     CustomFieldType.Date => JsonSerializer.Serialize((DateDefinition)definition),
@@ -44,7 +46,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize((RadioDefinition)definition),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize((CheckboxDefinition)definition),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize((CheckboxGroupDefinition)definition),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize((SelectListDefinition)definition),
+                    CustomFieldType.SelectList => JsonSerializer.Serialize((SelectListDefinition)definition),                   
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -53,6 +55,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 return type switch
                 {
                     CustomFieldType.Undefined => "{}",
+                    CustomFieldType.BCAddress => "{}",
                     CustomFieldType.Numeric => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.Text => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.Date => JsonSerializer.Serialize(element.ToString()),
@@ -64,7 +67,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(element.ToString()),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),
+                    CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),                    
                     _ => throw new NotImplementedException(),
                 };
             }
