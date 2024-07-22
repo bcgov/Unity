@@ -34,12 +34,18 @@ namespace Unity.RabbitMQ
             }
         }
 
-        public IConnection GetConnection()
+        public IConnection? GetConnection()
         {
             if (_connection == null || !_connection.IsOpen)
             {
                 _logger.LogDebug("Open RabbitMQ connection");
-                _connection = _connectionFactory.CreateConnection();
+                try
+                {
+                    _connection = _connectionFactory.CreateConnection();
+                } catch (Exception ex) {
+                    var ExceptionMessage = ex.Message;
+                    _logger.LogError(ex, "ConnectionProvider - Exception: {ConnectionProvider}", ExceptionMessage);
+                }                
             }
 
             return _connection;

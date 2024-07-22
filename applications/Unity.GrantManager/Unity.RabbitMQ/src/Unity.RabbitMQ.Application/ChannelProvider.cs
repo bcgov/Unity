@@ -19,11 +19,23 @@ namespace Unity.RabbitMQ
             _logger = logger;
         }
 
-        public IModel GetChannel()
+        public IModel? GetChannel()
         {
             if (_model == null || !_model.IsOpen)
             {
-                _model = _connectionProvider.GetConnection().CreateModel();
+                try
+                {
+                    IConnection? connection = _connectionProvider.GetConnection();
+                    if (connection != null) {
+                        _model = _connectionProvider.GetConnection().CreateModel();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var ExceptionMessage = ex.Message;
+                    _logger.LogError(ex, "ChannelProvider GetChannel Exception: {ExceptionMessage}", ExceptionMessage);
+                }
+
             }
 
             return _model;

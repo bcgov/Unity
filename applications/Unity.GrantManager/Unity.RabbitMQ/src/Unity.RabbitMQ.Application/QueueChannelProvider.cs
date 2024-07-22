@@ -21,7 +21,7 @@ namespace Unity.RabbitMQ
             _logger = logger;
         }
 
-        public IModel GetChannel()
+        public IModel? GetChannel()
         {
             _channel = _channelProvider.GetChannel();
             DeclareQueueAndDeadLetter();

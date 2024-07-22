@@ -22,13 +22,20 @@ namespace Unity.RabbitMQ
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Registering {typeof(TMessageConsumer).Name} as Consumer for Queue {typeof(TQueueMessage).Name}");
+            try
+            {
+                // Every registration of a IQueueConsumerHandler will have it's own scope
+                // This will result in messages to the QeueueConsumer will have their own incomming RabbitMQ channel
+                _scope = _serviceProvider.CreateScope();
 
-            // Every registration of a IQueueConsumerHandler will have it's own scope
-            // This will result in messages to the QeueueConsumer will have their own incomming RabbitMQ channel
-            _scope = _serviceProvider.CreateScope();
-
-            _consumerHandler = _scope.ServiceProvider.GetRequiredService<IQueueConsumerHandler<TMessageConsumer, TQueueMessage>>();
-            _consumerHandler.RegisterQueueConsumer();
+                _consumerHandler = _scope.ServiceProvider.GetRequiredService<IQueueConsumerHandler<TMessageConsumer, TQueueMessage>>();
+                _consumerHandler.RegisterQueueConsumer();
+            }
+            catch (Exception ex)
+            {
+                var MessageException = ex.Message;
+                _logger.LogError(ex, "QueueConsumerRegistratorService StartAsync {MessageException}", MessageException);
+            }
 
             return Task.CompletedTask;
         }

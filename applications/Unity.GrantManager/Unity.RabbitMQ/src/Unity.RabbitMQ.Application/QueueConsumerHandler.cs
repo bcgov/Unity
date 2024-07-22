@@ -36,23 +36,25 @@ namespace Unity.RabbitMQ
 
             // Request a channel for registering the Consumer for this Queue
             _consumerRegistrationChannel = scope.ServiceProvider.GetRequiredService<IQueueChannelProvider<TQueueMessage>>().GetChannel();
-
-            var consumer = new AsyncEventingBasicConsumer(_consumerRegistrationChannel);
-
-            // Register the trigger
-            consumer.Received += HandleMessage;
-            try
+            if(_consumerRegistrationChannel != null )
             {
-                _consumerTag = _consumerRegistrationChannel.BasicConsume(_queueName, false, consumer);
-            }
-            catch (Exception ex)
-            {
-                var exMsg = $"BasicConsume failed for Queue '{_queueName}'";
-                _logger.LogError(ex, exMsg);
-                throw new QueueingException(exMsg);
-            }
+                var consumer = new AsyncEventingBasicConsumer(_consumerRegistrationChannel);
 
-            _logger.LogInformation($"Succesfully registered {_consumerName} as a Consumer for Queue {_queueName}");
+                // Register the trigger
+                consumer.Received += HandleMessage;
+                try
+                {
+                    _consumerTag = _consumerRegistrationChannel.BasicConsume(_queueName, false, consumer);
+                }
+                catch (Exception ex)
+                {
+                    var exMsg = $"BasicConsume failed for Queue '{_queueName}'";
+                    _logger.LogError(ex, exMsg);
+                    throw new QueueingException(exMsg);
+                }
+
+                _logger.LogInformation($"Succesfully registered {_consumerName} as a Consumer for Queue {_queueName}");
+            }
         }
 
         public void CancelQueueConsumer()
@@ -81,7 +83,7 @@ namespace Unity.RabbitMQ
             // This is the channel on which the Queue message is delivered to the consumer
             var consumingChannel = ((AsyncEventingBasicConsumer)ch).Model;
 
-            IModel producingChannel = null;
+            IModel? producingChannel = null;
             try
             {
                 // Within this processing scope, we will open a new channel that will handle all messages produced within this consumer/scope.
@@ -89,33 +91,39 @@ namespace Unity.RabbitMQ
                 producingChannel = consumerScope.ServiceProvider.GetRequiredService<IChannelProvider>()
                     .GetChannel();
 
-                // Serialize the message
-                var message = DeserializeMessage(ea.Body.ToArray());
-
-                _logger.LogInformation($"MessageID '{message.MessageId}'");
-
-                // Start a transaction which will contain all messages produced by this consumer
-                producingChannel.TxSelect();
-
-                // Request an instance of the consumer from the Service Provider
-                var consumerInstance = consumerScope.ServiceProvider.GetRequiredService<TMessageConsumer>();
-
-                // Trigger the consumer to start processing the message
-                await consumerInstance.ConsumeAsync(message);
-
-                // Ensure both channels are open before committing
-                if (producingChannel.IsClosed || consumingChannel.IsClosed)
+                if (producingChannel != null)
                 {
-                    throw new QueueingException("A channel is closed during processing");
+                    // Serialize the message
+                    var message = DeserializeMessage(ea.Body.ToArray());
+
+                    _logger.LogInformation($"MessageID '{message.MessageId}'");
+
+                    // Start a transaction which will contain all messages produced by this consumer
+                    producingChannel.TxSelect();
+
+                    // Request an instance of the consumer from the Service Provider
+                    var consumerInstance = consumerScope.ServiceProvider.GetRequiredService<TMessageConsumer>();
+
+                    // Trigger the consumer to start processing the message
+                    await consumerInstance.ConsumeAsync(message);
+
+                    // Ensure both channels are open before committing
+                    if (producingChannel.IsClosed || consumingChannel.IsClosed)
+                    {
+                        throw new QueueingException("A channel is closed during processing");
+                    }
+
+                    // Commit the transaction of any messages produced within this consumer scope
+                    producingChannel.TxCommit();
+
+                    // Acknowledge successfull handling of the message
+                    consumingChannel.BasicAck(ea.DeliveryTag, false);
+
+                    _logger.LogInformation("Message succesfully processed");
+                } else
+                {
+                    _logger.LogError("RegisterQueueConsumer: The Producer Channel was null");
                 }
-
-                // Commit the transaction of any messages produced within this consumer scope
-                producingChannel.TxCommit();
-
-                // Acknowledge successfull handling of the message
-                consumingChannel.BasicAck(ea.DeliveryTag, false);
-
-                _logger.LogInformation("Message succesfully processed");
             }
             catch (Exception ex)
             {
