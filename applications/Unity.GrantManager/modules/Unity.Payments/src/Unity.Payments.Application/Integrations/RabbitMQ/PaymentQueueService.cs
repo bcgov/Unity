@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using System;
 using Volo.Abp.Application.Services;
 using Unity.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;

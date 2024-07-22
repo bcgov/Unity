@@ -24,8 +24,8 @@ namespace Unity.RabbitMQ
                 if (_connection != null && _connection.IsOpen)
                 {
                     _logger.LogDebug("Closing the connection");
-                    _connection?.Close();
-                    _connection?.Dispose();
+                    _connection.Close();
+                    _connection.Dispose();
                 }
             }
             catch (Exception ex)

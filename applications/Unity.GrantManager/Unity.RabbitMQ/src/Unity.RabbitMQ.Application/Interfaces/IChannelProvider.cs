@@ -4,6 +4,6 @@ namespace Unity.RabbitMQ.Interfaces
 {
     public interface IChannelProvider : IDisposable
     {
-        IModel GetChannel();
+        IModel? GetChannel();
     }
 }

@@ -5,7 +5,7 @@ using Unity.RabbitMQ.Interfaces;
 
 namespace Unity.RabbitMQ
 {
-    public sealed class ChannelProvider : IDisposable, IChannelProvider
+    public sealed class ChannelProvider : IChannelProvider
     {
         private readonly IConnectionProvider _connectionProvider;
         private readonly ILogger<ChannelProvider> _logger;
@@ -21,13 +21,13 @@ namespace Unity.RabbitMQ
 
         public IModel? GetChannel()
         {
-            if (_model == null || !_model.IsOpen)
+            if (_model == null || !_model.IsOpen && _connectionProvider != null)
             {
                 try
                 {
                     IConnection? connection = _connectionProvider.GetConnection();
                     if (connection != null) {
-                        _model = _connectionProvider.GetConnection().CreateModel();
+                        _model = _connectionProvider?.GetConnection()?.CreateModel();
                     }
                 }
                 catch (Exception ex)
@@ -35,7 +35,6 @@ namespace Unity.RabbitMQ
                     var ExceptionMessage = ex.Message;
                     _logger.LogError(ex, "ChannelProvider GetChannel Exception: {ExceptionMessage}", ExceptionMessage);
                 }
-
             }
 
             return _model;
@@ -47,8 +46,8 @@ namespace Unity.RabbitMQ
             {
                 if (_model != null)
                 {
-                    _model?.Close();
-                    _model?.Dispose();
+                    _model.Close();
+                    _model.Dispose();
                 }
             }
             catch (Exception ex)

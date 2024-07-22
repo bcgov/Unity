@@ -16,7 +16,7 @@ namespace Unity.Payments.PaymentRequests
 {
     public class CasPaymentRequestCoordinator : ApplicationService
     {
-        private readonly IPaymentRequestRepository _paymentRequestsRepository;        
+        private readonly IPaymentRequestRepository _paymentRequestsRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
@@ -59,9 +59,9 @@ namespace Unity.Payments.PaymentRequests
         public async Task AddPaymentRequestsToInvoiceQueue(PaymentRequest paymentRequest)
         {
             try
-            {
-                if (!string.IsNullOrEmpty(paymentRequest.InvoiceNumber) && (Guid)_currentTenant.Id != Guid.Empty)
-                {
+            {                
+                if (!string.IsNullOrEmpty(paymentRequest.InvoiceNumber) && _currentTenant != null && _currentTenant.Id != null)
+                {                    
                     InvoiceMessages message = new InvoiceMessages
                     {
                         TimeToLive = TimeSpan.FromMinutes(FiveMinutes),
@@ -99,7 +99,7 @@ namespace Unity.Payments.PaymentRequests
                             InvoiceNumber = paymentRequest.InvoiceNumber,
                             SupplierNumber = paymentRequest.SupplierNumber,
                             SiteNumber = paymentRequest.Site.Number,
-                            TenantId = (Guid)_currentTenant.Id
+                            TenantId = tenantId
                         };
 
                         await _paymentQueueService.SendPaymentToReconciliationQueueAsync(reconcilePaymentMessage);

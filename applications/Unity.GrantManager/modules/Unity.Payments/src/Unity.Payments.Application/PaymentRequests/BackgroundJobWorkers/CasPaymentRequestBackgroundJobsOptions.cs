@@ -14,7 +14,6 @@
 
     public class PaymentRequestOptions
     {
-        public string ConsumerExpression { get; set; } = string.Empty;
         public string ProducerExpression { get; set; } = string.Empty;
     }
 }

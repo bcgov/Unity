@@ -3,37 +3,22 @@ using Unity.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using System;
 using Unity.Payments.PaymentRequests;
-using Volo.Abp.MultiTenancy;
-using Volo.Abp.Uow;
-using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Integrations.Cas;
-using Newtonsoft.Json;
-using static Volo.Abp.Ui.LayoutHooks.LayoutHooks;
-using System.Text;
 
 namespace Unity.Payments.Integrations.RabbitMQ;
 
 public class ReconciliationConsumer : IQueueConsumer<ReconcilePaymentMessages>
 {
-    private readonly IPaymentRequestRepository _paymentRequestsRepository;
     private readonly CasPaymentRequestCoordinator _casPaymentRequestCoordinator;
-    private readonly ICurrentTenant _currentTenant;
-    private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly InvoiceService _invoiceService;
 
     public ReconciliationConsumer(
                 CasPaymentRequestCoordinator casPaymentRequestCoordinator,
-                InvoiceService invoiceService,
-                IPaymentRequestRepository paymentRequestRepository,
-                ICurrentTenant currentTenant,
-                IUnitOfWorkManager unitOfWorkManager
+                InvoiceService invoiceService
         )
     {
         _casPaymentRequestCoordinator = casPaymentRequestCoordinator;
         _invoiceService = invoiceService;
-        _currentTenant = currentTenant;
-        _unitOfWorkManager = unitOfWorkManager;
-        _paymentRequestsRepository = paymentRequestRepository;
     }
 
     public async Task<Task> ConsumeAsync(ReconcilePaymentMessages reconcilePaymentMessage)

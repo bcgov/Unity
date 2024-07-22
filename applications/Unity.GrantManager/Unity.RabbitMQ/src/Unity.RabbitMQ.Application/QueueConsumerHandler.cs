@@ -14,8 +14,8 @@ namespace Unity.RabbitMQ
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<QueueConsumerHandler<TMessageConsumer, TQueueMessage>> _logger;
         private readonly string _queueName;
-        private IModel _consumerRegistrationChannel;
-        private string _consumerTag;
+        private IModel? _consumerRegistrationChannel;
+        private string? _consumerTag;
         private readonly string _consumerName;
 
         public QueueConsumerHandler(IServiceProvider serviceProvider,
@@ -30,7 +30,7 @@ namespace Unity.RabbitMQ
 
         public void RegisterQueueConsumer()
         {
-            _logger.LogInformation($"Registering {_consumerName} as a consumer for Queue {_queueName}");
+            _logger.LogInformation("Registering {_consumerName} as a consumer for Queue {_queueName}", _consumerName, _queueName);
 
             var scope = _serviceProvider.CreateScope();
 
@@ -48,29 +48,28 @@ namespace Unity.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    var exMsg = $"BasicConsume failed for Queue '{_queueName}'";
-                    _logger.LogError(ex, exMsg);
-                    throw new QueueingException(exMsg);
+                    var ExceptionMessage = $"BasicConsume failed for Queue '{_queueName}'";
+                    _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", ExceptionMessage);
+                    throw new QueueingException(ExceptionMessage);
                 }
 
-                _logger.LogInformation($"Succesfully registered {_consumerName} as a Consumer for Queue {_queueName}");
+                _logger.LogInformation("Succesfully registered {_consumerName} as a Consumer for Queue {_queueName}", _consumerName, _queueName);
             }
         }
 
         public void CancelQueueConsumer()
         {
             if(_consumerRegistrationChannel != null) {
-                _logger.LogInformation($"Canceling QueueConsumer registration for {_consumerName}");
+                _logger.LogInformation("Canceling QueueConsumer registration for {_consumerName}", _consumerName);
                 try
                 {
                     _consumerRegistrationChannel.BasicCancel(_consumerTag);
                 }
                 catch (Exception ex)
                 {
-                    var message = $"Error canceling QueueConsumer registration for {_consumerName}";
-                    _logger.LogError(message, ex);
-
-                    throw new QueueingException(message, ex);
+                    var ExceptionMessage = $"Error canceling QueueConsumer registration for {_consumerName}";
+                    _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", ExceptionMessage);
+                    throw new QueueingException(ExceptionMessage, ex);
                 }
             }
         }
@@ -93,12 +92,13 @@ namespace Unity.RabbitMQ
                 producingChannel = consumerScope.ServiceProvider.GetRequiredService<IChannelProvider>()
                     .GetChannel();
 
-                if (producingChannel != null)
+                // Serialize the message
+                var message = DeserializeMessage(ea.Body.ToArray());
+                if (producingChannel != null && message != null)
                 {
-                    // Serialize the message
-                    var message = DeserializeMessage(ea.Body.ToArray());
 
-                    _logger.LogInformation($"MessageID '{message.MessageId}'");
+                    var MessageId = message.MessageId;
+                    _logger.LogInformation("MessageID '{MessageId}'", MessageId);
 
                     // Start a transaction which will contain all messages produced by this consumer
                     producingChannel.TxSelect();
@@ -129,9 +129,12 @@ namespace Unity.RabbitMQ
             }
             catch (Exception ex)
             {
-                var msg = $"Cannot handle consumption of a {_queueName} by {_consumerName}'";
-                _logger.LogError(ex, msg);
-                RejectMessage(ea.DeliveryTag, consumingChannel, producingChannel);
+                var ExceptionMessage = $"Cannot handle consumption of a {_queueName} by {_consumerName}'";
+                _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", ExceptionMessage);
+                if(producingChannel != null)
+                {
+                    RejectMessage(ea.DeliveryTag, consumingChannel, producingChannel);
+                }                
             }
             finally
             {
@@ -159,13 +162,12 @@ namespace Unity.RabbitMQ
             }
             catch (Exception bex)
             {
-                var bexMsg =
-                    $"BasicReject failed";
-                _logger.LogCritical(bex, bexMsg);
+                var ExceptionMessage = $"BasicReject failed";
+                _logger.LogError(bex, "QueueConsumerHandler Exception: {ExceptionMessage}", ExceptionMessage);
             }
         }
 
-        private static TQueueMessage DeserializeMessage(byte[] message)
+        private static TQueueMessage? DeserializeMessage(byte[] message)
         {
             var stringMessage = Encoding.UTF8.GetString(message);
             return JsonConvert.DeserializeObject<TQueueMessage>(stringMessage);

@@ -11,7 +11,7 @@ namespace Unity.RabbitMQ
     public class QueueProducer<TQueueMessage> : IQueueProducer<TQueueMessage> where TQueueMessage : IQueueMessage
     {
         private readonly ILogger<QueueProducer<TQueueMessage>> _logger;
-        private readonly string _queueName;
+        private readonly string? _queueName;
         private readonly IModel _channel;
 
         public QueueProducer(IQueueChannelProvider<TQueueMessage> channelProvider, ILogger<QueueProducer<TQueueMessage>> logger)

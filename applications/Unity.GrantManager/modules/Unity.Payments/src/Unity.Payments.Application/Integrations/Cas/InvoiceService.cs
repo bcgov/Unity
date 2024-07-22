@@ -122,7 +122,7 @@ namespace Unity.Payments.Integrations.Cas
                         invoiceResponse = await CreateInvoiceAsync(invoice);
                         if (invoiceResponse != null)
                         {
-                            UpdatePaymentRequestWithInvoice(paymentRequest.Id, invoiceResponse);
+                            await UpdatePaymentRequestWithInvoice(paymentRequest.Id, invoiceResponse);
                         }
                     }
                 }
@@ -134,7 +134,7 @@ namespace Unity.Payments.Integrations.Cas
             return invoiceResponse;
         }
 
-        private async void UpdatePaymentRequestWithInvoice(Guid PaymentRequestId, InvoiceResponse invoiceResponse)
+        private async Task UpdatePaymentRequestWithInvoice(Guid PaymentRequestId, InvoiceResponse invoiceResponse)
         {
             try
             {

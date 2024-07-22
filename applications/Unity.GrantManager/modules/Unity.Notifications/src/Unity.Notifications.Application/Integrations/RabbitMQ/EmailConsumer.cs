@@ -23,7 +23,6 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
     private readonly IEmailLogsRepository _emailLogsRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly ICurrentTenant _currentTenant;
-    private readonly IQueueProducer<EmailMessages> _emailMessageProducer;
     private readonly ILogger<EmailConsumer> _logger;
     private readonly IEmailNotificationService _emailNotificationService;
 
@@ -34,7 +33,6 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                     EmailQueueService emailQueueService,
                     IUnitOfWorkManager unitOfWorkManager,
                     ICurrentTenant currentTenant,
-                    IQueueProducer<EmailMessages> emailMessageProducer,
                     ILogger<EmailConsumer> logger
                     )
     {
@@ -44,7 +42,6 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
         _emailLogsRepository = emailLogsRepository;
         _unitOfWorkManager = unitOfWorkManager;
         _currentTenant = currentTenant;
-        _emailMessageProducer = emailMessageProducer;
         _logger = logger;
     }
 

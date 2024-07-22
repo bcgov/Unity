@@ -32,7 +32,6 @@ public class PaymentsTestBaseModule : AbpModule
         {
             options.IsJobExecutionEnabled = false;
             options.PaymentRequestOptions.ProducerExpression = "0 0 12 * * ? *";
-            options.PaymentRequestOptions.ConsumerExpression = "0 0 12 * * ? *";
         });
     }
 

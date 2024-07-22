@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using RabbitMQ.Client;
+﻿using RabbitMQ.Client;
 using Unity.RabbitMQ.Constants;
 using Unity.RabbitMQ.Interfaces;
 
@@ -9,21 +8,19 @@ namespace Unity.RabbitMQ
     {
         private readonly IChannelProvider _channelProvider;
         private IModel? _channel;
+        private bool disposedValue;
         private readonly string _queueName;
-        private readonly ILogger<QueueChannelProvider<TQueueMessage>> _logger;
 
         public QueueChannelProvider(
-            IChannelProvider channelProvider,
-            ILogger<QueueChannelProvider<TQueueMessage>> logger)
+            IChannelProvider channelProvider)
         {
             _channelProvider = channelProvider;
             _queueName = typeof(TQueueMessage).Name;
-            _logger = logger;
         }
 
         public IModel? GetChannel()
         {
-            _channel = _channelProvider.GetChannel();
+            _channel = _channelProvider?.GetChannel();
             DeclareQueueAndDeadLetter();
             return _channel;
         }
@@ -59,9 +56,24 @@ namespace Unity.RabbitMQ
             _channel.QueueBind(_queueName, _queueName, _queueName, null);
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // dispose managed state (managed objects)
+                }
+
+                disposedValue = true;
+            }
+        }
+
         public void Dispose()
         {
-            // This dispose is required but is done in the channel provider
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
