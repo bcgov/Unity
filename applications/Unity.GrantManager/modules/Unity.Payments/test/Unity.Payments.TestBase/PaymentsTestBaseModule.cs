@@ -1,7 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Configuration;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Authorization;

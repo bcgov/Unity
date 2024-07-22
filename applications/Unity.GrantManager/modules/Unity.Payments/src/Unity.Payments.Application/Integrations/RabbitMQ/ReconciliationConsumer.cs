@@ -50,7 +50,7 @@ public class ReconciliationConsumer : IQueueConsumer<ReconcilePaymentMessages>
 
             if (result != null && result.InvoiceStatus != null && result.InvoiceStatus != "")
             {
-                await _casPaymentRequestCoordinator.UpdatePaymentRequestStatus(reconcilePaymentMessage, result);
+                await _casPaymentRequestCoordinator.UpdatePaymentRequestStatus(reconcilePaymentMessage.TenantId, reconcilePaymentMessage.PaymentRequestId, result);
             }
 
         }

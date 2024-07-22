@@ -1,8 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Unity.Payments.Domain.PaymentRequests;
-using RabbitMQ.Client;
-using System.Text;
-using Unity.RabbitMQ;
 using System;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
@@ -11,8 +8,6 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 using Microsoft.Extensions.Logging;
 using Unity.Payments.Integrations.Cas;
-using RabbitMQ.Client.Events;
-using Newtonsoft.Json;
 using System.Linq;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Notifications.Integrations.RabbitMQ;
@@ -26,20 +21,16 @@ namespace Unity.Payments.PaymentRequests
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
         private readonly PaymentQueueService _paymentQueueService;
-        private readonly InvoiceService _invoiceService;
-
 
         private static int FiveMinutes = 5;
 
         public CasPaymentRequestCoordinator(
-            InvoiceService invoiceService,
             PaymentQueueService paymentQueueService,
             IPaymentRequestRepository paymentRequestsRepository,
             IUnitOfWorkManager unitOfWorkManager,
             ITenantRepository tenantRepository,
             ICurrentTenant currentTenant)
         {
-            _invoiceService = invoiceService;
             _paymentQueueService = paymentQueueService;
             _paymentRequestsRepository = paymentRequestsRepository;
             _tenantRepository = tenantRepository;
@@ -117,18 +108,17 @@ namespace Unity.Payments.PaymentRequests
             }
         }
 
-
-        public async Task<PaymentRequest?> UpdatePaymentRequestStatus(ReconcilePaymentMessages reconcilePayment, CasPaymentSearchResult result)
+        public async Task<PaymentRequest?> UpdatePaymentRequestStatus(Guid TenantId, Guid PaymentRequestId, CasPaymentSearchResult result)
         {
             PaymentRequest? paymentReqeust = null;
-            if (reconcilePayment.TenantId != Guid.Empty)
+            if (TenantId != Guid.Empty)
             {
-                using (_currentTenant.Change(reconcilePayment.TenantId))
+                using (_currentTenant.Change(TenantId))
                 {
                     try
                     {
                         using var uow = _unitOfWorkManager.Begin(true, false);
-                        paymentReqeust = await _paymentRequestsRepository.GetAsync(reconcilePayment.PaymentRequestId);
+                        paymentReqeust = await _paymentRequestsRepository.GetAsync(PaymentRequestId);
                         if (paymentReqeust != null)
                         {
                             paymentReqeust.SetInvoiceStatus(result.InvoiceStatus ?? "");
