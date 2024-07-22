@@ -405,7 +405,7 @@ $(function () {
 
 
 
-    $('#search').keyup(function () {
+    $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });

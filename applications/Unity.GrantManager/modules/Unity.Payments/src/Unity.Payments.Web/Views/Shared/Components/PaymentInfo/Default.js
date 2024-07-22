@@ -221,7 +221,7 @@
         dataTable.columns.adjust();
     });
 
-    $('#search').keyup(function () {
+    $('#search').on('input', function () {
         let table = $('#ApplicationPaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
