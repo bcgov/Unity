@@ -106,6 +106,15 @@ namespace Unity.Flex.Worksheets.Definitions
                     QuestionType.YesNo => JsonSerializer.Serialize(element.ToString()),
                     _ => throw new NotImplementedException(),
                 };
+            } else if (definition is string)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize(definition),
+                    QuestionType.Text => JsonSerializer.Serialize(definition),
+                    QuestionType.YesNo => JsonSerializer.Serialize(definition),
+                    _ => throw new NotImplementedException(),
+                };
             }
 
             throw new NotImplementedException(); // we should not get here
