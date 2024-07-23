@@ -48,9 +48,9 @@ namespace Unity.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    var ExceptionMessage = $"BasicConsume failed for Queue '{_queueName}'";
-                    _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", ExceptionMessage);
-                    throw new QueueingException(ExceptionMessage);
+                    var RegisterExceptionMessage = $"BasicConsume failed for Queue '{_queueName}'";
+                    _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", RegisterExceptionMessage);
+                    throw new QueueingException(RegisterExceptionMessage);
                 }
 
                 _logger.LogInformation("Succesfully registered {_consumerName} as a Consumer for Queue {_queueName}", _consumerName, _queueName);
@@ -67,16 +67,16 @@ namespace Unity.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    var ExceptionMessage = $"Error canceling QueueConsumer registration for {_consumerName}";
-                    _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", ExceptionMessage);
-                    throw new QueueingException(ExceptionMessage, ex);
+                    var CancelExceptionMessage = $"Error canceling QueueConsumer registration for {_consumerName}";
+                    _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", CancelExceptionMessage);
+                    throw new QueueingException(CancelExceptionMessage, ex);
                 }
             }
         }
 
         private async Task HandleMessage(object ch, BasicDeliverEventArgs ea)
         {
-            _logger.LogInformation($"Received Message on Queue {_queueName}");
+            _logger.LogInformation("Received Message on Queue {_queueName}", _queueName);
 
             // Create a new scope for handling the consumption of the queue message
             var consumerScope = _serviceProvider.CreateScope();
@@ -129,8 +129,8 @@ namespace Unity.RabbitMQ
             }
             catch (Exception ex)
             {
-                var ExceptionMessage = $"Cannot handle consumption of a {_queueName} by {_consumerName}'";
-                _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", ExceptionMessage);
+                var HandleMessageException = $"Cannot handle consumption of a {_queueName} by {_consumerName}'";
+                _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", HandleMessageException);
                 if(producingChannel != null)
                 {
                     RejectMessage(ea.DeliveryTag, consumingChannel, producingChannel);

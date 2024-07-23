@@ -12,19 +12,20 @@ namespace Unity.RabbitMQ
     {
         private readonly ILogger<QueueProducer<TQueueMessage>> _logger;
         private readonly string? _queueName;
-        private readonly IModel _channel;
+        private readonly IModel? _channel;
 
         public QueueProducer(IQueueChannelProvider<TQueueMessage> channelProvider, ILogger<QueueProducer<TQueueMessage>> logger)
         {
              _logger = logger;
 
             try{
-                _channel = channelProvider.GetChannel();
+                _channel = channelProvider?.GetChannel();
                 _queueName = typeof(TQueueMessage).Name;
             } catch (Exception ex) {
                 var ExceptionMessage = ex.Message;
                 _logger.LogError(ex, "QueueProducer Constructor issue: {ExceptionMessage}", ExceptionMessage);
             }
+
         }
 
         public void PublishMessage(TQueueMessage message)
@@ -45,9 +46,9 @@ namespace Unity.RabbitMQ
             }
             catch (Exception ex)
             {
-                var msg = ex.Message;
-                _logger.LogError(ex, msg);
-                throw new QueueingException(msg);
+                var PublishMessageException = ex.Message;
+                _logger.LogError(ex, "PublishMessage Exception: {PublishMessageException}", PublishMessageException);
+                throw new QueueingException(PublishMessageException);
             }
         }
 

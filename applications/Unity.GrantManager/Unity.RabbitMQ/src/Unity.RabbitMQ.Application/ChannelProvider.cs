@@ -27,7 +27,7 @@ namespace Unity.RabbitMQ
                 {
                     IConnection? connection = _connectionProvider.GetConnection();
                     if (connection != null) {
-                        _model = _connectionProvider?.GetConnection()?.CreateModel();
+                        _model = connection.CreateModel();
                     }
                 }
                 catch (Exception ex)
