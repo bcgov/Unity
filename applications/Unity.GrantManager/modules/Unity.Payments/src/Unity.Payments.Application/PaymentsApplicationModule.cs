@@ -81,6 +81,7 @@ public class PaymentsApplicationModule : AbpModule
         context.Services.AddScoped(typeof(IQueueChannelProvider<>), typeof(QueueChannelProvider<>));
         context.Services.AddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
         context.Services.AddQueueMessageConsumer<InvoiceConsumer, InvoiceMessages>();
+        context.Services.AddQueueMessageConsumer<ReconciliationConsumer, ReconcilePaymentMessages>();
 
         Configure<AbpMultiTenancyOptions>(options =>
         {
