@@ -28,3 +28,6 @@
 .dynamic-buttons-div{
     display:inline-flex;
 }
+input[type=search]::-webkit-search-cancel-button {
+    -webkit-appearance: button !important;
+}

@@ -70,7 +70,7 @@
         }
     });
 
-    $('#search').keyup(function () {
+    $('#search').on('input', function () {
         let table = $('#GrantApplicationsTable').DataTable();
         table.search($(this).val()).draw();
     });
