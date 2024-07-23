@@ -49,7 +49,7 @@ namespace Unity.RabbitMQ
                 catch (Exception ex)
                 {
                     var RegisterExceptionMessage = $"BasicConsume failed for Queue '{_queueName}'";
-                    _logger.LogError(ex, "QueueConsumerHandler Exception: {ExceptionMessage}", RegisterExceptionMessage);
+                    _logger.LogError(ex, "QueueConsumerHandler - {RegisterExceptionMessage}", RegisterExceptionMessage);
                     throw new QueueingException(RegisterExceptionMessage);
                 }
 
