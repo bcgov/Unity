@@ -21,8 +21,7 @@ $(function () {
         'CASResponse',
         'l1Approval',
         'l2Approval',
-        'l3Approval',
-      
+        'l3Approval'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -173,6 +172,8 @@ $(function () {
             getL2ApprovalColumn(),
             getL3ApprovalColumn(),
             getDescriptionColumn(),
+            getInvoiceStatusColumn(),
+            getPaymentStatusColumn()
         ]
     }
 
@@ -265,8 +266,6 @@ $(function () {
             index: 7,
         };
     }
-
-
 
     function getStatusColumn() {
         return {
@@ -383,11 +382,44 @@ $(function () {
             name: 'paymentDescription',
             data: 'description',
             className: 'data-table-header',
-            index: 17
+            index: 16
           
         };
     }
 
+    function getInvoiceStatusColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:InvoiceStatus'),
+            name: 'invoiceStatus',
+            data: 'invoiceStatus',
+            className: 'data-table-header',
+            index: 17,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+    function getPaymentStatusColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:PaymentStatus'),
+            name: 'paymentStatus',
+            data: 'paymentStatus',
+            className: 'data-table-header',
+            index: 18,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
