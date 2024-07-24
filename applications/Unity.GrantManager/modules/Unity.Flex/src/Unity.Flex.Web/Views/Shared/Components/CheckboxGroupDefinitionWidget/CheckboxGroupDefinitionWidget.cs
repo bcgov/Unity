@@ -44,8 +44,6 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 
         private static void ValidateInput(StringValues keys, StringValues labels)
         {
-            // throw new NotImplementedException();
-            // throw new UserFriendlyException("Duplicate Keys Encountered");
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
