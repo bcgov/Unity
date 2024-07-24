@@ -46,10 +46,13 @@ namespace Unity.Payments.PaymentRequests
             List<PaymentRequestDto> createdPayments = [];
 
             var paymentThreshold = await GetPaymentThresholdAsync();
+            var currentYear = DateTime.UtcNow.Year;
+            var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
 
-            foreach (var dto in paymentRequests)
+            foreach (var item in paymentRequests.Select((value, i) => new { i, value }))
             {
                 // Confirmation ID + 4 digit sequence NEED SEQUENCE IF MULTIPLE
+                var dto = item.value;
                 string format = "0000";
                 // Needs to be optimized
                 int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
@@ -65,8 +68,8 @@ namespace Unity.Payments.PaymentRequests
                    dto.SiteId,
                    dto.CorrelationId,
                    dto.CorrelationProvider,
-                   await GeneratePaymentNumberAsync(),
-                   dto.Description,
+                   GeneratePaymentNumberAsync(sequenceNumber,item.i),
+                    dto.Description,
                    paymentThreshold
                   );
 
@@ -87,6 +90,8 @@ namespace Unity.Payments.PaymentRequests
                         Status = result.Status,
                         ReferenceNumber  = result.ReferenceNumber,
                     });
+
+                   
                 }
                 catch (Exception ex)
                 {
@@ -200,14 +205,13 @@ namespace Unity.Payments.PaymentRequests
 
             return PaymentSharedConsts.DefaultThresholdAmount;
         }
-        public async Task<string> GeneratePaymentNumberAsync()
+        public  string GeneratePaymentNumberAsync(int sequenceNumber, int index)
         {
-            var currentYear = DateTime.UtcNow.Year;
             var prefix = "UP-";
+            var currentYear = DateTime.UtcNow.Year;
             var yearPart = currentYear.ToString();
 
-            // Get the next sequence number and reset it if it's a new year
-            var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
+            sequenceNumber = sequenceNumber + index;
             var sequencePart = sequenceNumber.ToString("D6");
 
             return $"{prefix}{yearPart}-{sequencePart}";
@@ -229,7 +233,6 @@ namespace Unity.Payments.PaymentRequests
             }
             else
             {
-                // First request of the year
                 return 1;
             }
         }
