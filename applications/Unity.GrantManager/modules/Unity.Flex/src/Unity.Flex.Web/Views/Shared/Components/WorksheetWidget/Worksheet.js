@@ -108,7 +108,7 @@ $(function () {
             fieldId: fieldId,
             actionType: action
         });
-    }
+    }    
 
     customFieldModal.onResult(function (_, response) {
         PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });

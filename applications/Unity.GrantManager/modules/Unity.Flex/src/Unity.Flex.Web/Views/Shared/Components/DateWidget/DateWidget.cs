@@ -20,23 +20,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.DateWidget
         {
             return View(await Task.FromResult(new DateViewModel() { Field = fieldModel, Name = modelName }));
         }
+    }
 
-        public class DateWidgetStyleBundleContributor : BundleContributor
+    public class DateWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/DateWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/DateWidget/Default.css");
         }
+    }
 
-        public class DateWidgetScriptBundleContributor : BundleContributor
+    public class DateWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/DateWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/DateWidget/Default.js");
         }
     }
 }
