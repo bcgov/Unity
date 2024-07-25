@@ -300,9 +300,9 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 try
                 {
-                    JObject? jsonObj = JObject.Parse(formSubmission.Submission);
-                    if (jsonObj == null) return 0;
-                    JToken? tokenFormVersionId = jsonObj.SelectToken("submission.formVersionId");
+                    JObject? submissionJson = JObject.Parse(formSubmission.Submission);
+                    if (submissionJson == null) return 0;
+                    JToken? tokenFormVersionId = submissionJson.SelectToken("submission.formVersionId");
                     if (tokenFormVersionId == null) return 0;
                     Guid formVersionId = Guid.Parse(tokenFormVersionId.ToString());
                     formSubmission.FormVersionId = formVersionId;
