@@ -7,5 +7,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
         public string ReferenceNo { get; set; } = string.Empty;
         public string ApplicantName { get; set; } = string.Empty;
         public string ApplicationStatus { get; set; } = string.Empty;
+        public int ApplicationFormVersion { get; set; } = 0;
     }
 }

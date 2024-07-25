@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
@@ -17,20 +19,24 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
     public class ApplicationBreadcrumbWidgetViewComponent : AbpViewComponent
     {
         private readonly IApplicationApplicantAppService _applicationApplicantAppService;
+        private readonly IApplicationFormVersionAppService _formVersionAppService;
 
-         public ApplicationBreadcrumbWidgetViewComponent(IApplicationApplicantAppService applicationApplicantAppService)
+         public ApplicationBreadcrumbWidgetViewComponent(IApplicationApplicantAppService applicationApplicantAppService, IApplicationFormVersionAppService formVersionAppService)
         {
             _applicationApplicantAppService = applicationApplicantAppService;
+            _formVersionAppService = formVersionAppService;
         }
         
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
         {
             var applicationApplicant = await _applicationApplicantAppService.GetByApplicationIdAsync(applicationId);
+            int formVersion = await _formVersionAppService.GetFormVersionByApplicationIdAsync(applicationId);
             return View(new ApplicationBreadcrumbWidgetViewModel() 
             { 
                 ApplicantName = applicationApplicant.ApplicantName,
                 ApplicationStatus = applicationApplicant.ApplicationStatus,
-                ReferenceNo = applicationApplicant.ApplicationReferenceNo
+                ReferenceNo = applicationApplicant.ApplicationReferenceNo,
+                ApplicationFormVersion = formVersion
             });
         }
     }
