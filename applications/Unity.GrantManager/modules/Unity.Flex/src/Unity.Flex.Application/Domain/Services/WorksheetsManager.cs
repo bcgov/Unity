@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
+using NUglify.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
@@ -51,18 +54,29 @@ namespace Unity.Flex.Domain.Services
                 if (worksheet == null) return;
 
                 var instance = await CreateNewWorksheetInstanceAsync(worksheetInstanceRepository, eventData, worksheet, fields);
-                UpdateWorksheetInstanceValue(instance);
+                await UpdateWorksheetInstanceValueAsync(instance);
             }
             else
             {
                 UpdateExistingWorksheetInstance(worksheetInstance, worksheet, fields);
-                UpdateWorksheetInstanceValue(worksheetInstance);
+                await UpdateWorksheetInstanceValueAsync(worksheetInstance);
             }
         }
 
-        private static void UpdateWorksheetInstanceValue(WorksheetInstance instance)
+        private async Task UpdateWorksheetInstanceValueAsync(WorksheetInstance instance)
         {
             // Update and set the instance value for the worksheet - high level values serialized
+            var worksheet = await worksheetRepository.GetAsync(instance.WorksheetId, true);
+            var fieldDefinitions = worksheet.Sections.SelectMany(s => s.Fields).ToList();
+            var instanceCurrentValue = new WorksheetInstanceValue();
+            foreach (var field in instance.Values)
+            {
+                var fieldDefinition = fieldDefinitions.Find(s => s.Id == field.CustomFieldId);
+                if (fieldDefinition != null)
+                    instanceCurrentValue.Values.Add(new FieldInstanceValue(fieldDefinition.Key,
+                        JsonNode.Parse(field.CurrentValue)?["value"]?.ToString() ?? string.Empty));
+            }
+            instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));
         }
 
         private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)
@@ -176,7 +190,7 @@ namespace Unity.Flex.Domain.Services
                         }
 
                         var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);
-                        UpdateWorksheetInstanceValue(newWorksheetInstance);
+                        await UpdateWorksheetInstanceValueAsync(newWorksheetInstance);
                         newWorksheetInstances.Add(new(worksheet, newWorksheetInstance));
                     }
                 }

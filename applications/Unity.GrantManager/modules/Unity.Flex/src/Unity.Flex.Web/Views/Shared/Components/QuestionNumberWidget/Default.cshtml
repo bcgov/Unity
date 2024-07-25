@@ -4,7 +4,8 @@
 
 <div class="mb-3">
     <label for="answer-number-@Model.QuestionId" class="form-label">Answer</label>
-    <input type="number" class="form-control answer-number-input" disabled="@Model.IsDisabled" id="answer-number-@Model.QuestionId" name="Answers[@Model.QuestionId]" value="@Model.Answer" data-original-value="@Model.Answer" oninput="handleInputChange('@Model.QuestionId','answer-number-','save-number-')" />
+    <input type="number" class="form-control answer-number-input" min="@Model.Min" max="@Model.Max" disabled="@Model.IsDisabled" id="answer-number-@Model.QuestionId" name="Answers[@Model.QuestionId]" value="@Model.Answer" data-original-value="@Model.Answer" oninput="handleInputChange('@Model.QuestionId','answer-number-','save-number-')" />
+    <span id="error-message-@Model.QuestionId" class="text-danger field-validation-error" ></span>
 </div>
 <div class="btn-group">
     <button type="button" class="btn btn-primary" disabled="@Model.IsDisabled" disabled id="save-number-@Model.QuestionId" onclick="saveChanges('@Model.QuestionId','answer-number-','save-number-',1)">SAVE CHANGES</button>

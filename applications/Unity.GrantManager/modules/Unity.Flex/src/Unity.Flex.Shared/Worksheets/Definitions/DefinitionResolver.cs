@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json;
+using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Worksheets.Definitions
 {
@@ -12,6 +13,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 return type switch
                 {
                     CustomFieldType.Undefined => "{}",
+                    CustomFieldType.BCAddress => "{}",
                     CustomFieldType.Numeric => JsonSerializer.Serialize(new NumericDefinition()),
                     CustomFieldType.Text => JsonSerializer.Serialize(new TextDefinition()),
                     CustomFieldType.Date => JsonSerializer.Serialize(new DateDefinition()),
@@ -23,7 +25,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize(new RadioDefinition()),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize(new CheckboxDefinition()),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupDefinition()),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),
+                    CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),                    
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -32,6 +34,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 return type switch
                 {
                     CustomFieldType.Undefined => "{}",
+                    CustomFieldType.BCAddress => "{}",
                     CustomFieldType.Numeric => JsonSerializer.Serialize((NumericDefinition)definition),
                     CustomFieldType.Text => JsonSerializer.Serialize((TextDefinition)definition),
                     CustomFieldType.Date => JsonSerializer.Serialize((DateDefinition)definition),
@@ -43,7 +46,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize((RadioDefinition)definition),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize((CheckboxDefinition)definition),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize((CheckboxGroupDefinition)definition),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize((SelectListDefinition)definition),
+                    CustomFieldType.SelectList => JsonSerializer.Serialize((SelectListDefinition)definition),                   
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -52,6 +55,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 return type switch
                 {
                     CustomFieldType.Undefined => "{}",
+                    CustomFieldType.BCAddress => "{}",
                     CustomFieldType.Numeric => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.Text => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.Date => JsonSerializer.Serialize(element.ToString()),
@@ -63,7 +67,52 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(element.ToString()),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),
+                    CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),                    
+                    _ => throw new NotImplementedException(),
+                };
+            }
+
+            throw new NotImplementedException(); // we should not get here
+        }
+
+        public static string Resolve(QuestionType type, object? definition)
+        {
+            if (definition == null)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize(new NumericDefinition()),
+                    QuestionType.Text => JsonSerializer.Serialize(new TextDefinition()),                    
+                    QuestionType.YesNo => JsonSerializer.Serialize(new YesNoDefinition()),                    
+                    _ => throw new NotImplementedException(),
+                };
+            }
+            else if (definition is CustomFieldDefinition)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize((NumericDefinition)definition),
+                    QuestionType.Text => JsonSerializer.Serialize((TextDefinition)definition),
+                    QuestionType.YesNo => JsonSerializer.Serialize((YesNoDefinition)definition),                    
+                    _ => throw new NotImplementedException(),
+                };
+            }
+            else if (definition is JsonElement element)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize(element.ToString()),
+                    QuestionType.Text => JsonSerializer.Serialize(element.ToString()),                    
+                    QuestionType.YesNo => JsonSerializer.Serialize(element.ToString()),
+                    _ => throw new NotImplementedException(),
+                };
+            } else if (definition is string)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize(definition),
+                    QuestionType.Text => JsonSerializer.Serialize(definition),
+                    QuestionType.YesNo => JsonSerializer.Serialize(definition),
                     _ => throw new NotImplementedException(),
                 };
             }

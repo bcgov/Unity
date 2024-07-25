@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Values;
 using Volo.Abp.DependencyInjection;
@@ -22,7 +23,7 @@ namespace Unity.Flex.Handlers
 
             if (ans != null)
             {
-                ans.SetValue(ValueConverter.Convert(eventData.Answer ?? "", (Worksheets.CustomFieldType)eventData.QuestionType));
+                ans.SetValue(ValueConverter.Convert(eventData.Answer ?? "", (QuestionType)eventData.QuestionType));
             }
             else
             {
@@ -30,7 +31,7 @@ namespace Unity.Flex.Handlers
                 {
                     ans = new Answer(Guid.NewGuid())
                     {
-                        CurrentValue = ValueConverter.Convert(eventData?.Answer?.ToString() ?? string.Empty, (Worksheets.CustomFieldType)eventData!.QuestionType),
+                        CurrentValue = ValueConverter.Convert(eventData?.Answer?.ToString() ?? string.Empty, (QuestionType)eventData!.QuestionType),
                         QuestionId = eventData.QuestionId,
                         ScoresheetInstanceId = instance.Id
                     };

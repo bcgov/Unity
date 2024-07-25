@@ -65,12 +65,47 @@ function positiveIntegersOnly(e) {
 function handleInputChange(questionId, inputFieldPrefix, saveButtonPrefix) {
     const inputField = document.getElementById(inputFieldPrefix + questionId);
     const saveButton = document.getElementById(saveButtonPrefix + questionId);
+    const errorMessage = document.getElementById('error-message-' + questionId);
     const originalValue = inputField.getAttribute('data-original-value');
 
-    if (inputField.value !== originalValue) {
+    let valid = true;   
+
+    if (inputFieldPrefix == 'answer-number-') {
+        valid = validateNumericField(inputField, errorMessage);
+    } else if (inputFieldPrefix == 'answer-text-') {
+        valid = validateTextField(inputField, errorMessage);
+    }      
+
+    if (inputField.value !== originalValue && valid) {
         saveButton.disabled = false;
     } else {
         saveButton.disabled = true;
+    }
+}
+
+function validateTextField(textInputField, errorMessage) {
+    if (textInputField.validity.tooShort) {
+        errorMessage.textContent = 'The answer is too short. Minimum length is ' + textInputField.minLength + ' characters.';
+        return false;
+    } else if (textInputField.validity.tooLong) {
+        errorMessage.textContent = 'The answer is too long. Maximum length is ' + textInputField.maxLength + ' characters.';
+        return false;
+    } else {
+        errorMessage.textContent = ''; 
+        return true;
+    }
+}
+
+function validateNumericField(numericInputField, errorMessage) {
+    if (numericInputField.validity.rangeOverflow) {
+        errorMessage.textContent = `Value must be less than or equal to ${numericInputField.max}.`;
+        return false;
+    } else if (numericInputField.validity.rangeUnderflow) {
+        errorMessage.textContent = `Value must be greater than or equal to ${numericInputField.min}.`;
+        return false;
+    } else {
+        errorMessage.textContent = '';
+        return true;
     }
 }
 
@@ -114,10 +149,15 @@ function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionTyp
 
 function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix) {
     const inputField = document.getElementById(inputFieldPrefix + questionId);
-    const saveButton = document.getElementById(saveButtonPrefix + questionId);
+    const saveButton = document.getElementById(saveButtonPrefix + questionId);    
 
     const originalValue = inputField.getAttribute('data-original-value');
     inputField.value = originalValue;
 
     saveButton.disabled = true;
+
+    if (inputFieldPrefix == 'answer-number-' || inputFieldPrefix == 'answer-text-') {
+        const errorMessage = document.getElementById('error-message-' + questionId);
+        errorMessage.textContent = '';
+    } 
 }

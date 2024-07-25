@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240716003756_Question_Definition_Column")]
+    partial class Question_Definition_Column
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2568,10 +2571,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("PaymentStatus")
                         .HasColumnType("text");
 
-                    b.Property<string>("ReferenceNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("RequesterName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -2591,9 +2590,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnName("TenantId");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ReferenceNumber")
-                        .IsUnique();
 
                     b.HasIndex("SiteId");
 

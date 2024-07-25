@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Unity.Flex.Worksheets.Values
 {
@@ -15,6 +14,7 @@ namespace Unity.Flex.Worksheets.Values
         }
 
         internal static object? ConvertCurrency(object? value)
+#pragma warning disable S125 // Sections of code should not be commented out
         {
             // We present the currency as thousand separated string
             if (value == null) return null;
@@ -22,9 +22,15 @@ namespace Unity.Flex.Worksheets.Values
             if (string.IsNullOrEmpty(strVal)) return null;
             var currencyParse = decimal.TryParse(strVal, out decimal currency);
             if (!currencyParse) { return null; }
-            IFormatProvider caFormatProvider = new System.Globalization.CultureInfo("en-CA");
-            return currency.ToString("#,##0.00", caFormatProvider);
+            return currency.ToString();
+            /*
+             * 
+              IFormatProvider caFormatProvider = new System.Globalization.CultureInfo("en-CA");
+              return currency.ToString("#,##0.00", caFormatProvider);
+            *
+            */
         }
+#pragma warning restore S125 // Sections of code should not be commented out
 
         internal static object? ConvertBCAddress(object? value)
         {
