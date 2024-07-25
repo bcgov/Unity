@@ -46,10 +46,13 @@ namespace Unity.Payments.PaymentRequests
             List<PaymentRequestDto> createdPayments = [];
 
             var paymentThreshold = await GetPaymentThresholdAsync();
+            var currentYear = DateTime.UtcNow.Year;
+            var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
 
-            foreach (var dto in paymentRequests)
+            foreach (var item in paymentRequests.Select((value, i) => new { i, value }))
             {
                 // Confirmation ID + 4 digit sequence NEED SEQUENCE IF MULTIPLE
+                var dto = item.value;
                 string format = "0000";
                 // Needs to be optimized
                 int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
@@ -65,8 +68,10 @@ namespace Unity.Payments.PaymentRequests
                    dto.SiteId,
                    dto.CorrelationId,
                    dto.CorrelationProvider,
-                   dto.Description,
-                   paymentThreshold);
+                   GeneratePaymentNumberAsync(sequenceNumber,item.i),
+                    dto.Description,
+                   paymentThreshold
+                  );
 
                     var result = await _paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
@@ -83,7 +88,10 @@ namespace Unity.Payments.PaymentRequests
                         Description = result.Description,
                         CreationTime = result.CreationTime,
                         Status = result.Status,
+                        ReferenceNumber  = result.ReferenceNumber,
                     });
+
+                   
                 }
                 catch (Exception ex)
                 {
@@ -196,6 +204,37 @@ namespace Unity.Payments.PaymentRequests
             }
 
             return PaymentSharedConsts.DefaultThresholdAmount;
+        }
+        public  string GeneratePaymentNumberAsync(int sequenceNumber, int index)
+        {
+            var prefix = "UP-";
+            var currentYear = DateTime.UtcNow.Year;
+            var yearPart = currentYear.ToString();
+
+            sequenceNumber = sequenceNumber + index;
+            var sequencePart = sequenceNumber.ToString("D6");
+
+            return $"{prefix}{yearPart}-{sequencePart}";
+        }
+
+        private async Task<int> GetNextSequenceNumberAsync(int currentYear)
+        {
+            // Retrieve all payment requests and filter for the current year
+            var payments = await _paymentRequestsRepository.GetListAsync();
+            var latestPayment = payments
+                .Where(p => p.CreationTime.Year == currentYear)
+                .OrderByDescending(p => p.ReferenceNumber)
+                .FirstOrDefault();
+
+            if (latestPayment != null)
+            {
+                var latestSequenceNumber = int.Parse(latestPayment.ReferenceNumber.Split('-').Last());
+                return latestSequenceNumber + 1;
+            }
+            else
+            {
+                return 1;
+            }
         }
     }
 }

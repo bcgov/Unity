@@ -89,7 +89,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         var addedSupplier = await _supplierRepository.InsertAsync(supplier);
 
         _ = await _paymentRequestRepository
-            .InsertAsync(new PaymentRequest(Guid.NewGuid(), "", 100, "Test", "0000000000", "", addedSupplier.Sites[0].Id, Guid.NewGuid(), ""), true);
+            .InsertAsync(new PaymentRequest(Guid.NewGuid(), "", 100, "Test", "0000000000", "", addedSupplier.Sites[0].Id, Guid.NewGuid(), "","UP-XXXX-000000"), true);
 
         // Act
         var paymentRequests = await _paymentRequestAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto()
