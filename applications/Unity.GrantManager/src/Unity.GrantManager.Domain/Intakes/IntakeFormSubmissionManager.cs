@@ -305,6 +305,7 @@ namespace Unity.GrantManager.Intakes
                 SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc,
                 ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
+                OrgStatus = intakeMap.OrgStatus,
             });
 
             await CreateApplicantAddressesAsync(intakeMap, applicant);
