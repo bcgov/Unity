@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RabbitMQ.Client;
-using Unity.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Shared.MessageBrokers.RabbitMQ
 {

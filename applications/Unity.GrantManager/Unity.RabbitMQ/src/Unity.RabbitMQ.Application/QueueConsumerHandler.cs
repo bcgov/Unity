@@ -4,8 +4,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Unity.RabbitMQ.Exceptions;
-using Unity.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ.Exceptions;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Shared.MessageBrokers.RabbitMQ
 {

@@ -3,8 +3,8 @@ using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
-using Unity.RabbitMQ.Interfaces;
-using Unity.RabbitMQ.Exceptions;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ.Exceptions;
 
 namespace Unity.Shared.MessageBrokers.RabbitMQ
 {
