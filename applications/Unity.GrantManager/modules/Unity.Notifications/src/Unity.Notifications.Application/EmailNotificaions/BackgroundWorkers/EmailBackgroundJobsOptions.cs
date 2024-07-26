@@ -14,7 +14,6 @@
 
     public class EmailResendOptions
     {
-        public string Expression { get; set; } = string.Empty;
         public int RetryAttemptsMaximum { get; set; } = 0;
     }
 }

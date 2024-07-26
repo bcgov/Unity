@@ -2,12 +2,7 @@
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
-using Volo.Abp.Localization.ExceptionHandling;
-using Unity.Payments.Localization;
 using Volo.Abp.VirtualFileSystem;
-using Volo.Abp.Localization;
-using Volo.Abp.Validation.Localization;
-using Localization.Resources.AbpUi;
 using Volo.Abp.AspNetCore.Mvc;
 using Unity.Payments.EntityFrameworkCore;
 using Volo.Abp.MultiTenancy;
@@ -18,7 +13,12 @@ using Unity.Payments.PaymentRequests;
 using Volo.Abp.Quartz;
 using System;
 using Volo.Abp.TenantManagement;
-
+using Unity.Shared.MessageBrokers.RabbitMQ;
+using RabbitMQ.Client;
+using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Payments.RabbitMQ.QueueMessages;
+using Unity.Payments.Integrations.RabbitMQ;
 
 namespace Unity.Payments;
 
@@ -58,18 +58,30 @@ public class PaymentsApplicationModule : AbpModule
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
-            options.PaymentRequestOptions.ConsumerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ConsumerExpression") ?? "";
-            options.InvoiceRequestOptions.ConsumerExpression = configuration.GetValue<string>("BackgroundJobs:CasInvoiceRequest:ConsumerExpression") ?? "";
         });
 
-        Configure<RabbitMQOptions>(options =>
+        context.Services.AddSingleton<IAsyncConnectionFactory>(provider =>
         {
-            options.HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "";
-            options.Port = configuration.GetValue<int>("RabbitMQ:Port");
-            options.UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "";
-            options.Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "";
-            options.VirtualHost = configuration.GetValue<string>("RabbitMQ:VirtualHost") ?? "";
+            var factory = new ConnectionFactory
+            {
+                UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "",
+                Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "",
+                HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "",
+                Port = configuration.GetValue<int>("RabbitMQ:Port"),
+                DispatchConsumersAsync = true,
+                AutomaticRecoveryEnabled = true,
+                // Configure the amount of concurrent consumers within one host
+                ConsumerDispatchConcurrency = QueueingConstants.MAX_RABBIT_CONCURRENT_CONSUMERS,
+            };
+            return factory;
         });
+
+        context.Services.AddSingleton<IConnectionProvider, ConnectionProvider>();
+        context.Services.AddScoped<IChannelProvider, ChannelProvider>();
+        context.Services.AddScoped(typeof(IQueueChannelProvider<>), typeof(QueueChannelProvider<>));
+        context.Services.AddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
+        context.Services.AddQueueMessageConsumer<InvoiceConsumer, InvoiceMessages>();
+        context.Services.AddQueueMessageConsumer<ReconciliationConsumer, ReconcilePaymentMessages>();
 
         Configure<AbpMultiTenancyOptions>(options =>
         {

@@ -1,10 +1,8 @@
 ﻿
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
-using Unity.Payments.PaymentRequests;
 
-namespace Unity.Payments.Integrations.RabbitMQ
-
+namespace Unity.Shared.MessageBrokers.RabbitMQ
 {
     public class RabbitMQConnection
     {

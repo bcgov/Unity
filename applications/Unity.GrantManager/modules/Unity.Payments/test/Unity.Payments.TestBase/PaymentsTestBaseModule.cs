@@ -1,7 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Configuration;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Authorization;
@@ -34,10 +32,7 @@ public class PaymentsTestBaseModule : AbpModule
         {
             options.IsJobExecutionEnabled = false;
             options.PaymentRequestOptions.ProducerExpression = "0 0 12 * * ? *";
-            options.PaymentRequestOptions.ConsumerExpression = "0 0 12 * * ? *";
-            options.InvoiceRequestOptions.ConsumerExpression = "0 0 12 * * ? *";
         });
-
     }
 
     public override void PreConfigureServices(ServiceConfigurationContext context)
