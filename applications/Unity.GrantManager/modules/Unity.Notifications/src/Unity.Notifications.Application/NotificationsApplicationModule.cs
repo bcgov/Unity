@@ -9,10 +9,10 @@ using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using RabbitMQ.Client;
-using Unity.RabbitMQ.Constants;
-using Unity.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
-using Unity.RabbitMQ;
+using Unity.Shared.MessageBrokers.RabbitMQ;
 using Unity.Notifications.Integrations.RabbitMQ;
 
 namespace Unity.Notifications;

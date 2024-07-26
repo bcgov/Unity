@@ -13,10 +13,10 @@ using Unity.Payments.PaymentRequests;
 using Volo.Abp.Quartz;
 using System;
 using Volo.Abp.TenantManagement;
-using Unity.RabbitMQ;
+using Unity.Shared.MessageBrokers.RabbitMQ;
 using RabbitMQ.Client;
-using Unity.RabbitMQ.Constants;
-using Unity.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
 

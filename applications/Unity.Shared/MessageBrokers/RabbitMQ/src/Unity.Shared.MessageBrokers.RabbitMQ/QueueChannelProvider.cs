@@ -1,6 +1,6 @@
 ﻿using RabbitMQ.Client;
-using Unity.RabbitMQ.Constants;
-using Unity.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Shared.MessageBrokers.RabbitMQ
 {

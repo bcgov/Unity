@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Unity.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using System;
 using Unity.Payments.PaymentRequests;

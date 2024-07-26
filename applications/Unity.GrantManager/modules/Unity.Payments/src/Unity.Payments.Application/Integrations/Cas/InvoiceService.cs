@@ -134,12 +134,12 @@ namespace Unity.Payments.Integrations.Cas
             return invoiceResponse;
         }
 
-        private async Task UpdatePaymentRequestWithInvoice(Guid PaymentRequestId, InvoiceResponse invoiceResponse)
+        private async Task UpdatePaymentRequestWithInvoice(Guid paymentRequestId, InvoiceResponse invoiceResponse)
         {
             try
             {
                 using var uow = _unitOfWorkManager.Begin();
-                PaymentRequest? paymentRequest = await _iPaymentRequestRepository.GetAsync(PaymentRequestId);
+                PaymentRequest? paymentRequest = await _iPaymentRequestRepository.GetAsync(paymentRequestId);
                 paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
                 paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
                 // Set the status - for the payment request

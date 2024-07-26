@@ -21,7 +21,6 @@ namespace Unity.Payments.PaymentRequests
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
         private readonly PaymentQueueService _paymentQueueService;
-
         private static int FiveMinutes = 5;
 
         public CasPaymentRequestCoordinator(

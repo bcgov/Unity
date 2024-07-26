@@ -1,5 +1,5 @@
 ﻿using System;
-using Unity.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Payments.RabbitMQ.QueueMessages
 {
