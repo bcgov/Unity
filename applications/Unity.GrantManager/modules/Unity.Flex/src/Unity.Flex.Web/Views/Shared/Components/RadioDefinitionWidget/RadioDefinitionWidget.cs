@@ -27,11 +27,13 @@ namespace Unity.Flex.Web.Views.Shared.Components.RadioDefinitionWidget
             {
                 throw new UserFriendlyException("Group Label should not be empty!");
             }
+            var options = form["Options"].ToList();
+            List<RadioOption> optionsList = options.Where(s => !string.IsNullOrEmpty(s)).Select(s => new RadioOption(s??string.Empty, s??string.Empty)).ToList();
+            
             return new RadioDefinition()
             {
                 GroupLabel = groupLabel,
-                //Min = decimal.Parse(form["Min"].ToString(), numberFormatInfo),
-                //Max = decimal.Parse(form["Max"].ToString(), numberFormatInfo)
+                Options = optionsList
             };
         }
 
