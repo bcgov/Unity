@@ -24,6 +24,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget
                 CustomFieldType.Numeric => NumericDefinitionWidget.NumericDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.Text => TextDefinitionWidget.TextDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.Currency => CurrencyDefinitionWidget.CurrencyDefinitionWidget.ParseFormValues(form),
+                CustomFieldType.Radio => RadioDefinitionWidget.RadioDefinitionWidget.ParseFormValues(form),
                 _ => null,
             };
         }
