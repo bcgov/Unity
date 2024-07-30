@@ -19,7 +19,14 @@
     font-weight: 400;
     color: var(--bc-type-color-secondary);
     margin-left: 0.75rem;
+    padding-right: 0.75rem !important;
 }
+
+    .application-details-breadcrumb .form-version {
+        font-weight: 400;
+        color: var(--bc-type-color-secondary);
+        font-size: 0.8rem;
+    }
 
 .application-details-breadcrumb .application-status {
     font-weight: 700;

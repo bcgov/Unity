@@ -28,9 +28,15 @@
     });
 
     function buildFormData(projectInfoObj, input) {
-        // This will not work if the culture is different and uses a different decimal separator
-        projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
 
+        let inputElement = $('[name="' + input.name + '"]');
+        // This will not work if the culture is different and uses a different decimal separator
+        if (inputElement.hasClass('unity-currency-input')) {
+            projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+        }
+        else {
+            projectInfoObj[input.name.split(".")[1]] = input.value;
+        }
         if (isNumberField(input)) {
             if (projectInfoObj[input.name.split(".")[1]] == '') {
                 projectInfoObj[input.name.split(".")[1]] = 0;
