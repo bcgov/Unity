@@ -205,7 +205,7 @@ namespace Unity.Payments.PaymentRequests
 
             return PaymentSharedConsts.DefaultThresholdAmount;
         }
-        public  string GeneratePaymentNumberAsync(int sequenceNumber, int index)
+        public static string GeneratePaymentNumberAsync(int sequenceNumber, int index)
         {
             var prefix = "UP-";
             var currentYear = DateTime.UtcNow.Year;
