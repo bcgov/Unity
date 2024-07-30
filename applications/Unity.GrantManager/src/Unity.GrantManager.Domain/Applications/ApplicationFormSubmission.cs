@@ -16,4 +16,5 @@ public class ApplicationFormSubmission : AuditedAggregateRoot<Guid>, IMultiTenan
     public string Submission { get; set; } = string.Empty;
     public Guid? TenantId { get; set; }
     public string? RenderedHTML { get; set; } = string.Empty;
+    public Guid? FormVersionId { get; set; }
 }
