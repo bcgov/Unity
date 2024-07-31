@@ -1,0 +1,24 @@
+{
+  "metabaseDetails": [
+    {
+      "unityEnv": "DEV",
+      "baseURL": "https://dev-unity-reporting.apps.silver.devops.gov.bc.ca/"
+    },
+    {
+      "unityEnv": "DEV2",
+      "baseURL": "https://dev-unity-reporting.apps.silver.devops.gov.bc.ca/"
+    },
+    {
+      "unityEnv": "TEST",
+      "baseURL": "https://test-unity-reporting.apps.silver.devops.gov.bc.ca/"
+    },
+    {
+      "unityEnv": "UAT",
+      "baseURL": "https://uat-unity-reporting.apps.silver.devops.gov.bc.ca/"
+    },
+    {
+      "unityEnv": "PROD",
+      "baseURL": "https://unity-reporting.apps.silver.devops.gov.bc.ca/"
+    }
+  ]
+}

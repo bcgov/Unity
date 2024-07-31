@@ -1,10 +1,8 @@
 ﻿
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
-using Unity.Notifications.EmailNotifications;
 
-namespace Unity.Notifications.Integrations.RabbitMQ
-
+namespace Unity.Shared.MessageBrokers.RabbitMQ
 {
     public class RabbitMQConnection
     {

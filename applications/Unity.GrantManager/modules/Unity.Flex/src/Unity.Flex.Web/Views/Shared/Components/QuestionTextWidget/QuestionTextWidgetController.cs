@@ -10,9 +10,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
     {
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult Refresh(Guid questionId, bool isDisabled, string? answer)
+        public IActionResult Refresh(Guid questionId, bool isDisabled, string? answer, int? minLength, int? maxLength)
         {
-            return ViewComponent(typeof(QuestionTextWidget), new { questionId, isDisabled, answer });
+            return ViewComponent(typeof(QuestionTextWidget), new { questionId, isDisabled, answer, minLength, maxLength });
         }
     }
 }

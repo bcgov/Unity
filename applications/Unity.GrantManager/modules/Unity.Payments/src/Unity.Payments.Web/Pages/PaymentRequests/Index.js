@@ -5,7 +5,7 @@ $(function () {
     let isApprove = false;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
-        'id',
+        'referenceNumber',
         'applicantName',
         'supplierNumber',
         'creationTime',
@@ -21,8 +21,7 @@ $(function () {
         'CASResponse',
         'l1Approval',
         'l2Approval',
-        'l3Approval',
-      
+        'l3Approval'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -156,7 +155,7 @@ $(function () {
 
     function getColumns() {
         return [
-            getPaymentIdColumn(),
+            getPaymenReferenceColumn(),
             getApplicantNameColumn(),
             getSupplierNumberColumn(),
             getSiteNumberColumn(),
@@ -173,14 +172,16 @@ $(function () {
             getL2ApprovalColumn(),
             getL3ApprovalColumn(),
             getDescriptionColumn(),
+            getInvoiceStatusColumn(),
+            getPaymentStatusColumn()
         ]
     }
 
-    function getPaymentIdColumn() {
+    function getPaymenReferenceColumn() {
         return {
             title: l('ApplicationPaymentListTable:PaymentID'),
-            name: 'id',
-            data: 'id',
+            name: 'referenceNumber',
+            data: 'referenceNumber',
             className: 'data-table-header',
             index: 0,
         };
@@ -265,8 +266,6 @@ $(function () {
             index: 7,
         };
     }
-
-
 
     function getStatusColumn() {
         return {
@@ -383,11 +382,44 @@ $(function () {
             name: 'paymentDescription',
             data: 'description',
             className: 'data-table-header',
-            index: 17
+            index: 16
           
         };
     }
 
+    function getInvoiceStatusColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:InvoiceStatus'),
+            name: 'invoiceStatus',
+            data: 'invoiceStatus',
+            className: 'data-table-header',
+            index: 17,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+    function getPaymentStatusColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:PaymentStatus'),
+            name: 'paymentStatus',
+            data: 'paymentStatus',
+            className: 'data-table-header',
+            index: 18,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
@@ -405,7 +437,7 @@ $(function () {
 
 
 
-    $('#search').keyup(function () {
+    $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });

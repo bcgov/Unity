@@ -7,9 +7,8 @@ namespace Unity.Payments.Integrations.Cas
 {
     public interface IInvoiceService : IApplicationService
     {
-        Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(PaymentRequest paymentRequest);
+        Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(string invoiceNumber);
         Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice);
         Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode);
-        Task<CasPaymentSearchResult> GetCasPaymentAsync(string paymentId);
     }
 }

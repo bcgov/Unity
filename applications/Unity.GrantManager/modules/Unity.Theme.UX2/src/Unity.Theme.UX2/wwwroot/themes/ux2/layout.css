@@ -736,3 +736,7 @@ input[type=number]::-webkit-outer-spin-button {
     bottom: 0;
     padding: 10px;
 }
+
+input[type=search]::-webkit-search-cancel-button {
+    -webkit-appearance: button !important;
+}

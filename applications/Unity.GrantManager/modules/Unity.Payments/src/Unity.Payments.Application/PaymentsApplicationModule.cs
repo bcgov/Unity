@@ -2,24 +2,35 @@
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
-using Volo.Abp.Localization.ExceptionHandling;
-using Unity.Payments.Localization;
 using Volo.Abp.VirtualFileSystem;
-using Volo.Abp.Localization;
-using Volo.Abp.Validation.Localization;
-using Localization.Resources.AbpUi;
 using Volo.Abp.AspNetCore.Mvc;
 using Unity.Payments.EntityFrameworkCore;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.BackgroundJobs;
+using Microsoft.Extensions.Configuration;
+using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.Payments.PaymentRequests;
+using Volo.Abp.Quartz;
+using System;
+using Volo.Abp.TenantManagement;
+using Unity.Shared.MessageBrokers.RabbitMQ;
+using RabbitMQ.Client;
+using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Payments.RabbitMQ.QueueMessages;
+using Unity.Payments.Integrations.RabbitMQ;
 
 namespace Unity.Payments;
 
 [DependsOn(
-    typeof(AbpVirtualFileSystemModule),    
+    typeof(AbpVirtualFileSystemModule),
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
     typeof(AbpVirtualFileSystemModule),
-    typeof(PaymentsApplicationContractsModule)
+    typeof(PaymentsApplicationContractsModule),
+    typeof(AbpBackgroundJobsModule),
+    typeof(AbpBackgroundWorkersQuartzModule),
+    typeof(AbpTenantManagementDomainModule)
     )]
 public class PaymentsApplicationModule : AbpModule
 {
@@ -29,11 +40,49 @@ public class PaymentsApplicationModule : AbpModule
         {
             mvcBuilder.AddApplicationPartIfNotExists(typeof(PaymentsApplicationModule).Assembly);
         });
-    }
 
+        PreConfigure<AbpQuartzOptions>(options =>
+        {
+            options.Configurator = configure =>
+            {
+                configure.SchedulerName = Guid.NewGuid().ToString();
+            };
+        });
+    }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var configuration = context.Services.GetConfiguration();
+
+        Configure<CasPaymentRequestBackgroundJobsOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+            options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
+        });
+
+        context.Services.AddSingleton<IAsyncConnectionFactory>(provider =>
+        {
+            var factory = new ConnectionFactory
+            {
+                UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "",
+                Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "",
+                HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "",
+                Port = configuration.GetValue<int>("RabbitMQ:Port"),
+                DispatchConsumersAsync = true,
+                AutomaticRecoveryEnabled = true,
+                // Configure the amount of concurrent consumers within one host
+                ConsumerDispatchConcurrency = QueueingConstants.MAX_RABBIT_CONCURRENT_CONSUMERS,
+            };
+            return factory;
+        });
+
+        context.Services.AddSingleton<IConnectionProvider, ConnectionProvider>();
+        context.Services.AddScoped<IChannelProvider, ChannelProvider>();
+        context.Services.AddScoped(typeof(IQueueChannelProvider<>), typeof(QueueChannelProvider<>));
+        context.Services.AddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
+        context.Services.AddQueueMessageConsumer<InvoiceConsumer, InvoiceMessages>();
+        context.Services.AddQueueMessageConsumer<ReconciliationConsumer, ReconcilePaymentMessages>();
+
         Configure<AbpMultiTenancyOptions>(options =>
         {
             options.IsEnabled = true;
@@ -65,6 +114,7 @@ public class PaymentsApplicationModule : AbpModule
         context.Services.AddAbpDbContext<PaymentsDbContext>(options =>
         {
             /* Add custom repositories here. */
+            options.AddDefaultRepositories(includeAllEntities: true);
         });
     }
 }

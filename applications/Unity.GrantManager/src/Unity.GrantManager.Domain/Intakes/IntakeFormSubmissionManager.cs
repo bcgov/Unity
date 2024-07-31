@@ -217,7 +217,8 @@ namespace Unity.GrantManager.Intakes
                     SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone,
                     SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone,
                     Place = intakeMap.Place,
-                    RiskRanking = intakeMap.RiskRanking
+                    RiskRanking = intakeMap.RiskRanking,
+                    ProjectSummary = intakeMap.ProjectSummary,
                 }
             );
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
@@ -304,6 +305,7 @@ namespace Unity.GrantManager.Intakes
                 SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc,
                 ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
+                OrgStatus = intakeMap.OrgStatus,
             });
 
             await CreateApplicantAddressesAsync(intakeMap, applicant);

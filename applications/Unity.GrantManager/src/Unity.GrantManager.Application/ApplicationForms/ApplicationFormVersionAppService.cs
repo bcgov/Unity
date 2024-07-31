@@ -29,18 +29,21 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IFormsApiService _formApiService;
+        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IUnitOfWorkManager unitOfWorkManager,
             IFormsApiService formsApiService,
-            IApplicationFormVersionRepository applicationFormVersionRepository)
+            IApplicationFormVersionRepository applicationFormVersionRepository,
+            IApplicationFormSubmissionRepository applicationFormSubmissionRepository)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _unitOfWorkManager = unitOfWorkManager;
             _formApiService = formsApiService;
+            _applicationFormSubmissionRepository = applicationFormSubmissionRepository; 
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -288,6 +291,39 @@ namespace Unity.GrantManager.ApplicationForms
             var applicationFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(chefsFormVersionId);
             if (applicationFormVersion == null) return null;
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
+        }
+
+        public async Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId)
+        {
+            ApplicationFormSubmission formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
+            if(formSubmission.FormVersionId == null)
+            {
+                try
+                {
+                    JObject? submissionJson = JObject.Parse(formSubmission.Submission);
+                    if (submissionJson == null) return 0;
+                    JToken? tokenFormVersionId = submissionJson.SelectToken("submission.formVersionId");
+                    if (tokenFormVersionId == null) return 0;
+                    Guid formVersionId = Guid.Parse(tokenFormVersionId.ToString());
+                    formSubmission.FormVersionId = formVersionId;
+                    await _applicationFormSubmissionRepository.UpdateAsync(formSubmission);
+                    return await GetVersion(formVersionId);
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return await GetVersion(formSubmission.FormVersionId ?? Guid.Empty);
+            }
+        }
+
+        private async Task<int> GetVersion(Guid formVersionId)
+        {
+            var formVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(formVersionId);
+            return formVersion?.Version ?? 0;
         }
     }
 }

@@ -1,0 +1,72 @@
+{
+  "kind": "Template",
+  "apiVersion": "template.openshift.io/v1",
+  "metadata": {
+    "name": "unity-chefs-data-web",
+    "annotations": {
+      "openshift.io/display-name": "Nginx HTTP server and a reverse proxy",
+      "description": "An example Nginx HTTP server and a reverse proxy (nginx) application that serves static content.",
+      "tags": "${APPLICATION_NAME}",
+      "iconClass": "icon-nginx",
+      "openshift.io/long-description": "This template defines resources needed to develop a static application served by Nginx HTTP server and a reverse proxy (nginx), including a build configuration and application deployment configuration."
+    }
+  },
+  "message": "The following service(s) have been created in your project: ${APPLICATION_NAME}.",
+  "labels": {
+    "template": "${APPLICATION_NAME}",
+    "app": "${APPLICATION_NAME}"
+  },
+  "objects": [
+    {
+      "kind": "Route",
+      "apiVersion": "route.openshift.io/v1",
+      "metadata": {
+        "name": "${APPLICATION_NAME}",
+        "labels": {
+          "app.kubernetes.io/part-of": "${APPLICATION_GROUP}"
+        },
+        "annotations": {
+          "template.openshift.io/expose-uri": "http://{.spec.host}{.spec.path}"
+        }
+      },
+      "spec": {
+        "host": "${APPLICATION_DOMAIN}",
+        "to": {
+          "kind": "Service",
+          "name": "${APPLICATION_SERVICE}"
+        },
+        "tls": {
+          "termination": "edge",
+          "insecureEdgeTerminationPolicy": "Redirect"
+        }        
+      }
+    }
+  ],
+  "parameters": [
+    {
+        "description": "The name of the application grouping.",
+        "displayName": "Application Group",
+        "name": "APPLICATION_GROUP",
+        "value": "unity-tools"
+    },
+    {
+        "description": "The name of the application.",
+        "displayName": "Application Name",
+        "name": "APPLICATION_NAME",
+        "required": true,
+        "value": "unity-chefs-data-web"
+    },
+    {
+      "description": "The name of the service.",
+      "displayName": "Application Seevice",
+      "name": "APPLICATION_SERVICE",
+      "value": "unity-app-data-web"
+    },
+    {
+      "name": "APPLICATION_DOMAIN",
+      "displayName": "Application Hostname",
+      "description": "The exposed hostname that will route to the nginx service, if left blank a value will be defaulted.",
+      "value": "dev-unity-chefs-data.apps.silver.devops.gov.bc.ca"
+    }
+  ]
+}

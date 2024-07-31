@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json;
+using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Worksheets.Definitions
 {
@@ -67,6 +68,51 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Checkbox => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),                    
+                    _ => throw new NotImplementedException(),
+                };
+            }
+
+            throw new NotImplementedException(); // we should not get here
+        }
+
+        public static string Resolve(QuestionType type, object? definition)
+        {
+            if (definition == null)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize(new NumericDefinition()),
+                    QuestionType.Text => JsonSerializer.Serialize(new TextDefinition()),                    
+                    QuestionType.YesNo => JsonSerializer.Serialize(new YesNoDefinition()),                    
+                    _ => throw new NotImplementedException(),
+                };
+            }
+            else if (definition is CustomFieldDefinition)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize((NumericDefinition)definition),
+                    QuestionType.Text => JsonSerializer.Serialize((TextDefinition)definition),
+                    QuestionType.YesNo => JsonSerializer.Serialize((YesNoDefinition)definition),                    
+                    _ => throw new NotImplementedException(),
+                };
+            }
+            else if (definition is JsonElement element)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize(element.ToString()),
+                    QuestionType.Text => JsonSerializer.Serialize(element.ToString()),                    
+                    QuestionType.YesNo => JsonSerializer.Serialize(element.ToString()),
+                    _ => throw new NotImplementedException(),
+                };
+            } else if (definition is string)
+            {
+                return type switch
+                {
+                    QuestionType.Number => JsonSerializer.Serialize(definition),
+                    QuestionType.Text => JsonSerializer.Serialize(definition),
+                    QuestionType.YesNo => JsonSerializer.Serialize(definition),
                     _ => throw new NotImplementedException(),
                 };
             }

@@ -1,5 +1,4 @@
 ﻿using Volo.Abp;
-using RestSharp;
 using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
@@ -7,6 +6,7 @@ using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
+using System.Net.Http;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -35,21 +35,22 @@ namespace Unity.Payments.Integrations.Cas
         {   
             if(!string.IsNullOrEmpty(supplierNumber))
             {
-                var authHeaders = await _iTokenService.GetAuthHeadersAsync();
+                var authToken = await _iTokenService.GetAuthTokenAsync();
                 var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_SUPPLIER}/{supplierNumber}";
-                var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
+                var response = await _resilientRestClient.HttpAsync(HttpMethod.Get, resource, authToken);
 
                 if (response != null)
                 {
                     if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                     {
-                        var result = JsonSerializer.Deserialize<dynamic>(response.Content)
+                        var contentString = ResilientHttpRequest.ContentToString(response.Content);                        
+                        var result = JsonSerializer.Deserialize<dynamic>(contentString)
                             ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
                         return result;
                     }
-                    else if (response.ErrorMessage != null)
+                    else if (response.StatusCode != HttpStatusCode.OK)
                     {
-                        throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Exception: " + response.ErrorMessage);
+                        throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);
                     }
                     else
                     {

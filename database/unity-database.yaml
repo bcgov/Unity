@@ -66,6 +66,10 @@ parameters:
   name: POSTGRESQL_DATABASE
   required: true
   value: UnityGrantManager
+- description: Name of the default tenant database.
+  displayName: PostgreSQL Tenant Database Name
+  name: UNITY_TENANT_DB
+  value: UnityGrantTenant
 - description: Volume space available for data, e.g. 512Mi, 2Gi.
   displayName: Volume Capacity
   name: VOLUME_CAPACITY
@@ -124,9 +128,9 @@ objects:
   kind: Secret
   metadata:
     annotations:
-      template.openshift.io/expose-database_name: '{.data[''database-name'']}'
-      template.openshift.io/expose-password: '{.data[''database-password'']}'
-      template.openshift.io/expose-username: '{.data[''database-user'']}'
+      template.openshift.io/expose-database_name: '{.data[''UNITY_POSTGRES_DB'']}'
+      template.openshift.io/expose-password: '{.data[''UNITY_POSTGRES_PASSWORD'']}'
+      template.openshift.io/expose-username: '{.data[''UNITY_POSTGRES_USER'']}'
     name: ${DATABASE_SERVICE_NAME}
     labels:
       app: ${DATABASE_SERVICE_NAME}
@@ -135,9 +139,9 @@ objects:
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
   stringData:
-    database-name: ${POSTGRESQL_DATABASE}
-    database-password: ${POSTGRESQL_PASSWORD}
-    database-user: ${POSTGRESQL_USER}
+    UNITY_POSTGRES_DB: ${POSTGRESQL_DATABASE}
+    UNITY_POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
+    UNITY_POSTGRES_USER: ${POSTGRESQL_USER}
   type: Opaque
 # Configmap
 - apiVersion: v1 
@@ -152,7 +156,9 @@ objects:
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   data:
     # Configuration values can be set as key-value properties
+    UNITY_DB_HOST: ${DATABASE_SERVICE_NAME}
     UNITY_DB_PORT: ${DATABASE_PORT}
+    UNITY_TENANT_DB: ${UNITY_TENANT_DB}
 # Service
 - apiVersion: v1
   kind: Service
@@ -248,20 +254,23 @@ objects:
           - name: POSTGRESQL_USER
             valueFrom:
               secretKeyRef:
-                key: database-user
                 name: ${DATABASE_SERVICE_NAME}
+                key: UNITY_POSTGRES_USER
           - name: POSTGRESQL_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: database-password
                 name: ${DATABASE_SERVICE_NAME}
+                key: UNITY_POSTGRES_PASSWORD
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
-                key: database-name
                 name: ${DATABASE_SERVICE_NAME}
+                key: UNITY_POSTGRES_DB
           - name: PGPORT
-            value: ${DATABASE_PORT}
+            valueFrom:
+              configMapKeyRef:
+                name: ${DATABASE_SERVICE_NAME}
+                key: UNITY_DB_PORT
           livenessProbe:
             exec:
               command:

@@ -1,0 +1,29 @@
+{
+  "submissionDetails": [
+    {
+      "unityEnv": "DEV",
+      "confirmationID": "089EAA02",
+      "formObjectID": "eohlzmc"
+    },
+    {
+      "unityEnv": "DEV2",
+      "confirmationID": "CA5D0DFA",
+      "formObjectID": "egbga5c"
+    },
+    {
+      "unityEnv": "TEST",
+      "confirmationID": "68090C5E",
+      "formObjectID": "efkdeiq"
+    },
+    {
+      "unityEnv": "UAT",
+      "confirmationID": "FD5CCD8F",
+      "formObjectID": "e0g3ct"
+    },
+    {
+      "unityEnv": "PROD",
+      "confirmationID": "6AF33D75",
+      "formObjectID": "ervcvjb"
+    }
+  ]
+}
