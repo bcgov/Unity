@@ -99,18 +99,22 @@
                     <div class="row">
                         @if (!@scoresheet.Published)
                         {
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="p-3">
                                     <button id="add_question_btn" onclick="openQuestionModal('@scoresheet.Id',null, null,'Add Question');" class="btn btn-light" type="button" disabled="@scoresheet.Sections.IsNullOrEmpty()">
                                         <i class="fl fl-plus"></i> <span>@L["Scoresheet:Configuration:AddQuestionButtonText"].Value</span>
                                     </button>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="p-3">
                                     <button id="add_section_btn" onclick="openSectionModal('@scoresheet.Id',null,'Add Section');" class="btn btn-light" type="button">
                                         <i class="fl fl-plus"></i> <span>@L["Scoresheet:Configuration:AddSectionButtonText"].Value</span>
                                     </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3">
                                 </div>
                             </div>
                         }
