@@ -64,7 +64,7 @@
                             </div>
                         }
                     </div>
-                    <div id="sections-questions" class="list-group col" data-published="@scoresheet.Published">
+                    <div id="sections-questions" class="list-group col" data-published="@scoresheet.Published" data-scoresheetid="@scoresheet.Id">
                         @foreach (var sec in scoresheet.Sections)
                         {
                             <div class="list-group-item row section-item" data-type="section" data-id="@sec.Id" data-scoresheetid="@scoresheet.Id" data-label="@sec.Name">
