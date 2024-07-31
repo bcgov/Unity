@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 table: "PaymentRequests",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValueSql: "random()");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentRequests_ReferenceNumber",
@@ -24,6 +24,14 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 table: "PaymentRequests",
                 column: "ReferenceNumber",
                 unique: true);
+
+                migrationBuilder.AlterColumn<string>(
+                name: "ReferenceNumber",
+                table: "PaymentRequests",
+                schema: "Payments",
+                type: "text",
+                nullable: false,
+                defaultValue: "");
         }
 
         /// <inheritdoc />
