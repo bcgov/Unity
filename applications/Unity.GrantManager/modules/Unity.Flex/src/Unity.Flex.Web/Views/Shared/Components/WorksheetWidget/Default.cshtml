@@ -39,6 +39,13 @@
                 </div>
             </div>
         }
+        <div class="col-md-4">
+            <div class="p-3">
+                <button data-worksheet-id="@worksheet.Id" class="btn btn-light export-worksheet-btn worksheet-btn" type="button">
+                    <i class="fl fl-export"></i> <span>@L["Worksheet:Configuration:ExportWorksheetButtonText"].Value</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <div id="sections-custom-fields" class="list-group col sections-wrapper-outer" data-worksheet-id="@worksheet.Id">
