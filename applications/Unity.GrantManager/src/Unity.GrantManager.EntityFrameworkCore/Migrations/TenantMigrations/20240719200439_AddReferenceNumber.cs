@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 table: "PaymentRequests",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValueSql: "random( )");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentRequests_ReferenceNumber",
