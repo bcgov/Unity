@@ -30,7 +30,7 @@ namespace Unity.Payments.Domain.PaymentRequests
 
         public virtual bool IsRecon { get; internal set; }
 
-        public virtual string ReferenceNumber { get;  set; }
+        public virtual string ReferenceNumber { get;  set; } = string.Empty;
 
         // Filled on a recon
         public virtual string? InvoiceStatus { get; private set; }

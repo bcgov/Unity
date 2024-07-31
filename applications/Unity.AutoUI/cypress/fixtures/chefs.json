@@ -1,0 +1,24 @@
+{
+  "chefsDetails": [
+    {
+      "unityEnv": "DEV",
+      "chefsBaseURL": "https://chefs-dev.apps.silver.devops.gov.bc.ca/app"
+    },
+    {
+      "unityEnv": "DEV2",
+      "chefsBaseURL": "https://chefs-dev.apps.silver.devops.gov.bc.ca/app"
+    },
+    {
+      "unityEnv": "TEST",
+      "chefsBaseURL": "https://chefs-test.apps.silver.devops.gov.bc.ca/app"
+    },
+    {
+      "unityEnv": "UAT",
+      "chefsBaseURL": "https://chefs-test.apps.silver.devops.gov.bc.ca/app"
+    },
+    {
+      "unityEnv": "PROD",
+      "chefsBaseURL": "https://submit.digital.gov.bc.ca/app/"
+    }
+  ]
+}
