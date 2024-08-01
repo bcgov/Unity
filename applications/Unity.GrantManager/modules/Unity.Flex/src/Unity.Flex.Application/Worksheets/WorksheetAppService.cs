@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Services;
+using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
 
@@ -137,6 +140,20 @@ namespace Unity.Flex.Worksheets
         public async Task<bool> ExistsAsync(Guid worksheetId)
         {
             return await worksheetRepository.FindAsync(worksheetId, false) != null;
+        }
+
+        public async Task<ExportWorksheetDto> ExportWorksheet(Guid worksheetId)
+        {
+            var worksheet = await worksheetRepository.GetAsync(worksheetId, true);
+            var settings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                ContractResolver = new WorksheetContractResolver()
+            };
+            var json = JsonConvert.SerializeObject(worksheet, settings);
+            var byteArray = System.Text.Encoding.UTF8.GetBytes(json);
+
+            return new ExportWorksheetDto { Content = byteArray, ContentType = "application/json", Name = "worksheet_"+worksheet.Title+"_"+worksheet.Name + ".json"};
         }
     }
 }
