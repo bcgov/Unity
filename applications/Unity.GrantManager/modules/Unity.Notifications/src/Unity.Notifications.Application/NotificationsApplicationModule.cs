@@ -47,6 +47,7 @@ public class NotificationsApplicationModule : AbpModule
                 UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "",
                 Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "",
                 HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "",
+                VirtualHost = configuration.GetValue<string>("RabbitMQ:VirtualHost") ?? "/",
                 Port = configuration.GetValue<int>("RabbitMQ:Port"),
                 DispatchConsumersAsync = true,
                 AutomaticRecoveryEnabled = true,
