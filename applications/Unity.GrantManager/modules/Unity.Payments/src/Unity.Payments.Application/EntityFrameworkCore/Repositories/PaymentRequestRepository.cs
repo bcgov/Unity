@@ -13,12 +13,19 @@ namespace Unity.Payments.Repositories
     public class PaymentRequestRepository : EfCoreRepository<PaymentsDbContext, PaymentRequest, Guid>, IPaymentRequestRepository
     {
         private List<string> ReCheckStatusList { get; set; } = new List<string>();
+        private List<string> FailedStatusList { get; set; } = new List<string>();
+
+
+
 
         public PaymentRequestRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
         {
             ReCheckStatusList.Add(CasPaymentRequestStatus.ServiceUnavailable);
             ReCheckStatusList.Add(CasPaymentRequestStatus.SentToCas);
             ReCheckStatusList.Add(CasPaymentRequestStatus.NeverValidated);
+
+            FailedStatusList.Add(CasPaymentRequestStatus.ServiceUnavailable);
+            FailedStatusList.Add(CasPaymentRequestStatus.ErrorFromCas);
         }
 
         public async Task<int> GetCountByCorrelationId(Guid correlationId)
@@ -51,6 +58,14 @@ namespace Unity.Payments.Repositories
         {
             var dbSet = await GetDbSetAsync();
             return dbSet.Where(p => p.InvoiceStatus != null && ReCheckStatusList.Contains(p.InvoiceStatus)).IncludeDetails().ToList();
+        }
+
+        public async Task<List<PaymentRequest>> GetPaymentRequestsByFailedsStatusAsync()
+        {
+            var dbSet = await GetDbSetAsync();
+            return dbSet.Where(p => p.InvoiceStatus != null 
+                                && FailedStatusList.Contains(p.InvoiceStatus) 
+                                && p.LastModificationTime >= DateTime.Today ).IncludeDetails().ToList();
         }
 
         public override async Task<IQueryable<PaymentRequest>> WithDetailsAsync()
