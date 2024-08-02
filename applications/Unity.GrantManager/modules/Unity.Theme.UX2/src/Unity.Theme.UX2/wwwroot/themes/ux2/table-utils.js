@@ -10,12 +10,27 @@ function createNumberFormatter() {
         maximumFractionDigits: 2,
     });
 }
+function getScrollHeight() {
+    const screenWidth = window.innerHeight;
+    let scrollY = '500px'; // default height
+
+    if (screenWidth <= 768) {
+        scrollY = '400px'; // small screens
+    } else if (screenWidth <= 1024) {
+        scrollY = '600px'; // medium screens
+    } else {
+        scrollY = '700px'; // large screens
+    }
+    return scrollY;
+}
+
 
 function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, responseCallback, actionButtons, dynamicButtonContainerId) {
 
     let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
 
     let filterData = {};
+    let tableHeight = getScrollHeight();
 
     let iDt = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -33,7 +48,7 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             iDisplayLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
-            scrollY: '400px',
+            scrollY: tableHeight,
             scrollCollapse: true,
             ajax: abp.libs.datatables.createAjax(
                 dataEndpoint,
