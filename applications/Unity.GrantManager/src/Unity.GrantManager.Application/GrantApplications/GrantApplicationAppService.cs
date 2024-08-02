@@ -922,8 +922,15 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
     {
-        var applications = await _applicationRepository.GetListAsync();
+        
+        var query = from applications in await _applicationRepository.GetQueryableAsync()
+                    select new GrantApplicationLiteDto
+                    {
+                        Id = applications.Id,
+                        ProjectName = applications.ProjectName,
+                        ReferenceNo = applications.ReferenceNo
+                    };
 
-        return ObjectMapper.Map<List<Application>, List<GrantApplicationLiteDto>>(applications.ToList());
+        return await query.ToListAsync();
     }
 }

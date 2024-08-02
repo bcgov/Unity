@@ -52,6 +52,8 @@
     <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\QuestionDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\QuestionDefinitionWidget\Default.js" />
+    <None Remove="Views\Shared\Components\RadioDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\RadioDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.css" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.js" />
     <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.css" />
@@ -97,6 +99,8 @@
     <EmbeddedResource Include="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\QuestionDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\QuestionDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\RadioDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\RadioDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.css" />
@@ -120,6 +124,13 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.Flex.Application.Contracts\Unity.Flex.Application.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Views\Shared\Components\RadioDefinitionWidget\Default.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
