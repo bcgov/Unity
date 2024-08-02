@@ -28,7 +28,7 @@ public class PaymentsTestBaseModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
         context.Services.AddAlwaysAllowAuthorization();
-        Configure<CasPaymentRequestBackgroundJobsOptions>(options =>
+        Configure<PaymentRequestBackgroundJobsOptions>(options =>
         {
             options.IsJobExecutionEnabled = false;
             options.PaymentRequestOptions.ProducerExpression = "0 0 12 * * ? *";

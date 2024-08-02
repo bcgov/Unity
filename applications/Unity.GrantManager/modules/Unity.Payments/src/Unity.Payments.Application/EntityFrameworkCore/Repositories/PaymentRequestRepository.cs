@@ -16,6 +16,7 @@ namespace Unity.Payments.Repositories
 
         public PaymentRequestRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
         {
+            ReCheckStatusList.Add(CasPaymentRequestStatus.ServiceUnavailable);
             ReCheckStatusList.Add(CasPaymentRequestStatus.SentToCas);
             ReCheckStatusList.Add(CasPaymentRequestStatus.NeverValidated);
         }
