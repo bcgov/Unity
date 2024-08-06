@@ -6,11 +6,12 @@ The codebase is being roughed out, but finer details are likely to change.
 
     .github                    - GitHub Actions
     applications/              - Application Root
+    ├── Unity.ApplicantPortal/ - Applicant Information solution
+    ├── Unity.AutoUI/          - Automated User Interface testing
     ├── Unity.GrantManager/    - Grant manager and adjudication solution
     ├── Unity.Orchestrator/    - Workflow orchestrator solution
-    ├── Unity.Metabase/        - Grant reporting solution
-    ├── Unity.RabbitMQ/        - Messaging and streaming broker
-    ├── Unity.Tools/           - Maintenance tools
+    ├── Unity.RabbitMQ/        - Messaging and streaming broker configuration
+    ├── Unity.Tools/           - DevOps tools
     database/                  - Database configuration files
     documentation/             - Solution documentation and assets
     openshift/                 - OpenShift deployment files
