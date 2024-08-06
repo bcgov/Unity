@@ -80,6 +80,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget
         [Display(Name = "Summary:Application.Owner")]
         public GrantApplicationAssigneeDto Owner { get; set; } = new();
 
+        [Display(Name = "Summary:Application.Place")]
+        public string? Place { get; set; }
+
         [HiddenInput]
         public Guid ApplicationId { get; set; }
         

@@ -28,4 +28,5 @@ public class GetSummaryDto
     public Guid? OwnerId { get; set; }
     public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
     public GrantApplicationAssigneeDto Owner { get; set; } = new();
+    public string? Place { get; set; }
 }

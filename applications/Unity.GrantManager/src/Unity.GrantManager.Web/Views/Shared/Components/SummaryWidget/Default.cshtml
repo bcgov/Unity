@@ -114,10 +114,16 @@
             </td>
         </tr>
         <tr>
-            <td colspan="2">
+            <td>
                 @Html.LabelFor(model => model.Community, new { @class= "display-input-label" })
                 <div class="display-input">
                     @Html.DisplayFor(model => model.Community)
+                </div>
+            </td>
+            <td>
+                @Html.LabelFor(model => model.Place, new { @class = "display-input-label" })
+                <div class="display-input">
+                    @Html.DisplayFor(model => model.Place)
                 </div>
             </td>
         </tr>
