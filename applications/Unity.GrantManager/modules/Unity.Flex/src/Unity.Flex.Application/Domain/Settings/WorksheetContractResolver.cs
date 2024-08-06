@@ -11,6 +11,9 @@ public class WorksheetContractResolver : DefaultContractResolver
     protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
     {
         var property = base.CreateProperty(member, memberSerialization);
+        property.Readable = true;
+        property.Writable = true;
+
         if ((property.DeclaringType == typeof(WorksheetSection) && (property.PropertyName == "Worksheet" || property.PropertyName == "WorksheetId")) ||
             (property.DeclaringType == typeof(CustomField) && (property.PropertyName == "Section" || property.PropertyName == "SectionId")) ||
             property.PropertyName == "TenantId" ||

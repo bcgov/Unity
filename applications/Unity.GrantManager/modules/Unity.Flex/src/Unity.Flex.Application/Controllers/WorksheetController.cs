@@ -1,16 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Worksheets;
 using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.Validation;
 
 namespace Unity.Flex.Controllers
 {
@@ -33,6 +27,45 @@ namespace Unity.Flex.Controllers
             return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
         }
 
-        
+        [HttpPost]
+        [Route("/api/app/worksheet/import")]
+        public async Task<IActionResult> ImportWorksheetFile(IFormFile file)
+        {
+            return await ImportWorksheet(file);
+        }
+
+        private async Task<IActionResult> ImportWorksheet(IFormFile file)
+        {            
+            try
+            {
+                var jsonString = await ReadJsonFileAsync(file);                
+                await _worksheetAppService.ImportWorksheetAsync(
+                    new WorksheetImportDto
+                    {
+                        Name = file.FileName,
+                        Content = jsonString
+                    });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("ERROR:<br>" + file.FileName + " : " + ex.Message);
+            }
+
+            return Ok("Worksheet Is Successfully Imported!");
+        }
+
+        private static async Task<string> ReadJsonFileAsync(IFormFile jsonFile)
+        {
+            if (jsonFile == null || jsonFile.Length == 0)
+            {
+                throw new ArgumentException("No file provided or file is empty.");
+            }
+
+            using (var stream = jsonFile.OpenReadStream())
+            using (var reader = new StreamReader(stream))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
     }
 }

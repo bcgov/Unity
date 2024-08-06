@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using Unity.Flex.Worksheets;
@@ -74,6 +75,13 @@ namespace Unity.Flex.Domain.Worksheets
                 throw new UserFriendlyException("Cannot duplicate field names for a worksheet.");
 
             Key = key;
+            Name = name;
+            return this;
+        }
+
+        public CustomField UpdateFieldName(string worksheetName)
+        {
+            var name = ConfigureName(this.Key, worksheetName);
             Name = name;
             return this;
         }
