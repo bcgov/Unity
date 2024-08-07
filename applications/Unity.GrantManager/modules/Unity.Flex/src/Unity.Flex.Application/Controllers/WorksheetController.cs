@@ -31,14 +31,9 @@ namespace Unity.Flex.Controllers
         [Route("/api/app/worksheet/import")]
         public async Task<IActionResult> ImportWorksheetFile(IFormFile file)
         {
-            return await ImportWorksheet(file);
-        }
-
-        private async Task<IActionResult> ImportWorksheet(IFormFile file)
-        {            
             try
             {
-                var jsonString = await ReadJsonFileAsync(file);                
+                var jsonString = await ReadJsonFileAsync(file);
                 await _worksheetAppService.ImportWorksheetAsync(
                     new WorksheetImportDto
                     {
