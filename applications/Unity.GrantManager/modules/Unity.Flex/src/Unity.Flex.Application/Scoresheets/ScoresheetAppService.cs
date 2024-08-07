@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.Settings;
+using Unity.Flex.EntityFrameworkCore.Repositories;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
@@ -11,7 +15,7 @@ using Volo.Abp.Validation;
 namespace Unity.Flex.Scoresheets
 {
     [Authorize]
-    public class ScoresheetAppService : FlexAppService, IScoresheetAppService
+    public partial class ScoresheetAppService : FlexAppService, IScoresheetAppService
     {
         private readonly IScoresheetRepository _scoresheetRepository;
         private readonly IScoresheetSectionRepository _sectionRepository;
@@ -181,5 +185,42 @@ namespace Unity.Flex.Scoresheets
             scoresheet.Published = true;
             await _scoresheetRepository.UpdateAsync(scoresheet);
         }
+
+        public async Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId)
+        {
+            var worksheet = await _scoresheetRepository.GetAsync(scoresheetId, true);
+            var settings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                ContractResolver = new ScoresheetContractResolver()
+            };
+            var json = JsonConvert.SerializeObject(worksheet, settings);
+            var byteArray = System.Text.Encoding.UTF8.GetBytes(json);
+
+            return new ExportScoresheetDto { Content = byteArray, ContentType = "application/json", Name = "worksheet_" + worksheet.Title + "_" + worksheet.Name + ".json" };
+        }
+
+        public async Task ImportScoresheetAsync(ScoresheetImportDto scoresheetImportDto)
+        {
+            if (scoresheetImportDto.Content == null || scoresheetImportDto.Content.Length == 0)
+            {
+                throw new UserFriendlyException("No file content provided.");
+            }
+
+            var json = scoresheetImportDto.Content;
+            var scoresheet = JsonConvert.DeserializeObject<Scoresheet>(json, new JsonSerializerSettings
+            {
+                ContractResolver = new PrivateSetterContractResolver(),
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore
+            }) ?? throw new UserFriendlyException("Invalid JSON content.");
+            var name = scoresheet.Title.ToLower().Trim() + "-v1";
+            _ = scoresheet.SetName(NameRegex().Replace(name, ""));
+            scoresheet.Published = false;
+            await _scoresheetRepository.InsertAsync(scoresheet);
+        }
+
+        [GeneratedRegex(@"\s+")]
+        private static partial Regex NameRegex();
     }
 }
