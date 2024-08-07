@@ -78,6 +78,13 @@ namespace Unity.Flex.Domain.Worksheets
             return this;
         }
 
+        public CustomField UpdateFieldName(string worksheetName)
+        {
+            var name = ConfigureName(this.Key, worksheetName);
+            Name = name;
+            return this;
+        }
+
         public CustomField SetLabel(string label)
         {
             Label = label;

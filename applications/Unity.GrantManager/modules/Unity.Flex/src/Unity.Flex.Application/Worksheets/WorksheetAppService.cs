@@ -1,16 +1,19 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Services;
+using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
 {
     [Authorize]
-    public class WorksheetAppService(IWorksheetRepository worksheetRepository, WorksheetsManager worksheetsManager) : FlexAppService, IWorksheetAppService
+    public partial class WorksheetAppService(IWorksheetRepository worksheetRepository, WorksheetsManager worksheetsManager) : FlexAppService, IWorksheetAppService
     {
         public virtual async Task<WorksheetDto> GetAsync(Guid id)
         {
@@ -138,5 +141,50 @@ namespace Unity.Flex.Worksheets
         {
             return await worksheetRepository.FindAsync(worksheetId, false) != null;
         }
+
+        public async Task<ExportWorksheetDto> ExportWorksheet(Guid worksheetId)
+        {
+            var worksheet = await worksheetRepository.GetAsync(worksheetId, true);
+            var settings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                ContractResolver = new WorksheetContractResolver()
+            };
+            var json = JsonConvert.SerializeObject(worksheet, settings);
+            var byteArray = System.Text.Encoding.UTF8.GetBytes(json);
+
+            return new ExportWorksheetDto { Content = byteArray, ContentType = "application/json", Name = "worksheet_"+worksheet.Title+"_"+worksheet.Name + ".json"};
+        }
+
+        public async Task ImportWorksheetAsync(WorksheetImportDto worksheetImportDto)
+        {
+            if (worksheetImportDto.Content == null || worksheetImportDto.Content.Length == 0)
+            {
+                throw new UserFriendlyException("No file content provided.");
+            }
+
+            var json = worksheetImportDto.Content;
+            var worksheet = JsonConvert.DeserializeObject<Worksheet>(json, new JsonSerializerSettings
+            {
+                ContractResolver = new PrivateSetterContractResolver(),
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore
+            }) ?? throw new UserFriendlyException("Invalid JSON content.");
+            var name = worksheet.Title.ToLower().Trim() + "-v1";
+            _ = worksheet.SetName(NameRegex().Replace(name, ""));
+            foreach(var section in worksheet.Sections)
+            {
+                foreach(var field in section.Fields)
+                {
+                    _ = field.UpdateFieldName(worksheet.Name);
+                }
+            }
+            worksheet.SetPublished(false);
+            await worksheetRepository.InsertAsync(worksheet);
+        }
+
+        [GeneratedRegex(@"\s+")]
+        private static partial Regex NameRegex();
+
     }
 }

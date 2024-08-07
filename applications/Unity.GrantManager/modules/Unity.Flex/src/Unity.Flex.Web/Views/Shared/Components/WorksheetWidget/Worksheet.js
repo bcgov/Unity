@@ -67,6 +67,40 @@ $(function () {
                 openPublishWorksheetModal(worksheetId);
             });
         }
+
+        let exportWorksheetButtons = $(".export-worksheet-btn");
+
+        if (exportWorksheetButtons) {
+            exportWorksheetButtons.on("click", function (event) {
+                let worksheetId = event.currentTarget.dataset.worksheetId;
+                let worksheetName = event.currentTarget.dataset.worksheetName;
+                let worksheetTitle = event.currentTarget.dataset.worksheetTitle;
+                exportWorksheet(worksheetId, worksheetName, worksheetTitle);
+            });
+        }
+    }
+
+    function exportWorksheet(worksheetId, worksheetName, worksheetTitle) {
+        fetch(`/api/app/worksheet/export/${worksheetId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                let url = window.URL.createObjectURL(blob);
+                let a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `worksheet_${worksheetTitle}_${worksheetName}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
     }
 
     function openEditWorksheetModal(worksheetId) {
