@@ -158,12 +158,12 @@ function setTableHeighDynamic(tableName) {
     }
 }
 
-function getSelectColumn(title) {
+function getSelectColumn(title,dataField) {
     return {
         title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter-heading"></span>',
         orderable: false,
         className: 'notexport text-center',
-        data: 'rowCount',
+        data: dataField,
         name: 'select',
         render: function (data) {           
             return `<input class="checkbox-select chkbox" id="row_${data}" type="checkbox" value="" title="${title}">`
