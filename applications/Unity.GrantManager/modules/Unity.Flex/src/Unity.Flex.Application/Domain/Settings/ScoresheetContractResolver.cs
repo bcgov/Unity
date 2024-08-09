@@ -16,7 +16,7 @@ public class ScoresheetContractResolver : DefaultContractResolver
 
         if ((property.DeclaringType == typeof(Scoresheet) && property.PropertyName == "Instances") ||
             (property.DeclaringType == typeof(ScoresheetSection) && (property.PropertyName == "Scoresheet" || property.PropertyName == "ScoresheetId")) ||
-            (property.DeclaringType == typeof(Question) && (property.PropertyName == "Section" || property.PropertyName == "SectionId")) ||
+            (property.DeclaringType == typeof(Question) && (property.PropertyName == "Section" || property.PropertyName == "SectionId" || property.PropertyName == "Answers")) ||
             property.PropertyName == "TenantId" ||
             property.PropertyName == "IsDeleted" ||
             property.PropertyName == "DeleterId" ||

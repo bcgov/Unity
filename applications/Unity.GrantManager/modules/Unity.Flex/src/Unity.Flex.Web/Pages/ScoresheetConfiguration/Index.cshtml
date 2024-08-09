@@ -19,6 +19,7 @@
 
 @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
             {
+    <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
     <div class="scoresheet-scrollable-content">
 
         <abp-row class="m-0 h-100 scoresheet-configuration-container">
@@ -26,6 +27,16 @@
                 <abp-card>
                     <abp-card-body>
                         <h4><b>Scoring Sheets</b></h4>
+                        <div class="d-flex justify-content-end m-3">
+                            <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
+                                <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" style="display: none" />
+                                <abp-button text="Import Scoring Sheet"
+                                            id="scoresheet_import_upload_btn"
+                                            icon-type="Other"
+                                            icon="fl fl-import"
+                                            button-type="Light" />
+                            </form>
+                        </div>
                         <div id="scoresheet-info-widget">
                             @await Component.InvokeAsync("Scoresheet")
                         </div>
