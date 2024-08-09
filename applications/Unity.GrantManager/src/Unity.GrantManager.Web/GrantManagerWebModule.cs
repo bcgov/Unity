@@ -266,7 +266,21 @@ public class GrantManagerWebModule : AbpModule
                     tokenValidatedContext.Response.Redirect("Account/NoGrantPrograms");
                 }
             };
+            options.Events.OnRedirectToIdentityProviderForSignOut = context =>
+            {
+                // Redirect to the IdP's logout endpoint
+                var postLogoutRedirectUri = new Uri($"{context.Request.Scheme}://{context.Request.Host}{context.Request.PathBase}").AbsoluteUri;
+                var idpLogoutUrl = $"{context.Options.Authority}/protocol/openid-connect/logout";
 
+                var uri = new UriBuilder(idpLogoutUrl)
+                {
+                    Query = $"client_id={context.Options.ClientId}&post_logout_redirect_uri={Uri.EscapeDataString(postLogoutRedirectUri)}"
+                };
+
+                context.Response.Redirect(uri.ToString());
+                context.HandleResponse(); // Suppress the default processing
+                return Task.CompletedTask;
+            };
             if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
             {
                 // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested
