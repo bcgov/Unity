@@ -8,19 +8,18 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Flex.Controllers
 {
+    [Route("/api/app/scoresheet")]
     public class ScoresheetController(IScoresheetAppService scoresheetAppService) : AbpController
     {
 
-        [HttpGet]
-        [Route("/api/app/scoresheet/export/{scoresheetId}")]
+        [HttpGet("export/{scoresheetId}")]
         public async Task<IActionResult> ExportScoresheet(Guid scoresheetId)
         {
             var fileDto = await scoresheetAppService.ExportScoresheet(scoresheetId);
             return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
         }
 
-        [HttpPost]
-        [Route("/api/app/scoresheet/import")]
+        [HttpPost("import")]
         public async Task<IActionResult> ImportScoresheetFile(IFormFile file)
         {
             try

@@ -7,7 +7,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
-using Unity.Flex.EntityFrameworkCore.Repositories;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;

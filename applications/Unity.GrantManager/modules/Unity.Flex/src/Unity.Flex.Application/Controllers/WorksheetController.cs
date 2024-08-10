@@ -8,6 +8,7 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Flex.Controllers
 {
+    [Route("/api/app/worksheet")]
     public class WorksheetController : AbpController
     {
 
@@ -17,18 +18,16 @@ namespace Unity.Flex.Controllers
         {
             _worksheetAppService = worksheetAppService;
         }
-        
 
-        [HttpGet]
-        [Route("/api/app/worksheet/export/{worksheetId}")]
+
+        [HttpGet("export/{worksheetId}")]
         public async Task<IActionResult> ExportWorksheet(Guid worksheetId)
         {
             var fileDto = await _worksheetAppService.ExportWorksheet(worksheetId);
             return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
         }
 
-        [HttpPost]
-        [Route("/api/app/worksheet/import")]
+        [HttpPost("import")]
         public async Task<IActionResult> ImportWorksheetFile(IFormFile file)
         {
             try

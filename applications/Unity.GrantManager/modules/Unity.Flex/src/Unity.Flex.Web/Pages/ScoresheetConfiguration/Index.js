@@ -5,49 +5,7 @@ $(function () {
 });
 
 function importScoresheetFile(inputId) {
-    let input = document.getElementById(inputId);
-    let urlStr = "/api/app/scoresheet/import";
-    let file = input.files[0]; // Only get the first file
-    let formData = new FormData();
-    const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
-
-    if (!file) {
-        return;
-    }
-
-    if ((file.size * 0.000001) > maxFileSize) {
-        input.value = null;
-        return abp.notify.error(
-            'Error',
-            'File size exceeds ' + maxFileSize + 'MB'
-        );
-    }
-
-    formData.append("file", file);
-
-    $.ajax({
-        url: urlStr,
-        data: formData,
-        processData: false,
-        contentType: false,
-        type: "POST",
-        success: function (data) {
-            abp.notify.success(
-                data.responseText,
-                'Scoring Sheet Import Is Successful'
-            );
-            PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
-            input.value = null;
-        },
-        error: function (data) {
-            abp.notify.error(
-                data.responseText,
-                'Scoring Sheet Import Not Successful'
-            );
-            PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
-            input.value = null;
-        }
-    });
+    importFlexFile(inputId, "/api/app/scoresheet/import", "Scoring Sheet", 'refresh_scoresheet_list');
 }
 
 
