@@ -114,6 +114,7 @@ namespace Unity.GrantManager.Assessments
 
                     var existingYesNoQuestions = await _scoresheetAppService.GetNonDeletedYesNoQuestions(questionIds);
                     var existingYesNoQuestionIds = existingYesNoQuestions.Select(a => a.Id).ToList();
+
                     double yesNoSubtotal = instance.Answers.Where(a => existingYesNoQuestionIds.Contains(a.QuestionId))
                         .Sum(answer => {
                             var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.YesNo)!.ToString();

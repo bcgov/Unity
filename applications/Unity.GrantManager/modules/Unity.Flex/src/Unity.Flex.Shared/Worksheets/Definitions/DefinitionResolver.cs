@@ -134,7 +134,7 @@ namespace Unity.Flex.Worksheets.Definitions
         {
             return field switch
             {
-                QuestionYesNoDefinition => ((QuestionYesNoDefinition)field).YesValue.ToString(),
+                QuestionYesNoDefinition yesNoField => yesNoField.YesValue.ToString(),
                 _ => null,
             };
         }
@@ -143,7 +143,7 @@ namespace Unity.Flex.Worksheets.Definitions
         {
             return field switch
             {
-                QuestionYesNoDefinition => ((QuestionYesNoDefinition)field).NoValue.ToString(),
+                QuestionYesNoDefinition yesNoField => yesNoField.NoValue.ToString(),
                 _ => null,
             };
         }

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
-using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget
 {
