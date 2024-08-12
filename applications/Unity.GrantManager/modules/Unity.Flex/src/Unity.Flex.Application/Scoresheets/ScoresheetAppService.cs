@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
@@ -180,6 +181,13 @@ namespace Unity.Flex.Scoresheets
             var scoresheet = await _scoresheetRepository.GetAsync(id);
             scoresheet.Published = true;
             await _scoresheetRepository.UpdateAsync(scoresheet);
+        }
+
+        public async Task<List<QuestionDto>> GetNonDeletedYesNoQuestions(List<Guid> questionIdsToCheck)
+        {
+            var existingQuestions = await _questionRepository.GetListAsync();
+            var result = existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.YesNo).ToList();
+            return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
         }
     }
 }

@@ -58,7 +58,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
             {
                 QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
                 QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
-                QuestionType.YesNo => JsonSerializer.Deserialize<YesNoDefinition>(definition),                
+                QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),                
                 _ => null,
             };
         }
@@ -96,6 +96,16 @@ namespace Unity.Flex.Web.Views.Shared.Components
         public static string? GetMaxValueOrNull(this CustomFieldDefinition field)
         {
             return DefinitionResolver.ResolveMax(field);
+        }
+
+        public static string? GetYesValueOrNull(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveYesValue(field);
+        }
+
+        public static string? GetNoValueOrNull(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveNoValue(field);
         }
 
         public static string? GetMinLengthValueOrNull(this CustomFieldDefinition field)
