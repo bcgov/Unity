@@ -15,6 +15,8 @@ using Unity.Payments.Enums;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Authorization.Permissions;
 using Unity.Payments.Permissions;
+using Volo.Abp.Data;
+using Volo.Abp;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -27,18 +29,20 @@ namespace Unity.Payments.PaymentRequests
         private readonly ICurrentUser _currentUser;
         private readonly IPaymentsManager _paymentsManager;
         private readonly IPermissionChecker _permissionChecker;
+        private readonly IDataFilter _dataFilter;
 
         public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
             ICurrentUser currentUser, 
             IPaymentsManager paymentsManager,
-            IPermissionChecker permissionChecker)
+            IPermissionChecker permissionChecker,IDataFilter dataFilter)
         {
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
             _paymentsManager = paymentsManager;
             _permissionChecker = permissionChecker;
+           _dataFilter = dataFilter;
         }
 
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
@@ -166,8 +170,10 @@ namespace Unity.Payments.PaymentRequests
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
+            using (_dataFilter.Disable<ISoftDelete>()) { 
             var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
+            }
         }
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
         {
