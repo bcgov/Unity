@@ -5,8 +5,11 @@ $(function () {
 });
 
 function importWorksheetFile(inputId) {
+    importFlexFile(inputId, "/api/app/worksheet/import", "Worksheet", 'refresh_worksheet_list');
+}
+
+function importFlexFile(inputId, urlStr, flexType, refreshChannel) {
     let input = document.getElementById(inputId);
-    let urlStr = "/api/app/worksheet/import";
     let file = input.files[0]; // Only get the first file
     let formData = new FormData();
     const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
@@ -34,17 +37,17 @@ function importWorksheetFile(inputId) {
         success: function (data) {
             abp.notify.success(
                 data.responseText,
-                'Worksheet Import Is Successful'
+                flexType + ' Import Is Successful'
             );
-            PubSub.publish('refresh_worksheet_list');
+            PubSub.publish(refreshChannel, { scoresheetId: null });
             input.value = null;
         },
         error: function (data) {
             abp.notify.error(
                 data.responseText,
-                'Worksheet Import Not Successful'
+                flexType + ' Import Not Successful'
             );
-            PubSub.publish('refresh_worksheet_list');
+            PubSub.publish(refreshChannel, { scoresheetId: null });
             input.value = null;
         }
     });

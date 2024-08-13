@@ -3,38 +3,30 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Unity.Flex.Worksheets;
+using Unity.Flex.Scoresheets;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Flex.Controllers
 {
-    [Route("/api/app/worksheet")]
-    public class WorksheetController : AbpController
+    [Route("/api/app/scoresheet")]
+    public class ScoresheetController(IScoresheetAppService scoresheetAppService) : AbpController
     {
 
-        private readonly IWorksheetAppService _worksheetAppService;
-
-        public WorksheetController(IWorksheetAppService worksheetAppService)
+        [HttpGet("export/{scoresheetId}")]
+        public async Task<IActionResult> ExportScoresheet(Guid scoresheetId)
         {
-            _worksheetAppService = worksheetAppService;
-        }
-
-
-        [HttpGet("export/{worksheetId}")]
-        public async Task<IActionResult> ExportWorksheet(Guid worksheetId)
-        {
-            var fileDto = await _worksheetAppService.ExportWorksheet(worksheetId);
+            var fileDto = await scoresheetAppService.ExportScoresheet(scoresheetId);
             return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
         }
 
         [HttpPost("import")]
-        public async Task<IActionResult> ImportWorksheetFile(IFormFile file)
+        public async Task<IActionResult> ImportScoresheetFile(IFormFile file)
         {
             try
             {
                 var jsonString = await ReadJsonFileAsync(file);
-                await _worksheetAppService.ImportWorksheetAsync(
-                    new WorksheetImportDto
+                await scoresheetAppService.ImportScoresheetAsync(
+                    new ScoresheetImportDto
                     {
                         Name = file.FileName,
                         Content = jsonString
@@ -45,9 +37,10 @@ namespace Unity.Flex.Controllers
                 return BadRequest("ERROR:<br>" + file.FileName + " : " + ex.Message);
             }
 
-            return Ok("Worksheet Is Successfully Imported!");
+            return Ok("Scoresheet Is Successfully Imported!");
         }
 
+        
         private static async Task<string> ReadJsonFileAsync(IFormFile jsonFile)
         {
             if (jsonFile == null || jsonFile.Length == 0)
@@ -55,11 +48,9 @@ namespace Unity.Flex.Controllers
                 throw new ArgumentException("No file provided or file is empty.");
             }
 
-            using (var stream = jsonFile.OpenReadStream())
-            using (var reader = new StreamReader(stream))
-            {
-                return await reader.ReadToEndAsync();
-            }
+            using var stream = jsonFile.OpenReadStream();
+            using var reader = new StreamReader(stream);
+            return await reader.ReadToEndAsync();
         }
     }
 }
