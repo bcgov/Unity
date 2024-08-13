@@ -70,6 +70,8 @@
     <None Remove="Views\Shared\Components\WorksheetListWidget\WorksheetList.js" />
     <None Remove="Views\Shared\Components\WorksheetWidget\Worksheet.css" />
     <None Remove="Views\Shared\Components\WorksheetWidget\Worksheet.js" />
+    <None Remove="Views\Shared\Components\QuestionYesNoDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\QuestionYesNoDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\YesNoWidget\Default.css" />
     <None Remove="Views\Shared\Components\YesNoWidget\Default.js" />
   </ItemGroup>
@@ -117,6 +119,8 @@
     <EmbeddedResource Include="Views\Shared\Components\WorksheetListWidget\WorksheetList.js" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetWidget\Worksheet.css" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetWidget\Worksheet.js" />
+    <EmbeddedResource Include="Views\Shared\Components\QuestionYesNoDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\QuestionYesNoDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\YesNoWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\YesNoWidget\Default.js" />
   </ItemGroup>

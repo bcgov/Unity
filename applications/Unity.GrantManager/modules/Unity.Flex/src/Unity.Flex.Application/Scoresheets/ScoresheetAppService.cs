@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
 using Volo.Abp;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
@@ -185,6 +186,13 @@ namespace Unity.Flex.Scoresheets
             await _scoresheetRepository.UpdateAsync(scoresheet);
         }
 
+        public async Task<List<QuestionDto>> GetNonDeletedYesNoQuestions(List<Guid> questionIdsToCheck)
+        {
+            var existingQuestions = await _questionRepository.GetListAsync();
+            var result = existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.YesNo).ToList();
+            return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
+        }
+
         public async Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId)
         {
             var worksheet = await _scoresheetRepository.GetAsync(scoresheetId, true);
@@ -221,5 +229,6 @@ namespace Unity.Flex.Scoresheets
 
         [GeneratedRegex(@"\s+")]
         private static partial Regex NameRegex();
+
     }
 }

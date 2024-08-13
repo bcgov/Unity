@@ -18,6 +18,7 @@ namespace Unity.Flex.Scoresheets
         Task SaveOrder(List<ScoresheetItemDto> dto);
         Task UpdateAsync(Guid scoresheetId, EditScoresheetDto dto);
         Task<List<Guid>> GetNonDeletedNumericQuestionIds(List<Guid> questionIdsToCheck);
+        Task<List<QuestionDto>> GetNonDeletedYesNoQuestions(List<Guid> questionIdsToCheck);
         Task ValidateChangeableScoresheet(Guid scoresheetId);
         Task PublishScoresheetAsync(Guid id);
         Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId);

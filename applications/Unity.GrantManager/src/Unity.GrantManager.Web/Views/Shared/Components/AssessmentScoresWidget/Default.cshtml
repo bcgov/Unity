@@ -59,7 +59,7 @@
                                                                                 }
                                                                             case QuestionType.YesNo:
                                                                                 {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer })
+                                                                                    @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, YesValue = question.Definition?.ConvertDefinition(question.Type)?.GetYesValueOrNull(), NoValue = question.Definition?.ConvertDefinition(question.Type)?.GetNoValueOrNull() })
                                                                                     break;
                                                                                 }
                                                                             case QuestionType.Text:
