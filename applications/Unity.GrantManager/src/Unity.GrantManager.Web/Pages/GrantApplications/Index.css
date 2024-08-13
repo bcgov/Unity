@@ -20,10 +20,7 @@ table.dataTable tbody tr {
     min-width: 145px;
 }
 
-#GrantApplicationsTable_wrapper .dataTables_scrollBody {
-    overflow-y: scroll;
-    max-height: calc(100vh - 312px);
-}
+
 
 .single-payment {
     border: var(--bs-border-width) solid;
