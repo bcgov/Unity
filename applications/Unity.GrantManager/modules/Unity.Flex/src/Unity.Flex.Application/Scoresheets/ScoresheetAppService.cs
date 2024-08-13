@@ -105,7 +105,10 @@ namespace Unity.Flex.Scoresheets
 
                 foreach (var originalQuestion in originalSection.Fields)
                 {
-                    var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, clonedSection.Id, originalQuestion.Definition);
+                    var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, originalQuestion.Definition)
+                    {
+                        SectionId = clonedSection.Id
+                    };
                     clonedSection.Fields.Add(clonedQuestion);
                 }
 
