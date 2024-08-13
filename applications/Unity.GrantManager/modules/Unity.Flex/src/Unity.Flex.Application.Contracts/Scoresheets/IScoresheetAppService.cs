@@ -20,5 +20,7 @@ namespace Unity.Flex.Scoresheets
         Task<List<Guid>> GetNonDeletedNumericQuestionIds(List<Guid> questionIdsToCheck);
         Task ValidateChangeableScoresheet(Guid scoresheetId);
         Task PublishScoresheetAsync(Guid id);
+        Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId);
+        Task ImportScoresheetAsync(ScoresheetImportDto scoresheetImportDto);
     }
 }
