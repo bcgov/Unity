@@ -89,7 +89,7 @@
 
     function getColumns() {
         return [
-            getSelectColumn('Select Application'),
+            getSelectColumn('Select Application', 'rowCount'),
             getApplicantNameColumn(),
             getApplicationNumberColumn(),
             getCategoryColumn(),
