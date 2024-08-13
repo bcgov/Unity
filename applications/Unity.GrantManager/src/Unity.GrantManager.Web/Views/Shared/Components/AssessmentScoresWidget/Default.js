@@ -111,13 +111,28 @@ function validateNumericField(numericInputField, errorMessage) {
 
 function updateSubtotal() {
     setTimeout(function () {
-        const answerInputs = document.querySelectorAll('.answer-number-input');
         let subtotal = 0;
-        answerInputs.forEach(input => {
+
+        // Handle number inputs
+        const numberInputs = document.querySelectorAll('.answer-number-input');
+        numberInputs.forEach(input => {
             subtotal += parseFloat(input.value) || 0;
         });
 
-        let subTotalField = document.getElementById('scoresheetSubtotal');
+        // Handle Yes/No inputs
+        const yesNoInputs = document.querySelectorAll('.answer-yesno-input');
+        yesNoInputs.forEach(input => {
+            let value = 0;
+            if (input.value === "Yes") {
+                value = parseFloat(input.getAttribute('data-yes-numeric-value')) || 0;
+            } else if (input.value === "No") {
+                value = parseFloat(input.getAttribute('data-no-numeric-value')) || 0;
+            }
+            subtotal += value;
+        });
+
+        // Update the subtotal field
+        const subTotalField = document.getElementById('scoresheetSubtotal');
         if (subTotalField) {
             subTotalField.value = subtotal;
         }

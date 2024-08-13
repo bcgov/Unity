@@ -63,6 +63,13 @@
                                 </div>
                             </div>
                         }
+                        <div class="col-md-4">
+                            <div class="p-3">
+                                <button id="export_scoresheet_btn" onclick="exportScoresheet('@scoresheet.Id','@scoresheet.Name','@scoresheet.Title');" class="btn btn-light" type="button">
+                                    <i class="fl fl-export"></i> <span>@L["Scoresheet:Configuration:ExportScoresheetButtonText"].Value</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div id="sections-questions" class="list-group col" data-published="@scoresheet.Published" data-scoresheetid="@scoresheet.Id">
                         @foreach (var sec in scoresheet.Sections)

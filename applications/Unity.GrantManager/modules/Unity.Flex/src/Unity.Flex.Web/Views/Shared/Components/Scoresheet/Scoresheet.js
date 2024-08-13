@@ -63,6 +63,7 @@ $(function () {
             });
         });
     }
+       
 
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
@@ -273,6 +274,28 @@ function saveOrder(sortedScoresheetId) {
     }
 }
 
+function exportScoresheet(scoresheetId, scoresheetName, scoresheetTitle) {
+    fetch(`/api/app/scoresheet/export/${scoresheetId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `scoresheet_${scoresheetTitle}_${scoresheetName}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+}
 
 
 

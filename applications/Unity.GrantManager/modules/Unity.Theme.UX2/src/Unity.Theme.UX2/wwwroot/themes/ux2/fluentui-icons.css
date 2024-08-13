@@ -298,6 +298,10 @@
     content: '\EDE2';
 }
 
+.fl-import:before {
+    content: '\EA52';
+}
+
 .fl-pdf:before {
     content: '\EA90';
 }
