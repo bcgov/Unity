@@ -88,5 +88,11 @@ namespace Unity.Flex.Domain.Worksheets
             Sections.Remove(section);
             return this;
         }
+
+        public Worksheet SetName(string name)
+        {
+            this.Name = name;
+            return this;
+        }
     }
 }

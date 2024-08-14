@@ -83,7 +83,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 {
                     QuestionType.Number => JsonSerializer.Serialize(new NumericDefinition()),
                     QuestionType.Text => JsonSerializer.Serialize(new TextDefinition()),                    
-                    QuestionType.YesNo => JsonSerializer.Serialize(new YesNoDefinition()),                    
+                    QuestionType.YesNo => JsonSerializer.Serialize(new QuestionYesNoDefinition()),                    
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -93,7 +93,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 {
                     QuestionType.Number => JsonSerializer.Serialize((NumericDefinition)definition),
                     QuestionType.Text => JsonSerializer.Serialize((TextDefinition)definition),
-                    QuestionType.YesNo => JsonSerializer.Serialize((YesNoDefinition)definition),                    
+                    QuestionType.YesNo => JsonSerializer.Serialize((QuestionYesNoDefinition)definition),                    
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -126,6 +126,24 @@ namespace Unity.Flex.Worksheets.Definitions
             {                
                 NumericDefinition => ((NumericDefinition)field).Min.ToString(),
                 CurrencyDefinition => ((CurrencyDefinition)field).Min.ToString(),
+                _ => null,
+            };
+        }
+
+        public static string? ResolveYesValue(CustomFieldDefinition field)
+        {
+            return field switch
+            {
+                QuestionYesNoDefinition yesNoField => yesNoField.YesValue.ToString(),
+                _ => null,
+            };
+        }
+
+        public static string? ResolveNoValue(CustomFieldDefinition field)
+        {
+            return field switch
+            {
+                QuestionYesNoDefinition yesNoField => yesNoField.NoValue.ToString(),
                 _ => null,
             };
         }

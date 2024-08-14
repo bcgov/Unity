@@ -6,12 +6,12 @@ $(function () {
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: function (evt) {
-                    saveOrder();
+                    const sortedScoresheetId = evt.target.dataset.scoresheetid;
+                    saveOrder(sortedScoresheetId);
                     updatePreview(evt);
                 },
                 ghostClass: 'blue-background',
                 onMove: function (evt) {
-                    debugger;
                     const draggedItem = evt.dragged;
                     const targetItem = evt.related;
                     const topItem = evt.from.children[0];
@@ -63,6 +63,7 @@ $(function () {
             });
         });
     }
+       
 
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
@@ -246,12 +247,13 @@ function openSectionModal(scoresheetId, sectionId, actionType) {
     });
 }
 
-function saveOrder() {
-    const allSections = document.querySelectorAll('[id^="sections-questions"]');
+function saveOrder(sortedScoresheetId) {
+
+    const sortedScoresheet = document.querySelector(`[id^="sections-questions"][data-scoresheetid="${sortedScoresheetId}"]`);
     const orderData = [];
 
-    allSections.forEach(section => {
-        const items = section.children;
+    if (sortedScoresheet) {
+        const items = sortedScoresheet.children;
         Array.from(items).forEach((item, index) => {
             orderData.push({
                 type: item.dataset.type,
@@ -261,30 +263,39 @@ function saveOrder() {
                 label: item.innerText.trim()
             });
         });
-    });
 
-    unity.flex.scoresheets.scoresheet.saveOrder(orderData)
-        .then(response => {
-            abp.notify.success(
-                'Sections and Questions ordering is successfully saved.',
-                'Scoresheet Section and Question'
-            );
-            updateScoresheetAccordion();
-        });
-
-    
-}
-
-function updateScoresheetAccordion() {
-    const nonCollapsedAccordion = document.querySelector('.accordion-collapse.show');
-    if (nonCollapsedAccordion) {
-        const scoresheetId = nonCollapsedAccordion.getAttribute('data-scoresheet');
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId });
-    } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+        unity.flex.scoresheets.scoresheet.saveOrder(orderData)
+            .then(response => {
+                abp.notify.success(
+                    'Sections and Questions ordering is successfully saved.',
+                    'Scoresheet Section and Question'
+                );
+            });
     }
 }
 
+function exportScoresheet(scoresheetId, scoresheetName, scoresheetTitle) {
+    fetch(`/api/app/scoresheet/export/${scoresheetId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `scoresheet_${scoresheetTitle}_${scoresheetName}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+}
 
 
 
