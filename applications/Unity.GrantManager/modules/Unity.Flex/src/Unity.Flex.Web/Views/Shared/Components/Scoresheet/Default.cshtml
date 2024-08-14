@@ -88,7 +88,7 @@
                             </div>
                             @foreach (var question in sec.Fields)
                             {
-                                <div class="list-group-item row question-item" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id" data-questiontype="@question.Type" data-questiondesc="@question.Description">
+                                <div class="list-group-item row question-item" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id" data-questiontype="@question.Type" data-min="@question.GetMin()" data-max="@question.GetMax()" data-minlength="@question.GetMinLength()" data-maxlength="@question.GetMaxLength()" data-yesvalue="@question.GetYesValue()" data-novalue="@question.GetNoValue()" data-questiondesc="@question.Description">
                                     <div class="col">
                                         <i class="fl fl-draggable"></i>
                                         <span class="p-2">@question.Label</span>
