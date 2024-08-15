@@ -51,9 +51,19 @@
         return {
             recordsTotal: result.length,
             recordsFiltered: result.length,
-            data: result
+            data: formatItems(result)
         };
     };
+
+    let formatItems = function (items) {
+        const newData = items.map((item, index) => {
+            return {
+                ...item,
+                rowCount: index
+            };
+        });
+        return newData;
+    }
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
@@ -62,11 +72,28 @@
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'select_application_payment');
+
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", true);
+                if ($(".chkbox:checked").length == $(".chkbox").length) {
+                    $(".select-all-application-payments").prop("checked", true);
+                }
+                selectApplication(type, index, 'select_application_payment');
+            });
+        }
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'deselect_application_payment');
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", false);
+                if ($(".chkbox:checked").length != $(".chkbox").length) {
+                    $(".select-all-application-payments").prop("checked", false);
+                }
+                selectApplication(type, index, 'deselect_application_payment');
+            });
+        }
     });
 
     function selectApplication(type, indexes, action) {
@@ -91,6 +118,7 @@
 
     function getColumns() {
         return [
+            getSelectColumn('Select Application', 'rowCount', 'application-payments'),
             getApplicationPaymentIdColumn(),
             getApplicationPaymentAmountColumn(),
             getApplicationPaymentStatusColumn(),
@@ -105,8 +133,8 @@
     function getApplicationPaymentIdColumn() {
         return {
             title: l('PaymentInfoView:ApplicationPaymentListTable.PaymentID'),
-            name: 'id',
-            data: 'id',
+            name: 'referenceNumber',
+            data: 'referenceNumber',
             className: 'data-table-header',
             index: 1,
         };
@@ -242,4 +270,13 @@
                 return "Created";
         }
     }
+
+    $('.select-all-application-payments').click(function () {
+        if ($(this).is(':checked')) {
+            dataTable.rows({ 'page': 'current' }).select();
+        }
+        else {
+            dataTable.rows({ 'page': 'current' }).deselect();
+        }
+    });
 });
