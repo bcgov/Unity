@@ -43,5 +43,7 @@ public class ScoresheetWidgetScriptBundleContributor : BundleContributor
     {
         context.Files
           .AddIfNotContains("/Views/Shared/Components/Scoresheet/Scoresheet.js");
+        context.Files
+              .AddIfNotContains("/Views/Shared/Components/AssessmentScoresWidget/Default.js");
     }
 }
