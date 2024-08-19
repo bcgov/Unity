@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Authorization.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Events;
+using Unity.Flex.Worksheets.Definitions;
 using Unity.Flex.Worksheets.Values;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
@@ -105,11 +107,28 @@ namespace Unity.GrantManager.Assessments
                 else
                 {
                     var questionIds = instance.Answers.Select(a => a.QuestionId).Distinct().ToList();
-                    var existingQuestionIds = await _scoresheetAppService.GetNonDeletedNumericQuestionIds(questionIds);
+                    var existingNumericQuestionIds = await _scoresheetAppService.GetNonDeletedNumericQuestionIds(questionIds);
 
-                    return instance.Answers.Where(a => existingQuestionIds.Contains(a.QuestionId))
+                    double numericSubtotal = instance.Answers.Where(a => existingNumericQuestionIds.Contains(a.QuestionId))
                         .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.Number)!.ToString()));
 
+                    var existingYesNoQuestions = await _scoresheetAppService.GetNonDeletedYesNoQuestions(questionIds);
+                    var existingYesNoQuestionIds = existingYesNoQuestions.Select(a => a.Id).ToList();
+
+                    double yesNoSubtotal = instance.Answers.Where(a => existingYesNoQuestionIds.Contains(a.QuestionId))
+                        .Sum(answer => {
+                            var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.YesNo)!.ToString();
+                            var question = existingYesNoQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
+                            var definition = JsonSerializer.Deserialize<QuestionYesNoDefinition>(question.Definition ?? "{}");
+                            return value switch
+                            {
+                                "Yes" => Convert.ToDouble(definition?.YesValue ?? 0),
+                                "No" => Convert.ToDouble(definition?.NoValue ?? 0),
+                                _ => 0,
+                            };
+                        });
+
+                    return numericSubtotal + yesNoSubtotal;
                 }
             }
             else

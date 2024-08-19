@@ -163,6 +163,7 @@ $(function () {
         'refresh_assessment_scores',
         (msg, data) => {
             assessmentScoresWidgetManager.refresh();
+            updateSubtotal();
         }
     );
 
@@ -177,6 +178,7 @@ $(function () {
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
                 assessmentUserDetailsWidgetManager.refresh();
                 assessmentScoresWidgetManager.refresh();
+                updateSubtotal();
                 checkCurrentUser(data);
             }
             else {

@@ -5,6 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using System;
+using static Volo.Abp.UI.Navigation.DefaultMenuNames.Application;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
 {
@@ -16,9 +17,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
         AutoInitialize = true)]
     public class QuestionYesNoWidget : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer)
+        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer, string? yesValue, string? noValue)
         {
-            return View(await Task.FromResult(new QuestionYesNoViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty }));
+            return View(await Task.FromResult(new QuestionYesNoViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty, YesValue = yesValue, NoValue = noValue }));
         }
 
         public class QuestionYesNoWidgetStyleBundleContributor : BundleContributor

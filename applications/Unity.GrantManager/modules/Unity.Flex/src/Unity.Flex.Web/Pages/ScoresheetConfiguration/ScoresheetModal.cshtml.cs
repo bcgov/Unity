@@ -24,6 +24,8 @@ public class ScoresheetModalModel : FlexPageModel
         public Guid Id { get; set; }
         public string ActionType { get; set; } = string.Empty;
         [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Title")]
+        [MinLength(3)]
+        [MaxLength(25)]
         public string Title { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public bool Published {  get; set; } 

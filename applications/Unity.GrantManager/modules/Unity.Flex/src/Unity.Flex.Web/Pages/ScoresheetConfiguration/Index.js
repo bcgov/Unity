@@ -1,3 +1,14 @@
+$(function () {
+    $('#scoresheet_import_upload_btn').click(function () {
+        $('#scoresheet_import_upload').trigger('click');
+    });
+});
+
+function importScoresheetFile(inputId) {
+    importFlexFile(inputId, "/api/app/scoresheet/import", "Scoring Sheet", 'refresh_scoresheet_list');
+}
+
+
 let scoresheetModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/ScoresheetModal'
 });
