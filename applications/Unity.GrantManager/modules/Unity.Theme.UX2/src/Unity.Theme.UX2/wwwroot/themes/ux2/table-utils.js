@@ -10,27 +10,12 @@ function createNumberFormatter() {
         maximumFractionDigits: 2,
     });
 }
-function getScrollHeight() {
-    const screenWidth = window.innerHeight;
-    let scrollY = '500px'; // default height
-
-    if (screenWidth <= 768) {
-        scrollY = '400px'; // small screens
-    } else if (screenWidth <= 1024) {
-        scrollY = '600px'; // medium screens
-    } else {
-        scrollY = '700px'; // large screens
-    }
-    return scrollY;
-}
-
 
 function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerPage, defaultSortColumn, dataEndpoint, data, responseCallback, actionButtons, dynamicButtonContainerId) {
 
     let visibleColumnsIndex = defaultVisibleColumns.map((name) => listColumns.find(obj => obj.name === name)?.index ?? 0);
 
     let filterData = {};
-    let tableHeight = getScrollHeight();
 
     let iDt = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -48,7 +33,6 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
             iDisplayLength: 25,
             lengthMenu: [10, 25, 50, 100],
             scrollX: true,
-            scrollY: tableHeight,
             scrollCollapse: true,
             ajax: abp.libs.datatables.createAjax(
                 dataEndpoint,
@@ -158,12 +142,12 @@ function setTableHeighDynamic(tableName) {
     }
 }
 
-function getSelectColumn(title) {
+function getSelectColumn(title,dataField,uniqueTableId) {
     return {
-        title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter-heading"></span>',
+        title: `<input class="checkbox-select select-all-${uniqueTableId}"  type="checkbox">`,
         orderable: false,
         className: 'notexport text-center',
-        data: 'rowCount',
+        data: dataField,
         name: 'select',
         render: function (data) {           
             return `<input class="checkbox-select chkbox" id="row_${data}" type="checkbox" value="" title="${title}">`
@@ -399,3 +383,13 @@ function updateFilterButton(dt) {
     let hasFilter = columnFiltersApplied || searchValue !== '';
     $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
 }
+
+$('.data-table-select-all').click(function () {
+
+    if ($('.data-table-select-all').is(":checked")) {
+        PubSub.publish('datatable_select_all',true);
+    } else {
+        PubSub.publish('datatable_select_all', false);
+    }
+   
+});

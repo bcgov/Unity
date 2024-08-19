@@ -62,9 +62,10 @@ function positiveIntegersOnly(e) {
     }
 }
 
-function handleInputChange(questionId, inputFieldPrefix, saveButtonPrefix) {
+function handleInputChange(questionId, inputFieldPrefix, saveButtonPrefix, discardButtonPrefix) {
     const inputField = document.getElementById(inputFieldPrefix + questionId);
     const saveButton = document.getElementById(saveButtonPrefix + questionId);
+    const discardButton = document.getElementById(discardButtonPrefix + questionId);
     const errorMessage = document.getElementById('error-message-' + questionId);
     const originalValue = inputField.getAttribute('data-original-value');
 
@@ -78,6 +79,10 @@ function handleInputChange(questionId, inputFieldPrefix, saveButtonPrefix) {
 
     if (inputField.value !== originalValue && valid) {
         saveButton.disabled = false;
+        discardButton.disabled = false;
+    } else if (inputField.value !== originalValue && !valid) {
+        saveButton.disabled = true;
+        discardButton.disabled = false;
     } else {
         saveButton.disabled = true;
     }
@@ -111,13 +116,28 @@ function validateNumericField(numericInputField, errorMessage) {
 
 function updateSubtotal() {
     setTimeout(function () {
-        const answerInputs = document.querySelectorAll('.answer-number-input');
         let subtotal = 0;
-        answerInputs.forEach(input => {
+
+        // Handle number inputs
+        const numberInputs = document.querySelectorAll('.answer-number-input');
+        numberInputs.forEach(input => {
             subtotal += parseFloat(input.value) || 0;
         });
 
-        let subTotalField = document.getElementById('scoresheetSubtotal');
+        // Handle Yes/No inputs
+        const yesNoInputs = document.querySelectorAll('.answer-yesno-input');
+        yesNoInputs.forEach(input => {
+            let value = 0;
+            if (input.value === "Yes") {
+                value = parseFloat(input.getAttribute('data-yes-numeric-value')) || 0;
+            } else if (input.value === "No") {
+                value = parseFloat(input.getAttribute('data-no-numeric-value')) || 0;
+            }
+            subtotal += value;
+        });
+
+        // Update the subtotal field
+        const subTotalField = document.getElementById('scoresheetSubtotal');
         if (subTotalField) {
             subTotalField.value = subtotal;
         }
@@ -125,9 +145,10 @@ function updateSubtotal() {
 }
 
 
-function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType) {
+function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType, discardButtonPrefix) {
     const inputField = document.getElementById(inputFieldPrefix + questionId);
     const saveButton = document.getElementById(saveButtonPrefix + questionId);
+    const discardButton = document.getElementById(discardButtonPrefix + questionId);
     const assessmentId = $("#AssessmentId").val();
     let answerValue = inputField.value;
     if (questionType == 1 && !answerValue) {
@@ -141,20 +162,23 @@ function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionTyp
             );
             inputField.setAttribute('data-original-value', inputField.value);
             saveButton.disabled = true;
+            discardButton.disabled = true;
             updateSubtotal();
             PubSub.publish('refresh_review_list_without_select', assessmentId);
         });
 
 }
 
-function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix) {
+function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix, discardButtonPrefix) {
     const inputField = document.getElementById(inputFieldPrefix + questionId);
     const saveButton = document.getElementById(saveButtonPrefix + questionId);    
+    const discardButton = document.getElementById(discardButtonPrefix + questionId); 
 
     const originalValue = inputField.getAttribute('data-original-value');
     inputField.value = originalValue;
 
     saveButton.disabled = true;
+    discardButton.disabled = true;
 
     if (inputFieldPrefix == 'answer-number-' || inputFieldPrefix == 'answer-text-') {
         const errorMessage = document.getElementById('error-message-' + questionId);

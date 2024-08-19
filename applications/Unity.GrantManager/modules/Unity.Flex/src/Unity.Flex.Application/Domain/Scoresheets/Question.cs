@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using Newtonsoft.Json;
 
 namespace Unity.Flex.Domain.Scoresheets
 {
@@ -31,6 +32,19 @@ namespace Unity.Flex.Domain.Scoresheets
         protected Question()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
+        }
+
+        [JsonConstructor]
+        public Question(Guid id, string name, string label, QuestionType type, uint order, string? description, string? definition)
+        {
+            Id = id;
+            Name = name;
+            Label = label;
+            Type = type;
+            Order = order;
+            Description = description;
+            Enabled = true;
+            Definition = definition ?? "{}";
         }
 
         public Question(Guid id, string name, string label, QuestionType type, uint order, string? description, Guid sectionId, object? definition)

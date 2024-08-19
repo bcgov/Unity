@@ -327,3 +327,10 @@ form label.error {
     color: #dc3545 !important;
     font-size: 0.8em;
 }
+
+.input-group-text:has(i.fa-calendar) {
+    display: none !important;
+}
+.formio-editor-read-only-content {
+    word-break: normal !important;
+}

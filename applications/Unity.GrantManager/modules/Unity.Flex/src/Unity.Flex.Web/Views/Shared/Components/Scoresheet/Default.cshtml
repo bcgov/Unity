@@ -63,8 +63,15 @@
                                 </div>
                             </div>
                         }
+                        <div class="col-md-4">
+                            <div class="p-3">
+                                <button id="export_scoresheet_btn" onclick="exportScoresheet('@scoresheet.Id','@scoresheet.Name','@scoresheet.Title');" class="btn btn-light" type="button">
+                                    <i class="fl fl-export"></i> <span>@L["Scoresheet:Configuration:ExportScoresheetButtonText"].Value</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div id="sections-questions" class="list-group col" data-published="@scoresheet.Published">
+                    <div id="sections-questions" class="list-group col" data-published="@scoresheet.Published" data-scoresheetid="@scoresheet.Id">
                         @foreach (var sec in scoresheet.Sections)
                         {
                             <div class="list-group-item row section-item" data-type="section" data-id="@sec.Id" data-scoresheetid="@scoresheet.Id" data-label="@sec.Name">
@@ -81,7 +88,7 @@
                             </div>
                             @foreach (var question in sec.Fields)
                             {
-                                <div class="list-group-item row question-item" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id" data-questiontype="@question.Type" data-questiondesc="@question.Description">
+                                <div class="list-group-item row question-item" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id" data-questiontype="@question.Type" data-min="@question.GetMin()" data-max="@question.GetMax()" data-minlength="@question.GetMinLength()" data-maxlength="@question.GetMaxLength()" data-yesvalue="@question.GetYesValue()" data-novalue="@question.GetNoValue()" data-questiondesc="@question.Description">
                                     <div class="col">
                                         <i class="fl fl-draggable"></i>
                                         <span class="p-2">@question.Label</span>
@@ -99,18 +106,22 @@
                     <div class="row">
                         @if (!@scoresheet.Published)
                         {
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="p-3">
                                     <button id="add_question_btn" onclick="openQuestionModal('@scoresheet.Id',null, null,'Add Question');" class="btn btn-light" type="button" disabled="@scoresheet.Sections.IsNullOrEmpty()">
                                         <i class="fl fl-plus"></i> <span>@L["Scoresheet:Configuration:AddQuestionButtonText"].Value</span>
                                     </button>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="p-3">
                                     <button id="add_section_btn" onclick="openSectionModal('@scoresheet.Id',null,'Add Section');" class="btn btn-light" type="button">
                                         <i class="fl fl-plus"></i> <span>@L["Scoresheet:Configuration:AddSectionButtonText"].Value</span>
                                     </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3">
                                 </div>
                             </div>
                         }

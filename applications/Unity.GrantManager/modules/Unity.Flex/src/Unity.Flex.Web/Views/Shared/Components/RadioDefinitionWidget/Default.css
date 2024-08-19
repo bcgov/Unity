@@ -1,0 +1,14 @@
+﻿.option-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.option-container input {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.option-container button {
+    flex-shrink: 0;
+}

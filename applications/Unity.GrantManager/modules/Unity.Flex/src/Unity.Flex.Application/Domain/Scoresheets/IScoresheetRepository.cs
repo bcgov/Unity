@@ -10,5 +10,6 @@ namespace Unity.Flex.Domain.Scoresheets
         public Task<List<Scoresheet>> GetListWithChildrenAsync();
         public Task<List<Scoresheet>> GetPublishedListAsync();
         public Task<Scoresheet?> GetWithChildrenAsync(Guid id);
+        Task<Scoresheet> GetAsync(Guid id, bool includeDetails = true);
     }
 }

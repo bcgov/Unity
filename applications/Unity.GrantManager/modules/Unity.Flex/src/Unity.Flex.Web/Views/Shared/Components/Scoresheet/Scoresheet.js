@@ -6,12 +6,12 @@ $(function () {
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: function (evt) {
-                    saveOrder();
+                    const sortedScoresheetId = evt.target.dataset.scoresheetid;
+                    saveOrder(sortedScoresheetId);
                     updatePreview(evt);
                 },
                 ghostClass: 'blue-background',
                 onMove: function (evt) {
-                    debugger;
                     const draggedItem = evt.dragged;
                     const targetItem = evt.related;
                     const topItem = evt.from.children[0];
@@ -63,6 +63,7 @@ $(function () {
             });
         });
     }
+       
 
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
@@ -103,38 +104,46 @@ $(function () {
                     questionBody = `
                     <p>${item.dataset.questiondesc}</p>
                     <div class="mb-3">
-                        <label class="form-label">Answer</label>
-                        <input type="text" class="form-control answer-text-input"/>
+                        <label for="answer-text-${item.dataset.id}" class="form-label">Answer</label>
+                        <input type="text" class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" id="answer-text-${item.dataset.id}" name="Answers[${item.dataset.id}]" value="" data-original-value="" oninput="handleInputChange('${item.dataset.id}','answer-text-','save-text-','discard-text-')" />
+                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
                     </div>
                     <div class="btn-group">
-                        <button type="button" class="btn btn-primary" >SAVE CHANGES</button>
-                        <button type="button" class="btn btn-secondary" >DISCARD CHANGES</button>
+                        <button type="button" class="btn btn-primary" disabled id="save-text-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-text-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">DISCARD CHANGES</button>
                     </div>`;
                 } else if (item.dataset.questiontype === "YesNo") {
                     questionBody = `
                     <p>${item.dataset.questiondesc}</p>
                     <div class="mb-3">
-                        <label class="form-label">Answer</label>
-                        <select class="form-control answer-yesno-input">
+                        <label for="answer-yesno-${item.dataset.id}" class="form-label">Answer</label>
+                        <select id="answer-yesno-${item.dataset.id}"
+                                class="form-control answer-yesno-input"
+                                name="Answer-YesNo[${item.dataset.id}]"
+                                data-original-value=""
+                                data-yes-numeric-value="${item.dataset.yesvalue}"
+                                data-no-numeric-value="${item.dataset.novalue}"
+                                onchange="handleInputChange('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">
                             <option value="">Please choose...</option>
                             <option value="Yes">Yes</option>
                             <option value="No">No</option>
                         </select>
                     </div>
                     <div class="btn-group">
-                        <button type="button" class="btn btn-primary" >SAVE CHANGES</button>
-                        <button type="button" class="btn btn-secondary" >DISCARD CHANGES</button>
+                        <button type="button" class="btn btn-primary" disabled id="save-yesno-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-yesno-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">DISCARD CHANGES</button>
                     </div>`;
                 } else if (item.dataset.questiontype === "Number") {
                     questionBody = `
                     <p>${item.dataset.questiondesc}</p>
                     <div class="mb-3">
-                        <label class="form-label">Answer</label>
-                        <input type="number" class="form-control answer-number-input" />
+                        <label for="answer-number-${item.dataset.id}" class="form-label">Answer</label>
+                        <input type="number" class="form-control answer-number-input" min="${item.dataset.min}" max="${item.dataset.max}" id="answer-number-${item.dataset.id}" name="Answers[${item.dataset.id}]" data-original-value="" oninput="handleInputChange('${item.dataset.id}','answer-number-','save-number-','discard-number-')" />
+                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error" ></span>
                     </div>
                     <div class="btn-group">
-                        <button type="button" class="btn btn-primary" >SAVE CHANGES</button>
-                        <button type="button" class="btn btn-secondary" >DISCARD CHANGES</button>
+                        <button type="button" class="btn btn-primary" disabled id="save-number-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-number-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">DISCARD CHANGES</button>
                     </div>`;
                 }
 
@@ -162,6 +171,10 @@ $(function () {
         previewDiv.innerHTML = `
             <div class="accordion" id="accordion-preview">
                 ${accordionHTML}
+            </div>
+            <div class="p-4" style="margin-top:2px">
+                <label class="form-label" for="scoresheetSubtotal">Subtotal</label>
+                <input type="number" size="18" value="0" class="form-control" disabled="disabled" name="ScoresheetSubtotal" id="scoresheetSubtotal" min="0" max="2147483647" />
             </div>
         `;
     }
@@ -246,12 +259,13 @@ function openSectionModal(scoresheetId, sectionId, actionType) {
     });
 }
 
-function saveOrder() {
-    const allSections = document.querySelectorAll('[id^="sections-questions"]');
+function saveOrder(sortedScoresheetId) {
+
+    const sortedScoresheet = document.querySelector(`[id^="sections-questions"][data-scoresheetid="${sortedScoresheetId}"]`);
     const orderData = [];
 
-    allSections.forEach(section => {
-        const items = section.children;
+    if (sortedScoresheet) {
+        const items = sortedScoresheet.children;
         Array.from(items).forEach((item, index) => {
             orderData.push({
                 type: item.dataset.type,
@@ -261,29 +275,53 @@ function saveOrder() {
                 label: item.innerText.trim()
             });
         });
-    });
 
-    unity.flex.scoresheets.scoresheet.saveOrder(orderData)
-        .then(response => {
-            abp.notify.success(
-                'Sections and Questions ordering is successfully saved.',
-                'Scoresheet Section and Question'
-            );
-            updateScoresheetAccordion();
-        });
-
-    
-}
-
-function updateScoresheetAccordion() {
-    const nonCollapsedAccordion = document.querySelector('.accordion-collapse.show');
-    if (nonCollapsedAccordion) {
-        const scoresheetId = nonCollapsedAccordion.getAttribute('data-scoresheet');
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetId });
-    } else {
-        PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+        unity.flex.scoresheets.scoresheet.saveOrder(orderData)
+            .then(response => {
+                abp.notify.success(
+                    'Sections and Questions ordering is successfully saved.',
+                    'Scoresheet Section and Question'
+                );
+            });
     }
 }
+
+function exportScoresheet(scoresheetId, scoresheetName, scoresheetTitle) {
+    fetch(`/api/app/scoresheet/export/${scoresheetId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `scoresheet_${scoresheetTitle}_${scoresheetName}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+}
+
+function savePreviewChanges(questionId, inputFieldPrefix, saveButtonPrefix, discardButtonPrefix) {
+    const inputField = document.getElementById(inputFieldPrefix + questionId);
+    const saveButton = document.getElementById(saveButtonPrefix + questionId);
+    const discardButton = document.getElementById(discardButtonPrefix + questionId);
+
+    inputField.setAttribute('data-original-value', inputField.value);
+    saveButton.disabled = true;
+    discardButton.disabled = true;
+
+    updateSubtotal();
+
+}
+
 
 
 

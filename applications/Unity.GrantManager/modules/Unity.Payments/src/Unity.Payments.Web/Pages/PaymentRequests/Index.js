@@ -86,9 +86,19 @@ $(function () {
         return {
             recordsTotal: result.totalCount,
             recordsFiltered: result.items.length,
-            data: result.items
+            data: formatItems(result.items)
         };
     };
+
+    let formatItems = function (items) {
+        const newData = items.map((item, index) => {
+            return {
+                ...item,
+                rowCount: index
+            };
+        });
+        return newData;
+    }
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
@@ -100,11 +110,27 @@ $(function () {
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'select_batchpayment_application');
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", true);
+                if ($(".chkbox:checked").length == $(".chkbox").length) {
+                    $(".select-all-payments").prop("checked", true);
+                }
+                selectApplication(type, index, 'select_batchpayment_application');
+            });
+        }
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'deselect_batchpayment_application');
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                selectApplication(type, index, 'deselect_batchpayment_application');
+                $("#row_" + index).prop("checked", false);
+                if ($(".chkbox:checked").length != $(".chkbox").length) {
+                    $(".select-all-payments").prop("checked", false);
+                }
+            });
+        }
     });
 
     function selectApplication(type, indexes, action) {
@@ -155,6 +181,7 @@ $(function () {
 
     function getColumns() {
         return [
+            getSelectColumn('Select Application', 'rowCount','payments'),
             getPaymenReferenceColumn(),
             getApplicantNameColumn(),
             getSupplierNumberColumn(),
@@ -449,6 +476,7 @@ $(function () {
             'Payment Requests'
         );
         dataTable.ajax.reload(null, false);
+        $(".select-all-payments").prop("checked", false);
         payment_approve_buttons.disable();
 
         selectedPaymentIds = [];
@@ -534,6 +562,15 @@ $(function () {
                 return "Created";
         }
     }
+
+    $('.select-all-payments').click(function () {
+        if ($(this).is(':checked')) {
+            dataTable.rows({ 'page': 'current' }).select();
+        }
+        else {
+            dataTable.rows({ 'page': 'current' }).deselect();
+        }
+    });
 });
 
 
@@ -546,3 +583,5 @@ function openCasResponseModal(casResponse) {
         casResponse: casResponse
     });
 }
+
+

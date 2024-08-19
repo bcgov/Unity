@@ -84,5 +84,11 @@ namespace Unity.Flex.Domain.Scoresheets
             Version++;
             return this;
         }
+
+        public Scoresheet SetName(string name)
+        {
+            this.Name = name;
+            return this;
+        }
     }
 }
