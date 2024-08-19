@@ -293,9 +293,16 @@ $(function () {
             assessmentResultWidgetManager.refresh();            
         }
     );
+    function maskCurrencies() {
+        setTimeout(function () {
+            $('.custom-currency-input').maskMoney();
+        }, 1000);
+    }
+    
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
-            assessmentResultWidgetManager.refresh();        
+            assessmentResultWidgetManager.refresh();
+            maskCurrencies();
         }
     );
 
@@ -307,9 +314,12 @@ $(function () {
             }
         }
     });
+    
+
     PubSub.subscribe('refresh_detail_panel_summary',
         (msg, data) => {
             summaryWidgetManager.refresh();
+            maskCurrencies();
         }
     );
 

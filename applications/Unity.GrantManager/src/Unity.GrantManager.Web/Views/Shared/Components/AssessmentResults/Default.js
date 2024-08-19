@@ -190,13 +190,15 @@ function flaggedFieldIsValid(flag, name) {
 
 function hasInvalidCustomFields() {        
     let invalidFieldsFound = false;
-    $("input[id^='custom']:visible").each(function (i, el) {
-        let fieldValidity = document.getElementById(el.id).validity.valid;        
-        if (!fieldValidity) {
+    $("input[id^='custom']:visible").each(function (i, el) {  
+        let $field = $(this);
+        let fieldInvalid = $field.attr('aria-invalid') === 'true';
+        let fieldValidity = document.getElementById(el.id).validity.valid;
+        if (!fieldValidity || fieldInvalid) {
             invalidFieldsFound = true;
         }
     });
-    
+
     return invalidFieldsFound;
 }
 

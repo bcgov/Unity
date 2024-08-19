@@ -1,2 +1,3 @@
-(function () {    
+(function () {   
+    $('.custom-currency-input').maskMoney();
 })();
