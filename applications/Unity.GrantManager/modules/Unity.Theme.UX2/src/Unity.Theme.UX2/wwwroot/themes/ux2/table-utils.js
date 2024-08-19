@@ -142,9 +142,9 @@ function setTableHeighDynamic(tableName) {
     }
 }
 
-function getSelectColumn(title,dataField) {
+function getSelectColumn(title,dataField,uniqueTableId) {
     return {
-        title: '<span class="btn btn-secondary btn-light fl fl-filter" title="Toggle Filter" id="btn-toggle-filter-heading"></span>',
+        title: `<input class="checkbox-select select-all-${uniqueTableId}"  type="checkbox">`,
         orderable: false,
         className: 'notexport text-center',
         data: dataField,
@@ -383,3 +383,13 @@ function updateFilterButton(dt) {
     let hasFilter = columnFiltersApplied || searchValue !== '';
     $('#btn-toggle-filter').text(hasFilter ? FilterDesc.With_Filter : FilterDesc.Default);
 }
+
+$('.data-table-select-all').click(function () {
+
+    if ($('.data-table-select-all').is(":checked")) {
+        PubSub.publish('datatable_select_all',true);
+    } else {
+        PubSub.publish('datatable_select_all', false);
+    }
+   
+});
