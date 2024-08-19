@@ -9,6 +9,10 @@ using System.Collections.Generic;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.Identity;
 using System.Linq;
+using Unity.Notifications.Emails;
+using Unity.Notifications.Events;
+using System.Text;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -18,6 +22,8 @@ namespace Unity.Payments.PaymentRequests
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
+        private readonly ILocalEventBus _localEventBus;
+        
 
         public const string FinancialAnalyst = "financial_analyst";
 
@@ -25,12 +31,14 @@ namespace Unity.Payments.PaymentRequests
             IIdentityUserIntegrationService identityUserIntegrationService,
             IPaymentRequestRepository paymentRequestsRepository,
             ITenantRepository tenantRepository,
-            ICurrentTenant currentTenant)
+            ICurrentTenant currentTenant,
+            ILocalEventBus localEventBus)
         {          
             _identityUserLookupAppService = identityUserIntegrationService;
             _paymentRequestsRepository = paymentRequestsRepository;
             _tenantRepository = tenantRepository;
             _currentTenant = currentTenant;
+            _localEventBus = localEventBus;
         }
 
         public async Task NotifyFinancialAdvisorsOfNightlyFailedPayments()
@@ -41,12 +49,61 @@ namespace Unity.Payments.PaymentRequests
                 using (_currentTenant.Change(tenant.Id))
                 {
                     List<PaymentRequest> failedPaymentList = await GetFailedPayments();
-                    await GetFinancialAnalysts();
+                    if (failedPaymentList != null && failedPaymentList.Count > 0)
+                    {
+                        string failedContent = GetFailedPaymentContent(failedPaymentList);
+                        if (!failedContent.IsNullOrEmpty())
+                        {
+                            List<string> financialAnalystEmails = await GetFinancialAnalystEmails();
+
+                            await _localEventBus.PublishAsync(
+                                new EmailNotificationEvent
+                                {
+                                    Action = EmailAction.SendFailedSummary,  
+                                    RetryAttempts = 0,
+                                    Body = failedContent,
+                                    EmailAddressList = financialAnalystEmails
+                                }
+                            );
+                        }                       
+                    }
+                    
                 }
             }
         }
 
-        public async Task GetFinancialAnalystEmails()
+        private string GetFailedPaymentContent(List<PaymentRequest> failedPaymentRequests)
+        {
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append("<b>Failed CAS Payment Requests</b>\n");
+            using (Table table = new Table(sb))
+            {
+                Row header = new Row(sb, true);
+
+                header.AddCell("Payment Id");
+                header.AddCell("Amount");
+                header.AddCell("Applicant Name");
+                header.AddCell("CAS Response");
+                header.Dispose();
+
+                foreach (var paymentRequest in failedPaymentRequests)
+                {
+                    using (Row row = table.AddRow())
+                    {
+                        row.AddCell(paymentRequest.ReferenceNumber ?? string.Empty);
+                        row.AddCell(paymentRequest.Amount.ToString());
+                        row.AddCell(paymentRequest.PayeeName);
+                        row.AddCell(paymentRequest.CasResponse ?? string.Empty);                        
+                    }
+                }
+            }
+
+            string finishedTable = sb.ToString();
+            return sb.ToString();
+        }
+
+        public async Task<List<string>> GetFinancialAnalystEmails()
         {
             List<string> financialAnalystEmails = new List<string>();
             var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
@@ -61,6 +118,7 @@ namespace Unity.Payments.PaymentRequests
                     }
                 }
             }
+            return financialAnalystEmails;
         }
         
         public async Task<List<PaymentRequest>> GetFailedPayments()
