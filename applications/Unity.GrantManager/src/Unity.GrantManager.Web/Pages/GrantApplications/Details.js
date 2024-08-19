@@ -293,7 +293,7 @@ $(function () {
             assessmentResultWidgetManager.refresh();            
         }
     );
-    function maskCurrencies() {
+    function initCustomFieldCurrencies() {
         setTimeout(function () {
             $('.custom-currency-input').maskMoney();
         }, 1000);
@@ -302,7 +302,7 @@ $(function () {
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
             assessmentResultWidgetManager.refresh();
-            maskCurrencies();
+            initCustomFieldCurrencies();
         }
     );
 
@@ -319,7 +319,7 @@ $(function () {
     PubSub.subscribe('refresh_detail_panel_summary',
         (msg, data) => {
             summaryWidgetManager.refresh();
-            maskCurrencies();
+            initCustomFieldCurrencies();
         }
     );
 
