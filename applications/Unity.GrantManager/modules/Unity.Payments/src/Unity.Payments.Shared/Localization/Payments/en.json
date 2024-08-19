@@ -44,7 +44,7 @@
     "ApplicationPaymentListTable:PaidOn": "Paid On",
     "ApplicationPaymentListTable:CASResponse": "CAS Response",
     "ApplicationPaymentListTable:InvoiceStatus": "Invoice Status",
-    "ApplicationPaymentListTable:PaymentStatus": "Payment Status",
+    "ApplicationPaymentListTable:PaymentStatus": "CAS Payment Status",
 
     "ApplicantInfoView:SupplierInfoTitle": "Payments",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",

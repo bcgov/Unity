@@ -17,11 +17,11 @@ $(function () {
         'status',
         'requestedOn',
         'updatedOn',
-        'paidOn',
-        'CASResponse',
+        'paidOn',        
         'l1Approval',
         'l2Approval',
-        'l3Approval'
+        'l3Approval',
+        'CASResponse'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -193,14 +193,14 @@ $(function () {
             getStatusColumn(),
             getRequestedonColumn(),
             getUpdatedOnColumn(),
-            getPaidOnColumn(),
-            getCASResponseColumn(),
+            getPaidOnColumn(),            
             getL1ApprovalColumn(),
             getL2ApprovalColumn(),
             getL3ApprovalColumn(),
             getDescriptionColumn(),
             getInvoiceStatusColumn(),
-            getPaymentStatusColumn()
+            getPaymentStatusColumn(),
+            getCASResponseColumn(),
         ]
     }
 
@@ -347,22 +347,7 @@ $(function () {
             }
         };
     }
-    function getCASResponseColumn() {
-        // Add button to view response modal
-        return {
-            title: l('ApplicationPaymentListTable:CASResponse'),
-            name: 'CASResponse',
-            data: 'casResponse',
-            className: 'data-table-header',
-            index: 12,
-            render: function (data) {
-                if(data+"" !== "undefined" && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
-                }
-                return  '{Not Available}';
-            }
-        };
-    }
+   
     function getL1ApprovalColumn() {
         return {
             title: l('ApplicationPaymentListTable:L1ApprovalDate'),
@@ -444,6 +429,23 @@ $(function () {
                 } else {
                     return "";
                 }
+            }
+        };
+    }
+
+    function getCASResponseColumn() {
+        // Add button to view response modal
+        return {
+            title: l('ApplicationPaymentListTable:CASResponse'),
+            name: 'CASResponse',
+            data: 'casResponse',
+            className: 'data-table-header',
+            index: 12,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                }
+                return  '{Not Available}';
             }
         };
     }
