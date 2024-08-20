@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
@@ -33,10 +34,12 @@ public class PaymentsTestBaseModule : AbpModule
             options.IsJobExecutionEnabled = false;
             options.PaymentRequestOptions.ProducerExpression = "0 0 12 * * ? *";
         });
+        Configure<AbpBackgroundWorkerQuartzOptions>(options => { options.IsAutoRegisterEnabled = false; });
     }
 
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
+        Quartz.Logging.LogContext.SetCurrentLogProvider(NullLoggerFactory.Instance);
         PreConfigure<AbpQuartzOptions>(options =>
         {
             options.Configurator = configure =>
