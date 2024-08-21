@@ -386,7 +386,7 @@ $(function () {
             let formDataName = data.worksheet + '_form';
             let formValid = $(`form#${formDataName}`).valid();               
             let saveBtn = $(`#save_${data.worksheet}_btn`);
-            if (formValid) {                
+            if (formValid && !formHasInvalidCurrencyCustomFields(`${formDataName}`)) {                
                 saveBtn.prop('disabled', false);
             } else {
                 saveBtn.prop('disabled', true);
