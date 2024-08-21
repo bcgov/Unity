@@ -17,18 +17,15 @@ public class AssessmentManager : DomainService
     private readonly IAssessmentRepository _assessmentRepository;
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly ILocalEventBus _localEventBus;
-    private readonly IFeatureChecker _featureChecker;
 
     public AssessmentManager(
         IAssessmentRepository assessmentRepository,
         IApplicationFormRepository applicationFormRepository,
-        ILocalEventBus localEventBus,
-        IFeatureChecker featureChecker)
+        ILocalEventBus localEventBus)
     {
         _assessmentRepository = assessmentRepository;
         _applicationFormRepository = applicationFormRepository;
         _localEventBus = localEventBus;
-        _featureChecker = featureChecker;
     }
 
     /// <summary>
@@ -58,20 +55,25 @@ public class AssessmentManager : DomainService
 
         var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
 
+        var otherAssessments = await _assessmentRepository.GetListByApplicationId(application.Id);
+        bool hasOtherAssessments = otherAssessments != null && otherAssessments.Count != 0;
+
         var assessment = await _assessmentRepository.InsertAsync(
             new Assessment(
                 GuidGenerator.Create(),
                 application.Id,
                 assessorUser.Id),
             autoSave: true);
+        
 
-        if (form.ScoresheetId != null && await _featureChecker.IsEnabledAsync("Unity.Flex"))
+        if (form.ScoresheetId != null)
         {
             await _localEventBus.PublishAsync(new CreateScoresheetInstanceEto()
             {
                 ScoresheetId = form.ScoresheetId ?? Guid.Empty,
                 CorrelationId = assessment.Id,
-                CorrelationProvider = "Assessment"
+                CorrelationProvider = "Assessment",
+                RelatedCorrelationId = hasOtherAssessments ? otherAssessments![0].Id : null
             });
         }
 

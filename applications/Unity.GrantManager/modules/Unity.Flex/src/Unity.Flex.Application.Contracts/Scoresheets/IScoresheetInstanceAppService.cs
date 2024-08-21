@@ -6,7 +6,7 @@ namespace Unity.Flex.Scoresheets
 {
     public interface IScoresheetInstanceAppService : IApplicationService
     {
-        Task<ScoresheetInstanceDto> CreateAsync(CreateScoresheetInstanceDto dto);
+        Task<ScoresheetInstanceDto?> CreateAsync(CreateScoresheetInstanceDto dto);
         Task<ScoresheetInstanceDto?> GetByCorrelationAsync(Guid id);
     }
 }
