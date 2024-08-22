@@ -8,7 +8,6 @@ using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Local;
-using Volo.Abp.Features;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Assessments;

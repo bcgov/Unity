@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
+using Volo.Abp.Validation;
 
 namespace Unity.Flex.Scoresheets
 {
@@ -17,7 +18,7 @@ namespace Unity.Flex.Scoresheets
             else
             {
                 // There are already other assessments in the application
-                var otherAssessment = await scoresheetInstanceRepository.GetByCorrelationAsync(dto.RelatedCorrelationId ?? throw new Exception("Invalid Assessment Id."));
+                var otherAssessment = await scoresheetInstanceRepository.GetByCorrelationAsync(dto.RelatedCorrelationId ?? throw new AbpValidationException("Invalid Assessment Id."));
                 if(otherAssessment != null)
                 {
                     // Use the scoresheet of the other existing assessments
