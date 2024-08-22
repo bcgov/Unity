@@ -26,7 +26,7 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         string sheetCorrelationProvider,
         string uiAnchor,
         Guid? worksheetId)
-    {        
+    {
         if (instanceCorrelationProvider == FlexConsts.Preview
             && sheetCorrelationProvider == FlexConsts.Preview
             && uiAnchor == FlexConsts.Preview
@@ -46,15 +46,15 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
     private async Task<IViewComponentResult> RenderViewAsync(Guid instanceCorrelationId,
         string instanceCorrelationProvider,
         Guid sheetCorrelationId,
-        string sheetCorrelationProvider,        
+        string sheetCorrelationProvider,
         string uiAnchor,
         Guid? worksheetId)
     {
         WorksheetViewModel? viewModel = null;
 
-        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId, 
-            instanceCorrelationProvider, 
-            worksheetId, 
+        var worksheetInstance = await worksheetInstanceAppService.GetByCorrelationAnchorAsync(instanceCorrelationId,
+            instanceCorrelationProvider,
+            worksheetId,
             uiAnchor);
 
         WorksheetDto? worksheet;
@@ -145,23 +145,23 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
 
         return worksheetViewModel;
     }
+}
 
-    public class WorksheetInstanceWidgetStyleBundleContributor : BundleContributor
+public class WorksheetInstanceWidgetStyleBundleContributor : BundleContributor
+{
+    public override void ConfigureBundle(BundleConfigurationContext context)
     {
-        public override void ConfigureBundle(BundleConfigurationContext context)
-        {
-            context.Files
-              .AddIfNotContains("/Views/Shared/Components/WorksheetInstanceWidget/Default.css");
-        }
+        context.Files
+          .AddIfNotContains("/Views/Shared/Components/WorksheetInstanceWidget/Default.css");
     }
+}
 
-    public class WorksheetInstanceWidgetScriptBundleContributor : BundleContributor
+public class WorksheetInstanceWidgetScriptBundleContributor : BundleContributor
+{
+    public override void ConfigureBundle(BundleConfigurationContext context)
     {
-        public override void ConfigureBundle(BundleConfigurationContext context)
-        {
-            context.Files
-              .AddIfNotContains("/Views/Shared/Components/WorksheetInstanceWidget/Default.js");
-        }
+        context.Files
+          .AddIfNotContains("/Views/Shared/Components/WorksheetInstanceWidget/Default.js");
     }
 }
 
