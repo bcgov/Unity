@@ -1,6 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
 @using Unity.GrantManager.Web.Views.Shared.Components.ReviewList;
@@ -196,6 +197,9 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
+                </li>                
             </ul>
 
 
@@ -261,11 +265,6 @@
                 </div>
                 @*-------- Details Tab Section END ---------*@
 
-                @*-------- History Tab Section ---------*@
-                <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab" style="text-align:center">
-                    <img src="/images/under-construction.png" alt="under-construction">
-                </div>
-                @*-------- History Tab Section END ---------*@
 
                 @*-------- Comments Tab Section ---------*@
                 <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
@@ -304,6 +303,13 @@
                 </div>
                 @*------- Links Tab Section END ---------*@
 
+                @*-------- History Tab Section ---------*@
+                <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">                    
+                    <div class="px-3 pb-2" id="applicationHistoryWidget">
+                        @await Component.InvokeAsync("HistoryWidget", new { applicationId = Model.ApplicationId })
+                    </div>
+                </div>
+                @*-------- History Tab Section END ---------*@
             </div>
 
         </abp-card>

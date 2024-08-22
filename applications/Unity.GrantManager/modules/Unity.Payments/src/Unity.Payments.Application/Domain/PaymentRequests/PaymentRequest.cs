@@ -8,9 +8,12 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Volo.Abp;
 using Unity.Payments.Domain.Exceptions;
+using Volo.Abp.Auditing;
+using System.Collections.Generic;
 
 namespace Unity.Payments.Domain.PaymentRequests
 {
+    [Audited]
     public class PaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         public Guid? TenantId { get; set; }

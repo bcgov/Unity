@@ -19,6 +19,7 @@ using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
+using Volo.Abp.Auditing;
 
 namespace Unity.Payments;
 
@@ -58,6 +59,13 @@ public class PaymentsApplicationModule : AbpModule
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
+        });
+
+        Configure<AbpAuditingOptions>(options =>
+        {
+            options.IsEnabled = true; 
+            options.ApplicationName = "Unity.Payments";
+            options.EntityHistorySelectors.AddAllEntities();
         });
 
         context.Services.AddSingleton<IAsyncConnectionFactory>(provider =>

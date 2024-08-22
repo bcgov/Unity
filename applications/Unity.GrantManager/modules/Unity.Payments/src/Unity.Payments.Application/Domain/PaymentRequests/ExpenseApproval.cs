@@ -2,9 +2,11 @@
 using Unity.Payments.Enums;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Auditing;
 
 namespace Unity.Payments.Domain.PaymentRequests
 {
+    [Audited]
     public class ExpenseApproval : FullAuditedEntity<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
