@@ -23,8 +23,6 @@ namespace Unity.Payments.PaymentRequests
         private readonly ICurrentTenant _currentTenant;
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
         private readonly ILocalEventBus _localEventBus;
-        
-
         public const string FinancialAnalyst = "financial_analyst";
 
         public FinancialSummaryService (
@@ -72,7 +70,7 @@ namespace Unity.Payments.PaymentRequests
             }
         }
 
-        private string GetFailedPaymentContent(List<PaymentRequest> failedPaymentRequests)
+        private static string GetFailedPaymentContent(List<PaymentRequest> failedPaymentRequests)
         {
 
             StringBuilder sb = new StringBuilder();
@@ -98,8 +96,6 @@ namespace Unity.Payments.PaymentRequests
                     }
                 }
             }
-
-            string finishedTable = sb.ToString();
             return sb.ToString();
         }
 

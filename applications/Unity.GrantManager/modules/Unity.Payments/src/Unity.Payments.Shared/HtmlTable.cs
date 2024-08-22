@@ -9,7 +9,8 @@ namespace Unity.Payments
     /// </summary>
     public class Table : IDisposable
     {
-        private StringBuilder _sb;
+        private readonly StringBuilder _sb;
+        private bool disposed = false;
 
         public Table(StringBuilder sb, string id = "default", string classValue = "")
         {
@@ -19,7 +20,22 @@ namespace Unity.Payments
 
         public void Dispose()
         {
-            _sb.Append("</table>");
+            GC.SuppressFinalize(this);
+            Dispose(true);            
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    _sb.Append("</table>");
+                }
+                // Release unmanaged resources.
+                // Set large fields to null.                
+                disposed = true;
+            }
         }
 
         public Row AddRow()
@@ -47,8 +63,10 @@ namespace Unity.Payments
 
     public class Row : IDisposable
     {
-        private StringBuilder _sb;
-        private bool _isHeader;
+        private readonly StringBuilder _sb;
+        private readonly bool _isHeader;
+        private bool disposed = false;
+
         public Row(StringBuilder sb, bool isHeader = false)
         {
             _sb = sb;
@@ -60,11 +78,26 @@ namespace Unity.Payments
         }
 
         public void Dispose()
+        {         
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
-            _sb.Append("\t</tr>\n");
-            if (_isHeader)
+            if (!disposed)
             {
-                _sb.Append("</thead>\n");
+                if (disposing)
+                {
+                    _sb.Append("\t</tr>\n");
+                    if (_isHeader)
+                    {
+                        _sb.Append("</thead>\n");
+                    }
+                }
+                // Release unmanaged resources.
+                // Set large fields to null.                
+                disposed = true;
             }
         }
 
