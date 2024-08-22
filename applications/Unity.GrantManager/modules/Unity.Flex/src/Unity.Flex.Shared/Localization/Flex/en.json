@@ -28,7 +28,7 @@
     "Worksheet:Configuration:CloneWorksheetButtonText": "Clone Worksheet",
     "Worksheet:Configuration:PublishWorksheetButtonText": "Publish Worksheet",
     "Worksheet:Configuration:DeleteWorksheetButtonText": "Delete Worksheet",
-    "Worksheet:Configuration:AddCheckboxOptionText": "Add Option"
+    "Worksheet:Configuration:AddCheckboxOptionText": "Add Option",
     "Worksheet:Configuration:ExportWorksheetButtonText": "Export Worksheet"
   }
 }
