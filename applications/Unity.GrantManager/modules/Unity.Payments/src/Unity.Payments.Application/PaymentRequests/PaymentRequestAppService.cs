@@ -15,6 +15,8 @@ using Unity.Payments.Enums;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Authorization.Permissions;
 using Unity.Payments.Permissions;
+using Volo.Abp.Data;
+using Volo.Abp;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -27,18 +29,20 @@ namespace Unity.Payments.PaymentRequests
         private readonly ICurrentUser _currentUser;
         private readonly IPaymentsManager _paymentsManager;
         private readonly IPermissionChecker _permissionChecker;
+        private readonly IDataFilter _dataFilter;
 
         public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
             ICurrentUser currentUser, 
             IPaymentsManager paymentsManager,
-            IPermissionChecker permissionChecker)
+            IPermissionChecker permissionChecker,IDataFilter dataFilter)
         {
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
             _paymentsManager = paymentsManager;
             _permissionChecker = permissionChecker;
+           _dataFilter = dataFilter;
         }
 
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
@@ -46,10 +50,13 @@ namespace Unity.Payments.PaymentRequests
             List<PaymentRequestDto> createdPayments = [];
 
             var paymentThreshold = await GetPaymentThresholdAsync();
+            var currentYear = DateTime.UtcNow.Year;
+            var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
 
-            foreach (var dto in paymentRequests)
+            foreach (var item in paymentRequests.Select((value, i) => new { i, value }))
             {
                 // Confirmation ID + 4 digit sequence NEED SEQUENCE IF MULTIPLE
+                var dto = item.value;
                 string format = "0000";
                 // Needs to be optimized
                 int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
@@ -65,8 +72,10 @@ namespace Unity.Payments.PaymentRequests
                    dto.SiteId,
                    dto.CorrelationId,
                    dto.CorrelationProvider,
-                   dto.Description,
-                   paymentThreshold);
+                   GeneratePaymentNumberAsync(sequenceNumber,item.i),
+                    dto.Description,
+                   paymentThreshold
+                  );
 
                     var result = await _paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
@@ -83,7 +92,10 @@ namespace Unity.Payments.PaymentRequests
                         Description = result.Description,
                         CreationTime = result.CreationTime,
                         Status = result.Status,
+                        ReferenceNumber  = result.ReferenceNumber,
                     });
+
+                   
                 }
                 catch (Exception ex)
                 {
@@ -158,15 +170,20 @@ namespace Unity.Payments.PaymentRequests
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
+            using (_dataFilter.Disable<ISoftDelete>()) { 
             var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
             return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
+            }
         }
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
         {
-            var payments = await _paymentRequestsRepository.GetListAsync();
-            var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
+            using (_dataFilter.Disable<ISoftDelete>())
+            {
+                var payments = await _paymentRequestsRepository.GetListAsync();
+                var filteredPayments = payments.Where(e => e.CorrelationId == applicationId).ToList();
 
-            return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
+                return new List<PaymentDetailsDto>(ObjectMapper.Map<List<PaymentRequest>, List<PaymentDetailsDto>>(filteredPayments));
+            }
         }
         public async Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds)
         {
@@ -196,6 +213,37 @@ namespace Unity.Payments.PaymentRequests
             }
 
             return PaymentSharedConsts.DefaultThresholdAmount;
+        }
+        public static string GeneratePaymentNumberAsync(int sequenceNumber, int index)
+        {
+            var prefix = "UP-";
+            var currentYear = DateTime.UtcNow.Year;
+            var yearPart = currentYear.ToString();
+
+            sequenceNumber = sequenceNumber + index;
+            var sequencePart = sequenceNumber.ToString("D6");
+
+            return $"{prefix}{yearPart}-{sequencePart}";
+        }
+
+        private async Task<int> GetNextSequenceNumberAsync(int currentYear)
+        {
+            // Retrieve all payment requests and filter for the current year
+            var payments = await _paymentRequestsRepository.GetListAsync();
+            var latestPayment = payments
+                .Where(p => p.CreationTime.Year == currentYear)
+                .OrderByDescending(p => p.ReferenceNumber)
+                .FirstOrDefault();
+
+            if (latestPayment != null)
+            {
+                var latestSequenceNumber = int.Parse(latestPayment.ReferenceNumber.Split('-').Last());
+                return latestSequenceNumber + 1;
+            }
+            else
+            {
+                return 1;
+            }
         }
     }
 }

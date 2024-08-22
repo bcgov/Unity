@@ -13,8 +13,14 @@
             else if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "AssessmentResults.Notes")) {
                 assessmentResultObj[input.name.split(".")[1]] = input.value;
             } else {
+                let inputElement = $('[name="' + input.name + '"]');
                 // This will not work if the culture is different and uses a different decimal separator
-                assessmentResultObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+                if (inputElement.hasClass('unity-currency-input')) {
+                    assessmentResultObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+                }
+                else {
+                    assessmentResultObj[input.name.split(".")[1]] = input.value;
+                }
 
                 if (isNumberField(input)) {
                     if (assessmentResultObj[input.name.split(".")[1]] == '') {

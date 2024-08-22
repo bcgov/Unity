@@ -10,9 +10,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
     {
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult Refresh(Guid questionId, bool isDisabled, double? answer)
+        public IActionResult Refresh(Guid questionId, bool isDisabled, double? answer, int? min, int? max)
         {
-            return ViewComponent(typeof(QuestionNumberWidget), new { questionId, isDisabled, answer });
+            return ViewComponent(typeof(QuestionNumberWidget), new { questionId, isDisabled, answer, min, max });
         }
     }
 }

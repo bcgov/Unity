@@ -19,5 +19,7 @@ namespace Unity.Flex.Worksheets
         Task DeleteAsync(Guid id);
         Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex);
         Task<bool> ExistsAsync(Guid worksheetId);
+        Task<ExportWorksheetDto> ExportWorksheet(Guid worksheetId);
+        Task ImportWorksheetAsync(WorksheetImportDto worksheetImportDto);
     }
 }

@@ -1,17 +1,21 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.Settings;
 using Volo.Abp;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Scoresheets
 {
     [Authorize]
-    public class ScoresheetAppService : FlexAppService, IScoresheetAppService
+    public partial class ScoresheetAppService : FlexAppService, IScoresheetAppService
     {
         private readonly IScoresheetRepository _scoresheetRepository;
         private readonly IScoresheetSectionRepository _sectionRepository;
@@ -56,7 +60,7 @@ namespace Unity.Flex.Scoresheets
                 ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
                 Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
                 var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
-                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id)).Result;
+                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition)).Result;
                 return ObjectMapper.Map<Question, QuestionDto>(result);
             }
         }
@@ -101,7 +105,10 @@ namespace Unity.Flex.Scoresheets
 
                 foreach (var originalQuestion in originalSection.Fields)
                 {
-                    var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, clonedSection.Id);
+                    var clonedQuestion = new Question(Guid.NewGuid(), originalQuestion.Name, originalQuestion.Label, originalQuestion.Type, originalQuestion.Order, originalQuestion.Description, originalQuestion.Definition)
+                    {
+                        SectionId = clonedSection.Id
+                    };
                     clonedSection.Fields.Add(clonedQuestion);
                 }
 
@@ -181,5 +188,50 @@ namespace Unity.Flex.Scoresheets
             scoresheet.Published = true;
             await _scoresheetRepository.UpdateAsync(scoresheet);
         }
+
+        public async Task<List<QuestionDto>> GetNonDeletedYesNoQuestions(List<Guid> questionIdsToCheck)
+        {
+            var existingQuestions = await _questionRepository.GetListAsync();
+            var result = existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.YesNo).ToList();
+            return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
+        }
+
+        public async Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId)
+        {
+            var worksheet = await _scoresheetRepository.GetAsync(scoresheetId, true);
+            var settings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                ContractResolver = new ScoresheetContractResolver()
+            };
+            var json = JsonConvert.SerializeObject(worksheet, settings);
+            var byteArray = System.Text.Encoding.UTF8.GetBytes(json);
+
+            return new ExportScoresheetDto { Content = byteArray, ContentType = "application/json", Name = "worksheet_" + worksheet.Title + "_" + worksheet.Name + ".json" };
+        }
+
+        public async Task ImportScoresheetAsync(ScoresheetImportDto scoresheetImportDto)
+        {
+            if (scoresheetImportDto.Content == null || scoresheetImportDto.Content.Length == 0)
+            {
+                throw new UserFriendlyException("No file content provided.");
+            }
+
+            var json = scoresheetImportDto.Content;
+            var scoresheet = JsonConvert.DeserializeObject<Scoresheet>(json, new JsonSerializerSettings
+            {
+                ContractResolver = new PrivateSetterContractResolver(),
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore
+            }) ?? throw new UserFriendlyException("Invalid JSON content.");
+            var name = scoresheet.Title.ToLower().Trim() + "-v1";
+            _ = scoresheet.SetName(NameRegex().Replace(name, ""));
+            scoresheet.Published = false;
+            await _scoresheetRepository.InsertAsync(scoresheet);
+        }
+
+        [GeneratedRegex(@"\s+")]
+        private static partial Regex NameRegex();
+
     }
 }

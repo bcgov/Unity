@@ -1,7 +1,9 @@
 ﻿using Shouldly;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets;
+using Unity.Flex.Worksheets.Values;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -44,9 +46,11 @@ namespace Unity.Flex.Scoresheet
             _ = await _scoresheetAppService.CreateSectionAsync(scoresheet.Id, new CreateSectionDto { Name = "Test Section" });
             var questionName = "Test Question";
             var questionLabel = "Test Label";
+            var description = "Test Description";
+            string definition = "{\"min\":2,\"max\":6}";
 
             // Act
-            var question = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(scoresheet.Id, new CreateQuestionDto { Name = questionName, Label = questionLabel });
+            var question = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(scoresheet.Id, new CreateQuestionDto { Name = questionName, Label = questionLabel, Description = description, QuestionType = 1, Definition = JsonSerializer.Deserialize<NumericValue>(definition)?.Value });
 
             // Assert
             question.ShouldNotBeNull();
@@ -93,18 +97,20 @@ namespace Unity.Flex.Scoresheet
             // Arrange
             var scoresheet = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto { Title = "Test Scoresheet" });
             _ = await _scoresheetAppService.CreateSectionAsync(scoresheet.Id, new CreateSectionDto { Name = "Test Section" });
-            var question = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(scoresheet.Id, new CreateQuestionDto { Name = "Test Question", Label = "Test Label" });
-            var questionName = "Updated Test Question";
-            var questionLabel = "Updated Test Label";
+            var question = await _scoresheetAppService.CreateQuestionInHighestOrderSectionAsync(scoresheet.Id, new CreateQuestionDto { Name = "Test Question", Label = "Test Label", Description = "Test Description", QuestionType = 1, Definition = JsonSerializer.Deserialize<NumericValue>("{\"min\":0,\"max\":3}")?.Value });
+            var updatedQuestionName = "Updated Test Question";
+            var updatedQuestionLabel = "Updated Test Label";
+            var updatedDescription = "Updated Test Description";
+            string updatedDefinition = "{\"min\":2,\"max\":6}";
 
             // Act
-            var updatedQuestion = await _questionAppService.UpdateAsync(question.Id, new EditQuestionDto { Name = questionName, Label = questionLabel });
+            var updatedQuestion = await _questionAppService.UpdateAsync(question.Id, new EditQuestionDto { Name = updatedQuestionName, Label = updatedQuestionLabel, Description = updatedDescription, QuestionType = 1, Definition = JsonSerializer.Deserialize<NumericValue>(updatedDefinition)?.Value });
 
             // Assert
             updatedQuestion.ShouldNotBeNull();
             updatedQuestion.Id.ShouldBeEquivalentTo(question.Id);
-            updatedQuestion.Name.ShouldBeEquivalentTo(questionName);
-            updatedQuestion.Label.ShouldBeEquivalentTo(questionLabel);
+            updatedQuestion.Name.ShouldBeEquivalentTo(updatedQuestionName);
+            updatedQuestion.Label.ShouldBeEquivalentTo(updatedQuestionLabel);
         }
 
         [Fact]

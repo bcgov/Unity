@@ -48,6 +48,10 @@ namespace Unity.Payments.Integrations.Cas
                             ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
                         return result;
                     }
+                    else if (response.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        throw new UserFriendlyException("You have entered an invalid Supplier #.");
+                    }
                     else if (response.StatusCode != HttpStatusCode.OK)
                     {
                         throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync Status Code: " + response.StatusCode);

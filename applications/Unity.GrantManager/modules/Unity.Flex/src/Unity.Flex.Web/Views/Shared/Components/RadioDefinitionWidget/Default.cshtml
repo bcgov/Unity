@@ -1,0 +1,78 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Web.Views.Shared.Components.RadioDefinitionWidget;
+@using Unity.Flex.Worksheets.Definitions;
+
+@model RadioDefinitionViewModel
+
+<div>
+    <abp-input type="text" id="GroupLabel" name="GroupLabel" asp-for="@Model.GroupLabel" />
+
+    <div id="radioOptions">
+        @if (Model.Options != null && Model.Options.Count > 0)
+        {
+            foreach (var option in Model.Options)
+            {
+                <div class="option-container" id="option@(Model.Options.IndexOf(option) + 1)Container">
+                    <input type="radio" name="radio_input" />
+                    <input type="text" id="option@(Model.Options.IndexOf(option) + 1)" name="Options" class="form-control" value="@option" />
+                    <button type="button" class="btn btn-danger btn-sm remove-option-btn" data-option-id="option@(Model.Options.IndexOf(option) + 1)Container">Delete Option</button>
+                </div>
+            }
+        }
+    </div>
+
+    <button type="button" id="addOptionBtn" class="btn btn-secondary">Add Radio Option</button>
+</div>
+
+<style>
+    .option-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+        .option-container input[type="text"] {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .option-container input[type="radio"] {
+            flex-shrink: 0;
+            margin-right: 10px;
+            width: auto;
+        }
+
+        .option-container button {
+            flex-shrink: 0;
+        }
+</style>
+
+<script>
+    (function () {
+        let optionCount = @Model.Options?.Count ?? 0;
+
+        document.getElementById("addOptionBtn").addEventListener("click", function () {
+            optionCount++;
+            let optionId = `option${optionCount}Container`;
+            let newOption = document.createElement("div");
+            newOption.className = "option-container";
+            newOption.id = optionId;
+            newOption.innerHTML = `
+                            <input type="radio" name="radio_input" />
+                            <input type="text" id="option${optionCount}" name="Options" class="form-control" />
+                            <button type="button" class="btn btn-danger btn-sm remove-option-btn" data-option-id="${optionId}">Delete Option</button>`;
+            document.getElementById("radioOptions").appendChild(newOption);
+        });
+
+        document.getElementById("radioOptions").addEventListener("click", function (event) {
+            if (event.target && event.target.classList.contains("remove-option-btn")) {
+                let optionId = event.target.getAttribute("data-option-id");
+                document.getElementById(optionId).remove();
+            }
+        });
+    })();
+</script>
+
+
+
+

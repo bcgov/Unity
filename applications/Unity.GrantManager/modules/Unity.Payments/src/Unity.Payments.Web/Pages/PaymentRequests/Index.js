@@ -5,7 +5,7 @@ $(function () {
     let isApprove = false;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
-        'id',
+        'referenceNumber',
         'applicantName',
         'supplierNumber',
         'creationTime',
@@ -17,12 +17,11 @@ $(function () {
         'status',
         'requestedOn',
         'updatedOn',
-        'paidOn',
-        'CASResponse',
+        'paidOn',        
         'l1Approval',
         'l2Approval',
         'l3Approval',
-      
+        'CASResponse'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -87,9 +86,19 @@ $(function () {
         return {
             recordsTotal: result.totalCount,
             recordsFiltered: result.items.length,
-            data: result.items
+            data: formatItems(result.items)
         };
     };
+
+    let formatItems = function (items) {
+        const newData = items.map((item, index) => {
+            return {
+                ...item,
+                rowCount: index
+            };
+        });
+        return newData;
+    }
 
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
@@ -101,11 +110,27 @@ $(function () {
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'select_batchpayment_application');
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", true);
+                if ($(".chkbox:checked").length == $(".chkbox").length) {
+                    $(".select-all-payments").prop("checked", true);
+                }
+                selectApplication(type, index, 'select_batchpayment_application');
+            });
+        }
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'deselect_batchpayment_application');
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                selectApplication(type, index, 'deselect_batchpayment_application');
+                $("#row_" + index).prop("checked", false);
+                if ($(".chkbox:checked").length != $(".chkbox").length) {
+                    $(".select-all-payments").prop("checked", false);
+                }
+            });
+        }
     });
 
     function selectApplication(type, indexes, action) {
@@ -156,7 +181,8 @@ $(function () {
 
     function getColumns() {
         return [
-            getPaymentIdColumn(),
+            getSelectColumn('Select Application', 'rowCount','payments'),
+            getPaymenReferenceColumn(),
             getApplicantNameColumn(),
             getSupplierNumberColumn(),
             getSiteNumberColumn(),
@@ -167,20 +193,22 @@ $(function () {
             getStatusColumn(),
             getRequestedonColumn(),
             getUpdatedOnColumn(),
-            getPaidOnColumn(),
-            getCASResponseColumn(),
+            getPaidOnColumn(),            
             getL1ApprovalColumn(),
             getL2ApprovalColumn(),
             getL3ApprovalColumn(),
             getDescriptionColumn(),
+            getInvoiceStatusColumn(),
+            getPaymentStatusColumn(),
+            getCASResponseColumn(),
         ]
     }
 
-    function getPaymentIdColumn() {
+    function getPaymenReferenceColumn() {
         return {
             title: l('ApplicationPaymentListTable:PaymentID'),
-            name: 'id',
-            data: 'id',
+            name: 'referenceNumber',
+            data: 'referenceNumber',
             className: 'data-table-header',
             index: 0,
         };
@@ -266,8 +294,6 @@ $(function () {
         };
     }
 
-
-
     function getStatusColumn() {
         return {
             title: l('ApplicationPaymentListTable:Status'),
@@ -321,22 +347,7 @@ $(function () {
             }
         };
     }
-    function getCASResponseColumn() {
-        // Add button to view response modal
-        return {
-            title: l('ApplicationPaymentListTable:CASResponse'),
-            name: 'CASResponse',
-            data: 'casResponse',
-            className: 'data-table-header',
-            index: 12,
-            render: function (data) {
-                if(data+"" !== "undefined" && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
-                }
-                return  '{Not Available}';
-            }
-        };
-    }
+   
     function getL1ApprovalColumn() {
         return {
             title: l('ApplicationPaymentListTable:L1ApprovalDate'),
@@ -383,11 +394,61 @@ $(function () {
             name: 'paymentDescription',
             data: 'description',
             className: 'data-table-header',
-            index: 17
+            index: 16
           
         };
     }
 
+    function getInvoiceStatusColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:InvoiceStatus'),
+            name: 'invoiceStatus',
+            data: 'invoiceStatus',
+            className: 'data-table-header',
+            index: 17,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+    function getPaymentStatusColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:PaymentStatus'),
+            name: 'paymentStatus',
+            data: 'paymentStatus',
+            className: 'data-table-header',
+            index: 18,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+    function getCASResponseColumn() {
+        // Add button to view response modal
+        return {
+            title: l('ApplicationPaymentListTable:CASResponse'),
+            name: 'CASResponse',
+            data: 'casResponse',
+            className: 'data-table-header',
+            index: 12,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                }
+                return  '{Not Available}';
+            }
+        };
+    }
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
@@ -405,7 +466,7 @@ $(function () {
 
 
 
-    $('#search').keyup(function () {
+    $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
@@ -417,6 +478,7 @@ $(function () {
             'Payment Requests'
         );
         dataTable.ajax.reload(null, false);
+        $(".select-all-payments").prop("checked", false);
         payment_approve_buttons.disable();
 
         selectedPaymentIds = [];
@@ -502,6 +564,15 @@ $(function () {
                 return "Created";
         }
     }
+
+    $('.select-all-payments').click(function () {
+        if ($(this).is(':checked')) {
+            dataTable.rows({ 'page': 'current' }).select();
+        }
+        else {
+            dataTable.rows({ 'page': 'current' }).deselect();
+        }
+    });
 });
 
 
@@ -514,3 +585,5 @@ function openCasResponseModal(casResponse) {
         casResponse: casResponse
     });
 }
+
+

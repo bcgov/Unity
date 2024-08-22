@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text.Json;
+using Unity.Flex.Scoresheets;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
 using Unity.Flex.Worksheets.Values;
@@ -51,6 +52,17 @@ namespace Unity.Flex.Web.Views.Shared.Components
             };
         }
 
+        public static CustomFieldDefinition? ConvertDefinition(this string definition, QuestionType type)
+        {
+            return type switch
+            {
+                QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
+                QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
+                QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),                
+                _ => null,
+            };
+        }
+
         public static string[] GetCheckedOptions(this string value)
         {
             if (string.IsNullOrEmpty(value)) return [];
@@ -84,6 +96,16 @@ namespace Unity.Flex.Web.Views.Shared.Components
         public static string? GetMaxValueOrNull(this CustomFieldDefinition field)
         {
             return DefinitionResolver.ResolveMax(field);
+        }
+
+        public static string? GetYesValueOrNull(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveYesValue(field);
+        }
+
+        public static string? GetNoValueOrNull(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveNoValue(field);
         }
 
         public static string? GetMinLengthValueOrNull(this CustomFieldDefinition field)

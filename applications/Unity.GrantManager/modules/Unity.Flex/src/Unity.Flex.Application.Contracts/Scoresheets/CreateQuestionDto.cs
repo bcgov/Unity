@@ -10,5 +10,6 @@ namespace Unity.Flex.Scoresheets
         public string? Description {  get; set; }
         public bool Enabled { get; set; }
         public uint QuestionType { get; set; }
+        public object? Definition { get; set; }
     }
 }

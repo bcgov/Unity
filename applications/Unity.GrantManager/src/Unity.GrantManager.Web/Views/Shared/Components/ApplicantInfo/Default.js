@@ -12,7 +12,7 @@
             }
             else {
                 // This will not work if the culture is different and uses a different decimal separator
-                ApplicantInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+                ApplicantInfoObj[input.name.split(".")[1]] = input.value;
 
                 if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
                     ApplicantInfoObj[input.name.split(".")[1]] = null;

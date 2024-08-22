@@ -160,10 +160,11 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
             new SelectListItem("Phone", "Phone"),
             new SelectListItem("Checkbox", "Checkbox"),
             new SelectListItem("Checkbox Group", "CheckboxGroup"),
+            new SelectListItem("Radio", "Radio"),
             new SelectListItem("Yes/No Select", "YesNo"),
             new SelectListItem("BC Address", "BCAddress")];
 
-        //new SelectListItem("Radio", "Radio"),
+        //,
         //new SelectListItem("Select List", "SelectList"),
     }
 

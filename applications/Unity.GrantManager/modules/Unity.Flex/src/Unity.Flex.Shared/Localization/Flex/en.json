@@ -15,6 +15,7 @@
     "Scoresheet:Configuration:EditScoresheetButtonText": "EDIT SCORESHEET",
     "Scoresheet:Configuration:CloneScoresheetButtonText": "CLONE SCORESHEET",
     "Scoresheet:Configuration:PublishScoresheetButtonText": "PUBLISH SCORESHEET",
+    "Scoresheet:Configuration:ExportScoresheetButtonText": "EXPORT SCORESHEET",
     "Scoresheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
     "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
     "Worksheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
@@ -28,5 +29,6 @@
     "Worksheet:Configuration:PublishWorksheetButtonText": "Publish Worksheet",
     "Worksheet:Configuration:DeleteWorksheetButtonText": "Delete Worksheet",
     "Worksheet:Configuration:AddCheckboxOptionText": "Add Option"
+    "Worksheet:Configuration:ExportWorksheetButtonText": "Export Worksheet"
   }
 }

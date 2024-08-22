@@ -106,6 +106,35 @@
                 </abp-column>
             </abp-row>
         </abp-row>
+        <abp-row class="m-0 signin-authority-form">
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                    <div id="SigningAuthorityContactInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                        <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:SigningAuthorityTitle"].Value</h6>
+                    </div>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityFullName" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityTitle" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityEmail" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityBusinessPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityCellPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
+                </abp-column>
+            </abp-row>
+        </abp-row>
+
         <abp-row class="m-0 contact-info-form">
             <div class="d-flex">
                 <abp-row class="m-0 physical-address-form pe-2">
@@ -168,35 +197,7 @@
                 </abp-row>
             </div>
         </abp-row>
-        <abp-row class="m-0 signin-authority-form">
-            <abp-row class="m-0 p-0">
-                <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                    <div id="SigningAuthorityContactInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
-                        <h6 class="ps-1 fw-bold">@L["ApplicantInfoView:SigningAuthorityTitle"].Value</h6>
-                    </div>
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityFullName" onchange="enableSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityTitle" onchange="enableSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityEmail" onchange="enableSaveBtn(this)" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityBusinessPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ApplicantInfo.SigningAuthorityCellPhone" pattern="^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$" onchange="enableSaveBtn(this)" />
-                </abp-column>
-            </abp-row>
-        </abp-row>
-
+      
         @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
         {
             @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
@@ -218,7 +219,22 @@
         }
     </form>
 </abp-row>
-
+<abp-row class="px-1 pb-2 mb-4 summary-container">
+    <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
+    <div id="applicationContactsWidget">
+        @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId })
+    </div>
+  
+        <div class="d-flex justify-content-end">
+            <abp-button text="Add Contact"
+                        id="AddContactButton"
+                        class="add_contact_btn"
+                        icon-type="Other"
+                        icon="fl fl-plus"
+                        button-type="Light" />
+        </div>
+    
+</abp-row>
 <script defer>
     (function () {
         if (window.jQuery) {

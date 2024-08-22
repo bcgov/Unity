@@ -5,6 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using System;
+using static Volo.Abp.UI.Navigation.DefaultMenuNames.Application;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
 {
@@ -16,9 +17,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
         AutoInitialize = true)]
     public class QuestionTextWidget : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer)
+        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer, string? minLength, string? maxLength)
         {
-            return View(await Task.FromResult(new QuestionTextViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty }));
+            return View(await Task.FromResult(new QuestionTextViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty, MinLength = minLength, MaxLength = maxLength }));
         }
 
         public class QuestionTextWidgetStyleBundleContributor : BundleContributor
