@@ -17,11 +17,11 @@ $(function () {
         'status',
         'requestedOn',
         'updatedOn',
-        'paidOn',
-        'CASResponse',
+        'paidOn',        
         'l1Approval',
         'l2Approval',
-        'l3Approval'
+        'l3Approval',
+        'CASResponse'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -110,18 +110,26 @@ $(function () {
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-        $("#row_" + indexes).prop("checked", true);
-        if ($(".chkbox:checked").length == $(".chkbox").length) {
-            $("#select-all").prop("checked", true);
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", true);
+                if ($(".chkbox:checked").length == $(".chkbox").length) {
+                    $(".select-all-payments").prop("checked", true);
+                }
+                selectApplication(type, index, 'select_batchpayment_application');
+            });
         }
-        selectApplication(type, indexes, 'select_batchpayment_application');
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'deselect_batchpayment_application');
-        $("#row_" + indexes).prop("checked", false);
-        if ($(".chkbox:checked").length != $(".chkbox").length) {
-            $("#select-all").prop("checked", false);
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                selectApplication(type, index, 'deselect_batchpayment_application');
+                $("#row_" + index).prop("checked", false);
+                if ($(".chkbox:checked").length != $(".chkbox").length) {
+                    $(".select-all-payments").prop("checked", false);
+                }
+            });
         }
     });
 
@@ -173,7 +181,7 @@ $(function () {
 
     function getColumns() {
         return [
-            getSelectColumn('Select Application', 'rowCount'),
+            getSelectColumn('Select Application', 'rowCount','payments'),
             getPaymenReferenceColumn(),
             getApplicantNameColumn(),
             getSupplierNumberColumn(),
@@ -185,14 +193,14 @@ $(function () {
             getStatusColumn(),
             getRequestedonColumn(),
             getUpdatedOnColumn(),
-            getPaidOnColumn(),
-            getCASResponseColumn(),
+            getPaidOnColumn(),            
             getL1ApprovalColumn(),
             getL2ApprovalColumn(),
             getL3ApprovalColumn(),
             getDescriptionColumn(),
             getInvoiceStatusColumn(),
-            getPaymentStatusColumn()
+            getPaymentStatusColumn(),
+            getCASResponseColumn(),
         ]
     }
 
@@ -339,22 +347,7 @@ $(function () {
             }
         };
     }
-    function getCASResponseColumn() {
-        // Add button to view response modal
-        return {
-            title: l('ApplicationPaymentListTable:CASResponse'),
-            name: 'CASResponse',
-            data: 'casResponse',
-            className: 'data-table-header',
-            index: 12,
-            render: function (data) {
-                if(data+"" !== "undefined" && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
-                }
-                return  '{Not Available}';
-            }
-        };
-    }
+   
     function getL1ApprovalColumn() {
         return {
             title: l('ApplicationPaymentListTable:L1ApprovalDate'),
@@ -440,6 +433,23 @@ $(function () {
         };
     }
 
+    function getCASResponseColumn() {
+        // Add button to view response modal
+        return {
+            title: l('ApplicationPaymentListTable:CASResponse'),
+            name: 'CASResponse',
+            data: 'casResponse',
+            className: 'data-table-header',
+            index: 12,
+            render: function (data) {
+                if(data+"" !== "undefined" && data?.length > 0) {
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                }
+                return  '{Not Available}';
+            }
+        };
+    }
+
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
     }
@@ -468,6 +478,7 @@ $(function () {
             'Payment Requests'
         );
         dataTable.ajax.reload(null, false);
+        $(".select-all-payments").prop("checked", false);
         payment_approve_buttons.disable();
 
         selectedPaymentIds = [];
@@ -553,6 +564,15 @@ $(function () {
                 return "Created";
         }
     }
+
+    $('.select-all-payments').click(function () {
+        if ($(this).is(':checked')) {
+            dataTable.rows({ 'page': 'current' }).select();
+        }
+        else {
+            dataTable.rows({ 'page': 'current' }).deselect();
+        }
+    });
 });
 
 
@@ -565,3 +585,5 @@ function openCasResponseModal(casResponse) {
         casResponse: casResponse
     });
 }
+
+

@@ -44,23 +44,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
 
             return View(await Task.FromResult(new NumericDefinitionViewModel()));
         }
+    }
 
-        public class NumericDefinitionWidgetStyleBundleContributor : BundleContributor
+    public class NumericDefinitionWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/NumericDefinitionWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/NumericDefinitionWidget/Default.css");
         }
+    }
 
-        public class NumericDefinitionWidgetScriptBundleContributor : BundleContributor
+    public class NumericDefinitionWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/NumericDefinitionWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/NumericDefinitionWidget/Default.js");
         }
     }
 }

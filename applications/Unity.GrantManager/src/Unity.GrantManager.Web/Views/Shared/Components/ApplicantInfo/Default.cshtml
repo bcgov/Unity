@@ -219,7 +219,22 @@
         }
     </form>
 </abp-row>
-
+<abp-row class="px-1 pb-2 mb-4 summary-container">
+    <h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
+    <div id="applicationContactsWidget">
+        @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId })
+    </div>
+  
+        <div class="d-flex justify-content-end">
+            <abp-button text="Add Contact"
+                        id="AddContactButton"
+                        class="add_contact_btn"
+                        icon-type="Other"
+                        icon="fl fl-plus"
+                        button-type="Light" />
+        </div>
+    
+</abp-row>
 <script defer>
     (function () {
         if (window.jQuery) {
