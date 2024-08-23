@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Unity.GrantManager.History;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget

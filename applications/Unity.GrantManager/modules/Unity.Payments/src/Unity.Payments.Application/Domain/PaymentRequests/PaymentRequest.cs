@@ -9,7 +9,6 @@ using System.Linq;
 using Volo.Abp;
 using Unity.Payments.Domain.Exceptions;
 using Volo.Abp.Auditing;
-using System.Collections.Generic;
 
 namespace Unity.Payments.Domain.PaymentRequests
 {

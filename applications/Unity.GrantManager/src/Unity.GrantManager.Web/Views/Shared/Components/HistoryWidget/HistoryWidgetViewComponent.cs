@@ -111,36 +111,38 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
         {
             string userName = "";
             AuditLog auditLog = await _auditLogRepository.GetAsync(auditLogId);
-            if (auditLog != null && auditLog.UserId != null)
+            if (auditLog != null && auditLog.UserId != null && auditLog.UserId != Guid.Empty)
             {       
                 string? userIdStr = auditLog.UserId.ToString();
-                Guid.TryParse(userIdStr, out Guid userId);
-                var user = await _identityUserAppService.GetAsync(userId);
-                userName = $"{user.Name} {user.Surname}";
+                if(Guid.TryParse(userIdStr, out Guid userId)) {
+                    var user = await _identityUserAppService.GetAsync(userId);
+                    userName = $"{user.Name} {user.Surname}";
+                }
             }
             
             return userName;
         }
     }
-}
 
-public class HistoryWidgetStyleBundleContributor : BundleContributor
-{
-    public override void ConfigureBundle(BundleConfigurationContext context)
+    public class HistoryWidgetStyleBundleContributor : BundleContributor
     {
-        context.Files
-          .AddIfNotContains("/Views/Shared/Components/HistoryWidget/Default.css");
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context.Files
+            .AddIfNotContains("/Views/Shared/Components/HistoryWidget/Default.css");
+        }
+    }
+
+    public class HistoryWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
+        {
+            context.Files
+            .AddIfNotContains("/Views/Shared/Components/HistoryWidget/Default.js");
+            context.Files
+            .AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
+        }
     }
 }
 
-public class HistoryWidgetScriptBundleContributor : BundleContributor
-{
-    public override void ConfigureBundle(BundleConfigurationContext context)
-    {
-        context.Files
-          .AddIfNotContains("/Views/Shared/Components/HistoryWidget/Default.js");
-        context.Files
-          .AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
-    }
-}
 
