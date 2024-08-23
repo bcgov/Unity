@@ -1,2 +1,3 @@
 ﻿
-Console.WriteLine("Applicant Portal");
+Console.WriteLine("Applicant Portal...");
+while (true);
