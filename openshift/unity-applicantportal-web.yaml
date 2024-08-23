@@ -39,7 +39,7 @@ parameters:
   displayName: Volume Capacity
   name: VOLUME_CAPACITY
   required: true
-  value: 128Mi
+  value: 40Mi
 - description: Git source URI for application
   displayName: Git Repository URL
   name: SOURCE_REPOSITORY_URL
@@ -91,7 +91,7 @@ parameters:
   displayName: CPU Limit
   name: CPU_LIMIT
   required: true
-  value: 100m
+  value: 50m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
@@ -101,7 +101,7 @@ parameters:
   displayName: Memory Limit
   name: MEMORY_LIMIT
   required: true
-  value: 256Mi
+  value: 64Mi
 # Template objects to instantiate the project application.
 objects:
 # Configmap
@@ -229,8 +229,6 @@ objects:
           envFrom:
             ## Add all values from ${APPLICATION_NAME}
             - configMapRef:
-                name: ${APPLICATION_NAME}
-            - secretRef:
                 name: ${APPLICATION_NAME}
             ## Add all from ${DATABASE_SERVICE_NAME}
             - configMapRef:

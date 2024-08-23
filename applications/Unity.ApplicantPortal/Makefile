@@ -1,3 +1,3 @@
 .PHONY: all
 all:
-	docker build -t unity-applicantportal-web .
+	docker build -t unity-applicantportal-web ./src
