@@ -61,13 +61,6 @@ public class PaymentsApplicationModule : AbpModule
             options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
         });
 
-        Configure<AbpAuditingOptions>(options =>
-        {
-            options.IsEnabled = true; 
-            options.ApplicationName = "Unity.Payments";
-            options.EntityHistorySelectors.AddAllEntities();
-        });
-
         context.Services.AddSingleton<IAsyncConnectionFactory>(provider =>
         {
             var factory = new ConnectionFactory

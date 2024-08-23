@@ -5,12 +5,8 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.Auditing;
-using Volo.Abp.AuditLogging;
-using Unity.GrantManager.History;
-using System.Threading;
 using Unity.GrantManager.Applications;
-using Volo.Abp.Identity;
+using Unity.GrantManager.History;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
 {
@@ -21,17 +17,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
         AutoInitialize = true)]
     public class HistoryWidgetViewComponent : AbpViewComponent
     {  
-        private readonly IAuditLogRepository _auditLogRepository;
-        private readonly IdentityUserAppService _identityUserAppService;
         private readonly IApplicationStatusRepository _applicationStatusRepository;
+        private readonly IHistoryAppService _historyAppService;
 
-        public HistoryWidgetViewComponent(IAuditLogRepository auditLogRepository,
-                                          IdentityUserAppService identityUserAppService,
-                                          IApplicationStatusRepository applicationStatusRepository)
+        public HistoryWidgetViewComponent(IApplicationStatusRepository applicationStatusRepository,
+                                          IHistoryAppService historyAppService)
         {
-            _identityUserAppService = identityUserAppService;
+
             _applicationStatusRepository = applicationStatusRepository;
-            _auditLogRepository = auditLogRepository;
+            _historyAppService = historyAppService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
@@ -41,60 +35,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
 
             HistoryWidgetViewModel model = new()
             {       
-                ApplicationStatusHistoryList = await GetHistoryList(entityId, "ApplicationStatusId", applicationStatusDict),
+                ApplicationStatusHistoryList = await _historyAppService.GetHistoryList(entityId, "ApplicationStatusId", applicationStatusDict),
             };                 
 
             return View(model);
-        }
-
-        public async Task<List<HistoryDto>> GetHistoryList(string? entityId, 
-                                                           string filterPropertyName, 
-                                                           Dictionary<string, string>? lookupDictionary) {
-
-            List<HistoryDto> historyList = new List<HistoryDto>();
-            string? sorting = null;
-            int maxResultCount = 50;
-            int skipCount = 0;
-            DateTime? startTime = null;
-            DateTime? endTime = null;
-            bool includeDetails = true;
-            Guid? auditLogId = null;
-            EntityChangeType? changeType = null;
-            string? entityTypeFullName = null;
-            CancellationToken cancellationToken = default;
-
-            var entityChanges = await _auditLogRepository.GetEntityChangeListAsync(
-                sorting,
-                maxResultCount,
-                skipCount,
-                auditLogId,
-                startTime, endTime,
-                changeType,
-                entityId,
-                entityTypeFullName,
-                includeDetails,
-                cancellationToken);
-
-            foreach (var entityChange in entityChanges)
-            {
-                foreach (var propertyChange in entityChange.PropertyChanges)
-                {
-                    if (propertyChange.PropertyName == filterPropertyName)
-                    {
-                        string origninalValue = propertyChange.OriginalValue != null ? propertyChange.OriginalValue.Replace("\"", "") : "";
-                        string newValue = propertyChange.NewValue != null ? propertyChange.NewValue.Replace("\"", "") : "";
-                        HistoryDto historyDto = new HistoryDto()
-                        {
-                            OriginalValue = lookupDictionary != null ? lookupDictionary[origninalValue] : origninalValue,
-                            NewValue = lookupDictionary != null ? lookupDictionary[newValue] : newValue,
-                            ChangeTime = entityChange.ChangeTime,
-                            UserName = await LookupUserName(entityChange.AuditLogId)
-                        };
-                        historyList.Add(historyDto);
-                    }
-                }
-            }
-            return historyList;
         }
 
         public async Task<Dictionary<string, string>> GetApplicationStatusDict() {
@@ -105,22 +49,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
                 applicationStatusDict.Add(applicationStatus.Id.ToString(), applicationStatus.InternalStatus);
             }
             return applicationStatusDict;
-        }
-
-        public async Task<string> LookupUserName(Guid auditLogId)
-        {
-            string userName = "";
-            AuditLog auditLog = await _auditLogRepository.GetAsync(auditLogId);
-            if (auditLog != null && auditLog.UserId != null && auditLog.UserId != Guid.Empty)
-            {       
-                string? userIdStr = auditLog.UserId.ToString();
-                if(Guid.TryParse(userIdStr, out Guid userId)) {
-                    var user = await _identityUserAppService.GetAsync(userId);
-                    userName = $"{user.Name} {user.Surname}";
-                }
-            }
-            
-            return userName;
         }
     }
 
