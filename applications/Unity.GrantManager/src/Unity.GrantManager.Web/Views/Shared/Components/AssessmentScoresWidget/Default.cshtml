@@ -1,6 +1,7 @@
 ﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
+@using Unity.Flex.Web.Views.Shared.Components.QuestionSelectListWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
@@ -65,6 +66,11 @@
                                                                             case QuestionType.Text:
                                                                                 {
                                                                                     @await Component.InvokeAsync(typeof(QuestionTextWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, MinLength = question.Definition?.ConvertDefinition(question.Type)?.GetMinLengthValueOrNull(), MaxLength = question.Definition?.ConvertDefinition(question.Type)?.GetMaxLengthValueOrNull() })
+                                                                                    break;
+                                                                                }
+                                                                            case QuestionType.SelectList:
+                                                                                {
+                                                                                    @await Component.InvokeAsync(typeof(QuestionSelectListWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, Definition = question.Definition })
                                                                                     break;
                                                                                 }
                                                                         }
