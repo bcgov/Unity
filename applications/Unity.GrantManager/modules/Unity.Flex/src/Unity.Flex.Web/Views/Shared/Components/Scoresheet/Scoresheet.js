@@ -64,8 +64,8 @@ $(function () {
         });
     }
        
-
-    function updatePreviewAccordion(sortedItems) {
+    
+    function updatePreviewAccordion(sortedItems) { // NOSONAR
         const previewDiv = document.getElementById('preview');
 
         if (sortedItems.length === 0) {
@@ -145,6 +145,29 @@ $(function () {
                         <button type="button" class="btn btn-primary" disabled id="save-number-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">SAVE CHANGES</button>
                         <button type="button" class="btn btn-secondary" id="discard-number-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">DISCARD CHANGES</button>
                     </div>`;
+                } else if (item.dataset.questiontype === "SelectList") {
+                    const options = JSON.parse(item.dataset.definition).options || [];
+                    const optionsHTML = options.map(option => {
+                        const truncatedKey = option.key.length > 70 ? option.key.substring(0, 70) + " ..." : option.key;
+                        return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.key}">${truncatedKey}</option>`;
+                    }).join('');
+
+                    questionBody = `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label for="answer-selectlist-${item.dataset.id}" class="form-label">Answer</label>
+                        <select id="answer-selectlist-${item.dataset.id}"
+                                class="form-control answer-selectlist-input"
+                                name="Answer-SelectList[${item.dataset.id}]"
+                                data-original-value=""
+                                onchange="handleInputChange('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">
+                            ${optionsHTML}
+                        </select>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" disabled id="save-selectlist-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-selectlist-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">DISCARD CHANGES</button>
+                    </div>`;
                 }
 
                 accordionHTML += `
@@ -177,6 +200,8 @@ $(function () {
                 <input type="number" size="18" value="0" class="form-control" disabled="disabled" name="ScoresheetSubtotal" id="scoresheetSubtotal" min="0" max="2147483647" />
             </div>
         `;
+
+        updateSubtotal();
     }
 
 

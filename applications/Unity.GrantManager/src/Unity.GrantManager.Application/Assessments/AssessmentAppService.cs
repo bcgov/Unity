@@ -163,7 +163,7 @@ namespace Unity.GrantManager.Assessments
             return yesNoSubtotal;
         }
 
-        private async Task<double> GetNumericAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid>? questionIds)
+        private async Task<double> GetNumericAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
         {            
             var existingNumericQuestionIds = await _scoresheetAppService.GetNonDeletedNumericQuestionIds(questionIds);
             double numericSubtotal = instance.Answers.Where(a => existingNumericQuestionIds.Contains(a.QuestionId))
