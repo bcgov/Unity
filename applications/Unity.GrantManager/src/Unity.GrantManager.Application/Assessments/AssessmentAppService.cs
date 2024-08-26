@@ -103,6 +103,7 @@ namespace Unity.GrantManager.Assessments
 
                 if (instance == null)
                 {
+                    // Assessment uses default scoresheet
                     return (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
                 }
                 else
