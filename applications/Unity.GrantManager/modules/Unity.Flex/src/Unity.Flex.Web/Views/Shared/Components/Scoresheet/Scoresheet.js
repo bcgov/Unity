@@ -65,7 +65,7 @@ $(function () {
     }
        
     
-    function updatePreviewAccordion(sortedItems) { // NOSONAR
+    function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
 
         if (sortedItems.length === 0) {
