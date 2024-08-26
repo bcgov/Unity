@@ -12,7 +12,7 @@
             data-original-value="@Model.Answer"
             disabled="@Model.IsDisabled"
             onchange="handleInputChange('@Model.QuestionId','answer-selectlist-','save-selectlist-','discard-selectlist-')">
-        
+        <option data-numeric-value="0" value="">Please choose...</option>
         @foreach (var item in ((QuestionSelectListDefinition?)Model.Definition?.ConvertDefinition(Unity.Flex.Scoresheets.QuestionType.SelectList))?.Options ?? [])
         {
             var truncatedKey = item.Key.Length > 70 ? item.Key.Substring(0, 70) + " ..." : item.Key;

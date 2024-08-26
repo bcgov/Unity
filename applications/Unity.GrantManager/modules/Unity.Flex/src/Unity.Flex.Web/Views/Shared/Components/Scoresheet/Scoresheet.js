@@ -147,7 +147,8 @@ $(function () {
                     </div>`;
                 } else if (item.dataset.questiontype === "SelectList") {
                     const options = JSON.parse(item.dataset.definition).options || [];
-                    const optionsHTML = options.map(option => {
+                    let optionsHTML = `<option data-numeric-value="0" value="">Please choose...</option>`;
+                    optionsHTML += options.map(option => {
                         const truncatedKey = option.key.length > 70 ? option.key.substring(0, 70) + " ..." : option.key;
                         return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.key}">${truncatedKey}</option>`;
                     }).join('');
