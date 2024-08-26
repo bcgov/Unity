@@ -1,5 +1,8 @@
 (function () {   
-    $('.custom-currency-input').maskMoney();
+    $('.custom-currency-input').maskMoney({
+        thousands: ',',
+        decimal: '.'
+    }).maskMoney('mask');
 })();
 
 

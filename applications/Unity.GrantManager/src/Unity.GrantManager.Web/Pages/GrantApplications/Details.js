@@ -314,7 +314,10 @@ $(function () {
     );
 
     function initCustomFieldCurrencies() {
-        $('.custom-currency-input').maskMoney();
+        $('.custom-currency-input').maskMoney({
+            thousands: ',',
+            decimal: '.'
+        }).maskMoney('mask');
     }
     
     PubSub.subscribe('application_assessment_results_saved',
