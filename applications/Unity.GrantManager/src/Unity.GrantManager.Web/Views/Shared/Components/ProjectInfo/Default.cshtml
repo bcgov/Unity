@@ -68,7 +68,7 @@
                     </div>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled />
+                    <abp-input class="percentage-mask" asp-for="@Model.ProjectInfo.PercentageTotalProjectBudget" onchange="calculatePercentage();enableProjectInfoSaveBtn(this);" disabled />
                 </abp-column>
 
 
@@ -138,7 +138,7 @@
 
             <abp-row class="m-0 p-0">
                 <abp-column size="_4" class="px-1">
-                    <abp-input class="remove-leading-zeros" type="number" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" step="1" asp-for="@Model.ProjectInfo.CommunityPopulation" onchange="enableProjectInfoSaveBtn(this)" />
+                    <abp-input class="numeric-mask" type="text" asp-for="@Model.ProjectInfo.CommunityPopulation" onchange="enableProjectInfoSaveBtn(this)" />
                 </abp-column>
                 <abp-column size="_4" class="px-1">
                     <abp-select asp-for="@Model.ProjectInfo.ElectoralDistrict" asp-items="@Model.ElectoralDistrictList"
