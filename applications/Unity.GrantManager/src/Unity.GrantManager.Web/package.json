@@ -18,6 +18,7 @@
     "echarts": "5.5.0",
     "formiojs": "^4.15.1",
     "html2canvas": "^1.4.1",
+    "inputmask": "^5.0.9",
     "jquery-maskmoney": "^3.0.2",
     "jspdf": "^2.5.1",
     "popper.js": "^1.16.1",
