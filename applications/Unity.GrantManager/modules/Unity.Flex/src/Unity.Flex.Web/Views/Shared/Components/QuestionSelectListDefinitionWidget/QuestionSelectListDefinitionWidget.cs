@@ -8,9 +8,6 @@ using Microsoft.AspNetCore.Http;
 using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
 using System.Linq;
-using Volo.Abp;
-using System.Security.Cryptography;
-using System.Text;
 using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWidget
@@ -27,16 +24,14 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWid
         {
             var questionDefinition = new QuestionSelectListDefinition();
             var options = new List<QuestionSelectListOption>();
-            var seenKeys = new HashSet<string>();  // To ensure unique keys
+            var seenKeys = new HashSet<string>();
 
-            // Iterate through form keys to extract option data
             foreach (var key in form.Keys)
             {
                 if (key.StartsWith("Options[") && key.EndsWith("].Text"))
                 {
-                    var index = key.Split('[')[1].Split(']')[0];  // Extract index from key
+                    var index = key.Split('[')[1].Split(']')[0];
 
-                    // Get the value of the option text field, providing a default empty string if null
                     var optionKey = form[key].ToString() ?? string.Empty;
                     var scoreKey = $"Options[{index}].Score";
                     var optionScore = form[scoreKey].ToString() ?? string.Empty;
