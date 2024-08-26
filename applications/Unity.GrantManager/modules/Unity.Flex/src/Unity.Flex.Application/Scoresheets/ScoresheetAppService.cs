@@ -191,9 +191,15 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<List<QuestionDto>> GetNonDeletedYesNoQuestions(List<Guid> questionIdsToCheck)
         {
-            var existingQuestions = await _questionRepository.GetListAsync();
-            var result = existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.YesNo).ToList();
+            var result = await GetNonDeletedQuestions(questionIdsToCheck, QuestionType.YesNo);
             return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
+        }
+
+        public async Task<List<Question>> GetNonDeletedQuestions(List<Guid> questionIdsToCheck, QuestionType type)
+        {
+            var existingQuestions = await _questionRepository.GetListAsync();
+            var result = existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == type).ToList();
+            return result;
         }
 
         public async Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId)
@@ -233,5 +239,10 @@ namespace Unity.Flex.Scoresheets
         [GeneratedRegex(@"\s+")]
         private static partial Regex NameRegex();
 
+        public async Task<List<QuestionDto>> GetNonDeletedSelectListQuestions(List<Guid> questionIdsToCheck)
+        {
+            var result = await GetNonDeletedQuestions(questionIdsToCheck, QuestionType.SelectList);
+            return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
+        }
     }
 }
