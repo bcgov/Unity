@@ -108,7 +108,18 @@ $(function () {
 
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
-
+    function checkOnlySubmittedtoCAS() {
+        let selectedRows = dataTable.rows('.selected').data();
+        let allHaveValue = true;
+        selectedRows.each(function (row) {
+            if (row.status !== 'Submitted') {
+                allHaveValue = false;
+                return false; 
+            }
+        });
+        return allHaveValue;
+      
+    }
     dataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach(index => {
@@ -151,8 +162,8 @@ $(function () {
     }
 
     function checkActionButtons() {
-
-        if (dataTable.rows({ selected: true }).indexes().length > 0) {
+        let isOnlySubmittedToCas = checkOnlySubmittedtoCAS();
+        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isOnlySubmittedToCas) {
             if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
                 payment_approve_buttons.enable();
 
