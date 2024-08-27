@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
 using Volo.Abp.Auditing;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.Domain.ChangeTracking;
@@ -14,14 +13,12 @@ namespace Unity.GrantManager.History
     {
         private readonly IAuditLogRepository _auditLogRepository;
         private readonly IdentityUserAppService _identityUserAppService;
-        private readonly IApplicationStatusRepository _applicationStatusRepository;
+
 
         public HistoryAppService(IAuditLogRepository auditLogRepository,
-                                          IdentityUserAppService identityUserAppService,
-                                          IApplicationStatusRepository applicationStatusRepository)
+                                 IdentityUserAppService identityUserAppService)
         {
             _identityUserAppService = identityUserAppService;
-            _applicationStatusRepository = applicationStatusRepository;
             _auditLogRepository = auditLogRepository;
         }
 

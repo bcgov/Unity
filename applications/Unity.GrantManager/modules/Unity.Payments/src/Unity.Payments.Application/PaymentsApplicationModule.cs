@@ -19,7 +19,6 @@ using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
-using Volo.Abp.Auditing;
 
 namespace Unity.Payments;
 
