@@ -1,9 +1,11 @@
-﻿namespace Unity.Flex.Worksheets.Definitions
+﻿using System.Text.Json;
+
+namespace Unity.Flex.Worksheets.Definitions
 {
     public class CustomFieldDefinition
     {
         public CustomFieldDefinition() : base()
-        {            
+        {
         }
     }
 }
