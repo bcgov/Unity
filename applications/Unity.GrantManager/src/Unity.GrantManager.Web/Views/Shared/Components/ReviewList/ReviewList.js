@@ -26,7 +26,8 @@ $(function () {
 
     let responseCallback = function (result) {
         return {
-            data: result
+            data: result.data,
+            isUsingDefaultScoresheet: result.isApplicationUsingDefaultScoresheet
         };
     };
 
@@ -69,7 +70,9 @@ $(function () {
         buttons: Array(renderUnityWorkflowButton('Create'))
     };
 
-    let reviewListTable = $('#ReviewListTable').DataTable(
+    const reviewListDiv = "ReviewListTable";
+
+    let reviewListTable = $('#' + reviewListDiv).DataTable(
         abp.libs.datatables.normalizeConfiguration({
             dom: 'Bfrtip',
             serverSide: false,
@@ -164,6 +167,20 @@ $(function () {
             ],
         })
     );
+
+    $('#' + reviewListDiv).on('xhr.dt', function (e, settings, json, xhr) {
+        if (!json.isUsingDefaultScoresheet) {
+            reviewListTable.column(7).visible(false);  // 'FinancialAnalysis' column
+            reviewListTable.column(8).visible(false);  // 'EconomicImpact' column
+            reviewListTable.column(9).visible(false);  // 'InclusiveGrowth' column
+            reviewListTable.column(10).visible(false); // 'CleanGrowth' column
+        } else {
+            reviewListTable.column(7).visible(true);
+            reviewListTable.column(8).visible(true);
+            reviewListTable.column(9).visible(true);
+            reviewListTable.column(10).visible(true);
+        }
+    });
 
     if (abp.auth.isGranted('GrantApplicationManagement.Assessments.Create')) {
         CreateAssessmentButton();
