@@ -110,7 +110,7 @@ $(function () {
     dataTable.on('search.dt', () => handleSearch());
 
     function checkAllRowsHaveState(state) {
-        return dataTable.rows('.selected').data().every(row => row.status === state);     
+        return dataTable.rows('.selected').data().toArray().every(row => row.status === state);     
     }
 
     dataTable.on('select', function (e, dt, type, indexes) {
