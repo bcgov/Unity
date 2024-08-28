@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Http;
 using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
 using Microsoft.Extensions.Primitives;
+using System.Linq;
+using Volo.Abp;
 
 namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 {
@@ -44,6 +46,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 
         private static void ValidateInput(StringValues keys, StringValues labels)
         {
+            if (keys.Count == 0 || labels.Count == 0)
+            {
+                throw new UserFriendlyException("Checkbox keys not provided");
+            } 
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)

@@ -7,5 +7,7 @@ namespace Unity.Flex.Worksheets.Definitions
     {
         [JsonPropertyName("options")]
         public List<CheckboxGroupDefinitionOption> Options { get; set; } = [];
+
+        public string Tester { get; set; }
     }
 }
