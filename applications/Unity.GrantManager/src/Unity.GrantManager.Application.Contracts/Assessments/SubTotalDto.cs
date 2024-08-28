@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
+﻿
 namespace Unity.GrantManager.Assessments;
 public class SubTotalDto
 {
