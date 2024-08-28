@@ -46,6 +46,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 
         private static void ValidateInput(StringValues keys, StringValues labels)
         {
+            if (keys.Count == 0 || labels.Count == 0)
+            {
+                throw new UserFriendlyException("Checkbox keys not provided");
+            } 
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
