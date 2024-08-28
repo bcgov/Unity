@@ -58,12 +58,12 @@ namespace Unity.GrantManager.History
                 {
                     if (propertyChange.PropertyName == filterPropertyName)
                     {
-                        string origninalValue = propertyChange.OriginalValue != null ? propertyChange.OriginalValue.Replace("\"", "") : "";
-                        string newValue = propertyChange.NewValue != null ? propertyChange.NewValue.Replace("\"", "") : "";
+                        string origninalValue = CleanValue(propertyChange.OriginalValue);
+                        string newValue = CleanValue(propertyChange.NewValue);
                         HistoryDto historyDto = new HistoryDto()
                         {
-                            OriginalValue = lookupDictionary != null ? lookupDictionary[origninalValue] : origninalValue,
-                            NewValue = lookupDictionary != null ? lookupDictionary[newValue] : newValue,
+                            OriginalValue = GetLookupValue(origninalValue, lookupDictionary),
+                            NewValue = GetLookupValue(newValue, lookupDictionary),
                             ChangeTime = entityChange.ChangeTime,
                             UserName = await LookupUserName(entityChange.AuditLogId)
                         };
@@ -72,22 +72,32 @@ namespace Unity.GrantManager.History
                 }
             }
             return historyList;
-        }     
+        }
+
+        private static string CleanValue(string? value)
+        {
+            return value?.Replace("\"", "") ?? "";
+        }
+
+        private static string GetLookupValue(string value, Dictionary<string, string>? lookupDictionary)
+        {
+            return lookupDictionary != null && lookupDictionary.TryGetValue(value, out var lookupValue)
+                ? lookupValue
+                : value;
+        }
 
         public async Task<string> LookupUserName(Guid auditLogId)
         {
-            string userName = "";
-            AuditLog auditLog = await _auditLogRepository.GetAsync(auditLogId);
-            if (auditLog != null && auditLog.UserId != null && auditLog.UserId != Guid.Empty)
-            {       
-                string? userIdStr = auditLog.UserId.ToString();
-                if(Guid.TryParse(userIdStr, out Guid userId)) {
-                    var user = await _identityUserAppService.GetAsync(userId);
-                    userName = $"{user.Name} {user.Surname}";
-                }
+            var auditLog = await _auditLogRepository.GetAsync(auditLogId);
+            if (auditLog?.UserId == null || auditLog.UserId == Guid.Empty)
+            {
+                return string.Empty;
             }
-            
-            return userName;
-        }   
+
+            var userId = auditLog.UserId.Value;
+            var user = await _identityUserAppService.GetAsync(userId);
+
+            return user != null ? $"{user.Name} {user.Surname}" : string.Empty;
+        }
     }
 }
