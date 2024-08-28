@@ -15,8 +15,8 @@
         <option data-numeric-value="0" value="">Please choose...</option>
         @foreach (var item in ((QuestionSelectListDefinition?)Model.Definition?.ConvertDefinition(Unity.Flex.Scoresheets.QuestionType.SelectList))?.Options ?? [])
         {
-            var truncatedKey = item.Key.Length > 70 ? item.Key.Substring(0, 70) + " ..." : item.Key;
-            <!option @(Model.Answer == @item.Value ? "selected" : "") data-numeric-value="@item.NumericValue" value="@item.Value" title="@item.Key">@truncatedKey</!option>
+            var truncatedValue = item.Value.Length > 70 ? item.Value.Substring(0, 70) + " ..." : item.Value;
+            <!option @(Model.Answer == @item.Value ? "selected" : "") data-numeric-value="@item.NumericValue" value="@item.Value" title="@item.Value">@truncatedValue</!option>
         }
     </select>
 </div>

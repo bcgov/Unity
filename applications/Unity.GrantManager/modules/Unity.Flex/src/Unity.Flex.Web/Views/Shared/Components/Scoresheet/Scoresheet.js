@@ -149,8 +149,8 @@ $(function () {
                     const options = JSON.parse(item.dataset.definition).options || [];
                     let optionsHTML = `<option data-numeric-value="0" value="">Please choose...</option>`;
                     optionsHTML += options.map(option => {
-                        const truncatedKey = option.key.length > 100 ? option.key.substring(0, 100) + " ..." : option.key;
-                        return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.key}">${truncatedKey}</option>`;
+                        const truncatedValue = option.value.length > 100 ? option.value.substring(0, 100) + " ..." : option.value;
+                        return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.value}">${truncatedValue}</option>`;
                     }).join('');
 
                     questionBody = `

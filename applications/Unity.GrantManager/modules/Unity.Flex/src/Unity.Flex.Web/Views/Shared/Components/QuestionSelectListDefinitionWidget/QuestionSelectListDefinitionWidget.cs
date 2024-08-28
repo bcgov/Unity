@@ -25,7 +25,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWid
             var questionDefinition = new QuestionSelectListDefinition();
             var options = new List<QuestionSelectListOption>();
             var seenKeys = new HashSet<string>();
-
+            var counter = 1;
             foreach (var key in form.Keys)
             {
                 if (key.StartsWith("Options[") && key.EndsWith("].Text"))
@@ -43,7 +43,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWid
 
                         var questionOption = new QuestionSelectListOption
                         {
-                            Key = optionKey,
+                            Key = "key" + counter++,
                             NumericValue = long.TryParse(optionScore, out var score) ? score : 0,
                             Value = optionKey
                         };
@@ -66,7 +66,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWid
                 {
                     return View(await Task.FromResult(new QuestionSelectListDefinitionViewModel()
                     {
-                        Options = selectDefinition.Options.Select(option => new QuestionSelectListOptionDto { Text = option.Key, Score = option.NumericValue }).ToList()
+                        Options = selectDefinition.Options.Select(option => new QuestionSelectListOptionDto { Text = option.Value, Score = option.NumericValue }).ToList()
                     }));
                 }
             }
