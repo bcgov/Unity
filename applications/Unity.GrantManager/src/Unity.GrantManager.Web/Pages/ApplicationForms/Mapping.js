@@ -294,7 +294,7 @@
                 $('#originalScoresheetId').val(scoresheetId);
                 Swal.fire({
                     title: "Note",
-                    text: "Please note that any changes made to the scoring sheet template will not impact assessments that have already been scored using the previous scoresheet template.",
+                    text: "Please note that any changes made to the scoresheet template will not impact assessments that have already been scored using the previous scoresheet template.",
                     confirmButtonText: 'Ok',
                     customClass: {
                         confirmButton: 'btn btn-primary'
