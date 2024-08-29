@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ApplicantPortal</title>
     <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+
+    @* <link rel="stylesheet" href="~/lib/datatables/css/dataTables.bootstrap.min.css" /> *@
+    @* <link rel="stylesheet" href="~/lib/datatables.net-bs5/dataTables.bootstrap5.css" /> *@
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.4/css/dataTables.bootstrap5.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
@@ -12,13 +16,16 @@
         <nav class="navbar navbar-expand">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="~/img/BCID_UnityGrantManagement_RGB_pos.svg" alt="Applicant Portal" />
+                    <img src="~/img/BCID_H_rgb_pos.svg" alt="Applicant Portal" />
                 </a>
                 <ul class="navbar-nav flex-grow-1">
                     <li class="nav-item active">
-                        <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">My Portal</a>
+                        <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Enterprise Grant Management System Portal</a>
                     </li>
-                </ul>                
+                </ul>
+                <div class="text-end">
+                    <button type="button" class="btn btn-primary text-uppercase">Logout</button>
+                </div>
             </div>
         </nav>
     </header>
@@ -26,21 +33,18 @@
         <span>@User.Identity?.Name</span>
     </div>
     <main role="main">
-        <div class="row page-container">
-            <aside class="col-xxl-1 col-2">
-                <ul class="nav">
-                    <li class="nav-item active">
-                        <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Info</a>
-                    </li>
-                </ul>
-            </aside>
-            <div class="col-xxl-11 col-10 page">
-                @RenderBody()
+        <div class="container-flex">
+            <div class="row px-4 page">
+                    @RenderBody()
             </div>
         </div>
     </main>
     <script src="~/lib/jquery/jquery.min.js"></script>
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script defer src="https://cdn.datatables.net/2.1.4/js/dataTables.min.js"></script>
+    <script defer src="https://cdn.datatables.net/2.1.4/js/dataTables.bootstrap5.min.js"></script>
+    @* <script src="~/lib/datatables/js/jquery.dataTables.min.js"></script> *@
+    @*<script src="~/lib/datatables.net-bs5/dataTables.bootstrap5.js"></script>*@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
