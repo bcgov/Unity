@@ -1,9 +1,9 @@
-﻿.custom-checkbox {
+﻿.custom-fields-checkbox-wrapper {
     display: flex;
     gap: 8px;
 }
 
-    .custom-checkbox input {
+    .custom-fields-checkbox-wrapper input {
         cursor: pointer;
         transform: scale(1.3);
     }
