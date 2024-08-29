@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace Unity.Flex.Worksheets.Definitions
+﻿namespace Unity.Flex.Worksheets.Definitions
 {
     public class CustomFieldDefinition
     {
