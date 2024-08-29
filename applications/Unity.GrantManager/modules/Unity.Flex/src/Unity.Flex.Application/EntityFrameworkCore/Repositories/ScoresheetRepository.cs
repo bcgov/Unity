@@ -20,6 +20,15 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .FirstAsync(s => s.Id == id);
         }
 
+        public async Task<Scoresheet?> GetByNameAsync(string name, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .FirstOrDefaultAsync(s => s.Name == name);
+        }
+
         public async Task<List<Scoresheet>> GetListWithChildrenAsync()
         {
             var dbContext = await GetDbContextAsync();

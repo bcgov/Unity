@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
 using Volo.Abp;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
@@ -47,6 +46,12 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
+            var existingScoresheet = await _scoresheetRepository.GetByNameAsync(dto.Name, false);
+
+            if (existingScoresheet != null)
+            {
+                throw new UserFriendlyException("Scoresheet names must be unique");
+            }
             var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Title, dto.Name));
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
@@ -57,10 +62,15 @@ namespace Unity.Flex.Scoresheets
 
             lock (_questionLockObject)
             {
+                var questionName = dto.Name.Trim();
+                if(_sectionRepository.HasQuestionWithNameAsync(scoresheetId, questionName).Result)
+                {
+                    throw new UserFriendlyException("Question names should be unique");
+                }
                 ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
                 Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
                 var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
-                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition)).Result;
+                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), questionName, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition)).Result;
                 return ObjectMapper.Map<Question, QuestionDto>(result);
             }
         }
@@ -71,9 +81,14 @@ namespace Unity.Flex.Scoresheets
 
             lock (_sectionLockObject)
             {
+                var sectionName = dto.Name.Trim();
+                if(_sectionRepository.HasSectionWithNameAsync(scoresheetId, sectionName).Result)
+                {
+                    throw new UserFriendlyException("Section names must be unique");
+                }
                 ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result;
                 var order = highestOrderSection == null ? 0 : highestOrderSection.Order + 1;
-                var result = _sectionRepository.InsertAsync(new ScoresheetSection(Guid.NewGuid(), dto.Name, order, scoresheetId)).Result;
+                var result = _sectionRepository.InsertAsync(new ScoresheetSection(Guid.NewGuid(), sectionName, order, scoresheetId)).Result;
                 return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(result);
             }
         }

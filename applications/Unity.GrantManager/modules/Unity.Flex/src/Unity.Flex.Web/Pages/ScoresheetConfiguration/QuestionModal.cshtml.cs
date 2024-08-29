@@ -107,7 +107,7 @@ public class QuestionModalModel : FlexPageModel
     private async Task EditQuestion()
     {
         await _scoresheetAppService.ValidateChangeableScoresheet(Question.ScoresheetId);
-        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType), Definition = ExtractDefinition() });
+        _ = await _questionAppService.UpdateAsync(Question.Id, new EditQuestionDto() { Name = Question.Name, Label = Question.Label, Description = Question.Description, QuestionType = uint.Parse(Question.QuestionType), Definition = ExtractDefinition(), ScoresheetId = Question.ScoresheetId });
     }
     
     private async Task DeleteQuestion()

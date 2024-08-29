@@ -2,6 +2,8 @@
 using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
+using Volo.Abp;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Scoresheets
@@ -22,9 +24,18 @@ namespace Unity.Flex.Scoresheets
         }
 
         public async Task<ScoresheetSectionDto> UpdateAsync(Guid id, EditSectionDto dto)
-        {
+        {            
             var section = await _sectionRepository.GetAsync(id) ?? throw new AbpValidationException("Missing SectionId:" + id);
-            section.Name = dto.Name;
+            var newName = dto.Name.Trim();
+            if(section.Name == newName)
+            {
+                return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(section);
+            }
+            if (await _sectionRepository.HasSectionWithNameAsync(section.ScoresheetId, newName))
+            {
+                throw new UserFriendlyException("Section names must be unique");
+            }
+            section.Name = newName;
             return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(await _sectionRepository.UpdateAsync(section));
         }
 

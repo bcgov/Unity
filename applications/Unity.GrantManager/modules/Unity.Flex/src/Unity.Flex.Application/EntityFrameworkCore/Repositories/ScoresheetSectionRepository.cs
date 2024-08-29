@@ -27,5 +27,24 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 
         }
 
+        public async Task<bool> HasSectionWithNameAsync(Guid scoresheetId, string sectionName)
+        {
+            var dbContext = await GetDbContextAsync();
+
+            var sections = await dbContext.ScoresheetSections
+                .Where(sec => sec.ScoresheetId == scoresheetId)
+                .ToListAsync();
+
+            return sections.Exists(s => s.Name == sectionName);
+        }
+
+        public async Task<bool> HasQuestionWithNameAsync(Guid scoresheetId, string questionName)
+        {
+            var dbContext = await GetDbContextAsync();
+
+            return await dbContext.ScoresheetSections
+                .Where(sec => sec.ScoresheetId == scoresheetId)
+                .AnyAsync(sec => sec.Fields.Any(q => q.Name == questionName));
+        }
     }
 }

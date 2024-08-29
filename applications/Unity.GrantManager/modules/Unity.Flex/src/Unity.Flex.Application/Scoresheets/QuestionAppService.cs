@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Worksheets.Definitions;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Validation;
 
@@ -12,10 +13,12 @@ namespace Unity.Flex.Scoresheets
     public class QuestionAppService : FlexAppService, IQuestionAppService
     {
         private readonly IQuestionRepository _questionRepository;
+        private readonly IScoresheetSectionRepository _scoresheetSectionRepository;
 
-        public QuestionAppService(IQuestionRepository questionRepository)
+        public QuestionAppService(IQuestionRepository questionRepository, IScoresheetSectionRepository scoresheetSectionRepository)
         {
             _questionRepository = questionRepository;
+            _scoresheetSectionRepository = scoresheetSectionRepository;
         }
 
         public virtual async Task<QuestionDto> GetAsync(Guid id)
@@ -28,8 +31,13 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<QuestionDto> UpdateAsync(Guid id, EditQuestionDto dto)
         {
+            var questionName = dto.Name.Trim();
             var question = await _questionRepository.GetAsync(id) ?? throw new AbpValidationException("Missing QuestionId:" + id);
-            question.Name = dto.Name;
+            if (question.Name != questionName && await _scoresheetSectionRepository.HasQuestionWithNameAsync(dto.ScoresheetId, questionName))
+            {
+                throw new UserFriendlyException("Question names should be unique");
+            }
+            question.Name = questionName;
             question.Label = dto.Label;
             question.Description = dto.Description;
             question.Type = (QuestionType)dto.QuestionType;
