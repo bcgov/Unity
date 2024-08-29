@@ -17,8 +17,9 @@ namespace Unity.Payments.Integrations.Http
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private static int _maxRetryAttempts = 3;
+        private static int OneMinuteInSeconds = 60; // CAS API takes 20 seconds
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
-        private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(20);
+        private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(OneMinuteInSeconds);
 
         public ResilientHttpRequest(IHttpClientFactory httpClientFactory)
         {

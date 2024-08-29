@@ -54,10 +54,11 @@ public class PaymentsApplicationModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
 
-        Configure<CasPaymentRequestBackgroundJobsOptions>(options =>
+        Configure<PaymentRequestBackgroundJobsOptions>(options =>
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
             options.PaymentRequestOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasPaymentsReconciliation:ProducerExpression") ?? "";
+            options.FinancialNotificationSummaryOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasFinancialNotificationSummary:ProducerExpression") ?? "";            
         });
 
         context.Services.AddSingleton<IAsyncConnectionFactory>(provider =>
