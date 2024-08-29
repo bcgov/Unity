@@ -4,15 +4,11 @@
 
 @model HomeViewModel
 
-<div>
-    <h1 class="display-4">Applicant</h1>
+<div class="col-md-6">
+    <h1 class="display-4">Info</h1>
     <form method="post" asp-action="Index">
         <input type="hidden" asp-for="Applicant.ApplicantId" />
         <div class="form-container">
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success py-1">@TempData["SuccessMessage"]</div>
-            }
             <div class="row mb-3">
                 <div class="col-lg-4">
                     <div class="form-group">
@@ -132,4 +128,7 @@
             </div>
         </div>
     </form>
+</div>
+<div class="col-md-6">
+    @await Component.InvokeAsync("ApplicantSubmissions")
 </div>

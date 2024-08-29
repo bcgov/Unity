@@ -1,0 +1,44 @@
+@model IEnumerable<ApplicantSubmissionsViewModel>
+
+<h1 class="display-4">Submissions</h1>
+
+<div class="form-container">
+    @if (ViewBag.BasketInoperativeMsg != null)
+    {
+        <br />
+        <div class="alert alert-warning" role="alert">
+            &nbsp;@ViewBag.BasketInoperativeMsg
+        </div>
+    } else
+    {
+        <table class="table" id="SubmissionsTable">
+            <thead>
+                <tr>
+                    <th scope="col">@Html.DisplayNameFor(model => model.SubmissionDate)</th>
+                    <th scope="col">@Html.DisplayNameFor(model => model.ReferenceNo)</th>
+                    <th scope="col">@Html.DisplayNameFor(model => model.Status)</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <th scope="row">@item.SubmissionDate.ToString("yyyy-MM-dd")</th>
+                        <td>@Html.DisplayFor(model => item.ReferenceNo)</td>
+                        <td>@Html.DisplayFor(model => item.Status)</td>
+                        <td></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section ViewComponentScripts {
+    <script>
+        $(document).ready(function () {
+            $('#SubmissionsTable').DataTable();
+        });
+    </script>
+}
