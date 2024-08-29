@@ -13,5 +13,6 @@
         public const string FullyPaid = "Fully Paid"; // CAS Ran and was fully paid
         public const string Paid = "Paid";
         public const string Voided = "Voided";
+        public const string ServiceUnavailable = "ServiceUnavailable";
     }
 }

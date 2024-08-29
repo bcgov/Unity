@@ -17,6 +17,7 @@ namespace Unity.GrantManager.Events
         private readonly IFeatureChecker _featureChecker;
 
         private const string GRANT_APPLICATION_UPDATE_SUBJECT = "Grant Application Update";
+        private const string FAILED_PAYMENTS_SUBJECT = "Failed Payment Requests";
 
         public EmailNotificationHandler(
             IEmailNotificationService emailNotificationService,
@@ -35,33 +36,43 @@ namespace Unity.GrantManager.Events
         }
 
 
-        private async Task InitializeAndSendEmailToQueue(string email, string body, Guid applicationId)
+        private async Task InitializeAndSendEmailToQueue(string email, string body, string subject, Guid applicationId)
         {
             EmailLog emailLog = await _emailNotificationService.InitializeEmailLog(
                                                 email,
                                                 body,
-                                                GRANT_APPLICATION_UPDATE_SUBJECT,
+                                                subject,
                                                 applicationId) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
+
             await _emailNotificationService.SendEmailToQueue(emailLog);            
         }
 
         private async Task EmailNotificationEventAsync(EmailNotificationEvent eventData)
         {
-            if (eventData == null || string.IsNullOrEmpty(eventData.EmailAddress)) return;
+            if (eventData == null) return;
 
             string email = eventData.EmailAddress;
             switch (eventData.Action)
             {
+                case EmailAction.SendFailedSummary:
+                    {
+                        foreach(string emailString in eventData.EmailAddressList)
+                        {
+                            await InitializeAndSendEmailToQueue(emailString, eventData.Body, FAILED_PAYMENTS_SUBJECT, eventData.ApplicationId);
+                        }
+  
+                        break;
+                    }
                 case EmailAction.SendApproval:
                     {
                         string body = _emailNotificationService.GetApprovalBody();
-                        await InitializeAndSendEmailToQueue(email, body, eventData.ApplicationId);
+                        await InitializeAndSendEmailToQueue(email, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId);
                         break;
                     }
                 case EmailAction.SendDecline:
                     {
                         string body = _emailNotificationService.GetDeclineBody();
-                        await InitializeAndSendEmailToQueue(email, body, eventData.ApplicationId);
+                        await InitializeAndSendEmailToQueue(email, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId);
                         break;
                     }
                 case EmailAction.Retry:
