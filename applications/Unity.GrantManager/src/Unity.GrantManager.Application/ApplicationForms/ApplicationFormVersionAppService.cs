@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
@@ -317,6 +319,20 @@ namespace Unity.GrantManager.ApplicationForms
             else
             {
                 return await GetVersion(formSubmission.FormVersionId ?? Guid.Empty);
+            }
+        }
+
+        public async Task DeleteWorkSheetMappingByFormName(string Name, Guid formVersionId)
+        {
+            ApplicationFormVersion applicationFormVersion = await _applicationFormVersionRepository.GetAsync(formVersionId);
+            if (applicationFormVersion != null && applicationFormVersion.SubmissionHeaderMapping != null)
+            {
+                string mappingString = applicationFormVersion.SubmissionHeaderMapping;
+                // (,\s*\"custom_additionalinfo-v1.*\")
+                // remove the fields that match the name
+                string pattern = "(,\\s*\\\"" + Name + ".*\")|(\""+Name+".*\\\",)";
+                applicationFormVersion.SubmissionHeaderMapping = Regex.Replace(mappingString, pattern, "");
+                await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
             }
         }
 
