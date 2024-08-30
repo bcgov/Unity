@@ -52,6 +52,8 @@
     <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\QuestionDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\QuestionDefinitionWidget\Default.js" />
+    <None Remove="Views\Shared\Components\QuestionSelectListDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\QuestionSelectListDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\RadioDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\RadioDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\RadioWidget\Default.css" />
@@ -101,6 +103,8 @@
     <EmbeddedResource Include="Views\Shared\Components\NumericDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\QuestionDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\QuestionDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\QuestionSelectListDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\QuestionSelectListDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\RadioDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\RadioDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.css" />
