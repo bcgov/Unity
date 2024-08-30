@@ -118,7 +118,7 @@ $(function () {
                     <div class="mb-3">
                         <label for="answer-yesno-${item.dataset.id}" class="form-label">Answer</label>
                         <select id="answer-yesno-${item.dataset.id}"
-                                class="form-control answer-yesno-input"
+                                class="form-select form-control answer-yesno-input"
                                 name="Answer-YesNo[${item.dataset.id}]"
                                 data-original-value=""
                                 data-yes-numeric-value="${item.dataset.yesvalue}"
@@ -158,7 +158,7 @@ $(function () {
                     <div class="mb-3">
                         <label for="answer-selectlist-${item.dataset.id}" class="form-label">Answer</label>
                         <select id="answer-selectlist-${item.dataset.id}"
-                                class="form-control answer-selectlist-input"
+                                class="form-select form-control answer-selectlist-input"
                                 name="Answer-SelectList[${item.dataset.id}]"
                                 data-original-value=""
                                 onchange="handleInputChange('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">
