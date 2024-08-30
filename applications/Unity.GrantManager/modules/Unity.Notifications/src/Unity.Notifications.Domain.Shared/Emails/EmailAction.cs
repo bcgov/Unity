@@ -7,6 +7,7 @@ public enum EmailAction
 {
     Retry,
     SendByTemplateId,
+    SendFailedSummary,
     SendApproval,
     SendDecline
 }

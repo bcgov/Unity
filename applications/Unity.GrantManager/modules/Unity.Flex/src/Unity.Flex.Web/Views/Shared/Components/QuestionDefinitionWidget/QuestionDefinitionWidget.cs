@@ -24,6 +24,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
                 QuestionType.Number => NumericDefinitionWidget.NumericDefinitionWidget.ParseFormValues(form),
                 QuestionType.Text => TextDefinitionWidget.TextDefinitionWidget.ParseFormValues(form),
                 QuestionType.YesNo => QuestionYesNoDefinitionWidget.QuestionYesNoDefinitionWidget.ParseFormValues(form),
+                QuestionType.SelectList => QuestionSelectListDefinitionWidget.QuestionSelectListDefinitionWidget.ParseFormValues(form),
                 _ => null,
             };
         }

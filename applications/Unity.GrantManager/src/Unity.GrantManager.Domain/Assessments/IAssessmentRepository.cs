@@ -9,4 +9,5 @@ public interface IAssessmentRepository : IRepository<Assessment, Guid>
 {
     Task<bool> ExistsAsync(Guid applicationId, Guid userId);
     Task<List<AssessmentWithAssessorQueryResultItem>> GetListWithAssessorsAsync(Guid applicationId);
+    Task<List<Assessment>> GetListByApplicationId(Guid applicationId);
 }

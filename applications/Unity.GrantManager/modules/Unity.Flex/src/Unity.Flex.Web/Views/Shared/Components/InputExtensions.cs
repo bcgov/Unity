@@ -58,7 +58,8 @@ namespace Unity.Flex.Web.Views.Shared.Components
             {
                 QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
                 QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
-                QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),                
+                QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),
+                QuestionType.SelectList => JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition),
                 _ => null,
             };
         }

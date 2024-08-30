@@ -2,8 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -1071,6 +1069,14 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("DeclineRational")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp without time zone");
 
@@ -1096,6 +1102,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("ForestryFocus")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")

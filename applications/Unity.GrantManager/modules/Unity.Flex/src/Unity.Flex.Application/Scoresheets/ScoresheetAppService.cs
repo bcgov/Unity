@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
 using Volo.Abp;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
@@ -166,7 +165,7 @@ namespace Unity.Flex.Scoresheets
             return ObjectMapper.Map<List<Scoresheet>, List<ScoresheetDto>>(result);
         }
 
-        public async Task<List<Guid>> GetNonDeletedNumericQuestionIds(List<Guid> questionIdsToCheck)
+        public async Task<List<Guid>> GetNumericQuestionIdsAsync(List<Guid> questionIdsToCheck)
         {
             var existingQuestions = await _questionRepository.GetListAsync();
             return existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.Number).Select(q => q.Id).ToList();
@@ -189,11 +188,17 @@ namespace Unity.Flex.Scoresheets
             await _scoresheetRepository.UpdateAsync(scoresheet);
         }
 
-        public async Task<List<QuestionDto>> GetNonDeletedYesNoQuestions(List<Guid> questionIdsToCheck)
+        public async Task<List<QuestionDto>> GetYesNoQuestionsAsync(List<Guid> questionIdsToCheck)
+        {
+            var result = await GetQuestionsAsync(questionIdsToCheck, QuestionType.YesNo);
+            return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
+        }
+
+        private async Task<List<Question>> GetQuestionsAsync(List<Guid> questionIdsToCheck, QuestionType type)
         {
             var existingQuestions = await _questionRepository.GetListAsync();
-            var result = existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == QuestionType.YesNo).ToList();
-            return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
+            var result = existingQuestions.Where(q => questionIdsToCheck.Contains(q.Id) && q.Type == type).ToList();
+            return result;
         }
 
         public async Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId)
@@ -233,5 +238,10 @@ namespace Unity.Flex.Scoresheets
         [GeneratedRegex(@"\s+")]
         private static partial Regex NameRegex();
 
+        public async Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck)
+        {
+            var result = await GetQuestionsAsync(questionIdsToCheck, QuestionType.SelectList);
+            return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
+        }
     }
 }
