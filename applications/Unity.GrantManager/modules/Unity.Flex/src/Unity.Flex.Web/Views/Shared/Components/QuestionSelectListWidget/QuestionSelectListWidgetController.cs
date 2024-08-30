@@ -12,11 +12,6 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListWidget
         [Route("Refresh")]
         public IActionResult Refresh(Guid questionId, bool isDisabled, string? answer, string definition)
         {
-            if (!ModelState.IsValid)
-            {
-                // Do nothing, this is just for sonarqube compliance
-            }
-
             return ViewComponent(typeof(QuestionSelectListWidget), new { questionId, isDisabled, answer, definition });
         }
     }

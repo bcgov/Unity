@@ -125,7 +125,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task<double> GetSelectListAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
         {
-            var existingSelectListQuestions = await _scoresheetAppService.GetNonDeletedSelectListQuestions(questionIds);
+            var existingSelectListQuestions = await _scoresheetAppService.GetSelectListQuestionsAsync(questionIds);
             var existingSelectListQuestionIds = existingSelectListQuestions.Select(a => a.Id).ToList();
             double selectListSubtotal = instance.Answers.Where(a => existingSelectListQuestionIds.Contains(a.QuestionId))
                 .Sum(answer => {
@@ -147,7 +147,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task<double> GetYesNoAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
         {
-            var existingYesNoQuestions = await _scoresheetAppService.GetNonDeletedYesNoQuestions(questionIds);
+            var existingYesNoQuestions = await _scoresheetAppService.GetYesNoQuestionsAsync(questionIds);
             var existingYesNoQuestionIds = existingYesNoQuestions.Select(a => a.Id).ToList();
             double yesNoSubtotal = instance.Answers.Where(a => existingYesNoQuestionIds.Contains(a.QuestionId))
                 .Sum(answer => {
@@ -166,7 +166,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task<double> GetNumericAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
         {            
-            var existingNumericQuestionIds = await _scoresheetAppService.GetNonDeletedNumericQuestionIds(questionIds);
+            var existingNumericQuestionIds = await _scoresheetAppService.GetNumericQuestionIdsAsync(questionIds);
             double numericSubtotal = instance.Answers.Where(a => existingNumericQuestionIds.Contains(a.QuestionId))
                 .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.Number)!.ToString()));
             return numericSubtotal;
