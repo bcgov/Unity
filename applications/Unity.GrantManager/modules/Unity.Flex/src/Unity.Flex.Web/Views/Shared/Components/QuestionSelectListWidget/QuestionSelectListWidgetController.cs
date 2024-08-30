@@ -12,6 +12,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListWidget
         [Route("Refresh")]
         public IActionResult Refresh(Guid questionId, bool isDisabled, string? answer, string definition)
         {
+            if (!ModelState.IsValid)
+            {
+                return ViewComponent(typeof(QuestionSelectListWidget));
+            }
+
             return ViewComponent(typeof(QuestionSelectListWidget), new { questionId, isDisabled, answer, definition });
         }
     }
