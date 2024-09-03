@@ -151,6 +151,13 @@ public class GrantManagerWebModule : AbpModule
         {
             options.EntityHistorySelectors.Add(
                 new NamedTypeSelector(
+                    "Abp.FullAuditedEntities",
+                    type => typeof(IFullAuditedObject).IsAssignableFrom(type)
+                )
+            );
+
+            options.EntityHistorySelectors.Add(
+                new NamedTypeSelector(
                  "ExplictEntityAudit",
                  type =>
                  {

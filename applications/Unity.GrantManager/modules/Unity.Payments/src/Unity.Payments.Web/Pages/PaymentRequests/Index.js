@@ -109,6 +109,10 @@ $(function () {
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
 
+    function checkAllRowsHaveState(state) {
+        return dataTable.rows('.selected').data().toArray().every(row => row.status === state);     
+    }
+
     dataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach(index => {
@@ -151,8 +155,8 @@ $(function () {
     }
 
     function checkActionButtons() {
-
-        if (dataTable.rows({ selected: true }).indexes().length > 0) {
+        let isOnlySubmittedToCas = checkAllRowsHaveState('Submitted');
+        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isOnlySubmittedToCas) {
             if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
                 payment_approve_buttons.enable();
 

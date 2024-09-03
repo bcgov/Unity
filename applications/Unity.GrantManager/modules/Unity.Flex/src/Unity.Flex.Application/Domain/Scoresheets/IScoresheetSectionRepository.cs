@@ -6,6 +6,6 @@ namespace Unity.Flex.Domain.Scoresheets
 {
     public interface IScoresheetSectionRepository : IBasicRepository<ScoresheetSection, Guid>
     {
-        public Task<ScoresheetSection?> GetSectionWithHighestOrderAsync(Guid scoresheetId);
+        public Task<ScoresheetSection?> GetSectionWithHighestOrderAsync(Guid scoresheetId, bool includeDetails = false);
     }
 }

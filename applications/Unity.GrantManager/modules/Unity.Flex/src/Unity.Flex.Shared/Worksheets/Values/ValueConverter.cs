@@ -34,6 +34,7 @@ namespace Unity.Flex.Worksheets.Values
                 QuestionType.Text => JsonSerializer.Serialize(new TextValue(currentValue)),
                 QuestionType.Number => JsonSerializer.Serialize(new NumericValue(currentValue)),
                 QuestionType.YesNo => JsonSerializer.Serialize(new YesNoValue(ValueConverterHelpers.ConvertYesNo(currentValue))),
+                QuestionType.SelectList => JsonSerializer.Serialize(new SelectListValue( currentValue)),
                 _ => throw new NotImplementedException()
             };
         }

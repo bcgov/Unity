@@ -11,7 +11,7 @@ public class ReconciliationProducer : QuartzBackgroundWorkerBase
     private readonly CasPaymentRequestCoordinator _casPaymentRequestCoordinator;
 
     public ReconciliationProducer(
-        IOptions<CasPaymentRequestBackgroundJobsOptions> casPaymentsBackgroundJobsOptions,
+        IOptions<PaymentRequestBackgroundJobsOptions> casPaymentsBackgroundJobsOptions,
         CasPaymentRequestCoordinator casPaymentRequestCoordinator
         )
     {

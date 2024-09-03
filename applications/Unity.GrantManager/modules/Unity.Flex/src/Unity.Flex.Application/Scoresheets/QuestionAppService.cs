@@ -12,7 +12,7 @@ namespace Unity.Flex.Scoresheets
     public class QuestionAppService : FlexAppService, IQuestionAppService
     {
         private readonly IQuestionRepository _questionRepository;
-
+        
         public QuestionAppService(IQuestionRepository questionRepository)
         {
             _questionRepository = questionRepository;
@@ -28,8 +28,9 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<QuestionDto> UpdateAsync(Guid id, EditQuestionDto dto)
         {
+            var questionName = dto.Name.Trim();
             var question = await _questionRepository.GetAsync(id) ?? throw new AbpValidationException("Missing QuestionId:" + id);
-            question.Name = dto.Name;
+            question.SetName(questionName);
             question.Label = dto.Label;
             question.Description = dto.Description;
             question.Type = (QuestionType)dto.QuestionType;
