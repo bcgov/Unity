@@ -1,5 +1,4 @@
 ﻿using System;
-using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace Unity.GrantManager.Assessments;
 public class AssessmentListItemDto
