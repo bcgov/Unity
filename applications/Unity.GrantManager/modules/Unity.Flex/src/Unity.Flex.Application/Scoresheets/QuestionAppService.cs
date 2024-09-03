@@ -12,12 +12,10 @@ namespace Unity.Flex.Scoresheets
     public class QuestionAppService : FlexAppService, IQuestionAppService
     {
         private readonly IQuestionRepository _questionRepository;
-        private readonly IScoresheetSectionRepository _scoresheetSectionRepository;
-
-        public QuestionAppService(IQuestionRepository questionRepository, IScoresheetSectionRepository scoresheetSectionRepository)
+        
+        public QuestionAppService(IQuestionRepository questionRepository)
         {
             _questionRepository = questionRepository;
-            _scoresheetSectionRepository = scoresheetSectionRepository;
         }
 
         public virtual async Task<QuestionDto> GetAsync(Guid id)

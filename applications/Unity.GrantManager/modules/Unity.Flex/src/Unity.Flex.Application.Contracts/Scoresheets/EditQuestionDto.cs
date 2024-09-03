@@ -11,6 +11,5 @@ namespace Unity.Flex.Scoresheets
         public bool Enabled { get; set; }
         public uint QuestionType { get; set; }
         public object? Definition { get; set; }
-        public Guid ScoresheetId { get; set; }
     }
 }

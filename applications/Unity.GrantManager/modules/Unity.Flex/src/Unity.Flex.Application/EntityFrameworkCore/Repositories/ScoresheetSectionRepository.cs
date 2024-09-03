@@ -14,7 +14,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
         {
         }
 
-        public async Task<ScoresheetSection?> GetSectionWithHighestOrderAsync(Guid scoresheetId, bool includeDetails = true)
+        public async Task<ScoresheetSection?> GetSectionWithHighestOrderAsync(Guid scoresheetId, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();
 
@@ -25,13 +25,5 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .FirstOrDefaultAsync();
         }        
 
-        public async Task<bool> HasQuestionWithNameAsync(Guid scoresheetId, string questionName)
-        {
-            var dbContext = await GetDbContextAsync();
-
-            return await dbContext.ScoresheetSections
-                .Where(sec => sec.ScoresheetId == scoresheetId)
-                .AnyAsync(sec => sec.Fields.Any(q => q.Name == questionName));
-        }
     }
 }

@@ -36,18 +36,15 @@ namespace Unity.Flex.Domain.Scoresheets
             Name = name;
         }
 
-        public ScoresheetSection AddSection(string name, uint order)
+        public Scoresheet AddSection(ScoresheetSection section)
         {
-            if (Sections.Any(s => s.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
+            if (Sections.Any(s => s.Name.Equals(section.Name, StringComparison.CurrentCultureIgnoreCase)))
             {
                 throw new UserFriendlyException("Section names must be unique");
             }
-            ScoresheetSection newSection = new(Guid.NewGuid(), name, order)
-            {
-                ScoresheetId = this.Id
-            };
-            Sections.Add(newSection);
-            return newSection;
+            section.ScoresheetId = this.Id;
+            Sections.Add(section);
+            return this;
         }
 
         public Scoresheet UpdateSectionName(string name, string newName)

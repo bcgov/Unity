@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
 using Volo.Abp;
@@ -62,7 +63,7 @@ namespace Unity.Flex.Scoresheets
 
             lock (_questionLockObject)
             {
-                ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
+                ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId, true).Result ?? throw new AbpValidationException("Scoresheet has no section.");
                 uint highestOrder = (highestOrderSection.Fields != null && highestOrderSection.Fields.Count > 0) ? highestOrderSection.Fields.Max(q => q.Order) : 0;
                 var order = highestOrder + 1;
                 var newQuestion = new Question(Guid.NewGuid(), dto.Name.Trim(), dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition);
@@ -78,13 +79,13 @@ namespace Unity.Flex.Scoresheets
 
             lock (_sectionLockObject)
             {
-                var sectionName = dto.Name.Trim();
-                ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result;
+                ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId, true).Result;
                 var order = highestOrderSection == null ? 0 : highestOrderSection.Order + 1;
-                var scoresheet = _scoresheetRepository.GetAsync(scoresheetId,true).Result;
-                var section = scoresheet.AddSection(sectionName, order);
+                var scoresheet = _scoresheetRepository.GetAsync(scoresheetId, true).Result;
+                ScoresheetSection newSection = new(Guid.NewGuid(), dto.Name.Trim(), order);
+                _ = scoresheet.AddSection(newSection);
                 _ = _scoresheetRepository.UpdateAsync(scoresheet).Result;
-                return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(section);
+                return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(newSection);
             }
         }
 
