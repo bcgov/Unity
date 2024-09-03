@@ -62,16 +62,13 @@ namespace Unity.Flex.Scoresheets
 
             lock (_questionLockObject)
             {
-                var questionName = dto.Name.Trim();
-                if(_sectionRepository.HasQuestionWithNameAsync(scoresheetId, questionName).Result)
-                {
-                    throw new UserFriendlyException("Question names should be unique");
-                }
                 ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
-                Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
-                var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
-                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), questionName, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition)).Result;
-                return ObjectMapper.Map<Question, QuestionDto>(result);
+                uint highestOrder = (highestOrderSection.Fields != null && highestOrderSection.Fields.Count > 0) ? highestOrderSection.Fields.Max(q => q.Order) : 0;
+                var order = highestOrder + 1;
+                var newQuestion = new Question(Guid.NewGuid(), dto.Name.Trim(), dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition);
+                highestOrderSection.AddQuestion(newQuestion);
+                _ = _sectionRepository.UpdateAsync(highestOrderSection).Result;
+                return ObjectMapper.Map<Question, QuestionDto>(newQuestion);
             }
         }
 
@@ -82,14 +79,12 @@ namespace Unity.Flex.Scoresheets
             lock (_sectionLockObject)
             {
                 var sectionName = dto.Name.Trim();
-                if(_sectionRepository.HasSectionWithNameAsync(scoresheetId, sectionName).Result)
-                {
-                    throw new UserFriendlyException("Section names must be unique");
-                }
                 ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result;
                 var order = highestOrderSection == null ? 0 : highestOrderSection.Order + 1;
-                var result = _sectionRepository.InsertAsync(new ScoresheetSection(Guid.NewGuid(), sectionName, order, scoresheetId)).Result;
-                return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(result);
+                var scoresheet = _scoresheetRepository.GetAsync(scoresheetId,true).Result;
+                var section = scoresheet.AddSection(sectionName, order);
+                _ = _scoresheetRepository.UpdateAsync(scoresheet).Result;
+                return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(section);
             }
         }
 

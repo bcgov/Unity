@@ -3,7 +3,6 @@ using System;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Worksheets.Definitions;
-using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Validation;
 
@@ -33,11 +32,7 @@ namespace Unity.Flex.Scoresheets
         {
             var questionName = dto.Name.Trim();
             var question = await _questionRepository.GetAsync(id) ?? throw new AbpValidationException("Missing QuestionId:" + id);
-            if (question.Name != questionName && await _scoresheetSectionRepository.HasQuestionWithNameAsync(dto.ScoresheetId, questionName))
-            {
-                throw new UserFriendlyException("Question names should be unique");
-            }
-            question.Name = questionName;
+            question.SetName(questionName);
             question.Label = dto.Label;
             question.Description = dto.Description;
             question.Type = (QuestionType)dto.QuestionType;

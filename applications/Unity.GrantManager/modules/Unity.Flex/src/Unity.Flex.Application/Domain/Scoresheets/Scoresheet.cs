@@ -36,18 +36,18 @@ namespace Unity.Flex.Domain.Scoresheets
             Name = name;
         }
 
-        public Scoresheet AddSection(string name, uint order)
+        public ScoresheetSection AddSection(string name, uint order)
         {
             if (Sections.Any(s => s.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
             {
-                throw new BusinessException(ErrorConsts.DuplicateSectionName).WithData("duplicateName", name); // cannot have duplicate section names
+                throw new UserFriendlyException("Section names must be unique");
             }
             ScoresheetSection newSection = new(Guid.NewGuid(), name, order)
             {
                 ScoresheetId = this.Id
             };
             Sections.Add(newSection);
-            return this;
+            return newSection;
         }
 
         public Scoresheet UpdateSectionName(string name, string newName)
@@ -88,6 +88,12 @@ namespace Unity.Flex.Domain.Scoresheets
         public Scoresheet SetName(string name)
         {
             this.Name = name;
+            return this;
+        }
+
+        public Scoresheet UpdateSection(ScoresheetSection section, string name)
+        {
+            section.SetName(name);
             return this;
         }
     }

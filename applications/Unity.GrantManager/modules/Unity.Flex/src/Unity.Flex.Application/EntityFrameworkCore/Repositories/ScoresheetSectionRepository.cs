@@ -14,29 +14,16 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
         {
         }
 
-        public async Task<ScoresheetSection?> GetSectionWithHighestOrderAsync(Guid scoresheetId)
+        public async Task<ScoresheetSection?> GetSectionWithHighestOrderAsync(Guid scoresheetId, bool includeDetails = true)
         {
-            var dbContext = await GetDbContextAsync();
+            var dbSet = await GetDbSetAsync();
 
-            var highestOrderSection = await dbContext.ScoresheetSections
+            return await dbSet
+                .IncludeDetails(includeDetails)
                 .Where(sec => sec.ScoresheetId == scoresheetId)
                 .OrderByDescending(sec => sec.Order)
                 .FirstOrDefaultAsync();
-
-            return highestOrderSection;
-
-        }
-
-        public async Task<bool> HasSectionWithNameAsync(Guid scoresheetId, string sectionName)
-        {
-            var dbContext = await GetDbContextAsync();
-
-            var sections = await dbContext.ScoresheetSections
-                .Where(sec => sec.ScoresheetId == scoresheetId)
-                .ToListAsync();
-
-            return sections.Exists(s => s.Name == sectionName);
-        }
+        }        
 
         public async Task<bool> HasQuestionWithNameAsync(Guid scoresheetId, string questionName)
         {

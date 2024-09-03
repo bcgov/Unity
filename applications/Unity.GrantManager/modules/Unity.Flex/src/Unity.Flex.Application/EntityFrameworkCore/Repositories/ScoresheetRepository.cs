@@ -55,5 +55,14 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                     .ThenInclude(ss => ss.Fields.OrderBy(q => q.Order))
                     .FirstOrDefaultAsync(s => s.Id == id);
         }
+
+        public async Task<Scoresheet?> GetBySectionAsync(Guid id, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .FirstOrDefaultAsync(s => s.Sections.Any(s => s.Id == id));
+        }
     }
 }
