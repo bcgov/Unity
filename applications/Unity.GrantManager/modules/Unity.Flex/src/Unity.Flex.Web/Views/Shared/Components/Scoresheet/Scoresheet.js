@@ -195,8 +195,8 @@ $(function () {
         previewDiv.innerHTML = `
             <div class="accordion" id="accordion-preview">
                 <div class="d-flex justify-content-end m-3">
-                    <button type="button" class="btn btn-primary me-2" onclick="expandAllPreviewAccordions()">Expand All</button>
-                    <button type="button" class="btn btn-secondary" onclick="collapseAllPreviewAccordions()">Collapse All</button>
+                    <button type="button" class="btn btn-primary me-2" onclick="expandAllAccordions('accordion-preview')">Expand All</button>
+                    <button type="button" class="btn btn-secondary" onclick="collapseAllAccordions('accordion-preview')">Collapse All</button>
                 </div>
                 <div>
                 ${accordionHTML}
@@ -354,21 +354,7 @@ function savePreviewChanges(questionId, inputFieldPrefix, saveButtonPrefix, disc
 
 }
 
-function expandAllPreviewAccordions() {
-    const accordions = document.querySelectorAll('#accordion-preview .accordion-collapse');
-    accordions.forEach(accordion => {
-        accordion.classList.add('show');
-        accordion.previousElementSibling.querySelector('.accordion-button').classList.remove('collapsed');
-    });
-}
 
-function collapseAllPreviewAccordions() {
-    const accordions = document.querySelectorAll('#accordion-preview .accordion-collapse');
-    accordions.forEach(accordion => {
-        accordion.classList.remove('show');
-        accordion.previousElementSibling.querySelector('.accordion-button').classList.add('collapsed');
-    });
-}
 
 
 
