@@ -1,13 +1,16 @@
 $(function () {
     let addCheckboxOption;   
     let checkboxOptionsTable;
-
+    const checkKeyInputRegexBase = '[a-zA-Z0-9 ]+';
+    const checkKeyInputRegexVal = new RegExp('^' + checkKeyInputRegexBase + '$');
+    
     function bindRootActions() {
         addCheckboxOption = $('#add-checkbox-option-btn');
 
         bindAddCheckboxOption();
         bindSaveOption();
         bindCancelOption();
+        bindNewRowKeyCheck();
     }
 
     function bindAddCheckboxOption() {
@@ -17,6 +20,8 @@ $(function () {
             addCheckboxOption.on('click', function (event) {
                 if (newRowTable) {
                     newRowTable.toggleClass('hidden');
+                    $('#new-row-key').val('check' + ($('.key-input')?.toArray()?.length + 1));                    
+                    $('#new-row-label').focus();
                     addCheckboxOption.toggleClass('hidden');
                 }
             });
@@ -26,28 +31,11 @@ $(function () {
     function bindSaveOption() {
         let save = $('#save-checkbox-option-btn');
         if (save) {
-            save.on('click', function (event) {
-                let newRow = $('#new-checkbox-row');
-                let inputs = newRow.find('input');
-                let row = {};
-                row.key = $(inputs[0]).val();
-                row.label = $(inputs[1]).val();
+            save.on('click', function (event) {               
+                let row = getNewInputRow();
 
-                // check against existing rows
-                let existingRows = $('.key-input').toArray();
-                let existing = existingRows.find(o => o.value.toLowerCase() == row.key.toLowerCase());
-
-                // validate format of row before adding
-                let pattern = /[a-zA-Z0-9]+/;
-                if (!pattern.test(row.key)) {
-                    window.alert('Invalid key syntax provided');
-                    return;
-                }
-
-                if (existing) {
-                    window.alert('Duplicate keys are not allowed');
-                    return;
-                }
+                if (!validateInputCharacters())
+                    return;                    
 
                 // Add valid row to table
                 $('#checkbox-options-table').find('tbody')
@@ -62,10 +50,55 @@ $(function () {
         }
     }
 
+    function getNewInputRow() {
+        let newRow = $('#new-checkbox-row');
+        let inputs = newRow.find('input');
+        let row = {};
+        row.key = $(inputs[0]).val();
+        row.label = $(inputs[1]).val();
+        return row;
+    }
+
+    function validateInputCharacters() {
+        let row = getNewInputRow();
+
+        // check against existing rows
+        let existingRows = $('.key-input').toArray();
+        let existing = existingRows.find(o => o.value.toLowerCase() == row.key.toLowerCase());
+
+        // validate format of row before adding                
+        if (!isAlphanumericWithSpace(row.key)) {
+            addSummaryError('Invalid key syntax provided');
+            return false;
+        }
+
+        if (existing) {
+            addSummaryError('Duplicate keys are not allowed');
+            return false;
+        }
+
+        return true;
+    }
+
+    function clearSummaryError() {
+        $('#invalid-input-summary-text').text();
+        $('#invalid-input-error-summary').addClass('hidden');        
+    }
+
+    function addSummaryError(message) {
+        $('#invalid-input-summary-text').text(message);        
+        $('#invalid-input-error-summary').removeClass('hidden');                
+    }
+
+    function isAlphanumericWithSpace(str) {
+        // Regular expression to match alphanumeric characters and spaces        
+        return checkKeyInputRegexVal.test(str);
+    }
+
     function getRowTemplate(key, label) {
-        return `<tr><td><input type="text" class="form-control key-input" name="CheckboxKeys" pattern="[a-zA-Z0-9]+" value="${key}" minlength="1" maxlength="25" required id="new-chk-key-${key}" />
+        return `<tr><td><input type="text" class="form-control key-input" name="CheckboxKeys" pattern="${checkKeyInputRegexBase}" value="${key}" minlength="1" maxlength="25" required id="new-chk-key-${key}" />
         </td><td><input type="text" class="form-control" name="CheckboxLabels" value="${label}" maxlength="25" required id="new-chk-label-${key}" />
-        </td><td><button id="data-btn-${key}" class="delete-checkbox-option btn btn-light" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
+        </td><td><button id="data-btn-${key}" class="delete-checkbox-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
         <i class="fl fl-delete"></i></button></td></tr>`
     }
 
@@ -81,6 +114,17 @@ $(function () {
         }
     }
 
+    function bindNewRowKeyCheck() {
+        let newKey = $('#new-row-key');
+
+        newKey.on('change', function (event) {               
+            let valid = validateInputCharacters();
+            if (valid === true) {
+                clearSummaryError();
+            }
+        });
+    }
+
     function cancelAddRow() {
         let newRowTable = $('#add-new-checkbox-table');
 
@@ -89,6 +133,7 @@ $(function () {
 
         newRowTable.toggleClass('hidden');
         addCheckboxOption.toggleClass('hidden');
+        clearSummaryError();
     }
 
     function bindNewRowActions() {
