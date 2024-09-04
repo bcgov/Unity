@@ -98,8 +98,8 @@ namespace Unity.Payments.Integrations.Http
 
             try
             {
-                //specify to use TLS 1.2 as default connection
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                //specify to use TLS 1.3 as default connection
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13;
                 HttpRequestMessage requestMessage = new HttpRequestMessage(httpVerb, resource) { Version = new Version(3, 0) };
                 using HttpClient httpClient = _httpClientFactory.CreateClient();
                 httpClient.DefaultRequestHeaders.Accept.Clear();

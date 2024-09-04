@@ -68,8 +68,8 @@ namespace Unity.Payments.Integrations.Cas
                 requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
                 requestMessage.Content = content;
 
-                //specify to use TLS 1.2 as default connection
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                //specify to use TLS 1.3 as default connection
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13;
                 HttpClient client = _httpClientFactory.CreateClient();
                 client.BaseAddress = new Uri(url);               
                 client.DefaultRequestHeaders.Accept.Clear();     
