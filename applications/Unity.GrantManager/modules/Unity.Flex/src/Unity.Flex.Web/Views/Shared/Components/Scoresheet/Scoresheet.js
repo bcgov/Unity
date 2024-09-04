@@ -178,7 +178,7 @@ $(function () {
                                 ${sectionNumber}.${questionNumber}  ${item.innerText}
                             </button>
                         </h2>
-                        <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}" data-bs-parent="#${parentAccordionId}">
+                        <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}">
                             <div class="accordion-body">
                                 ${questionBody}
                             </div>
@@ -194,7 +194,13 @@ $(function () {
 
         previewDiv.innerHTML = `
             <div class="accordion" id="accordion-preview">
+                <div class="d-flex justify-content-end m-3">
+                    <button type="button" class="btn btn-primary me-2" onclick="expandAllPreviewAccordions()">Expand All</button>
+                    <button type="button" class="btn btn-secondary" onclick="collapseAllPreviewAccordions()">Collapse All</button>
+                </div>
+                <div>
                 ${accordionHTML}
+                </div>
             </div>
             <div class="p-4" style="margin-top:2px">
                 <label class="form-label" for="scoresheetSubtotal">Subtotal</label>
@@ -346,6 +352,22 @@ function savePreviewChanges(questionId, inputFieldPrefix, saveButtonPrefix, disc
 
     updateSubtotal();
 
+}
+
+function expandAllPreviewAccordions() {
+    const accordions = document.querySelectorAll('#accordion-preview .accordion-collapse');
+    accordions.forEach(accordion => {
+        accordion.classList.add('show');
+        accordion.previousElementSibling.querySelector('.accordion-button').classList.remove('collapsed');
+    });
+}
+
+function collapseAllPreviewAccordions() {
+    const accordions = document.querySelectorAll('#accordion-preview .accordion-collapse');
+    accordions.forEach(accordion => {
+        accordion.classList.remove('show');
+        accordion.previousElementSibling.querySelector('.accordion-button').classList.add('collapsed');
+    });
 }
 
 

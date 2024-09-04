@@ -193,3 +193,19 @@ function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix, discardB
         errorMessage.textContent = '';
     } 
 }
+
+function expandAllAccordions() {
+    const accordions = document.querySelectorAll('.accordion-collapse');
+    accordions.forEach(accordion => {
+        accordion.classList.add('show');
+        accordion.previousElementSibling.querySelector('.accordion-button').classList.remove('collapsed');
+    });
+}
+
+function collapseAllAccordions() {
+    const accordions = document.querySelectorAll('.accordion-collapse');
+    accordions.forEach(accordion => {
+        accordion.classList.remove('show');
+        accordion.previousElementSibling.querySelector('.accordion-button').classList.add('collapsed');
+    });
+}
