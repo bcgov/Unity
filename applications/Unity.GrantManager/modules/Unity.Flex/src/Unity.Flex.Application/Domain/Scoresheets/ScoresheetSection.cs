@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Unity.Flex.Domain.Exceptions;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -49,18 +48,19 @@ namespace Unity.Flex.Domain.Scoresheets
 
         public ScoresheetSection SetName(string name)
         {
+            if (Scoresheet!.Sections.Any(s => s.Name == name && s.Id != Id))
+                throw new UserFriendlyException("Cannot duplicate section names.");
+
             Name = name;
             return this;
         }
 
-        public ScoresheetSection AddField(Question field)
+        public ScoresheetSection AddQuestion(Question question)
         {
-            if (Fields.Any(s => s.Name.Equals(field.Name, StringComparison.CurrentCultureIgnoreCase)))
-            {
-                throw new BusinessException(ErrorConsts.DuplicateSectionName).WithData("duplicateName", field.Name); // cannot have duplicate field names
-            }
-            field.SectionId = this.Id;
-            Fields.Add(field);
+            if (Scoresheet!.Sections.SelectMany(s => s.Fields).Any(s => s.Name == question.Name && s.Id != question.Id))
+                throw new UserFriendlyException("Cannot duplicate question names for a scoresheet.");
+            question.SectionId = this.Id;
+            Fields.Add(question);
 
             return this;
         }

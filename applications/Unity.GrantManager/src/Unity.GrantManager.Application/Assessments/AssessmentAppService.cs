@@ -18,6 +18,7 @@ using Unity.GrantManager.Workflow;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
@@ -40,6 +41,7 @@ namespace Unity.GrantManager.Assessments
         private readonly IScoresheetAppService _scoresheetAppService;
         private readonly ILocalEventBus _localEventBus;
         private readonly IFeatureChecker _featureChecker;
+        private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
 
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
@@ -50,7 +52,8 @@ namespace Unity.GrantManager.Assessments
             IScoresheetInstanceAppService scoresheetInstanceAppService,
             IFeatureChecker featureChecker,
             ILocalEventBus localEventBus, 
-            IScoresheetAppService scoresheetAppService)
+            IScoresheetAppService scoresheetAppService,
+            IRepository<ApplicationForm, Guid> applicationFormRepository)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
@@ -61,6 +64,7 @@ namespace Unity.GrantManager.Assessments
             _scoresheetAppService = scoresheetAppService;
             _featureChecker = featureChecker;
             _localEventBus = localEventBus;
+            _applicationFormRepository = applicationFormRepository;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -81,21 +85,44 @@ namespace Unity.GrantManager.Assessments
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(assessments.OrderByDescending(s => s.CreationTime).ToList()));
         }
 
-        public async Task<List<AssessmentListItemDto>> GetDisplayList(Guid applicationId)
+        public async Task<AssessmentDisplayListDto> GetDisplayList(Guid applicationId)
         {
-            var assessmentList = ObjectMapper.Map<
-                List<AssessmentWithAssessorQueryResultItem>,
-                List<AssessmentListItemDto>>
-                (await _assessmentRepository.GetListWithAssessorsAsync(applicationId));
+            var assessments = await _assessmentRepository.GetListWithAssessorsAsync(applicationId);
+            var assessmentList = ObjectMapper.Map<List<AssessmentWithAssessorQueryResultItem>,List<AssessmentListItemDto>>(assessments);
+            bool isApplicationUsingDefaultScoresheet = true;
             foreach (var assessment in assessmentList)
             {
-                assessment.SubTotal = await GetSubTotal(assessment);
+                var subtotalDto = await GetSubTotal(assessment);
+                assessment.SubTotal = subtotalDto.SubTotal;
+                if (!subtotalDto.IsUsingDefaultScoresheet)
+                {
+                    isApplicationUsingDefaultScoresheet = false;
+                }
             }
 
-            return assessmentList;
+            if(assessmentList.Count == 0)
+            {
+                isApplicationUsingDefaultScoresheet = await IsScoresheetNotLinkedToForm(applicationId);
+            }
+
+            return new AssessmentDisplayListDto { Data = assessmentList, IsApplicationUsingDefaultScoresheet = isApplicationUsingDefaultScoresheet };
         }
 
-        private async Task<double> GetSubTotal(AssessmentListItemDto assessment)
+        private async Task<bool> IsScoresheetNotLinkedToForm(Guid applicationId)
+        {
+            var application = await _applicationRepository.GetAsync(applicationId);
+            var applicationForm = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
+            if(applicationForm.ScoresheetId == null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private async Task<SubTotalDto> GetSubTotal(AssessmentListItemDto assessment)
         {
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
@@ -103,8 +130,10 @@ namespace Unity.GrantManager.Assessments
 
                 if (instance == null)
                 {
-                    // Assessment uses default scoresheet
-                    return (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
+
+                    double subTotal = (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
+                    return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = true};
+
                 }
                 else
                 {
@@ -114,12 +143,15 @@ namespace Unity.GrantManager.Assessments
                     var yesNoSubtotal = await GetYesNoAnswerSubtotal(instance, questionIds);
                     var selectListSubtotal = await GetSelectListAnswerSubtotal(instance, questionIds);
 
-                    return numericSubtotal + yesNoSubtotal + selectListSubtotal;
+                    double subTotal = numericSubtotal + yesNoSubtotal + selectListSubtotal;
+                    return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = false };
+
                 }
             }
             else
             {
-                return (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
+                double subTotal = (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
+                return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = true };
             }
         }
 
