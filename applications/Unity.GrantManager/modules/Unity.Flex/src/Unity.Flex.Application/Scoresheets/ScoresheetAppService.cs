@@ -254,5 +254,16 @@ namespace Unity.Flex.Scoresheets
             var result = await GetQuestionsAsync(questionIdsToCheck, QuestionType.SelectList);
             return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
         }
+
+        public async Task SaveScoresheetOrder(List<Guid> scoresheetIds)
+        {
+            uint index = 0;
+            foreach(Guid id in scoresheetIds)
+            {
+                var scoresheet = await _scoresheetRepository.GetAsync(id);
+                scoresheet.Order = index++;
+                await _scoresheetRepository.UpdateAsync(scoresheet);
+            }
+        }
     }
 }

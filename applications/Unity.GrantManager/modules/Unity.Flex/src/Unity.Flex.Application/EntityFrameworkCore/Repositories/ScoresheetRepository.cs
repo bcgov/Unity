@@ -35,7 +35,8 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
             return await dbContext.Scoresheets
                 .Include(s => s.Sections.OrderBy(sec => sec.Order))
                 .ThenInclude(sec => sec.Fields.OrderBy(q => q.Order))
-                .OrderBy(s => s.CreationTime)
+                .OrderBy(s => s.Order)
+                .ThenBy(s => s.CreationTime)
                 .ToListAsync();    
         }
 

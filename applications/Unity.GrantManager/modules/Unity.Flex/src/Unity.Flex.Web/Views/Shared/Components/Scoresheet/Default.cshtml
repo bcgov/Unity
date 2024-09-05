@@ -6,6 +6,7 @@
 @inject IPermissionChecker PermissionChecker
 @model Unity.Flex.Web.Views.Shared.Components.Scoresheet.ScoresheetViewModel
 
+
 @section scripts {
     <abp-script src="/libs/sortablejs/Sortable.js"></abp-script>
 }
@@ -20,6 +21,9 @@
             <div class="accordion-header" id="heading-@scoresheet.Id">
                 <div class="d-flex w-100 align-items-center">
                     <button class="accordion-button collapsed flex-grow-1" id="accordion-button-@scoresheet.Id" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="false" aria-controls="collapse-@scoresheet.Id">
+                        <div class="draggable-header card-header">
+                            <i class="fl fl-draggable"></i>
+                        </div>
                         <span class="flex-grow-1 text-start">
                             <b>@scoresheet.Title</b>&nbsp;&nbsp;
                             (@($"{scoresheet.Name}"))
