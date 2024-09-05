@@ -6,3 +6,16 @@
     overflow-y: scroll;
     height: calc(100vh - 120px);
 }
+
+.scoresheet-column, .preview-column {
+    height: 100%; 
+    overflow-y: auto; 
+}
+
+.scoresheet-column {
+    width: 50%; 
+}
+
+.preview-column {
+    width: 50%; 
+}
