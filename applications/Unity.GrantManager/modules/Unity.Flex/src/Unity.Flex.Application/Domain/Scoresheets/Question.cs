@@ -6,12 +6,14 @@ using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using Newtonsoft.Json;
+using Volo.Abp;
+using System.Linq;
 
 namespace Unity.Flex.Domain.Scoresheets
 {
     public class Question : FullAuditedEntity<Guid>, IMultiTenant
     {
-        public virtual string Name { get; set; } = string.Empty;
+        public virtual string Name { get; private set; } = string.Empty;
         public virtual string Label { get; set; } = string.Empty;
         public virtual string? Description { get; set; }
         public virtual uint Order { get; set; }
@@ -64,6 +66,16 @@ namespace Unity.Flex.Domain.Scoresheets
         {
             Answers.Add(answer);
             return this;
-        }        
+        }
+        
+        public Question SetName(string name)
+        {
+            var scoresheet = Section!.Scoresheet;
+
+            if (scoresheet!.Sections.SelectMany(s => s.Fields).Any(s => s.Name == name && s.Id != Id))
+                throw new UserFriendlyException("Cannot duplicate question names for a scoresheet.");
+            Name = name;
+            return this;
+        }
     }
 }

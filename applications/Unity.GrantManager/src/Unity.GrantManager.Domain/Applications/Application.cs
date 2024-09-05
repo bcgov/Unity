@@ -13,7 +13,7 @@ namespace Unity.GrantManager.Applications;
 
 // NOTE: See https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#required-navigation-properties
 
-public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
+public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid ApplicationFormId { get; set; }
 

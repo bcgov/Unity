@@ -73,6 +73,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                                             question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.Text)!.ToString();
                                             break;
                                         }
+                                    case QuestionType.SelectList:
+                                        {
+                                            question.Answer = ValueResolver.Resolve(answer.CurrentValue!, CustomFieldType.SelectList)!.ToString();
+                                            break;
+                                        }
                                 }
                                 
                             }

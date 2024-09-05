@@ -6,6 +6,7 @@
 @inject IPermissionChecker PermissionChecker
 @model Unity.Flex.Web.Views.Shared.Components.Scoresheet.ScoresheetViewModel
 
+
 @section scripts {
     <abp-script src="/libs/sortablejs/Sortable.js"></abp-script>
 }
@@ -20,6 +21,9 @@
             <div class="accordion-header" id="heading-@scoresheet.Id">
                 <div class="d-flex w-100 align-items-center">
                     <button class="accordion-button collapsed flex-grow-1" id="accordion-button-@scoresheet.Id" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="false" aria-controls="collapse-@scoresheet.Id">
+                        <div class="draggable-header card-header">
+                            <i class="fl fl-draggable"></i>
+                        </div>
                         <span class="flex-grow-1 text-start">
                             <b>@scoresheet.Title</b>&nbsp;&nbsp;
                             (@($"{scoresheet.Name}"))
@@ -41,7 +45,7 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="p-3">
-                                <button id="edit_scoresheet_btn" onclick="openScoresheetModal('@scoresheet.Id','Edit Scoring Sheet');" class="btn btn-light" type="button">
+                                <button id="edit_scoresheet_btn" onclick="openScoresheetModal('@scoresheet.Id','Edit Scoresheet');" class="btn btn-light" type="button">
                                     <i class="fl fl-edit"></i> <span>@L["Scoresheet:Configuration:EditScoresheetButtonText"].Value</span>
                                 </button>
                             </div>
@@ -88,7 +92,7 @@
                             </div>
                             @foreach (var question in sec.Fields)
                             {
-                                <div class="list-group-item row question-item" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id" data-questiontype="@question.Type" data-min="@question.GetMin()" data-max="@question.GetMax()" data-minlength="@question.GetMinLength()" data-maxlength="@question.GetMaxLength()" data-yesvalue="@question.GetYesValue()" data-novalue="@question.GetNoValue()" data-questiondesc="@question.Description">
+                                <div class="list-group-item row question-item" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id" data-questiontype="@question.Type" data-min="@question.GetMin()" data-max="@question.GetMax()" data-minlength="@question.GetMinLength()" data-maxlength="@question.GetMaxLength()" data-yesvalue="@question.GetYesValue()" data-novalue="@question.GetNoValue()" data-questiondesc="@question.Description" data-definition="@question.Definition">
                                     <div class="col">
                                         <i class="fl fl-draggable"></i>
                                         <span class="p-2">@question.Label</span>

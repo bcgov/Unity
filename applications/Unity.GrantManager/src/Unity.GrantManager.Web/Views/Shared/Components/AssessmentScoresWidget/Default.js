@@ -136,6 +136,14 @@ function updateSubtotal() {
             subtotal += value;
         });
 
+        // Handle select list inputs
+        const selectListInputs = document.querySelectorAll('.answer-selectlist-input');
+        selectListInputs.forEach(select => {
+            const selectedOption = select.options[select.selectedIndex];
+            const numericValue = parseFloat(selectedOption.getAttribute('data-numeric-value')) || 0;
+            subtotal += numericValue;
+        });
+
         // Update the subtotal field
         const subTotalField = document.getElementById('scoresheetSubtotal');
         if (subTotalField) {
@@ -184,4 +192,20 @@ function discardChanges(questionId, inputFieldPrefix, saveButtonPrefix, discardB
         const errorMessage = document.getElementById('error-message-' + questionId);
         errorMessage.textContent = '';
     } 
+}
+
+function expandAllAccordions(divId) {
+    const accordions = document.querySelectorAll('#' + divId + ' .accordion-collapse');
+    accordions.forEach(accordion => {
+        accordion.classList.add('show');
+        accordion.previousElementSibling.querySelector('.accordion-button').classList.remove('collapsed');
+    });
+}
+
+function collapseAllAccordions(divId) {
+    const accordions = document.querySelectorAll('#' + divId + ' .accordion-collapse');
+    accordions.forEach(accordion => {
+        accordion.classList.remove('show');
+        accordion.previousElementSibling.querySelector('.accordion-button').classList.add('collapsed');
+    });
 }

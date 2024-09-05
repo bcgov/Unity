@@ -6,8 +6,6 @@ namespace Unity.Flex.Worksheets.Definitions
     public class CheckboxGroupDefinition : CustomFieldDefinition
     {
         [JsonPropertyName("options")]
-        public List<CheckboxGroupDefinitionOption> Options { get; set; } = [];
-
-        public string Tester { get; set; }
+        public List<CheckboxGroupDefinitionOption> Options { get; set; } = [];        
     }
 }

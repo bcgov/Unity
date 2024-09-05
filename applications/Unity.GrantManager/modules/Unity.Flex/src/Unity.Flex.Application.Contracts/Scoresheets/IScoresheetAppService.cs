@@ -17,11 +17,13 @@ namespace Unity.Flex.Scoresheets
         Task<List<ScoresheetDto>> GetAllPublishedScoresheetsAsync();
         Task SaveOrder(List<ScoresheetItemDto> dto);
         Task UpdateAsync(Guid scoresheetId, EditScoresheetDto dto);
-        Task<List<Guid>> GetNonDeletedNumericQuestionIds(List<Guid> questionIdsToCheck);
-        Task<List<QuestionDto>> GetNonDeletedYesNoQuestions(List<Guid> questionIdsToCheck);
+        Task<List<Guid>> GetNumericQuestionIdsAsync(List<Guid> questionIdsToCheck);
+        Task<List<QuestionDto>> GetYesNoQuestionsAsync(List<Guid> questionIdsToCheck);
+        Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck);
         Task ValidateChangeableScoresheet(Guid scoresheetId);
         Task PublishScoresheetAsync(Guid id);
         Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId);
         Task ImportScoresheetAsync(ScoresheetImportDto scoresheetImportDto);
+        Task SaveScoresheetOrder(List<Guid> scoresheetIds);
     }
 }

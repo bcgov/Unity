@@ -59,5 +59,8 @@
     cursor: grab;
 }
 
+.draggable-header {
+    cursor: move; 
+}
 
 

@@ -1,6 +1,6 @@
 $(function () {
 
-    function makeSectionsAndQuestionsSortable() {
+    function makeScoresheetsSortable() {
         document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
             
             _ = new Sortable(div, {
@@ -35,6 +35,38 @@ $(function () {
                 }
             });
         });
+
+        
+        _ = new Sortable(document.getElementById('scoresheet-accordion'), {
+            handle: '.draggable-header',
+            animation: 150,
+            ghostClass: 'blue-background',
+            onEnd: function (evt) {
+                let itemEl = evt.item; 
+                itemEl.style.border = "";
+                updateScoresheetOrder();
+            },
+            onStart: function (evt) {
+                let itemEl = evt.item; 
+                itemEl.style.border = "2px solid lightblue"; 
+            },
+        });
+                
+    }
+
+    function updateScoresheetOrder() {
+        let order = [];
+        $("#scoresheet-accordion .accordion-item").each(function (index, element) {
+            let scoresheetId = $(element).find(".accordion-header").attr("id").replace("heading-","");
+            order.push(scoresheetId);
+        });
+        unity.flex.scoresheets.scoresheet.saveScoresheetOrder(order)
+            .then(response => {
+                abp.notify.success(
+                    'Scoresheet ordering is successfully saved.',
+                    'Scoresheet'
+                );
+            });
     }
 
     function updatePreview(event) {
@@ -64,7 +96,7 @@ $(function () {
         });
     }
        
-
+    
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
 
@@ -118,7 +150,7 @@ $(function () {
                     <div class="mb-3">
                         <label for="answer-yesno-${item.dataset.id}" class="form-label">Answer</label>
                         <select id="answer-yesno-${item.dataset.id}"
-                                class="form-control answer-yesno-input"
+                                class="form-select form-control answer-yesno-input"
                                 name="Answer-YesNo[${item.dataset.id}]"
                                 data-original-value=""
                                 data-yes-numeric-value="${item.dataset.yesvalue}"
@@ -145,6 +177,30 @@ $(function () {
                         <button type="button" class="btn btn-primary" disabled id="save-number-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">SAVE CHANGES</button>
                         <button type="button" class="btn btn-secondary" id="discard-number-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">DISCARD CHANGES</button>
                     </div>`;
+                } else if (item.dataset.questiontype === "SelectList") {
+                    const options = JSON.parse(item.dataset.definition).options || [];
+                    let optionsHTML = `<option data-numeric-value="0" value="">Please choose...</option>`;
+                    optionsHTML += options.map(option => {
+                        const truncatedValue = option.value.length > 100 ? option.value.substring(0, 100) + " ..." : option.value;
+                        return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.value}">${truncatedValue}</option>`;
+                    }).join('');
+
+                    questionBody = `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label for="answer-selectlist-${item.dataset.id}" class="form-label">Answer</label>
+                        <select id="answer-selectlist-${item.dataset.id}"
+                                class="form-select form-control answer-selectlist-input"
+                                name="Answer-SelectList[${item.dataset.id}]"
+                                data-original-value=""
+                                onchange="handleInputChange('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">
+                            ${optionsHTML}
+                        </select>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" disabled id="save-selectlist-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-selectlist-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">DISCARD CHANGES</button>
+                    </div>`;
                 }
 
                 accordionHTML += `
@@ -154,7 +210,7 @@ $(function () {
                                 ${sectionNumber}.${questionNumber}  ${item.innerText}
                             </button>
                         </h2>
-                        <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}" data-bs-parent="#${parentAccordionId}">
+                        <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}">
                             <div class="accordion-body">
                                 ${questionBody}
                             </div>
@@ -170,13 +226,21 @@ $(function () {
 
         previewDiv.innerHTML = `
             <div class="accordion" id="accordion-preview">
+                <div class="d-flex justify-content-end m-3">
+                    <button type="button" class="btn btn-primary me-2" onclick="expandAllAccordions('accordion-preview')">Expand All</button>
+                    <button type="button" class="btn btn-secondary" onclick="collapseAllAccordions('accordion-preview')">Collapse All</button>
+                </div>
+                <div>
                 ${accordionHTML}
+                </div>
             </div>
             <div class="p-4" style="margin-top:2px">
                 <label class="form-label" for="scoresheetSubtotal">Subtotal</label>
                 <input type="number" size="18" value="0" class="form-control" disabled="disabled" name="ScoresheetSubtotal" id="scoresheetSubtotal" min="0" max="2147483647" />
             </div>
         `;
+
+        updateSubtotal();
     }
 
 
@@ -194,14 +258,14 @@ $(function () {
     }
 
     
-    makeSectionsAndQuestionsSortable();
+    makeScoresheetsSortable();
     attachAccordionToggleListeners();
     updateUnsortedPreview();
     
     PubSub.subscribe(
         'refresh_scoresheet_configuration_page',
         (msg, data) => {
-            makeSectionsAndQuestionsSortable();
+            makeScoresheetsSortable();
             attachAccordionToggleListeners();
             updateUnsortedPreview();
         }
@@ -321,6 +385,8 @@ function savePreviewChanges(questionId, inputFieldPrefix, saveButtonPrefix, disc
     updateSubtotal();
 
 }
+
+
 
 
 

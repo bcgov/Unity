@@ -43,8 +43,7 @@ namespace Unity.Flex.Web.Tests.Components
                 Options =
                 [
                     new CheckboxGroupDefinitionOption() { Key = "Key1", Label = "Label1", Value = true }
-                ],
-                Tester = "Bob"
+                ]                
             });            
 
             // Act

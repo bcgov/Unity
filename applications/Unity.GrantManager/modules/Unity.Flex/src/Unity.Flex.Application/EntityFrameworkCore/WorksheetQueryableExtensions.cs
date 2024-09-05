@@ -27,5 +27,11 @@ namespace Unity.Flex.EntityFrameworkCore
                 .Include(s => s.Sections.OrderBy(s => s.Order))
                     .ThenInclude(s => s.Fields.OrderBy(s => s.Order));
         }
+
+        public static IQueryable<ScoresheetSection> IncludeDetails(this IQueryable<ScoresheetSection> queryable, bool include = true)
+        {
+            return !include ? queryable : queryable
+                .Include(s => s.Fields.OrderBy(s => s.Order));
+        }
     }
 }
