@@ -57,7 +57,7 @@ $(function () {
             text: 'History',
             className: 'custom-table-btn flex-none btn btn-secondary',
             action: function (e, dt, node, config) {
-                alert('History Button activated');
+                location.href = '/PaymentHistory/Details?PaymentId=' + selectedPaymentIds[0];
             }
         },
         {
