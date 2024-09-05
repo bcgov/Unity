@@ -1,6 +1,6 @@
 $(function () {
 
-    function makeSectionsAndQuestionsSortable() {
+    function makeScoresheetsSortable() {
         document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
             
             _ = new Sortable(div, {
@@ -35,6 +35,38 @@ $(function () {
                 }
             });
         });
+
+        
+        _ = new Sortable(document.getElementById('scoresheet-accordion'), {
+            handle: '.draggable-header',
+            animation: 150,
+            ghostClass: 'blue-background',
+            onEnd: function (evt) {
+                let itemEl = evt.item; 
+                itemEl.style.border = "";
+                updateScoresheetOrder();
+            },
+            onStart: function (evt) {
+                let itemEl = evt.item; 
+                itemEl.style.border = "2px solid lightblue"; 
+            },
+        });
+                
+    }
+
+    function updateScoresheetOrder() {
+        let order = [];
+        $("#scoresheet-accordion .accordion-item").each(function (index, element) {
+            let scoresheetId = $(element).find(".accordion-header").attr("id").replace("heading-","");
+            order.push(scoresheetId);
+        });
+        unity.flex.scoresheets.scoresheet.saveScoresheetOrder(order)
+            .then(response => {
+                abp.notify.success(
+                    'Scoresheet ordering is successfully saved.',
+                    'Scoresheet'
+                );
+            });
     }
 
     function updatePreview(event) {
@@ -220,14 +252,14 @@ $(function () {
     }
 
     
-    makeSectionsAndQuestionsSortable();
+    makeScoresheetsSortable();
     attachAccordionToggleListeners();
     updateUnsortedPreview();
     
     PubSub.subscribe(
         'refresh_scoresheet_configuration_page',
         (msg, data) => {
-            makeSectionsAndQuestionsSortable();
+            makeScoresheetsSortable();
             attachAccordionToggleListeners();
             updateUnsortedPreview();
         }
