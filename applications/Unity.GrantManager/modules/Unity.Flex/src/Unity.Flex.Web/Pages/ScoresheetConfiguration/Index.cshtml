@@ -27,11 +27,11 @@
             <abp-column class="p-0">
                 <abp-card>
                     <abp-card-body>
-                        <h4><b>Scoring Sheets</b></h4>
+                        <h4><b>Scoresheets</b></h4>
                         <div class="d-flex justify-content-end m-3">
                             <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
                                 <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" style="display: none" />
-                                <abp-button text="Import Scoring Sheet"
+                                <abp-button text="Import Scoresheet"
                                             id="scoresheet_import_upload_btn"
                                             icon-type="Other"
                                             icon="fl fl-import"
@@ -46,7 +46,7 @@
                                         id="add_scoresheet_btn"
                                         icon-type="Other"
                                         icon="fl fl-plus"
-                                        onclick="openScoresheetModal(null,'Add Scoring Sheet');"
+                                        onclick="openScoresheetModal(null,'Add Scoresheet');"
                                         button-type="Light" />
                         </div>
                 

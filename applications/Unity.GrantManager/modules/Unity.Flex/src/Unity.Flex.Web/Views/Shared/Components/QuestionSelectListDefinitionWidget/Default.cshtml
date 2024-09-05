@@ -1,0 +1,75 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWidget;
+
+@model QuestionSelectListDefinitionViewModel
+
+<div>
+    <div id="selectOptions">
+        @if (Model.Options != null && Model.Options.Count > 0)
+        {
+            foreach (var option in Model.Options)
+            {
+                var index = Model.Options.IndexOf(option) + 1;
+                <div class="option-container" id="option@(index)Container">
+                    <input type="text" title="Enter option text here." maxlength="1000" id="option@(index)Text" name="Options[@(index)].Text" class="form-control" value="@option.Text" />
+                    <input type="number" title="Enter numeric score value here." id="option@(index)Score" name="Options[@(index)].Score" class="form-control score-input" value="@option.Score" />
+                    <button type="button" class="btn btn-danger btn-sm remove-option-btn" data-option-id="option@(index)Container">Delete Option</button>
+                </div>
+            }
+        }
+    </div>
+
+    <button type="button" id="addOptionBtn" class="btn btn-secondary">Add Select List Option</button>
+</div>
+
+<style>
+    .option-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+        .option-container input[type="text"],
+        .option-container input[type="number"] {
+            flex: 1;
+            margin-right: 10px;
+        }        
+
+        .option-container button {
+            flex-shrink: 0;
+        }
+
+        .score-input {
+            max-width: 80px;
+        }
+    
+</style>
+
+<script>
+    (function () {
+        let optionCount = @Model.Options?.Count ?? 0;
+
+        document.getElementById("addOptionBtn").addEventListener("click", function () {
+            optionCount++;
+            let optionId = `option${optionCount}Container`;
+            let newOption = document.createElement("div");
+            newOption.className = "option-container";
+            newOption.id = optionId;
+            newOption.innerHTML = `
+                    <input type="text" title="Enter option text here." maxlength="1000" id="option${optionCount}Text" name="Options[${optionCount}].Text" class="form-control" />
+                    <input type="number" title="Enter numeric score value here." id="option${optionCount}Score" name="Options[${optionCount}].Score" class="form-control score-input" value="0"/>
+                    <button type="button" class="btn btn-danger btn-sm remove-option-btn" data-option-id="${optionId}">Delete Option</button>`;
+            document.getElementById("selectOptions").appendChild(newOption);
+        });
+
+        document.getElementById("selectOptions").addEventListener("click", function (event) {
+            if (event.target && event.target.classList.contains("remove-option-btn")) {
+                let optionId = event.target.getAttribute("data-option-id");
+                document.getElementById(optionId).remove();
+            }
+        });
+    })();
+</script>
+
+
+
+

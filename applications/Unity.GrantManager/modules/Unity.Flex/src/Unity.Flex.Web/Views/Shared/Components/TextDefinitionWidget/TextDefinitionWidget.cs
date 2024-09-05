@@ -43,23 +43,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget
 
             return View(await Task.FromResult(new TextDefinitionViewModel()));
         }
+    }
 
-        public class TextDefinitionWidgetStyleBundleContributor : BundleContributor
+    public class TextDefinitionWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/TextDefinitionWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/TextDefinitionWidget/Default.css");
         }
+    }
 
-        public class TextDefinitionWidgetScriptBundleContributor : BundleContributor
+    public class TextDefinitionWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/TextDefinitionWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/TextDefinitionWidget/Default.js");
         }
     }
 }

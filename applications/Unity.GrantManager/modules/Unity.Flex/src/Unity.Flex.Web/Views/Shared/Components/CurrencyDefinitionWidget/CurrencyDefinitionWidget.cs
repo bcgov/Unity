@@ -50,23 +50,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.CurrencyDefinitionWidget
 
             return View(await Task.FromResult(new CurrencyDefinitionViewModel()));
         }
+    }
 
-        public class CurrencyDefinitionWidgetStyleBundleContributor : BundleContributor
+    public class CurrencyDefinitionWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/CurrencyDefinitionWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/CurrencyDefinitionWidget/Default.css");
         }
+    }
 
-        public class CurrencyDefinitionWidgetScriptBundleContributor : BundleContributor
+    public class CurrencyDefinitionWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/CurrencyDefinitionWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/CurrencyDefinitionWidget/Default.js");
         }
     }
 }

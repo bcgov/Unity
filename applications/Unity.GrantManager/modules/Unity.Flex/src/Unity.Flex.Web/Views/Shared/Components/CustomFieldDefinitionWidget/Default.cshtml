@@ -1,4 +1,5 @@
 ﻿@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.CurrencyDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget;
 @using Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
@@ -25,6 +26,11 @@
             @await Component.InvokeAsync(typeof(NumericDefinitionWidget), new { Model.Definition })
         </abp-row>
         break;
+    case Unity.Flex.Worksheets.CustomFieldType.CheckboxGroup:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(CheckboxGroupDefinitionWidget), new { Model.Definition })
+        </abp-row>
+       break;
     case Unity.Flex.Worksheets.CustomFieldType.Radio:
         <abp-row class"m-0 p-0">
             @await Component.InvokeAsync(typeof(RadioDefinitionWidget), new { Model.Definition })

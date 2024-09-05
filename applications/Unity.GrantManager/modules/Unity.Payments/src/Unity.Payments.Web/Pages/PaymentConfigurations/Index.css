@@ -7,12 +7,11 @@
 
 .card {
 	padding: 1rem;
+	max-height: 80vh;
 	overflow: scroll;
 }
 
-input.form-control, textarea.form-control, .form-select {
-    width: 332px;
-}
+
 
 .field-validation-error {
 	float: inline-start;
@@ -42,8 +41,9 @@ input.form-control, textarea.form-control, .form-select {
 	max-width: 100%;
 }
 
-h4 {
+.payment-form  h4 {
 	padding: 4px;
+	font-weight:700;
 }
 
 @media only screen and (max-width: 850px) {
@@ -51,3 +51,22 @@ h4 {
 		float: none;
 	}
   }
+
+.payment-form .mb-3:nth-child(-n+3) {
+	width: 30%;
+}
+
+.payment-form .mb-3:nth-child(n+4) {
+	width: 45%;
+}
+
+.payment-form .mb-3:nth-child(n+6) {
+	width: 100%;
+}
+.submit-section{
+	display:inline-flex;
+	gap:1rem;
+}
+.note{
+	margin-left:5px;
+}
