@@ -11,9 +11,9 @@
     width: 100%;
 }
 
-#add-new-checkbox-table {
-    background-color: var(--bc-colors-blue-primary, #2E5DD7);
+#add-new-checkbox-table {    
     margin-top: 1rem;
+    margin-left: 1rem;
     border-radius: 5px;
 }
 
@@ -42,7 +42,9 @@
     #checkbox-options-table thead {
         position: sticky;
         top: 0;
-        background-color: lightgray;
+        height: 2rem;
+        color: #5d5d5d;
+        background-color: #fff;
     }
 
     #checkbox-options-table th {
