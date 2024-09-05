@@ -5,4 +5,5 @@
 .scoresheet-scrollable-content {
     overflow-y: scroll;
     height: calc(100vh - 120px);
+    margin-top: 10px;
 }
