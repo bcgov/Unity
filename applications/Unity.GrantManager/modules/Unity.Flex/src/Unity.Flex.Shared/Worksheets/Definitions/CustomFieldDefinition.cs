@@ -3,7 +3,7 @@
     public class CustomFieldDefinition
     {
         public CustomFieldDefinition() : base()
-        {            
+        {
         }
     }
 }

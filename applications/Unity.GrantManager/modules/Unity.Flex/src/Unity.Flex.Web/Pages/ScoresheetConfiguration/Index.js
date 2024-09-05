@@ -5,7 +5,7 @@ $(function () {
 });
 
 function importScoresheetFile(inputId) {
-    importFlexFile(inputId, "/api/app/scoresheet/import", "Scoring Sheet", 'refresh_scoresheet_list');
+    importFlexFile(inputId, "/api/app/scoresheet/import", "Scoresheet", 'refresh_scoresheet_list');
 }
 
 
@@ -39,7 +39,7 @@ scoresheetModal.onResult(function (response) {
 cloneScoresheetModal.onResult(function (response) {
     PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
     abp.notify.success(
-        'Scoring sheet cloning is successful.',
+        'Scoresheet cloning is successful.',
         'Scoresheet'
     );
 });
@@ -47,7 +47,7 @@ cloneScoresheetModal.onResult(function (response) {
 publishScoresheetModal.onResult(function (response) {
     PubSub.publish('refresh_scoresheet_list', { scoresheetId: scoresheetToEditId });
     abp.notify.success(
-        'Scoring sheet publishing is successful.',
+        'Scoresheet publishing is successful.',
         'Scoresheet'
     );
 });

@@ -1,0 +1,42 @@
+@model HistoryWidgetViewModel
+@using Unity.GrantManager.History
+@using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget;
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.GrantManager.Localization;
+@using Microsoft.Extensions.Localization
+@inject IHtmlLocalizer<GrantManagerResource> L
+@inject IStringLocalizerFactory StringLocalizerFactory
+@{
+    Layout = null;
+}
+<br/>
+<div class="mb-2 card border"> 
+    <div class="card-header bg-default custom-active"> 
+        <h4 class="mb-0 card-title">Application Status History</h4> 
+    </div> 
+    <div ref="tab-tabs" class="card-body" style="display: block;">
+        <div id="history-div" class="mt-2 history-container">
+            
+            @foreach (HistoryDto historyDto in Model.ApplicationStatusHistoryList)
+            {
+                <div class="mb-2 history-read-mode">
+                    <div class="unity-history-block read-mode">
+                        <div class="d-flex justify-content-between">
+                            <div class="fw-bold history-name">
+                                @historyDto.UserName
+                            </div>
+                        </div>
+                        <div class="history-lbl">
+                            <div>
+                                Status changed from
+                                <span class="status-change">@historyDto.OriginalValue</span> to
+                                <span class="status-change">@historyDto.NewValue</span>
+                            </div>
+                        </div>
+                        <div class="history-time mt-3 fw-bold">@historyDto.ChangeTime.ToLocalTime()</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div> 
+</div>

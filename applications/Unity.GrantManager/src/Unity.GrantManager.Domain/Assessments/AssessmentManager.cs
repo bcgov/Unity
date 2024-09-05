@@ -58,12 +58,16 @@ public class AssessmentManager : DomainService
 
         var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
 
+        var otherAssessments = await _assessmentRepository.GetListByApplicationId(application.Id);
+        bool hasOtherAssessments = otherAssessments != null && otherAssessments.Count != 0;
+
         var assessment = await _assessmentRepository.InsertAsync(
             new Assessment(
                 GuidGenerator.Create(),
                 application.Id,
                 assessorUser.Id),
             autoSave: true);
+        
 
         if (form.ScoresheetId != null && await _featureChecker.IsEnabledAsync("Unity.Flex"))
         {
@@ -71,7 +75,8 @@ public class AssessmentManager : DomainService
             {
                 ScoresheetId = form.ScoresheetId ?? Guid.Empty,
                 CorrelationId = assessment.Id,
-                CorrelationProvider = "Assessment"
+                CorrelationProvider = "Assessment",
+                RelatedCorrelationId = hasOtherAssessments ? otherAssessments![0].Id : null
             });
         }
 

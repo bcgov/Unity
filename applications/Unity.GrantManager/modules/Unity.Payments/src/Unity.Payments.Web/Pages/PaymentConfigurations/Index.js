@@ -50,4 +50,8 @@ $(function () {
         $(UIElements.inputProjectNumber).val();
         $(UIElements.readOnlyAccountCoding).val(currentAccount);
     }
+    $('#resetButton').click(function () {
+        $('#paymentConfigForm')[0].reset();
+        setAccountCodingDisplay();
+    });
 });

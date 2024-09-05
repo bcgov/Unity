@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.Flex;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
@@ -17,6 +18,7 @@ using Unity.GrantManager.Workflow;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
@@ -39,6 +41,7 @@ namespace Unity.GrantManager.Assessments
         private readonly IScoresheetAppService _scoresheetAppService;
         private readonly ILocalEventBus _localEventBus;
         private readonly IFeatureChecker _featureChecker;
+        private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
 
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
@@ -49,7 +52,8 @@ namespace Unity.GrantManager.Assessments
             IScoresheetInstanceAppService scoresheetInstanceAppService,
             IFeatureChecker featureChecker,
             ILocalEventBus localEventBus, 
-            IScoresheetAppService scoresheetAppService)
+            IScoresheetAppService scoresheetAppService,
+            IRepository<ApplicationForm, Guid> applicationFormRepository)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
@@ -60,6 +64,7 @@ namespace Unity.GrantManager.Assessments
             _scoresheetAppService = scoresheetAppService;
             _featureChecker = featureChecker;
             _localEventBus = localEventBus;
+            _applicationFormRepository = applicationFormRepository;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -80,21 +85,44 @@ namespace Unity.GrantManager.Assessments
             return await Task.FromResult<IList<AssessmentDto>>(ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(assessments.OrderByDescending(s => s.CreationTime).ToList()));
         }
 
-        public async Task<List<AssessmentListItemDto>> GetDisplayList(Guid applicationId)
+        public async Task<AssessmentDisplayListDto> GetDisplayList(Guid applicationId)
         {
-            var assessmentList = ObjectMapper.Map<
-                List<AssessmentWithAssessorQueryResultItem>,
-                List<AssessmentListItemDto>>
-                (await _assessmentRepository.GetListWithAssessorsAsync(applicationId));
+            var assessments = await _assessmentRepository.GetListWithAssessorsAsync(applicationId);
+            var assessmentList = ObjectMapper.Map<List<AssessmentWithAssessorQueryResultItem>,List<AssessmentListItemDto>>(assessments);
+            bool isApplicationUsingDefaultScoresheet = true;
             foreach (var assessment in assessmentList)
             {
-                assessment.SubTotal = await GetSubTotal(assessment);
+                var subtotalDto = await GetSubTotal(assessment);
+                assessment.SubTotal = subtotalDto.SubTotal;
+                if (!subtotalDto.IsUsingDefaultScoresheet)
+                {
+                    isApplicationUsingDefaultScoresheet = false;
+                }
             }
 
-            return assessmentList;
+            if(assessmentList.Count == 0)
+            {
+                isApplicationUsingDefaultScoresheet = await IsScoresheetNotLinkedToForm(applicationId);
+            }
+
+            return new AssessmentDisplayListDto { Data = assessmentList, IsApplicationUsingDefaultScoresheet = isApplicationUsingDefaultScoresheet };
         }
 
-        private async Task<double> GetSubTotal(AssessmentListItemDto assessment)
+        private async Task<bool> IsScoresheetNotLinkedToForm(Guid applicationId)
+        {
+            var application = await _applicationRepository.GetAsync(applicationId);
+            var applicationForm = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
+            if(applicationForm.ScoresheetId == null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private async Task<SubTotalDto> GetSubTotal(AssessmentListItemDto assessment)
         {
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
             {
@@ -102,39 +130,78 @@ namespace Unity.GrantManager.Assessments
 
                 if (instance == null)
                 {
-                    return (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
+
+                    double subTotal = (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
+                    return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = true};
+
                 }
                 else
                 {
                     var questionIds = instance.Answers.Select(a => a.QuestionId).Distinct().ToList();
-                    var existingNumericQuestionIds = await _scoresheetAppService.GetNonDeletedNumericQuestionIds(questionIds);
 
-                    double numericSubtotal = instance.Answers.Where(a => existingNumericQuestionIds.Contains(a.QuestionId))
-                        .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.Number)!.ToString()));
+                    var numericSubtotal = await GetNumericAnswerSubtotal(instance, questionIds);
+                    var yesNoSubtotal = await GetYesNoAnswerSubtotal(instance, questionIds);
+                    var selectListSubtotal = await GetSelectListAnswerSubtotal(instance, questionIds);
 
-                    var existingYesNoQuestions = await _scoresheetAppService.GetNonDeletedYesNoQuestions(questionIds);
-                    var existingYesNoQuestionIds = existingYesNoQuestions.Select(a => a.Id).ToList();
+                    double subTotal = numericSubtotal + yesNoSubtotal + selectListSubtotal;
+                    return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = false };
 
-                    double yesNoSubtotal = instance.Answers.Where(a => existingYesNoQuestionIds.Contains(a.QuestionId))
-                        .Sum(answer => {
-                            var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.YesNo)!.ToString();
-                            var question = existingYesNoQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
-                            var definition = JsonSerializer.Deserialize<QuestionYesNoDefinition>(question.Definition ?? "{}");
-                            return value switch
-                            {
-                                "Yes" => Convert.ToDouble(definition?.YesValue ?? 0),
-                                "No" => Convert.ToDouble(definition?.NoValue ?? 0),
-                                _ => 0,
-                            };
-                        });
-
-                    return numericSubtotal + yesNoSubtotal;
                 }
             }
             else
             {
-                return (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
+                double subTotal = (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
+                return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = true };
             }
+        }
+
+        private async Task<double> GetSelectListAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
+        {
+            var existingSelectListQuestions = await _scoresheetAppService.GetSelectListQuestionsAsync(questionIds);
+            var existingSelectListQuestionIds = existingSelectListQuestions.Select(a => a.Id).ToList();
+            double selectListSubtotal = instance.Answers.Where(a => existingSelectListQuestionIds.Contains(a.QuestionId))
+                .Sum(answer => {
+                    var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.SelectList)!.ToString();
+                    var question = existingSelectListQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
+                    var definition = JsonSerializer.Deserialize<QuestionSelectListDefinition>(question.Definition ?? "{}");
+                    var selectedOption = definition?.Options.Find(o => o.Value == value);
+                    if(selectedOption != null)
+                    {
+                        return selectedOption.NumericValue;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+                });
+            return selectListSubtotal;
+        }
+
+        private async Task<double> GetYesNoAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
+        {
+            var existingYesNoQuestions = await _scoresheetAppService.GetYesNoQuestionsAsync(questionIds);
+            var existingYesNoQuestionIds = existingYesNoQuestions.Select(a => a.Id).ToList();
+            double yesNoSubtotal = instance.Answers.Where(a => existingYesNoQuestionIds.Contains(a.QuestionId))
+                .Sum(answer => {
+                    var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.YesNo)!.ToString();
+                    var question = existingYesNoQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
+                    var definition = JsonSerializer.Deserialize<QuestionYesNoDefinition>(question.Definition ?? "{}");
+                    return value switch
+                    {
+                        "Yes" => Convert.ToDouble(definition?.YesValue ?? 0),
+                        "No" => Convert.ToDouble(definition?.NoValue ?? 0),
+                        _ => 0,
+                    };
+                });
+            return yesNoSubtotal;
+        }
+
+        private async Task<double> GetNumericAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
+        {            
+            var existingNumericQuestionIds = await _scoresheetAppService.GetNumericQuestionIdsAsync(questionIds);
+            double numericSubtotal = instance.Answers.Where(a => existingNumericQuestionIds.Contains(a.QuestionId))
+                .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.Number)!.ToString()));
+            return numericSubtotal;
         }
 
         /// <summary>

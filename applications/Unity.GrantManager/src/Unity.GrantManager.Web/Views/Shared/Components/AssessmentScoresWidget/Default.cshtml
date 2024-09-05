@@ -1,6 +1,7 @@
 ﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
+@using Unity.Flex.Web.Views.Shared.Components.QuestionSelectListWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
@@ -17,6 +18,13 @@
     <form id="assessmentScoresheetForm" action="Widgets/AssessmentScoresheet/UpdateAssessmentScoresheet" method="post" enctype="multipart/form-data">
         <abp-input type="hidden" id="AssessmentId" asp-for="@Model.AssessmentId" />
         <div class="container-fluid px-3" id="assessment-scoresheet">
+            @if (Model.Scoresheet.Sections.Any())
+            {
+                <div class="d-flex justify-content-end mb-3">
+                    <button type="button" class="btn btn-primary me-2" onclick="expandAllAccordions('assessment-scoresheet')">Expand All</button>
+                    <button type="button" class="btn btn-secondary" onclick="collapseAllAccordions('assessment-scoresheet')">Collapse All</button>
+                </div>
+            }
             <div>
                 <div>
                     <div class="accordion" id="scoresheetAccordion">
@@ -45,7 +53,7 @@
                                                                     @sectionNumber.@questionNumber @question.Label
                                                                 </button>
                                                             </h2>
-                                                            <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id" data-bs-parent="#questionsAccordion-@sec.Id">
+                                                            <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id">
                                                                 <div class="accordion-body">
                                                                     <form method="post" id="question-form-@question.Id">
                                                                         <p>@question.Description</p>
@@ -65,6 +73,11 @@
                                                                             case QuestionType.Text:
                                                                                 {
                                                                                     @await Component.InvokeAsync(typeof(QuestionTextWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, MinLength = question.Definition?.ConvertDefinition(question.Type)?.GetMinLengthValueOrNull(), MaxLength = question.Definition?.ConvertDefinition(question.Type)?.GetMaxLengthValueOrNull() })
+                                                                                    break;
+                                                                                }
+                                                                            case QuestionType.SelectList:
+                                                                                {
+                                                                                    @await Component.InvokeAsync(typeof(QuestionSelectListWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, Definition = question.Definition })
                                                                                     break;
                                                                                 }
                                                                         }
