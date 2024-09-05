@@ -67,8 +67,8 @@ body {
     --bs-btn-color: var(--bc-colors-white-primary-500);
     --bs-btn-bg: var(--bc-colors-blue-primary);
     --bs-btn-focus-shadow-rgb: 83, 117, 255;
-    --bs-btn-active-color: var(--bc-colors-blue-primary-500);
-    --bs-btn-active-bg: var(--bc-colors-white-primary);
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-text-links);
     --bs-btn-disabled-color: var(--bc-colors-grey-text-100);
     --bs-btn-disabled-bg: var(--bc-colors-white-primary-500);
     --bs-btn-border-radius: var(--bc-layout-margin-xsmall);
