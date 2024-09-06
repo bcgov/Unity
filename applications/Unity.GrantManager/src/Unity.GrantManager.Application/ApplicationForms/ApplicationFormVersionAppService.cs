@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.FileSystemGlobbing.Internal;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
@@ -331,7 +330,7 @@ namespace Unity.GrantManager.ApplicationForms
                 // (,\s*\"custom_additionalinfo-v1.*\")
                 // remove the fields that match the name
                 string pattern = "(,\\s*\\\"" + formName + ".*\")|(\"" + formName + ".*\\\",)";
-                applicationFormVersion.SubmissionHeaderMapping = Regex.Replace(mappingString, pattern, "");
+                applicationFormVersion.SubmissionHeaderMapping = Regex.Replace(mappingString, pattern, "", RegexOptions.None, TimeSpan.FromSeconds(30));
                 await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
             }
         }
