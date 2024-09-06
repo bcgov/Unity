@@ -19,9 +19,6 @@ namespace Unity.GrantManager;
 
 [DependsOn(
     typeof(AbpAutofacModule),
-    typeof(AbpLocalizationModule),
-    typeof(AbpLocalizationOptions),
-    typeof(AbpIdentityDomainModule),
     typeof(AbpTestBaseModule),
     typeof(AbpAuthorizationModule),
     typeof(GrantManagerDomainModule)

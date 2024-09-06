@@ -112,16 +112,19 @@ namespace Unity.GrantManager.Repositories
         }
 
         public virtual async Task<List<EntityChangeWithUsername>> GetEntityChangeByTypeWithUsernameAsync(
+                                                                        Guid? entityId,
                                                                         List<string> entityTypeFullNames,
                                                                         CancellationToken cancellationToken = default
                                                                         )
         {
             List<EntityChangeWithUsername> entities = new List<EntityChangeWithUsername>();
-            var auditLogs = await (await GetDbSetAsync())
-                .AsNoTracking()
-                .IncludeDetails()
-                .Where(x => x.EntityChanges.Any(y => entityTypeFullNames.Contains(y.EntityTypeFullName)))
-                .ToListAsync(GetCancellationToken(cancellationToken));
+            var dbSet = await GetDbSetAsync();
+            var dqQuery = dbSet.AsNoTracking().IncludeDetails().Where(x => x.EntityChanges.All(y => entityTypeFullNames.Contains(y.EntityTypeFullName)));
+
+            if(entityId != null && entityId != Guid.Empty) {
+                dqQuery = dbSet.AsNoTracking().IncludeDetails().Where(x => x.EntityChanges.Any(y => y.EntityId == entityId.ToString()));
+            }
+            var auditLogs = await dqQuery.Distinct().ToListAsync(GetCancellationToken(cancellationToken));
 
             foreach(var auditLog in auditLogs)
             {

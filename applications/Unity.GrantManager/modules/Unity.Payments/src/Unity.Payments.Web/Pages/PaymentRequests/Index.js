@@ -55,7 +55,7 @@ $(function () {
         },
         {
             text: 'History',
-            className: 'custom-table-btn flex-none btn btn-secondary',
+            className: 'custom-table-btn flex-none btn btn-secondary history',
             action: function (e, dt, node, config) {
                 location.href = '/PaymentHistory/Details?PaymentId=' + selectedPaymentIds[0];
             }
@@ -105,6 +105,7 @@ $(function () {
         listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
+    let history_button = dataTable.buttons(['.history']);
 
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
@@ -155,6 +156,7 @@ $(function () {
     }
 
     function checkActionButtons() {
+        console.log('in here');
         let isOnlySubmittedToCas = checkAllRowsHaveState('Submitted');
         if (dataTable.rows({ selected: true }).indexes().length > 0 && !isOnlySubmittedToCas) {
             if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
@@ -163,9 +165,16 @@ $(function () {
             } else {
                 payment_approve_buttons.disable();
             }
+
+            if(dataTable.rows({ selected: true }).indexes().length == 1) {
+                history_button.enable();
+            } else {
+                history_button.disable();
+            }
         }
         else {       
             payment_approve_buttons.disable();
+            history_button.enable();
         }
 
     }

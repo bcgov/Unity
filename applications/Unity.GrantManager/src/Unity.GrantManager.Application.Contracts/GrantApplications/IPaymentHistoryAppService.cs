@@ -7,6 +7,6 @@ namespace Unity.GrantManager.History
 {
     public interface IPaymentHistoryAppService : IApplicationService
     {
-        Task<List<HistoryDto>> GetPaymentHistoryList();
+        Task<List<HistoryDto>> GetPaymentHistoryList(Guid? entityId);
     }
 }

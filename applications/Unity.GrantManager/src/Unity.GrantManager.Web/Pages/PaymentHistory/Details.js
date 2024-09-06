@@ -10,7 +10,6 @@
     const defaultSortColumn = 0;
     let actionButtons = [];
 
-
     let responseCallback = function (result) {
         if (result + "" == "undefined") {
             return {
@@ -26,13 +25,17 @@
         };
     };
 
+    let inputAction = function () {
+        return document.getElementById('paymentId').value
+    };
+
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
         maxRows,
         defaultSortColumn,
         unity.grantManager.history.paymentHistory.getPaymentHistoryList,
-        {},
+        inputAction,
         responseCallback,
         actionButtons,
         'dynamicButtonContainerId');
@@ -155,5 +158,5 @@
             $(".select-all-applications").prop("checked", false);
             PubSub.publish('clear_selected_application');
         }
-    );   
+    );
 });

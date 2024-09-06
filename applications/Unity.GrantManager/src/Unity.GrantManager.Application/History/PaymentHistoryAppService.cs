@@ -31,11 +31,12 @@ namespace Unity.GrantManager.History
         }
 
         [DisableEntityChangeTracking]
-        public async Task<List<HistoryDto>> GetPaymentHistoryList()
+        public async Task<List<HistoryDto>> GetPaymentHistoryList(Guid? entityId)
         {
             List<HistoryDto> historyList = new List<HistoryDto>();
             CancellationToken cancellationToken = default;
             var entityChanges = await _auditLogRepository.GetEntityChangeByTypeWithUsernameAsync(
+                entityId,
                 entityTypeFullNames,
                 cancellationToken
             );
