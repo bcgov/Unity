@@ -45,7 +45,7 @@ namespace Unity.GrantManager.ApplicationForms
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _unitOfWorkManager = unitOfWorkManager;
             _formApiService = formsApiService;
-            _applicationFormSubmissionRepository = applicationFormSubmissionRepository; 
+            _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -298,7 +298,7 @@ namespace Unity.GrantManager.ApplicationForms
         public async Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId)
         {
             ApplicationFormSubmission formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
-            if(formSubmission.FormVersionId == null)
+            if (formSubmission.FormVersionId == null)
             {
                 try
                 {
@@ -322,7 +322,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
         }
 
-        public async Task DeleteWorkSheetMappingByFormName(string Name, Guid formVersionId)
+        public async Task DeleteWorkSheetMappingByFormName(string formName, Guid formVersionId)
         {
             ApplicationFormVersion applicationFormVersion = await _applicationFormVersionRepository.GetAsync(formVersionId);
             if (applicationFormVersion != null && applicationFormVersion.SubmissionHeaderMapping != null)
@@ -330,7 +330,7 @@ namespace Unity.GrantManager.ApplicationForms
                 string mappingString = applicationFormVersion.SubmissionHeaderMapping;
                 // (,\s*\"custom_additionalinfo-v1.*\")
                 // remove the fields that match the name
-                string pattern = "(,\\s*\\\"" + Name + ".*\")|(\""+Name+".*\\\",)";
+                string pattern = "(,\\s*\\\"" + formName + ".*\")|(\"" + formName + ".*\\\",)";
                 applicationFormVersion.SubmissionHeaderMapping = Regex.Replace(mappingString, pattern, "");
                 await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
             }
