@@ -240,7 +240,7 @@ namespace Unity.Flex.Scoresheets
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
-            var name = scoresheet.Title.ToLower().Trim() + "-v1";
+            var name = scoresheet.Title.ToLower().Trim() + "-v" + (scoresheet.Version + 1);
             _ = scoresheet.SetName(NameRegex().Replace(name, ""));
             scoresheet.Published = false;
             await _scoresheetRepository.InsertAsync(scoresheet);
