@@ -69,14 +69,21 @@ namespace Unity.Flex.Web.Views.Shared.Components
             if (string.IsNullOrEmpty(value)) return [];
             var currentValue = JsonSerializer.Deserialize<CheckboxGroupValue>(value);
             if (currentValue == null) return [];
+            if (currentValue.Value?.ToString() == string.Empty) return [];
             var values = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(currentValue.Value?.ToString() ?? "[]");
             return values?.Where(s => s.Value).Select(s => s.Key).ToArray() ?? [];
         }
 
-        public static bool CompareSelectListValue(this string value, string compare)
+        public static bool CompareYesNoSelectListValue(this string value, string compare)
         {
             var yesNo = JsonSerializer.Deserialize<YesNoValue>(value);
             return yesNo?.Value?.ToString() == compare;
+        }
+
+        public static bool CompareSelectListKey(this string key, string compare)
+        {
+            var value = JsonSerializer.Deserialize<SelectListOption>(key);
+            return value?.Value.ToString() == compare;
         }
 
         public static string ApplyCssClass(this CustomFieldType type)

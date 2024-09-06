@@ -13,7 +13,7 @@
 
         @foreach (var item in ((SelectListDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Options ?? [])
         {
-            <option selected="@Model.Field?.CurrentValue?.CompareSelectListValue(@item.Value)" value="@item.Value">@item.Key</option>
+            <option selected="@Model.Field?.CurrentValue?.CompareSelectListKey(@item.Key)" value="@item.Key">@item.Value</option>
         }
 
     </select>
