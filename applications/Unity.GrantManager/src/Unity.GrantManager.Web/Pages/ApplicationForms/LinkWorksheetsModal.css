@@ -17,6 +17,7 @@
     border: 1px solid gray;
     border-radius: 5px;
     height: calc(100% - 25px);
+    overflow-y: auto;
 }
 
 .slots-col {
