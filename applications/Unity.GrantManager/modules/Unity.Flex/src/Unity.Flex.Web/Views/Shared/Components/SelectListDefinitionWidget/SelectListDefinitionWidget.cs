@@ -27,8 +27,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget
 
         internal static object? ParseFormValues(IFormCollection form)
         {
-            var keys = form["Keys"];
-            var values = form["Values"];
+            var keys = form["SelectListKeys"];
+            var values = form["SelectListValues"];
 
             ValidateInput(keys, values);
 
@@ -43,7 +43,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget
             {
                 checkboxGroupDefinition.Options.Add(new SelectListOption()
                 {
-                    Key = key!,                    
+                    Key = key!,
                     Value = values[indx] ?? string.Empty
                 });
                 indx++;
@@ -120,6 +120,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
+            context.Files
+                .AddIfNotContains("/Views/Shared/Components/Common/KeyValueComponents.js");
+
             context.Files
               .AddIfNotContains("/Views/Shared/Components/SelectListDefinitionWidget/Default.js");
         }

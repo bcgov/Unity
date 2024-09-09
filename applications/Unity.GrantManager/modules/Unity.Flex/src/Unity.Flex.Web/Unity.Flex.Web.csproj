@@ -40,6 +40,7 @@
     <None Remove="Views\Shared\Components\CheckboxGroupWidget\Default.js" />
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.css" />
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.js" />
+    <None Remove="Views\Shared\Components\Common\KeyValueComponents.js" />
     <None Remove="Views\Shared\Components\CurrencyWidget\Default.css" />
     <None Remove="Views\Shared\Components\CurrencyWidget\Default.js" />
     <None Remove="Views\Shared\Components\CustomFieldDefinitionWidget\Default.css" />
@@ -89,6 +90,7 @@
     <EmbeddedResource Include="Views\Shared\Components\CheckboxGroupWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\Common\KeyValueComponents.js" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CustomFieldDefinitionWidget\Default.css" />

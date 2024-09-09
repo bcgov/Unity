@@ -119,6 +119,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
             context.Files
+                .AddIfNotContains("/Views/Shared/Components/Common/KeyValueComponents.js");
+
+            context.Files
               .AddIfNotContains("/Views/Shared/Components/CheckboxGroupDefinitionWidget/Default.js");
         }
     }

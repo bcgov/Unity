@@ -1,41 +1,28 @@
 $(function () {
-    let addSelectListOption;   
+    let addSelectListOption;
     let selectlistOptionsTable;
-    const checkKeyInputRegexBase = '[a-zA-Z0-9 ]+';
-    const checkKeyInputRegexVal = new RegExp('^' + checkKeyInputRegexBase + '$');
-    
+    let newRowControl = 'new-selectlist-row';
+    let deleteClass = 'delete-selectlist-option';
+    let newListItemTable = 'add-new-selectlist-table';
+    let validityClass = 'selectlist-input-valid';
+
     function bindRootActions() {
         addSelectListOption = $('#add-selectlist-option-btn');
-
-        bindaddSelectListOption();
+        
+        bindNewKeyValueOption(newListItemTable, addSelectListOption, 'key');
         bindSaveOption();
         bindCancelOption();
-        bindNewRowKeyCheck();
-    }
-
-    function bindaddSelectListOption() {
-        let newRowTable = $('#add-new-selectlist-table');
-
-        if (addSelectListOption) {
-            addSelectListOption.on('click', function (event) {
-                if (newRowTable) {
-                    newRowTable.toggleClass('hidden');
-                    $('#new-row-key').val('key' + ($('.key-input')?.toArray()?.length + 1));                    
-                    $('#new-row-label').focus();
-                    addSelectListOption.toggleClass('hidden');
-                }
-            });
-        }
+        bindNewRowKeyCheck(newRowControl);
     }
 
     function bindSaveOption() {
         let save = $('#save-selectlist-option-btn');
         if (save) {
-            save.on('click', function (event) {               
-                let row = getNewInputRow();
+            save.on('click', function (event) {
+                let row = getNewInputRow(newRowControl);
 
-                if (!validateInputCharacters())
-                    return;                    
+                if (!validateInputCharacters(newRowControl))
+                    return;
 
                 // Add valid row to table
                 $('#selectlist-options-table').find('tbody')
@@ -50,54 +37,9 @@ $(function () {
         }
     }
 
-    function getNewInputRow() {
-        let newRow = $('#new-selectlist-row');
-        let inputs = newRow.find('input');
-        let row = {};
-        row.key = inputs[0].value;
-        row.label = inputs[1].value;
-        return row;
-    }
-
-    function validateInputCharacters() {
-        let row = getNewInputRow();
-
-        // check against existing rows
-        let existingRows = $('.key-input').toArray();
-        let existing = existingRows.find(o => o.value.toLowerCase() == row.key.toLowerCase());
-
-        // validate format of row before adding                
-        if (!isAlphanumericWithSpace(row.key)) {
-            addSummaryError('Invalid key syntax provided');
-            return false;
-        }
-
-        if (existing) {
-            addSummaryError('Duplicate keys are not allowed');
-            return false;
-        }
-
-        return true;
-    }
-
-    function clearSummaryError() {
-        $('#invalid-input-summary-text').text();
-        $('#invalid-input-error-summary').addClass('hidden');        
-    }
-
-    function addSummaryError(message) {
-        $('#invalid-input-summary-text').text(message);        
-        $('#invalid-input-error-summary').removeClass('hidden');                
-    }
-
-    function isAlphanumericWithSpace(str) {
-        // Regular expression to match alphanumeric characters and spaces        
-        return checkKeyInputRegexVal.test(str);
-    }
-
     function getRowTemplate(key, label) {
-        return `<tr><td><input type="text" class="form-control key-input" name="Keys" pattern="${checkKeyInputRegexBase}" value="${key}" minlength="1" maxlength="25" required id="new-list-key-${key}" />
-        </td><td><input type="text" class="form-control" name="Values" value="${label}" maxlength="25" required id="new-list-label-${key}" />
+        return `<tr><td><input type="text" class="form-control key-input" name="SelectListKeys" pattern="${checkKeyInputRegexBase}" value="${key}" minlength="1" maxlength="25" required id="new-list-key-${key}" />
+        </td><td><input type="text" class="form-control" name="SelectListValues" value="${label}" maxlength="25" required id="new-list-label-${key}" />
         </td><td><button id="data-btn-${key}" class="delete-selectlist-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
         <i class="fl fl-delete"></i></button></td></tr>`
     }
@@ -112,17 +54,6 @@ $(function () {
                 }
             });
         }
-    }
-
-    function bindNewRowKeyCheck() {
-        let newKey = $('#new-row-key');
-
-        newKey.on('change', function (event) {               
-            let valid = validateInputCharacters();
-            if (valid === true) {
-                clearSummaryError();
-            }
-        });
     }
 
     function cancelAddRow() {
@@ -142,8 +73,8 @@ $(function () {
         let lastRow = selectlistOptionsTable.rows[selectlistOptionsTable.rows.length - 1];
         let deleteBtn = $(lastRow).find('.delete-selectlist-option');
         if (deleteBtn) {
-            bindDeleteAction(deleteBtn);            
-        }        
+            bindDeleteAction(deleteBtn, selectlistOptionsTable);
+        }
     }
 
     function bindNewRowInputChanges() {
@@ -151,46 +82,15 @@ $(function () {
         let lastRow = selectlistOptionsTable.rows[selectlistOptionsTable.rows.length - 1];
         let keyInput = $(lastRow).find('.key-input');
         if (keyInput) {
-            bindInputChanges(keyInput);
-        }
-    }
-
-    function bindDeleteAction(buttons) {
-        buttons.on('click', function (event) {
-            let rowIndex = event.target.closest('tr').rowIndex;
-            selectlistOptionsTable.deleteRow(rowIndex);
-        })
-    }
-
-    function bindRowActions() {
-        let deleteOptions = $('.delete-selectlist-option');
-        if (deleteOptions) {
-            bindDeleteAction(deleteOptions); 
-        }
-    }
-
-    function bindInputChanges(keys) {
-        if (keys) {
-            keys.on('change', function (event) {
-                let input = event.target;
-                let result = input.checkValidity();
-
-                if (!result) {
-                    $(input).addClass('selectlist-input-valid')
-                    $('#invalid-input-error-summary').removeClass('hidden');
-                } else {
-                    $(input).removeClass('selectlist-input-valid')
-                    $('#invalid-input-error-summary').addClass('hidden');
-                }                
-            });
+            bindInputChanges(keyInput, validityClass);
         }
     }
 
     function init() {
         selectlistOptionsTable = document.getElementById('selectlist-options-table');
         bindRootActions();
-        bindRowActions();        
-        bindInputChanges($('.key-input'));
+        bindRowActions(deleteClass, selectlistOptionsTable);
+        bindInputChanges($('.key-input'), validityClass);
     }
 
     PubSub.subscribe(
