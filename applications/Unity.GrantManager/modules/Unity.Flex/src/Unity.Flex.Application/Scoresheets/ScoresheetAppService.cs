@@ -240,8 +240,14 @@ namespace Unity.Flex.Scoresheets
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
-            var name = scoresheet.Title.ToLower().Trim() + "-v" + (scoresheet.Version + 1);
-            _ = scoresheet.SetName(NameRegex().Replace(name, ""));
+            string? name;
+            do
+            {
+                scoresheet.Version += 1;
+                name = NameRegex().Replace(scoresheet.Title.ToLower().Trim() + "-v" + scoresheet.Version, "");
+            } while (await _scoresheetRepository.GetByNameAsync(name,false) != null);
+            
+            _ = scoresheet.SetName(name);
             scoresheet.Published = false;
             await _scoresheetRepository.InsertAsync(scoresheet);
         }
