@@ -14,7 +14,6 @@ namespace Unity.GrantManager.GrantApplications
         private readonly IApplicationContactService _applicationContactService;
         private readonly IRepository<Application, Guid> _applicationsRepository;
        
-
         public ApplicationContactAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
             _applicationContactService = GetRequiredService<IApplicationContactService>();

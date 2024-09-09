@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
@@ -43,7 +44,7 @@ namespace Unity.GrantManager.ApplicationForms
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _unitOfWorkManager = unitOfWorkManager;
             _formApiService = formsApiService;
-            _applicationFormSubmissionRepository = applicationFormSubmissionRepository; 
+            _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -296,7 +297,7 @@ namespace Unity.GrantManager.ApplicationForms
         public async Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId)
         {
             ApplicationFormSubmission formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
-            if(formSubmission.FormVersionId == null)
+            if (formSubmission.FormVersionId == null)
             {
                 try
                 {
@@ -317,6 +318,20 @@ namespace Unity.GrantManager.ApplicationForms
             else
             {
                 return await GetVersion(formSubmission.FormVersionId ?? Guid.Empty);
+            }
+        }
+
+        public async Task DeleteWorkSheetMappingByFormName(string formName, Guid formVersionId)
+        {
+            ApplicationFormVersion applicationFormVersion = await _applicationFormVersionRepository.GetAsync(formVersionId);
+            if (applicationFormVersion != null && applicationFormVersion.SubmissionHeaderMapping != null)
+            {
+                string mappingString = applicationFormVersion.SubmissionHeaderMapping;
+                // (,\s*\"custom_additionalinfo-v1.*\")
+                // remove the fields that match the name
+                string pattern = "(,\\s*\\\"" + formName + ".*\")|(\"" + formName + ".*\\\",)";
+                applicationFormVersion.SubmissionHeaderMapping = Regex.Replace(mappingString, pattern, "", RegexOptions.None, TimeSpan.FromSeconds(30));
+                await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
             }
         }
 

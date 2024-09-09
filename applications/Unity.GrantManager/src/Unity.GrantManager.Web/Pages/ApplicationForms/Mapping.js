@@ -179,7 +179,7 @@
                     let chefsMappingProperty = existingMapping[intakeProperty];
                     let intakeMappingCard = document.getElementById("unity_" + intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
-                    if (chefsMappingDiv != null) {
+                    if (chefsMappingDiv != null && intakeMappingCard != null) {
                         chefsMappingDiv.appendChild(intakeMappingCard);
                     } else {
                         abp.notify.error(
