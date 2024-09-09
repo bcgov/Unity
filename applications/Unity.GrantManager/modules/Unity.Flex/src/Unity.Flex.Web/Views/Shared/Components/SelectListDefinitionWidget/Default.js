@@ -54,8 +54,8 @@ $(function () {
         let newRow = $('#new-selectlist-row');
         let inputs = newRow.find('input');
         let row = {};
-        row.key = $(inputs[0]).val();
-        row.label = $(inputs[1]).val();
+        row.key = inputs[0].value;
+        row.label = inputs[1].value;
         return row;
     }
 
@@ -131,6 +131,7 @@ $(function () {
         $('#new-row-key').val('');
         $('#new-row-label').val('');
 
+        $('#new-row-label').blur();
         newRowTable.toggleClass('hidden');
         addSelectListOption.toggleClass('hidden');
         clearSummaryError();
