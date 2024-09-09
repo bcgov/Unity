@@ -13,46 +13,48 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System;
 
-namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
+namespace Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget
 {
-    [ViewComponent(Name = "CheckboxGroupDefinitionWidget")]
+    [ViewComponent(Name = "SelectListDefinitionWidget")]
     [Widget(
-        RefreshUrl = "../Flex/Widgets/CheckboxGroupDefinition/Refresh",
-        ScriptTypes = [typeof(CheckboxGroupDefinitionWidgetScriptBundleContributor)],
-        StyleTypes = [typeof(CheckboxGroupDefinitionWidgetStyleBundleContributor)],
+        RefreshUrl = "../Flex/Widgets/SelectListDefinition/Refresh",
+        ScriptTypes = [typeof(SelectListDefinitionWidgetScriptBundleContributor)],
+        StyleTypes = [typeof(SelectListDefinitionWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public partial class CheckboxGroupDefinitionWidget : AbpViewComponent
+    public partial class SelectListDefinitionWidget : AbpViewComponent
     {
         private static readonly Regex _regex = MyRegex();
 
         internal static object? ParseFormValues(IFormCollection form)
         {
-            var keys = form["CheckboxKeys"];
-            var labels = form["CheckboxLabels"];
+            var keys = form["SelectListKeys"];
+            var values = form["SelectListValues"];
 
-            ValidateInput(keys, labels);
+            ValidateInput(keys, values);
 
-            var checkboxGroupDefinition = new CheckboxGroupDefinition
+            var checkboxGroupDefinition = new SelectListDefinition
             {
                 Options = []
             };
+
             var indx = 0;
+
             foreach (var key in keys)
             {
-                checkboxGroupDefinition.Options.Add(new CheckboxGroupDefinitionOption()
+                checkboxGroupDefinition.Options.Add(new SelectListOption()
                 {
                     Key = key!,
-                    Label = labels[indx]!,
-                    Value = false
+                    Value = values[indx] ?? string.Empty
                 });
                 indx++;
             }
+
             return checkboxGroupDefinition;
         }
 
-        private static void ValidateInput(StringValues keys, StringValues labels)
+        private static void ValidateInput(StringValues keys, StringValues values)
         {
-            ValidateValuesAdded(keys, labels);
+            ValidateValuesAdded(keys, values);
             ValidateKeysUnique(keys);
             ValidateKeysFormat(keys);
         }
@@ -61,7 +63,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
         {
             if (keys.Any(key => !_regex.IsMatch(key ?? string.Empty)))
             {
-                throw new UserFriendlyException("Checkbox keys must match input pattern");
+                throw new UserFriendlyException("Select list keys must match input pattern");
             }
         }
 
@@ -69,7 +71,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
         {
             if (keys.Distinct().Count() != keys.Count)
             {
-                throw new UserFriendlyException("Checkbox keys must be unique");
+                throw new UserFriendlyException("Select list keys must be unique");
             }
         }
 
@@ -77,7 +79,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
         {
             if (keys.Count == 0 || labels.Count == 0)
             {
-                throw new UserFriendlyException("Checkbox keys not provided");
+                throw new UserFriendlyException("Select list keys not provided");
             }
         }
 
@@ -85,36 +87,36 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
         {
             if (definition != null)
             {
-                CheckboxGroupDefinition? checkboxGroupDefinition = JsonSerializer.Deserialize<CheckboxGroupDefinition>(definition);
+                SelectListDefinition? selectListDefinition = JsonSerializer.Deserialize<SelectListDefinition>(definition);
 
-                if (checkboxGroupDefinition != null)
+                if (selectListDefinition != null)
                 {
-                    return View(await Task.FromResult(new CheckboxGroupDefinitionViewModel()
+                    return View(await Task.FromResult(new SelectListDefinitionViewModel()
                     {
                         Definition = definition,
-                        Type = Flex.Worksheets.CustomFieldType.CheckboxGroup,
-                        CheckboxOptions = checkboxGroupDefinition.Options,
+                        Type = Flex.Worksheets.CustomFieldType.SelectList,
+                        Options = selectListDefinition.Options,
                     }));
                 }
             }
 
-            return View(await Task.FromResult(new CheckboxGroupDefinitionViewModel()));
+            return View(await Task.FromResult(new SelectListDefinitionViewModel()));
         }
 
         [GeneratedRegex(@"^[a-zA-Z0-9 ]+$", RegexOptions.Compiled)]
         private static partial Regex MyRegex();
     }
 
-    public class CheckboxGroupDefinitionWidgetStyleBundleContributor : BundleContributor
+    public class SelectListDefinitionWidgetStyleBundleContributor : BundleContributor
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
             context.Files
-              .AddIfNotContains("/Views/Shared/Components/CheckboxGroupDefinitionWidget/Default.css");
+              .AddIfNotContains("/Views/Shared/Components/SelectListDefinitionWidget/Default.css");
         }
     }
 
-    public class CheckboxGroupDefinitionWidgetScriptBundleContributor : BundleContributor
+    public class SelectListDefinitionWidgetScriptBundleContributor : BundleContributor
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
@@ -122,7 +124,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
                 .AddIfNotContains("/Views/Shared/Components/Common/KeyValueComponents.js");
 
             context.Files
-              .AddIfNotContains("/Views/Shared/Components/CheckboxGroupDefinitionWidget/Default.js");
+              .AddIfNotContains("/Views/Shared/Components/SelectListDefinitionWidget/Default.js");
         }
     }
 }
