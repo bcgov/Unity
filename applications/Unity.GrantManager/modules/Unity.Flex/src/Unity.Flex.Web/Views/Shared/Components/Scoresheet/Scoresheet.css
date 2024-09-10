@@ -63,4 +63,46 @@
     cursor: move; 
 }
 
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.button-container button {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .button-container {
+        justify-content: center; 
+    }
+}
+
+.accordion-button {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.accordion-button .flex-grow-1 {
+    min-width: 0; 
+}
+/*
+#scoresheet-accordion {
+    width: 100%;
+    overflow-x: hidden;
+}*/
+
+
+.scoresheet-title {
+    font-weight: bold;
+}
+
+.scoresheet-name {
+    font-size: 0.7rem;
+}
+
+
 

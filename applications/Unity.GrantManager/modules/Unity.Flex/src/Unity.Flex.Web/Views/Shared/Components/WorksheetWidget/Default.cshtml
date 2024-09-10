@@ -15,36 +15,22 @@
     var worksheet = @Model.Worksheet;
 
     <div class="row">
-        <div class="col-md-4">
-            <div class="p-3">
-                <button data-worksheet-id="@worksheet.Id" class="btn btn-light edit-worksheet-btn worksheet-btn" type="button">
-                    <i class="fl fl-edit"></i> <span>@L["Worksheet:Configuration:EditWorksheetButtonText"].Value</span>
+        <div class="button-container">
+            <button data-worksheet-id="@worksheet.Id" class="btn btn-light edit-worksheet-btn worksheet-btn" type="button">
+                <i class="fl fl-edit"></i> <span>@L["Worksheet:Configuration:EditWorksheetButtonText"].Value</span>
+            </button>
+            <button data-worksheet-id="@worksheet.Id" class="btn btn-light clone-worksheet-btn worksheet-btn" type="button">
+                <i class="fl fl-copy"></i> <span>@L["Worksheet:Configuration:CloneWorksheetButtonText"].Value</span>
+            </button>
+            @if (!Model.Worksheet.Published)
+            {   
+                <button data-worksheet-id="@worksheet.Id" class="btn btn-light publish-worksheet-btn worksheet-btn" type="button">
+                    <i class="fl fl-upload"></i> <span>@L["Worksheet:Configuration:PublishWorksheetButtonText"].Value</span>
                 </button>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="p-3">
-                <button data-worksheet-id="@worksheet.Id" class="btn btn-light clone-worksheet-btn worksheet-btn" type="button">
-                    <i class="fl fl-copy"></i> <span>@L["Worksheet:Configuration:CloneWorksheetButtonText"].Value</span>
-                </button>
-            </div>
-        </div>
-        @if (!Model.Worksheet.Published)
-        {
-            <div class="col-md-4">
-                <div class="p-3">
-                    <button data-worksheet-id="@worksheet.Id" class="btn btn-light publish-worksheet-btn worksheet-btn" type="button">
-                        <i class="fl fl-upload"></i> <span>@L["Worksheet:Configuration:PublishWorksheetButtonText"].Value</span>
-                    </button>
-                </div>
-            </div>
-        }
-        <div class="col-md-4">
-            <div class="p-3">
-                <button data-worksheet-id="@worksheet.Id" data-worksheet-title="@worksheet.Title" data-worksheet-name="@worksheet.Name"  class="btn btn-light export-worksheet-btn worksheet-btn" type="button">
-                    <i class="fl fl-export"></i> <span>@L["Worksheet:Configuration:ExportWorksheetButtonText"].Value</span>
-                </button>
-            </div>
+            }
+            <button data-worksheet-id="@worksheet.Id" data-worksheet-title="@worksheet.Title" data-worksheet-name="@worksheet.Name" class="btn btn-light export-worksheet-btn worksheet-btn" type="button">
+                <i class="fl fl-export"></i> <span>@L["Worksheet:Configuration:ExportWorksheetButtonText"].Value</span>
+            </button>
         </div>
     </div>
 

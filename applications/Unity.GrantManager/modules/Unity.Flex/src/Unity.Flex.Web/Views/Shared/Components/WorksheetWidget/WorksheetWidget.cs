@@ -28,6 +28,8 @@ public class WorksheetWidgetStyleBundleContributor : BundleContributor
     {
         context.Files
           .AddIfNotContains("/Views/Shared/Components/WorksheetWidget/Worksheet.css");
+        context.Files
+          .AddIfNotContains("/Views/Shared/Components/Scoresheet/Scoresheet.css");
     }
 }
 
