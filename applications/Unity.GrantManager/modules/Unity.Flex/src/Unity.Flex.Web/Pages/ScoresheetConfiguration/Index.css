@@ -29,9 +29,9 @@
 
 @media (max-width: 768px) {
     .scoresheet-column, .preview-column {
-        width: 100% !important; /* Force columns to take full width on small screens */
-        display: block !important; /* Explicitly force block layout to ensure stacking */
-        height: auto !important; /* Let the columns grow based on their content */
+        width: 100% !important; 
+        display: block !important; 
+        height: auto !important; 
         overflow-y: visible;
         box-sizing: border-box;
     }
