@@ -1,6 +1,4 @@
 ﻿$(function () {
-
-    const l = abp.localization.getResource('GrantManager');
     let dt = $('#AuditHistoryTable');
     let dataTable;
 

@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Repositories
         : EfCoreRepository<GrantManagerDbContext, AuditLog, Guid>,
             IEfCoreAuditLogRepository
     {
-        private IIdentityUserAppService _identityUserAppService;
+        private readonly IIdentityUserAppService _identityUserAppService;
 
         public EfCoreAuditLogRepository(IDbContextProvider<GrantManagerDbContext> dbContextProvider, IIdentityUserAppService identityUserAppService)
             : base(dbContextProvider) { 
@@ -64,18 +64,19 @@ namespace Unity.GrantManager.Repositories
             DateTime? endTime = null,
             EntityChangeType? changeType = null,
             string? entityId = null,
-            string entityTypeFullName = "",
+            string? entityTypeFullName = null,
             bool includeDetails = false,
             CancellationToken cancellationToken = default
         )
         {
+            string entityFullName = entityTypeFullName ?? "";
             var query = await GetEntityChangeListQueryAsync(
                 auditLogId,
                 startTime,
                 endTime,
                 changeType,
                 entityId,
-                entityTypeFullName,
+                entityFullName,
                 includeDetails
             );
 
@@ -93,17 +94,18 @@ namespace Unity.GrantManager.Repositories
             DateTime? endTime = null,
             EntityChangeType? changeType = null,
             string? entityId = null,
-            string entityTypeFullName = "",
+            string? entityTypeFullName = null,
             CancellationToken cancellationToken = default
         )
         {
+            string entityFullName = entityTypeFullName ?? "";
             var query = await GetEntityChangeListQueryAsync(
                 auditLogId,
                 startTime,
                 endTime,
                 changeType,
                 entityId,
-                entityTypeFullName
+                entityFullName
             );
 
             var totalCount = await query.LongCountAsync(GetCancellationToken(cancellationToken));
@@ -114,7 +116,7 @@ namespace Unity.GrantManager.Repositories
         public virtual async Task<List<EntityChangeWithUsername>> GetEntityChangeByTypeWithUsernameAsync(
                                                                         Guid? entityId,
                                                                         List<string> entityTypeFullNames,
-                                                                        CancellationToken cancellationToken = default
+                                                                        CancellationToken cancellationToken
                                                                         )
         {
             List<EntityChangeWithUsername> entities = new List<EntityChangeWithUsername>();

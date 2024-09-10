@@ -12,7 +12,6 @@ namespace Unity.GrantManager.History
     public class PaymentHistoryAppService : GrantManagerAppService, IPaymentHistoryAppService
     {
         private readonly IEfCoreAuditLogRepository _auditLogRepository;
-        private readonly IdentityUserAppService _identityUserAppService;
         private const string ExpenseApprovalObject = "Unity.Payments.Domain.PaymentRequests.ExpenseApproval";
         private const string PaymentRequestObject = "Unity.Payments.Domain.PaymentRequests.PaymentRequest";
         private readonly List<string> entityTypeFullNames = new()
@@ -22,11 +21,9 @@ namespace Unity.GrantManager.History
             };
 
         public PaymentHistoryAppService(
-            IEfCoreAuditLogRepository auditLogRepository,
-            IdentityUserAppService identityUserAppService
+            IEfCoreAuditLogRepository auditLogRepository
         )
         {
-            _identityUserAppService = identityUserAppService;
             _auditLogRepository = auditLogRepository;
         }
 
@@ -62,7 +59,7 @@ namespace Unity.GrantManager.History
             return historyList;
         }
 
-        private string GetShortEntityName(string fullEntityName)
+        private static string GetShortEntityName(string fullEntityName)
         {
             string pattern = @"[^.]+$";
             string shortEntityName = "";
@@ -80,17 +77,6 @@ namespace Unity.GrantManager.History
         private static string CleanValue(string? value)
         {
             return value?.Replace("\"", "") ?? "";
-        }
-
-        private static string GetLookupValue(
-            string value,
-            Dictionary<string, string>? lookupDictionary
-        )
-        {
-            return
-                lookupDictionary != null && lookupDictionary.TryGetValue(value, out var lookupValue)
-                ? lookupValue
-                : value;
-        }       
+        }   
     }
 }
