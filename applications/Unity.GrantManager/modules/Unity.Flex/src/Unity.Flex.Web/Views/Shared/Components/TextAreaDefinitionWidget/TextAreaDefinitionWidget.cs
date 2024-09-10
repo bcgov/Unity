@@ -7,14 +7,12 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
 {
     [Widget(
         RefreshUrl = "../Flex/Widgets/TextAreaDefinition/Refresh",
-        ScriptTypes = [typeof(TextAreaDefinitionWidgetScriptBundleContributor)],
-        StyleTypes = [typeof(TextAreaDefinitionWidgetStyleBundleContributor)],
+        ScriptTypes = [typeof(TextAreaDefinitionWidgetScriptBundleContributor)],        
         AutoInitialize = true)]
     public class TextAreaDefinitionWidget : AbpViewComponent
     {
@@ -45,15 +43,6 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
             }
 
             return View(await Task.FromResult(new TextAreaDefinitionViewModel()));
-        }
-    }
-
-    public class TextAreaDefinitionWidgetStyleBundleContributor : BundleContributor
-    {
-        public override void ConfigureBundle(BundleConfigurationContext context)
-        {
-            context.Files
-              .AddIfNotContains("/Views/Shared/Components/TextAreaDefinitionWidget/Default.css");
         }
     }
 

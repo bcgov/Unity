@@ -12,7 +12,12 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextAreaWidget
         [Route("Refresh")]
         public IActionResult Refresh(WorksheetFieldViewModel? fieldModel, string modelName)
         {
-            return ViewComponent(typeof(TextAreaWidget), new { fieldModel, modelName });
+            if (ModelState.IsValid)
+            {
+                return ViewComponent(typeof(TextAreaWidget), new { fieldModel, modelName });
+            }
+            else
+                return ViewComponent(typeof(TextAreaWidget));
         }
     }
 }

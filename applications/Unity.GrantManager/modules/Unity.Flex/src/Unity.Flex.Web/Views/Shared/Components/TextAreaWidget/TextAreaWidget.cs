@@ -11,22 +11,12 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextAreaWidget
     [Widget(
         RefreshUrl = "../Flex/Widgets/TextAreaWidget/Refresh",
         ScriptTypes = [typeof(TextAreaWidgetScriptBundleContributor)],
-        StyleTypes = [typeof(TextAreaWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class TextAreaWidget : AbpViewComponent
     {
         public async Task<IViewComponentResult> InvokeAsync(WorksheetFieldViewModel? fieldModel, string modelName)
         {
             return View(await Task.FromResult(new TextAreaViewModel() { Field = fieldModel, Name = modelName }));
-        }
-    }
-
-    public class TextAreaWidgetStyleBundleContributor : BundleContributor
-    {
-        public override void ConfigureBundle(BundleConfigurationContext context)
-        {
-            context.Files
-              .AddIfNotContains("/Views/Shared/Components/TextAreaWidget/Default.css");
         }
     }
 
