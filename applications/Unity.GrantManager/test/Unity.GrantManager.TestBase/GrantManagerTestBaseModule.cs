@@ -18,6 +18,8 @@ using Volo.Abp.TenantManagement;
 namespace Unity.GrantManager;
 
 [DependsOn(
+    typeof(AbpLocalizationModule),
+    typeof(AbpIdentityDomainModule),
     typeof(AbpAutofacModule),
     typeof(AbpTestBaseModule),
     typeof(AbpAuthorizationModule),

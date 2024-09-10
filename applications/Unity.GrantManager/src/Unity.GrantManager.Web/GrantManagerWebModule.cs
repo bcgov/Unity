@@ -64,6 +64,8 @@ using Unity.Payments;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 using Unity.Flex.Web;
+using Volo.Abp.Identity;
+using Volo.Abp.Localization;
 
 namespace Unity.GrantManager.Web;
 
@@ -71,6 +73,8 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerHttpApiModule),
     typeof(GrantManagerApplicationModule),
     typeof(GrantManagerEntityFrameworkCoreModule),
+    typeof(AbpLocalizationModule),
+    typeof(AbpIdentityDomainModule),
     typeof(AbpAutofacModule),
     typeof(AbpSettingManagementWebModule),
     typeof(UnityAspNetCoreMvcUIThemeUX2Module),

@@ -32,16 +32,15 @@ namespace Unity.GrantManager.Intake
             return testData;
         }
 
-
-        // [InlineData("test-submission1.json", 14)]
-        // [InlineData("test-submission2.json", 20)]
-        // [InlineData("test-submission3.json", 14)]
-        // public void ExtractSubmissionFiles_ReturnsExpectedCount(string filename, int expectedCount)
-        // {
-        //     dynamic? formSubmission = LoadTestData(filename);
-        //     Dictionary<Guid, string> dictionary = _intakeFormSubmissionMapper.ExtractSubmissionFiles(formSubmission);
-        //     dictionary.Count.ShouldBe(expectedCount);
-        // }
+        [InlineData("test-submission1.json", 14)]
+        [InlineData("test-submission2.json", 20)]
+        [InlineData("test-submission3.json", 14)]
+        public void ExtractSubmissionFiles_ReturnsExpectedCount(string filename, int expectedCount)
+        {
+            dynamic? formSubmission = LoadTestData(filename);
+            Dictionary<Guid, string> dictionary = _intakeFormSubmissionMapper.ExtractSubmissionFiles(formSubmission);
+            dictionary.Count.ShouldBe(expectedCount);
+        }
     }
 }
 
