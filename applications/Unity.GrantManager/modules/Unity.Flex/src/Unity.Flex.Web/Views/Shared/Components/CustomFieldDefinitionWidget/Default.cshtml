@@ -5,6 +5,7 @@
 @using Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.RadioDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget
 @using Unity.Flex.Worksheets.Definitions;
 
@@ -40,6 +41,11 @@
     case Unity.Flex.Worksheets.CustomFieldType.SelectList:
         <abp-row class"m-0 p-0">
             @await Component.InvokeAsync(typeof(SelectListDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Worksheets.CustomFieldType.TextArea:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(TextAreaDefinitionWidget), new { Model.Definition })
         </abp-row>
         break;
     default:

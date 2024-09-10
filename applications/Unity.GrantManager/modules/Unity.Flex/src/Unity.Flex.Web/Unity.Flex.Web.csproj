@@ -67,6 +67,7 @@
     <None Remove="Views\Shared\Components\SelectListWidget\Default.js" />
     <None Remove="Views\Shared\Components\CurrencyDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\CurrencyDefinitionWidget\Default.js" />
+    <None Remove="Views\Shared\Components\TextAreaWidget\Default.js" />
     <None Remove="Views\Shared\Components\TextDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\TextDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
@@ -121,6 +122,8 @@
     <EmbeddedResource Include="Views\Shared\Components\SelectListWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\TextAreaDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\TextAreaWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\TextDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\TextDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />

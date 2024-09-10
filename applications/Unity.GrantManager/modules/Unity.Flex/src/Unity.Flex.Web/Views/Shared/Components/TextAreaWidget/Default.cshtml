@@ -1,0 +1,14 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Web.Views.Shared.Components.TextAreaWidget;
+@using Unity.Flex.Worksheets.Definitions;
+
+@model TextAreaViewModel;
+
+@if (Model.Field != null)
+{
+    <textarea id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+              name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
+              rows="@(((TextAreaDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Rows ?? 1)"
+              class="form-control"              
+              onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")">@Model?.Field?.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type)</textarea>
+}

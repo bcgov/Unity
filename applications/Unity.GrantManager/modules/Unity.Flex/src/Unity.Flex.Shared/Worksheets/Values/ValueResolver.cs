@@ -23,6 +23,7 @@ namespace Unity.Flex.Worksheets.Values
                 CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupValue>(currentValue)?.Value,
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListValue>(currentValue)?.Value,
                 CustomFieldType.BCAddress => ValueResolverHelpers.ConvertBCAddress(JsonSerializer.Deserialize<BCAddressValue>(currentValue)?.Value),
+                CustomFieldType.TextArea => JsonSerializer.Deserialize<TextAreaValue>(currentValue)?.Value,
                 _ => throw new NotImplementedException()
             };
         }
