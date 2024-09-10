@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.ChangeTracking;
-using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.History
 {
