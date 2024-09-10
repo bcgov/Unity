@@ -152,7 +152,7 @@ public class WorksheetInstanceWidgetStyleBundleContributor : BundleContributor
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
         context.Files
-          .AddIfNotContains("/Views/Shared/Components/WorksheetInstanceWidget/Default.css");
+            .AddIfNotContains("/Views/Shared/Components/WorksheetInstanceWidget/Default.css");
     }
 }
 

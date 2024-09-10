@@ -21,7 +21,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.Radio => "radio",
                 CustomFieldType.Checkbox => "checkbox",
                 CustomFieldType.CheckboxGroup => "checkbox",
-                CustomFieldType.Email => "email",
+                CustomFieldType.Email => "email",                
                 _ => "text",
             };
         }
@@ -48,6 +48,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupDefinition>(definition),
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
                 CustomFieldType.BCAddress => JsonSerializer.Deserialize<BCAddressDefinition>(definition),
+                CustomFieldType.TextArea => JsonSerializer.Deserialize<TextAreaDefinition>(definition),
                 _ => null,
             };
         }

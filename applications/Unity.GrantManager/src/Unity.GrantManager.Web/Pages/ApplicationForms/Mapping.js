@@ -386,6 +386,7 @@
             case 'CheckboxGroup':
             case 'SelectList':
             case 'BCAddress':
+            case 'TextArea':
                 return `<i class="${setTypeIcon(intakeField)}"></i> `;
             case 'Number':
                 return setTypeIndicatorText('123');
@@ -418,6 +419,8 @@
                 return 'fl fl-list';
             case 'BCAddress':
                 return 'fl fl-globe';
+            case 'TextArea':
+                return 'fl fl-text-area';
             default:
                 return '';
         }
