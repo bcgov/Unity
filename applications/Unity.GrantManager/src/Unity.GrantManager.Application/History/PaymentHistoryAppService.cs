@@ -8,32 +8,16 @@ using Volo.Abp.Domain.ChangeTracking;
 
 namespace Unity.GrantManager.History
 {
-    public class PaymentHistoryAppService : GrantManagerAppService, IPaymentHistoryAppService
+    public class PaymentHistoryAppService(IExtendedAuditLogRepository extendedAuditLogRepository) : GrantManagerAppService, IPaymentHistoryAppService
     {
-        private readonly IEfCoreAuditLogRepository _auditLogRepository;
-        private const string ExpenseApprovalObject = "Unity.Payments.Domain.PaymentRequests.ExpenseApproval";
-        private const string PaymentRequestObject = "Unity.Payments.Domain.PaymentRequests.PaymentRequest";
-        private readonly List<string> entityTypeFullNames = new()
-            {
-                ExpenseApprovalObject,
-                PaymentRequestObject,
-            };
-
-        public PaymentHistoryAppService(
-            IEfCoreAuditLogRepository auditLogRepository
-        )
-        {
-            _auditLogRepository = auditLogRepository;
-        }
-
         [DisableEntityChangeTracking]
         public async Task<List<HistoryDto>> GetPaymentHistoryList(Guid? entityId)
         {
-            List<HistoryDto> historyList = new List<HistoryDto>();
+            List<HistoryDto> historyList = [];
             CancellationToken cancellationToken = default;
-            var entityChanges = await _auditLogRepository.GetEntityChangeByTypeWithUsernameAsync(
+            var entityChanges = await extendedAuditLogRepository.GetEntityChangeByTypeWithUsernameAsync(
                 entityId,
-                entityTypeFullNames,
+                HistoryConsts.PaymentEntityTypeFullNames,
                 cancellationToken
             );
 
@@ -43,7 +27,7 @@ namespace Unity.GrantManager.History
                 {
                     string origninalValue = CleanValue(propertyChange.OriginalValue);
                     string newValue = CleanValue(propertyChange.NewValue);
-                    HistoryDto historyDto = new HistoryDto()
+                    HistoryDto historyDto = new()
                     {
                         EntityName = GetShortEntityName(entityChange.EntityChange.EntityTypeFullName),
                         PropertyName = propertyChange.PropertyName, // The name of the property on the entity class.
@@ -62,7 +46,7 @@ namespace Unity.GrantManager.History
         {
             string pattern = @"[^.]+$";
             string shortEntityName = "";
-            Regex myRegex = new Regex(pattern, RegexOptions.IgnoreCase);
+            Regex myRegex = new(pattern, RegexOptions.IgnoreCase);
 
             Match m = myRegex.Match(fullEntityName);   // m is the first match
             if (m.Success)
@@ -76,6 +60,6 @@ namespace Unity.GrantManager.History
         private static string CleanValue(string? value)
         {
             return value?.Replace("\"", "") ?? "";
-        }   
+        }
     }
 }

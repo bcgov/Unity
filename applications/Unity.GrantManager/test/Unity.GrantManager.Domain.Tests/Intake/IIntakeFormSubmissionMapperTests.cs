@@ -7,7 +7,6 @@ using Unity.GrantManager.Applications;
 using NSubstitute;
 using System.Collections.Generic;
 using Shouldly;
-using AutoMapper.Configuration.Annotations;
 
 namespace Unity.GrantManager.Intake
 {
@@ -32,6 +31,7 @@ namespace Unity.GrantManager.Intake
             return testData;
         }
 
+        [Theory]
         [InlineData("test-submission1.json", 14)]
         [InlineData("test-submission2.json", 20)]
         [InlineData("test-submission3.json", 14)]

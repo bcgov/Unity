@@ -6,7 +6,7 @@ using Volo.Abp.AuditLogging;
 
 namespace Unity.GrantManager.Applications;
 
-public interface IEfCoreAuditLogRepository : IAuditLogRepository
+public interface IExtendedAuditLogRepository : IAuditLogRepository
 {
     Task<List<EntityChangeWithUsername>> GetEntityChangeByTypeWithUsernameAsync(Guid? entityId, List<string> entityTypeFullNames, CancellationToken cancellationToken);
 }
