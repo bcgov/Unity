@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
+using Unity.Flex.Domain.Worksheets;
 
 namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
@@ -37,7 +38,7 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .ThenInclude(sec => sec.Fields.OrderBy(q => q.Order))
                 .OrderBy(s => s.Order)
                 .ThenBy(s => s.CreationTime)
-                .ToListAsync();    
+                .ToListAsync();
         }
 
         public async Task<List<Scoresheet>> GetPublishedListAsync()
@@ -64,6 +65,16 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
             return await dbSet
                 .IncludeDetails(includeDetails)
                 .FirstOrDefaultAsync(s => s.Sections.Any(s => s.Id == id));
+        }
+
+        public async Task<List<Scoresheet>> GetByNameStartsWithAsync(string name, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .Where(s => s.Name.StartsWith(name))
+                .ToListAsync();
         }
     }
 }

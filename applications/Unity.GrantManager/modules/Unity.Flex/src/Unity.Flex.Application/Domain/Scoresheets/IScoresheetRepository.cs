@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Worksheets;
 using Volo.Abp.Domain.Repositories;
 
 namespace Unity.Flex.Domain.Scoresheets
@@ -13,5 +14,6 @@ namespace Unity.Flex.Domain.Scoresheets
         Task<Scoresheet> GetAsync(Guid id, bool includeDetails = true);
         Task<Scoresheet?> GetByNameAsync(string name, bool includeDetails = false);
         Task<Scoresheet?> GetBySectionAsync(Guid id, bool includeDetails = false);
+        Task<List<Scoresheet>> GetByNameStartsWithAsync(string name, bool includeDetails = false);
     }
 }
