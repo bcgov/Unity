@@ -1,0 +1,256 @@
+﻿apiVersion: template.openshift.io/v1
+kind: Template
+message: |-
+  A new application been created in your project: unity-applicantportal-web
+  For more information about using this template, including OpenShift considerations, 
+  see template usage guide found in the project readme.md and wiki documents.
+metadata:
+  name: unity-applicantportal-web
+  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # oc process -f .\openshift\unity-applicantportal-web.yaml --param-file=namespace.env | oc create -f -
+  labels:
+    template: unity-applicantportal-web
+  annotations:
+    description: |-
+      Template for running a DotNet web application on OpenShift.
+    iconClass: icon-dotnet
+    openshift.io/display-name: DotNet web application
+    template.openshift.io/long-description: |-
+      This template defines resources needed to build and deploy a GitHub DotNet core base web application.
+    tags: dotnet,unity-applicantportal-web
+parameters:
+# Project namespace parameters
+- description: The name of the application grouping.
+  displayName: Application Group
+  name: APPLICATION_GROUP
+  value: unity-applicantportal
+- description: The name of the application.
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: true
+  value: unity-applicantportal-web
+# Additional parameters for project application provisioning.
+- description: The name of the OpenShift Service exposed for the database.
+  displayName: Database Service Name
+  name: DATABASE_SERVICE_NAME
+  required: true
+  value: unity-data-postgres
+- description: Volume space available for data, e.g. 512Mi, 2Gi.
+  displayName: Volume Capacity
+  name: VOLUME_CAPACITY
+  required: true
+  value: 40Mi
+- description: Git source URI for application
+  displayName: Git Repository URL
+  name: SOURCE_REPOSITORY_URL
+  required: true
+  value: https://github.com/bcgov/Unity
+- description: Git branch/tag reference
+  displayName: Git Reference
+  name: SOURCE_REPOSITORY_REF
+  value: dev
+- description: 'Custom hostname for http service route. Leave blank for default hostname,
+    e.g.: <application-name>-<project>.<default-domain-suffix>'
+  displayName: Custom http Route Hostname
+  name: HOSTNAME_HTTP
+  value: dev2-grants.apps.silver.devops.gov.bc.ca
+- description: ASPNETCORE_ENVIRONMENT
+  displayName: ASPNETCORE_ENVIRONMENT
+  name: ASPNETCORE_ENVIRONMENT
+  value: Development
+- description: ASPNETCORE_URLS
+  displayName: ASPNETCORE_URLS
+  name: ASPNETCORE_URLS
+  value: 'http://*:8080'
+# Base image location
+- description: The Namespace where the container image resides
+  displayName: Registry Namespace
+  name: IMAGEPULL_NAMESPACE
+  from: '[a-zA-Z0-9]{5}-tools'
+  generate: expression
+- description: The ImageStream Name 
+  displayName: Registry imagestream name
+  name: IMAGESTREAM_NAME
+  value: unity-applicantportal-build 
+- description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
+  displayName: Application Version
+  name: IMAGESTREAM_TAG
+  required: true
+  value: latest
+- description: The registry path of the container image used.
+  displayName: Registry location to pull from
+  name: IMAGEPULL_REGISTRY
+  value: image-registry.openshift-image-registry.svc:5000
+# Resource limits control how much CPU and memory a container will consume
+- description: The minimum amount of CPU the Container is guaranteed.
+  displayName: CPU Request
+  name: CPU_REQUEST
+  required: true
+  value: 50m
+- description: The maximum amount of CPU the Container is allowed to use when running.
+  displayName: CPU Limit
+  name: CPU_LIMIT
+  required: true
+  value: 50m
+- description: The minimum amount of Memory the Container is guaranteed.
+  displayName: Memory Request
+  name: MEMORY_REQUEST
+  required: true
+  value: 64Mi
+- description: The maximum amount of Memory the Container is allowed to use when running.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 64Mi
+# Template objects to instantiate the project application.
+objects:
+# Configmap
+- apiVersion: v1 
+  kind: ConfigMap 
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  data:
+    # Configuration values can be set as key-value properties
+    ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+# Service
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: The application's http port.
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    ports:
+      - name: 80-tcp
+        protocol: TCP
+        port: 80
+        targetPort: 8080
+    selector:
+      app: ${APPLICATION_NAME}
+# Route
+- apiVersion: route.openshift.io/v1
+  id: ${APPLICATION_NAME}-http
+  kind: Route
+  metadata:
+    annotations:
+      description: Route for application's http service.
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    host: ${HOSTNAME_HTTP}
+    path: /
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}
+      weight: 100
+    port:
+      targetPort: 80-tcp
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+    wildcardPolicy: None
+# Persistent storage for the application logfiles.
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${APPLICATION_NAME}-logfiles
+    labels:
+      app: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    accessModes:
+    - ReadWriteMany
+    resources:
+      requests:
+        storage: ${VOLUME_CAPACITY}
+      storageClassName: netapp-file-standard
+      volumeMode: Filesystem
+# Deployment
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ${APPLICATION_NAME}
+    annotations:
+      app.openshift.io/route-disabled: "false"
+      app.openshift.io/vcs-ref: ${SOURCE_REPOSITORY_REF}
+      app.openshift.io/vcs-uri: ${SOURCE_REPOSITORY_URL}
+      # Add the trigger annotation
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${APPLICATION_NAME}\")].image","pause":"false"}]
+    labels:
+      app: ${APPLICATION_NAME}
+      app.openshift.io/runtime: dotnet
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: ${APPLICATION_NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: ${APPLICATION_NAME}
+      spec:
+        volumes:
+          - name: ${APPLICATION_NAME}-logfiles
+            persistentVolumeClaim:
+              claimName: ${APPLICATION_NAME}-logfiles
+        containers:
+          - name: ${APPLICATION_NAME}
+            image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+            imagePullPolicy: Always
+            resources:
+              limits:
+                cpu: ${CPU_LIMIT}
+                memory: ${MEMORY_LIMIT}
+              requests:
+                cpu: ${CPU_REQUEST}
+                memory: ${MEMORY_REQUEST}
+            ports:
+              - containerPort: 443
+                protocol: TCP
+              - containerPort: 80
+                protocol: TCP
+            env:
+              - name: ConnectionStrings__Default
+                value: >-
+                  Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+            envFrom:
+              - configMapRef:
+                  name: ${APPLICATION_NAME}
+              - configMapRef:
+                  name: ${DATABASE_SERVICE_NAME}
+              - secretRef:
+                  name: ${DATABASE_SERVICE_NAME}
+            volumeMounts:
+              - mountPath: /app/logs
+                name: ${APPLICATION_NAME}-logfiles
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst

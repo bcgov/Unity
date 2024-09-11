@@ -67,6 +67,7 @@
                     );
                     $('#saveProjectInfoBtn').prop('disabled', true);
                     PubSub.publish('project_info_saved', projectInfoObj);
+                    PubSub.publish('refresh_detail_panel_summary');
                 });
         }
         catch (error) {

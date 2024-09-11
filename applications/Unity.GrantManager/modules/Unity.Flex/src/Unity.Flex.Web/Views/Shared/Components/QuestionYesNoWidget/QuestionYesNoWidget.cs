@@ -5,7 +5,6 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
 using System;
-using static Volo.Abp.UI.Navigation.DefaultMenuNames.Application;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
 {

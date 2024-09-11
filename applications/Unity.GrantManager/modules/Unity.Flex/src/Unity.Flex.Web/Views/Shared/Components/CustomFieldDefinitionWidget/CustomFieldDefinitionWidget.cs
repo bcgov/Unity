@@ -24,7 +24,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget
                 CustomFieldType.Numeric => NumericDefinitionWidget.NumericDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.Text => TextDefinitionWidget.TextDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.Currency => CurrencyDefinitionWidget.CurrencyDefinitionWidget.ParseFormValues(form),
+                CustomFieldType.CheckboxGroup => CheckboxGroupDefinitionWidget.CheckboxGroupDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.Radio => RadioDefinitionWidget.RadioDefinitionWidget.ParseFormValues(form),
+                CustomFieldType.SelectList => SelectListDefinitionWidget.SelectListDefinitionWidget.ParseFormValues(form),
+                CustomFieldType.TextArea => TextAreaDefinitionWidget.TextAreaDefinitionWidget.ParseFormValues(form),
                 _ => null,
             };
         }
@@ -39,23 +42,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget
 
             return View(await Task.FromResult(new CustomFieldDefinitionViewModel() { Type = customFieldType, Definition = definition }));
         }
+    }
 
-        public class CustomFieldDefinitionWidgetStyleBundleContributor : BundleContributor
+    public class CustomFieldDefinitionWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/CustomFieldDefinitionWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/CustomFieldDefinitionWidget/Default.css");
         }
+    }
 
-        public class CustomFieldDefinitionWidgetScriptBundleContributor : BundleContributor
+    public class CustomFieldDefinitionWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/CustomFieldDefinitionWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/CustomFieldDefinitionWidget/Default.js");
         }
     }
 }

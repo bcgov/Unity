@@ -59,5 +59,38 @@
     cursor: grab;
 }
 
+.draggable-header {
+    cursor: move; 
+}
+
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.button-container button {
+    white-space: nowrap;
+}
+
+.accordion-button {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.accordion-button .flex-grow-1 {
+    min-width: 0; 
+}
+
+.scoresheet-title {
+    font-weight: bold;
+}
+
+.scoresheet-name {
+    font-size: 0.7rem;
+}
+
 
 

@@ -21,7 +21,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.Radio => "radio",
                 CustomFieldType.Checkbox => "checkbox",
                 CustomFieldType.CheckboxGroup => "checkbox",
-                CustomFieldType.Email => "email",
+                CustomFieldType.Email => "email",                
                 _ => "text",
             };
         }
@@ -48,6 +48,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupDefinition>(definition),
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
                 CustomFieldType.BCAddress => JsonSerializer.Deserialize<BCAddressDefinition>(definition),
+                CustomFieldType.TextArea => JsonSerializer.Deserialize<TextAreaDefinition>(definition),
                 _ => null,
             };
         }
@@ -58,7 +59,8 @@ namespace Unity.Flex.Web.Views.Shared.Components
             {
                 QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
                 QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
-                QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),                
+                QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),
+                QuestionType.SelectList => JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition),
                 _ => null,
             };
         }
@@ -68,14 +70,21 @@ namespace Unity.Flex.Web.Views.Shared.Components
             if (string.IsNullOrEmpty(value)) return [];
             var currentValue = JsonSerializer.Deserialize<CheckboxGroupValue>(value);
             if (currentValue == null) return [];
+            if (currentValue.Value?.ToString() == string.Empty) return [];
             var values = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(currentValue.Value?.ToString() ?? "[]");
             return values?.Where(s => s.Value).Select(s => s.Key).ToArray() ?? [];
         }
 
-        public static bool CompareSelectListValue(this string value, string compare)
+        public static bool CompareYesNoSelectListValue(this string value, string compare)
         {
             var yesNo = JsonSerializer.Deserialize<YesNoValue>(value);
             return yesNo?.Value?.ToString() == compare;
+        }
+
+        public static bool CompareSelectListKey(this string key, string compare)
+        {
+            var value = JsonSerializer.Deserialize<SelectListOption>(key);
+            return value?.Value.ToString() == compare;
         }
 
         public static string ApplyCssClass(this CustomFieldType type)

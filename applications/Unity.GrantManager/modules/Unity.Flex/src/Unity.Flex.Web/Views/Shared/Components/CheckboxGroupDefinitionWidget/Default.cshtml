@@ -1,0 +1,71 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Localization
+@using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
+@using Unity.Flex.Worksheets.Definitions;
+
+@inject IHtmlLocalizer<FlexResource> L
+
+@model CheckboxGroupDefinitionViewModel;
+
+<abp-row class="m-0 p-0">
+    <div class="checkbox-options-list">
+        <table id="checkbox-options-table">
+            <caption></caption>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Label</th>
+                    <th class="checkbox-options-actions-column"></th>
+                </tr>
+            </thead>
+            <tbody id="checkbox-options-body">
+                @foreach (var option in Model.CheckboxOptions)
+                {
+                    <tr>
+                        <td><input type="text" class="form-control key-input" name="CheckboxKeys" pattern="[a-zA-Z0-9 ]+" value="@option.Key" minlength="1" maxlength="25" required id="key-@option.Key" /></td>
+                        <td><input type="text" class="form-control" name="CheckboxLabels" value="@option.Label" maxlength="25" required id="label-@option.Key" /></td>
+                        <td>
+                            <abp-button id="data-btn-@option.Key"
+                                        class="delete-checkbox-option btn-danger"
+                                        icon-type="Other" 
+                                        icon="fl fl-delete"
+                                        abp-tooltip="Delete"
+                                        button-type="Danger" />
+                        </td>
+                    </tr>                    
+                }
+            </tbody>
+        </table>
+    </div>
+    <table id="add-new-checkbox-table" class="hidden">
+        <caption></caption>
+        <thead>
+        <th></th>
+        <th></th>
+        <th></th>
+        </thead>
+        <tr id="new-checkbox-row">
+            <td><input type="text" class="form-control" id="new-row-key" placeholder="Key" /></td>
+            <td><input type="text" class="form-control" id="new-row-label" placeholder="Label" /></td>
+            <td class="new-row-actions">
+                <abp-button id="save-checkbox-option-btn" icon-type="Other" icon="fl fl-checkmark"
+                            abp-tooltip="Confirm"
+                            button-type="Primary" />
+                <abp-button id="cancel-checkbox-option-btn" icon-type="Other" icon="fl fl-cancel"
+                            abp-tooltip="Cancel"
+                            button-type="Secondary" />
+            </td>
+        </tr>
+    </table>
+    <div id="invalid-input-error-summary" class="input-errors hidden"><p id="invalid-input-summary-text"></p></div>
+    <div class="checkbox-options-edit-controls">
+        <abp-button id="add-checkbox-option-btn"
+                    text="@L["Worksheet:Configuration:AddCheckboxOptionText"].Value"                    
+                    button-type="Secondary" />
+    </div>
+</abp-row>
+<script>
+    if (PubSub) {
+        PubSub.publish('checkbox_group_widget_fired');
+    }
+</script>

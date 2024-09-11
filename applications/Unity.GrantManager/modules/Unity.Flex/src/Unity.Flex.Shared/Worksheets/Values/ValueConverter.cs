@@ -23,6 +23,7 @@ namespace Unity.Flex.Worksheets.Values
                 CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupValue(currentValue)),
                 CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListValue(currentValue)),
                 CustomFieldType.BCAddress => JsonSerializer.Serialize(new BCAddressValue(currentValue)),
+                CustomFieldType.TextArea => JsonSerializer.Serialize(new TextAreaValue(currentValue)),
                 _ => throw new NotImplementedException()
             };
         }
@@ -34,6 +35,7 @@ namespace Unity.Flex.Worksheets.Values
                 QuestionType.Text => JsonSerializer.Serialize(new TextValue(currentValue)),
                 QuestionType.Number => JsonSerializer.Serialize(new NumericValue(currentValue)),
                 QuestionType.YesNo => JsonSerializer.Serialize(new YesNoValue(ValueConverterHelpers.ConvertYesNo(currentValue))),
+                QuestionType.SelectList => JsonSerializer.Serialize(new SelectListValue( currentValue)),
                 _ => throw new NotImplementedException()
             };
         }

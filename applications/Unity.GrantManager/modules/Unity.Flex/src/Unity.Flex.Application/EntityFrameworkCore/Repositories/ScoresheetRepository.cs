@@ -20,14 +20,24 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .FirstAsync(s => s.Id == id);
         }
 
+        public async Task<Scoresheet?> GetByNameAsync(string name, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .FirstOrDefaultAsync(s => s.Name == name);
+        }
+
         public async Task<List<Scoresheet>> GetListWithChildrenAsync()
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Scoresheets
                 .Include(s => s.Sections.OrderBy(sec => sec.Order))
                 .ThenInclude(sec => sec.Fields.OrderBy(q => q.Order))
-                .OrderBy(s => s.CreationTime)
-                .ToListAsync();    
+                .OrderBy(s => s.Order)
+                .ThenBy(s => s.CreationTime)
+                .ToListAsync();
         }
 
         public async Task<List<Scoresheet>> GetPublishedListAsync()
@@ -45,6 +55,25 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                     .Include(s => s.Sections.OrderBy(sec => sec.Order))
                     .ThenInclude(ss => ss.Fields.OrderBy(q => q.Order))
                     .FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public async Task<Scoresheet?> GetBySectionAsync(Guid id, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .FirstOrDefaultAsync(s => s.Sections.Any(s => s.Id == id));
+        }
+
+        public async Task<List<Scoresheet>> GetByNameStartsWithAsync(string name, bool includeDetails = false)
+        {
+            var dbSet = await GetDbSetAsync();
+
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .Where(s => s.Name.StartsWith(name))
+                .ToListAsync();
         }
     }
 }

@@ -179,7 +179,7 @@
                     let chefsMappingProperty = existingMapping[intakeProperty];
                     let intakeMappingCard = document.getElementById("unity_" + intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
-                    if (chefsMappingDiv != null) {
+                    if (chefsMappingDiv != null && intakeMappingCard != null) {
                         chefsMappingDiv.appendChild(intakeMappingCard);
                     } else {
                         abp.notify.error(
@@ -294,7 +294,7 @@
                 $('#originalScoresheetId').val(scoresheetId);
                 Swal.fire({
                     title: "Note",
-                    text: "Please note that any changes made to the scoring sheet template will not impact assessments that have already been scored using the previous scoresheet template.",
+                    text: "Please note that any changes made to the scoresheet template will not impact assessments that have already been scored using the previous scoresheet template.",
                     confirmButtonText: 'Ok',
                     customClass: {
                         confirmButton: 'btn btn-primary'
@@ -386,6 +386,7 @@
             case 'CheckboxGroup':
             case 'SelectList':
             case 'BCAddress':
+            case 'TextArea':
                 return `<i class="${setTypeIcon(intakeField)}"></i> `;
             case 'Number':
                 return setTypeIndicatorText('123');
@@ -418,6 +419,8 @@
                 return 'fl fl-list';
             case 'BCAddress':
                 return 'fl fl-globe';
+            case 'TextArea':
+                return 'fl fl-text-area';
             default:
                 return '';
         }

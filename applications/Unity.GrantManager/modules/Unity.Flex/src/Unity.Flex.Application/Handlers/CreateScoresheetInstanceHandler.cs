@@ -13,7 +13,8 @@ namespace Unity.Flex.Handlers
             await scoresheetInstanceAppService.CreateAsync(new CreateScoresheetInstanceDto() {
                 CorrelationId = eventData.CorrelationId,
                 CorrelationProvider = eventData.CorrelationProvider,
-                ScoresheetId = eventData.ScoresheetId
+                ScoresheetId = eventData.ScoresheetId,
+                RelatedCorrelationId = eventData.RelatedCorrelationId,
             }); 
         }
     }

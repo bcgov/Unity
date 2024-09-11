@@ -25,7 +25,8 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize(new RadioDefinition()),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize(new CheckboxDefinition()),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupDefinition()),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),                    
+                    CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),
+                    CustomFieldType.TextArea => JsonSerializer.Serialize(new TextAreaDefinition()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -46,7 +47,8 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize((RadioDefinition)definition),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize((CheckboxDefinition)definition),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize((CheckboxGroupDefinition)definition),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize((SelectListDefinition)definition),                   
+                    CustomFieldType.SelectList => JsonSerializer.Serialize((SelectListDefinition)definition),
+                    CustomFieldType.TextArea => JsonSerializer.Serialize((TextAreaDefinition)definition),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -67,7 +69,8 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.Radio => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.Checkbox => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(element.ToString()),
-                    CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),                    
+                    CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),
+                    CustomFieldType.TextArea => JsonSerializer.Serialize(element.ToString()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -83,7 +86,8 @@ namespace Unity.Flex.Worksheets.Definitions
                 {
                     QuestionType.Number => JsonSerializer.Serialize(new NumericDefinition()),
                     QuestionType.Text => JsonSerializer.Serialize(new TextDefinition()),                    
-                    QuestionType.YesNo => JsonSerializer.Serialize(new QuestionYesNoDefinition()),                    
+                    QuestionType.YesNo => JsonSerializer.Serialize(new QuestionYesNoDefinition()),
+                    QuestionType.SelectList => JsonSerializer.Serialize(new QuestionSelectListDefinition()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -93,7 +97,8 @@ namespace Unity.Flex.Worksheets.Definitions
                 {
                     QuestionType.Number => JsonSerializer.Serialize((NumericDefinition)definition),
                     QuestionType.Text => JsonSerializer.Serialize((TextDefinition)definition),
-                    QuestionType.YesNo => JsonSerializer.Serialize((QuestionYesNoDefinition)definition),                    
+                    QuestionType.YesNo => JsonSerializer.Serialize((QuestionYesNoDefinition)definition), 
+                    QuestionType.SelectList => JsonSerializer.Serialize((QuestionSelectListDefinition)definition),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -104,6 +109,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     QuestionType.Number => JsonSerializer.Serialize(element.ToString()),
                     QuestionType.Text => JsonSerializer.Serialize(element.ToString()),                    
                     QuestionType.YesNo => JsonSerializer.Serialize(element.ToString()),
+                    QuestionType.SelectList => JsonSerializer.Serialize(element.ToString()),
                     _ => throw new NotImplementedException(),
                 };
             } else if (definition is string)
@@ -113,6 +119,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     QuestionType.Number => JsonSerializer.Serialize(definition),
                     QuestionType.Text => JsonSerializer.Serialize(definition),
                     QuestionType.YesNo => JsonSerializer.Serialize(definition),
+                    QuestionType.SelectList => JsonSerializer.Serialize(definition),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -162,7 +169,8 @@ namespace Unity.Flex.Worksheets.Definitions
         {
             return field switch
             {
-                TextDefinition => ((TextDefinition)field).MinLength.ToString(),                
+                TextDefinition => ((TextDefinition)field).MinLength.ToString(),
+                TextAreaDefinition => ((TextAreaDefinition)field).MinLength.ToString(),
                 _ => null,
             };
         }
@@ -172,6 +180,7 @@ namespace Unity.Flex.Worksheets.Definitions
             return field switch
             {
                 TextDefinition => ((TextDefinition)field).MaxLength.ToString(),
+                TextAreaDefinition => ((TextAreaDefinition)field).MaxLength.ToString(),
                 _ => null,
             };
         }

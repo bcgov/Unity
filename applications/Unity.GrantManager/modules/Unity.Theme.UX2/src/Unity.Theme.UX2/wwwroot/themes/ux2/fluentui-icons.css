@@ -19,6 +19,10 @@
     content: '\EA37';
 }
 
+.fl-history:before {
+    content: '\E81C';
+}
+
 /*GID362 : U+E16C*/ /**!!**/
 .fl-attach:before {
     content: '\E723';
@@ -388,4 +392,8 @@
 
 .fl-globe:before {
     content: '\E774';
+}
+
+.fl-text-area:before {
+    content: '\E7BC';
 }
