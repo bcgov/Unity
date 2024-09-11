@@ -98,7 +98,7 @@ namespace Unity.Flex.Scoresheets
         public async Task CloneScoresheetAsync(Guid scoresheetIdToClone)
         {
             using var unitOfWork = _unitOfWorkManager.Begin();
-            
+
             var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
             var versionSplit = originalScoresheet.Name.Split('-');
             var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, $"{versionSplit[0]}-v{originalScoresheet.Version + 1}")
@@ -240,14 +240,27 @@ namespace Unity.Flex.Scoresheets
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
-            var name = scoresheet.Title.ToLower().Trim() + "-v1";
-            _ = scoresheet.SetName(NameRegex().Replace(name, ""));
+            string? name;
+            
+            var scoresheets = await _scoresheetRepository.GetByNameStartsWithAsync(RemoveTrailingNumbers(scoresheet.Name));
+            var maxVersion = scoresheets.Max(s => s.Version);
+            var newVersion = maxVersion + 1;
+            name = scoresheet.Name.Replace($"-v{scoresheet.Version}", $"-v{newVersion}");
+            scoresheet.Version = newVersion;
+            _ = scoresheet.SetName(name);
             scoresheet.Published = false;
             await _scoresheetRepository.InsertAsync(scoresheet);
         }
 
-        [GeneratedRegex(@"\s+")]
-        private static partial Regex NameRegex();
+        private static string RemoveTrailingNumbers(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+
+            return TrailingZeroes().Replace(input, string.Empty);
+        }
 
         public async Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck)
         {
@@ -258,12 +271,15 @@ namespace Unity.Flex.Scoresheets
         public async Task SaveScoresheetOrder(List<Guid> scoresheetIds)
         {
             uint index = 0;
-            foreach(Guid id in scoresheetIds)
+            foreach (Guid id in scoresheetIds)
             {
                 var scoresheet = await _scoresheetRepository.GetAsync(id);
                 scoresheet.Order = index++;
                 await _scoresheetRepository.UpdateAsync(scoresheet);
             }
         }
+
+        [GeneratedRegex(@"\d+$")]
+        private static partial Regex TrailingZeroes();
     }
 }
