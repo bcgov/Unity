@@ -2,6 +2,8 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -281,6 +283,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<long>("Order")
+                        .HasColumnType("bigint");
 
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");

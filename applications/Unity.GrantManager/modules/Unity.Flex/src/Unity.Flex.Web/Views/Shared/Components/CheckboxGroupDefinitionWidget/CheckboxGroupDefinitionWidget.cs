@@ -9,6 +9,9 @@ using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
 using Microsoft.Extensions.Primitives;
 using Volo.Abp;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System;
 
 namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 {
@@ -18,8 +21,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
         ScriptTypes = [typeof(CheckboxGroupDefinitionWidgetScriptBundleContributor)],
         StyleTypes = [typeof(CheckboxGroupDefinitionWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class CheckboxGroupDefinitionWidget : AbpViewComponent
+    public partial class CheckboxGroupDefinitionWidget : AbpViewComponent
     {
+        private static readonly Regex _regex = MyRegex();
+
         internal static object? ParseFormValues(IFormCollection form)
         {
             var keys = form["CheckboxKeys"];
@@ -27,8 +32,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 
             ValidateInput(keys, labels);
 
-            var checkboxGroupDefinition = new CheckboxGroupDefinition();
-            checkboxGroupDefinition.Options = [];
+            var checkboxGroupDefinition = new CheckboxGroupDefinition
+            {
+                Options = []
+            };
             var indx = 0;
             foreach (var key in keys)
             {
@@ -45,10 +52,33 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 
         private static void ValidateInput(StringValues keys, StringValues labels)
         {
+            ValidateValuesAdded(keys, labels);
+            ValidateKeysUnique(keys);
+            ValidateKeysFormat(keys);
+        }
+
+        private static void ValidateKeysFormat(StringValues keys)
+        {
+            if (keys.Any(key => !_regex.IsMatch(key ?? string.Empty)))
+            {
+                throw new UserFriendlyException("Checkbox keys must match input pattern");
+            }
+        }
+
+        private static void ValidateKeysUnique(StringValues keys)
+        {
+            if (keys.Distinct().Count() != keys.Count)
+            {
+                throw new UserFriendlyException("Checkbox keys must be unique");
+            }
+        }
+
+        private static void ValidateValuesAdded(StringValues keys, StringValues labels)
+        {
             if (keys.Count == 0 || labels.Count == 0)
             {
                 throw new UserFriendlyException("Checkbox keys not provided");
-            } 
+            }
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
@@ -70,6 +100,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 
             return View(await Task.FromResult(new CheckboxGroupDefinitionViewModel()));
         }
+
+        [GeneratedRegex(@"^[a-zA-Z0-9 ]+$", RegexOptions.Compiled)]
+        private static partial Regex MyRegex();
     }
 
     public class CheckboxGroupDefinitionWidgetStyleBundleContributor : BundleContributor
@@ -85,6 +118,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
+            context.Files
+                .AddIfNotContains("/Views/Shared/Components/Common/KeyValueComponents.js");
+
             context.Files
               .AddIfNotContains("/Views/Shared/Components/CheckboxGroupDefinitionWidget/Default.js");
         }

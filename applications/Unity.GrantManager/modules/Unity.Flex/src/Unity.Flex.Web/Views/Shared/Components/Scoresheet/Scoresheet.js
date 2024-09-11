@@ -1,6 +1,6 @@
 $(function () {
 
-    function makeSectionsAndQuestionsSortable() {
+    function makeScoresheetsSortable() {
         document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
             
             _ = new Sortable(div, {
@@ -35,6 +35,38 @@ $(function () {
                 }
             });
         });
+
+        
+        _ = new Sortable(document.getElementById('scoresheet-accordion'), {
+            handle: '.draggable-header',
+            animation: 150,
+            ghostClass: 'blue-background',
+            onEnd: function (evt) {
+                let itemEl = evt.item; 
+                itemEl.style.border = "";
+                updateScoresheetOrder();
+            },
+            onStart: function (evt) {
+                let itemEl = evt.item; 
+                itemEl.style.border = "2px solid lightblue"; 
+            },
+        });
+                
+    }
+
+    function updateScoresheetOrder() {
+        let order = [];
+        $("#scoresheet-accordion .accordion-item").each(function (index, element) {
+            let scoresheetId = $(element).find(".accordion-header").attr("id").replace("heading-","");
+            order.push(scoresheetId);
+        });
+        unity.flex.scoresheets.scoresheet.saveScoresheetOrder(order)
+            .then(response => {
+                abp.notify.success(
+                    'Scoresheet ordering is successfully saved.',
+                    'Scoresheet'
+                );
+            });
     }
 
     function updatePreview(event) {
@@ -178,7 +210,7 @@ $(function () {
                                 ${sectionNumber}.${questionNumber}  ${item.innerText}
                             </button>
                         </h2>
-                        <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}" data-bs-parent="#${parentAccordionId}">
+                        <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}">
                             <div class="accordion-body">
                                 ${questionBody}
                             </div>
@@ -194,7 +226,13 @@ $(function () {
 
         previewDiv.innerHTML = `
             <div class="accordion" id="accordion-preview">
+                <div class="d-flex justify-content-end m-3">
+                    <button type="button" class="btn btn-primary me-2" onclick="expandAllAccordions('accordion-preview')">Expand All</button>
+                    <button type="button" class="btn btn-secondary" onclick="collapseAllAccordions('accordion-preview')">Collapse All</button>
+                </div>
+                <div>
                 ${accordionHTML}
+                </div>
             </div>
             <div class="p-4" style="margin-top:2px">
                 <label class="form-label" for="scoresheetSubtotal">Subtotal</label>
@@ -220,14 +258,14 @@ $(function () {
     }
 
     
-    makeSectionsAndQuestionsSortable();
+    makeScoresheetsSortable();
     attachAccordionToggleListeners();
     updateUnsortedPreview();
     
     PubSub.subscribe(
         'refresh_scoresheet_configuration_page',
         (msg, data) => {
-            makeSectionsAndQuestionsSortable();
+            makeScoresheetsSortable();
             attachAccordionToggleListeners();
             updateUnsortedPreview();
         }
@@ -347,6 +385,8 @@ function savePreviewChanges(questionId, inputFieldPrefix, saveButtonPrefix, disc
     updateSubtotal();
 
 }
+
+
 
 
 

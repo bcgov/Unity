@@ -8,6 +8,7 @@ using Unity.Flex.Worksheets;
 using System.Linq;
 using Unity.Flex.Web.Views.Shared.Components.Worksheets;
 using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget;
+using Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetList;
 
@@ -16,12 +17,14 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetList;
     ScriptTypes = [
         typeof(WorksheetListWidgetScriptBundleContributor),
         typeof(WorksheetWidgetScriptBundleContributor),
-        typeof(CheckboxGroupDefinitionWidgetScriptBundleContributor)
+        typeof(CheckboxGroupDefinitionWidgetScriptBundleContributor),
+        typeof(SelectListDefinitionWidgetScriptBundleContributor)
     ],
     StyleTypes = [
         typeof(WorksheetListWidgetStyleBundleContributor),
         typeof(WorksheetWidgetStyleBundleContributor),
-        typeof(CheckboxGroupDefinitionWidgetStyleBundleContributor)
+        typeof(CheckboxGroupDefinitionWidgetStyleBundleContributor),
+        typeof(SelectListDefinitionWidgetStyleBundleContributor)
     ],
     AutoInitialize = true)]
 public class WorksheetListWidget(IWorksheetAppService worksheetAppService) : AbpViewComponent

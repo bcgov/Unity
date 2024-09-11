@@ -229,6 +229,8 @@ public class GrantManagerWebModule : AbpModule
         })
         .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
+            options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            options.SlidingExpiration = false;
             options.Events.OnSigningOut = async e =>
             {
                 // revoke refresh token on sign-out
@@ -247,6 +249,7 @@ public class GrantManagerWebModule : AbpModule
 
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
+            options.MaxAge = TimeSpan.FromHours(8); 
 
             options.ClaimActions.MapClaimTypes();
             options.TokenValidationParameters = new TokenValidationParameters

@@ -1,0 +1,18 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget;
+
+@model TextAreaDefinitionViewModel;
+
+<abp-row class="m-0 p-0">
+    <abp-column size="_12" class="px-1">
+        <abp-input asp-for="@Model.MinLength" />
+    </abp-column>
+    <abp-column size="_12" class="px-1">
+        <abp-input asp-for="@Model.MaxLength" />
+    </abp-column>
+    <abp-column size="_12" class="px-1">
+        <abp-input asp-for="@Model.Rows" />
+    </abp-column>
+</abp-row>
+
+
+

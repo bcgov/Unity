@@ -22,16 +22,17 @@
                 @foreach (var option in Model.CheckboxOptions)
                 {
                     <tr>
-                        <td><input type="text" class="form-control key-input" name="CheckboxKeys" pattern="[a-zA-Z0-9]+" value="@option.Key" minlength="1" maxlength="25" required id="key-@option.Key" /></td>
+                        <td><input type="text" class="form-control key-input" name="CheckboxKeys" pattern="[a-zA-Z0-9 ]+" value="@option.Key" minlength="1" maxlength="25" required id="key-@option.Key" /></td>
                         <td><input type="text" class="form-control" name="CheckboxLabels" value="@option.Label" maxlength="25" required id="label-@option.Key" /></td>
                         <td>
                             <abp-button id="data-btn-@option.Key"
-                                        class="delete-checkbox-option"
-                                        icon-type="Other" icon="fl fl-delete"
+                                        class="delete-checkbox-option btn-danger"
+                                        icon-type="Other" 
+                                        icon="fl fl-delete"
                                         abp-tooltip="Delete"
-                                        button-type="Light" />
+                                        button-type="Danger" />
                         </td>
-                    </tr>
+                    </tr>                    
                 }
             </tbody>
         </table>
@@ -47,20 +48,20 @@
             <td><input type="text" class="form-control" id="new-row-key" placeholder="Key" /></td>
             <td><input type="text" class="form-control" id="new-row-label" placeholder="Label" /></td>
             <td class="new-row-actions">
-                <abp-button id="save-checkbox-option-btn" icon-type="Other" icon="fl fl-plus"
-                            abp-tooltip="Add Option"
-                            button-type="Light" />
+                <abp-button id="save-checkbox-option-btn" icon-type="Other" icon="fl fl-checkmark"
+                            abp-tooltip="Confirm"
+                            button-type="Primary" />
                 <abp-button id="cancel-checkbox-option-btn" icon-type="Other" icon="fl fl-cancel"
                             abp-tooltip="Cancel"
-                            button-type="Light" />
+                            button-type="Secondary" />
             </td>
         </tr>
     </table>
-    <div id="invalid-input-error-summary" class="input-errors hidden"><p>There are invalid keys added, please correct these in order to save the changes.</p></div>
+    <div id="invalid-input-error-summary" class="input-errors hidden"><p id="invalid-input-summary-text"></p></div>
     <div class="checkbox-options-edit-controls">
-        <abp-button id="add-checkbox-option-btn" icon-type="Other" icon="fl fl-plus"
+        <abp-button id="add-checkbox-option-btn"
                     text="@L["Worksheet:Configuration:AddCheckboxOptionText"].Value"                    
-                    button-type="Light" />
+                    button-type="Secondary" />
     </div>
 </abp-row>
 <script>
