@@ -9,15 +9,14 @@ using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.History
 {
-    public class HistoryAppService(IAuditLogRepository auditLogRepository,
-                             IdentityUserAppService identityUserAppService) : GrantManagerAppService, IHistoryAppService
+    public class HistoryAppService(IAuditLogRepository auditLogRepository, IIdentityUserRepository identityUserRepository) : GrantManagerAppService, IHistoryAppService
     {
         [DisableEntityChangeTracking]
-        public async Task<List<HistoryDto>> GetHistoryList(string? entityId, 
-                                                           string filterPropertyName, 
-                                                           Dictionary<string, string>? lookupDictionary) {
-
-            List<HistoryDto> historyList = new List<HistoryDto>();
+        public async Task<List<HistoryDto>> GetHistoryList(string? entityId,
+                                                           string filterPropertyName,
+                                                           Dictionary<string, string>? lookupDictionary)
+        {
+            List<HistoryDto> historyList = [];
             string? sorting = null;
             int maxResultCount = 50;
             int skipCount = 0;
@@ -84,7 +83,7 @@ namespace Unity.GrantManager.History
             }
 
             var userId = auditLog.UserId.Value;
-            var user = await identityUserAppService.GetAsync(userId);
+            var user = await identityUserRepository.GetAsync(userId);
 
             return user != null ? $"{user.Name} {user.Surname}" : string.Empty;
         }
