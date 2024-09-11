@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
-using Unity.Flex.Domain.Worksheets;
 
 namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
