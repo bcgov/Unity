@@ -46,7 +46,7 @@ namespace Unity.GrantManager.History
         {
             string pattern = @"[^.]+$";
             string shortEntityName = "";
-            Regex myRegex = new(pattern, RegexOptions.IgnoreCase);
+            Regex myRegex = new(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(30));
 
             Match m = myRegex.Match(fullEntityName);   // m is the first match
             if (m.Success)
