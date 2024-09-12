@@ -10,13 +10,13 @@ imagePullPolicy: IfNotPresent
 standby:
   enabled: false
   # If you want to recover from PVC, use repo1. If you want to recover from S3, use repo2
-  repoName: repo2
+  repoName: repo1
 
 instances:
   name: ha # high availability
   replicas: 2
   dataVolumeClaimSpec:
-    storage: 256Mi
+    storage: 384Mi
     storageClassName: netapp-block-standard
   requests:
     cpu: 1m
@@ -49,17 +49,17 @@ dataSource:
 
 pgBackRest:
   image: # it's not necessary to specify an image as the images specified in the Crunchy Postgres Operator will be pulled by default
-  retention: "2" # Ideally a larger number such as 30 backups/days
+  retention: "7" # Ideally a larger number such as 30 backups/days
   # If retention-full-type set to 'count' then the oldest backups will expire when the number of backups reach the number defined in retention
   # If retention-full-type set to 'time' then the number defined in retention will take that many days worth of full backups before expiration
-  retentionFullType: count
+  retentionFullType: time
   repos:
     schedules:
-      full: 0 8 * * *
-      incremental: 0 0,4,12,16,20 * * *
+      full: 0 15 * * *
+      incremental: 0 0,4,8,12 * * *
     volume:
       accessModes: "ReadWriteOnce"
-      storage: 128Mi
+      storage: 384Mi
       storageClassName: netapp-file-backup
   repoHost:
     requests:
@@ -99,8 +99,8 @@ pgBackRest:
     keySecret: "s3SecretValue"
     # setting the below to be one plus of the default schedule
     # to avoid conflicts
-    fullSchedule: "0 9 * * *"
-    incrementalSchedule: "0 1,5,13,17,21 * * *"
+    fullSchedule: "30 16 * * *"
+    incrementalSchedule: "30 1,5,9,13 * * *"
 
 patroni:
   postgresql:
