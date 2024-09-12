@@ -1,5 +1,10 @@
 ﻿$(function () {
     const l = abp.localization.getResource('Payments');
+    $('.unity-currency-input').maskMoney({});
+    $('.unity-currency-input').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
+    const formatter = createNumberFormatter();
     let dt = $('#ApplicationPaymentRequestListTable');
     let dataTable;
     const listColumns = getColumns();
@@ -145,8 +150,11 @@
             title: l('PaymentInfoView:ApplicationPaymentListTable.Amount'),
             name: 'amount',
             data: 'amount',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             index: 2,
+            render: function (data) {
+                return formatter.format(data);
+            },
         };
     }
 

@@ -1,5 +1,6 @@
 $(function () {
     const l = abp.localization.getResource('Payments');
+    const formatter = createNumberFormatter();
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
@@ -300,8 +301,11 @@ $(function () {
             title: l('ApplicationPaymentListTable:Amount'),
             name: 'amount',
             data: 'amount',
-            className: 'data-table-header',
+            className: 'data-table-header  currency-display',
             index: 7,
+            render: function (data) {
+                return formatter.format(data);
+            },
         };
     }
 

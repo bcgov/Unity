@@ -1,4 +1,9 @@
 ﻿$(function () {
+    $('.numeric-mask').maskMoney({ precision: 0 });
+    $('.numeric-mask').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
+
     $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();

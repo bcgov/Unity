@@ -53,7 +53,7 @@
                     </abp-select>
                 </abp-column>
                 <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.ApplicantInfo.OrganizationSize" onchange="enableSaveBtn(this)" />
+                    <abp-input class="numeric-mask" asp-for="@Model.ApplicantInfo.OrganizationSize" onchange="enableSaveBtn(this)" />
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">

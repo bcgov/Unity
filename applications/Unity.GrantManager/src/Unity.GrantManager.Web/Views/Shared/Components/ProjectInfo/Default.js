@@ -1,4 +1,12 @@
 ﻿$(function () {
+    $('.numeric-mask').maskMoney({ precision: 0 });
+    $('.percentage-mask').maskMoney();
+    $('.numeric-mask').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
+    $('.percentage-mask').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
     $('body').on('click', '#saveProjectInfoBtn', function () {
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
@@ -31,7 +39,7 @@
 
         let inputElement = $('[name="' + input.name + '"]');
         // This will not work if the culture is different and uses a different decimal separator
-        if (inputElement.hasClass('unity-currency-input')) {
+        if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
             projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
         }
         else {
@@ -192,6 +200,7 @@ function calculatePercentage() {
         document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
         return;
     }
-    const percentage = (requestedAmount / totalProjectBudget) * 100.00;
-    document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = percentage.toFixed(2);
+    const percentage = ((requestedAmount / totalProjectBudget) * 100.00).toFixed(2);
+    $("#ProjectInfo_PercentageTotalProjectBudget").maskMoney('mask', parseFloat(percentage));
+   
 }
