@@ -113,6 +113,16 @@ $(function () {
         return dataTable.rows('.selected').data().toArray().every(row => row.status === state);     
     }
 
+    $('#PaymentRequestListTable').on('click', 'tr td', function (e) {
+        var column = dataTable.column(this);
+        var columnName = dataTable.context[0].aoColumns[column.index()].sName;
+        if (columnName == "CASResponse") {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+        }
+    });
+
     dataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach(index => {
