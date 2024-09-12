@@ -17,7 +17,7 @@ $(function () {
         'status',
         'requestedOn',
         'updatedOn',
-        'paidOn',        
+        'paidOn',
         'l1Approval',
         'l2Approval',
         'l3Approval',
@@ -55,16 +55,16 @@ $(function () {
         },
         {
             text: 'History',
-            className: 'custom-table-btn flex-none btn btn-secondary',
+            className: 'custom-table-btn flex-none btn btn-secondary history',
             action: function (e, dt, node, config) {
-                alert('History Button activated');
+                location.href = '/PaymentHistory/Details?PaymentId=' + selectedPaymentIds[0];
             }
         },
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
             id: "btn-toggle-filter",
-            action: function (e, dt, node, config) {},
+            action: function (e, dt, node, config) { },
             attr: {
                 id: 'btn-toggle-filter'
             }
@@ -105,12 +105,13 @@ $(function () {
         listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
+    let history_button = dataTable.buttons(['.history']);
 
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
 
     function checkAllRowsHaveState(state) {
-        return dataTable.rows('.selected').data().toArray().every(row => row.status === state);     
+        return dataTable.rows('.selected').data().toArray().every(row => row.status === state);
     }
 
     dataTable.on('select', function (e, dt, type, indexes) {
@@ -163,11 +164,17 @@ $(function () {
             } else {
                 payment_approve_buttons.disable();
             }
-        }
-        else {       
-            payment_approve_buttons.disable();
-        }
 
+            if (dataTable.rows({ selected: true }).indexes().length == 1) {
+                history_button.enable();
+            } else {
+                history_button.disable();
+            }
+        }
+        else {
+            payment_approve_buttons.disable();
+            history_button.enable();
+        }
     }
 
     function handleSearch() {
@@ -185,7 +192,7 @@ $(function () {
 
     function getColumns() {
         return [
-            getSelectColumn('Select Application', 'rowCount','payments'),
+            getSelectColumn('Select Application', 'rowCount', 'payments'),
             getPaymenReferenceColumn(),
             getApplicantNameColumn(),
             getSupplierNumberColumn(),
@@ -197,7 +204,7 @@ $(function () {
             getStatusColumn(),
             getRequestedonColumn(),
             getUpdatedOnColumn(),
-            getPaidOnColumn(),            
+            getPaidOnColumn(),
             getL1ApprovalColumn(),
             getL2ApprovalColumn(),
             getL3ApprovalColumn(),
@@ -351,7 +358,7 @@ $(function () {
             }
         };
     }
-   
+
     function getL1ApprovalColumn() {
         return {
             title: l('ApplicationPaymentListTable:L1ApprovalDate'),
@@ -399,7 +406,7 @@ $(function () {
             data: 'description',
             className: 'data-table-header',
             index: 16
-          
+
         };
     }
 
@@ -411,7 +418,7 @@ $(function () {
             className: 'data-table-header',
             index: 17,
             render: function (data) {
-                if(data+"" !== "undefined" && data?.length > 0) {
+                if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
                     return "";
@@ -428,7 +435,7 @@ $(function () {
             className: 'data-table-header',
             index: 18,
             render: function (data) {
-                if(data+"" !== "undefined" && data?.length > 0) {
+                if (data + "" !== "undefined" && data?.length > 0) {
                     return data;
                 } else {
                     return "";
@@ -446,10 +453,10 @@ $(function () {
             className: 'data-table-header',
             index: 12,
             render: function (data) {
-                if(data+"" !== "undefined" && data?.length > 0) {
+                if (data + "" !== "undefined" && data?.length > 0) {
                     return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
-                return  '{Not Available}';
+                return '{Not Available}';
             }
         };
     }

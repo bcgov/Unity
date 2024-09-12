@@ -9,26 +9,14 @@ using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.History
 {
-    public class HistoryAppService : GrantManagerAppService, IHistoryAppService
+    public class HistoryAppService(IAuditLogRepository auditLogRepository, IIdentityUserRepository identityUserRepository) : GrantManagerAppService, IHistoryAppService
     {
-        private readonly IAuditLogRepository _auditLogRepository;
-        private readonly IdentityUserAppService _identityUserAppService;
-
-
-        public HistoryAppService(IAuditLogRepository auditLogRepository,
-                                 IdentityUserAppService identityUserAppService)
-        {
-            _identityUserAppService = identityUserAppService;
-            _auditLogRepository = auditLogRepository;
-        }
-
-
         [DisableEntityChangeTracking]
-        public async Task<List<HistoryDto>> GetHistoryList(string? entityId, 
-                                                           string filterPropertyName, 
-                                                           Dictionary<string, string>? lookupDictionary) {
-
-            List<HistoryDto> historyList = new List<HistoryDto>();
+        public async Task<List<HistoryDto>> GetHistoryList(string? entityId,
+                                                           string filterPropertyName,
+                                                           Dictionary<string, string>? lookupDictionary)
+        {
+            List<HistoryDto> historyList = [];
             string? sorting = null;
             int maxResultCount = 50;
             int skipCount = 0;
@@ -40,7 +28,7 @@ namespace Unity.GrantManager.History
             string? entityTypeFullName = null;
             CancellationToken cancellationToken = default;
 
-            var entityChanges = await _auditLogRepository.GetEntityChangeListAsync(
+            var entityChanges = await auditLogRepository.GetEntityChangeListAsync(
                 sorting,
                 maxResultCount,
                 skipCount,
@@ -60,7 +48,7 @@ namespace Unity.GrantManager.History
                     {
                         string origninalValue = CleanValue(propertyChange.OriginalValue);
                         string newValue = CleanValue(propertyChange.NewValue);
-                        HistoryDto historyDto = new HistoryDto()
+                        HistoryDto historyDto = new()
                         {
                             OriginalValue = GetLookupValue(origninalValue, lookupDictionary),
                             NewValue = GetLookupValue(newValue, lookupDictionary),
@@ -88,14 +76,14 @@ namespace Unity.GrantManager.History
 
         public async Task<string> LookupUserName(Guid auditLogId)
         {
-            var auditLog = await _auditLogRepository.GetAsync(auditLogId);
+            var auditLog = await auditLogRepository.GetAsync(auditLogId);
             if (auditLog?.UserId == null || auditLog.UserId == Guid.Empty)
             {
                 return string.Empty;
             }
 
             var userId = auditLog.UserId.Value;
-            var user = await _identityUserAppService.GetAsync(userId);
+            var user = await identityUserRepository.GetAsync(userId);
 
             return user != null ? $"{user.Name} {user.Surname}" : string.Empty;
         }

@@ -1,0 +1,33 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Payments.Localization;
+@model Unity.GrantManager.Web.Pages.Payments.DisplayPaymentHistoryModel
+@inject IStringLocalizer<PaymentsResource> L
+
+
+@section scripts {
+    <abp-script-bundle>
+        <abp-script src="/Pages/PaymentHistory/Details.js" />
+    </abp-script-bundle>
+}
+@section styles {
+    <abp-style src="/Pages/PaymentHistory/Details.css" />
+}
+
+<abp-row class="m-0 h-100 application-details-container">
+    <abp-input type="hidden" id="paymentId" asp-for="@Model.EntityId" />
+    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Payment History</h6>
+    <div class="action-bar p-2 search-action-bar">
+        <div class="search-action-bar_search-wrapper">
+            <input type="search" id="search" placeholder="Search" class="tbl-search">
+        </div>
+
+        <div class="btn-group" id="app_custom_buttons"></div>
+
+        <div id="dynamicButtonContainerId" class="dynamic-buttons-div"></div>
+    </div>
+
+    <abp-column class="p-0">
+        <abp-table id="AuditHistoryTable"></abp-table>
+    </abp-column>
+</abp-row>
