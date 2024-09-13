@@ -6,7 +6,8 @@ $(function () {
         inputStob: $('input[name="PaymentConfiguration.Stob"]'),
         inputProjectNumber: $('input[name="PaymentConfiguration.ProjectNumber"]'),
         readOnlyAccountCoding: $('#account-coding'),
-        statusMessage: $('#status-message')
+        statusMessage: $('#status-message'),
+        inputPaymentIdPrefix: $('#PaymentIdPrefix')
     };
 
     init();
@@ -35,11 +36,24 @@ $(function () {
     }
 
     function bindUIEvents() {
+        UIElements.inputPaymentIdPrefix.on('keyup', upperCaseTextOnly);
         UIElements.inputMinistryClient.on('keyup', setAccountCodingDisplay);
         UIElements.inputResponsibility.on('keyup', setAccountCodingDisplay);
         UIElements.inputServiceLine.on('keyup', setAccountCodingDisplay);
         UIElements.inputStob.on('keyup', setAccountCodingDisplay);
         UIElements.inputProjectNumber.on('keyup', setAccountCodingDisplay);
+    }
+
+    function upperCaseTextOnly(e) {
+        var regex = new RegExp("^[a-zA-Z0-9]+$");
+        var key = String.fromCharCode(!e.charCode ? e.which : e.charCode);
+        if (!regex.test(key)) {
+           e.preventDefault();
+           return false;
+        }   
+
+        let currentValue = e.currentTarget.value;
+        e.currentTarget.value = currentValue.toUpperCase();
     }
 
     function setAccountCodingDisplay() {

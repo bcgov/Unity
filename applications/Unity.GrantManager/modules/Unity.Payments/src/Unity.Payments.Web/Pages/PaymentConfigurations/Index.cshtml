@@ -27,25 +27,35 @@
                 <label class="form-label">Account Coding</label>
                 <input id="account-coding" type="text" value="" readonly="" class="valid form-control readonly" aria-invalid="false">
             </abp-column>
-            <abp-column size="_12" class="p-3 dm-approval">
-                <h4 class="pt-2">Approval Payment Threshold</h4>
-                <label class="form-label note"><b>NOTE:</b> All payments above this limit will require an additional level of approval before they can be submitted to CAS.</label>
-                <div class="pt-2">
-                    <label class="form-label" for="PaymentThreshold">Threshold</label><span> * </span>
-                </div>
-                <div>
-                    <span class="currencyinput">
-                        $
-                        <input type="number" data-val="true" data-val-range="The field Payment Threshold Amount must be 0 or greater."
-                               data-val-range-max="1.7976931348623157E+308"
-                               data-val-range-min="0" data-val-required="The Payment Threshold Amount field is required."
-                               id="PaymentThreshold" name="PaymentThreshold"
-                               value="@Model.PaymentThreshold" class="form-control currency"><span class="text-danger field-validation-valid"
-                                                                                                   data-valmsg-for="PaymentThreshold" data-valmsg-replace="true">
+            <abp-row>
+                <h4 class="pt-2">Payment Details</h4>
+                <label class="form-label note"><b>NOTE:</b> All payments above the approval payment threshold will require an additional level of approval before they can be submitted to CAS.</label>
+                <abp-column size="_6" class="mb-3 dm-approval">
+                        <label class="form-label" for="PaymentThreshold">Approval Payment Threshold</label><span> * </span>
+                        <span class="currencyinput">
+                            $
+                            <input type="number" data-val="true" data-val-range="The field Payment Threshold Amount must be 0 or greater."
+                                data-val-range-max="1.7976931348623157E+308"
+                                data-val-range-min="0" data-val-required="The Payment Threshold Amount field is required."
+                                id="PaymentThreshold" name="PaymentThreshold"
+                                value="@Model.PaymentThreshold" class="form-control currency">
+                                <span class="text-danger field-validation-valid" data-valmsg-for="PaymentThreshold" data-valmsg-replace="true">
+                            </span>
                         </span>
-                    </span>
-                </div>
-            </abp-column>
+  
+                </abp-column>
+                <abp-column size="_6" class="mb-3 dm-approval">                    
+                        <label class="form-label" for="PaymentIdPrefix">Payment Id Prefix</label><span> * </span>
+
+                        <input type="text" data-val="true" data-val-required="The Payment Id Prefix field is required."
+                            maxlength="4"
+                            id="PaymentIdPrefix" name="PaymentIdPrefix"
+                            value="@Model.PaymentIdPrefix" class="form-control payment-prefix">
+                        <span class="text-danger field-validation-valid" data-valmsg-for="PaymentIdPrefix" data-valmsg-replace="true">
+
+                </abp-column>
+            </abp-row>
+
             <abp-column size="_12" class="p-3 submit-section">
                 <abp-button class="btn-primary" text="SAVE CHANGES" type="submit"></abp-button>
                 <abp-button id="resetButton" class="btn-secondary pl-1" text="DISCARD CHANGES"></abp-button>
