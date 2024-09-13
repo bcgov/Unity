@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Unity.ApplicantPortal.Data;
+using Unity.ApplicantPortal.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,10 +42,10 @@ builder.Services.AddAuthentication(options =>
 })
 .AddOpenIdConnect(options =>
 {
-    options.Authority = $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}";
-    options.ClientId = builder.Configuration.GetSection("Keycloak")["resource"];
-    options.ClientSecret = builder.Configuration.GetSection("Keycloak").GetSection("credentials")["secret"];
-    options.MetadataAddress= $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}/.well-known/openid-configuration";
+    options.Authority = $"{builder.Configuration.GetSection(Consts.AuthConfigSection)["auth-server-url"]}/realms/{builder.Configuration.GetSection(Consts.AuthConfigSection)["realm"]}";
+    options.ClientId = builder.Configuration.GetSection(Consts.AuthConfigSection)["resource"];
+    options.ClientSecret = builder.Configuration.GetSection(Consts.AuthConfigSection).GetSection("credentials")["secret"];
+    options.MetadataAddress= $"{builder.Configuration.GetSection(Consts.AuthConfigSection)["auth-server-url"]}/realms/{builder.Configuration.GetSection(Consts.AuthConfigSection)["realm"]}/.well-known/openid-configuration";
     options.RequireHttpsMetadata = false;
     options.GetClaimsFromUserInfoEndpoint = true;
     options.ResponseType = OpenIdConnectResponseType.Code;
@@ -92,9 +93,9 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     using var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
+    await context.Database.MigrateAsync();
 }
 
 Log.Information("Starting web host.");
 
-app.Run();
+await app.RunAsync();

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using System.Security.Claims;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Unity.ApplicantPortal.Web.Services;
@@ -9,14 +8,14 @@ using Unity.ApplicantPortal.Web.Services;
 namespace Unity.ApplicantPortal.Web.Extensions;
 
 public static class StartupConfigurations
-{
+{    
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         // This extension method implements IHttpClientFactory
         builder.Services.AddHttpClient<GrantManagerClient>(
             client =>
             {
-                client.BaseAddress = new Uri("https://localhost:44342/api/portal/");
+                client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("App:SelfUrl") ?? string.Empty);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("unity-applicant-portal");
             }
             )
@@ -26,11 +25,6 @@ public static class StartupConfigurations
 
     public static void AddAuthenticationServices(this IHostApplicationBuilder builder)
     {
-        var configuration = builder.Configuration;
-        var services = builder.Services;
-
-        // JsonWebTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
-
         //Authentication Schems
         builder.Services.AddAuthentication(options =>
         {
@@ -51,10 +45,10 @@ public static class StartupConfigurations
         })
         .AddOpenIdConnect(options =>
         {
-            options.Authority = $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}";
-            options.ClientId = builder.Configuration.GetSection("Keycloak")["resource"];
-            options.ClientSecret = builder.Configuration.GetSection("Keycloak").GetSection("credentials")["secret"];
-            options.MetadataAddress = $"{builder.Configuration.GetSection("Keycloak")["auth-server-url"]}/realms/{builder.Configuration.GetSection("Keycloak")["realm"]}/.well-known/openid-configuration";
+            options.Authority = $"{builder.Configuration.GetSection(Consts.AuthConfigSection)["auth-server-url"]}/realms/{builder.Configuration.GetSection(Consts.AuthConfigSection)["realm"]}";
+            options.ClientId = builder.Configuration.GetSection(Consts.AuthConfigSection)["resource"];
+            options.ClientSecret = builder.Configuration.GetSection(Consts.AuthConfigSection).GetSection("credentials")["secret"];
+            options.MetadataAddress = $"{builder.Configuration.GetSection(Consts.AuthConfigSection)["auth-server-url"]}/realms/{builder.Configuration.GetSection(Consts.AuthConfigSection)["realm"]}/.well-known/openid-configuration";
 
             options.RequireHttpsMetadata = false;
             options.ResponseType = OpenIdConnectResponseType.Code;
@@ -74,7 +68,6 @@ public static class StartupConfigurations
 
             options.Scope.Add("openid");
             options.Scope.Add("profile");
-            //options.Scope.Add("ApplicantPortalService");
 
             options.TokenValidationParameters = new TokenValidationParameters
             {

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Unity.ApplicantPortal.Web.ViewModels;
 
@@ -9,6 +10,7 @@ public class ApplicantViewModel
 
     #region Organization details
     [Required(ErrorMessage = "Please enter the organization's name.")]
+    [JsonRequired]
     [DisplayName("Organization")]
     [MaxLength(500)]
     public string OrganizationName { get; set; } = string.Empty;
