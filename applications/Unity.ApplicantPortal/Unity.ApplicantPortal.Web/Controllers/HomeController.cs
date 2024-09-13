@@ -10,13 +10,10 @@ namespace Unity.ApplicantPortal.Web.Controllers;
 [Authorize]
 public class HomeController(ILogger<HomeController> logger, AppDbContext dbContext) : Controller
 {
-    private readonly ILogger<HomeController> _logger = logger;
-    private readonly AppDbContext _dbContext = dbContext;
-
     [HttpGet]
     public IActionResult Index()
     {
-        var applicant = _dbContext.Applicants.FirstOrDefault();
+        var applicant = dbContext.Applicants.FirstOrDefault();
         if (applicant == null)
         {
             HomeViewModel model = new();
@@ -54,11 +51,11 @@ public class HomeController(ILogger<HomeController> logger, AppDbContext dbConte
     {
         if (ModelState.IsValid)
         {
-            var applicant = _dbContext.Applicants.Find(model.Applicant.ApplicantId);
+            var applicant = dbContext.Applicants.Find(model.Applicant.ApplicantId);
             if (applicant == null)
             {
                 //Insert new
-                _dbContext.Applicants.Add(new Applicant()
+                dbContext.Applicants.Add(new Applicant()
                 {
                     OrganizationName = model.Applicant.OrganizationName,
                     PhysicalAddress = model.Applicant.PhysicalAddress,
@@ -74,7 +71,7 @@ public class HomeController(ILogger<HomeController> logger, AppDbContext dbConte
                     OrganizationSocietyNumber = model.Applicant.OrganizationSocietyNumber,
                     OrganizationBusinessLicenseNumber = model.Applicant.OrganizationBusinessLicenseNumber
                 });
-                _dbContext.SaveChanges();
+                dbContext.SaveChanges();
                 TempData["SuccessMessage"] = "Applicant created.";
             }
             else
@@ -92,7 +89,7 @@ public class HomeController(ILogger<HomeController> logger, AppDbContext dbConte
                 applicant.OrganizationSubSector = model.Applicant.OrganizationSubSector;
                 applicant.OrganizationSocietyNumber = model.Applicant.OrganizationSocietyNumber;
                 applicant.OrganizationBusinessLicenseNumber = model.Applicant.OrganizationBusinessLicenseNumber;
-                _dbContext.SaveChanges();
+                dbContext.SaveChanges();
                 TempData["SuccessMessage"] = "Applicant updated.";
             }
         }
@@ -103,7 +100,7 @@ public class HomeController(ILogger<HomeController> logger, AppDbContext dbConte
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        _logger.LogError("Request error: {RequestId}", Activity.Current?.Id ?? HttpContext.TraceIdentifier);
+        logger.LogError("Request error: {RequestId}", Activity.Current?.Id ?? HttpContext.TraceIdentifier);
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
