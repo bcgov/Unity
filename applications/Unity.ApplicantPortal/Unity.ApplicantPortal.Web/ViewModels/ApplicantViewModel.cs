@@ -13,7 +13,7 @@ public class ApplicantViewModel
     [JsonRequired]
     [DisplayName("Organization")]
     [MaxLength(500)]
-    public string OrganizationName { get; set; } = string.Empty;
+    public string? OrganizationName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Please enter the organization number.")]
     [DisplayName("Org #")]
