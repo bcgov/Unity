@@ -6,6 +6,7 @@ namespace Unity.ApplicantPortal.Web.ViewModels;
 
 public class ApplicantViewModel
 {
+    [JsonRequired]
     public int ApplicantId { get; set; }
 
     #region Organization details
