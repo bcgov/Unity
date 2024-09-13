@@ -241,14 +241,28 @@ namespace Unity.Flex.Scoresheets
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
             string? name;
-            
+
             var scoresheets = await _scoresheetRepository.GetByNameStartsWithAsync(RemoveTrailingNumbers(scoresheet.Name));
-            var maxVersion = scoresheets.Max(s => s.Version);
-            var newVersion = maxVersion + 1;
+            uint maxVersion = 0;
+            uint newVersion = 0;
+
+            if (scoresheets.Count > 0)
+            {
+                maxVersion = scoresheets.Max(s => s.Version);
+                newVersion = maxVersion + 1;
+            }
+            else
+            {
+                newVersion = scoresheet.Version;
+            }
+
             name = scoresheet.Name.Replace($"-v{scoresheet.Version}", $"-v{newVersion}");
             scoresheet.Version = newVersion;
+
             _ = scoresheet.SetName(name);
+
             scoresheet.Published = false;
+
             await _scoresheetRepository.InsertAsync(scoresheet);
         }
 
