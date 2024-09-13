@@ -230,7 +230,7 @@
             index: 8,
             render: function (data) {
                 if(data+"" !== "undefined" && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                    return '<button id="cas-response-btn" class="btn btn-light info-btn cas-response-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return  '{Not Available}';
             }
