@@ -116,8 +116,8 @@ $(function () {
     }
 
     $('#PaymentRequestListTable').on('click', 'tr td', function (e) {
-        var column = dataTable.column(this);
-        var columnName = dataTable.context[0].aoColumns[column.index()].sName;
+        let column = dataTable.column(this);
+        let columnName = dataTable.context[0].aoColumns[column.index()].sName;
         if (columnName == "CASResponse") {
             e.preventDefault();
             e.stopImmediatePropagation();
