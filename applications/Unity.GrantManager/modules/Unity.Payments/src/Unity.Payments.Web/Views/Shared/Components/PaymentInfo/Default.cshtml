@@ -11,6 +11,8 @@
 @{
 }
 
+<input type="hidden" id="ProjectInfoViewApplicationId" value="@Model.ApplicationId" />
+
 <abp-row class="m-0 payment-info">
     <abp-row class="m-0 p-0">
         <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
@@ -18,6 +20,8 @@
                 <h6 class="ps-1 fw-bold">@L["PaymentInfoView:PaymentInfoTitle"].Value</h6>
             </div>
         </abp-column>
+        <abp-button text="Save" id="savePaymentInfoBtn" class="floating-save-btn" icon-type="Other"
+                    icon="fl fl-save" button-type="Primary" disabled="true" />
     </abp-row>
     <abp-row class="m-0 p-0">
         <abp-column size="_6" class="px-1">

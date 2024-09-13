@@ -14,6 +14,32 @@
         'status'
     ];
 
+    $('body').on('click', '#savePaymentInfoBtn', function () {
+        let applicationId = document.getElementById('PaymentInfoViewApplicationId').value; 
+        let formData = $("#paymentInfoForm").serializeArray();
+        let paymentInfoObj = {};
+        let formVersionId = $("#ApplicationFormVersionId").val();
+        let worksheetId = $("#WorksheetId").val();
+
+        $.each(formData, function (_, input) {
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+                Flex.includeCustomFieldObj(paymentInfoObj, input);
+            }
+            else {
+                buildFormData(paymentInfoObj, input)
+            }
+        });
+
+        // Update checkboxes which are serialized if unchecked
+        $(`#paymentInfoForm input:checkbox`).each(function () {
+            paymentInfoForm[this.name] = (this.checked).toString();
+        });
+
+        paymentInfoForm['correlationId'] = formVersionId;
+        paymentInfoForm['worksheetId'] = worksheetId;
+        updatePaymentInfo(applicationId, paymentInfoObj);
+    });
+
     let actionButtons = [
         {
             text: 'Edit & Resubmit',
@@ -158,7 +184,6 @@
         };
     }
 
-
     function getApplicationPaymentStatusColumn() {
         return {
             title: l('PaymentInfoView:ApplicationPaymentListTable.Status'),
@@ -236,7 +261,6 @@
             }
         };
     }
-
 
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
