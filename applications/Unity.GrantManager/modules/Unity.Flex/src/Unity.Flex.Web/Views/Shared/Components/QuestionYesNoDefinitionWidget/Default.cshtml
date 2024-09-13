@@ -1,0 +1,13 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget;
+
+@model QuestionYesNoDefinitionViewModel;
+
+<abp-row class="m-0 p-0">
+    <abp-column size="_12" class="px-1">
+        <abp-input asp-for="@Model.YesValue" />
+    </abp-column>
+    <abp-column size="_12" class="px-1">
+        <abp-input asp-for="@Model.NoValue" />
+    </abp-column>
+</abp-row>
+

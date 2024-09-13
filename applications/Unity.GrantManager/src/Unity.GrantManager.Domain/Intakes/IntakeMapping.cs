@@ -211,5 +211,13 @@ namespace Unity.GrantManager.Intakes
         [DisplayName("Signing Authority Cell Phone")]
         [MapFieldType("Phone")]
         public string? SigningAuthorityCellPhone { get; set; }
+
+        [DisplayName("Risk Ranking")]
+        [MapFieldType("String")]
+        public string? RiskRanking  { get; set; }
+
+        [DisplayName("Project Summary")]
+        [MapFieldType("String")]
+        public string? ProjectSummary { get; set; }
     }
 }

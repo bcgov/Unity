@@ -14,34 +14,46 @@
 @section scripts
 {
     <abp-script src="/Pages/ScoresheetConfiguration/Index.js" />
+    <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
     <abp-script src="/libs/sortablejs/Sortable.js" />
 }
 
 @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
             {
+    <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
     <div class="scoresheet-scrollable-content">
 
         <abp-row class="m-0 h-100 scoresheet-configuration-container">
-            <abp-column class="p-0">
+            <abp-column class="p-0 scoresheet-column">
                 <abp-card>
                     <abp-card-body>
-                        <h4><b>Scoring Sheets</b></h4>
+                        <h4><b>Scoresheets</b></h4>
+                        <div class="d-flex justify-content-end m-3">
+                            <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
+                                <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" style="display: none" />
+                                <abp-button text="Import Scoresheet"
+                                            id="scoresheet_import_upload_btn"
+                                            icon-type="Other"
+                                            icon="fl fl-import"
+                                            button-type="Light" />
+                            </form>
+                        </div>
                         <div id="scoresheet-info-widget">
-                            @await Component.InvokeAsync("Scoresheet", new { scoresheetIdsToLoad = new List<Guid>() })
+                            @await Component.InvokeAsync("Scoresheet")
                         </div>
                         <div class="p-4">
                             <abp-button text="@L["Scoresheet:Configuration:AddScoresheetButtonText"].Value"
                                         id="add_scoresheet_btn"
                                         icon-type="Other"
                                         icon="fl fl-plus"
-                                        onclick="openScoresheetModal(null,'Add Scoring Sheet',null);"
+                                        onclick="openScoresheetModal(null,'Add Scoresheet');"
                                         button-type="Light" />
                         </div>
                 
                     </abp-card-body>
                  </abp-card>
             </abp-column>
-            <abp-column class="pe-0 ps-2">
+            <abp-column class="pe-0 ps-2 preview-column">
                 <abp-card class="right-card">
                     <abp-card-body>
                         <h4><b>Preview</b></h4>

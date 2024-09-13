@@ -6,6 +6,7 @@
 @inject IPermissionChecker PermissionChecker
 @model Unity.Flex.Web.Views.Shared.Components.Scoresheet.ScoresheetViewModel
 
+
 @section scripts {
     <abp-script src="/libs/sortablejs/Sortable.js"></abp-script>
 }
@@ -15,76 +16,93 @@
     @foreach (var scoresheet in Model.Scoresheets)
     {
         var totalQuestions = scoresheet.Sections.SelectMany(sec => sec.Fields).Count();
+        var totalSections = scoresheet.Sections.Count;
         <div class="accordion-item">
-            <div class="accordion-header" id="heading-@scoresheet.Id">
+            <div class="accordion-header scoresheet-header" id="heading-@scoresheet.Id">
                 <div class="d-flex w-100 align-items-center">
-                    <button class="accordion-button collapsed flex-grow-1" id="accordion-button-@scoresheet.Id" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="false" aria-controls="collapse-@scoresheet.Id">
-                        <span class="flex-grow-1 text-start"><b>@scoresheet.Name</b></span>
+                    <button class="accordion-button collapsed flex-grow-1 scoresheet-accordion-button" id="accordion-button-@scoresheet.Id" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@scoresheet.Id" aria-expanded="false" aria-controls="collapse-@scoresheet.Id">
+                        <div class="draggable-header card-header">
+                            <i class="fl fl-draggable"></i>
+                        </div>
+                        <span class="flex-grow-1 text-start">
+                            <span id="scoresheet-title-@scoresheet.Id" class="scoresheet-title">@scoresheet.Title</span>
+                            (<span id="scoresheet-name-@scoresheet.Id" class="scoresheet-name">@scoresheet.Name</span>)
+                            <i id="scoresheet-published-@scoresheet.Id" class="scoresheet-published-icon fl fl-upload @(@scoresheet.Published ? "" : "hidden")"></i>
+                        </span>
+                        <div class="text-end d-flex flex-column align-items-center section-info">
+                            <div class="total-sections"><b>Sections</b></div>
+                            <div class="total-sections">@totalSections</div>
+                        </div>
                         <div class="text-end d-flex flex-column align-items-center question-info">
                             <div class="total-questions"><b>Questions</b></div>
                             <div class="total-questions">@totalQuestions</div>
                         </div>                    
                     </button>
-                    <select class="form-select ms-3" style="width: auto;" aria-label="Select version" id="version-selector" onchange="handleVersionChange(event)">
-                        @foreach (var version in scoresheet.GroupVersions)
-                        {                         
-                            <!option value="@version.ScoresheetId"  @(scoresheet.Version == version.Version ? "selected" : "")>Version @version.Version</!option>
-                        }
-                    </select>
                 </div>
             </div>
             <div id="collapse-@scoresheet.Id" class="accordion-collapse collapse" data-scoresheet="@scoresheet.Id" aria-labelledby="heading-@scoresheet.Id" data-bs-parent="#scoresheet-accordion">
                 <div class="accordion-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="p-3">
-                                <button id="edit_scoresheet_btn" onclick="openScoresheetModal('@scoresheet.Id','Edit Scoring Sheet','@scoresheet.GroupId');" class="btn btn-light" type="button">
-                                    <i class="fl fl-edit"></i> <span>@L["Scoresheet:Configuration:EditScoresheetButtonText"].Value</span>
-                                </button>
-                            </div>
-                        </div>
+                    <div class="button-container">
+                        <button id="edit_scoresheet_btn" onclick="openScoresheetModal('@scoresheet.Id','Edit Scoresheet');" class="btn btn-light" type="button">
+                            <i class="fl fl-edit"></i> <span>@L["Scoresheet:Configuration:EditScoresheetButtonText"].Value</span>
+                        </button>
+                        <button id="clone_scoresheet_btn" onclick="openCloneScoresheetModal('@scoresheet.Id');" class="btn btn-light" type="button">
+                            <i class="fl fl-copy"></i> <span>@L["Scoresheet:Configuration:CloneScoresheetButtonText"].Value</span>
+                        </button>
+                        @if (!@scoresheet.Published)
+                        {
+                            <button id="publish_scoresheet_btn" onclick="openPublishScoresheetModal('@scoresheet.Id');" class="btn btn-light" type="button">
+                                <i class="fl fl-upload"></i> <span>@L["Scoresheet:Configuration:PublishScoresheetButtonText"].Value</span>
+                            </button>
+                        }
+                        <button id="export_scoresheet_btn" onclick="exportScoresheet('@scoresheet.Id','@scoresheet.Name','@scoresheet.Title');" class="btn btn-light" type="button">
+                            <i class="fl fl-export"></i> <span>@L["Scoresheet:Configuration:ExportScoresheetButtonText"].Value</span>
+                        </button>
                     </div>
-                    <div id="sections-questions" class="list-group col">
+                    <div id="sections-questions" class="list-group col" data-published="@scoresheet.Published" data-scoresheetid="@scoresheet.Id">
                         @foreach (var sec in scoresheet.Sections)
                         {
                             <div class="list-group-item row section-item" data-type="section" data-id="@sec.Id" data-scoresheetid="@scoresheet.Id" data-label="@sec.Name">
                                 <div class="col">
                                     <i class="fl fl-draggable"></i>
                                     <span class="p-2"><b>Section:</b> @sec.Name</span>
-                                    <button class="btn question-info-btn float-end" type="button" onclick="openSectionModal('@scoresheet.Id','@sec.Id','Edit Section');">
-                                        <i class="fl fl-edit"></i>
-                                    </button>
+                                    @if (!@scoresheet.Published)
+                                    {
+                                        <button class="btn question-info-btn float-end" type="button" onclick="openSectionModal('@scoresheet.Id','@sec.Id','Edit Section');">
+                                            <i class="fl fl-edit"></i>
+                                        </button>
+                                    }
                                 </div>
                             </div>
                             @foreach (var question in sec.Fields)
                             {
-                                <div class="list-group-item row" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id">
+                                <div class="list-group-item row question-item" data-type="question" data-id="@question.Id" data-scoresheetid="@scoresheet.Id" data-questiontype="@question.Type" data-min="@question.GetMin()" data-max="@question.GetMax()" data-minlength="@question.GetMinLength()" data-maxlength="@question.GetMaxLength()" data-yesvalue="@question.GetYesValue()" data-novalue="@question.GetNoValue()" data-questiondesc="@question.Description" data-definition="@question.Definition">
                                     <div class="col">
                                         <i class="fl fl-draggable"></i>
                                         <span class="p-2">@question.Label</span>
-                                        <button class="btn question-info-btn float-end" type="button" onclick="openQuestionModal('@scoresheet.Id','@sec.Id','@question.Id','Edit Question');">
-                                            <i class="fl fl-edit"></i>
-                                        </button>
+                                        @if (!@scoresheet.Published)
+                                        {
+                                            <button class="btn question-info-btn float-end" type="button" onclick="openQuestionModal('@scoresheet.Id','@sec.Id','@question.Id','Edit Question');">
+                                                <i class="fl fl-edit"></i>
+                                            </button>
+                                        }
                                     </div>
                                 </div>
                             }
                         }
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="p-3">
+                        @if (!@scoresheet.Published)
+                        {
+                            <div class="button-container">
                                 <button id="add_question_btn" onclick="openQuestionModal('@scoresheet.Id',null, null,'Add Question');" class="btn btn-light" type="button" disabled="@scoresheet.Sections.IsNullOrEmpty()">
                                     <i class="fl fl-plus"></i> <span>@L["Scoresheet:Configuration:AddQuestionButtonText"].Value</span>
                                 </button>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3">
                                 <button id="add_section_btn" onclick="openSectionModal('@scoresheet.Id',null,'Add Section');" class="btn btn-light" type="button">
                                     <i class="fl fl-plus"></i> <span>@L["Scoresheet:Configuration:AddSectionButtonText"].Value</span>
                                 </button>
                             </div>
-                        </div>
+                        }
                     </div>
 
                 </div>
@@ -94,22 +112,7 @@
     }
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="p-3">
-            <button id="save_order_btn" onclick="saveOrder();" class="btn btn-light" type="button" disabled>
-                <span>@L["Scoresheet:Configuration:SaveChangesButtonText"].Value</span>
-            </button>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="p-3">
-            <button id="discard_order_btn" onclick="updateScoresheetAccordion();" class="btn btn-light" type="button" disabled>
-                <span>@L["Scoresheet:Configuration:DiscardChangesButtonText"].Value</span>
-            </button>
-        </div>
-    </div>
-</div>
+
 
 
 

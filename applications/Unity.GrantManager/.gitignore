@@ -263,3 +263,5 @@ src/Unity.GrantManager.Blazor.Server.Tiered/Logs/*
 
 # Use abp install-libs to restore.
 **/wwwroot/libs/*
+
+.config/*

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.FileSystemGlobbing.Internal;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -92,8 +91,12 @@ namespace Unity.GrantManager.Intakes
                 Submission = ReplaceAdvancedFormIoControls(formSubmission)
             });
 
-            await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id, application.ApplicationFormId, formSubmission, formVersionSubmissionHeaderMapping);
-            
+            var localFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(Guid.Parse(formVersionId));
+            await _customFieldsIntakeSubmissionMapper.MapAndPersistCustomFields(application.Id,
+                localFormVersion?.Id ?? Guid.Empty,
+                formSubmission,
+                formVersionSubmissionHeaderMapping);
+
             await uow.SaveChangesAsync();
 
             return applicationFormSubmission.Id;
@@ -164,10 +167,10 @@ namespace Unity.GrantManager.Intakes
                     // Allow one minute timeout
                     try
                     {
-                        replacedString = Regex.Replace(replacedString, 
-                            patternKey, 
-                            replace, 
-                            RegexOptions.None, 
+                        replacedString = Regex.Replace(replacedString,
+                            patternKey,
+                            replace,
+                            RegexOptions.None,
                             TimeSpan.FromMilliseconds(OneMinuteMilliseconds));
                     }
                     catch (RegexMatchTimeoutException ex)
@@ -175,7 +178,7 @@ namespace Unity.GrantManager.Intakes
                         Console.WriteLine(ex.Message);
                     }
                 }
-                
+
                 formSubmissionStr = replacedString;
             }
             return formSubmissionStr;
@@ -213,7 +216,9 @@ namespace Unity.GrantManager.Intakes
                     SigningAuthorityEmail = intakeMap.SigningAuthorityEmail,
                     SigningAuthorityBusinessPhone = intakeMap.SigningAuthorityBusinessPhone,
                     SigningAuthorityCellPhone = intakeMap.SigningAuthorityCellPhone,
-                    Place = intakeMap.Place
+                    Place = intakeMap.Place,
+                    RiskRanking = intakeMap.RiskRanking,
+                    ProjectSummary = intakeMap.ProjectSummary,
                 }
             );
             await CreateApplicantAgentAsync(intakeMap, applicant, application);
@@ -300,6 +305,7 @@ namespace Unity.GrantManager.Intakes
                 SectorSubSectorIndustryDesc = intakeMap.SectorSubSectorIndustryDesc,
                 ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
                 IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
+                OrgStatus = intakeMap.OrgStatus,
             });
 
             await CreateApplicantAddressesAsync(intakeMap, applicant);

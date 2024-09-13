@@ -8,9 +8,8 @@ using System.Collections.Generic;
 
 namespace Unity.Flex.Web.Views.Shared.Components.YesNoWidget
 {
-    [ViewComponent(Name = "YesNoWidget")]
     [Widget(
-        RefreshUrl = "Widgets/YesNo/Refresh",
+        RefreshUrl = "../Flex/Widgets/YesNo/Refresh",
         ScriptTypes = [typeof(YesNoWidgetScriptBundleContributor)],
         StyleTypes = [typeof(YesNoWidgetStyleBundleContributor)],
         AutoInitialize = true)]
@@ -20,23 +19,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.YesNoWidget
         {
             return View(await Task.FromResult(new YesNoViewModel() { Field = fieldModel, Name = modelName }));
         }
+    }
 
-        public class YesNoWidgetStyleBundleContributor : BundleContributor
+    public class YesNoWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/YesNoWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/YesNoWidget/Default.css");
         }
+    }
 
-        public class YesNoWidgetScriptBundleContributor : BundleContributor
+    public class YesNoWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/YesNoWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/YesNoWidget/Default.js");
         }
     }
 }

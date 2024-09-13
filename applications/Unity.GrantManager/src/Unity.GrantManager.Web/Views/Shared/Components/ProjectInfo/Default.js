@@ -1,8 +1,19 @@
 ﻿$(function () {
+    $('.numeric-mask').maskMoney({ precision: 0 });
+    $('.percentage-mask').maskMoney();
+    $('.numeric-mask').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
+    $('.percentage-mask').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
     $('body').on('click', '#saveProjectInfoBtn', function () {
         let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
         let formData = $("#projectInfoForm").serializeArray();
-        let projectInfoObj = {};        
+        let projectInfoObj = {};       
+        let formVersionId = $("#ApplicationFormVersionId").val();
+        let worksheetId = $("#WorksheetId").val();
+
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
                 Flex.includeCustomFieldObj(projectInfoObj, input);
@@ -19,13 +30,21 @@
             projectInfoObj[this.name] = (this.checked).toString();
         });
 
+        projectInfoObj['correlationId'] = formVersionId;
+        projectInfoObj['worksheetId'] = worksheetId;
         updateProjectInfo(applicationId, projectInfoObj);
     });
 
     function buildFormData(projectInfoObj, input) {
-        // This will not work if the culture is different and uses a different decimal separator
-        projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
 
+        let inputElement = $('[name="' + input.name + '"]');
+        // This will not work if the culture is different and uses a different decimal separator
+        if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
+            projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+        }
+        else {
+            projectInfoObj[input.name.split(".")[1]] = input.value;
+        }
         if (isNumberField(input)) {
             if (projectInfoObj[input.name.split(".")[1]] == '') {
                 projectInfoObj[input.name.split(".")[1]] = 0;
@@ -48,6 +67,7 @@
                     );
                     $('#saveProjectInfoBtn').prop('disabled', true);
                     PubSub.publish('project_info_saved', projectInfoObj);
+                    PubSub.publish('refresh_detail_panel_summary');
                 });
         }
         catch (error) {
@@ -144,9 +164,11 @@
         (msg, data) => {
             if (data.RequestedAmount) {
                 $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
+                $('#RequestedAmountInputPI').maskMoney('mask');
             }
             if (data.TotalProjectBudget) {
                 $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
+                $('#TotalBudgetInputPI').maskMoney('mask');
             }
         }
     );
@@ -178,6 +200,7 @@ function calculatePercentage() {
         document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
         return;
     }
-    const percentage = (requestedAmount / totalProjectBudget) * 100.00;
-    document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = percentage.toFixed(2);
+    const percentage = ((requestedAmount / totalProjectBudget) * 100.00).toFixed(2);
+    $("#ProjectInfo_PercentageTotalProjectBudget").maskMoney('mask', parseFloat(percentage));
+   
 }

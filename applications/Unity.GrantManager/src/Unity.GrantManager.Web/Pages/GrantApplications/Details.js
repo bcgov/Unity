@@ -38,10 +38,10 @@ $(function () {
             ).then(function (form) {
                 // Set Example Submission Object
                 form.submission = submissionData.submission.submission;
-                addEventListeners();
                 form.resetValue();
                 form.refresh();
-                form.on('render', function() {
+                form.on('render', function () {
+                    addEventListeners();
                     storeRenderedHtml();
                 });
             });
@@ -59,7 +59,7 @@ $(function () {
                 data: JSON.stringify({ "SubmissionId": submissionId, "InnerHTML": innerHTML }),
                 contentType: "application/json",
                 type: "POST",
-            success: function (data) {
+                success: function (data) {
                     console.log(data);
                 },
                 error: function () {
@@ -163,6 +163,7 @@ $(function () {
         'refresh_assessment_scores',
         (msg, data) => {
             assessmentScoresWidgetManager.refresh();
+            updateSubtotal();
         }
     );
 
@@ -177,6 +178,7 @@ $(function () {
                 PubSub.publish('AssessmentComment_refresh', { review: selectedReviewDetails });
                 assessmentUserDetailsWidgetManager.refresh();
                 assessmentScoresWidgetManager.refresh();
+                updateSubtotal();
                 checkCurrentUser(data);
             }
             else {
@@ -278,22 +280,22 @@ $(function () {
         wrapper: '#assessmentResultWidget',
         filterCallback: function () {
             return {
-                'applicationId': $('#DetailsViewApplicationId').val()
+                'applicationId': $('#DetailsViewApplicationId').val(),
+                'applicationFormVersionId': $('#AssessmentResultViewApplicationFormVersionId').val()
             };
         }
     });
     PubSub.subscribe(
         'application_status_changed',
-        (msg, data) => {
-            console.log(msg, data);
+        (msg, data) => {            
             applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
-            assessmentResultWidgetManager.refresh();
+            assessmentResultWidgetManager.refresh();            
         }
     );
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
-            assessmentResultWidgetManager.refresh();
+            assessmentResultWidgetManager.refresh();        
         }
     );
 
@@ -350,41 +352,50 @@ $(function () {
     $('body').on('click', '.custom-tab-save', function (event) {
         let id = $(this).attr('id');
         let uiAnchor = $(this).attr('data-ui-anchor');
+        let worksheetId = $(this).attr('data-ui-worksheetId');
         let formDataName = id.replace('save_', '').replace('_btn', '') + '_form';
         let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
-        let formId = decodeURIComponent($("#ApplicationFormId").val());
-        let formData = $(`#${formDataName}`).serializeArray();        
+        let formData = $(`#${formDataName}`).serializeArray();
         let customFormObj = {};
+        let formVersionId = $("#ApplicationFormVersionId").val();        
 
         $.each(formData, function (_, input) {
             customFormObj[input.name] = input.value;
         });
-        
+
         $(`#${formDataName} input:checkbox`).each(function () {
             customFormObj[this.name] = (this.checked).toString();
         });
 
-        updateCustomForm(applicationId, formId, customFormObj, uiAnchor, id);
+        updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, id, formDataName, worksheetId);
     });
 
     PubSub.subscribe(
         'fields_tab',
-        (_, fieldId) => {
-            let saveBtn = $(`#save_${fieldId.split('.')[1]}_btn`);
-            saveBtn.prop('disabled', false);
+        (_, data) => {          
+            let formDataName = data.worksheet + '_form';
+            let formValid = $(`form#${formDataName}`).valid();               
+            let saveBtn = $(`#save_${data.worksheet}_btn`);
+            if (formValid) {                
+                saveBtn.prop('disabled', false);
+            } else {
+                saveBtn.prop('disabled', true);
+            }
         }
     );
 });
 
-function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId) {
+function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, saveId, formDataName, worksheetId) {
     let customFormUpdate = {
         instanceCorrelationId: applicationId,
         instanceCorrelationProvider: 'Application',
-        sheetCorrelationId: formId,
-        sheetCorrelationProvider: 'Form',
+        sheetCorrelationId: formVersionId,
+        sheetCorrelationProvider: 'FormVersion',
         uiAnchor: uiAnchor,
-        customFields: customFormObj
-    }     
+        customFields: customFormObj,
+        formDataName: formDataName,
+        worksheetId: worksheetId
+    }
 
     $(`#${saveId}`).prop('disabled', true);
     unity.flex.worksheetInstances.worksheetInstance.update(customFormUpdate)
@@ -392,25 +403,26 @@ function updateCustomForm(applicationId, formId, customFormObj, uiAnchor, saveId
             abp.notify.success(
                 'Information has been updated.'
             );
-        });        
+        });
 }
 
 // custom fields
-function notifyFieldChange(event, field) {
+function notifyFieldChange(worksheet, uianchor, field) {
     let value = document.getElementById(field.id).value;
+    let anchor = uianchor.toLowerCase();
     if (PubSub) {
-        if (isKnownAnchor(event)) {
-            PubSub.publish('fields_' + event, value);
+        if (isKnownAnchor(anchor)) {
+            PubSub.publish('fields_' + anchor, value);
         } else {
-            PubSub.publish('fields_tab', field.id);
+            PubSub.publish('fields_tab', { worksheet: worksheet, fieldId: field.id });
         }
     }
 }
 
-function isKnownAnchor(event) {
-    if (event === 'projectinfo'
-        || event === 'applicantinfo'
-        || event === 'assessmentinfo') {
+function isKnownAnchor(anchor) {
+    if (anchor === 'projectinfo'
+        || anchor === 'applicantinfo'
+        || anchor === 'assessmentinfo') {
         return true;
     }
 }

@@ -19,111 +19,98 @@
 @section scripts
 {
     <abp-script src="/Pages/ApplicationForms/Mapping.js" />
+    <abp-script src="/Pages/ApplicationForms/LinkWorksheetsModal.js" />
 }
 
 @section styles {
     <abp-style src="/Pages/ApplicationForms/Mapping.css" />
+    <abp-style src="/Pages/ApplicationForms/LinkWorksheetsModal.css" />
 }
 
-<input type="hidden" id="intakeProperties" value="@Model.IntakeProperties">
-<input type="hidden" id="applicationFormVersionDtoString" value="@Model.ApplicationFormVersionDtoString">
-<input type="hidden" id="availableChefsFields" value="@Model.ApplicationFormVersionDto?.AvailableChefsFields">
-<input type="hidden" id="existingMapping" value="@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping">
-<input type="hidden" id="formVersionId" value="@Model.ApplicationFormVersionDto?.Id">
-<input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto?.Id">
-<input type="hidden" id="chefsFormId" value="@Model.ApplicationFormDto?.ChefsApplicationFormGuid">
+<input type="hidden" id="intakeProperties" value="@Model.IntakeProperties" />
+<input type="hidden" id="applicationFormVersionDtoString" value="@Model.ApplicationFormVersionDtoString" />
+<input type="hidden" id="availableChefsFields" value="@Model.ApplicationFormVersionDto?.AvailableChefsFields" />
+<input type="hidden" id="existingMapping" value="@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping" />
+<input type="hidden" id="formVersionId" value="@Model.ApplicationFormVersionDto?.Id" />
+<input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto?.Id" />
+<input type="hidden" id="chefsFormId" value="@Model.ApplicationFormDto?.ChefsApplicationFormGuid" />
+<input type="hidden" id="formName" value="@Model.ApplicationFormDto?.ApplicationFormName" />
 
 <div class="container-fluid px-2">
-    <div class="d-flex my-1 p-2">
-        <abp-row class="m-0 assessment-result-form" >
-            <abp-column size="_9" class="px-1 d-flex align-items-center">
-                <abp-card-title class="label">@Model.ApplicationFormDto?.ApplicationFormName </abp-card-title>
-            </abp-column>
-            <abp-column size="_3" class="px-1 d-flex align-items-center">
-                <label for="scoresheet" class="label">Scoring Sheet:&nbsp;&nbsp;</label>
-                <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet">
+    <abp-row>
+        <abp-column size="_4" class="px-1">
+            <abp-card-title class="label">@Model.ApplicationFormDto?.ApplicationFormName </abp-card-title>
+        </abp-column>
+    </abp-row>
+    <abp-row class="pt-2 pb-3">
+        <abp-column size="_4" class="px-1">
+            <label for="applicationFormVersion" class="form-label">Version:</label>
+            <div class="select-icon-wrapper">
+                <select class="form-select form-control" id="applicationFormVersion" name="Version">
+                    @foreach (var applicationFormVersionDto in Model?.ApplicationFormVersionDtoList ?? new List<ApplicationFormVersionDto> { })
+                    {
+                        @if (@applicationFormVersionDto.ChefsFormVersionGuid + "" != "")
+                        {
+                            var selected = false;
+                            @if (Model?.ChefsFormVersionGuid + "" == applicationFormVersionDto.ChefsFormVersionGuid)
+                            {
+                                selected = true;
+                            }
+
+                            <option value="@applicationFormVersionDto.ChefsFormVersionGuid" selected="@(selected)"> @applicationFormVersionDto.Version - @applicationFormVersionDto.ChefsFormVersionGuid</option>
+                        }
+                    }
+                </select>
+                @if (Model?.ApplicationFormVersionDto?.Published == true)
+                {
+                    <i class="fl fl-tick published-tick" data-toggle="tooltip" title="This form is published"></i>
+                }
+
+            </div>
+        </abp-column>
+        <abp-column size="_4" class="px-1">
+            <label for="chefsFormVersionId" class="form-label">Form Version ID:</label>
+            <div class="input-button-wrapper ">
+                <input id="chefsFormVersionId" class="form-control input-width" type="text" value="@Model?.ChefsFormVersionGuid">
+                <abp-button id="btn-sync"
+                            text="Sync"
+                            disabled="false"
+                            icon-type="Other"
+                            icon="fl fl-synch"
+                            abp-tooltip="Call out to CHEFS and bring back all the Available CHEFS form Fields. This action requires a Form Version ID to be entered"
+                            button-type="Success" />
+            </div>
+        </abp-column>
+    </abp-row>
+
+    @if (Model.FlexEnabled)
+    {
+        <abp-row class="pb-3">
+            <abp-column size="_4" class="px-1">
+                <input type="hidden" id="originalScoresheetId" value="@Model.ScoresheetId" />
+                <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
                     <option value="">Please choose...</option>
                 </abp-select>
             </abp-column>
-        </abp-row>
-    </div>
-
-    <div class="row">
-        <div class="column">
-            <div class="d-flex my-1 p-2">
-                <abp-row class="m-0 assessment-result-form" style="width: 500px;">
-                    <abp-column size="_4" class="px-1">
-                        <abp-card-title class="label">Version</abp-card-title>
-                    </abp-column>
-                    <abp-column size="_2" class="px-1">
-                        <select class="form-select form-control" id="applicationFormVersion" name="Version">
-                            @foreach (var applicationFormVersionDto in Model?.ApplicationFormVersionDtoList ?? new List<ApplicationFormVersionDto> { })
-                            {
-                                @if (@applicationFormVersionDto.ChefsFormVersionGuid+"" != "")
-                                {
-                                    var selected = false;
-                                    @if (Model?.ChefsFormVersionGuid+"" == applicationFormVersionDto.ChefsFormVersionGuid)
-                                    {
-                                        selected = true;
-                                    }
-                                
-                                    <option value="@applicationFormVersionDto.ChefsFormVersionGuid" selected="@(selected)"> @applicationFormVersionDto.Version - @applicationFormVersionDto.ChefsFormVersionGuid</option>
-                                }
-                            }
-                        </select>
-                    </abp-column>
-                </abp-row>
-            </div>
-            <div class="d-flex my-1 p-2">
-                <abp-row class="m-0 assessment-result-form" style="width: 500px;">
-                    <abp-column size="_4" class="px-1">
-                        <abp-card-title class="label">Published</abp-card-title>
-                    </abp-column>
-                    <abp-column size="_2" class="px-1">
-                    <abp-card-title class="label">@Model.ApplicationFormVersionDto?.Published</abp-card-title>
-                    </abp-column>
-                </abp-row>
-            </div>
-        </div>
-        <div class="column">
-            <form id="mappingForm" class="mappingForm">
-                <abp-row class="m-0 assessment-result-form">
-                    <abp-column size="_3" class="px-1">
-                        <div class="row">
-                            <div class="column">
-                                <abp-card-title class="label form-version-label">Form Version ID</abp-card-title>
-                            </div>
-                            <div class="column">
-                                <div class="unity-input-group">
-                                    <input id="chefsFormVersionId" class="form-control" type="text"  value="@Model.ChefsFormVersionGuid">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="column"></div>
-                            <div class="column">
-                        <div class="unity-input-group">
-                            <abp-button 
-                                id="btn-sync" 
-                                text="Sync Available" 
-                                disabled="false" 
+            <abp-column size="_4" class="px-1">
+                <div class="btn-label-wrapper">
+                    <label for="btn-link-worksheets" class="form-label">Custom Fields:</label>
+                    <abp-button id="btn-link-worksheets"
                                 icon-type="Other"
-                                icon="fl fl-synch"
-                                abp-tooltip="Call out to CHEFS and bring back all the Available CHEFS form Fields. This action requires a Form Version ID to be entered"
-                                button-type="Success" />
-                        </div>
-                            </div>
-                        </div>
-                    </abp-column>
-                </abp-row>
-            </form>
-        </div>
-    </div>
-    <div class="mapping-container">
+                                icon="fl fl-link"
+                                text="Link Worksheets"
+                                abp-tooltip="Link custom field worksheets for the currently selected form version."
+                                button-type="Primary" />
+                </div>
+            </abp-column>
+        </abp-row>
+    }
+</div>
+<div class="mapping-container">
     <div class="main-content mapping-div">
         <div class="table-div left">
             <div class="row label table-title">
-                    Chefs Available Fields
+                Chefs Available Fields
             </div>
             <abp-table id="ApplicationFormsTable" class="chef-field-table">
                 <thead>
@@ -150,12 +137,12 @@
             <textarea id="jsonText" rows="15" cols="80">@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
         </abp-modal-body>
         <abp-modal-footer>
-                <abp-button id="btn-save-mapping"
+            <abp-button id="btn-save-mapping"
                         text="Save Mapping JSON"
                         icon-type="Other"
                         abp-tooltip="Save the Mapping JSON"
                         button-type="Primary" />
-                <abp-button id="btn-cancel-mapping"
+            <abp-button id="btn-cancel-mapping"
                         text="Cancel"
                         icon-type="Other"
                         class="btn btn-secondary"
@@ -173,7 +160,7 @@
                             icon="fl fl-save"
                             class="mx-1"
                             style="pointer-events: all;"
-                            abp-tooltip="Save the Scoring Sheet and the Mapping of CHEFS fields to Unity Fields"
+                            abp-tooltip="Save the Scoresheet and the Mapping of CHEFS fields to Unity Fields"
                             button-type="Primary" />
                 <abp-button id="btn-edit"
                             text="Edit Mapping"
@@ -200,5 +187,5 @@
             </div>
         </div>
     </div>
-  </div>
+</div>
 </div>

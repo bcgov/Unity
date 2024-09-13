@@ -1,8 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
-@using Newtonsoft.Json
-@using Unity.Flex.Localization;
-@using Microsoft.Extensions.Localization;
-@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
+@using Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
+@using Unity.Flex.Web.Views.Shared.Components.TextAreaWidget
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 @using Unity.Flex.Worksheets;
 @using Unity.Flex.Web.Views.Shared.Components;
@@ -16,11 +14,11 @@
 
 @model WorksheetViewModel;
 
-@inject IStringLocalizer<FlexResource> L
 @inject IAuthorizationService AuthorizationService
 
 @if (Model.IsConfigured)
 {
+    <input type="hidden" id="WorksheetId" value="@Model.WorksheetId" />    
     <div class="@($"worksheet worksheet_{Model.UiAnchor}")">
         @foreach (var worksheetSection in Model.Sections)
         {
@@ -70,6 +68,16 @@
                                             @await Component.InvokeAsync(typeof(CheckboxGroupWidget), new { fieldModel = field, modelName = Model.Name })
                                             break;
                                         }
+                                    case CustomFieldType.BCAddress:
+                                        {
+                                            @await Component.InvokeAsync(typeof(BCAddressWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.TextArea:
+                                        {
+                                            @await Component.InvokeAsync(typeof(TextAreaWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
                                     default:
                                         {
                                             <input type="@field.Type.ConvertInputType()"
@@ -82,7 +90,7 @@
                                                    maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()"
                                                    id="@($"{field.Name}.{Model.Name}.{field.Id}")"
                                                    name="@($"{field.Name}.{Model.Name}.{field.Id}")"
-                                                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                                                   onchange="@($"notifyFieldChange('{Model.Name}', '{Model.UiAnchor}', this)")" />
                                             break;
                                         }
                                 }

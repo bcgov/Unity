@@ -16,3 +16,18 @@
     border: var(--bs-border-width) solid;
     border-color: var(--bs-border-color);
 }
+
+.info-btn {
+    font-size: 13pt;
+    font-family: BCSans, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-weight: 100;
+}
+.payment-status-transition {
+    background-color: #FFF8E9;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.payment-status-transition-arrow {
+    color: #42814A;
+}

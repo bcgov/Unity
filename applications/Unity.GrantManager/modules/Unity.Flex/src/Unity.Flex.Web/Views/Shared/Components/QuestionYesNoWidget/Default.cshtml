@@ -1,0 +1,23 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget;
+
+@model QuestionYesNoViewModel;
+
+<div class="mb-3">
+    <label for="answer-yesno-@Model.QuestionId" class="form-label">Answer</label>
+    <select id="answer-yesno-@Model.QuestionId"
+            class="form-select form-control answer-yesno-input"
+            name="Answer-YesNo[@Model.QuestionId]"
+            data-original-value="@Model.Answer"
+            data-yes-numeric-value="@Model.YesValue"
+            data-no-numeric-value="@Model.NoValue"
+            disabled="@Model.IsDisabled"
+            onchange="handleInputChange('@Model.QuestionId','answer-yesno-','save-yesno-','discard-yesno-')">
+        <option value="">Please choose...</option>
+        <!option value="Yes" @(Model.Answer == "Yes" ? "selected" : "")>Yes</!option>
+        <!option value="No" @(Model.Answer == "No" ? "selected" : "")>No</!option>
+    </select>
+</div>
+<div class="btn-group">
+    <button type="button" class="btn btn-primary" disabled="@Model.IsDisabled" disabled id="save-yesno-@Model.QuestionId" onclick="saveChanges('@Model.QuestionId','answer-yesno-','save-yesno-',6,'discard-yesno-')">SAVE CHANGES</button>
+    <button type="button" class="btn btn-secondary" disabled="@Model.IsDisabled" id="discard-yesno-@Model.QuestionId" onclick="discardChanges('@Model.QuestionId','answer-yesno-','save-yesno-','discard-yesno-')">DISCARD CHANGES</button>
+</div>

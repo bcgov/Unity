@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Intakes
         ILocalEventBus localEventBus) : DomainService
     {
         public async Task MapAndPersistCustomFields(Guid applicationId,
-            Guid formId,
+            Guid formVersionId,
             dynamic formSubmission,
             string? formVersionSubmissionHeaderMapping)
         {
@@ -46,7 +46,7 @@ namespace Unity.GrantManager.Intakes
                                 var field = TrimTypeFromFieldName(dataKey);
                                 var token = data.SelectToken(property.Value.ToString());
                                 var fieldType = ResolveFieldType(dataKey);
-                                var value = ((JToken)token).ApplyTransformer(fieldType);
+                                var value = ((JToken)token).ApplyTransformer(fieldType);                                
                                 customIntakeValues.Add(new(field, value.ApplySerializer()));
                             }
                         }
@@ -59,8 +59,8 @@ namespace Unity.GrantManager.Intakes
 
                 await localEventBus.PublishAsync(new CreateWorksheetInstanceByFieldValuesEto()
                 {
-                    SheetCorrelationId = formId,
-                    SheetCorrelationProvider = CorrelationConsts.Form,
+                    SheetCorrelationId = formVersionId,
+                    SheetCorrelationProvider = CorrelationConsts.FormVersion,
                     InstanceCorrelationId = applicationId,
                     InstanceCorrelationProvider = CorrelationConsts.Application,
                     CustomFields = customIntakeValues

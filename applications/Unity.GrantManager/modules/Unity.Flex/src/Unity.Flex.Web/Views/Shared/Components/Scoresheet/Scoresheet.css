@@ -12,6 +12,11 @@
     filter: grayscale(1) invert(1);
 }
 
+#preview .question-btn::after {
+    -webkit-filter: grayscale(1) invert(0);
+    filter: grayscale(1) invert(0);
+}
+
 #preview .preview-btn:not(.collapsed) {
     background-color: #007bff; 
     color: #ffffff; 
@@ -30,10 +35,62 @@
     font-size: 0.75rem; 
 }
 
+.accordion-button .section-info .total-sections {
+    font-size: 0.75rem;
+}
+
 .accordion-button .text-end {
     margin-right: 1rem; 
 }
 
+.scoresheet-published-icon {
+    border: 2px solid;
+    border-radius: 5px;
+    padding: 5px;
+    color: var(--bc-colors-grey-text-100, light-gray);
+    font-size: 0.6rem;
+}
+
+.section-item {
+    cursor:grab;
+}
+
+.question-item {
+    cursor: grab;
+}
+
+.draggable-header {
+    cursor: move; 
+}
+
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.button-container button {
+    white-space: nowrap;
+}
+
+.accordion-button {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.accordion-button .flex-grow-1 {
+    min-width: 0; 
+}
+
+.scoresheet-title {
+    font-weight: bold;
+}
+
+.scoresheet-name {
+    font-size: 0.7rem;
+}
 
 
 

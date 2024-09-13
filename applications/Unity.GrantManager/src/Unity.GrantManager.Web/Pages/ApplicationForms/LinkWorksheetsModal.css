@@ -1,0 +1,76 @@
+﻿.drop-layout {
+    height: 400px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-content: center;
+    align-items: center;
+}
+
+.published-forms-col {
+    height: 100%;
+    flex: 0.5;
+    padding: 5px;
+}
+
+.available-worksheets {
+    border: 1px solid gray;
+    border-radius: 5px;
+    height: calc(100% - 25px);
+    overflow-y: auto;
+}
+
+.slots-col {
+    height: 100%;
+    flex: 0.5;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.single-slot {
+    height: 40px;
+    width: 98%;
+    border: 1px solid gray;
+    margin: 0px 5px 5px;
+    border-radius: 5px;
+    padding: 2px;
+}
+
+.multi-slot {
+    height: 170px;
+    overflow-y: scroll;
+    width: 98%;
+    border: 1px solid gray;
+    margin: 0px 5px 5px;
+    border-radius: 5px;
+}
+
+.slot-title {
+    margin-left: 5px;
+    font-weight: bold;
+    color: var(--bc-colors-blue-background, #38598A);
+}
+
+.draggable-card {
+    margin: 0.2rem;
+    padding: 0.2rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    width: 98%;
+    cursor: grab;
+    background-image: linear-gradient(135deg, #f9f9fb 10%, #38598A 900%);
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+
+.save-note {
+    border: 2px solid;
+    border-color: var(--bc-colors-blue-primary);
+    text-align: center;
+    padding-top: 1rem;
+    background-color: var(--bc-colors-blue-hover);
+    border-radius: 5px;
+}

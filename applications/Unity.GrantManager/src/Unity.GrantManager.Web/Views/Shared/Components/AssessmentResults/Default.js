@@ -1,9 +1,10 @@
 ﻿$(function () {
-   
     $('body').on('click', '#saveAssessmentResultBtn', function () {
         let applicationId = document.getElementById('AssessmentResultViewApplicationId').value;
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
+        let formVersionId = $("#ApplicationFormVersionId").val();     
+        let worksheetId = $("#WorksheetId").val();       
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -12,8 +13,14 @@
             else if ((input.name == "AssessmentResults.ProjectSummary") || (input.name == "AssessmentResults.Notes")) {
                 assessmentResultObj[input.name.split(".")[1]] = input.value;
             } else {
+                let inputElement = $('[name="' + input.name + '"]');
                 // This will not work if the culture is different and uses a different decimal separator
-                assessmentResultObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+                if (inputElement.hasClass('unity-currency-input')) {
+                    assessmentResultObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+                }
+                else {
+                    assessmentResultObj[input.name.split(".")[1]] = input.value;
+                }
 
                 if (isNumberField(input)) {
                     if (assessmentResultObj[input.name.split(".")[1]] == '') {
@@ -31,6 +38,8 @@
         });
 
         try {
+            assessmentResultObj['correlationId'] = formVersionId;
+            assessmentResultObj['worksheetId'] = worksheetId;
             unity.grantManager.grantApplications.grantApplication
                 .updateAssessmentResults(applicationId, assessmentResultObj)
                 .done(function () {
@@ -104,10 +113,12 @@
         (msg, data) => { 
             if (data.RequestedAmount) {
                 $('#RequestedAmountInputAR')?.prop("value", data?.RequestedAmount);
+                $('#RequestedAmountInputAR').maskMoney('mask');
             }
             if (data.TotalProjectBudget) {
                 $('#TotalBudgetInputAR')?.prop("value", data?.TotalProjectBudget);
-            }
+                $('#TotalBudgetInputAR').maskMoney('mask');
+            } 
         }
     );
 
@@ -177,7 +188,24 @@ function flaggedFieldIsValid(flag, name) {
     return true;
 }
 
+function hasInvalidCustomFields() {        
+    let invalidFieldsFound = false;
+    $("input[id^='custom']:visible").each(function (i, el) {
+        let fieldValidity = document.getElementById(el.id).validity.valid;        
+        if (!fieldValidity) {
+            invalidFieldsFound = true;
+        }
+    });
+    
+    return invalidFieldsFound;
+}
+
 function enableResultSaveBtn() {
+    if (hasInvalidCustomFields()) {
+        $('#saveAssessmentResultBtn').prop('disabled', true);
+        return;
+    }
+
     if (hasInvalidExplicitValidations()) {
         $('#saveAssessmentResultBtn').prop('disabled', true);
         return;

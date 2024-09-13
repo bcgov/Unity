@@ -1,35 +1,51 @@
-$(function () {  
+$(function () {
     const l = abp.localization.getResource('Payments');
+    const formatter = createNumberFormatter();
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
     const listColumns = getColumns();
     const defaultVisibleColumns = [
-        'id',
+        'referenceNumber',
+        'applicantName',
+        'supplierNumber',
         'creationTime',
+        'siteNumber',
+        'contactNumber',
+        'invoiceNumber',
+        'payGroup',
+        'amount',
+        'status',
+        'requestedOn',
+        'updatedOn',
+        'paidOn',
+        'l1Approval',
+        'l2Approval',
+        'l3Approval',
+        'CASResponse'
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
         viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
     });
     let selectedPaymentIds = [];
- 
+
     let actionButtons = [
-        
+
         {
             text: 'Approve',
-            className: 'custom-table-btn flex-none btn btn-secondary payment-status-approve',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
                 paymentRequestStatusModal.open({
                     paymentIds: JSON.stringify(selectedPaymentIds),
-                    isApprove : true
+                    isApprove: true
                 });
                 isApprove = true;
             }
         },
         {
             text: 'Decline',
-            className: 'custom-table-btn flex-none btn btn-secondary payment-status-decline',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             action: function (e, dt, node, config) {
                 paymentRequestStatusModal.open({
                     paymentIds: JSON.stringify(selectedPaymentIds),
@@ -40,17 +56,18 @@ $(function () {
         },
         {
             text: 'History',
-            className: 'custom-table-btn flex-none btn btn-secondary',
+            className: 'custom-table-btn flex-none btn btn-secondary history',
             action: function (e, dt, node, config) {
-                alert('History Button activated');
+                location.href = '/PaymentHistory/Details?PaymentId=' + selectedPaymentIds[0];
             }
         },
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
             id: "btn-toggle-filter",
-            action: function (e, dt, node, config) {
-                $(".tr-toggle-filter").toggle();
+            action: function (e, dt, node, config) { },
+            attr: {
+                id: 'btn-toggle-filter'
             }
         },
 
@@ -64,32 +81,72 @@ $(function () {
                 orthogonal: 'fullName',
             }
         },
-       
+
     ];
     let responseCallback = function (result) {
         return {
             recordsTotal: result.totalCount,
             recordsFiltered: result.items.length,
-            data: result.items
+            data: formatItems(result.items)
         };
     };
 
+    let formatItems = function (items) {
+        const newData = items.map((item, index) => {
+            return {
+                ...item,
+                rowCount: index
+            };
+        });
+        return newData;
+    }
+
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
-        listColumns, 15, 4, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
+        listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
-    let approve_buttons = dataTable.buttons(['.payment-status-approve']);
-    let decline_buttons = dataTable.buttons(['.payment-status-decline']);
-    approve_buttons.disable();
-    decline_buttons.disable();
+    let payment_approve_buttons = dataTable.buttons(['.payment-status']);
+    let history_button = dataTable.buttons(['.history']);
+
+    payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
 
+    function checkAllRowsHaveState(state) {
+        return dataTable.rows('.selected').data().toArray().every(row => row.status === state);
+    }
+
+    $('#PaymentRequestListTable').on('click', 'tr td', function (e) {
+        let column = dataTable.column(this);
+        let columnName = dataTable.context[0].aoColumns[column.index()].sName;
+        if (columnName == "CASResponse") {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+        }
+    });
+
     dataTable.on('select', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'select_batchpayment_application');
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", true);
+                if ($(".chkbox:checked").length == $(".chkbox").length) {
+                    $(".select-all-payments").prop("checked", true);
+                }
+                selectApplication(type, index, 'select_batchpayment_application');
+            });
+        }
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'deselect_batchpayment_application');
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                selectApplication(type, index, 'deselect_batchpayment_application');
+                $("#row_" + index).prop("checked", false);
+                if ($(".chkbox:checked").length != $(".chkbox").length) {
+                    $(".select-all-payments").prop("checked", false);
+                }
+            });
+        }
     });
 
     function selectApplication(type, indexes, action) {
@@ -105,28 +162,30 @@ $(function () {
             }
 
             checkActionButtons();
-          
+
         }
     }
 
-   function checkActionButtons() {
+    function checkActionButtons() {
+        let isOnlySubmittedToCas = checkAllRowsHaveState('Submitted');
+        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isOnlySubmittedToCas) {
+            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
+                payment_approve_buttons.enable();
 
-       if (dataTable.rows({ selected: true }).indexes().length === 0) {
-           approve_buttons.disable();
-           decline_buttons.disable();
-       }
-       else {
-           if(abp.auth.isGranted('GrantApplicationManagement.Payments.Approve')) {
-               approve_buttons.enable();
-              
-           }
-           if(abp.auth.isGranted('GrantApplicationManagement.Payments.Decline')) {
-               decline_buttons.enable();
-           }
-           
-          
-       }
+            } else {
+                payment_approve_buttons.disable();
+            }
 
+            if (dataTable.rows({ selected: true }).indexes().length == 1) {
+                history_button.enable();
+            } else {
+                history_button.disable();
+            }
+        }
+        else {
+            payment_approve_buttons.disable();
+            history_button.enable();
+        }
     }
 
     function handleSearch() {
@@ -144,7 +203,8 @@ $(function () {
 
     function getColumns() {
         return [
-            getPaymentIdColumn(),
+            getSelectColumn('Select Application', 'rowCount', 'payments'),
+            getPaymenReferenceColumn(),
             getApplicantNameColumn(),
             getSupplierNumberColumn(),
             getSiteNumberColumn(),
@@ -153,24 +213,26 @@ $(function () {
             getPayGroupColumn(),
             getAmountColumn(),
             getStatusColumn(),
-            getDescriptionColumn(),
             getRequestedonColumn(),
             getUpdatedOnColumn(),
             getPaidOnColumn(),
-            getCASResponseColumn(),
             getL1ApprovalColumn(),
             getL2ApprovalColumn(),
-            getL3ApprovalColumn()
+            getL3ApprovalColumn(),
+            getDescriptionColumn(),
+            getInvoiceStatusColumn(),
+            getPaymentStatusColumn(),
+            getCASResponseColumn(),
         ]
     }
 
-    function getPaymentIdColumn() {
+    function getPaymenReferenceColumn() {
         return {
             title: l('ApplicationPaymentListTable:PaymentID'),
-            name: 'id',
-            data: 'id',
+            name: 'referenceNumber',
+            data: 'referenceNumber',
             className: 'data-table-header',
-            index: 1,
+            index: 0,
         };
     }
     function getApplicantNameColumn() {
@@ -179,7 +241,7 @@ $(function () {
             name: 'applicantName',
             data: 'payeeName',
             className: 'data-table-header',
-            index: 2,
+            index: 1,
         };
     }
 
@@ -189,7 +251,7 @@ $(function () {
             name: 'supplierNumber',
             data: 'supplierNumber',
             className: 'data-table-header',
-            index: 3,
+            index: 2,
         };
     }
     function getSiteNumberColumn() {
@@ -198,7 +260,7 @@ $(function () {
             name: 'siteNumber',
             data: 'site',
             className: 'data-table-header',
-            index: 4,
+            index: 3,
             render: function (data) {
                 return data?.number;
             }
@@ -210,8 +272,8 @@ $(function () {
             name: 'contactNumber',
             data: 'contractNumber',
             className: 'data-table-header',
-            index: 5,
- 
+            index: 4,
+
         };
     }
 
@@ -221,7 +283,7 @@ $(function () {
             name: 'invoiceNumber',
             data: 'invoiceNumber',
             className: 'data-table-header',
-            index: 6,
+            index: 5,
         };
     }
     function getPayGroupColumn() {
@@ -230,7 +292,7 @@ $(function () {
             name: 'payGroup',
             data: 'site',
             className: 'data-table-header',
-            index: 7,
+            index: 6,
             render: function (data) {
                 switch (data.paymentGroup) {
                     case 1:
@@ -249,12 +311,13 @@ $(function () {
             title: l('ApplicationPaymentListTable:Amount'),
             name: 'amount',
             data: 'amount',
-            className: 'data-table-header',
-            index: 8,
+            className: 'data-table-header  currency-display',
+            index: 7,
+            render: function (data) {
+                return formatter.format(data);
+            },
         };
     }
-
-
 
     function getStatusColumn() {
         return {
@@ -262,60 +325,24 @@ $(function () {
             name: 'status',
             data: 'status',
             className: 'data-table-header',
-            index: 9,
+            index: 8,
             render: function (data) {
-                switch (data) {
-                    case 1:
-                        return "Created";
-                    case 2:
-                        return "Submitted";
-                    case 3:
-                        return "Approved";
-                    case 4:
-                        return "Declined";
-                    case 5:
-                        return "Awaiting Approval";
-                    case 6:
-                        return "L1 Pending";
-                    case 7:
-                        return "L1 Approved";
-                    case 8:
-                        return "L1 Declined";
-                    case 9:
-                        return "L2 Pending";
-                    case 10:
-                        return "L2 Approved";
-                    case 11:
-                        return "L2 Declined";
-                    case 12:
-                        return "L3 Pending";
-                    case 13:
-                        return "L3 Approved";
-                    case 14:
-                        return "L3 Declined";
-                    default:
-                        return "Created";
-                }
+
+                let statusText = getStatusText(data);
+                let statusColor = getStatusTextColor(data);
+                return '<span style="color:' + statusColor + ';">' + statusText + '</span>';
             }
         };
     }
 
-    function getDescriptionColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:Description'),
-            name: 'description',
-            data: 'description',
-            className: 'data-table-header',
-            index: 10,
-        };
-    }
+
     function getRequestedonColumn() {
         return {
             title: l('ApplicationPaymentListTable:RequestedOn'),
             name: 'requestedOn',
             data: 'creationTime',
             className: 'data-table-header',
-            index: 11,
+            index: 9,
             render: function (data) {
                 return formatDate(data);
             }
@@ -327,7 +354,7 @@ $(function () {
             name: 'updatedOn',
             data: 'lastModificationTime',
             className: 'data-table-header',
-            index: 12,
+            index: 10,
             render: function (data) {
                 return formatDate(data);
             }
@@ -339,31 +366,20 @@ $(function () {
             name: 'paidOn',
             data: 'paidOn',
             className: 'data-table-header',
-            index: 13,
+            index: 11,
             render: function (data) {
                 return formatDate(data);
             }
         };
     }
-    function getCASResponseColumn() {
-        return {
-            title: l('ApplicationPaymentListTable:CASResponse'),
-            name: 'CASResponse',
-            data: 'casResponse',
-            className: 'data-table-header',
-            index: 14,
-            render: function (data) {
-                return formatDate(data);
-            }
-        };
-    }
+
     function getL1ApprovalColumn() {
         return {
             title: l('ApplicationPaymentListTable:L1ApprovalDate'),
             name: 'l1Approval',
             data: 'expenseApprovals',
             className: 'data-table-header',
-            index: 15,
+            index: 13,
             render: function (data) {
                 let approval = getExpenseApprovalsDetails(data, 1)
                 return formatDate(approval?.decisionDate);
@@ -389,7 +405,7 @@ $(function () {
             name: 'l3Approval',
             data: 'expenseApprovals',
             className: 'data-table-header',
-            index: 14,
+            index: 15,
             render: function (data) {
                 let approval = getExpenseApprovalsDetails(data, 3)
                 return formatDate(approval?.decisionDate);
@@ -397,6 +413,67 @@ $(function () {
         };
     }
 
+    function getDescriptionColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:Description'),
+            name: 'paymentDescription',
+            data: 'description',
+            className: 'data-table-header',
+            index: 16
+
+        };
+    }
+
+    function getInvoiceStatusColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:InvoiceStatus'),
+            name: 'invoiceStatus',
+            data: 'invoiceStatus',
+            className: 'data-table-header',
+            index: 17,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+    function getPaymentStatusColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:PaymentStatus'),
+            name: 'paymentStatus',
+            data: 'paymentStatus',
+            className: 'data-table-header',
+            index: 18,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
+    function getCASResponseColumn() {
+        // Add button to view response modal
+        return {
+            title: l('ApplicationPaymentListTable:CASResponse'),
+            name: 'CASResponse',
+            data: 'casResponse',
+            className: 'data-table-header',
+            index: 12,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                }
+                return '{Not Available}';
+            }
+        };
+    }
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
         return expenseApprovals.find(x => x.type == type);
@@ -414,7 +491,7 @@ $(function () {
 
 
 
-    $('#search').keyup(function () {
+    $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
@@ -426,8 +503,112 @@ $(function () {
             'Payment Requests'
         );
         dataTable.ajax.reload(null, false);
-        approve_buttons.disable();
-        decline_buttons.disable();
+        $(".select-all-payments").prop("checked", false);
+        payment_approve_buttons.disable();
+
         selectedPaymentIds = [];
     });
+
+    function getStatusTextColor(status) {
+        switch (status) {
+
+            case "L1Pending":
+                return "#053662";
+
+            case "L1Declined":
+                return "#CE3E39";
+
+            case "L2Pending":
+                return "#053662";
+
+            case "L2Declined":
+                return "#CE3E39";
+
+            case "L3Pending":
+                return "#053662";
+
+            case "L3Declined":
+                return "#CE3E39";
+
+            case "Submitted":
+                return "#5595D9";
+
+            case "Paid":
+                return "#42814A";
+
+            case "PaymentFailed":
+                return "#CE3E39";
+
+            default:
+                return "#053662";
+        }
+    }
+
+    function getStatusText(status) {
+
+        switch (status) {
+
+            case "L1Pending":
+                return "L1 Pending";
+
+            case "L1Approved":
+                return "L1 Approved";
+
+            case "L1Declined":
+                return "L1 Declined";
+
+            case "L2Pending":
+                return "L2 Pending";
+
+            case "L2Approved":
+                return "L2 Approved";
+
+            case "L2Declined":
+                return "L2 Declined";
+
+            case "L3Pending":
+                return "L3 Pending";
+
+            case "L3Approved":
+                return "L3 Approved";
+
+            case "L3Declined":
+                return "L3 Declined";
+
+            case "Submitted":
+                return "Submitted to CAS";
+
+            case "Paid":
+                return "Paid";
+
+            case "PaymentFailed":
+                return "Payment Failed";
+
+
+            default:
+                return "Created";
+        }
+    }
+
+    $('.select-all-payments').click(function () {
+        if ($(this).is(':checked')) {
+            dataTable.rows({ 'page': 'current' }).select();
+        }
+        else {
+            dataTable.rows({ 'page': 'current' }).deselect();
+        }
+    });
 });
+
+
+let casPaymentResponseModal = new abp.ModalManager({
+    viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
+});
+
+function openCasResponseModal(casResponse) {
+    casPaymentResponseModal.open({
+        casResponse: casResponse
+    });
+}
+
+

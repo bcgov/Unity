@@ -44,7 +44,7 @@
     dataTable = initializeDataTable(dt,
         defaultVisibleColumns,
         listColumns,
-        15,
+        10,
         4,
         unity.grantManager.grantApplications.grantApplication.getList,
         {},
@@ -55,22 +55,32 @@
     dataTable.on('search.dt', () => handleSearch());
 
     dataTable.on('select', function (e, dt, type, indexes) {
-        $("#row_" + indexes).prop("checked", true);
-        if ($(".chkbox:checked").length == $(".chkbox").length) {
-            $("#select-all").prop("checked", true);
+
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                $("#row_" + index).prop("checked", true);
+                if ($(".chkbox:checked").length == $(".chkbox").length) {
+                    $(".select-all-applications").prop("checked", true);
+                }
+                selectApplication(type, index, 'select_application');
+            });
         }
-        selectApplication(type, indexes, 'select_application');
+        
     });
 
     dataTable.on('deselect', function (e, dt, type, indexes) {
-        selectApplication(type, indexes, 'deselect_application');
-        $("#row_" + indexes).prop("checked", false);
-        if ($(".chkbox:checked").length != $(".chkbox").length) {
-            $("#select-all").prop("checked", false);
+        if (indexes?.length) {
+            indexes.forEach(index => {
+                selectApplication(type, index, 'deselect_application');
+                $("#row_" + index).prop("checked", false);
+                if ($(".chkbox:checked").length != $(".chkbox").length) {
+                    $(".select-all-applications").prop("checked", false);
+                }
+            });
         }
     });
 
-    $('#search').keyup(function () {
+    $('#search').on('input', function () {
         let table = $('#GrantApplicationsTable').DataTable();
         table.search($(this).val()).draw();
     });
@@ -89,7 +99,7 @@
 
     function getColumns() {
         return [
-            getSelectColumn('Select Application'),
+            getSelectColumn('Select Application', 'rowCount','applications'),
             getApplicantNameColumn(),
             getApplicationNumberColumn(),
             getCategoryColumn(),
@@ -143,6 +153,8 @@
             getSigningAuthorityEmailColumn(),
             getSigningAuthorityBusinessPhoneColumn(),
             getSigningAuthorityCellPhoneColumn(),
+            getPlaceColumn(),
+            getRiskRankingColumn(),
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -376,7 +388,7 @@
                     return 'Historical';
                 } else {
                     return data ?? '';
-                }  
+                }
             },
             index: 17
         }
@@ -887,6 +899,31 @@
             index: 53
         }
     }
+    function getPlaceColumn() {
+        return {
+            title: 'Place',
+            name: 'place',
+            data: 'place',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 54
+        }
+    }
+
+    function getRiskRankingColumn() {
+        return {
+            title: 'Risk Ranking',
+            name: 'riskranking',
+            data: 'riskRanking',
+            className: 'data-table-header',
+            render: function (data) {
+                return titleCase(data ?? '') ?? '';
+            },
+            index: 55
+        }
+    }
 
     window.addEventListener('resize', () => {
     });
@@ -895,6 +932,7 @@
         'refresh_application_list',
         (msg, data) => {
             dataTable.ajax.reload(null, false);
+            $(".select-all-applications").prop("checked", false);
             PubSub.publish('clear_selected_application');
         }
     );
@@ -917,4 +955,13 @@
         }
         return str.join(' ');
     }
+
+    $('.select-all-applications').click(function () {
+        if ($(this).is(':checked')) {
+            dataTable.rows({ 'page': 'current' }).select();
+        }
+        else {
+            dataTable.rows({ 'page': 'current' }).deselect();
+        }
+    });
 });

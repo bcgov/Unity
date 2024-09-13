@@ -6,10 +6,11 @@ namespace Unity.Flex.Scoresheets
     [Serializable]
     public class ScoresheetDto : ExtensibleFullAuditedEntityDto<Guid>
     {
+        public string Title { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public Guid GroupId { get; set; }
         public uint Version { get; set; }
-        public Collection<VersionDto> GroupVersions { get; set; } = [];
+        public bool Published { get; set; }
         public Collection<ScoresheetSectionDto> Sections { get; private set; } = [];
+
     }
 }

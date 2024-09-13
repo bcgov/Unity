@@ -1,0 +1,71 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Localization
+@using Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget
+@using Unity.Flex.Worksheets.Definitions;
+
+@inject IHtmlLocalizer<FlexResource> L
+
+@model SelectListDefinitionViewModel;
+
+<abp-row class="m-0 p-0">
+    <div class="selectlist-options-list">
+        <table id="selectlist-options-table">
+            <caption></caption>
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th class="selectlist-options-actions-column"></th>
+                </tr>
+            </thead>
+            <tbody id="selectlist-options-body">
+                @foreach (var option in Model.Options)
+                {
+                    <tr>
+                        <td><input type="text" class="form-control key-input" name="SelectListKeys" pattern="[a-zA-Z0-9 ]+" value="@option.Key" minlength="1" maxlength="25" required id="key-@option.Key" /></td>
+                        <td><input type="text" class="form-control" name="SelectListValues" value="@option.Value" maxlength="25" required id="value-@option.Key" /></td>
+                        <td>
+                            <abp-button id="data-btn-@option.Key"
+                                        class="delete-selectlist-option btn-danger"
+                                        icon-type="Other" 
+                                        icon="fl fl-delete"
+                                        abp-tooltip="Delete"
+                                        button-type="Danger" />
+                        </td>
+                    </tr>                    
+                }
+            </tbody>
+        </table>
+    </div>
+    <table id="add-new-selectlist-table" class="hidden">
+        <caption></caption>
+        <thead>
+        <th></th>
+        <th></th>
+        <th></th>
+        </thead>
+        <tr id="new-selectlist-row">
+            <td><input type="text" class="form-control" id="new-row-key" placeholder="Key" /></td>
+            <td><input type="text" class="form-control" id="new-row-label" placeholder="Value" /></td>
+            <td class="new-row-actions">
+                <abp-button id="save-selectlist-option-btn" icon-type="Other" icon="fl fl-checkmark"
+                            abp-tooltip="Confirm"
+                            button-type="Primary" />
+                <abp-button id="cancel-selectlist-option-btn" icon-type="Other" icon="fl fl-cancel"
+                            abp-tooltip="Cancel"
+                            button-type="Secondary" />
+            </td>
+        </tr>
+    </table>
+    <div id="invalid-input-error-summary" class="input-errors hidden"><p id="invalid-input-summary-text"></p></div>
+    <div class="selectlist-options-edit-controls">
+        <abp-button id="add-selectlist-option-btn"
+                    text="@L["Worksheet:Configuration:AddSelectListOptionText"].Value"                    
+                    button-type="Secondary" />
+    </div>
+</abp-row>
+<script>
+    if (PubSub) {
+        PubSub.publish('selectlist_widget_fired');
+    }
+</script>

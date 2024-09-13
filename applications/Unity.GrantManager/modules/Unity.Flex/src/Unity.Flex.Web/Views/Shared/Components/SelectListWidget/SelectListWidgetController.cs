@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.Flex.Web.Views.Shared.Components.SelectListWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("GrantApplications/Widgets/SelectList")]
+    [Route("Flex/Widgets/SelectList")]
     public class SelectListWidgetController : AbpController
     {
         [HttpGet]

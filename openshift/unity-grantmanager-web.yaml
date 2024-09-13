@@ -95,22 +95,10 @@ parameters:
   displayName: AuthServer__ServerAddress
   name: AuthServer__ServerAddress
   value: 'https://dev.loginproxy.gov.bc.ca/auth'
-- description: BackgroundJobs__IntakeResync__NumDaysToCheck
-  displayName: BackgroundJobs__IntakeResync__NumDaysToCheck
-  name: BackgroundJobs__IntakeResync__NumDaysToCheck
-  value: '-2'
-- description: BackgroundJobs__IntakeResync__Expression
-  displayName: BackgroundJobs__IntakeResync__Expression
-  name: BackgroundJobs__IntakeResync__Expression
-  value: '0 0 0/2 1/1 * ? *'
 - description: Intake__BaseUri
   displayName: Intake__BaseUri
   name: Intake__BaseUri
   value: 'https://submit.digital.gov.bc.ca/app/api/v1'
-- description: Name of the tenant database accessed.
-  displayName: PostgreSQL Tenant Database Name
-  name: UNITY_TENANT_DB
-  value: UnityGrantTenant
 - description: CssApi__ClientId
   displayName: CssApi__ClientId
   name: CssApi__ClientId
@@ -175,6 +163,23 @@ parameters:
   from: '[a-zA-Z0-9]{22}..'
   generate: expression
   name: Payments__CasClientId
+- description: RabbitMQ__Password
+  displayName: RabbitMQ__Password
+  from: '[a-zA-Z0-9]{26}'
+  generate: expression
+  name: RabbitMQ__Password
+- description: RabbitMQ__UserName
+  displayName: RabbitMQ__UserName
+  value: 'unity-rabbitmq-user-dev'
+  name: RabbitMQ__UserName
+- description: RabbitMQ__VirtualHost
+  displayName: RabbitMQ__VirtualHost
+  value: 'dev'
+  name: RabbitMQ__VirtualHost
+- description: RabbitMQ__HostName
+  displayName: RabbitMQ__HostName
+  value: 'unity-rabbitmq'
+  name: RabbitMQ__HostName
 # Base image location
 - description: The Namespace where the container image resides
   displayName: Registry Namespace
@@ -193,11 +198,7 @@ parameters:
 - description: The registry path of the container image used.
   displayName: Registry location to pull from
   name: IMAGEPULL_REGISTRY
-  value: image-registry.openshift-image-registry.svc:5000/
-- description: The DB Migrator ImageStream Name 
-  displayName: Registry dbmigrator imagestream name
-  name: DBMIGRATOR_NAME
-  value: unity-dbmigrator-build 
+  value: image-registry.openshift-image-registry.svc:5000
 # Resource limits control how much CPU and memory a container will consume
 - description: The minimum amount of CPU the Container is guaranteed.
   displayName: CPU Request
@@ -208,7 +209,7 @@ parameters:
   displayName: CPU Limit
   name: CPU_LIMIT
   required: true
-  value: 250m
+  value: 1000m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
@@ -218,7 +219,7 @@ parameters:
   displayName: Memory Limit
   name: MEMORY_LIMIT
   required: true
-  value: 512Mi
+  value: 1Gi
 # Template objects to instantiate the project application.
 objects:
 # Secrets 
@@ -244,6 +245,7 @@ objects:
     Notifications__ChesClientSecret: ${Notifications__ChesClientSecret}
     Payments__CasClientSecret: ${Payments__CasClientSecret}
     Payments__CasClientId: ${Payments__CasClientId}
+    RabbitMQ__Password: ${RabbitMQ__Password}
   type: Opaque
 # Configmap
 - apiVersion: v1 
@@ -264,8 +266,14 @@ objects:
     AuthServer__Realm: standard
     AuthServer__RequireHttpsMetadata: 'false'
     AuthServer__ServerAddress: ${AuthServer__ServerAddress}
-    BackgroundJobs__IntakeResync__NumDaysToCheck: ${BackgroundJobs__IntakeResync__NumDaysToCheck}
-    BackgroundJobs__IntakeResync__Expression: ${BackgroundJobs__IntakeResync__Expression}
+    BackgroundJobs__CasPaymentsReconciliation__ConsumerExpression: '0 0 14 1/1 * ? *'
+    BackgroundJobs__CasPaymentsReconciliation__ProducerExpression: '0 0 13 1/1 * ? *'
+    BackgroundJobs__EmailResend__Expression: '0 0/5 * * * ?'
+    BackgroundJobs__EmailResend__RetryAttemptsMaximum: '2'
+    BackgroundJobs__IsJobExecutionEnabled: 'true'
+    BackgroundJobs__Quartz__IsAutoRegisterEnabled: 'true'
+    BackgroundJobs__IntakeResync__NumDaysToCheck: '-2'
+    BackgroundJobs__IntakeResync__Expression: '0 0 23 1/1 * ? *'
     CssApi__TokenUrl: ${CssApi__TokenUrl}
     CssApi__Url: ${CssApi__Url}
     CssApi__Env: ${CssApi__Env}
@@ -274,6 +282,9 @@ objects:
     Notifications__ChesUrl: ${Notifications__ChesUrl}
     Notifications__ChesFromEmail: ${Notifications__ChesFromEmail}
     Payments__CasBaseUrl: ${Payments__CasBaseUrl}
+    RabbitMQ__UserName: ${RabbitMQ__UserName}
+    RabbitMQ__VirtualHost: ${RabbitMQ__VirtualHost}
+    RabbitMQ__HostName: ${RabbitMQ__HostName}
 # Service
 - apiVersion: v1
   kind: Service
@@ -294,7 +305,7 @@ objects:
         port: 80
         targetPort: 8080
     selector:
-      deploymentConfig: ${APPLICATION_NAME}
+      app: ${APPLICATION_NAME}
 # Route
 - apiVersion: route.openshift.io/v1
   id: ${APPLICATION_NAME}-http
@@ -322,34 +333,6 @@ objects:
       termination: edge
       insecureEdgeTerminationPolicy: Redirect
     wildcardPolicy: None
-# Imagestream
-- apiVersion: image.openshift.io/v1
-  kind: ImageStream
-  metadata:
-    name: ${IMAGESTREAM_NAME}
-    labels:
-      app: ${APPLICATION_NAME}
-      app.kubernetes.io/component: ${APPLICATION_NAME}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-      app.kubernetes.io/name: ${APPLICATION_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  spec:
-    lookupPolicy:
-      local: true
-# Imagestream
-- apiVersion: image.openshift.io/v1
-  kind: ImageStream
-  metadata:
-    name: ${DBMIGRATOR_NAME}
-    labels:
-      app: ${APPLICATION_NAME}
-      app.kubernetes.io/component: ${APPLICATION_NAME}
-      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
-      app.kubernetes.io/name: ${APPLICATION_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
-  spec:
-    lookupPolicy:
-      local: true
 # Persistent storage for the application logfiles.
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -369,15 +352,17 @@ objects:
         storage: ${VOLUME_CAPACITY}
       storageClassName: netapp-file-standard
       volumeMode: Filesystem
-# Deployment Config
-- apiVersion: apps.openshift.io/v1
-  kind: DeploymentConfig
+# Deployment 
+- apiVersion: apps/v1
+  kind: Deployment
   metadata:
     name: ${APPLICATION_NAME}
     annotations:
       app.openshift.io/route-disabled: "false"
       app.openshift.io/vcs-ref: ${SOURCE_REPOSITORY_REF}
       app.openshift.io/vcs-uri: ${SOURCE_REPOSITORY_URL}
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${APPLICATION_NAME}\")].image","pause":"false"}]
     labels:
       app: ${APPLICATION_NAME}
       app.openshift.io/runtime: dotnet
@@ -388,223 +373,44 @@ objects:
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ${APPLICATION_NAME}
+      matchLabels:
+        app: ${APPLICATION_NAME}
     strategy:
       type: Recreate
     template:
       metadata:
         labels:
           application: ${APPLICATION_NAME}
-          deploymentConfig: ${APPLICATION_NAME}
-        name: ${APPLICATION_NAME}
+          app: ${APPLICATION_NAME}
       spec:
         volumes:
           - name: ${APPLICATION_NAME}-logfiles
             persistentVolumeClaim:
               claimName: ${APPLICATION_NAME}-logfiles
         containers:
-        - env:
-            ## Runtime environment ASP.NET Core 
-            - name: ASPNETCORE_ENVIRONMENT
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: ASPNETCORE_ENVIRONMENT
-            - name: ASPNETCORE_URLS
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: ASPNETCORE_URLS
-            ## DATABASE SETTINGS
-            - name: UNITY_DB_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: ${DATABASE_SERVICE_NAME}
-                  key: UNITY_DB_PORT
-            - name: UNITY_DB_HOST
-              value: ${DATABASE_SERVICE_NAME}
-            - name: UNITY_POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: ${DATABASE_SERVICE_NAME}
-                  key: database-name
-            - name: UNITY_POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: ${DATABASE_SERVICE_NAME}
-                  key: database-user
-            - name: UNITY_POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: ${DATABASE_SERVICE_NAME}
-                  key: database-password
-            - name: UNITY_TENANT_DB
-              value: ${UNITY_TENANT_DB}
-            ## APPLICATION SETTINGS
+        - name: ${APPLICATION_NAME}
+          image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+          imagePullPolicy: Always
+          env:
             - name: ConnectionStrings__Default
               value: >-
                 Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
             - name: ConnectionStrings__Tenant
               value: >-
                 Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_TENANT_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
-            - name: StringEncryption__DefaultPassPhrase
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: StringEncryption__DefaultPassPhrase
-           ## CHEFS INTEGRATION
-            - name: Intake__BaseUri
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: Intake__BaseUri
-            - name: BackgroundJobs__IntakeResync__NumDaysToCheck
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: BackgroundJobs__IntakeResync__NumDaysToCheck
-            - name: BackgroundJobs__IntakeResync__Expression
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: BackgroundJobs__IntakeResync__Expression
-            ## COMMON HOSTED SINGLE SIGN ON
-            - name: AuthServer__Realm
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: AuthServer__Realm
-            - name: AuthServer__RequireHttpsMetadata
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: AuthServer__RequireHttpsMetadata
-            - name: AuthServer__ServerAddress
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: AuthServer__ServerAddress
-            - name: AuthServer__ClientId
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: AuthServer__ClientId
-            - name: AuthServer__ClientSecret
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: AuthServer__ClientSecret
-            - name: AuthServer__Audience
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: AuthServer__Audience
-            - name: AuthServer__IsBehindTlsTerminationProxy
-              valueFrom: 
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: AuthServer__IsBehindTlsTerminationProxy
-            ## COMMON HOSTED SINGLE SIGN ON - API
-            - name: CssApi__ClientId
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: CssApi__ClientId
-            - name: CssApi__ClientSecret
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: CssApi__ClientSecret
-            - name: CssApi__Env
-              valueFrom:
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: CssApi__Env
-            - name: CssApi__TokenUrl
-              valueFrom:
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: CssApi__TokenUrl
-            - name: CssApi__Url
-              valueFrom:
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: CssApi__Url
-            ## S3 STORAGE
-            - name: S3__AccessKeyId
-              valueFrom:
-                secretKeyRef:
-                  name: ${STORAGE_OBJECT_NAME}
-                  key: Access-Key-ID   
-            - name: S3__Bucket
-              valueFrom:
-                secretKeyRef:
-                  name: ${STORAGE_OBJECT_NAME}
-                  key: Bucket-Display-Name  
-            - name: S3__Endpoint
-              valueFrom:
-                configMapKeyRef:
-                  name: ${STORAGE_OBJECT_NAME}
-                  key: Rest-Endpoint  
-            - name: S3__SecretAccessKey
-              valueFrom:
-                secretKeyRef:
-                  name: ${STORAGE_OBJECT_NAME}
-                  key: Secret-Key
-            - name: S3__ApplicationS3Folder
-              valueFrom:
-                configMapKeyRef:
-                  name: ${STORAGE_OBJECT_NAME}
-                  key: ApplicationFolder
-            - name: S3__AssessmentS3Folder
-              valueFrom:
-                configMapKeyRef:
-                  name: ${STORAGE_OBJECT_NAME}
-                  key: AssessmentFolder
-            - name: S3__DisallowedFileTypes
-              valueFrom:
-                configMapKeyRef:
-                  name: ${STORAGE_OBJECT_NAME}
-                  key: DisallowedFileTypes
-            - name: S3__MaxFileSize
-              valueFrom:
-                configMapKeyRef:
-                  name: ${STORAGE_OBJECT_NAME}
-                  key: MaxFileSize
-            ## Common Hosted Email System
-            - name: Notifications__ChesClientId
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: Notifications__ChesClientId
-            - name: Notifications__ChesClientSecret
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: Notifications__ChesClientSecret
-            - name: Notifications__ChesTokenUrl
-              valueFrom:
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: Notifications__ChesTokenUrl
-            - name: Notifications__ChesUrl
-              valueFrom:
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: Notifications__ChesUrl
-            - name: Notifications__TeamsNotificationsWebhook
-              valueFrom:
-                secretKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: Notifications__TeamsNotificationsWebhook
-            - name: Notifications__ChesFromEmail
-              valueFrom:
-                configMapKeyRef:
-                  name: ${APPLICATION_NAME}
-                  key: Notifications__ChesFromEmail        
-          image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
-          imagePullPolicy: Always
-          name: ${APPLICATION_NAME}
+          envFrom:
+            - configMapRef:
+                name: ${APPLICATION_NAME}
+            - secretRef:
+                name: ${APPLICATION_NAME}
+            - configMapRef:
+                name: ${DATABASE_SERVICE_NAME}
+            - secretRef:
+                name: ${DATABASE_SERVICE_NAME}
+            - configMapRef:
+                name: ${STORAGE_OBJECT_NAME}
+            - secretRef:
+                name: ${STORAGE_OBJECT_NAME}
           resources:
             limits:
               cpu: ${CPU_LIMIT}
@@ -625,11 +431,6 @@ objects:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 3
-          ports:
-            - containerPort: 443
-              protocol: TCP
-            - containerPort: 80
-              protocol: TCP
           startupProbe:
             httpGet:
               path: /healthz/startup
@@ -643,21 +444,14 @@ objects:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 12
+          ports:
+            - containerPort: 443
+              protocol: TCP
+            - containerPort: 80
+              protocol: TCP
           volumeMounts:
-          - mountPath: /app/logs
-            name: ${APPLICATION_NAME}-logfiles
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
-      dnsPolicy: ClusterFirst
-    triggers:
-    - type: ImageChange
-      imageChangeParams:
-        automatic: true
-        containerNames:
-        - ${APPLICATION_NAME}
-        from:
-          kind: ImageStreamTag
-          name: ${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
-          namespace: ${IMAGEPULL_NAMESPACE}
-    - type: ConfigChange
-  status: {}
+            - mountPath: /app/logs
+              name: ${APPLICATION_NAME}-logfiles
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst

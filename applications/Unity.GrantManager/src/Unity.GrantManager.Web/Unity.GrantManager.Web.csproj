@@ -75,6 +75,7 @@
   <ItemGroup>
     <None Include="Pages\Template\TemplateEditModal.cshtml" />
     <None Include="Pages\Template\TemplateModal.cshtml" />
+    <None Include="Views\Shared\Components\AssessmentScoresWidget\Default.cshtml" />
   </ItemGroup>
 
 </Project>

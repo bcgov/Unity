@@ -40,10 +40,6 @@ parameters:
   name: SOURCE_REPOSITORY_URL
   required: true
   value: 'https://github.com/bcgov/Unity'
-- description: Name of the tenant database accessed.
-  displayName: PostgreSQL Tenant Database Name
-  name: UNITY_TENANT_DB
-  value: UnityGrantTenant 
 # Base image location
 - description: The Namespace where the container image resides
   displayName: Registry Namespace
@@ -62,7 +58,7 @@ parameters:
 - description: The registry path of the container image used.
   displayName: Registry location to pull from
   name: IMAGEPULL_REGISTRY
-  value: image-registry.openshift-image-registry.svc:5000/
+  value: image-registry.openshift-image-registry.svc:5000
 # Template objects to instantiate the project.
 objects:
 # RunOnce Job for Database Migrator
@@ -94,36 +90,18 @@ objects:
       spec:
         containers:
           - name: ${APPLICATION_NAME}
-            image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+            image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
             env:
-              - name: UNITY_DB_PORT
-                valueFrom:
-                  configMapKeyRef:
-                    name: ${DATABASE_SERVICE_NAME}
-                    key: UNITY_DB_PORT
-              - name: UNITY_DB_HOST
-                value: ${DATABASE_SERVICE_NAME}
-              - name: UNITY_POSTGRES_DB
-                valueFrom:
-                  secretKeyRef:
-                    name: ${DATABASE_SERVICE_NAME}
-                    key: database-name
-              - name: UNITY_POSTGRES_USER
-                valueFrom:
-                  secretKeyRef:
-                    name: ${DATABASE_SERVICE_NAME}
-                    key: database-user
-              - name: UNITY_POSTGRES_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: ${DATABASE_SERVICE_NAME}
-                    key: database-password
-              - name: UNITY_TENANT_DB
-                value: ${UNITY_TENANT_DB}
               - name: ConnectionStrings__Default
                 value: >-
                   Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
               - name: ConnectionStrings__Tenant
                 value: >-
                   Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_TENANT_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+            envFrom:
+              ## Add all from ${DATABASE_SERVICE_NAME}
+              - configMapRef:
+                  name: ${DATABASE_SERVICE_NAME}
+              - secretRef:
+                  name: ${DATABASE_SERVICE_NAME}
         restartPolicy: Never

@@ -99,10 +99,16 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         // CLOSED STATES
 
-        stateMachine.Configure(GrantApplicationState.CLOSED);
+        stateMachine.Configure(GrantApplicationState.CLOSED)
+            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD);
+
 
         stateMachine.Configure(GrantApplicationState.WITHDRAWN)
-            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD);
 
         stateMachine.Configure(GrantApplicationState.GRANT_APPROVED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)

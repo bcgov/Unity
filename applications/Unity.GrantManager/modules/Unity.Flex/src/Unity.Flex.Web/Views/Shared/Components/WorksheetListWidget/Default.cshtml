@@ -1,0 +1,61 @@
+﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetList;
+@using Unity.Flex.Web.Views.Shared.Components.Worksheets
+@using Volo.Abp.Authorization.Permissions;
+
+@inject IHtmlLocalizer<FlexResource> L
+@inject IPermissionChecker PermissionChecker
+@model Unity.Flex.Web.Views.Shared.Components.WorksheetList.WorksheetListViewModel;
+
+@section scripts {
+    <abp-script src="/libs/sortablejs/Sortable.js"></abp-script>
+}
+
+<div class="accordion" id="worksheet-accordion">
+    @foreach (var worksheet in Model.Worksheets)
+    {
+        <div class="accordion-item">
+            <div class="accordion-header" id="heading-@worksheet.Id">
+                <div class="d-flex w-100 align-items-center">
+                    <button class="accordion-button collapsed flex-grow-1" data-worksheet-id="@worksheet.Id" id="accordion-button-@worksheet.Id" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@worksheet.Id" aria-expanded="false" aria-controls="collapse-@worksheet.Id">
+                        <span class="flex-grow-1 text-start">
+                            <span id="worksheet-title-@worksheet.Id" class="worksheet-title">@worksheet.Title</span>
+                            (<span id="worksheet-name-@worksheet.Id" class="worksheet-name">@worksheet.Name</span>)
+                            <i id="worksheet-published-@worksheet.Id" class="worksheet-published-icon fl fl-upload @(@worksheet.Published ? "" : "hidden")"></i>                            
+                        </span>
+                        <div class="text-end d-flex align-items-center custom-field-count-info">
+                            <div class="custom-field-count-wrapper">
+                                <div class="custom-field-count-title"><b>Sections</b></div>
+                                <div class="custom-field-count-value"><span id="worksheet-total-sections-@worksheet.Id">@worksheet.TotalSections</span></div>
+                            </div>
+                            <div class="custom-field-count-wrapper">
+                                <div class="custom-field-count-title"><b>Fields</b></div>
+                                <div class="custom-field-count-value"><span id="worksheet-total-fields-@worksheet.Id">@worksheet.TotalFields</span></div>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <div id="collapse-@worksheet.Id" class="accordion-collapse collapse" data-worksheet="@worksheet.Id" aria-labelledby="heading-@worksheet.Id" data-bs-parent="#worksheet-accordion">
+                <div class="accordion-body">
+                    <div id="worksheet-info-widget-@worksheet.Id">
+                        @await Component.InvokeAsync(typeof(WorksheetWidget), new { worksheetDto = worksheet })
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,37 @@
+﻿@* #pragma warning disable S1128 *@
+@using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
+@using Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget
+@using Unity.Flex.Worksheets.Definitions;
+@* #pragma warning restore S1128 *@
+
+@model QuestionDefinitionViewModel;
+
+@switch (Model.Type)
+{
+    case Unity.Flex.Scoresheets.QuestionType.Text:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(TextDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Scoresheets.QuestionType.Number:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(NumericDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Scoresheets.QuestionType.YesNo:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(QuestionYesNoDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Scoresheets.QuestionType.SelectList:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(QuestionSelectListDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    default:
+        break;
+}
+

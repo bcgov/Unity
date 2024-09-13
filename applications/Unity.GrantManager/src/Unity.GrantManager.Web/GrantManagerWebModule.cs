@@ -64,6 +64,8 @@ using Unity.Payments;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 using Unity.Flex.Web;
+using Volo.Abp.Identity;
+using Volo.Abp.Localization;
 
 namespace Unity.GrantManager.Web;
 
@@ -71,6 +73,8 @@ namespace Unity.GrantManager.Web;
     typeof(GrantManagerHttpApiModule),
     typeof(GrantManagerApplicationModule),
     typeof(GrantManagerEntityFrameworkCoreModule),
+    typeof(AbpLocalizationModule),
+    typeof(AbpIdentityDomainModule),
     typeof(AbpAutofacModule),
     typeof(AbpSettingManagementWebModule),
     typeof(UnityAspNetCoreMvcUIThemeUX2Module),
@@ -151,6 +155,13 @@ public class GrantManagerWebModule : AbpModule
         {
             options.EntityHistorySelectors.Add(
                 new NamedTypeSelector(
+                    "Abp.FullAuditedEntities",
+                    type => typeof(IFullAuditedObject).IsAssignableFrom(type)
+                )
+            );
+
+            options.EntityHistorySelectors.Add(
+                new NamedTypeSelector(
                  "ExplictEntityAudit",
                  type =>
                  {
@@ -218,6 +229,8 @@ public class GrantManagerWebModule : AbpModule
         })
         .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
+            options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            options.SlidingExpiration = false;
             options.Events.OnSigningOut = async e =>
             {
                 // revoke refresh token on sign-out
@@ -236,6 +249,7 @@ public class GrantManagerWebModule : AbpModule
 
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
+            options.MaxAge = TimeSpan.FromHours(8); 
 
             options.ClaimActions.MapClaimTypes();
             options.TokenValidationParameters = new TokenValidationParameters
@@ -266,7 +280,21 @@ public class GrantManagerWebModule : AbpModule
                     tokenValidatedContext.Response.Redirect("Account/NoGrantPrograms");
                 }
             };
+            options.Events.OnRedirectToIdentityProviderForSignOut = context =>
+            {
+                // Redirect to the IdP's logout endpoint
+                var postLogoutRedirectUri = new Uri($"{context.Request.Scheme}://{context.Request.Host}{context.Request.PathBase}").AbsoluteUri;
+                var idpLogoutUrl = $"{context.Options.Authority}/protocol/openid-connect/logout";
 
+                var uri = new UriBuilder(idpLogoutUrl)
+                {
+                    Query = $"client_id={context.Options.ClientId}&post_logout_redirect_uri={Uri.EscapeDataString(postLogoutRedirectUri)}"
+                };
+
+                context.Response.Redirect(uri.ToString());
+                context.HandleResponse(); // Suppress the default processing
+                return Task.CompletedTask;
+            };
             if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
             {
                 // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested

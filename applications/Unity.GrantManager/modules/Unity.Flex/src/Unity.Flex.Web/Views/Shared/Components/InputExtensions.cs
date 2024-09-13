@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text.Json;
+using Unity.Flex.Scoresheets;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
 using Unity.Flex.Worksheets.Values;
@@ -14,12 +15,13 @@ namespace Unity.Flex.Web.Views.Shared.Components
             {
                 CustomFieldType.Text => "text",
                 CustomFieldType.Numeric => "number",
-                CustomFieldType.Currency => "text",
+                CustomFieldType.Currency => "number",
                 CustomFieldType.DateTime => "datetime-local",
                 CustomFieldType.Date => "date",
                 CustomFieldType.Radio => "radio",
                 CustomFieldType.Checkbox => "checkbox",
                 CustomFieldType.CheckboxGroup => "checkbox",
+                CustomFieldType.Email => "email",                
                 _ => "text",
             };
         }
@@ -45,6 +47,20 @@ namespace Unity.Flex.Web.Views.Shared.Components
                 CustomFieldType.Checkbox => JsonSerializer.Deserialize<CheckboxDefinition>(definition),
                 CustomFieldType.CheckboxGroup => JsonSerializer.Deserialize<CheckboxGroupDefinition>(definition),
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
+                CustomFieldType.BCAddress => JsonSerializer.Deserialize<BCAddressDefinition>(definition),
+                CustomFieldType.TextArea => JsonSerializer.Deserialize<TextAreaDefinition>(definition),
+                _ => null,
+            };
+        }
+
+        public static CustomFieldDefinition? ConvertDefinition(this string definition, QuestionType type)
+        {
+            return type switch
+            {
+                QuestionType.Text => JsonSerializer.Deserialize<TextDefinition>(definition),
+                QuestionType.Number => JsonSerializer.Deserialize<NumericDefinition>(definition),
+                QuestionType.YesNo => JsonSerializer.Deserialize<QuestionYesNoDefinition>(definition),
+                QuestionType.SelectList => JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition),
                 _ => null,
             };
         }
@@ -54,21 +70,28 @@ namespace Unity.Flex.Web.Views.Shared.Components
             if (string.IsNullOrEmpty(value)) return [];
             var currentValue = JsonSerializer.Deserialize<CheckboxGroupValue>(value);
             if (currentValue == null) return [];
+            if (currentValue.Value?.ToString() == string.Empty) return [];
             var values = JsonSerializer.Deserialize<CheckboxGroupValueOption[]>(currentValue.Value?.ToString() ?? "[]");
             return values?.Where(s => s.Value).Select(s => s.Key).ToArray() ?? [];
         }
 
-        public static bool CompareSelectListValue(this string value, string compare)
+        public static bool CompareYesNoSelectListValue(this string value, string compare)
         {
             var yesNo = JsonSerializer.Deserialize<YesNoValue>(value);
             return yesNo?.Value?.ToString() == compare;
+        }
+
+        public static bool CompareSelectListKey(this string key, string compare)
+        {
+            var value = JsonSerializer.Deserialize<SelectListOption>(key);
+            return value?.Value.ToString() == compare;
         }
 
         public static string ApplyCssClass(this CustomFieldType type)
         {
             return type switch
             {
-                CustomFieldType.Currency => "form-control unity-currency-input",
+                CustomFieldType.Currency => "form-control custom-currency-input",
                 CustomFieldType.YesNo => "form-select form-control",
                 _ => "form-control",
             };
@@ -76,22 +99,32 @@ namespace Unity.Flex.Web.Views.Shared.Components
 
         public static string? GetMinValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMin(field);                                    
         }
 
         public static string? GetMaxValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMax(field);
+        }
+
+        public static string? GetYesValueOrNull(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveYesValue(field);
+        }
+
+        public static string? GetNoValueOrNull(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveNoValue(field);
         }
 
         public static string? GetMinLengthValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMinLength(field);
         }
 
         public static string? GetMaxLengthValueOrNull(this CustomFieldDefinition field)
         {
-            return null;
+            return DefinitionResolver.ResolveMaxLength(field);
         }
     }
 }

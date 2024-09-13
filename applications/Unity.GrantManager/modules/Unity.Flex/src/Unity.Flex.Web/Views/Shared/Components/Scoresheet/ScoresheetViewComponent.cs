@@ -2,7 +2,6 @@
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using System;
 using Unity.Flex.Scoresheets;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
@@ -22,9 +21,9 @@ public class ScoresheetViewComponent : AbpViewComponent
         _scoresheetService = scoresheetService;
     }
 
-    public async Task<IViewComponentResult> InvokeAsync(List<Guid> scoresheetIdsToLoad)
+    public async Task<IViewComponentResult> InvokeAsync()
     {
-        var scoresheets = await _scoresheetService.GetListAsync(scoresheetIdsToLoad);
+        var scoresheets = await _scoresheetService.GetListAsync();
         return View(new ScoresheetViewModel() { Scoresheets = scoresheets });
     }
 }
@@ -44,5 +43,7 @@ public class ScoresheetWidgetScriptBundleContributor : BundleContributor
     {
         context.Files
           .AddIfNotContains("/Views/Shared/Components/Scoresheet/Scoresheet.js");
+        context.Files
+              .AddIfNotContains("/Views/Shared/Components/AssessmentScoresWidget/Default.js");
     }
 }

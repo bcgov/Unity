@@ -70,9 +70,9 @@ objects:
       app.kubernetes.io/name: ${APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   stringData:
-    Access-Key-ID: ${AccessKeyID}
-    Bucket-Display-Name: ${BucketName}
-    Secret-Key: ${SecretKey}
+    S3__AccessKeyId: ${AccessKeyID}
+    S3__Bucket: ${BucketName}
+    S3__SecretAccessKey: ${SecretKey}
   type: Opaque
 # Configmap
 - apiVersion: v1 
@@ -87,8 +87,8 @@ objects:
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   data:
     # Configuration values can be set as key-value properties
-    Rest-Endpoint: ${Endpoint}
-    ApplicationFolder: ${ApplicationFolder}
-    AssessmentFolder: ${AssessmentFolder}
-    DisallowedFileTypes: '[ "exe" , "sh" , "ksh" , "bat" , "cmd" ]'
-    MaxFileSize: '25'
+    S3__Endpoint: ${Endpoint}
+    S3__ApplicationS3Folder: ${ApplicationFolder}
+    S3__AssessmentS3Folder: ${AssessmentFolder}
+    S3__DisallowedFileTypes: '[ "exe" , "sh" , "ksh" , "bat" , "cmd" ]'
+    S3__MaxFileSize: '25'

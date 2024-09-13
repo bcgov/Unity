@@ -1,0 +1,54 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.CurrencyDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget;
+@using Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.RadioDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
+@using Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget
+@using Unity.Flex.Worksheets.Definitions;
+
+@model CustomFieldDefinitionViewModel;
+
+@switch (Model.Type)
+{
+    case Unity.Flex.Worksheets.CustomFieldType.Text:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(TextDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Worksheets.CustomFieldType.Currency:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(CurrencyDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Worksheets.CustomFieldType.Numeric:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(NumericDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Worksheets.CustomFieldType.CheckboxGroup:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(CheckboxGroupDefinitionWidget), new { Model.Definition })
+        </abp-row>
+       break;
+    case Unity.Flex.Worksheets.CustomFieldType.Radio:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(RadioDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Worksheets.CustomFieldType.SelectList:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(SelectListDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Worksheets.CustomFieldType.TextArea:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(TextAreaDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    default:
+        break;
+}
+

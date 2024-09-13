@@ -13,7 +13,7 @@ namespace Unity.GrantManager.Applications;
 
 // NOTE: See https://learn.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#required-navigation-properties
 
-public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
+public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid ApplicationFormId { get; set; }
 
@@ -128,19 +128,21 @@ public class Application : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? SigningAuthorityCellPhone { get; set; }
     public string? ContractNumber { get; set; }
     public DateTime? ContractExecutionDate { get; set; }
+    public string? RiskRanking { get; set; }
 
     public bool IsInFinalDecisionState()
     {
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
     }
 
-    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, decimal? totalProjectBudget, DateTime? notificationDate)
+    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, decimal? totalProjectBudget, DateTime? notificationDate, string? riskRanking)
     {
         Notes = notes;
         SubStatus = subStatus;
         LikelihoodOfFunding = likelihoodOfFunding;
         TotalProjectBudget = totalProjectBudget ?? 0;
         NotificationDate = notificationDate;
+        RiskRanking = riskRanking;
     }
 
     public void UpdateFieldsRequiringPostEditPermission(decimal? approvedAmount, decimal? requestedAmount, int? totalScore)

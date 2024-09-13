@@ -14,6 +14,8 @@
         Radio = 9,
         Checkbox = 10,
         CheckboxGroup = 11,
-        SelectList = 12
+        SelectList = 12,
+        BCAddress = 13,
+        TextArea = 14
     }
 }

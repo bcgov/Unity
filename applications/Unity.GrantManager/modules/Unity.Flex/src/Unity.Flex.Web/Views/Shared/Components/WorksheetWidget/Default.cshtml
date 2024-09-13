@@ -1,0 +1,100 @@
+﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.Worksheets;
+@using Volo.Abp.Authorization.Permissions;
+
+@inject IHtmlLocalizer<FlexResource> L
+@inject IPermissionChecker PermissionChecker
+@model Unity.Flex.Web.Views.Shared.Components.Worksheets.WorksheetWidgetViewModel;
+
+@section scripts {
+    <abp-script src="/libs/sortablejs/Sortable.js"></abp-script>
+}
+
+@{
+    var worksheet = @Model.Worksheet;
+
+    <div class="row">
+        <div class="button-container">
+            <button data-worksheet-id="@worksheet.Id" class="btn btn-light edit-worksheet-btn worksheet-btn" type="button">
+                <i class="fl fl-edit"></i> <span>@L["Worksheet:Configuration:EditWorksheetButtonText"].Value</span>
+            </button>
+            <button data-worksheet-id="@worksheet.Id" class="btn btn-light clone-worksheet-btn worksheet-btn" type="button">
+                <i class="fl fl-copy"></i> <span>@L["Worksheet:Configuration:CloneWorksheetButtonText"].Value</span>
+            </button>
+            @if (!Model.Worksheet.Published)
+            {   
+                <button data-worksheet-id="@worksheet.Id" class="btn btn-light publish-worksheet-btn worksheet-btn" type="button">
+                    <i class="fl fl-upload"></i> <span>@L["Worksheet:Configuration:PublishWorksheetButtonText"].Value</span>
+                </button>
+            }
+            <button data-worksheet-id="@worksheet.Id" data-worksheet-title="@worksheet.Title" data-worksheet-name="@worksheet.Name" class="btn btn-light export-worksheet-btn worksheet-btn" type="button">
+                <i class="fl fl-export"></i> <span>@L["Worksheet:Configuration:ExportWorksheetButtonText"].Value</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="sections-custom-fields" class="list-group col sections-wrapper-outer" data-worksheet-id="@worksheet.Id">
+        @foreach (var sect in worksheet.Sections)
+        {
+            <div class="sections-wrapper-inner">
+                <div class="list-group-item row section-item" data-type="section" data-id="@sect.Id" data-worksheet-id="@worksheet.Id" data-label="@sect.Name">
+                    <div class="col">
+                        <i class="fl fl-draggable"></i>
+                        <span class="p-2"><b>Section:</b> @sect.Name</span>
+                        @if (!Model.Worksheet.Published)
+                        {
+                            <button class="btn float-end add-custom-field-btn worksheet-btn" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-action="Insert" type="button">
+                                <i class="fl fl-plus"></i>
+                            </button>
+                            <button class="btn float-end edit-section-btn worksheet-btn" data-action="Update" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" type="button">
+                                <i class="fl fl-edit"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div id="custom-fields-wrapper-@sect-id" data-section-id="@sect.Id" class="custom-fields-wrapper">
+                    @foreach (var customField in sect.Fields)
+                    {
+                        <div class="list-group-item row custom-field-row" data-type="custom-field" data-id="@customField.Id" data-section-id="@sect.Id" data-worksheet-id="@worksheet.Id">
+                            <div class="col">
+                                <i class="fl fl-draggable"></i>
+                                <span class="p-2">@customField.Label</span>
+                                <span class="p-2">(@customField.Type)</span>
+                                @if (!Model.Worksheet.Published)
+                                {
+                                    <button class="btn float-end edit-custom-field-btn worksheet-btn" type="button" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-field-id="@customField.Id" data-action="Update">
+                                        <i class="fl fl-edit"></i>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Worksheet.Published)
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <div class="p-3">
+                    <button id="add_worksheet_section_btn-@worksheet.Id" data-worksheet-id="@worksheet.Id" data-action="Insert" class="btn btn-light add-worksheet-section-btn worksheet-btn" type="button">
+                        <i class="fl fl-plus"></i> <span>@L["Worksheet:Configuration:AddSectionButtonText"].Value</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+
+
+
+
+
+
+
+

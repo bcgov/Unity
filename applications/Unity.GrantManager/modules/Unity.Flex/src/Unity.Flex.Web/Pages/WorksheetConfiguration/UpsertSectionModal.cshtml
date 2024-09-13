@@ -1,0 +1,62 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@using Unity.Flex.Web.Pages.WorksheetConfiguration;
+
+@model Unity.Flex.Web.Pages.WorksheetConfiguration.UpsertSectionModalModel
+
+@inject IStringLocalizer<FlexResource> L
+
+@{
+    Layout = null;
+}
+@section scripts
+{
+    <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
+}
+<form method="post" asp-page-handler="OnPostAsync" id="sectionInfo">
+    <abp-input type="hidden" id="WorksheetId" asp-for="@Model.WorksheetId" />
+    <abp-input type="hidden" id="SectionId" asp-for="@Model.SectionId" />
+    <abp-input type="hidden" id="UpsertAction" asp-for="@Model.UpsertAction" />
+    <abp-input type="hidden" id="DeleteAction" asp-for="@Model.IsDelete" />
+    <abp-modal size="Large" id="worksheet-info-modal">
+        <abp-modal-header class="site-info-modal-header" title="@Model.UpsertAction"></abp-modal-header>
+        <abp-modal-body>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Name" />
+                </abp-column>
+            </abp-row>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="submit" id="save_worksheet_section_btn" name="saveSectionBtn" class="btn btn-primary" value="save">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+            @if (Model.UpsertAction == WorksheetUpsertAction.Update && !Model.Published)
+            {
+                <button type="button" class="btn btn-danger" name="deleteSectionBtn" value="delete" onclick="deleteSection()">Delete</button>
+            }
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+
+<script>
+    function deleteSection() {
+        Swal.fire({
+            title: "Delete Section?",
+            text: 'Are you sure you want to delete this section?',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#DeleteAction').val(true);
+                $('#sectionInfo').submit();
+            }
+        });
+    }
+</script>

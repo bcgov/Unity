@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.RadioWidget
 {
     [ViewComponent(Name = "RadioWidget")]
     [Widget(
-        RefreshUrl = "Widgets/Radio/Refresh",
+        RefreshUrl = "../Flex/Widgets/Radio/Refresh",
         ScriptTypes = [typeof(RadioWidgetScriptBundleContributor)],
         StyleTypes = [typeof(RadioWidgetStyleBundleContributor)],
         AutoInitialize = true)]
@@ -20,23 +20,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.RadioWidget
         {
             return View(await Task.FromResult(new RadioViewModel() { Field = fieldModel, Name = modelName }));
         }
+    }
 
-        public class RadioWidgetStyleBundleContributor : BundleContributor
+    public class RadioWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/RadioWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/RadioWidget/Default.css");
         }
+    }
 
-        public class RadioWidgetScriptBundleContributor : BundleContributor
+    public class RadioWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/RadioWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/RadioWidget/Default.js");
         }
     }
 }

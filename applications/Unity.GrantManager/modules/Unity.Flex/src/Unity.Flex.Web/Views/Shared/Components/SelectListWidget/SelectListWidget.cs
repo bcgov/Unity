@@ -8,9 +8,8 @@ using System.Collections.Generic;
 
 namespace Unity.Flex.Web.Views.Shared.Components.SelectListWidget
 {
-    [ViewComponent(Name = "SelectListWidget")]
     [Widget(
-        RefreshUrl = "Widgets/SelectList/Refresh",
+        RefreshUrl = "../Flex/Widgets/SelectList/Refresh",
         ScriptTypes = [typeof(SelectListWidgetScriptBundleContributor)],
         StyleTypes = [typeof(SelectListWidgetStyleBundleContributor)],
         AutoInitialize = true)]
@@ -20,23 +19,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.SelectListWidget
         {
             return View(await Task.FromResult(new SelectListViewModel() { Field = fieldModel, Name = modelName }));
         }
+    }
 
-        public class SelectListWidgetStyleBundleContributor : BundleContributor
+    public class SelectListWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/SelectListWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/SelectListWidget/Default.css");
         }
+    }
 
-        public class SelectListWidgetScriptBundleContributor : BundleContributor
+    public class SelectListWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/SelectListWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/SelectListWidget/Default.js");
         }
     }
 }

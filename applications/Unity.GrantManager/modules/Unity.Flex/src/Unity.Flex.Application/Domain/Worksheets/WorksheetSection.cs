@@ -40,8 +40,8 @@ namespace Unity.Flex.Domain.Worksheets
 
         public WorksheetSection SetName(string name)
         {
-            if (Worksheet.Sections.Any(s => s.Name == name))
-                throw new BusinessException("Cannot duplicate name");
+            if (Worksheet.Sections.Any(s => s.Name == name && s.Id != Id))
+                throw new UserFriendlyException("Cannot duplicate section names.");
 
             Name = name;
             return this;
@@ -49,12 +49,20 @@ namespace Unity.Flex.Domain.Worksheets
 
         public WorksheetSection AddField(CustomField field)
         {
-            if (Fields.Any(s => s.Name == field.Name))
-                throw new BusinessException("Cannot duplicate name");
+            if (Worksheet.Sections.SelectMany(s => s.Fields).Any(s => s.Name == field.Name && s.Id != field.Id))
+                throw new UserFriendlyException("Cannot duplicate field names for a worksheet.");
 
             field = field.SetOrder((uint)Fields.Count + 1);
 
             Fields.Add(field);
+            return this;
+        }
+
+        internal WorksheetSection CloneField(CustomField clonedField)
+        {
+            clonedField = clonedField.SetOrder((uint)Fields.Count + 1);
+
+            Fields.Add(clonedField);
             return this;
         }
 
@@ -63,5 +71,11 @@ namespace Unity.Flex.Domain.Worksheets
             Order = order;
             return this;
         }
+
+        public WorksheetSection RemoveField(CustomField field)
+        {
+            Fields.Remove(field);
+            return this;
+        }        
     }
 }

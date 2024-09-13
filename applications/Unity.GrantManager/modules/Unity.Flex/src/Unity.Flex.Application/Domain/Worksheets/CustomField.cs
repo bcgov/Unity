@@ -12,6 +12,7 @@ namespace Unity.Flex.Domain.Worksheets
     public class CustomField : FullAuditedEntity<Guid>, IMultiTenant
     {
         public virtual string Name { get; private set; } = string.Empty;
+        public virtual string Key { get; private set; } = string.Empty;
         public virtual string Label { get; private set; } = string.Empty;
         public virtual CustomFieldType Type { get; private set; } = CustomFieldType.Undefined;
         public virtual uint Order { get; private set; }
@@ -37,13 +38,26 @@ namespace Unity.Flex.Domain.Worksheets
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public CustomField(Guid id, string name, string worksheetName, string label, CustomFieldType type, object? definition)
+        private CustomField(Guid id, string key, string worksheetName, string label, CustomFieldType type)
         {
             Id = id;
-            Name = ConfigureName(name, worksheetName);
+            Name = ConfigureName(key, worksheetName);
+            Key = key;
             Label = label;
             Type = type;
+        }
+
+        public CustomField(Guid id, string key, string worksheetName, string label, CustomFieldType type, object? definition)
+            : this(id, key, worksheetName, label, type)
+        {
+
             Definition = DefinitionResolver.Resolve(type, definition);
+        }
+
+        public CustomField(Guid id, string key, string worksheetName, string label, CustomFieldType type, string? definition)
+            : this(id, key, worksheetName, label, type)
+        {
+            Definition = definition ?? "{}";
         }
 
         private static string ConfigureName(string name, string worksheetName)
@@ -51,11 +65,22 @@ namespace Unity.Flex.Domain.Worksheets
             return "custom_" + SanitizeNameField(worksheetName) + "_" + SanitizeNameField(name);
         }
 
-        public CustomField SetName(string name)
+        public CustomField SetKey(string key, string worksheetName)
         {
-            if (Section.Fields.Any(s => s.Name == name))
-                throw new BusinessException("Cannot duplicate name");
+            var name = ConfigureName(key, worksheetName);
+            var worksheet = Section.Worksheet;
 
+            if (worksheet.Sections.SelectMany(s => s.Fields).Any(s => s.Name == name && s.Id != Id))
+                throw new UserFriendlyException("Cannot duplicate field names for a worksheet.");
+
+            Key = key;
+            Name = name;
+            return this;
+        }
+
+        public CustomField UpdateFieldName(string worksheetName)
+        {
+            var name = ConfigureName(this.Key, worksheetName);
             Name = name;
             return this;
         }
@@ -75,6 +100,18 @@ namespace Unity.Flex.Domain.Worksheets
         public CustomField SetOrder(uint order)
         {
             Order = order;
+            return this;
+        }
+
+        public CustomField SetType(CustomFieldType type)
+        {
+            Type = type;
+            return this;
+        }
+
+        public CustomField SetDefinition(string definition)
+        {
+            Definition = definition;
             return this;
         }
 

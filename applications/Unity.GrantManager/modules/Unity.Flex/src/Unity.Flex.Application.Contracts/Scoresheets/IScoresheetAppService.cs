@@ -11,11 +11,19 @@ namespace Unity.Flex.Scoresheets
         Task<QuestionDto> CreateQuestionInHighestOrderSectionAsync(Guid scoresheetId, CreateQuestionDto dto);
         Task<ScoresheetSectionDto> CreateSectionAsync(Guid scoresheetId, CreateSectionDto dto);
         Task DeleteAsync(Guid id);
-        Task<ClonedObjectDto> CloneScoresheetAsync(Guid scoresheetIdToClone, Guid? sectionIdToClone, Guid? questionIdToClone);
+        Task CloneScoresheetAsync(Guid scoresheetIdToClone);
         Task<ScoresheetDto> GetAsync(Guid id);
-        Task<List<ScoresheetDto>> GetListAsync(List<Guid> scoresheetIdsToLoad);
-        Task<List<ScoresheetDto>> GetAllScoresheetsAsync();
+        Task<List<ScoresheetDto>> GetListAsync();
+        Task<List<ScoresheetDto>> GetAllPublishedScoresheetsAsync();
         Task SaveOrder(List<ScoresheetItemDto> dto);
-        Task UpdateAllAsync(Guid groupId, EditScoresheetsDto dto);
+        Task UpdateAsync(Guid scoresheetId, EditScoresheetDto dto);
+        Task<List<Guid>> GetNumericQuestionIdsAsync(List<Guid> questionIdsToCheck);
+        Task<List<QuestionDto>> GetYesNoQuestionsAsync(List<Guid> questionIdsToCheck);
+        Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck);
+        Task ValidateChangeableScoresheet(Guid scoresheetId);
+        Task PublishScoresheetAsync(Guid id);
+        Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId);
+        Task ImportScoresheetAsync(ScoresheetImportDto scoresheetImportDto);
+        Task SaveScoresheetOrder(List<Guid> scoresheetIds);
     }
 }

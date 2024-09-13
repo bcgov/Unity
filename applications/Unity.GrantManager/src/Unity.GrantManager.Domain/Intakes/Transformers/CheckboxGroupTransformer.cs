@@ -8,7 +8,7 @@ namespace Unity.GrantManager.Intakes
     {
         public CheckboxGroupValue Transform(JToken value)
         {
-            // Post from CHEFS checkboxgroup value                                                        
+            // Post from CHEFS checkboxgroup value                                                       
             var checkboxValues = new List<CheckboxGroupValueOption>();            
             JObject obj = JObject.FromObject(value);
             foreach (var prop in obj.Properties())

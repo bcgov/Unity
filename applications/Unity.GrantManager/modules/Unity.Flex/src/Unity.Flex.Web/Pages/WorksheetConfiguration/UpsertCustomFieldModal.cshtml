@@ -1,0 +1,93 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@using Unity.Flex.Web.Pages.WorksheetConfiguration;
+
+@model Unity.Flex.Web.Pages.WorksheetConfiguration.UpsertCustomFieldModalModel;
+
+@inject IStringLocalizer<FlexResource> L
+@{
+    Layout = null;
+}
+@section scripts
+{
+    <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
+}
+<form method="post" asp-page-handler="OnPostAsync" id="customFieldInfo" spellcheck="false">
+    <abp-input type="hidden" id="SectionId" asp-for="@Model.SectionId" />
+    <abp-input type="hidden" id="WorksheetId" asp-for="@Model.WorksheetId" />
+    <abp-input type="hidden" id="CustomFieldId" asp-for="@Model.FieldId" />
+    <abp-input type="hidden" id="Order" asp-for="@Model.Order" />
+    <abp-input type="hidden" id="UpsertAction" asp-for="@Model.UpsertAction" />
+    <abp-input type="hidden" id="DeleteAction" asp-for="@Model.IsDelete" />
+    <abp-modal size="Large" id="custom-field-info-modal">
+        <abp-modal-header class="custom-field-info-modal-header" title="@Model.UpsertAction"></abp-modal-header>
+        <abp-modal-body>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Key" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Label" />
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-select id="fieldType" asp-for="@Model.FieldType" asp-items="@Model.FieldTypes"
+                            onchange="typeSelectionChanged(this)">
+                </abp-select>
+            </abp-row>
+
+            <div id="definition-editor">
+                @await Component.InvokeAsync(typeof(CustomFieldDefinitionWidget), new { type = Model.FieldType, definition = Model.Definition })
+            </div>
+
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="submit" class="btn btn-primary" name="saveCustomFieldBtn" value="save">@AbpModalButtons.Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+            @if (Model.UpsertAction == WorksheetUpsertAction.Update && !Model.Published)
+            {
+                <button type="button" class="btn btn-danger" name="deleteCustomFieldBtn" value="delete" onclick="deleteCustomField()">Delete</button>
+            }
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+    function typeSelectionChanged(event) {
+        let customFieldWidget;
+        if (typeof customFieldWidget === 'undefined') {
+            customFieldWidget = new abp.WidgetManager({
+                wrapper: '#definition-editor',
+                filterCallback: function () {
+                    return {
+                        'type': $('#fieldType').val(),
+                    };
+                },
+            })
+            customFieldWidget.refresh();
+        }
+    }
+
+    function deleteCustomField() {
+        Swal.fire({
+            title: "Delete Custom Field?",
+            text: 'Are you sure you want to delete this custom field?',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#DeleteAction').val(true);
+                $('#customFieldInfo').submit();
+            }
+        });
+    }
+</script>

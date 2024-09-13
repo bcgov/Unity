@@ -5,13 +5,13 @@
 
 @if (Model.Field != null)
 {
-    <div class="custom-checkbox">
+    <div class="custom-fields-checkbox-wrapper">
         @if ((bool)(Model.Field?.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type) ?? false))
         {
             <input type="@Model.Field?.Type.ConvertInputType()"
                    id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")"
                    name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")"
-                   onchange="@($"notifyFieldChange('{Model.Name}', this)")"
+                   onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")"
                    checked />
         }
         else
@@ -19,7 +19,7 @@
             <input type="@Model.Field?.Type.ConvertInputType()"
                    id="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")"
                    name="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")"
-                   onchange="@($"notifyFieldChange('{Model.Name}', this)")" />
+                   onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")" />
         }
         <label for="@($"{Model.Field?.Name}.{Model.Name}.{Model.Field?.Id}")">@($"{Model.Field?.Label}")</label>
     </div>

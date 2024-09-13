@@ -1,0 +1,66 @@
+﻿@page
+@using Microsoft.Extensions.Localization;
+@using Unity.Flex.Localization;
+@using Unity.Flex.Web.Pages.WorksheetConfiguration;
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetList
+@using Volo.Abp.Features;
+@model Unity.Flex.Web.Pages.WorksheetConfiguration.IndexModel;
+
+@inject IStringLocalizer<FlexResource> L
+@inject IFeatureChecker FeatureChecker
+
+@section styles
+{
+    <abp-style src="/Pages/WorksheetConfiguration/Index.css" />
+}
+@section scripts
+{
+    <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
+    <abp-script src="/libs/sortablejs/Sortable.js" />
+}
+
+@if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+{
+    <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+    <div class="worksheet-scrollable-content">
+        <abp-row class="m-0 h-100 worksheet-configuration-container">
+            <abp-column class="p-0">
+                <abp-card>
+                    <abp-card-body>
+                        <h4><b>Worksheets</b></h4>
+                        <div class="d-flex justify-content-end m-3">
+                            <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
+                                <input id="worksheet_import_upload" name="worksheet_import_upload" type="file" size="1" onchange="importWorksheetFile('worksheet_import_upload');" style="display: none" />
+                                <abp-button text="Import Worksheet"
+                                            id="worksheet_import_upload_btn"
+                                            icon-type="Other"
+                                            icon="fl fl-import"
+                                            button-type="Light" />
+                            </form>
+                        </div>
+                        <div id="worksheet-info-widget-list">
+                            @await Component.InvokeAsync(typeof(WorksheetListWidget))
+                        </div>
+                        <div class="p-4">
+                            <abp-button text="@L["Worksheet:Configuration:AddWorksheetButtonText"].Value"
+                                        id="add_worksheet_btn"
+                                        icon-type="Other"
+                                        icon="fl fl-plus"                                        
+                                        button-type="Light" />
+                        </div>
+                    </abp-card-body>
+                </abp-card>
+            </abp-column>
+            <abp-column class="pe-0 ps-2">
+                <abp-card class="right-card">
+                    <abp-card-body>
+                        <h4><b>Preview</b></h4>
+                        <div id="preview">
+                            <p>No sections to display.</p>
+                        </div>
+                    </abp-card-body>
+                </abp-card>
+            </abp-column>
+        </abp-row>
+    </div>
+}

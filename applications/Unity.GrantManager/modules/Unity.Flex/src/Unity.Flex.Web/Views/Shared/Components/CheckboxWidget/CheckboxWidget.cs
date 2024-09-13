@@ -10,7 +10,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxWidget
 {
     [ViewComponent(Name = "CheckboxWidget")]
     [Widget(
-        RefreshUrl = "Widgets/Checkbox/Refresh",
+        RefreshUrl = "../Flex/Widgets/Checkbox/Refresh",
         ScriptTypes = [typeof(CheckboxWidgetScriptBundleContributor)],
         StyleTypes = [typeof(CheckboxWidgetStyleBundleContributor)],
         AutoInitialize = true)]
@@ -20,23 +20,23 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxWidget
         {
             return View(await Task.FromResult(new CheckboxViewModel() { Field = fieldModel, Name = modelName }));
         }
+    }
 
-        public class CheckboxWidgetStyleBundleContributor : BundleContributor
+    public class CheckboxWidgetStyleBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/CheckboxWidget/Default.css");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/CheckboxWidget/Default.css");
         }
+    }
 
-        public class CheckboxWidgetScriptBundleContributor : BundleContributor
+    public class CheckboxWidgetScriptBundleContributor : BundleContributor
+    {
+        public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            public override void ConfigureBundle(BundleConfigurationContext context)
-            {
-                context.Files
-                  .AddIfNotContains("/Views/Shared/Components/CheckboxWidget/Default.js");
-            }
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/CheckboxWidget/Default.js");
         }
     }
 }

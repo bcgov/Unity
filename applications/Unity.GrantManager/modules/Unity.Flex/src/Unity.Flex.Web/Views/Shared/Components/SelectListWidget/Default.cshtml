@@ -9,11 +9,11 @@
     <select class="@Model.Field.Type.ApplyCssClass()"
             id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
             name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
-            onchange="@($"notifyFieldChange('{Model.Name}', this)")">
+            onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")">
 
         @foreach (var item in ((SelectListDefinition?)Model.Field?.Definition?.ConvertDefinition(Model.Field.Type))?.Options ?? [])
         {
-            <option selected="@Model.Field?.CurrentValue?.CompareSelectListValue(@item.Value)" value="@item.Value">@item.Key</option>
+            <option selected="@Model.Field?.CurrentValue?.CompareSelectListKey(@item.Key)" value="@item.Key">@item.Value</option>
         }
 
     </select>

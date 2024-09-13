@@ -1,5 +1,5 @@
 ﻿$(function () {
-
+    let worksheetsModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/LinkWorksheetsModal');
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
@@ -48,7 +48,8 @@
         'simplecheckboxadvanced',
         'simplecurrencyadvanced',
         'simpletextarea',
-        'simpletextareaadvanced'];
+        'simpletextareaadvanced',
+        'bcaddress'];
 
     const UIElements = {
         btnBack: $('#btn-back'),
@@ -62,9 +63,14 @@
         inputSearchBar: $('#search-bar'),
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
+        linkWorksheets: $('#btn-link-worksheets')
     };
 
     init();
+
+    worksheetsModal.onResult(function (_, response) {           
+        navigateToVersion(response.responseText.chefsFormVersionId);
+    });
 
     function init() {
         bindUIEvents();
@@ -72,6 +78,13 @@
         let availableChefsFields = JSON.parse(availableChefFieldsString)
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
+        setupTooltips();        
+    }
+
+    function setupTooltips() {
+        $('[data-toggle="tooltip"]').tooltip({
+            placement: 'top'
+        });
     }
 
     function bindUIEvents() {
@@ -85,6 +98,11 @@
         UIElements.btnClose.on('click', handleCancelMapping);
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
         UIElements.selectVersionList.on('change', handleSelectVersion);
+        UIElements.linkWorksheets.on('click', handleLinkWorksheets);
+    }
+
+    function handleLinkWorksheets() {
+        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val() });        
     }
 
     function handleEdit() {
@@ -107,7 +125,7 @@
 
             setTimeout(function () {
                 window.location.href = location.href;
-            }, 2000);
+            }, 500);
 
         }
         catch (err) {
@@ -148,8 +166,7 @@
             } else {
                 location.href = location.href + "&ChefsFormVersionGuid=" + chefsFormVersionGuid;
             }
-        }, 2000);
-
+        }, 500);
     }
 
     function bindExistingMaps() {
@@ -159,10 +176,10 @@
                 let keys = Object.keys(existingMapping);
                 for (let key of keys) {
                     let intakeProperty = key;
-                    let chefsMappingProperty = existingMapping[intakeProperty];                    
+                    let chefsMappingProperty = existingMapping[intakeProperty];
                     let intakeMappingCard = document.getElementById("unity_" + intakeProperty);
                     let chefsMappingDiv = document.getElementById(chefsMappingProperty);
-                    if (chefsMappingDiv != null) {
+                    if (chefsMappingDiv != null && intakeMappingCard != null) {
                         chefsMappingDiv.appendChild(intakeMappingCard);
                     } else {
                         abp.notify.error(
@@ -263,13 +280,26 @@
 
     function saveScoresheet() {
         let appFormId = $('#applicationFormId').val();
+        let originalValue = $('#originalScoresheetId').val();
         let scoresheetId = $('#scoresheet').val();
+        if (originalValue == scoresheetId) {
+            return;
+        }
         unity.grantManager.applicationForms.applicationForm.saveApplicationFormScoresheet({ applicationFormId: appFormId, scoresheetId: scoresheetId })
             .then(response => {
                 abp.notify.success(
                     'Scoresheet is successfully saved.',
                     'Application Form Scoresheet'
                 );
+                $('#originalScoresheetId').val(scoresheetId);
+                Swal.fire({
+                    title: "Note",
+                    text: "Please note that any changes made to the scoresheet template will not impact assessments that have already been scored using the previous scoresheet template.",
+                    confirmButtonText: 'Ok',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    }
+                });
             });
     }
 
@@ -355,13 +385,15 @@
             case 'Checkbox':
             case 'CheckboxGroup':
             case 'SelectList':
+            case 'BCAddress':
+            case 'TextArea':
                 return `<i class="${setTypeIcon(intakeField)}"></i> `;
             case 'Number':
                 return setTypeIndicatorText('123');
             case 'Currency':
                 return setTypeIndicatorText('$');
-            case 'YesNo':                            
-                return setTypeIndicatorText('Y/N');                  
+            case 'YesNo':
+                return setTypeIndicatorText('Y/N');
             default:
                 return '';
         }
@@ -382,9 +414,13 @@
             case 'Checkbox':
                 return 'fl fl-checkbox-checked';
             case 'CheckboxGroup':
-                return 'fl fl-multi-select'
+                return 'fl fl-multi-select';
             case 'SelectList':
                 return 'fl fl-list';
+            case 'BCAddress':
+                return 'fl fl-globe';
+            case 'TextArea':
+                return 'fl fl-text-area';
             default:
                 return '';
         }
@@ -552,5 +588,4 @@
             prettyJson.push(TAB);
         }
     }
-
 });

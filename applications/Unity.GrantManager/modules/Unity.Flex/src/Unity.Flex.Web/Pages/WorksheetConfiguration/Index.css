@@ -1,0 +1,29 @@
+﻿.worksheet-configuration-container {
+    width: 100%;
+}
+
+.worksheet-scrollable-content {
+    overflow-y: scroll;
+    height: calc(100vh - 120px);
+    margin-top: 10px;
+}
+
+.preview-section:has(> :nth-child(1)) .preview-field {
+    flex: 0 0 99%;
+}
+
+.preview-section:has(> :nth-child(2)) .preview-field {
+    flex: 0 0 45%;
+}
+
+.preview-section:has(> :nth-child(3)) .preview-field {
+    flex: 0 0 30%;
+}
+
+.preview-section {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+}

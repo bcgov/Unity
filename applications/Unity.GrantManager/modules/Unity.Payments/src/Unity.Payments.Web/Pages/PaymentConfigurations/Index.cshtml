@@ -16,19 +16,21 @@
 
 <input id="status-message" type="hidden" asp-for="StatusMessage" />
 
-<div class="input-area card mb-3">
-    <abp-dynamic-form abp-model="PaymentConfiguration" asp-page="/PaymentConfigurations/Index" submit-button="true">
-        <div>
-            <h4>Account Coding</h4>
-            <div class="mb-3">
+<div class="input-area card mb-3 payment-config">
+
+    <abp-dynamic-form abp-model="PaymentConfiguration" id="paymentConfigForm" class="payment-form" asp-page="/PaymentConfigurations/Index">
+        <h4>Account Coding</h4>
+        <abp-form-content />
+        <abp-row>
+
+            <abp-column size="_12" class="p-3">
+                <label class="form-label">Account Coding</label>
                 <input id="account-coding" type="text" value="" readonly="" class="valid form-control readonly" aria-invalid="false">
-            </div>
-        </div>
-        <abp-form-content>
-            <div class="mb-3 dm-approval">
-                <h4>Approval Payment Threshold</h4>
-                <label class="form-label"><b>NOTE:</b> All payments above this limit will require an additional level of approval before they can be submitted to CAS.</label>
-                <div>
+            </abp-column>
+            <abp-column size="_12" class="p-3 dm-approval">
+                <h4 class="pt-2">Approval Payment Threshold</h4>
+                <label class="form-label note"><b>NOTE:</b> All payments above this limit will require an additional level of approval before they can be submitted to CAS.</label>
+                <div class="pt-2">
                     <label class="form-label" for="PaymentThreshold">Threshold</label><span> * </span>
                 </div>
                 <div>
@@ -43,7 +45,12 @@
                         </span>
                     </span>
                 </div>
-            </div>
-        </abp-form-content>
+            </abp-column>
+            <abp-column size="_12" class="p-3 submit-section">
+                <abp-button class="btn-primary" text="SAVE CHANGES" type="submit"></abp-button>
+                <abp-button id="resetButton" class="btn-secondary pl-1" text="DISCARD CHANGES"></abp-button>
+            </abp-column>
+        </abp-row>
+
     </abp-dynamic-form>
 </div>

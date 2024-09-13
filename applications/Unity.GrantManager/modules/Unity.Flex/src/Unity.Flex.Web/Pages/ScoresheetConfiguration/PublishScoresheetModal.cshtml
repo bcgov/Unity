@@ -1,0 +1,39 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+@using Unity.Flex.Web.Pages.ScoresheetConfiguration;
+@model Unity.Flex.Web.Pages.ScoresheetConfiguration.PublishScoresheetModalModel
+
+@inject IStringLocalizer<FlexResource> L
+
+@{
+    Layout = null;
+}
+@section scripts
+{
+    <abp-script src="/Pages/ScoresheetConfiguration/Index.js" />
+}
+<form method="post" asp-page-handler="OnPostAsync" id="scoresheetInfo">
+    <abp-input type="hidden" id="ScoresheetId" asp-for="@Model.Scoresheet.Id" />
+    <abp-modal size="Large" id="scoresheet-info-modal">
+        <abp-modal-header class="site-info-modal-header" title="Publish Scoresheet"></abp-modal-header>
+        <abp-modal-body>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Scoresheet.Title" disabled/>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.Scoresheet.Name" disabled/>
+                </abp-column>
+            </abp-row>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="submit" class="btn btn-primary">Publish</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+

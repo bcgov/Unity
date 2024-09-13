@@ -1,0 +1,13 @@
+﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget;
+
+@model QuestionTextViewModel;
+
+<div class="mb-3">
+    <label for="answer-text-@Model.QuestionId" class="form-label">Answer</label>
+    <input type="text" class="form-control answer-text-input" minlength="@Model.MinLength" maxlength="@Model.MaxLength" disabled="@Model.IsDisabled" id="answer-text-@Model.QuestionId" name="Answers[@Model.QuestionId]" value="@Model.Answer" data-original-value="@Model.Answer" oninput="handleInputChange('@Model.QuestionId','answer-text-','save-text-','discard-text-')" />
+    <span id="error-message-@Model.QuestionId" class="text-danger field-validation-error"></span>
+</div>
+<div class="btn-group">
+    <button type="button" class="btn btn-primary" disabled="@Model.IsDisabled" disabled id="save-text-@Model.QuestionId" onclick="saveChanges('@Model.QuestionId','answer-text-','save-text-',2,'discard-text-')">SAVE CHANGES</button>
+    <button type="button" class="btn btn-secondary" disabled="@Model.IsDisabled" id="discard-text-@Model.QuestionId" onclick="discardChanges('@Model.QuestionId','answer-text-','save-text-','discard-text-')">DISCARD CHANGES</button>
+</div>

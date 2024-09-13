@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("GrantApplications/Widgets/CustomTab")]
+    [Route("Flex/Widgets/CustomTab")]
     public class CustomTabWidgetController : AbpController
     {
         [HttpGet]

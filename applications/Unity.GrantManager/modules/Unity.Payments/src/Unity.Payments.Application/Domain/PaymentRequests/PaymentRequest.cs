@@ -25,10 +25,12 @@ namespace Unity.Payments.Domain.PaymentRequests
 
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
-        public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.Created;
+        public virtual PaymentRequestStatus Status { get; private set; } = PaymentRequestStatus.L1Pending;
         public virtual string? Description { get; private set; } = null;
 
         public virtual bool IsRecon { get; internal set; }
+
+        public virtual string ReferenceNumber { get;  set; } = string.Empty;
 
         // Filled on a recon
         public virtual string? InvoiceStatus { get; private set; }
@@ -85,6 +87,7 @@ namespace Unity.Payments.Domain.PaymentRequests
             Guid siteId,
             Guid correlationId,
             string correlationProvider,
+            string referenceNumber,
             string? description = null,
             decimal? paymentThreshold = 500000m
             )
@@ -99,6 +102,7 @@ namespace Unity.Payments.Domain.PaymentRequests
             Description = description;
             CorrelationId = correlationId;
             CorrelationProvider = correlationProvider;
+            ReferenceNumber = referenceNumber;
             ExpenseApprovals = GenerateExpenseApprovals(amount, paymentThreshold);
             ValidatePaymentRequest();
         }

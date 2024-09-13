@@ -1,0 +1,46 @@
+#worksheet-accordion {
+    display: block;
+}
+
+.custom-field-count-value {
+    margin: 0.2rem;
+}
+
+.custom-field-anchor {
+    margin-right: 0.2rem;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+.worksheet-title {
+    font-weight: bold;
+}
+
+.worksheet-name {
+    font-size: 0.7rem;
+}
+
+.custom-field-count-wrapper {
+    display: flex;
+    flex-direction: column;    
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.custom-field-count-info {
+    gap: 0.5rem;
+}
+
+.worksheet-published-icon {
+    border: 2px solid;
+    border-radius: 5px;
+    padding: 5px;
+    color: var(--bc-colors-grey-text-100, light-gray);
+    font-size: 0.6rem;
+}
+
+.hidden-widget {
+    display: none;
+}

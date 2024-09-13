@@ -1,6 +1,7 @@
 ﻿@page
 @using Microsoft.Extensions.Localization
 @using Unity.Flex.Localization;
+@using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
 @using Unity.Flex.Web.Pages.ScoresheetConfiguration;
 @model Unity.Flex.Web.Pages.ScoresheetConfiguration.QuestionModalModel
@@ -19,6 +20,7 @@
     <abp-input type="hidden" id="SectionId" asp-for="@Model.Question.SectionId" />
     <abp-input type="hidden" id="QuestionId" asp-for="@Model.Question.Id" />
     <abp-input type="hidden" id="ActionType" asp-for="@Model.Question.ActionType" />
+    
     <abp-modal size="Large" id="question-info-modal">
         <abp-modal-header class="question-info-modal-header" title="@Model.Question.ActionType"></abp-modal-header>
         <abp-modal-body>
@@ -37,9 +39,18 @@
                     <abp-input asp-for="@Model.Question.Description" />
                 </abp-column>
             </abp-row>
+            <abp-row class="m-0 p-0">
+                <abp-column size="_12" class="px-1">
+                    <abp-select asp-for="@Model.Question.QuestionType" asp-items="@Model.QuestionTypeOptionsList" id="questionType" onchange="typeSelectionChanged(this)">
+                    </abp-select>
+                </abp-column>
+            </abp-row>
+            <div id="question-definition-editor">
+                @await Component.InvokeAsync(typeof(QuestionDefinitionWidget), new { type = Model.Question.QuestionType, definition = Model.Question.Definition })
+            </div>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="button" class="btn btn-primary" onclick="handleSaveQuestionButtonClick(event)">@AbpModalButtons.Save</button>
+            <button type="submit" class="btn btn-primary">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
             @if (!Model.Question.ActionType.StartsWith("Add"))
             {
@@ -50,12 +61,18 @@
 </form>
 
 <script>
-    async function handleSaveQuestionButtonClick(event) {
-        event.preventDefault();
-        const action = await askToCreateNewVersion();
-        if (action) {
-            $('#ActionType').val($('#ActionType').val() + action);
-            $('#questionInfo').submit();
+    function typeSelectionChanged(event) {
+        let questionWidget;
+        if (typeof questionWidget === 'undefined') {
+            questionWidget = new abp.WidgetManager({
+                wrapper: '#question-definition-editor',
+                filterCallback: function () {
+                    return {
+                        'type': $('#questionType').val(),
+                    };
+                },
+            })
+            questionWidget.refresh();
         }
     }
 
@@ -72,11 +89,8 @@
         });
 
         if (result.isConfirmed) {
-            const action = await askToCreateNewVersion();
-            if (action) {
-                $('#ActionType').val('Delete Question' + action);
-                $('#questionInfo').submit();
-            }
+            $('#ActionType').val('Delete Question');
+            $('#questionInfo').submit();
         }
 
     }

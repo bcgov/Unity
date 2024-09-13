@@ -8,7 +8,7 @@ metadata:
     template: unity-networkpolicy
   annotations:
     description: |-
-      Template for commuication rules in OpenShift.
+      Template for communications rules in OpenShift.
 parameters:
 # Project namespace parameters
 - description: The name of the application grouping.

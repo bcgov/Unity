@@ -1,8 +1,15 @@
 ﻿$(function () {
+    $('.numeric-mask').maskMoney({ precision: 0 });
+    $('.numeric-mask').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
+
     $('body').on('click', '#saveApplicantInfoBtn', function () {
         let applicationId = document.getElementById('ApplicantInfoViewApplicationId').value;
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
+        let formVersionId = $("#ApplicationFormVersionId").val(); 
+        let worksheetId = $("#WorksheetId").val();
 
         $.each(formData, function (_, input) {            
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {                
@@ -10,7 +17,7 @@
             }
             else {
                 // This will not work if the culture is different and uses a different decimal separator
-                ApplicantInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+                ApplicantInfoObj[input.name.split(".")[1]] = input.value;
 
                 if (ApplicantInfoObj[input.name.split(".")[1]] == '') {
                     ApplicantInfoObj[input.name.split(".")[1]] = null;
@@ -36,6 +43,8 @@
                 $('.cas-spinner').show();
             }
 
+            ApplicantInfoObj['correlationId'] = formVersionId;
+            ApplicantInfoObj['worksheetId'] = worksheetId;
             unity.grantManager.grantApplications.grantApplication
                 .updateProjectApplicantInfo(applicationId, ApplicantInfoObj)
                 .done(function () {
@@ -43,8 +52,7 @@
                         'The Applicant info has been updated.'
                     );
                     $('#saveApplicantInfoBtn').prop('disabled', true);
-                    PubSub.publish("refresh_detail_panel_summary");
-                    PubSub.publish('project_info_saved');
+                    PubSub.publish("refresh_detail_panel_summary");                    
                     refreshSupplierInfoWidget();
                 })
                 .then(function () {

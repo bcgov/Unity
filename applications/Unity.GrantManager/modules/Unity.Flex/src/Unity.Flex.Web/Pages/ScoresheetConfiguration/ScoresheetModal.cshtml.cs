@@ -22,36 +22,35 @@ public class ScoresheetModalModel : FlexPageModel
     public class ScoresheetModalModelModel
     {
         public Guid Id { get; set; }
-        public Guid GroupId { get; set; }
         public string ActionType { get; set; } = string.Empty;
-        [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Name")]
+        [Display(Name = "Scoresheet:Configuration:ScoresheetModal.Title")]
+        [MinLength(3)]
+        [MaxLength(25)]
+        public string Title { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public bool Published {  get; set; } 
     }
     public async Task OnGetAsync(Guid scoresheetId,
-       string actionType, Guid groupId)
+       string actionType)
     {
         Scoresheet.Id = scoresheetId;
         Scoresheet.ActionType = actionType;
-        Scoresheet.GroupId = groupId;
         if (Scoresheet.ActionType.Contains("Edit"))
         {
             ScoresheetDto scoresheet = await _scoresheetAppService.GetAsync(scoresheetId);
+            Scoresheet.Title = scoresheet.Title ?? "";
             Scoresheet.Name = scoresheet.Name ?? "";
+            Scoresheet.Published = scoresheet.Published;
         }
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Scoresheet.ActionType.Equals("Edit Scoring Sheet On Current Version"))
+        if (Scoresheet.ActionType.StartsWith("Edit"))
         {
             await EditScoresheets();
             return NoContent();
-        }
-        else if (Scoresheet.ActionType.Equals("Edit Scoring Sheet On New Version"))
-        {
-            await EditScoresheetsAndCreateNewVersion();
-            return NoContent();
-        }
+        }        
         else if (Scoresheet.ActionType.StartsWith("Add"))
         {
             await CreateScoresheet();
@@ -70,19 +69,13 @@ public class ScoresheetModalModel : FlexPageModel
 
     private async Task CreateScoresheet()
     {
-        _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Name = Scoresheet.Name });
+        _ = await _scoresheetAppService.CreateAsync(new CreateScoresheetDto() { Title = Scoresheet.Title, Name = Scoresheet.Name });
     }
 
     private async Task EditScoresheets()
     {
-        await _scoresheetAppService.UpdateAllAsync(Scoresheet.GroupId, new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType });
-    }
-
-    private async Task EditScoresheetsAndCreateNewVersion()
-    {
-        await _scoresheetAppService.UpdateAllAsync(Scoresheet.GroupId, new EditScoresheetsDto() { Name = Scoresheet.Name, ActionType = Scoresheet.ActionType });
-        _ = await _scoresheetAppService.CloneScoresheetAsync(Scoresheet.Id, null, null);
-    }
+        await _scoresheetAppService.UpdateAsync(Scoresheet.Id, new EditScoresheetDto() { Title = Scoresheet.Title, ActionType = Scoresheet.ActionType });
+    }    
 
     private async Task DeleteScoresheet()
     {

@@ -1,21 +1,21 @@
-﻿namespace Unity.Payments.Enums
+﻿using System.Text.Json.Serialization;
+
+namespace Unity.Payments.Enums
 {
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum PaymentRequestStatus
     {
-        Created = 1,
-        Submitted = 2,
-        Approved = 3,
-        Declined = 4,
-        AwaitingApproval = 5,
-        L1Pending = 6,
-        L1Approved = 7,
-        L1Declined = 8,
-        L2Pending = 9,
-        L2Approved = 10,
-        L2Declined  = 11,
-        L3Pending  = 12,
-        L3Approved = 13,
-        L3Declined = 14,
-
+        L1Pending = 1,
+        L1Declined = 2,
+        L2Pending = 3,
+        L2Declined  = 4,
+        L3Pending  = 5,
+        L3Declined = 6,
+        Submitted = 7,
+        Validated = 8,
+        NotValidated = 9,
+        Paid = 10,
+        Failed = 11,
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using Unity.Flex.Domain.Exceptions;
+using Unity.Flex.Domain.ScoresheetInstances;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -10,11 +11,11 @@ namespace Unity.Flex.Domain.Scoresheets
 {
     public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
-        public virtual string Name { get; set; } = string.Empty;
+        public virtual string Title { get; set; } = string.Empty;
+        public virtual string Name { get; private set; } = string.Empty;
         public virtual uint Version { get; set; } = 1;
-
-        public Guid GroupId { get; set; }
-
+        public virtual uint Order { get; set; } = 0;
+        public virtual bool Published {  get; set; } = false;
         public Guid? TenantId { get; set; }
                
 
@@ -27,26 +28,23 @@ namespace Unity.Flex.Domain.Scoresheets
         }
 
         public Scoresheet(Guid id,
-        string name,
-        Guid groupId)
+        string title,
+        string name)
         : base(id)
         {
             Id = id;
+            Title = title;
             Name = name;
-            GroupId = groupId;
         }
 
-        public Scoresheet AddSection(string name, uint order)
+        public Scoresheet AddSection(ScoresheetSection section)
         {
-            if (Sections.Any(s => s.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
+            if (Sections.Any(s => s.Name.Equals(section.Name, StringComparison.CurrentCultureIgnoreCase)))
             {
-                throw new BusinessException(ErrorConsts.DuplicateSectionName).WithData("duplicateName", name); // cannot have duplicate section names
+                throw new UserFriendlyException("Section names must be unique");
             }
-            ScoresheetSection newSection = new(Guid.NewGuid(), name, order)
-            {
-                ScoresheetId = this.Id
-            };
-            Sections.Add(newSection);
+            section.ScoresheetId = this.Id;
+            Sections.Add(section);
             return this;
         }
 
@@ -82,6 +80,18 @@ namespace Unity.Flex.Domain.Scoresheets
         public Scoresheet IncreaseVersion()
         {
             Version++;
+            return this;
+        }
+
+        public Scoresheet SetName(string name)
+        {
+            this.Name = name;
+            return this;
+        }
+
+        public Scoresheet UpdateSection(ScoresheetSection section, string name)
+        {
+            section.SetName(name);
             return this;
         }
     }

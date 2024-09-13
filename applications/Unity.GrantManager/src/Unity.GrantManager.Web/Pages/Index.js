@@ -25,7 +25,7 @@ $(function () {
         d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
         let expires = "expires=" + d.toUTCString();
         document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;domain=" +
-            window.location.hostname;
+            window.location.hostname + ";SameSite=Lax;secure;";
     }
 
     $('.btn-forms-templte').on("click", function (e) {

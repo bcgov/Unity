@@ -58,13 +58,6 @@ namespace Unity.GrantManager.Permissions
             public const string EditFinalStateFields = Default + ".EditFinalStateFields";
         }
 
-        public static class Payments
-        {
-            public const string Default = GroupName + ".Payments";
-            public const string Approve = Default + ".Approve";
-            public const string Decline = Default + ".Decline";
-        }
-
         public static string[] GetAll()
         {
             return ReflectionHelper.GetPublicConstantsRecursively(typeof(GrantApplicationPermissions));

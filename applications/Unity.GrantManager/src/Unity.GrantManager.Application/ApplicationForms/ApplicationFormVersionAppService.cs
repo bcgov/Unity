@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
@@ -11,7 +12,6 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -30,18 +30,21 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IIntakeFormSubmissionMapper _intakeFormSubmissionMapper;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IFormsApiService _formApiService;
+        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IUnitOfWorkManager unitOfWorkManager,
             IFormsApiService formsApiService,
-            IApplicationFormVersionRepository applicationFormVersionRepository)
+            IApplicationFormVersionRepository applicationFormVersionRepository,
+            IApplicationFormSubmissionRepository applicationFormSubmissionRepository)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
             _intakeFormSubmissionMapper = intakeFormSubmissionMapper;
             _unitOfWorkManager = unitOfWorkManager;
             _formApiService = formsApiService;
+            _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -60,7 +63,8 @@ namespace Unity.GrantManager.ApplicationForms
             return dto;
         }
 
-        private static JToken? GetFormVersionToken(dynamic chefsForm) {
+        private static JToken? GetFormVersionToken(dynamic chefsForm)
+        {
             if (chefsForm == null) return null;
             JObject formObject = JObject.Parse(chefsForm.ToString());
             if (formObject == null) return null;
@@ -77,15 +81,16 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 JToken? versionsToken = GetFormVersionToken(chefsForm);
                 if (versionsToken == null) return false;
-                
+
                 foreach (JToken childToken in versionsToken.Children().Where(t => t.Type == JTokenType.Object))
                 {
-                    if (TryParsePublished(childToken, out var formVersionId, out var published) 
-                            && formVersionId != null 
+                    if (TryParsePublished(childToken, out var formVersionId, out var published)
+                            && formVersionId != null
                             && await FormVersionDoesNotExist(formVersionId))
                     {
                         ApplicationFormVersionDto? applicationFormVersion = new ApplicationFormVersionDto();
-                        if ((initializePublishedOnly && published) || !initializePublishedOnly) {
+                        if ((initializePublishedOnly && published) || !initializePublishedOnly)
+                        {
                             applicationFormVersion = await TryInitializeApplicationFormVersionWithToken(childToken, applicationFormId, formVersionId, published);
                         }
 
@@ -123,7 +128,7 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 string? formId = token.Value<string>("formId");
                 int version = token.Value<int>("version");
-                return await TryInitializeApplicationFormVersion(formId, version, applicationFormId,formVersionId, published);
+                return await TryInitializeApplicationFormVersion(formId, version, applicationFormId, formVersionId, published);
             }
             catch (Exception ex)
             {
@@ -280,6 +285,60 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
+        }
+
+        public async Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId)
+        {
+            var applicationFormVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(chefsFormVersionId);
+            if (applicationFormVersion == null) return null;
+            return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
+        }
+
+        public async Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId)
+        {
+            ApplicationFormSubmission formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
+            if (formSubmission.FormVersionId == null)
+            {
+                try
+                {
+                    JObject? submissionJson = JObject.Parse(formSubmission.Submission);
+                    if (submissionJson == null) return 0;
+                    JToken? tokenFormVersionId = submissionJson.SelectToken("submission.formVersionId");
+                    if (tokenFormVersionId == null) return 0;
+                    Guid formVersionId = Guid.Parse(tokenFormVersionId.ToString());
+                    formSubmission.FormVersionId = formVersionId;
+                    await _applicationFormSubmissionRepository.UpdateAsync(formSubmission);
+                    return await GetVersion(formVersionId);
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return await GetVersion(formSubmission.FormVersionId ?? Guid.Empty);
+            }
+        }
+
+        public async Task DeleteWorkSheetMappingByFormName(string formName, Guid formVersionId)
+        {
+            ApplicationFormVersion applicationFormVersion = await _applicationFormVersionRepository.GetAsync(formVersionId);
+            if (applicationFormVersion != null && applicationFormVersion.SubmissionHeaderMapping != null)
+            {
+                string mappingString = applicationFormVersion.SubmissionHeaderMapping;
+                // (,\s*\"custom_additionalinfo-v1.*\")
+                // remove the fields that match the name
+                string pattern = "(,\\s*\\\"" + formName + ".*\")|(\"" + formName + ".*\\\",)";
+                applicationFormVersion.SubmissionHeaderMapping = Regex.Replace(mappingString, pattern, "", RegexOptions.None, TimeSpan.FromSeconds(30));
+                await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
+            }
+        }
+
+        private async Task<int> GetVersion(Guid formVersionId)
+        {
+            var formVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(formVersionId);
+            return formVersion?.Version ?? 0;
         }
     }
 }
