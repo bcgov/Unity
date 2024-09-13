@@ -68,6 +68,13 @@
 	margin-top: -7px;
 }
 
+.unity-app-main-container {
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 @media only screen and (max-width: 850px) {
 	.field-validation-error {
 		float: none;
