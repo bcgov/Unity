@@ -12,12 +12,12 @@ namespace Unity.GrantManager.Exceptions
         private const string FormSetupErrorMessage = "Application Form Setup Error";
 
         public ApplicationFormSetupException(string? message = null)
-            : base(new List<ValidationResult> { new ValidationResult(message ?? FormSetupErrorMessage) })
+            : base(new List<ValidationResult> { new(message ?? FormSetupErrorMessage) })
         {
             LogLevel = Microsoft.Extensions.Logging.LogLevel.Error;
         }
 
-        protected ApplicationFormSetupException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
+        protected ApplicationFormSetupException(SerializationInfo serializationEntries, StreamingContext context) : base()
         {
             LogLevel = Microsoft.Extensions.Logging.LogLevel.Error;
         }

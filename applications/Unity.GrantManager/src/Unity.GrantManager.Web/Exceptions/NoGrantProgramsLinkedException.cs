@@ -13,7 +13,7 @@ namespace Unity.GrantManager.Web.Exceptions
             LogLevel = LogLevel.Error;
         }
 
-        protected NoGrantProgramsLinkedException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
+        protected NoGrantProgramsLinkedException(SerializationInfo serializationEntries, StreamingContext context) : base("No Grant Programs Linked")
         {
             LogLevel = LogLevel.Error;
         }
