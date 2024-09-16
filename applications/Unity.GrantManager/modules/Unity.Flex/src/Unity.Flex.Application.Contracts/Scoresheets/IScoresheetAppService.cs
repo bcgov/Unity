@@ -24,5 +24,6 @@ namespace Unity.Flex.Scoresheets
         Task PublishScoresheetAsync(Guid id);
         Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId);
         Task ImportScoresheetAsync(ScoresheetImportDto scoresheetImportDto);
+        Task SaveScoresheetOrder(List<Guid> scoresheetIds);
     }
 }

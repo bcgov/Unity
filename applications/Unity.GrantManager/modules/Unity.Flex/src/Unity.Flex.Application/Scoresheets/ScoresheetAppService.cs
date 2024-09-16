@@ -46,6 +46,12 @@ namespace Unity.Flex.Scoresheets
 
         public async Task<ScoresheetDto> CreateAsync(CreateScoresheetDto dto)
         {
+            var existingScoresheet = await _scoresheetRepository.GetByNameAsync(dto.Name, false);
+
+            if (existingScoresheet != null)
+            {
+                throw new UserFriendlyException("Scoresheet names must be unique");
+            }
             var result = await _scoresheetRepository.InsertAsync(new Scoresheet(Guid.NewGuid(), dto.Title, dto.Name));
             return ObjectMapper.Map<Scoresheet, ScoresheetDto>(result);
         }
@@ -56,11 +62,13 @@ namespace Unity.Flex.Scoresheets
 
             lock (_questionLockObject)
             {
-                ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result ?? throw new AbpValidationException("Scoresheet has no section.");
-                Question? highestOrderQuestion = _questionRepository.GetQuestionWithHighestOrderAsync(highestOrderSection.Id).Result;
-                var order = highestOrderQuestion == null ? 0 : highestOrderQuestion.Order + 1;
-                var result = _questionRepository.InsertAsync(new Question(Guid.NewGuid(), dto.Name, dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition)).Result;
-                return ObjectMapper.Map<Question, QuestionDto>(result);
+                ScoresheetSection highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId, true).Result ?? throw new AbpValidationException("Scoresheet has no section.");
+                uint highestOrder = (highestOrderSection.Fields != null && highestOrderSection.Fields.Count > 0) ? highestOrderSection.Fields.Max(q => q.Order) : 0;
+                var order = highestOrder + 1;
+                var newQuestion = new Question(Guid.NewGuid(), dto.Name.Trim(), dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition);
+                highestOrderSection.AddQuestion(newQuestion);
+                _ = _sectionRepository.UpdateAsync(highestOrderSection).Result;
+                return ObjectMapper.Map<Question, QuestionDto>(newQuestion);
             }
         }
 
@@ -70,10 +78,13 @@ namespace Unity.Flex.Scoresheets
 
             lock (_sectionLockObject)
             {
-                ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId).Result;
+                ScoresheetSection? highestOrderSection = _sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId, true).Result;
                 var order = highestOrderSection == null ? 0 : highestOrderSection.Order + 1;
-                var result = _sectionRepository.InsertAsync(new ScoresheetSection(Guid.NewGuid(), dto.Name, order, scoresheetId)).Result;
-                return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(result);
+                var scoresheet = _scoresheetRepository.GetAsync(scoresheetId, true).Result;
+                ScoresheetSection newSection = new(Guid.NewGuid(), dto.Name.Trim(), order);
+                _ = scoresheet.AddSection(newSection);
+                _ = _scoresheetRepository.UpdateAsync(scoresheet).Result;
+                return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(newSection);
             }
         }
 
@@ -87,7 +98,7 @@ namespace Unity.Flex.Scoresheets
         public async Task CloneScoresheetAsync(Guid scoresheetIdToClone)
         {
             using var unitOfWork = _unitOfWorkManager.Begin();
-            
+
             var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
             var versionSplit = originalScoresheet.Name.Split('-');
             var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, $"{versionSplit[0]}-v{originalScoresheet.Version + 1}")
@@ -229,19 +240,46 @@ namespace Unity.Flex.Scoresheets
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
-            var name = scoresheet.Title.ToLower().Trim() + "-v1";
-            _ = scoresheet.SetName(NameRegex().Replace(name, ""));
+            string? name;
+            
+            var scoresheets = await _scoresheetRepository.GetByNameStartsWithAsync(RemoveTrailingNumbers(scoresheet.Name));
+            var maxVersion = scoresheets.Max(s => s.Version);
+            var newVersion = maxVersion + 1;
+            name = scoresheet.Name.Replace($"-v{scoresheet.Version}", $"-v{newVersion}");
+            scoresheet.Version = newVersion;
+            _ = scoresheet.SetName(name);
             scoresheet.Published = false;
             await _scoresheetRepository.InsertAsync(scoresheet);
         }
 
-        [GeneratedRegex(@"\s+")]
-        private static partial Regex NameRegex();
+        private static string RemoveTrailingNumbers(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+
+            return TrailingZeroes().Replace(input, string.Empty);
+        }
 
         public async Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck)
         {
             var result = await GetQuestionsAsync(questionIdsToCheck, QuestionType.SelectList);
             return ObjectMapper.Map<List<Question>, List<QuestionDto>>(result);
         }
+
+        public async Task SaveScoresheetOrder(List<Guid> scoresheetIds)
+        {
+            uint index = 0;
+            foreach (Guid id in scoresheetIds)
+            {
+                var scoresheet = await _scoresheetRepository.GetAsync(id);
+                scoresheet.Order = index++;
+                await _scoresheetRepository.UpdateAsync(scoresheet);
+            }
+        }
+
+        [GeneratedRegex(@"\d+$")]
+        private static partial Regex TrailingZeroes();
     }
 }

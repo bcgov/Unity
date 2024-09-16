@@ -1,5 +1,10 @@
 ﻿$(function () {
     const l = abp.localization.getResource('Payments');
+    $('.unity-currency-input').maskMoney({});
+    $('.unity-currency-input').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
+    const formatter = createNumberFormatter();
     let dt = $('#ApplicationPaymentRequestListTable');
     let dataTable;
     const listColumns = getColumns();
@@ -145,8 +150,11 @@
             title: l('PaymentInfoView:ApplicationPaymentListTable.Amount'),
             name: 'amount',
             data: 'amount',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             index: 2,
+            render: function (data) {
+                return formatter.format(data);
+            },
         };
     }
 
@@ -222,7 +230,7 @@
             index: 8,
             render: function (data) {
                 if(data+"" !== "undefined" && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                    return '<button id="cas-response-btn" class="btn btn-light info-btn cas-response-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return  '{Not Available}';
             }

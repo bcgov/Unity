@@ -188,6 +188,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 CustomFieldType.CheckboxGroup => "CheckboxGroup",
                 CustomFieldType.SelectList => "SelectList",
                 CustomFieldType.BCAddress => "BCAddress",
+                CustomFieldType.TextArea => "TextArea",
                 _ => "",
             };
         }

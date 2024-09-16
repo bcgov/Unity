@@ -58,7 +58,7 @@ parameters:
 - description: The registry path of the container image used.
   displayName: Registry location to pull from
   name: IMAGEPULL_REGISTRY
-  value: image-registry.openshift-image-registry.svc:5000/
+  value: image-registry.openshift-image-registry.svc:5000
 # Template objects to instantiate the project.
 objects:
 # RunOnce Job for Database Migrator
@@ -90,7 +90,7 @@ objects:
       spec:
         containers:
           - name: ${APPLICATION_NAME}
-            image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+            image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
             env:
               - name: ConnectionStrings__Default
                 value: >-

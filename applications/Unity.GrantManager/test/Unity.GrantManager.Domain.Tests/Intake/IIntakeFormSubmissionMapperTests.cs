@@ -29,7 +29,7 @@ namespace Unity.GrantManager.Intake
             var testData = JsonConvert.DeserializeObject<dynamic>(jsonStr);
             reader.Dispose();
             return testData;
-        }       
+        }
 
         [Theory]
         [InlineData("test-submission1.json", 14)]
@@ -38,9 +38,9 @@ namespace Unity.GrantManager.Intake
         public void ExtractSubmissionFiles_ReturnsExpectedCount(string filename, int expectedCount)
         {
             dynamic? formSubmission = LoadTestData(filename);
-            Dictionary<Guid, string> dictionary = _intakeFormSubmissionMapper.ExtractSubmissionFiles(formSubmission);                      
+            Dictionary<Guid, string> dictionary = _intakeFormSubmissionMapper.ExtractSubmissionFiles(formSubmission);
             dictionary.Count.ShouldBe(expectedCount);
-        }       
+        }
     }
 }
 
