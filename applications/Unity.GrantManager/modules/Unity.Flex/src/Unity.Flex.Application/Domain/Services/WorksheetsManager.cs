@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
+using NUglify.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Utils;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
@@ -200,7 +202,7 @@ namespace Unity.Flex.Domain.Services
         public async Task<Worksheet> CloneWorksheetAsync(Guid id)
         {
             var worksheet = await worksheetRepository.GetAsync(id, true);
-            var versionSplit = worksheet.Name.Split('-');
+            var versionSplit = SheetParserFunctions.SplitSheetNameAndVersion(worksheet.Name);
             var worksheetVersions = await worksheetRepository.GetByNameStartsWithAsync($"{versionSplit[0]}-v", false);
             var highestVersion = worksheetVersions.Max(s => s.Version);
             var clonedWorksheet = new Worksheet(Guid.NewGuid(), $"{versionSplit[0]}-v{highestVersion + 1}", worksheet.Title);
@@ -218,7 +220,7 @@ namespace Unity.Flex.Domain.Services
 
             var result = await worksheetRepository.InsertAsync(clonedWorksheet);
             return result;
-        }
+        }       
 
         private static CustomField? FindCustomFieldByName(Worksheet? worksheet, string fieldName)
         {

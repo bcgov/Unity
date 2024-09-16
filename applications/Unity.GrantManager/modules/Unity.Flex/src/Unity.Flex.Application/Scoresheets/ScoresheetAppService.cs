@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
+using Unity.Flex.Domain.Utils;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
@@ -100,7 +101,7 @@ namespace Unity.Flex.Scoresheets
             using var unitOfWork = _unitOfWorkManager.Begin();
 
             var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
-            var versionSplit = originalScoresheet.Name.Split('-');
+            var versionSplit = SheetParserFunctions.SplitSheetNameAndVersion(originalScoresheet.Name);
             var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, $"{versionSplit[0]}-v{originalScoresheet.Version + 1}")
             {
                 Version = originalScoresheet.Version + 1,
