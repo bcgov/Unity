@@ -243,7 +243,7 @@ namespace Unity.Flex.Scoresheets
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
             string? name;
             
-            var scoresheets = await _scoresheetRepository.GetByNameStartsWithAsync(RemoveTrailingNumbers(scoresheet.Name));
+            var scoresheets = await _scoresheetRepository.GetByNameStartsWithAsync(SheetParserFunctions.RemoveTrailingNumbers(scoresheet.Name));
             var maxVersion = scoresheets.Max(s => s.Version);
             var newVersion = maxVersion + 1;
             name = scoresheet.Name.Replace($"-v{scoresheet.Version}", $"-v{newVersion}");
@@ -272,18 +272,5 @@ namespace Unity.Flex.Scoresheets
                 await _scoresheetRepository.UpdateAsync(scoresheet);
             }
         }
-
-        private static string RemoveTrailingNumbers(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-            {
-                return input;
-            }
-
-            return TrailingZeroes().Replace(input, string.Empty);
-        }
-
-        [GeneratedRegex(@"\d+$")]
-        private static partial Regex TrailingZeroes();
     }
 }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Settings;
+using Unity.Flex.Domain.Utils;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
 
@@ -173,7 +174,7 @@ namespace Unity.Flex.Worksheets
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
             string? name;
 
-            var worksheets = await worksheetRepository.GetByNameStartsWithAsync(RemoveTrailingNumbers(worksheet.Name));
+            var worksheets = await worksheetRepository.GetByNameStartsWithAsync(SheetParserFunctions.RemoveTrailingNumbers(worksheet.Name));
             var maxVersion = worksheets.Max(s => s.Version);
             var newVersion = maxVersion + 1;
             name = worksheet.Name.Replace($"-v{worksheet.Version}", $"-v{newVersion}");
@@ -191,18 +192,5 @@ namespace Unity.Flex.Worksheets
             worksheet.SetPublished(false);
             await worksheetRepository.InsertAsync(worksheet);
         }
-
-        private static string RemoveTrailingNumbers(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-            {
-                return input;
-            }
-
-            return TrailingZeroes().Replace(input, string.Empty);
-        }
-
-        [GeneratedRegex(@"\d+$")]
-        private static partial Regex TrailingZeroes();
     }
 }
