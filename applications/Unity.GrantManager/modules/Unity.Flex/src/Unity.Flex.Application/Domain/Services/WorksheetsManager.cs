@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using NUglify.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
