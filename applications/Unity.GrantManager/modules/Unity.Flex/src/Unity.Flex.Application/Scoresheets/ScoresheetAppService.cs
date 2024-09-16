@@ -248,19 +248,12 @@ namespace Unity.Flex.Scoresheets
             name = scoresheet.Name.Replace($"-v{scoresheet.Version}", $"-v{newVersion}");
             scoresheet.Version = newVersion;
             _ = scoresheet.SetName(name);
+
             scoresheet.Published = false;
             await _scoresheetRepository.InsertAsync(scoresheet);
         }
 
-        private static string RemoveTrailingNumbers(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-            {
-                return input;
-            }
 
-            return TrailingZeroes().Replace(input, string.Empty);
-        }
 
         public async Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck)
         {
@@ -277,6 +270,16 @@ namespace Unity.Flex.Scoresheets
                 scoresheet.Order = index++;
                 await _scoresheetRepository.UpdateAsync(scoresheet);
             }
+        }
+
+        private static string RemoveTrailingNumbers(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+
+            return TrailingZeroes().Replace(input, string.Empty);
         }
 
         [GeneratedRegex(@"\d+$")]

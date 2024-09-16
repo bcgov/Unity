@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Worksheets;
@@ -170,8 +171,15 @@ namespace Unity.Flex.Worksheets
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
-            var name = worksheet.Title.ToLower().Trim() + "-v1";
-            _ = worksheet.SetName(NameRegex().Replace(name, ""));
+            string? name;
+
+            var worksheets = await worksheetRepository.GetByNameStartsWithAsync(RemoveTrailingNumbers(worksheet.Name));
+            var maxVersion = worksheets.Max(s => s.Version);
+            var newVersion = maxVersion + 1;
+            name = worksheet.Name.Replace($"-v{worksheet.Version}", $"-v{newVersion}");
+            worksheet.SetVersion(newVersion);
+            _ = worksheet.SetName(name);
+
             foreach(var section in worksheet.Sections)
             {
                 foreach(var field in section.Fields)
@@ -179,12 +187,22 @@ namespace Unity.Flex.Worksheets
                     _ = field.UpdateFieldName(worksheet.Name);
                 }
             }
+
             worksheet.SetPublished(false);
             await worksheetRepository.InsertAsync(worksheet);
         }
 
-        [GeneratedRegex(@"\s+")]
-        private static partial Regex NameRegex();
+        private static string RemoveTrailingNumbers(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
 
+            return TrailingZeroes().Replace(input, string.Empty);
+        }
+
+        [GeneratedRegex(@"\d+$")]
+        private static partial Regex TrailingZeroes();
     }
 }
