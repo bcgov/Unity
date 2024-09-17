@@ -185,7 +185,7 @@
 
 
 function enableProjectInfoSaveBtn(inputText) {
-    if (!$("#projectInfoForm").valid()) {
+    if (!$("#projectInfoForm").valid() || formHasInvalidCurrencyCustomFields("projectInfoForm")) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
     }

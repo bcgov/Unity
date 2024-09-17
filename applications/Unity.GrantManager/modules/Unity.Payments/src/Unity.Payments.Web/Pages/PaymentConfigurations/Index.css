@@ -11,8 +11,6 @@
 	overflow: scroll;
 }
 
-
-
 .field-validation-error {
 	float: inline-start;
     display: block;
@@ -30,7 +28,6 @@
 	float: left;
 }
 
-
 .currency {
 	text-align: right; 
 	width: 100%;
@@ -45,12 +42,6 @@
 	padding: 4px;
 	font-weight:700;
 }
-
-@media only screen and (max-width: 850px) {
-	.field-validation-error {
-		float: none;
-	}
-  }
 
 .payment-form .mb-3:nth-child(-n+3) {
 	width: 30%;
@@ -67,6 +58,25 @@
 	display:inline-flex;
 	gap:1rem;
 }
+
 .note{
 	margin-left:5px;
+}
+
+.payment-prefix {
+	width: 200px;
+	margin-top: -7px;
+}
+
+.unity-app-main-container {
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@media only screen and (max-width: 850px) {
+	.field-validation-error {
+		float: none;
+	}
 }

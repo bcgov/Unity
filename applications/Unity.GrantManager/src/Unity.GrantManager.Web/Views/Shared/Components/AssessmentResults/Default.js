@@ -190,13 +190,21 @@ function flaggedFieldIsValid(flag, name) {
 
 function hasInvalidCustomFields() {        
     let invalidFieldsFound = false;
-    $("input[id^='custom']:visible").each(function (i, el) {
-        let fieldValidity = document.getElementById(el.id).validity.valid;        
-        if (!fieldValidity) {
-            invalidFieldsFound = true;
+    $("input[id^='custom']:visible").each(function (i, el) {  
+        let $field = $(this);
+        if ($field.hasClass('custom-currency-input')) {
+            if (!isValidCurrencyCustomField($field)) {
+                invalidFieldsFound = true;
+            }
+        } else {
+            let fieldValidity = document.getElementById(el.id).validity.valid;
+            if (!fieldValidity) {
+                invalidFieldsFound = true;
+            }
         }
+        
     });
-    
+
     return invalidFieldsFound;
 }
 
@@ -213,5 +221,7 @@ function enableResultSaveBtn() {
 
     $('#saveAssessmentResultBtn').prop('disabled', false);
 }
+
+
 
 

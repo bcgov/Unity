@@ -15,7 +15,7 @@ namespace Unity.Flex.Web.Views.Shared.Components
             {
                 CustomFieldType.Text => "text",
                 CustomFieldType.Numeric => "number",
-                CustomFieldType.Currency => "number",
+                CustomFieldType.Currency => "text",
                 CustomFieldType.DateTime => "datetime-local",
                 CustomFieldType.Date => "date",
                 CustomFieldType.Radio => "radio",

@@ -268,6 +268,7 @@ $(function () {
             };
         }
     });
+
     let applicationStatusWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationStatusWidget',
         filterCallback: function () {
@@ -276,8 +277,11 @@ $(function () {
             };
         }
     });
+
+    const assessmentResultWidgetDiv = "assessmentResultWidget";
+
     let assessmentResultWidgetManager = new abp.WidgetManager({
-        wrapper: '#assessmentResultWidget',
+        wrapper: '#' + assessmentResultWidgetDiv,
         filterCallback: function () {
             return {
                 'applicationId': $('#DetailsViewApplicationId').val(),
@@ -285,6 +289,21 @@ $(function () {
             };
         }
     });
+
+    const assessmentResultTargetNode = document.querySelector('#' + assessmentResultWidgetDiv);
+    const widgetConfig = { attributes: true, childList: true, subtree: true };
+    const widgetCallback = function (mutationsList, observer) {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'childList') {
+                initCustomFieldCurrencies(); 
+                break;
+            }
+        }
+    };
+    const assessmentResultObserver = new MutationObserver(widgetCallback);
+    assessmentResultObserver.observe(assessmentResultTargetNode, widgetConfig);
+
+
     PubSub.subscribe(
         'application_status_changed',
         (msg, data) => {            
@@ -293,20 +312,36 @@ $(function () {
             assessmentResultWidgetManager.refresh();            
         }
     );
+
+    function initCustomFieldCurrencies() {
+        $('.custom-currency-input').maskMoney({
+            thousands: ',',
+            decimal: '.'
+        }).maskMoney('mask');
+    }
+    
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
-            assessmentResultWidgetManager.refresh();        
+            assessmentResultWidgetManager.refresh();
         }
     );
 
+    const summaryWidgetDiv = "summaryWidgetArea";
+
     let summaryWidgetManager = new abp.WidgetManager({
-        wrapper: '#summaryWidgetArea',
+        wrapper: '#' + summaryWidgetDiv,
         filterCallback: function () {
             return {
                 'applicationId': $('#DetailsViewApplicationId').val() ?? "00000000-0000-0000-0000-000000000000"
             }
         }
     });
+    
+    const summaryWidgetTargetNode = document.querySelector('#' + summaryWidgetDiv);
+    const summaryWidgetObserver = new MutationObserver(widgetCallback);
+    summaryWidgetObserver.observe(summaryWidgetTargetNode, widgetConfig);
+
+
     PubSub.subscribe('refresh_detail_panel_summary',
         (msg, data) => {
             summaryWidgetManager.refresh();
@@ -376,7 +411,7 @@ $(function () {
             let formDataName = data.worksheet + '_form';
             let formValid = $(`form#${formDataName}`).valid();               
             let saveBtn = $(`#save_${data.worksheet}_btn`);
-            if (formValid) {                
+            if (formValid && !formHasInvalidCurrencyCustomFields(`${formDataName}`)) {                
                 saveBtn.prop('disabled', false);
             } else {
                 saveBtn.prop('disabled', true);
@@ -624,5 +659,53 @@ function setDetailsContext(context) {
         case 'assessment': $('#reviewDetails').show(); $('#applicationDetails').hide(); break;
         case 'application': $('#reviewDetails').hide(); $('#applicationDetails').show(); break;
     }
+}
+
+function formHasInvalidCurrencyCustomFields(formId) {
+    let invalidFieldsFound = false;
+    $("#" + formId + " input[id^='custom']:visible").each(function (i, el) {
+        let $field = $(this);
+        if ($field.hasClass('custom-currency-input')) {
+            if (!isValidCurrencyCustomField($field)) {
+                invalidFieldsFound = true;
+            }
+        }
+    });
+
+    return invalidFieldsFound;
+}
+
+function isValidCurrencyCustomField(input) {
+    let originalValue = input.val();
+    let numericValue = parseFloat(originalValue.replace(/,/g, ''));
+
+    let minValue = parseFloat(input.attr('data-min'));
+    let maxValue = parseFloat(input.attr('data-max'));
+
+    if (isNaN(numericValue)) {
+        showCurrencyError(input, 'Please enter a valid number.');
+        return false;
+    } else if (numericValue < minValue) {
+        showCurrencyError(input, `Please enter a value greater than or equal to ${minValue}.`);
+        return false;
+    } else if (numericValue > maxValue) {
+        showCurrencyError(input, `Please enter a value less than or equal to ${maxValue}.`);
+        return false;
+    } else {
+        clearCurrencyError(input);
+        return true;
+    }
+
+}
+function showCurrencyError(input, message) {
+    let errorSpan = input.attr('id') + "-error";
+    document.getElementById(errorSpan).textContent = message;
+    input.attr('aria-invalid', 'true');
+}
+
+function clearCurrencyError(input) {
+    let errorSpan = input.attr('id') + "-error";
+    document.getElementById(errorSpan).textContent = '';
+    input.attr('aria-invalid', 'false');
 }
 
