@@ -54,11 +54,11 @@ namespace Unity.GrantManager.ApplicationForms
 
         public override async Task<ApplicationFormDto> UpdateAsync(Guid id, CreateUpdateApplicationFormDto input)
         {
-            var existingEntity = await Repository.GetAsync(id);
+            var existingForm = await Repository.GetAsync(id);
             input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);
 
-            bool hasFormGuidChanged = existingEntity.ChefsApplicationFormGuid != input.ChefsApplicationFormGuid;
-            bool hasFormApiKeyChanged = existingEntity.ApiKey != input.ApiKey;
+            bool hasFormGuidChanged = existingForm.ChefsApplicationFormGuid != input.ChefsApplicationFormGuid;
+            bool hasFormApiKeyChanged = existingForm.ApiKey != input.ApiKey;
 
             // Only initialize form version if changes are made to form connection details
             if (hasFormGuidChanged || hasFormApiKeyChanged)
