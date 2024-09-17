@@ -153,6 +153,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     {
         // Tailored list in specific order of the available fields enum
         return [new SelectListItem("Text", "Text"),
+            new SelectListItem("Text Area", "TextArea"),
             new SelectListItem("Number", "Numeric"),
             new SelectListItem("Currency", "Currency"),
             new SelectListItem("Date", "Date"),
@@ -160,6 +161,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
             new SelectListItem("Phone", "Phone"),
             new SelectListItem("Checkbox", "Checkbox"),
             new SelectListItem("Checkbox Group", "CheckboxGroup"),
+            new SelectListItem("Select List", "SelectList"),
             new SelectListItem("Radio", "Radio"),
             new SelectListItem("Yes/No Select", "YesNo"),
             new SelectListItem("BC Address", "BCAddress")];

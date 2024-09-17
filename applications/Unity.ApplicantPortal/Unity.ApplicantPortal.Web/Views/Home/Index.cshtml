@@ -1,0 +1,134 @@
+@{
+    ViewData["Title"] = "Applicant";
+}
+
+@model HomeViewModel
+
+<div class="col-md-6">
+    <h1 class="display-4">Info</h1>
+    <form method="post" asp-action="Index">
+        <input type="hidden" asp-for="Applicant.ApplicantId" />
+        <div class="form-container">
+            <div class="row mb-3">
+                <div class="col-lg-4">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationName"></label><br />
+                        <input asp-for="Applicant.OrganizationName" class="form-control" required />
+                        <span asp-validation-for="Applicant.OrganizationName"></span>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="form-group">
+                        <label asp-for="Applicant.PhysicalAddress"></label><br />
+                        <input asp-for="Applicant.PhysicalAddress" class="form-control" />
+                        <span asp-validation-for="Applicant.PhysicalAddress"></span>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="form-group">
+                        <label asp-for="Applicant.MailingAddress"></label><br />
+                        <input asp-for="Applicant.MailingAddress" class="form-control" />
+                        <span asp-validation-for="Applicant.MailingAddress"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-lg-2">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationNumber"></label><br />
+                        <input asp-for="Applicant.OrganizationNumber" class="form-control" />
+                        <span asp-validation-for="Applicant.OrganizationNumber"></span>
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationSize"></label><br />
+                        <select asp-for="Applicant.OrganizationSize" class="form-select">
+                            @foreach (var row in Model.Applicant.OrganizationSizes)
+                            {
+                                <option value="@row">@row</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Applicant.OrganizationSize"></span>
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationBookStatus"></label><br />
+                        <select asp-for="Applicant.OrganizationBookStatus" class="form-select">
+                            @foreach (var row in Model.Applicant.OrganizationBookStatuses)
+                            {
+                                <option value="@row">@row</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Applicant.OrganizationBookStatus"></span>
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationType"></label><br />
+                        <select asp-for="Applicant.OrganizationType" class="form-select">
+                            @foreach (var row in Model.Applicant.OrganizationTypes)
+                            {
+                                <option value="@row">@row</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Applicant.OrganizationType"></span>
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationOperationStartDate"></label><br />
+                        <input asp-for="Applicant.OrganizationOperationStartDate" class="form-control" />
+                        <span asp-validation-for="Applicant.OrganizationOperationStartDate"></span>
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationFiscalYearEnd"></label><br />
+                        <input asp-for="Applicant.OrganizationFiscalYearEnd" class="form-control" />
+                        <span asp-validation-for="Applicant.OrganizationFiscalYearEnd"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-lg-3">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationSector"></label><br />
+                        <input asp-for="Applicant.OrganizationSector" class="form-control" />
+                        <span asp-validation-for="Applicant.OrganizationSector"></span>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationSubSector"></label><br />
+                        <input asp-for="Applicant.OrganizationSubSector" class="form-control" />
+                        <span asp-validation-for="Applicant.OrganizationSubSector"></span>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationSocietyNumber"></label><br />
+                        <input asp-for="Applicant.OrganizationSocietyNumber" class="form-control" />
+                        <span asp-validation-for="Applicant.OrganizationSocietyNumber"></span>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="form-group">
+                        <label asp-for="Applicant.OrganizationBusinessLicenseNumber"></label><br />
+                        <input asp-for="Applicant.OrganizationBusinessLicenseNumber" class="form-control" />
+                        <span asp-validation-for="Applicant.OrganizationBusinessLicenseNumber"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="col-md-6">
+    @await Component.InvokeAsync("ApplicantSubmissions")
+</div>

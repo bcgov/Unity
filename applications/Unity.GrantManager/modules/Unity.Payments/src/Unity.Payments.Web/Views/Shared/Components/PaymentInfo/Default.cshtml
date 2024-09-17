@@ -21,14 +21,32 @@
     </abp-row>
     <abp-row class="m-0 p-0">
         <abp-column size="_6" class="px-1">
-            <abp-input asp-for="@Model.RequestedAmount" disabled />
-            <abp-input asp-for="@Model.ApprovedAmount" disabled />
-            <abp-input asp-for="@Model.TotalPendingAmounts" disabled />
+            <div class="unity-input-group">
+                <span class="unity-input-prepend">$</span>
+            <abp-input class="unity-currency-input" asp-for="@Model.RequestedAmount" disabled />
+            </div>
+            <div class="unity-input-group">
+                <span class="unity-input-prepend">$</span>
+            <abp-input class="unity-currency-input" asp-for="@Model.ApprovedAmount" disabled />
+            </div>
+            <div class="unity-input-group">
+                <span class="unity-input-prepend">$</span>
+            <abp-input class="unity-currency-input" asp-for="@Model.TotalPendingAmounts" disabled />
+            </div>
         </abp-column>
         <abp-column size="_6" class="px-1">
-            <abp-input asp-for="@Model.RecommendedAmount" disabled />
-            <abp-input asp-for="@Model.TotalPaid" disabled />
-            <abp-input asp-for="@Model.RemainingAmount" disabled />
+            <div class="unity-input-group">
+                <span class="unity-input-prepend">$</span>
+            <abp-input class="unity-currency-input" asp-for="@Model.RecommendedAmount" disabled />
+            </div>
+            <div class="unity-input-group">
+                <span class="unity-input-prepend">$</span>
+            <abp-input class="unity-currency-input" asp-for="@Model.TotalPaid" disabled />
+            </div>
+            <div class="unity-input-group">
+                <span class="unity-input-prepend">$</span>
+            <abp-input class="unity-currency-input" asp-for="@Model.RemainingAmount" disabled />
+            </div>
         </abp-column>
 
     </abp-row>
@@ -48,3 +66,13 @@
         </abp-column>
     </abp-row>
 </abp-row>
+
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney();
+
+        }
+    })();
+</script>

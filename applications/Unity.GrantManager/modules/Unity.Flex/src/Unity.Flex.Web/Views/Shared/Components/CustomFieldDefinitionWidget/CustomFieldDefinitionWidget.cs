@@ -26,6 +26,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget
                 CustomFieldType.Currency => CurrencyDefinitionWidget.CurrencyDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.CheckboxGroup => CheckboxGroupDefinitionWidget.CheckboxGroupDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.Radio => RadioDefinitionWidget.RadioDefinitionWidget.ParseFormValues(form),
+                CustomFieldType.SelectList => SelectListDefinitionWidget.SelectListDefinitionWidget.ParseFormValues(form),
+                CustomFieldType.TextArea => TextAreaDefinitionWidget.TextAreaDefinitionWidget.ParseFormValues(form),
                 _ => null,
             };
         }

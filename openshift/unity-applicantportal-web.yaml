@@ -80,7 +80,7 @@ parameters:
 - description: The registry path of the container image used.
   displayName: Registry location to pull from
   name: IMAGEPULL_REGISTRY
-  value: image-registry.openshift-image-registry.svc:5000/
+  value: image-registry.openshift-image-registry.svc:5000
 # Resource limits control how much CPU and memory a container will consume
 - description: The minimum amount of CPU the Container is guaranteed.
   displayName: CPU Request
@@ -139,7 +139,7 @@ objects:
         port: 80
         targetPort: 8080
     selector:
-      deploymentConfig: ${APPLICATION_NAME}
+      app: ${APPLICATION_NAME}
 # Route
 - apiVersion: route.openshift.io/v1
   id: ${APPLICATION_NAME}-http
@@ -186,15 +186,18 @@ objects:
         storage: ${VOLUME_CAPACITY}
       storageClassName: netapp-file-standard
       volumeMode: Filesystem
-# Deployment Config
-- apiVersion: apps.openshift.io/v1
-  kind: DeploymentConfig
+# Deployment
+- apiVersion: apps/v1
+  kind: Deployment
   metadata:
     name: ${APPLICATION_NAME}
     annotations:
       app.openshift.io/route-disabled: "false"
       app.openshift.io/vcs-ref: ${SOURCE_REPOSITORY_REF}
       app.openshift.io/vcs-uri: ${SOURCE_REPOSITORY_URL}
+      # Add the trigger annotation
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${APPLICATION_NAME}\")].image","pause":"false"}]
     labels:
       app: ${APPLICATION_NAME}
       app.openshift.io/runtime: dotnet
@@ -205,66 +208,49 @@ objects:
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ${APPLICATION_NAME}
+      matchLabels:
+        app: ${APPLICATION_NAME}
     strategy:
       type: Recreate
     template:
       metadata:
         labels:
-          application: ${APPLICATION_NAME}
-          deploymentConfig: ${APPLICATION_NAME}
-        name: ${APPLICATION_NAME}
+          app: ${APPLICATION_NAME}
       spec:
         volumes:
           - name: ${APPLICATION_NAME}-logfiles
             persistentVolumeClaim:
               claimName: ${APPLICATION_NAME}-logfiles
         containers:
-        ## Add single environment values
-        - env:
-            - name: ConnectionStrings__Default
-              value: >-
-                Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
-          ## Add all values from ConfigMaps and Secrets
-          envFrom:
-            ## Add all values from ${APPLICATION_NAME}
-            - configMapRef:
-                name: ${APPLICATION_NAME}
-            ## Add all from ${DATABASE_SERVICE_NAME}
-            - configMapRef:
-                name: ${DATABASE_SERVICE_NAME}
-            - secretRef:
-                name: ${DATABASE_SERVICE_NAME}
-          image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
-          imagePullPolicy: Always
-          name: ${APPLICATION_NAME}
-          resources:
-            limits:
-              cpu: ${CPU_LIMIT}
-              memory: ${MEMORY_LIMIT}
-            requests:
-              cpu: ${CPU_REQUEST}
-              memory: ${MEMORY_REQUEST}
-          ports:
-            - containerPort: 443
-              protocol: TCP
-            - containerPort: 80
-              protocol: TCP
-          volumeMounts:
-          - mountPath: /app/logs
-            name: ${APPLICATION_NAME}-logfiles
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
-      dnsPolicy: ClusterFirst
-    triggers:
-    - type: ImageChange
-      imageChangeParams:
-        automatic: true
-        containerNames:
-        - ${APPLICATION_NAME}
-        from:
-          kind: ImageStreamTag
-          name: ${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
-          namespace: ${IMAGEPULL_NAMESPACE}
-    - type: ConfigChange
-  status: {}
+          - name: ${APPLICATION_NAME}
+            image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+            imagePullPolicy: Always
+            resources:
+              limits:
+                cpu: ${CPU_LIMIT}
+                memory: ${MEMORY_LIMIT}
+              requests:
+                cpu: ${CPU_REQUEST}
+                memory: ${MEMORY_REQUEST}
+            ports:
+              - containerPort: 443
+                protocol: TCP
+              - containerPort: 80
+                protocol: TCP
+            env:
+              - name: ConnectionStrings__Default
+                value: >-
+                  Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+            envFrom:
+              - configMapRef:
+                  name: ${APPLICATION_NAME}
+              - configMapRef:
+                  name: ${DATABASE_SERVICE_NAME}
+              - secretRef:
+                  name: ${DATABASE_SERVICE_NAME}
+            volumeMounts:
+              - mountPath: /app/logs
+                name: ${APPLICATION_NAME}-logfiles
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst

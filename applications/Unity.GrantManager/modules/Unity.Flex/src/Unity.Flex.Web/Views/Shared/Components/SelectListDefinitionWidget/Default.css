@@ -1,0 +1,61 @@
+﻿.selectlist-options-actions-column {
+    width: 1rem;
+}
+
+.selectlist-options-list {
+    max-height: 200px;
+    overflow: auto;
+}
+
+.selectlist-options-list table {
+    width: 100%;
+}
+
+#add-new-selectlist-table {    
+    margin-top: 1rem;
+    margin-left: 1rem;
+    border-radius: 5px;
+}
+
+    #add-new-selectlist-table td {
+        margin: 5px;
+        border-radius: 0px !important;
+    }
+
+.new-row-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.selectlist-options-edit-controls {
+    margin-top: 1rem;
+}
+
+.selectlist-input-valid {
+    border: 1px solid red !important;
+}
+
+#selectlist-options-table {    
+    overflow-y: auto;    
+}
+
+    #selectlist-options-table thead {
+        position: sticky;
+        top: 0;
+        height: 2rem;
+        color: #5d5d5d;
+        background-color: #fff;
+    }
+
+    #selectlist-options-table th {
+        padding: 5px;
+    }
+
+#new-selectlist-row td:first-child {
+    padding-left: 10px;
+}
+
+#invalid-input-error-summary {
+    color: var(--bs-red, red);
+    text-align: center;
+}

@@ -4,12 +4,16 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
+using Unity.Flex.WorksheetLinkInstance;
 using Unity.Flex.WorksheetLinks;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.Flex.Worksheets
 {
     [Authorize]
-    public class WorksheetLinkAppService(IWorksheetLinkRepository worksheetLinkRepository,
+    public class WorksheetLinkAppService(
+        ILocalEventBus localEventBus,
+        IWorksheetLinkRepository worksheetLinkRepository,
         IWorksheetInstanceRepository worksheetInstanceRepository) : FlexAppService, IWorksheetLinkAppService
     {
         const string ORPHANED = "Orphaned";
@@ -62,7 +66,7 @@ namespace Unity.Flex.Worksheets
             }
         }
 
-        private static async Task UpdateAndDeleteLinksAsync(IWorksheetLinkRepository worksheetLinkRepository, IWorksheetInstanceRepository worksheetInstanceRepository, UpdateWorksheetLinksDto dto, List<WorksheetLink> worksheetLinks, List<WorksheetLinkDto> refreshedLinks)
+        private async Task UpdateAndDeleteLinksAsync(IWorksheetLinkRepository worksheetLinkRepository, IWorksheetInstanceRepository worksheetInstanceRepository, UpdateWorksheetLinksDto dto, List<WorksheetLink> worksheetLinks, List<WorksheetLinkDto> refreshedLinks)
         {
             // Update or delete
             foreach (var link in worksheetLinks)
@@ -89,9 +93,23 @@ namespace Unity.Flex.Worksheets
                         worksheetInstance.SetAnchor(ORPHANED);
                     }
 
+                    await SendDeleteEvent(link);
                     await worksheetLinkRepository.DeleteAsync(link);
                 }
             }
+        }
+
+        private async Task SendDeleteEvent(WorksheetLink link)
+        {
+            // Cleanup the mapping json for the worksheet that is deleted
+            await localEventBus.PublishAsync(
+                new WorksheetLinkEto
+                {
+                    Action = "DeleteWorksheetLink",
+                    FormVersionId = link.CorrelationId,
+                    Name = $"custom_{link.Worksheet.Name}"
+                }
+            );
         }
 
         private static WorksheetLinkDto MapWorksheetLink(WorksheetLink link)

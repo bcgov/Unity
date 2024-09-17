@@ -40,6 +40,7 @@
     <None Remove="Views\Shared\Components\CheckboxGroupWidget\Default.js" />
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.css" />
     <None Remove="Views\Shared\Components\CheckboxWidget\Default.js" />
+    <None Remove="Views\Shared\Components\Common\KeyValueComponents.js" />
     <None Remove="Views\Shared\Components\CurrencyWidget\Default.css" />
     <None Remove="Views\Shared\Components\CurrencyWidget\Default.js" />
     <None Remove="Views\Shared\Components\CustomFieldDefinitionWidget\Default.css" />
@@ -60,10 +61,13 @@
     <None Remove="Views\Shared\Components\RadioWidget\Default.js" />
     <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.css" />
     <None Remove="Views\Shared\Components\Scoresheet\Scoresheet.js" />
+    <None Remove="Views\Shared\Components\SelectListDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\SelectListDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\SelectListWidget\Default.css" />
     <None Remove="Views\Shared\Components\SelectListWidget\Default.js" />
     <None Remove="Views\Shared\Components\CurrencyDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\CurrencyDefinitionWidget\Default.js" />
+    <None Remove="Views\Shared\Components\TextAreaWidget\Default.js" />
     <None Remove="Views\Shared\Components\TextDefinitionWidget\Default.css" />
     <None Remove="Views\Shared\Components\TextDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
@@ -87,6 +91,7 @@
     <EmbeddedResource Include="Views\Shared\Components\CheckboxGroupWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CheckboxWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\Common\KeyValueComponents.js" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CustomFieldDefinitionWidget\Default.css" />
@@ -111,10 +116,14 @@
     <EmbeddedResource Include="Views\Shared\Components\RadioWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.css" />
     <EmbeddedResource Include="Views\Shared\Components\Scoresheet\Scoresheet.js" />
+    <EmbeddedResource Include="Views\Shared\Components\SelectListDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\SelectListDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\SelectListWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\SelectListWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\CurrencyDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\TextAreaDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\TextAreaWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\TextDefinitionWidget\Default.css" />
     <EmbeddedResource Include="Views\Shared\Components\TextDefinitionWidget\Default.js" />
     <EmbeddedResource Include="Views\Shared\Components\WorksheetInstanceWidget\Default.css" />
