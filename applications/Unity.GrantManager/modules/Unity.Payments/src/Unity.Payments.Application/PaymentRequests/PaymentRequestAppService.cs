@@ -33,16 +33,16 @@ namespace Unity.Payments.PaymentRequests
 
         public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
-            ICurrentUser currentUser, 
+            ICurrentUser currentUser,
             IPaymentsManager paymentsManager,
-            IPermissionChecker permissionChecker,IDataFilter dataFilter)
+            IPermissionChecker permissionChecker, IDataFilter dataFilter)
         {
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
             _paymentsManager = paymentsManager;
             _permissionChecker = permissionChecker;
-           _dataFilter = dataFilter;
+            _dataFilter = dataFilter;
         }
 
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
@@ -51,11 +51,15 @@ namespace Unity.Payments.PaymentRequests
             var paymentConfig = await GetPaymentConfigurationAsync();
             var paymentThreshold = PaymentSharedConsts.DefaultThresholdAmount;
             var paymentIdPrefix = string.Empty;
-            if(paymentConfig != null) {
-                if(paymentConfig.PaymentThreshold != null) {
+
+            if (paymentConfig != null)
+            {
+                if (paymentConfig.PaymentThreshold != null)
+                {
                     paymentThreshold = (decimal)paymentConfig.PaymentThreshold;
                 }
-                if(!paymentConfig.PaymentIdPrefix.IsNullOrEmpty()) {
+                if (!paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
+                {
                     paymentIdPrefix = paymentConfig.PaymentIdPrefix;
                 }
             }
@@ -67,24 +71,25 @@ namespace Unity.Payments.PaymentRequests
             {
                 // referenceNumber + Chefs Confirmation ID + 4 digit sequence based on invoice number count
                 var dto = item.value;
-                int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;                
+                int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
                 var sequenceForInvoice = applicationPaymentRequestCount.ToString("D4");
                 var referenceNumber = GeneratePaymentNumberAsync(sequenceNumber, item.i, paymentIdPrefix);
+
                 try
                 {
-                   var payment = new PaymentRequest(Guid.NewGuid(),
-                        $"{referenceNumber}-{dto.InvoiceNumber}-{sequenceForInvoice}",
-                        dto.Amount,
-                        dto.PayeeName,
-                        dto.ContractNumber,
-                        dto.SupplierNumber,
-                        dto.SiteId,
-                        dto.CorrelationId,
-                        dto.CorrelationProvider,
-                        referenceNumber,
-                        dto.Description,
-                        paymentThreshold
-                    );
+                    var payment = new PaymentRequest(Guid.NewGuid(),
+                         $"{referenceNumber}-{dto.InvoiceNumber}-{sequenceForInvoice}",
+                         dto.Amount,
+                         dto.PayeeName,
+                         dto.ContractNumber,
+                         dto.SupplierNumber,
+                         dto.SiteId,
+                         dto.CorrelationId,
+                         dto.CorrelationProvider,
+                         referenceNumber,
+                         dto.Description,
+                         paymentThreshold
+                     );
 
                     var result = await _paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
@@ -101,10 +106,10 @@ namespace Unity.Payments.PaymentRequests
                         Description = result.Description,
                         CreationTime = result.CreationTime,
                         Status = result.Status,
-                        ReferenceNumber  = result.ReferenceNumber,
+                        ReferenceNumber = result.ReferenceNumber,
                     });
 
-                   
+
                 }
                 catch (Exception ex)
                 {
@@ -179,9 +184,10 @@ namespace Unity.Payments.PaymentRequests
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
-            using (_dataFilter.Disable<ISoftDelete>()) { 
-            var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
-            return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
+            using (_dataFilter.Disable<ISoftDelete>())
+            {
+                var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
+                return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
             }
         }
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)

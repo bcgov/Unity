@@ -16,6 +16,7 @@ $(function () {
         bindUIEvents();
         setAccountCodingDisplay();
         displayStatusMessage();
+        bindLimitedInputFields(/^[a-zA-Z0-9]+$/, [UIElements.inputPaymentIdPrefix[0].id]);
     }
 
     function displayStatusMessage() {
@@ -36,7 +37,6 @@ $(function () {
     }
 
     function bindUIEvents() {
-        UIElements.inputPaymentIdPrefix.on('keyup', upperCaseTextOnly);
         UIElements.inputMinistryClient.on('keyup', setAccountCodingDisplay);
         UIElements.inputResponsibility.on('keyup', setAccountCodingDisplay);
         UIElements.inputServiceLine.on('keyup', setAccountCodingDisplay);
@@ -44,24 +44,28 @@ $(function () {
         UIElements.inputProjectNumber.on('keyup', setAccountCodingDisplay);
     }
 
-    function upperCaseTextOnly(e) {
-        var regex = new RegExp("^[a-zA-Z0-9]+$");
-        var key = String.fromCharCode(!e.charCode ? e.which : e.charCode);
-        if (!regex.test(key)) {
-           e.preventDefault();
-           return false;
-        }   
+    function bindLimitedInputFields(regex, fieldIds) {
+        fieldIds.forEach((id) => {
+            let inputElement = document.getElementById(id);
+            inputElement.addEventListener('input', function (_) {
+                let value = inputElement.value;
+                let lastChar = value.charAt(value.length - 1);
 
-        let currentValue = e.currentTarget.value;
-        e.currentTarget.value = currentValue.toUpperCase();
+                if (!regex.test(lastChar)) {
+                    inputElement.value = value.slice(0, -1);
+                }
+
+                inputElement.value = inputElement.value.toUpperCase();
+            });
+        });
     }
 
     function setAccountCodingDisplay() {
         let currentAccount = $(UIElements.inputMinistryClient).val() + "." +
-        $(UIElements.inputResponsibility).val() + "." +
-        $(UIElements.inputServiceLine).val() + "." +
-        $(UIElements.inputStob).val() + "." +
-        $(UIElements.inputProjectNumber).val();
+            $(UIElements.inputResponsibility).val() + "." +
+            $(UIElements.inputServiceLine).val() + "." +
+            $(UIElements.inputStob).val() + "." +
+            $(UIElements.inputProjectNumber).val();
         $(UIElements.readOnlyAccountCoding).val(currentAccount);
     }
     $('#resetButton').click(function () {
