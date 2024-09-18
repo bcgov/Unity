@@ -457,7 +457,8 @@ function notifyFieldChange(worksheet, uianchor, field) {
 function isKnownAnchor(anchor) {
     if (anchor === 'projectinfo'
         || anchor === 'applicantinfo'
-        || anchor === 'assessmentinfo') {
+        || anchor === 'assessmentinfo'
+        || anchor === 'paymentinfo') {
         return true;
     }
 }

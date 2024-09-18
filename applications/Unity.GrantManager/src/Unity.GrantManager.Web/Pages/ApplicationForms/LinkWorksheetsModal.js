@@ -87,6 +87,9 @@
             case 'applicantInfo':
                 $('#ApplicantInfoSlotId').val(null);
                 break;
+            case 'paymentInfo':
+                $('#PaymentInfoSlotId').val(null);
+                break;
         }
     }
 
@@ -100,6 +103,9 @@
                 break;
             case 'applicantInfo':
                 $('#ApplicantInfoSlotId').val(draggedEl.dataset.worksheetId);
+                break;
+            case 'paymentInfo':
+                $('#PaymentInfoSlotId').val(draggedEl.dataset.worksheetId);
                 break;
         }
     }

@@ -15,8 +15,9 @@
     <abp-input type="hidden" id="AssessmentInfoSlotId" asp-for="@Model.AssessmentInfoSlotId" />
     <abp-input type="hidden" id="ApplicantInfoSlotId" asp-for="@Model.ApplicantInfoSlotId" />
     <abp-input type="hidden" id="ProjectInfoSlotId" asp-for="@Model.ProjectInfoSlotId" />
+    <abp-input type="hidden" id="PaymentInfoSlotId" asp-for="@Model.PaymentInfoSlotId" />
     <abp-input type="hidden" id="CustomTabsSlotIds" asp-for="@Model.CustomTabsSlotIds" />
-    <abp-modal size="Large" id="worksheet-info-modal">
+    <abp-modal size="ExtraLarge" id="worksheet-info-modal">
         <abp-modal-header class="site-info-modal-header" title="Link Worksheets"></abp-modal-header>
         <abp-modal-body>
             <div class="drop-layout">
@@ -63,6 +64,17 @@
                             <div class="draggable-card" draggable="true" data-worksheet-id="@Model.ApplicantInfoLink.WorksheetId">
                                 <span class="published-form-title">
                                     @Model.ApplicantInfoLink.Worksheet.Title (@Model.ApplicantInfoLink.Worksheet.Name)
+                                </span>
+                            </div>
+                        }
+                    </div>
+                    <div class="slot-title">Payment Info:</div>
+                    <div class="single-slot drag-target single-target" draggable="false" data-target="paymentInfo">
+                        @if (Model.PaymentInfoLink != null)
+                        {
+                            <div class="draggable-card" draggable="true" data-worksheet-id="@Model.PaymentInfoLink.WorksheetId">
+                                <span class="published-form-title">
+                                    @Model.PaymentInfoLink.Worksheet.Title (@Model.PaymentInfoLink.Worksheet.Name)
                                 </span>
                             </div>
                         }
