@@ -12,7 +12,7 @@ namespace Unity.Payments.Domain.Exceptions
         {
         }
 
-        protected ConfigurationExistsException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
+        protected ConfigurationExistsException(SerializationInfo serializationEntries, StreamingContext context) : base()
         {
         }
     }

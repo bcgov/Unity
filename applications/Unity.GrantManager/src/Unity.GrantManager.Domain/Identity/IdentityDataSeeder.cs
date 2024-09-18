@@ -53,7 +53,8 @@ namespace Unity.GrantManager.Identity
         public virtual async Task<IdentityDataSeedResult> SeedAsync(
             string adminEmail,
             string adminPassword,
-            Guid? tenantId = null)
+            Guid? tenantId = null,
+            string? adminUserName = null)
         {
             Check.NotNullOrWhiteSpace(adminEmail, nameof(adminEmail));
             Check.NotNullOrWhiteSpace(adminPassword, nameof(adminPassword));
@@ -63,7 +64,7 @@ namespace Unity.GrantManager.Identity
                 await IdentityOptions.SetAsync();
 
                 var result = new IdentityDataSeedResult();
-                
+
                 foreach (var role in UnityRoles.DefinedRoles)
                 {
                     await CreateRoleAsync(role, tenantId);
@@ -90,7 +91,7 @@ namespace Unity.GrantManager.Identity
                     IsPublic = true
                 };
 
-                (await RoleManager.CreateAsync(systemAdminRole)).CheckErrors();                
+                (await RoleManager.CreateAsync(systemAdminRole)).CheckErrors();
             }
         }
     }
