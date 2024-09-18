@@ -17,6 +17,9 @@ namespace Unity.Payments.Web.Pages.PaymentConfigurations
         [BindProperty]
         public decimal PaymentThreshold { get; set; }
 
+        [BindProperty]
+        public string PaymentIdPrefix { get; set; } = string.Empty;
+
         [TempData]
         public string StatusMessage { get; set; } = string.Empty;
 
@@ -34,6 +37,7 @@ namespace Unity.Payments.Web.Pages.PaymentConfigurations
             if (paymentConfigurationDto != null)
             {
                 PaymentThreshold = paymentConfigurationDto.PaymentThreshold;
+                PaymentIdPrefix = paymentConfigurationDto.PaymentIdPrefix;
                 PaymentConfiguration.MinistryClient = paymentConfigurationDto.MinistryClient;
                 PaymentConfiguration.Responsibility = paymentConfigurationDto.Responsibility;
                 PaymentConfiguration.Stob = paymentConfigurationDto.Stob;
@@ -70,6 +74,7 @@ namespace Unity.Payments.Web.Pages.PaymentConfigurations
                 await PaymentConfigurationService.CreateAsync(new CreatePaymentConfigurationDto
                 {
                     PaymentThreshold = PaymentThreshold,
+                    PaymentIdPrefix = PaymentIdPrefix,
                     MinistryClient = PaymentConfiguration.MinistryClient,
                     Responsibility = PaymentConfiguration.Responsibility,
                     Stob = PaymentConfiguration.Stob,
@@ -82,6 +87,7 @@ namespace Unity.Payments.Web.Pages.PaymentConfigurations
                 await PaymentConfigurationService.UpdateAsync(new UpdatePaymentConfigurationDto
                 {
                     PaymentThreshold = PaymentThreshold,
+                    PaymentIdPrefix = PaymentIdPrefix,
                     MinistryClient = PaymentConfiguration.MinistryClient,
                     Responsibility = PaymentConfiguration.Responsibility,
                     Stob = PaymentConfiguration.Stob,

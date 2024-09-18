@@ -16,13 +16,6 @@
 
     let actionButtons = [
         {
-            text: 'Edit & Resubmit',
-            className: 'custom-table-btn flex-none btn btn-secondary',
-            action: function (e, dt, node, config) {
-                alert('Edit & Resubmit');
-            }
-        },
-        {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
             id: "btn-toggle-filter",

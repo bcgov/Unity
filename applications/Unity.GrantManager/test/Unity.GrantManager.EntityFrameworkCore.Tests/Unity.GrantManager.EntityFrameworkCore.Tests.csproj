@@ -1,21 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\..\common.props" />
+	<Import Project="..\..\common.props" />
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <RootNamespace>Unity.GrantManager</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<RootNamespace>Unity.GrantManager</RootNamespace>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Unity.GrantManager.EntityFrameworkCore\Unity.GrantManager.EntityFrameworkCore.csproj" />
-    <ProjectReference Include="..\Unity.GrantManager.TestBase\Unity.GrantManager.TestBase.csproj" />
-    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.1.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Unity.GrantManager.EntityFrameworkCore\Unity.GrantManager.EntityFrameworkCore.csproj" />
+		<ProjectReference Include="..\Unity.GrantManager.TestBase\Unity.GrantManager.TestBase.csproj" />
+		<PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.3.0" />		
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.8" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+	</ItemGroup>
 
 </Project>
