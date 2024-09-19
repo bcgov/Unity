@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
@@ -22,5 +23,8 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
 
         [Display(Name = "PaymentInfoView:PaymentInfo.RemainingAmount")]
         public decimal? RemainingAmount { get; set; }
+
+        public Guid ApplicationId { get; set; }
+        public Guid ApplicationFormVersionId { get; set; } 
     }
 }

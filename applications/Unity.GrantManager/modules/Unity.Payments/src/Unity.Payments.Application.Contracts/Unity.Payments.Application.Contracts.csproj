@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Unity.Flex\src\Unity.Flex.Application.Contracts\Unity.Flex.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.Payments.Shared\Unity.Payments.Shared.csproj" />
   </ItemGroup>
 
