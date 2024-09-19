@@ -26,7 +26,7 @@
                     <abp-input asp-for="@Model.Title" id="worksheetTitle" onkeyup="updateWorksheetName('@Model.UpsertAction.ToString()')" />
                 </abp-column>
                 <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.Name" id="worksheetName" readonly="true" />
+                    <abp-input asp-for="@Model.Name" id="worksheetName" readonly="true" class="disabled" />
                 </abp-column>
             </abp-row>
         </abp-modal-body>
