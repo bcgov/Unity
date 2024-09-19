@@ -302,6 +302,7 @@ select.selected{
     position: absolute;
     right: 24px;
     top: 80px;
+    z-index: 999;
 }
 
 #detailsTab .nav-item .nav-link {
