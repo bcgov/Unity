@@ -17,7 +17,28 @@ public class WorksheetWidget : AbpViewComponent
 {
     public async Task<IViewComponentResult> InvokeAsync(WorksheetDto worksheetDto)
     {
-        var worksheet = await Task.FromResult(new WorksheetWidgetViewModel() { Worksheet = worksheetDto });
+        var worksheet = await Task.FromResult(new WorksheetWidgetViewModel()
+        {
+            Worksheet = worksheetDto,
+            IconMap = new Dictionary<string, string>()
+            {
+                { "String", "fl fl-font" },
+                { "Phone", "fl fl-phone" },
+                { "Date", "fl fl-datetime" },
+                { "Email", "fl fl-mail" },
+                { "Radio", "fl fl-radio" },
+                { "Checkbox", "fl fl-checkbox-checked" },
+                { "CheckboxGroup", "fl fl-multi-select" },
+                { "SelectList", "fl fl-list" },
+                { "BCAddress", "fl fl-globe" },
+                { "TextArea", "fl fl-text-area" },
+                { "Text", "fl fl-font" },                
+                { "Currency", "custom-icon-text custom-dollar" },
+                { "YesNo", "custom-icon-text custom-yesno" },
+                { "Numeric", "custom-icon-text custom-numeric" },
+
+            }
+        });
         return View(worksheet);
     }
 }

@@ -44,3 +44,20 @@
 .float-end.worksheet-btn {
     margin-top: -5px;
 }
+
+.custom-icon-text {
+    font-size: 0.8rem;
+    font-style: normal;
+}
+
+    .custom-icon-text.custom-numeric::before {
+        content: '123';
+    }
+
+    .custom-icon-text.custom-dollar::before {
+        content: '$';
+    }
+
+    .custom-icon-text.custom-yesno::before {
+        content: 'Y/N';
+    }
