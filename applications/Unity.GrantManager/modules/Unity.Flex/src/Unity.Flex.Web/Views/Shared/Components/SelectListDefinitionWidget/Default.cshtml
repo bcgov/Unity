@@ -22,8 +22,8 @@
                 @foreach (var option in Model.Options)
                 {
                     <tr>
-                        <td><input type="text" class="form-control key-input" name="SelectListKeys" pattern="[a-zA-Z0-9 ]+" value="@option.Key" minlength="1" maxlength="25" required id="key-@option.Key" /></td>
-                        <td><input type="text" class="form-control" name="SelectListValues" value="@option.Value" maxlength="25" required id="value-@option.Key" /></td>
+                        <td><input type="text" class="form-control key-input" name="SelectListKeys" value="@option.Key" minlength="1" maxlength="100" required id="key-@option.Key" /></td>
+                        <td><input type="text" class="form-control" name="SelectListValues" value="@option.Value" maxlength="250" required id="value-@option.Key" /></td>
                         <td>
                             <abp-button id="data-btn-@option.Key"
                                         class="delete-selectlist-option btn-danger"
@@ -45,8 +45,8 @@
         <th></th>
         </thead>
         <tr id="new-selectlist-row">
-            <td><input type="text" class="form-control" id="new-row-key" placeholder="Key" /></td>
-            <td><input type="text" class="form-control" id="new-row-label" placeholder="Value" /></td>
+            <td><input type="text" class="form-control" id="new-row-key" minlength="1" maxlength="100" placeholder="Key" /></td>
+            <td><input type="text" class="form-control" id="new-row-label" minlength="1" maxlength="250" placeholder="Value" /></td>
             <td class="new-row-actions">
                 <abp-button id="save-selectlist-option-btn" icon-type="Other" icon="fl fl-checkmark"
                             abp-tooltip="Confirm"
