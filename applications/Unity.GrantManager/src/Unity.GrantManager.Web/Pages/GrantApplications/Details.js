@@ -137,9 +137,6 @@ $(function () {
         updateRecommendation(value, selectedReviewDetails.id);
     });
 
-    // Set reset button state on load
-    $recommendationResetBtn.prop('disabled', !$recommendationSelect.prop('disabled') || !$recommendationSelect.val());
-
     function disableRecommendationControls(state) {
         $recommendationSelect.prop('disabled', state)
         $recommendationResetBtn.prop('disabled', state ? true : !$recommendationSelect.val());
@@ -601,10 +598,13 @@ const checkCurrentUser = function (data) {
     if (getCurrentUser() == data.assessorId && data.status == "IN_PROGRESS") {
         $('#recommendation_select').prop('disabled', false);
         $('#assessment_upload_btn').prop('disabled', false);
+        // Review state class transitions between hide and show
+        $('#recommendation_reset_btn').prop('disabled', !$('#recommendation_select').val()).show();
     }
     else {
         $('#recommendation_select').prop('disabled', 'disabled');
         $('#assessment_upload_btn').prop('disabled', 'disabled');
+        $('#recommendation_reset_btn').prop('disabled', 'disabled').hide();
     }
 };
 
