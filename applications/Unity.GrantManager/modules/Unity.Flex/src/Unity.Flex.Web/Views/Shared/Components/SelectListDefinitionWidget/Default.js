@@ -24,9 +24,11 @@ $(function () {
                 if (!validateInputCharacters(newRowControl))
                     return;
 
+                let santizedLabel = sanitizeInput(row.label);
+
                 // Add valid row to table
                 $('#selectlist-options-table').find('tbody')
-                    .append(getRowTemplate(row.key, row.label));
+                    .append(getRowTemplate(row.key, santizedLabel));
 
                 cancelAddRow();
 
@@ -38,8 +40,8 @@ $(function () {
     }
 
     function getRowTemplate(key, label) {
-        return `<tr><td><input type="text" class="form-control key-input" name="SelectListKeys" pattern="${checkKeyInputRegexBase}" value="${key}" minlength="1" maxlength="25" required id="new-list-key-${key}" />
-        </td><td><input type="text" class="form-control" name="SelectListValues" value="${label}" maxlength="25" required id="new-list-label-${key}" />
+        return `<tr><td><input type="text" class="form-control key-input" name="SelectListKeys" value="${key}" minlength="1" maxlength="100" required id="new-list-key-${key}" />
+        </td><td><input type="text" class="form-control" name="SelectListValues" value="${label}" maxlength="250" required id="new-list-label-${key}" />
         </td><td><button id="data-btn-${key}" class="delete-selectlist-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
         <i class="fl fl-delete"></i></button></td></tr>`
     }
