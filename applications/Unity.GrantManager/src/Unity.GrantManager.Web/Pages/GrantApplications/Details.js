@@ -116,13 +116,41 @@ $(function () {
 
     $('#application_attachment_upload_btn').click(function () { $('#application_attachment_upload').trigger('click'); });
 
-    $('#recommendation_select').change(function () {
+    function debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    }
+
+    const $recommendationSelect = $('#recommendation_select');
+    const $recommendationResetBtn = $('#recommendation_reset_btn');
+
+    $recommendationResetBtn.click(debounce(function () {
+        $recommendationSelect.prop('selectedIndex', 0).trigger('change');
+    }, 400));
+
+    $recommendationSelect.change(function () {
         let value = $(this).val();
         updateRecommendation(value, selectedReviewDetails.id);
     });
 
+    function updateResetButtonState() {
+        // The reset button is only enabled if a recommendation has been selected
+        $recommendationResetBtn.prop('disabled', !$recommendationSelect.val());
+    }
+
+    // Set button state on load
+    updateResetButtonState();
+
     function updateRecommendation(value, id) {
         try {
+            // Disable the select and reset button during update
+            $recommendationSelect.prop('disabled', true);
+            $recommendationResetBtn.prop('disabled', true);
+
             let data = { "approvalRecommended": value, "assessmentId": id }
             unity.grantManager.assessments.assessment.updateAssessmentRecommendation(data)
                 .done(function () {
@@ -130,11 +158,19 @@ $(function () {
                         'The recommendation has been updated.'
                     );
                     PubSub.publish('refresh_review_list_without_select', id);
+                })
+                .always(function () {
+                    // Re-enable the select and reset button
+                    $recommendationSelect.prop('disabled', false);
+                    updateResetButtonState();
                 });
 
         }
         catch (error) {
             console.log(error);
+            // Re-enable the select and reset button in case of error
+            $recommendationSelect.prop('disabled', false);
+            updateResetButtonState();
         }
     }
 
