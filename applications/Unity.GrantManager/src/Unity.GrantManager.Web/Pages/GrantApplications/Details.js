@@ -137,19 +137,18 @@ $(function () {
         updateRecommendation(value, selectedReviewDetails.id);
     });
 
-    function updateResetButtonState() {
-        // The reset button is only enabled if a recommendation has been selected
-        $recommendationResetBtn.prop('disabled', !$recommendationSelect.val());
-    }
+    // Set reset button state on load
+    $recommendationResetBtn.prop('disabled', !$recommendationSelect.prop('disabled') || !$recommendationSelect.val());
 
-    // Set button state on load
-    updateResetButtonState();
+    function disableRecommendationControls(state) {
+        $recommendationSelect.prop('disabled', state)
+        $recommendationResetBtn.prop('disabled', state ? true : !$recommendationSelect.val());
+    }
 
     function updateRecommendation(value, id) {
         try {
             // Disable the select and reset button during update
-            $recommendationSelect.prop('disabled', true);
-            $recommendationResetBtn.prop('disabled', true);
+            disableRecommendationControls(true);
 
             let data = { "approvalRecommended": value, "assessmentId": id }
             unity.grantManager.assessments.assessment.updateAssessmentRecommendation(data)
@@ -161,16 +160,14 @@ $(function () {
                 })
                 .always(function () {
                     // Re-enable the select and reset button
-                    $recommendationSelect.prop('disabled', false);
-                    updateResetButtonState();
+                    disableRecommendationControls(false);
                 });
 
         }
         catch (error) {
             console.log(error);
             // Re-enable the select and reset button in case of error
-            $recommendationSelect.prop('disabled', false);
-            updateResetButtonState();
+            disableRecommendationControls(false);
         }
     }
 
