@@ -119,7 +119,7 @@
 
 
 function enableSaveBtn(inputText) {
-    if (!$("#ApplicantInfoForm").valid()) {
+    if (!$("#ApplicantInfoForm").valid() || formHasInvalidCurrencyCustomFields("ApplicantInfoForm")) {
         $('#saveApplicantInfoBtn').prop('disabled', true);
         return;
     }

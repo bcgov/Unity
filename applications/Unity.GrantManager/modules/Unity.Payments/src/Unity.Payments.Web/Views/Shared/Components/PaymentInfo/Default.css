@@ -11,3 +11,7 @@
 #ApplicationPaymentRequestListTable_filter input {
     margin: 0.25rem;
 }
+
+.payment-info-summary {
+    border-bottom: 0.25rem solid var(--bc-colors-white-background);
+}

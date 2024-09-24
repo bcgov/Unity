@@ -44,10 +44,10 @@
                         <span class="p-2"><b>Section:</b> @sect.Name</span>
                         @if (!Model.Worksheet.Published)
                         {
-                            <button class="btn float-end add-custom-field-btn worksheet-btn" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-action="Insert" type="button">
+                            <button data-toggle="tooltip" title="Add Field" class="btn float-end add-custom-field-btn worksheet-btn" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-action="Insert" type="button">
                                 <i class="fl fl-plus"></i>
                             </button>
-                            <button class="btn float-end edit-section-btn worksheet-btn" data-action="Update" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" type="button">
+                            <button data-toggle="tooltip" title="Edit Section" class="btn float-end edit-section-btn worksheet-btn" data-action="Update" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" type="button">
                                 <i class="fl fl-edit"></i>
                             </button>
                         }
@@ -61,10 +61,12 @@
                             <div class="col">
                                 <i class="fl fl-draggable"></i>
                                 <span class="p-2">@customField.Label</span>
-                                <span class="p-2">(@customField.Type)</span>
+                                <span class="p-2">
+                                    <i class="@Model.IconMap[customField.Type.ToString()]" data-toggle="tooltip" title="@customField.Type"></i>
+                                </span>
                                 @if (!Model.Worksheet.Published)
                                 {
-                                    <button class="btn float-end edit-custom-field-btn worksheet-btn" type="button" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-field-id="@customField.Id" data-action="Update">
+                                    <button data-toggle="tooltip" title="Edit Field" class="btn float-end edit-custom-field-btn worksheet-btn" type="button" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-field-id="@customField.Id" data-action="Update">
                                         <i class="fl fl-edit"></i>
                                     </button>
                                 }

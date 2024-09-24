@@ -26,7 +26,7 @@
                     <abp-input asp-for="@Model.Scoresheet.Title" id="scoresheetTitle" onkeyup="updateScoresheetName('@Model.Scoresheet.ActionType')" />
                 </abp-column>
                 <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.Scoresheet.Name" id="scoresheetName" readonly="true" />
+                    <abp-input asp-for="@Model.Scoresheet.Name" id="scoresheetName" readonly="true" class="disabled" />
                 </abp-column>
             </abp-row>
         </abp-modal-body>

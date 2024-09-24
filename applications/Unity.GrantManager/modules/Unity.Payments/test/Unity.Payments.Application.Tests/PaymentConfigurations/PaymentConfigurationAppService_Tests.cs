@@ -23,6 +23,7 @@ namespace Unity.Payments.PaymentConfigurations
             // Arrange
             var inserted = await _paymentConfigurationRepository.InsertAsync(new PaymentConfiguration(
                 paymentThreshold: 500,
+                paymentIdPrefix: "CGG",
                 AccountCoding.Create(
                 ministryClient: "0TW",
                 responsibility: "51OCG",
@@ -76,6 +77,7 @@ namespace Unity.Payments.PaymentConfigurations
             // Arrange
             _ = await _paymentConfigurationRepository.InsertAsync(new PaymentConfiguration(
                 paymentThreshold: 500,
+                paymentIdPrefix: "CGG",
                 AccountCoding.Create(
                     ministryClient: "0TW",
                     responsibility: "51OCG",

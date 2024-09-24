@@ -31,6 +31,9 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     public string? ApplicantInfoSlotId { get; set; }
 
     [BindProperty]
+    public string? PaymentInfoSlotId { get; set; }
+
+    [BindProperty]
     public string? CustomTabsSlotIds { get; set; }
 
     [BindProperty]
@@ -49,6 +52,9 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
     public WorksheetLinkDto? ProjectInfoLink { get; set; }
 
     [BindProperty]
+    public WorksheetLinkDto? PaymentInfoLink { get; set; }
+
+    [BindProperty]
     public List<WorksheetLinkDto>? CustomTabLinks { get; set; }
 
     public async Task OnGetAsync(Guid formVersionId, string formName)
@@ -63,22 +69,56 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
             .Where(s => s.Published && !WorksheetLinks.Select(s => s.WorksheetId).Contains(s.Id))
             .OrderBy(s => s.Title)];
 
-        AssessmentInfoLink = WorksheetLinks.Find(s => s.UiAnchor == FlexConsts.AssessmentInfoUiAnchor);
-        AssessmentInfoSlotId = AssessmentInfoLink?.WorksheetId.ToString();
-
-        ProjectInfoLink = WorksheetLinks.Find(s => s.UiAnchor == FlexConsts.ProjectInfoUiAnchor);
-        ProjectInfoSlotId = ProjectInfoLink?.WorksheetId.ToString();
-
-        ApplicantInfoLink = WorksheetLinks.Find(s => s.UiAnchor == FlexConsts.ApplicantInfoUiAnchor);
-        ApplicantInfoSlotId = ApplicantInfoLink?.WorksheetId.ToString();
+        GetSlotIdAnchors(WorksheetLinks);
 
         CustomTabLinks = WorksheetLinks.Where(s => s.UiAnchor == FlexConsts.CustomTab).ToList();
         CustomTabsSlotIds = string.Join(";", CustomTabLinks.Select(s => s.Id));
     }
 
+    private void GetSlotIdAnchors(List<WorksheetLinkDto> worksheetLinks)
+    {
+        AssessmentInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.AssessmentInfoUiAnchor);
+        AssessmentInfoSlotId = AssessmentInfoLink?.WorksheetId.ToString();
+
+        ProjectInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.ProjectInfoUiAnchor);
+        ProjectInfoSlotId = ProjectInfoLink?.WorksheetId.ToString();
+
+        ApplicantInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.ApplicantInfoUiAnchor);
+        ApplicantInfoSlotId = ApplicantInfoLink?.WorksheetId.ToString();
+
+        PaymentInfoLink = worksheetLinks.Find(s => s.UiAnchor == FlexConsts.PaymentInfoUiAnchor);
+        PaymentInfoSlotId = PaymentInfoLink?.WorksheetId.ToString();
+    }
+
     public async Task<IActionResult> OnPostAsync()
     {
         var tabLinks = new Dictionary<Guid, string>();
+
+        AddSlotIdAnchors(tabLinks);
+
+        if (CustomTabsSlotIds != null && CustomTabsSlotIds != Guid.Empty.ToString())
+        {
+            var customTabs = CustomTabsSlotIds.Split(';');
+            foreach (var customTabId in customTabs)
+            {
+                tabLinks.Add(Guid.Parse(customTabId), FlexConsts.CustomTab);
+            }
+        }
+
+        var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionId);
+        _ = await worksheetLinkAppService
+            .UpdateWorksheetLinksAsync(new UpdateWorksheetLinksDto()
+            {
+                CorrelationId = formVersion?.Id ?? Guid.Empty,
+                CorrelationProvider = CorrelationConsts.FormVersion,
+                WorksheetAnchors = tabLinks
+            });
+
+        return new OkObjectResult(new { ChefsFormVersionId });
+    }
+
+    private void AddSlotIdAnchors(Dictionary<Guid, string> tabLinks)
+    {
         if (AssessmentInfoSlotId != null && AssessmentInfoSlotId != Guid.Empty.ToString())
         {
             tabLinks.Add(Guid.Parse(AssessmentInfoSlotId), FlexConsts.AssessmentInfoUiAnchor);
@@ -94,25 +134,10 @@ public class LinkWorksheetModalModel(IWorksheetListAppService worksheetListAppSe
             tabLinks.Add(Guid.Parse(ApplicantInfoSlotId), FlexConsts.ApplicantInfoUiAnchor);
         }
 
-        if (CustomTabsSlotIds != null && CustomTabsSlotIds != Guid.Empty.ToString())
+        if (PaymentInfoSlotId != null && PaymentInfoSlotId != Guid.Empty.ToString())
         {
-            var customTabs = CustomTabsSlotIds.Split(';');
-            foreach (var customTabId in customTabs)
-            {
-                tabLinks.Add(Guid.Parse(customTabId), FlexConsts.CustomTab);
-            }
+            tabLinks.Add(Guid.Parse(PaymentInfoSlotId), FlexConsts.PaymentInfoUiAnchor);
         }
-
-        var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionId);
-        _ = await worksheetLinkAppService
-            .UpdateWorksheetLinksAsync(new UpdateWorksheetLinksDto()
-        {
-            CorrelationId = formVersion?.Id ?? Guid.Empty,
-            CorrelationProvider = CorrelationConsts.FormVersion,            
-            WorksheetAnchors = tabLinks
-        });
-
-        return new OkObjectResult(new { ChefsFormVersionId });
     }
 }
 
