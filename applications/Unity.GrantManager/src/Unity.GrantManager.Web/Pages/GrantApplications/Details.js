@@ -138,8 +138,10 @@ $(function () {
     });
 
     function disableRecommendationControls(state) {
-        $recommendationSelect.prop('disabled', state)
-        $recommendationResetBtn.prop('disabled', state ? true : !$recommendationSelect.val());
+        $recommendationSelect.prop('disabled', state);
+        $recommendationResetBtn
+            .prop('disabled', state ? true : !$recommendationSelect.val())
+            .toggleClass('d-none', state ? true : !$recommendationSelect.val());
     }
 
     function updateRecommendation(value, id) {
@@ -598,13 +600,14 @@ const checkCurrentUser = function (data) {
     if (getCurrentUser() == data.assessorId && data.status == "IN_PROGRESS") {
         $('#recommendation_select').prop('disabled', false);
         $('#assessment_upload_btn').prop('disabled', false);
-        // Review state class transitions between hide and show
-        $('#recommendation_reset_btn').prop('disabled', !$('#recommendation_select').val()).show();
+        $('#recommendation_reset_btn')
+            .prop('disabled', !$('#recommendation_select').val())
+            .toggleClass('d-none', !$('#recommendation_select').val());
     }
     else {
         $('#recommendation_select').prop('disabled', 'disabled');
         $('#assessment_upload_btn').prop('disabled', 'disabled');
-        $('#recommendation_reset_btn').prop('disabled', 'disabled').hide();
+        $('#recommendation_reset_btn').prop('disabled', 'disabled').toggleClass('d-none', true);
     }
 };
 
