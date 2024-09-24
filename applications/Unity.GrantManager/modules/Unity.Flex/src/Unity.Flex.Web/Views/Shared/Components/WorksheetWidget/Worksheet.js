@@ -78,6 +78,15 @@ $(function () {
                 exportWorksheet(worksheetId, worksheetName, worksheetTitle);
             });
         }
+
+        setupTooltips();
+    }
+
+    function setupTooltips() {
+        $('[data-toggle="tooltip"]').tooltip({
+            placement: 'top',
+            delay: { show: 100, hide: 0 }
+        });
     }
 
     function exportWorksheet(worksheetId, worksheetName, worksheetTitle) {
@@ -131,7 +140,7 @@ $(function () {
         });
     }
 
-    sectionModal.onResult(function (_, response) {        
+    sectionModal.onResult(function (_, response) {
         PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
     });
 
@@ -142,7 +151,7 @@ $(function () {
             fieldId: fieldId,
             actionType: action
         });
-    }    
+    }
 
     customFieldModal.onResult(function (_, response) {
         PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
@@ -214,6 +223,3 @@ $(function () {
         }
     );
 });
-
-
-
