@@ -209,17 +209,17 @@ parameters:
   displayName: CPU Limit
   name: CPU_LIMIT
   required: true
-  value: 1000m
+  value: 400m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
   required: true
-  value: 256Mi
+  value: 128Mi
 - description: The maximum amount of Memory the Container is allowed to use when running.
   displayName: Memory Limit
   name: MEMORY_LIMIT
   required: true
-  value: 1Gi
+  value: 512Mi
 # Template objects to instantiate the project application.
 objects:
 # Secrets 
