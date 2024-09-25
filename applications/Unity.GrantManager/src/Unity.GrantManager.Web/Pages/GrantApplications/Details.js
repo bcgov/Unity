@@ -54,7 +54,7 @@ $(function () {
                     addEventListeners();
                 });
 
-                waitFor(_ => form.changing == false)
+                waitFor(_ => isFormChanging(form))
                     .then(_ => 
                         storeRenderedHtml()
                     );
@@ -62,6 +62,10 @@ $(function () {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    function isFormChanging(form) {
+        return form.changing === false;
     }
 
     async function storeRenderedHtml() {
