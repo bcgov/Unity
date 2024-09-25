@@ -13,6 +13,49 @@ $(function () {
 
         return false;
     });
+
+    function isTextOverflowing(element) {
+        return element.scrollWidth > element.clientWidth;
+    }
+
+    function createTooltipOnOverflow(inputElement, tooltipTarget) {
+        if (inputElement.tagName !== 'INPUT') {
+            console.warn('createTooltipOnOverflow: The provided inputElement is not an input element');
+            return;
+        }
+
+        const elementTitle = inputElement.value;
+        if (elementTitle && isTextOverflowing(inputElement)) {
+            bootstrap.Tooltip.getOrCreateInstance(tooltipTarget, {
+                title: elementTitle,
+                trigger: 'hover',
+                placement: 'right',
+                fallbackPlacements: ['right', 'bottom', 'left', 'top'],
+                delay: { show: 500, hide: 100 }
+            });
+        }
+    }
+
+    $('.overflow-tooltip, input.form-control[type="text"]:not(.exclude-tooltip)').each(function () {
+        const $input = $(this);
+
+        // Wrap element in tooltip wrapper to support input disabled/enabled transitions
+        $input.wrap('<span class="tooltip-wrapper"></span>');
+        const tooltipTarget = $input.parent()[0];
+
+        // Create tooltip from value on initial load
+        createTooltipOnOverflow(this, tooltipTarget);
+
+        $input.on("input paste", function () {
+            const tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTarget);
+            if (tooltipInstance) {
+                tooltipInstance.dispose();
+            }
+
+            // Update tooltip from value on input change
+            createTooltipOnOverflow(this, tooltipTarget);
+        });
+    });
 });
 
 window.addEventListener('DOMContentLoaded', (event) => {
