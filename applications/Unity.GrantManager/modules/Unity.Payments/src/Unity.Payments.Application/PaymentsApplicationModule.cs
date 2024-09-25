@@ -19,6 +19,7 @@ using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
+using Volo.Abp.Application.Dtos;
 
 namespace Unity.Payments;
 
@@ -118,5 +119,12 @@ public class PaymentsApplicationModule : AbpModule
             /* Add custom repositories here. */
             options.AddDefaultRepositories(includeAllEntities: true);
         });
+
+        // Set the max defaults as max - we are using non serverside paging and this effect this
+        ExtensibleLimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
+        ExtensibleLimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
+
+        LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
+        LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 }
