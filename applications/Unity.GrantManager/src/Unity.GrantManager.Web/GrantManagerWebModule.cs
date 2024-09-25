@@ -18,6 +18,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+using Unity.Flex.Web;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission;
@@ -26,6 +29,7 @@ using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.HealthChecks;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
+using Unity.GrantManager.Web.Components.MiniProfiler;
 using Unity.GrantManager.Web.Exceptions;
 using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
@@ -33,6 +37,9 @@ using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Services;
 using Unity.Identity.Web;
+using Unity.Notifications.Web;
+using Unity.Payments;
+using Unity.Payments.Web;
 using Unity.TenantManagement.Web;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Auditing;
@@ -49,23 +56,18 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.BlobStoring;
+using Volo.Abp.Identity;
+using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict.Tokens;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.Timing;
+using Volo.Abp.Ui.LayoutHooks;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
-using Unity.Notifications.Web;
-using Unity.Payments.Web;
-using Unity.Payments;
-using Unity.AspNetCore.Mvc.UI.Theme.UX2;
-using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
-using Unity.Flex.Web;
-using Volo.Abp.Identity;
-using Volo.Abp.Localization;
 
 namespace Unity.GrantManager.Web;
 
@@ -128,6 +130,7 @@ public class GrantManagerWebModule : AbpModule
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
         ConfigureUtils(context);
+        ConfigureMiniProfiler(context);
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
@@ -249,7 +252,7 @@ public class GrantManagerWebModule : AbpModule
 
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
-            options.MaxAge = TimeSpan.FromHours(8); 
+            options.MaxAge = TimeSpan.FromHours(8);
 
             options.ClaimActions.MapClaimTypes();
             options.TokenValidationParameters = new TokenValidationParameters
@@ -385,8 +388,6 @@ public class GrantManagerWebModule : AbpModule
         {
             Configure<AbpVirtualFileSystemOptions>(options =>
             {
-                // TODO: Not used but raises error in container: System.IO.DirectoryNotFoundException: /Unity.GrantManager.Domain.Shared/
-                // options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Domain.Shared"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Domain"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Application.Contracts"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Application"));
@@ -433,6 +434,21 @@ public class GrantManagerWebModule : AbpModule
         );
     }
 
+    private void ConfigureMiniProfiler(ServiceConfigurationContext context)
+    {
+        context.Services.Configure<AbpLayoutHookOptions>(options =>
+        {
+            options.Add(LayoutHooks.Body.Last, typeof(MiniProfilerViewComponent));
+        });
+
+        context.Services.AddMiniProfiler(options =>
+        {
+            options.RouteBasePath = "/profiler";
+            options.EnableMvcFilterProfiling = true;
+            options.EnableMvcViewProfiling = true;
+        }).AddEntityFramework();
+    }
+
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
@@ -470,6 +486,7 @@ public class GrantManagerWebModule : AbpModule
             });
         }
 
+        app.UseMiniProfiler();
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
