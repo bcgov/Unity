@@ -44,7 +44,7 @@ $(function () {
                     addEventListeners();
                     setTimeout(function () {
                         storeRenderedHtml();
-                    }, 1000);
+                    }, 2000);
                 });
             });
         } catch (error) {
