@@ -772,3 +772,7 @@ input.form-control.disabled:read-only, textarea.form-control.disabled:read-only,
         max-height: calc(100vh - 30vh);
     }
 }
+
+.overflow-tooltip {
+    text-overflow: ellipsis;
+}
