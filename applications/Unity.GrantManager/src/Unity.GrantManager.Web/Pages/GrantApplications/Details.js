@@ -42,7 +42,9 @@ $(function () {
                 form.refresh();
                 form.on('render', function () {
                     addEventListeners();
-                    storeRenderedHtml();
+                    setTimeout(function () {
+                        storeRenderedHtml();
+                    }, 1000);
                 });
             });
         } catch (error) {
