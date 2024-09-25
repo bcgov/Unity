@@ -29,7 +29,8 @@ $(function () {
             bootstrap.Tooltip.getOrCreateInstance(tooltipTarget, {
                 title: elementTitle,
                 trigger: 'hover',
-                placement: 'top',
+                placement: 'right',
+                fallbackPlacements: ['right', 'bottom', 'left', 'top'],
                 delay: { show: 500, hide: 100 }
             });
         }
