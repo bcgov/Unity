@@ -166,6 +166,17 @@
         color: #333;
     }
 
+.recom-reset-button {
+    font-size: 0.8rem;
+    color: var(--bc-colors-blue-text-links);
+    border: 2px solid var(--bc-colors-blue-text-links);
+    min-height: 1.4rem;
+}
+
+.recom-reset-button:hover {
+    border-color: var(--bs-btn-color);
+}
+
 .back-button-container {
     justify-content: left;
     align-items: start;
