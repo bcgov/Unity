@@ -26,7 +26,7 @@ $(function () {
 
         const elementTitle = inputElement.value;
         if (elementTitle && isTextOverflowing(inputElement)) {
-            new bootstrap.Tooltip(tooltipTarget, {
+            bootstrap.Tooltip.getOrCreateInstance(tooltipTarget, {
                 title: elementTitle,
                 trigger: 'hover',
                 placement: 'top',
@@ -35,7 +35,7 @@ $(function () {
         }
     }
 
-    $(".overflow-tooltip").each(function () {
+    $('.overflow-tooltip, input.form-control[type="text"]:not(.exclude-tooltip)').each(function () {
         const $input = $(this);
 
         // Wrap element in tooltip wrapper to support input disabled/enabled transitions
