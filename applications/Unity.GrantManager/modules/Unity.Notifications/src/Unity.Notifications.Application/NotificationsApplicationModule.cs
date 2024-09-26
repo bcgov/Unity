@@ -14,6 +14,7 @@ using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
 using Unity.Shared.MessageBrokers.RabbitMQ;
 using Unity.Notifications.Integrations.RabbitMQ;
+using Volo.Abp.Application.Dtos;
 
 namespace Unity.Notifications;
 
@@ -67,5 +68,12 @@ public class NotificationsApplicationModule : AbpModule
         {
             options.IsEnabled = true;
         });
+
+        // Set the max defaults as max - we are using non serverside paging and this effect this
+        ExtensibleLimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
+        ExtensibleLimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
+
+        LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
+        LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
     }
 }
