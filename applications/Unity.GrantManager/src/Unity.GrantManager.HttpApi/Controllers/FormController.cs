@@ -124,16 +124,17 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
-        private static string FormatHtml(string html)
-        {
-            // Replace all sequences of whitespace characters with a single space
-            string formattedInnerHTML = Regex.Replace(html, @"\s+", " ");
-            
-            // Remove new line and tabs
-            return formattedInnerHTML.Replace(Environment.NewLine, "").Replace("\t", " ");
-        }
+            [GeneratedRegex(@"\s+")]
+            private static partial Regex WhitespaceRegex();
 
-        [GeneratedRegex(@"\s+")]
-        private static partial Regex HtmlRegex();
+            public static string FormatHtml(string html)
+            {
+                // Use the generated regex to replace sequences of whitespace characters with a single space
+                string formattedInnerHTML = WhitespaceRegex().Replace(html, " ");
+                
+                // Remove new lines and tabs
+                return formattedInnerHTML.Replace(Environment.NewLine, "").Replace("\t", " ");
+            }
+
     }
 }
