@@ -27,6 +27,7 @@ using Unity.GrantManager.Intakes.BackgroundWorkers;
 using Unity.Payments.Integrations.Cas;
 using Unity.Flex;
 using Unity.Payments;
+using Volo.Abp.Caching;
 
 namespace Unity.GrantManager;
 
@@ -141,5 +142,10 @@ public class GrantManagerApplicationModule : AbpModule
         // Set the max defaults as max - we are using non serverside paging and this effect this
         PagedAndSortedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         PagedAndSortedResultRequestDto.MaxMaxResultCount = int.MaxValue;
+
+        Configure<AbpDistributedCacheOptions>(options =>
+        {
+            options.KeyPrefix = configuration["Redis:KeyPrefix"] ?? "unity";
+        });
     }
 }

@@ -69,6 +69,8 @@ using Volo.Abp.Localization;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
+using Volo.Abp.Caching;
+using Volo.Abp.Quartz;
 
 namespace Unity.GrantManager.Web;
 
@@ -112,6 +114,24 @@ public class GrantManagerWebModule : AbpModule
         {
             options.IsCleanupEnabled = false; // not used
         });
+
+        //PreConfigure<AbpQuartzOptions>(options =>
+        //{
+        //    options.Configurator = configure =>
+        //    {
+        //        configure.UsePersistentStore(storeOptions =>
+        //        {
+        //            storeOptions.UseProperties = true;
+        //            storeOptions.UseJsonSerializer();
+        //            storeOptions.UseSqlServer(configuration.GetConnectionString("Quartz"));
+        //            storeOptions.UseClustering(c =>
+        //            {
+        //                c.CheckinMisfireThreshold = TimeSpan.FromSeconds(20);
+        //                c.CheckinInterval = TimeSpan.FromSeconds(10);
+        //            });
+        //        });
+        //    };
+        //});
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -130,8 +150,8 @@ public class GrantManagerWebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
-        ConfigureUtils(context);
-        ConfigureMultiplexer();
+        ConfigureUtils(context);                
+        ConfigureDistributedCache(context, configuration);
         ConfigureDataProtection(context, configuration);
 
         Configure<AbpBackgroundJobOptions>(options =>
@@ -141,7 +161,8 @@ public class GrantManagerWebModule : AbpModule
 
         Configure<AbpBackgroundWorkerQuartzOptions>(options =>
         {
-            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
+            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");    
+            
         });
 
         Configure<AbpAntiForgeryOptions>(options =>
@@ -206,11 +227,23 @@ public class GrantManagerWebModule : AbpModule
            .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
     }
 
-    private void ConfigureMultiplexer()
+    private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
     {
+        context.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.InstanceName = configuration["Redis:InstanceName"];
+            options.Configuration = configuration["Redis:Configuration"];
+        });
+
         Configure<RedisCacheOptions>(options =>
         {
-            options.InstanceName = "Redis";
+            options.InstanceName = configuration["Redis:InstanceName"];
+            options.Configuration = configuration["Redis:Configuration"];
+        });
+
+        Configure<AbpDistributedCacheOptions>(options =>
+        {
+            options.KeyPrefix = configuration["Redis:KeyPrefix"] ?? "unity";
         });
     }
 
@@ -225,7 +258,7 @@ public class GrantManagerWebModule : AbpModule
             var redis = ConnectionMultiplexer
               .Connect(redisConfiguration);
 
-            dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "UnityGrantManagerWeb-Keys");
+            dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Unity-DataKeys");
         }
 
         context.Services.AddSession(options =>
