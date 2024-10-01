@@ -12,6 +12,8 @@ using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Validation;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -20,6 +22,7 @@ namespace Unity.GrantManager.Controllers
         private readonly IFileAppService _fileAppService;
         private readonly IConfiguration _configuration;
         private readonly ISubmissionAppService _submissionAppService;
+        private ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
         public AttachmentController(IFileAppService fileAppService, IConfiguration configuration, ISubmissionAppService submissionAppService)
         {
@@ -32,47 +35,146 @@ namespace Unity.GrantManager.Controllers
         [Route("/api/app/attachment/application/{applicationId}/download/{fileName}")]
         public async Task<IActionResult> DownloadApplicationAttachment(string applicationId, string fileName)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(applicationId))
+            {
+                return BadRequest("Application ID must be provided.");
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return BadRequest("File name must be provided.");
+            }
+
             var folder = _configuration["S3:ApplicationS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicationS3Folder");
+
             if (!folder.EndsWith('/'))
             {
                 folder += "/";
             }
+
             folder += applicationId;
             var key = folder + "/" + fileName;
-            var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName }); 
-            return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+
+            try
+            {
+                var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName });
+
+                if (fileDto == null || fileDto.Content == null)
+                {
+                    return NotFound("File not found.");
+                }
+
+                return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+            }
+            catch (Exception ex)
+            {
+                string ExceptionMessage = ex.Message;
+                logger.LogError(ex, "AttachmentController->DownloadApplicationAttachment: {ExceptionMessage}", ExceptionMessage);
+                return StatusCode(500, "An error occurred while downloading the file.");
+            }
         }
 
         [HttpGet]
         [Route("/api/app/attachment/assessment/{assessmentId}/download/{fileName}")]
         public async Task<IActionResult> DownloadAssessmentAttachment(string assessmentId, string fileName)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(assessmentId))
+            {
+                return BadRequest("Assessment ID must be provided.");
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return BadRequest("File name must be provided.");
+            }
+
             var folder = _configuration["S3:AssessmentS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:AssessmentS3Folder");
+
             if (!folder.EndsWith('/'))
             {
                 folder += "/";
             }
+
             folder += assessmentId;
             var key = folder + "/" + fileName;
-            var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName });
-            return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+
+            try
+            {
+                var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName });
+
+                if (fileDto == null || fileDto.Content == null)
+                {
+                    return NotFound("File not found.");
+                }
+
+                return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (consider using a logging framework)
+                return StatusCode(500, "An error occurred while downloading the file.");
+            }
         }
 
         [HttpGet]
         [Route("/api/app/attachment/chefs/{formSubmissionId}/download/{chefsFileId}/{fileName}")]
         public async Task<IActionResult> DownloadChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
         {
-            var fileDto = await _submissionAppService.GetChefsFileAttachment(formSubmissionId, chefsFileId, fileName);
-            return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return BadRequest("File name must be provided.");
+            }
+
+            try
+            {
+                var fileDto = await _submissionAppService.GetChefsFileAttachment(formSubmissionId, chefsFileId, fileName);
+
+                if (fileDto == null || fileDto.Content == null)
+                {
+                    return NotFound("File not found.");
+                }
+
+                return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (consider using a logging framework)
+                return StatusCode(500, "An error occurred while downloading the file.");
+            }
         }
 
         [HttpPost]
         [Route("/api/app/attachment/assessment/{assessmentId}/upload")]
 #pragma warning disable IDE0060 // Remove unused parameter
-        public async Task<IActionResult> UploadAssessmentAttachments(Guid assessmentId, IList<IFormFile> files, string userId, string userName)
+        public async Task<IActionResult> UploadAssessmentAttachments(Guid assessmentId, IList<IFormFile> files)
 #pragma warning restore IDE0060 // Remove unused parameter
         {
-            return await UploadFiles(files);            
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (files == null || files.Count == 0)
+            {
+                return BadRequest("At least one file must be provided.");
+            }
+
+            return await UploadFiles(files);
         }
 
         [HttpPost]
@@ -81,6 +183,16 @@ namespace Unity.GrantManager.Controllers
         public async Task<IActionResult> UploadApplicationAttachments(Guid applicationId, IList<IFormFile> files, string userId, string userName)
 #pragma warning restore IDE0060 // Remove unused parameter
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (files == null || files.Count == 0)
+            {
+                return BadRequest("At least one file must be provided.");
+            }
+
             return await UploadFiles(files);
         }
 
@@ -89,7 +201,7 @@ namespace Unity.GrantManager.Controllers
             List<ValidationResult> InvalidFileTypes = GetInvalidFileTypes(files);
             if (InvalidFileTypes.Count > 0)
             {
-                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors:InvalidFileTypes);
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: InvalidFileTypes);
             }
             List<string> ErrorList = new();
             foreach (IFormFile source in files)
@@ -125,20 +237,21 @@ namespace Unity.GrantManager.Controllers
             List<ValidationResult> ErrorList = new();
             var InvalidFileTypes = _configuration["S3:DisallowedFileTypes"] ?? "";
             var DisallowedFileTypes = JsonConvert.DeserializeObject<string[]>(InvalidFileTypes);
-            if(DisallowedFileTypes == null)
+            if (DisallowedFileTypes == null)
             {
                 return ErrorList;
             }
-            foreach (var source in files.Where(file => {
+            foreach (var source in files.Where(file =>
+            {
                 string FileType = System.IO.Path.GetExtension(file.FileName);
                 if (FileType.StartsWith('.'))
                 {
                     FileType = FileType[1..];
                 }
                 return DisallowedFileTypes.Contains(FileType.ToLower());
-                }))
+            }))
             {
-                ErrorList.Add(new ValidationResult("Invalid file type for " + source.FileName, new[] { "FileName"}));
+                ErrorList.Add(new ValidationResult("Invalid file type for " + source.FileName, new[] { "FileName" }));
             }
             return ErrorList;
         }

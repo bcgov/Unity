@@ -9,6 +9,8 @@ using Unity.GrantManager.Integration.Chefs;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Domain.Entities;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -18,6 +20,8 @@ namespace Unity.GrantManager.Controllers
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
         private readonly IFormsApiService _formsApiService;
+
+       protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
         public FormController(
             IApplicationFormRepository applicationFormRepository,
@@ -33,20 +37,50 @@ namespace Unity.GrantManager.Controllers
 
         [HttpPost]
         [Route("/api/app/form/{formId}/version/{formVersionId}")]
-        public async Task<ApplicationFormVersionDto> SynchronizeChefsAvailableFields(string formId, string formVersionId)
+        public async Task<IActionResult> SynchronizeChefsAvailableFields(string formId, string formVersionId)
         {
-            var applicationForm = (await _applicationFormRepository
+            // Check for model state validity (if you have a model to validate)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(formId) || string.IsNullOrWhiteSpace(formVersionId))
+            {
+                return BadRequest("Form ID and Version ID must be provided.");
+            }
+
+            try
+            {
+                var applicationForm = (await _applicationFormRepository
                     .GetQueryableAsync())
                     .Where(s => s.ChefsApplicationFormGuid == formId)
                     .FirstOrDefault() ?? throw new EntityNotFoundException("Application Form Not Registered");
 
-            if (string.IsNullOrEmpty(applicationForm.ApiKey))
-            {
-                throw new BusinessException("Application Form API Key is Required");
-            }
+                if (string.IsNullOrEmpty(applicationForm.ApiKey))
+                {
+                    throw new BusinessException("Application Form API Key is Required");
+                }
 
-            var chefsFormVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
-            return await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);
+                var chefsFormVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId);
+                var result = await _applicationFormVersionAppService.UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);
+                
+                return Ok(result);
+            }
+            catch (EntityNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (BusinessException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                string ExceptionMessage = ex.Message;
+                logger.LogError(ex, "FormController->SynchronizeChefsAvailableFields: {ExceptionMessage}", ExceptionMessage);
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
 
@@ -59,14 +93,44 @@ namespace Unity.GrantManager.Controllers
         [HttpPost]
         [Route("/api/app/submission")]
         [Consumes("application/json")]
-        public async Task StoreSubmissionHtml([FromBody] ApplicationSubmission applicationSubmission)
+        public async Task<IActionResult> StoreSubmissionHtml([FromBody] ApplicationSubmission applicationSubmission)
         {
-            ApplicationFormSubmission applicationFormSubmission = await _applicationFormSubmissionRepository.GetAsync(Guid.Parse(applicationSubmission.SubmissionId));
-            // Replace all double spaces
-            string formattedInnerHTML = HtmlRegex().Replace(applicationSubmission.InnerHTML, " ");
-            // Replace new line and tabs
-            applicationFormSubmission.RenderedHTML = formattedInnerHTML.Replace(Environment.NewLine, "").Replace("\t", " ");
-            await _applicationFormSubmissionRepository.UpdateAsync(applicationFormSubmission);
+            if (!ModelState.IsValid)
+            {
+                logger.LogWarning("Invalid model state for StoreSubmissionHtml");
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var applicationFormSubmission = await _applicationFormSubmissionRepository.GetAsync(Guid.Parse(applicationSubmission.SubmissionId));
+                
+                if (applicationFormSubmission == null)
+                {
+                    return NotFound("Submission not found.");
+                }
+
+                // Format HTML
+                applicationFormSubmission.RenderedHTML = FormatHtml(applicationSubmission.InnerHTML);
+                
+                await _applicationFormSubmissionRepository.UpdateAsync(applicationFormSubmission);
+                return Ok("Submission updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                string ExceptionMessage = ex.Message;
+                logger.LogError(ex, "FormController->StoreSubmissionHtml: {ExceptionMessage}", ExceptionMessage);
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
+        }
+
+        private static string FormatHtml(string html)
+        {
+            // Replace all sequences of whitespace characters with a single space
+            string formattedInnerHTML = Regex.Replace(html, @"\s+", " ");
+            
+            // Remove new line and tabs
+            return formattedInnerHTML.Replace(Environment.NewLine, "").Replace("\t", " ");
         }
 
         [GeneratedRegex(@"\s+")]
