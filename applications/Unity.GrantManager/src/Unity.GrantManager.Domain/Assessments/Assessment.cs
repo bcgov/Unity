@@ -62,7 +62,7 @@ public class Assessment : AuditedAggregateRoot<Guid>, IHasWorkflow<AssessmentSta
     public void ConfigureWorkflow(StateMachine<AssessmentState, AssessmentAction> stateMachine)
     {
         stateMachine.Configure(AssessmentState.IN_PROGRESS)
-            .PermitIf(AssessmentAction.SendToTeamLead, AssessmentState.IN_REVIEW, () => ApprovalRecommended is not null);
+            .PermitIf(AssessmentAction.SendToTeamLead, AssessmentState.IN_REVIEW);
 
         stateMachine.Configure(AssessmentState.IN_REVIEW)
             .Permit(AssessmentAction.SendBack, AssessmentState.IN_PROGRESS)
