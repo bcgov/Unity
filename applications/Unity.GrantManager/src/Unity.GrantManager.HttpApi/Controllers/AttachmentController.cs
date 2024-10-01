@@ -121,7 +121,8 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception (consider using a logging framework)
+                string ExceptionMessage = ex.Message;
+                logger.LogError(ex, "AttachmentController->DownloadAssessmentAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, "An error occurred while downloading the file.");
             }
         }
@@ -153,7 +154,8 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception (consider using a logging framework)
+                string ExceptionMessage = ex.Message;
+                logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, "An error occurred while downloading the file.");
             }
         }
