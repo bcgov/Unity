@@ -1,16 +1,14 @@
-version: '3.8'
-
 name: unity_local
 
 # Add docker runtime environment variables from the .env file these are not included in the docker builds. 
 services:
   unity-grantmanager-web:
     env_file:
-      - .env
+     - .env
 
   unity-data-dbmigrator:
     env_file:
-      - .env
+     - .env
 
   unity-data-postgres:
     env_file:

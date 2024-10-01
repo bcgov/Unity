@@ -66,6 +66,9 @@ using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 using Unity.Flex.Web;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+using StackExchange.Redis;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Unity.GrantManager.Web;
 
@@ -128,6 +131,8 @@ public class GrantManagerWebModule : AbpModule
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
         ConfigureUtils(context);
+        ConfigureMultiplexer();
+        ConfigureDataProtection(context, configuration);
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
@@ -201,6 +206,35 @@ public class GrantManagerWebModule : AbpModule
            .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
     }
 
+    private void ConfigureMultiplexer()
+    {
+        Configure<RedisCacheOptions>(options =>
+        {
+            options.InstanceName = "Redis";
+        });
+    }
+
+    private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        var redisConfiguration = configuration["Redis:InstanceName"];
+
+        if (redisConfiguration != null)
+        {
+            IDataProtectionBuilder dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("UnityGrantManagerWeb");
+
+            var redis = ConnectionMultiplexer
+              .Connect(redisConfiguration);
+
+            dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "UnityGrantManagerWeb-Keys");
+        }
+
+        context.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromHours(8);
+            options.Cookie.Name = "UnityGrantManagerWebSession";
+        });
+    }
+
     private static void ConfigureUtils(ServiceConfigurationContext context)
     {
         context.Services.AddScoped<BrowserUtils>();
@@ -249,7 +283,7 @@ public class GrantManagerWebModule : AbpModule
 
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
-            options.MaxAge = TimeSpan.FromHours(8); 
+            options.MaxAge = TimeSpan.FromHours(8);
 
             options.ClaimActions.MapClaimTypes();
             options.TokenValidationParameters = new TokenValidationParameters
@@ -295,13 +329,15 @@ public class GrantManagerWebModule : AbpModule
                 context.HandleResponse(); // Suppress the default processing
                 return Task.CompletedTask;
             };
-            if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
+            if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"])
+                || Convert.ToBoolean(configuration["AuthServer:SpecifyOdicParameters"]))
             {
                 // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested
                 options.Events.OnRedirectToIdentityProvider = context =>
                 {
                     var host = context.Request.Host;
-                    context.ProtocolMessage.SetParameter("redirect_uri", $"https://{host}/signin-oidc");
+                    var explicitIn = configuration["AuthServer:OidcSignin"] ?? $"https://{host}/signin-oidc";
+                    context.ProtocolMessage.SetParameter("redirect_uri", explicitIn);
 
                     if (!string.IsNullOrEmpty(configuration["AuthServer:IdpHint"]))
                     {
@@ -314,7 +350,8 @@ public class GrantManagerWebModule : AbpModule
                 options.Events.OnRedirectToIdentityProviderForSignOut = ctx =>
                 {
                     var host = ctx.Request.Host;
-                    ctx.ProtocolMessage.SetParameter("post_logout_redirect_uri", $"https://{host}/signout-callback-oidc");
+                    var explicitCallback = configuration["AuthServer:OidcSignoutCallback"] ?? $"https://{host}/signout-callback-oidc";
+                    ctx.ProtocolMessage.SetParameter("post_logout_redirect_uri", explicitCallback);
 
                     return Task.CompletedTask;
                 };
@@ -501,5 +538,7 @@ public class GrantManagerWebModule : AbpModule
             options.SupportedCultures = supportedCultures;
             options.SupportedUICultures = supportedCultures;
         });
+
+        app.UseSession();
     }
 }
