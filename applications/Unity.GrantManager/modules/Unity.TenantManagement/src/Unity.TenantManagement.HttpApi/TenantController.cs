@@ -24,6 +24,10 @@ public class TenantController : AbpControllerBase, ITenantAppService
     [Route("{id}")]
     public virtual Task<TenantDto> GetAsync(Guid id)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->GetAsync: ModelState Invalid");
+        }
         return TenantAppService.GetAsync(id);
     }
 
