@@ -9,7 +9,6 @@ using Unity.GrantManager.Identity;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
-using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.Repositories;
 
