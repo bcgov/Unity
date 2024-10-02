@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 
