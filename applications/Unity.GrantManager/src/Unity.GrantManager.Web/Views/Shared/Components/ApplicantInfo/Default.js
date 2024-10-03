@@ -110,7 +110,7 @@
     PubSub.subscribe(
         'fields_applicantinfo',
         () => {
-            enableSaveBtn();
+            enableApplicantInfoSaveBtn();
         }
     );
 
@@ -118,7 +118,7 @@
 });
 
 
-function enableSaveBtn(inputText) {
+function enableApplicantInfoSaveBtn(inputText) {
     if (!$("#ApplicantInfoForm").valid() || formHasInvalidCurrencyCustomFields("ApplicantInfoForm")) {
         $('#saveApplicantInfoBtn').prop('disabled', true);
         return;

@@ -125,7 +125,7 @@
     PubSub.subscribe(
         'fields_assessmentinfo',
         () => {
-            enableResultSaveBtn();
+            enableAssessmentResultsSaveBtn();
         }
     );
 
@@ -138,17 +138,17 @@ let notificationDateHasChanged = false;
 
 function validateDueDate() {
     dueDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function validateNotificationDate() {
     notificationDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function validateDecisionDate() {
     decisionDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function hasInvalidExplicitValidations() {
@@ -208,7 +208,7 @@ function hasInvalidCustomFields() {
     return invalidFieldsFound;
 }
 
-function enableResultSaveBtn() {
+function enableAssessmentResultsSaveBtn() {
     if (hasInvalidCustomFields()) {
         $('#saveAssessmentResultBtn').prop('disabled', true);
         return;
