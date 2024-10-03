@@ -69,13 +69,13 @@ namespace Unity.GrantManager.Controllers
             using (var ms = new MemoryStream())
             {
                 using TextWriter tw = new StreamWriter(ms);
-                tw.Write(JsonSerializer.Serialize(await _applicationFormConfigurationAppService.GetConfiguration(),
+                await tw.WriteAsync(JsonSerializer.Serialize(await _applicationFormConfigurationAppService.GetConfiguration(),
                     options: new JsonSerializerOptions()
                     {
                         WriteIndented = true,
                         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     }));
-                tw.Flush();
+                await tw.FlushAsync();
                 ms.Position = 0;
                 bytes = ms.ToArray();
                 ms.Close();

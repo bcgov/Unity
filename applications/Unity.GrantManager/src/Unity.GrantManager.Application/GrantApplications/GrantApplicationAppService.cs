@@ -641,8 +641,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             IQueryable<ApplicationFormSubmission> queryableFormSubmissions = await _applicationFormSubmissionRepository.GetQueryableAsync();
             if (queryableFormSubmissions != null)
             {
-                var dbResult = queryableFormSubmissions
-                    .FirstOrDefault(a => a.ApplicationId.Equals(applicationId));
+                var dbResult = await queryableFormSubmissions
+                    .FirstOrDefaultAsync(a => a.ApplicationId.Equals(applicationId));
 
                 if (dbResult != null)
                 {

@@ -60,7 +60,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetEconomicRegionDto { EconomicRegion = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.EconomicRegion);
 
-            return result.ToList();
+            return await result.ToListAsync();
         });
 
         return economicRegionDto;
@@ -84,7 +84,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetApplicationStatusDto { ApplicationStatus = group.Key, Count = group.Sum(obj => obj.Count) })
                 .OrderBy(o => o.ApplicationStatus);
 
-            return result.ToList();
+            return await result.ToListAsync();
         });
 
         return applicationStatusDto;
@@ -100,7 +100,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                         join tag in await _applicationTagsRepository.GetQueryableAsync() on baseQuery.Application.Id equals tag.ApplicationId
                         select tag;
 
-            var applicationTags = query.Distinct().ToList();
+            var applicationTags = await query.Distinct().ToListAsync();
             List<string> concatenatedTags = applicationTags.Select(tags => tags.Text).ToList();
             List<string> tags = [];
             concatenatedTags.ForEach(txt => tags.AddRange([.. txt.Split(',')]));
@@ -132,7 +132,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 .Select(group => new GetSubsectorRequestedAmtDto { Subsector = group.Key, TotalRequestedAmount = group.Sum(obj => obj.TotalRequestedAmount) })
                 .OrderBy(o => o.Subsector);
 
-            var queryResult = result.ToList();
+            var queryResult = await result.ToListAsync();
             queryResult.RemoveAll(item => item.TotalRequestedAmount == 0);
 
             return queryResult;
@@ -163,7 +163,7 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
                 })
                 .OrderBy(o => o.ApplicationAssignee);
 
-            var queryResult = result.ToList();
+            var queryResult = await result.ToListAsync();
 
             return queryResult;
         });
@@ -183,8 +183,8 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var applicationTags = await GetFilteredApplicationTags(applicationQuery, parameters);
             var filteredApplications = applicationQuery.Where(app => applicationTags.Contains(app.Id));
 
-            var requestedAmount = filteredApplications.Sum(app => app.RequestedAmount);
-            var approvedAmount = filteredApplications.Sum(app => app.ApprovedAmount);
+            var requestedAmount = await filteredApplications.SumAsync(app => app.RequestedAmount);
+            var approvedAmount = await filteredApplications.SumAsync(app => app.ApprovedAmount);
 
             var queryResult = new List<GetRequestedApprovedAmtDto>
             {
