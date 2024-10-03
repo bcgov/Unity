@@ -350,7 +350,7 @@
     PubSub.subscribe(
         'fields_paymentinfo',
         () => {
-            enableSaveBtn();
+            enablePaymentInfoSaveBtn();
         }
     );
 });
@@ -365,7 +365,7 @@ function openCasResponseModal(casResponse) {
     });
 }
 
-function enableSaveBtn() {
+function enablePaymentInfoSaveBtn() {
     if (!$("#paymentInfoForm").valid() || formHasInvalidCurrencyCustomFields("paymentInfoForm")) {
         $('#savePaymentInfoBtn').prop('disabled', true);
         return;
