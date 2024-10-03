@@ -19,7 +19,7 @@
         let formData = $("#paymentInfoForm").serializeArray();
         let paymentInfoObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();
-        let worksheetId = $("#WorksheetId").val();
+        let worksheetId = $("#PaymentInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
