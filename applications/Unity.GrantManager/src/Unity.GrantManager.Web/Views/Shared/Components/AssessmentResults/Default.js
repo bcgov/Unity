@@ -4,7 +4,7 @@
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();     
-        let worksheetId = $("#WorksheetId").val();       
+        let worksheetId = $("#AssessmentInfo_WorksheetId").val();       
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
