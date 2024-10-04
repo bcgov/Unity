@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Utils;
@@ -115,7 +116,7 @@ namespace Unity.Flex.Worksheets
         public virtual async Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex)
         {
             if (oldIndex == newIndex) return;
-            var worksheet = await worksheetRepository.GetAsync(id);            
+            var worksheet = await worksheetRepository.GetAsync(id);
 
             var sections = worksheet.Sections.OrderBy(s => s.Order).ToList();
             var movedSection = sections[(int)oldIndex];
@@ -153,7 +154,7 @@ namespace Unity.Flex.Worksheets
             var json = JsonConvert.SerializeObject(worksheet, settings);
             var byteArray = System.Text.Encoding.UTF8.GetBytes(json);
 
-            return new ExportWorksheetDto { Content = byteArray, ContentType = "application/json", Name = "worksheet_"+worksheet.Title+"_"+worksheet.Name + ".json"};
+            return new ExportWorksheetDto { Content = byteArray, ContentType = "application/json", Name = "worksheet_" + worksheet.Title + "_" + worksheet.Name + ".json" };
         }
 
         public async Task ImportWorksheetAsync(WorksheetImportDto worksheetImportDto)
@@ -173,22 +174,38 @@ namespace Unity.Flex.Worksheets
             string? name;
 
             var worksheets = await worksheetRepository.GetByNameStartsWithAsync(SheetParserFunctions.RemoveTrailingNumbers(worksheet.Name));
-            var maxVersion = worksheets.Max(s => s.Version);
-            var newVersion = maxVersion + 1;
-            name = worksheet.Name.Replace($"-v{worksheet.Version}", $"-v{newVersion}");
-            worksheet.SetVersion(newVersion);
-            _ = worksheet.SetName(name);
+            uint maxVersion = 0;
+            uint newVersion = 0;
 
-            foreach(var section in worksheet.Sections)
+            if (worksheets.Count > 0)
             {
-                foreach(var field in section.Fields)
+                maxVersion = worksheets.Max(s => s.Version);
+                newVersion = maxVersion + 1;
+            }
+            else
+            {
+                newVersion = worksheet.Version;
+            }
+            name = worksheet.Name.Replace($"-v{worksheet.Version}", $"-v{newVersion}");
+
+            var newWorksheet = new Worksheet(Guid.NewGuid(), name, worksheet.Title);
+            newWorksheet.SetVersion(newVersion);
+            newWorksheet.SetPublished(true);
+
+            foreach (var section in worksheet.Sections)
+            {
+                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
+                clonedSection.SetOrder(section.Order);
+
+                foreach (var field in section.Fields.OrderBy(s => s.Order))
                 {
-                    _ = field.UpdateFieldName(worksheet.Name);
+                    var clonedField = new CustomField(Guid.NewGuid(), field.Key, newWorksheet.Name, field.Label, field.Type, field.Definition);
+                    clonedSection.CloneField(clonedField);
                 }
+                newWorksheet.CloneSection(clonedSection);
             }
 
-            worksheet.SetPublished(false);
-            await worksheetRepository.InsertAsync(worksheet);
+            await worksheetRepository.InsertAsync(newWorksheet);
         }
     }
 }
