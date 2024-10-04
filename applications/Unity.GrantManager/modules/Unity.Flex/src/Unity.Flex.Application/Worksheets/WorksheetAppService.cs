@@ -190,7 +190,7 @@ namespace Unity.Flex.Worksheets
 
             var newWorksheet = new Worksheet(Guid.NewGuid(), name, worksheet.Title);
             newWorksheet.SetVersion(newVersion);
-            newWorksheet.SetPublished(true);
+            newWorksheet.SetPublished(false);
 
             foreach (var section in worksheet.Sections)
             {
