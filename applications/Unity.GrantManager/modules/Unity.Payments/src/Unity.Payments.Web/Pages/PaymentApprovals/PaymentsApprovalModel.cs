@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Unity.Payments.Enums;
 
 namespace Unity.Payments.Web.Pages.PaymentApprovals

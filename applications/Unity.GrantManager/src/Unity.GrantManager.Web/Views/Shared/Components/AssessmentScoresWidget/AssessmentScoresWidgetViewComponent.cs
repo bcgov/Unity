@@ -11,7 +11,6 @@ using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets;
 using System.Linq;
 using Unity.Flex.Worksheets;
-using Unity.Flex.Web.Views.Shared.Components;
 using Unity.Flex.Worksheets.Values;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
