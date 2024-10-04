@@ -64,5 +64,11 @@ namespace Unity.Flex.Domain.Scoresheets
 
             return this;
         }
+
+        internal ScoresheetSection CloneQuestion(Question clonedQuestion)
+        {
+            Fields.Add(clonedQuestion);
+            return this;
+        }
     }
 }
