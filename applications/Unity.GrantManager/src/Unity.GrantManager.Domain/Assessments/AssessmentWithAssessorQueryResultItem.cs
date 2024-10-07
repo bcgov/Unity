@@ -1,5 +1,4 @@
 ﻿using System;
-using Unity.GrantManager.Identity;
 
 namespace Unity.GrantManager.Assessments;
 public class AssessmentWithAssessorQueryResultItem

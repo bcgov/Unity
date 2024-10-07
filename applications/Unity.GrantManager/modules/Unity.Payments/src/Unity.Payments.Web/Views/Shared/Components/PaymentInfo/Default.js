@@ -1,5 +1,10 @@
 ﻿$(function () {
     const l = abp.localization.getResource('Payments');
+    $('.unity-currency-input').maskMoney({});
+    $('.unity-currency-input').each(function () {
+        $(this).maskMoney('mask', this.value);
+    });
+    const formatter = createNumberFormatter();
     let dt = $('#ApplicationPaymentRequestListTable');
     let dataTable;
     const listColumns = getColumns();
@@ -9,14 +14,72 @@
         'status'
     ];
 
-    let actionButtons = [
-        {
-            text: 'Edit & Resubmit',
-            className: 'custom-table-btn flex-none btn btn-secondary',
-            action: function (e, dt, node, config) {
-                alert('Edit & Resubmit');
+    $('body').on('click', '#savePaymentInfoBtn', function () {
+        let applicationId = document.getElementById('PaymentInfoViewApplicationId').value; 
+        let formData = $("#paymentInfoForm").serializeArray();
+        let paymentInfoObj = {};
+        let formVersionId = $("#ApplicationFormVersionId").val();
+        let worksheetId = $("#PaymentInfo_WorksheetId").val();
+
+        $.each(formData, function (_, input) {
+            if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
+                Flex.includeCustomFieldObj(paymentInfoObj, input);
             }
-        },
+            else {
+                buildFormData(paymentInfoObj, input)
+            }
+        });
+
+        // Update checkboxes which are serialized if unchecked
+        $(`#paymentInfoForm input:checkbox`).each(function () {
+            paymentInfoForm[this.name] = (this.checked).toString();
+        });
+
+        paymentInfoObj['correlationId'] = formVersionId;
+        paymentInfoObj['worksheetId'] = worksheetId;
+        updatePaymentInfo(applicationId, paymentInfoObj);
+    });
+
+    function buildFormData(paymentInfoObj, input) {
+
+        let inputElement = $('[name="' + input.name + '"]');
+        // This will not work if the culture is different and uses a different decimal separator
+        if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
+            paymentInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+        }
+        else {
+            paymentInfoObj[input.name.split(".")[1]] = input.value;
+        }
+        if (isNumberField(input)) {
+            if (paymentInfoObj[input.name.split(".")[1]] == '') {
+                paymentInfoObj[input.name.split(".")[1]] = 0;
+            } else if (paymentInfoObj[input.name.split(".")[1]] > getMaxNumberField(input)) {
+                paymentInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
+            }
+        }
+        else if (paymentInfoObj[input.name.split(".")[1]] == '') {
+            paymentInfoObj[input.name.split(".")[1]] = null;
+        }
+    }
+
+    function updatePaymentInfo(applicationId, paymentInfoObj) {
+        try {
+            unity.payments.paymentInfo.paymentInfo
+                .update(applicationId, paymentInfoObj)
+                .done(function () {
+                    abp.notify.success(
+                        'The payment info has been updated.'
+                    );
+                    $('#savePaymentInfoBtn').prop('disabled', true);                    
+                });
+        }
+        catch (error) {
+            console.log(error);
+            $('#savePaymentInfoBtn').prop('disabled', false);
+        }
+    }
+
+    let actionButtons = [
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
@@ -145,11 +208,13 @@
             title: l('PaymentInfoView:ApplicationPaymentListTable.Amount'),
             name: 'amount',
             data: 'amount',
-            className: 'data-table-header',
+            className: 'data-table-header currency-display',
             index: 2,
+            render: function (data) {
+                return formatter.format(data);
+            },
         };
     }
-
 
     function getApplicationPaymentStatusColumn() {
         return {
@@ -222,13 +287,12 @@
             index: 8,
             render: function (data) {
                 if(data+"" !== "undefined" && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                    return '<button id="cas-response-btn" class="btn btn-light info-btn cas-response-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return  '{Not Available}';
             }
         };
     }
-
 
     function formatDate(data) {
         return data != null ? luxon.DateTime.fromISO(data, {
@@ -282,6 +346,13 @@
             dataTable.rows({ 'page': 'current' }).deselect();
         }
     });
+
+    PubSub.subscribe(
+        'fields_paymentinfo',
+        () => {
+            enablePaymentInfoSaveBtn();
+        }
+    );
 });
 
 let casPaymentResponseModal = new abp.ModalManager({
@@ -292,4 +363,12 @@ function openCasResponseModal(casResponse) {
     casPaymentResponseModal.open({
         casResponse: casResponse
     });
+}
+
+function enablePaymentInfoSaveBtn() {
+    if (!$("#paymentInfoForm").valid() || formHasInvalidCurrencyCustomFields("paymentInfoForm")) {
+        $('#savePaymentInfoBtn').prop('disabled', true);
+        return;
+    }
+    $('#savePaymentInfoBtn').prop('disabled', false);
 }

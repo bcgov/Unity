@@ -14,6 +14,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual string Title { get; set; } = string.Empty;
         public virtual string Name { get; private set; } = string.Empty;
         public virtual uint Version { get; set; } = 1;
+        public virtual uint Order { get; set; } = 0;
         public virtual bool Published {  get; set; } = false;
         public Guid? TenantId { get; set; }
                
@@ -91,6 +92,12 @@ namespace Unity.Flex.Domain.Scoresheets
         public Scoresheet UpdateSection(ScoresheetSection section, string name)
         {
             section.SetName(name);
+            return this;
+        }
+
+        internal Scoresheet CloneSection(ScoresheetSection clonedSection)
+        {
+            Sections.Add(clonedSection);
             return this;
         }
     }

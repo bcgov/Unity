@@ -98,7 +98,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 {
                     CreateUpdateApplicationFormVersionDto appFormVersion = new CreateUpdateApplicationFormVersionDto();
                     appFormVersion.ApplicationFormId = ApplicationFormDto.Id;
-                    appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;                    
+                    appFormVersion.ChefsApplicationFormGuid = ApplicationFormDto.ChefsApplicationFormGuid;
                     ApplicationFormVersionDto = await _applicationFormVersionAppService.CreateAsync(appFormVersion);
                 }
                 else if (ApplicationFormVersionDto == null)
@@ -138,7 +138,11 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
                 foreach (var scoresheet in scoresheets)
                 {
-                    ScoresheetOptionsList.Add(new SelectListItem { Text = scoresheet.Title + " V" + scoresheet.Version + ".0", Value = scoresheet.Id.ToString() });
+                    ScoresheetOptionsList.Add(new SelectListItem 
+                    { 
+                        Text = $"{scoresheet.Title} ({scoresheet.Name})", 
+                        Value = scoresheet.Id.ToString() 
+                    });
                 }
 
                 ScoresheetOptionsList = [.. ScoresheetOptionsList.OrderBy(item => item.Text)];
@@ -188,6 +192,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 CustomFieldType.CheckboxGroup => "CheckboxGroup",
                 CustomFieldType.SelectList => "SelectList",
                 CustomFieldType.BCAddress => "BCAddress",
+                CustomFieldType.TextArea => "TextArea",
                 _ => "",
             };
         }

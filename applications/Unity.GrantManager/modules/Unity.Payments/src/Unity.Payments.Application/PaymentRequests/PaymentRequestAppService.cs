@@ -33,49 +33,63 @@ namespace Unity.Payments.PaymentRequests
 
         public PaymentRequestAppService(IPaymentConfigurationRepository paymentConfigurationRepository,
             IPaymentRequestRepository paymentRequestsRepository,
-            ICurrentUser currentUser, 
+            ICurrentUser currentUser,
             IPaymentsManager paymentsManager,
-            IPermissionChecker permissionChecker,IDataFilter dataFilter)
+            IPermissionChecker permissionChecker, IDataFilter dataFilter)
         {
             _paymentConfigurationRepository = paymentConfigurationRepository;
             _paymentRequestsRepository = paymentRequestsRepository;
             _currentUser = currentUser;
             _paymentsManager = paymentsManager;
             _permissionChecker = permissionChecker;
-           _dataFilter = dataFilter;
+            _dataFilter = dataFilter;
         }
 
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
         {
             List<PaymentRequestDto> createdPayments = [];
+            var paymentConfig = await GetPaymentConfigurationAsync();
+            var paymentThreshold = PaymentSharedConsts.DefaultThresholdAmount;
+            var paymentIdPrefix = string.Empty;
 
-            var paymentThreshold = await GetPaymentThresholdAsync();
+            if (paymentConfig != null)
+            {
+                if (paymentConfig.PaymentThreshold != null)
+                {
+                    paymentThreshold = (decimal)paymentConfig.PaymentThreshold;
+                }
+                if (!paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
+                {
+                    paymentIdPrefix = paymentConfig.PaymentIdPrefix;
+                }
+            }
+
             var currentYear = DateTime.UtcNow.Year;
             var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
 
             foreach (var item in paymentRequests.Select((value, i) => new { i, value }))
             {
-                // Confirmation ID + 4 digit sequence NEED SEQUENCE IF MULTIPLE
+                // referenceNumber + Chefs Confirmation ID + 4 digit sequence based on invoice number count
                 var dto = item.value;
-                string format = "0000";
-                // Needs to be optimized
                 int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
+                var sequenceForInvoice = applicationPaymentRequestCount.ToString("D4");
+                var referenceNumber = GeneratePaymentNumberAsync(sequenceNumber, item.i, paymentIdPrefix);
 
                 try
                 {
                     var payment = new PaymentRequest(Guid.NewGuid(),
-                   dto.InvoiceNumber + $"-{applicationPaymentRequestCount.ToString(format)}",
-                   dto.Amount,
-                   dto.PayeeName,
-                   dto.ContractNumber,
-                   dto.SupplierNumber,
-                   dto.SiteId,
-                   dto.CorrelationId,
-                   dto.CorrelationProvider,
-                   GeneratePaymentNumberAsync(sequenceNumber,item.i),
-                    dto.Description,
-                   paymentThreshold
-                  );
+                         $"{referenceNumber}-{dto.InvoiceNumber}-{sequenceForInvoice}",
+                         dto.Amount,
+                         dto.PayeeName,
+                         dto.ContractNumber,
+                         dto.SupplierNumber,
+                         dto.SiteId,
+                         dto.CorrelationId,
+                         dto.CorrelationProvider,
+                         referenceNumber,
+                         dto.Description,
+                         paymentThreshold
+                     );
 
                     var result = await _paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
@@ -92,10 +106,10 @@ namespace Unity.Payments.PaymentRequests
                         Description = result.Description,
                         CreationTime = result.CreationTime,
                         Status = result.Status,
-                        ReferenceNumber  = result.ReferenceNumber,
+                        ReferenceNumber = result.ReferenceNumber,
                     });
 
-                   
+
                 }
                 catch (Exception ex)
                 {
@@ -170,9 +184,10 @@ namespace Unity.Payments.PaymentRequests
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
-            using (_dataFilter.Disable<ISoftDelete>()) { 
-            var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
-            return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
+            using (_dataFilter.Disable<ISoftDelete>())
+            {
+                var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
+                return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
             }
         }
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
@@ -202,6 +217,19 @@ namespace Unity.Payments.PaymentRequests
             return $"{_currentUser.Name} {_currentUser.SurName}";
         }
 
+        protected virtual async Task<PaymentConfiguration?> GetPaymentConfigurationAsync()
+        {
+            var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
+
+            if (paymentConfigs.Count > 0)
+            {
+                var paymentConfig = paymentConfigs[0];
+                return paymentConfig;
+            }
+
+            return null;
+        }
+
         protected virtual async Task<decimal> GetPaymentThresholdAsync()
         {
             var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
@@ -214,16 +242,16 @@ namespace Unity.Payments.PaymentRequests
 
             return PaymentSharedConsts.DefaultThresholdAmount;
         }
-        public static string GeneratePaymentNumberAsync(int sequenceNumber, int index)
+
+        public static string GeneratePaymentNumberAsync(int sequenceNumber, int index, string paymentIdPrefix)
         {
-            var prefix = "UP-";
             var currentYear = DateTime.UtcNow.Year;
             var yearPart = currentYear.ToString();
 
             sequenceNumber = sequenceNumber + index;
             var sequencePart = sequenceNumber.ToString("D6");
 
-            return $"{prefix}{yearPart}-{sequencePart}";
+            return $"{paymentIdPrefix}-{yearPart}-{sequencePart}";
         }
 
         private async Task<int> GetNextSequenceNumberAsync(int currentYear)
@@ -232,7 +260,7 @@ namespace Unity.Payments.PaymentRequests
             var payments = await _paymentRequestsRepository.GetListAsync();
             var latestPayment = payments
                 .Where(p => p.CreationTime.Year == currentYear)
-                .OrderByDescending(p => p.ReferenceNumber)
+                .OrderByDescending(p => p.CreationTime)
                 .FirstOrDefault();
 
             if (latestPayment != null)

@@ -11,10 +11,14 @@ using Volo.Abp.Uow;
 using Volo.Abp.Quartz;
 using System;
 using Microsoft.Extensions.Logging.Abstractions;
+using Volo.Abp.Identity;
+using Volo.Abp.Localization;
 
 namespace Unity.GrantManager;
 
 [DependsOn(
+    typeof(AbpLocalizationModule),
+    typeof(AbpIdentityDomainModule),
     typeof(AbpAutofacModule),
     typeof(AbpTestBaseModule),
     typeof(AbpAuthorizationModule),

@@ -393,3 +393,7 @@
 .fl-globe:before {
     content: '\E774';
 }
+
+.fl-text-area:before {
+    content: '\E7BC';
+}

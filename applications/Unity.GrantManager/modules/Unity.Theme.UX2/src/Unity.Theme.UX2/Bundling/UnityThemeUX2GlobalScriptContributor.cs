@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.Design.Serialization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 
 namespace Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;

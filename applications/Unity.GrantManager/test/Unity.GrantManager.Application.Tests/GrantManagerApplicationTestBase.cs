@@ -7,9 +7,6 @@ using Xunit;
 using Xunit.Abstractions;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
-[assembly: TestCollectionOrderer(
-    ordererTypeName: "XUnit.Project.Orderers.DisplayNameOrderer",
-    ordererAssemblyName: "XUnit.Project")]
 
 namespace Unity.GrantManager;
 

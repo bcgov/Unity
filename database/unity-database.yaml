@@ -8,25 +8,24 @@ message: |-
     Database Name: ${POSTGRESQL_DATABASE}
    Connection URL: unity-database://${DATABASE_SERVICE_NAME}:${DATABASE_PORT}/
 
-  For more information about using this template, including OpenShift considerations, see template 
-  usage guide found in the project readme.md and wiki documents.
+  For more information about using this template, including OpenShift considerations, see the project readme.md and wiki documents.
 metadata:
   name: unity-database
   # This template uses a separate parameter .env file to override the default values defined in this section. 
-  # oc process -f .\database\unity-database.yaml --param-file=.env | oc create -f -
+  # Use command: oc process -f .\database\unity-database.yaml --param-file=.env | oc create -f -
   labels:
     template: unity-database
   annotations:
     description: |-
-      PostgreSQL database service, with persistent storage.
+      PostgreSQL database service with persistent storage.
       NOTE: Scaling to more than one replica is not supported. 
     iconClass: icon-postgresql
     openshift.io/display-name: PostgreSQL
     openshift.io/documentation-url: https://docs.okd.io/latest/using_images/db_images/postgresql.html
     openshift.io/long-description: This template provides a standalone PostgreSQL
-      server with an initial database created.  The database is stored on persistent storage.
-      The database name, username, and password are chosen via parameters when provisioning.
-    tags: database,postgresql
+      server with an initial database created. The database is stored on persistent storage.
+      The database name, username, and password are selected through parameters during provisioning.
+    tags: database, postgresql
 parameters:
 # Project namespace parameters
 - description: The name of the application grouping.
@@ -35,11 +34,11 @@ parameters:
   required: true
   value: unity-grantmanager
 - description: The name of the backup application.
-  displayName: Application Name
+  displayName: Backup Application Name
   name: BACKUP_APPLICATION_NAME
   required: true
   value: unity-backup
-# Additional parameters for project database provisioning
+# Additional parameters for database provisioning
 - description: The name of the OpenShift Service exposed for the database.
   displayName: Database Service Name
   name: DATABASE_SERVICE_NAME
@@ -70,7 +69,7 @@ parameters:
   displayName: PostgreSQL Tenant Database Name
   name: UNITY_TENANT_DB
   value: UnityGrantTenant
-- description: Volume space available for data, e.g. 512Mi, 2Gi.
+- description: Volume space for data directory.
   displayName: Volume Capacity
   name: VOLUME_CAPACITY
   required: true
@@ -80,48 +79,48 @@ parameters:
   name: STORAGE_OBJECT_NAME
   required: true
   value: s3-object-storage
-- description: The Namespace where the database container image resides default=redhat cluster=openshift, project=tools
+- description: The Namespace where the database container image resides.
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
   required: true
   value: redhat
-- description: The Openshift ImageStream Name
-  displayName: Registry imagestream name
+- description: The OpenShift ImageStream Name.
+  displayName: Registry ImageStream Name
   name: IMAGESTREAM_NAME
   required: true
-  value: postgresql-15  
-- description: The version of the postgresql container image to use.
-  displayName: Registry container image  to pull
+  value: postgresql-15
+- description: The version of the PostgreSQL container image to use.
+  displayName: Registry ImageStream Tag
   name: IMAGESTREAM_TAG
   required: true
   value: latest
-- description: The registry path of the postgresql container image to use.
-  displayName: Registry container image to pull
+- description: The registry path of the PostgreSQL container image to use.
+  displayName: Registry Container Image
   name: IMAGEPULL_REGISTRY
   required: true
   value: registry.redhat.io/rhel9/
-# Resource limits control how much CPU and memory a container will consume
-- description: The minimum amount of CPU the Container is guaranteed.
+# Resource limits
+- description: The minimum amount of CPU the container is guaranteed.
   displayName: CPU Request
   name: CPU_REQUEST
   required: true
   value: 50m
-- description: The maximum amount of CPU the Container is allowed to use when running.
+- description: The maximum amount of CPU the container is allowed to use.
   displayName: CPU Limit
   name: CPU_LIMIT
   required: true
   value: 500m
-- description: The minimum amount of Memory the Container is guaranteed.
+- description: The minimum amount of memory the container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
   required: true
   value: 256Mi
-- description: The maximum amount of Memory the Container is allowed to use when running.
+- description: The maximum amount of memory the container is allowed to use.
   displayName: Memory Limit
   name: MEMORY_LIMIT
   required: true
   value: 1024Mi
-# Template objects to instantiate the project database.
+# Template objects to instantiate the database.
 objects:
 # Secrets 
 - apiVersion: v1
@@ -143,9 +142,9 @@ objects:
     UNITY_POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
     UNITY_POSTGRES_USER: ${POSTGRESQL_USER}
   type: Opaque
-# Configmap
-- apiVersion: v1 
-  kind: ConfigMap 
+# ConfigMap
+- apiVersion: v1
+  kind: ConfigMap
   metadata:
     name: ${DATABASE_SERVICE_NAME}
     labels:
@@ -155,7 +154,6 @@ objects:
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   data:
-    # Configuration values can be set as key-value properties
     UNITY_DB_HOST: ${DATABASE_SERVICE_NAME}
     UNITY_DB_PORT: ${DATABASE_PORT}
     UNITY_TENANT_DB: ${UNITY_TENANT_DB}
@@ -180,12 +178,12 @@ objects:
       port: ${{DATABASE_PORT}}
       targetPort: ${{DATABASE_PORT}}
     selector:
-      name: ${DATABASE_SERVICE_NAME}
+      app: ${DATABASE_SERVICE_NAME}
     sessionAffinity: None
     type: ClusterIP
   status:
     loadBalancer: {}
-# Persistent storage for the database.
+# Persistent storage for the database
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
@@ -202,9 +200,9 @@ objects:
     resources:
       requests:
         storage: ${VOLUME_CAPACITY}
-      storageClassName: netapp-file-standard
-      volumeMode: Filesystem
-# Persistent storage for the database backups.
+    storageClassName: netapp-file-standard
+    volumeMode: Filesystem
+# Persistent storage for database backups
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
@@ -221,14 +219,17 @@ objects:
     resources:
       requests:
         storage: ${VOLUME_CAPACITY}
-      storageClassName: netapp-file-standard
-      volumeMode: Filesystem
-# Deployment Config
-- apiVersion: apps.openshift.io/v1
-  kind: DeploymentConfig
+    storageClassName: netapp-file-standard
+    volumeMode: Filesystem
+# Deployment
+- apiVersion: apps/v1
+  kind: Deployment
   metadata:
     annotations:
       template.alpha.openshift.io/wait-for-ready: "true"
+      # Add the trigger annotation
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${APPLICATION_NAME}\")].image","pause":"true"}]
     name: ${DATABASE_SERVICE_NAME}
     labels:
       app: ${DATABASE_SERVICE_NAME}
@@ -240,16 +241,23 @@ objects:
   spec:
     replicas: 1
     selector:
-      name: ${DATABASE_SERVICE_NAME}
-    strategy:
-      type: Recreate
+      matchLabels:
+        app: ${DATABASE_SERVICE_NAME}
     template:
       metadata:
         labels:
-          name: ${DATABASE_SERVICE_NAME}
+          app: ${DATABASE_SERVICE_NAME}
+          app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
+          app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
+          app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
+          app.kubernetes.io/part-of: ${APPLICATION_GROUP}
       spec:
         containers:
-        - capabilities: {}
+        - name: ${DATABASE_SERVICE_NAME}
+          image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+          ports:
+          - containerPort: ${{DATABASE_PORT}}
+            protocol: TCP
           env:
           - name: POSTGRESQL_USER
             valueFrom:
@@ -278,10 +286,6 @@ objects:
               - --live
             initialDelaySeconds: 120
             timeoutSeconds: 10
-          name: postgresql
-          ports:
-          - containerPort: ${{DATABASE_PORT}}
-            protocol: TCP
           readinessProbe:
             exec:
               command:
@@ -295,9 +299,6 @@ objects:
             requests:
               cpu: ${CPU_REQUEST}
               memory: ${MEMORY_REQUEST}
-          securityContext:
-            capabilities: {}
-            privileged: false
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /var/lib/pgsql/data
@@ -313,16 +314,6 @@ objects:
         - name: unity-data-backups
           persistentVolumeClaim:
             claimName: unity-data-backup
-    triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - postgresql
-        from:
-          kind: ImageStreamTag
-          name: ${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
-          namespace: ${IMAGEPULL_NAMESPACE}
-        lastTriggeredImage: ""
-      type: ImageChange
-    - type: ConfigChange
-  status: {}
+    strategy:
+      type: Recreate
+

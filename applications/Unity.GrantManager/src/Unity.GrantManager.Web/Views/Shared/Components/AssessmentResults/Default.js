@@ -4,7 +4,7 @@
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();     
-        let worksheetId = $("#WorksheetId").val();       
+        let worksheetId = $("#AssessmentInfo_WorksheetId").val();       
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -125,7 +125,7 @@
     PubSub.subscribe(
         'fields_assessmentinfo',
         () => {
-            enableResultSaveBtn();
+            enableAssessmentResultsSaveBtn();
         }
     );
 
@@ -138,17 +138,17 @@ let notificationDateHasChanged = false;
 
 function validateDueDate() {
     dueDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function validateNotificationDate() {
     notificationDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function validateDecisionDate() {
     decisionDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function hasInvalidExplicitValidations() {
@@ -190,17 +190,25 @@ function flaggedFieldIsValid(flag, name) {
 
 function hasInvalidCustomFields() {        
     let invalidFieldsFound = false;
-    $("input[id^='custom']:visible").each(function (i, el) {
-        let fieldValidity = document.getElementById(el.id).validity.valid;        
-        if (!fieldValidity) {
-            invalidFieldsFound = true;
+    $("input[id^='custom']:visible").each(function (i, el) {  
+        let $field = $(this);
+        if ($field.hasClass('custom-currency-input')) {
+            if (!isValidCurrencyCustomField($field)) {
+                invalidFieldsFound = true;
+            }
+        } else {
+            let fieldValidity = document.getElementById(el.id).validity.valid;
+            if (!fieldValidity) {
+                invalidFieldsFound = true;
+            }
         }
+        
     });
-    
+
     return invalidFieldsFound;
 }
 
-function enableResultSaveBtn() {
+function enableAssessmentResultsSaveBtn() {
     if (hasInvalidCustomFields()) {
         $('#saveAssessmentResultBtn').prop('disabled', true);
         return;
@@ -213,5 +221,7 @@ function enableResultSaveBtn() {
 
     $('#saveAssessmentResultBtn').prop('disabled', false);
 }
+
+
 
 

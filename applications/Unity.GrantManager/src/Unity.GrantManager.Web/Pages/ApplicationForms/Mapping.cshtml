@@ -83,7 +83,7 @@
         </abp-column>
     </abp-row>
 
-    @if (Model.FlexEnabled)
+    @if (Model?.FlexEnabled == true)
     {
         <abp-row class="pb-3">
             <abp-column size="_4" class="px-1">
@@ -134,7 +134,7 @@
     <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">
         <abp-modal-header title="Edit Mapping JSON"></abp-modal-header>
         <abp-modal-body>
-            <textarea id="jsonText" rows="15" cols="80">@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
+            <textarea id="jsonText" rows="15" cols="80">@Model?.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
         </abp-modal-body>
         <abp-modal-footer>
             <abp-button id="btn-save-mapping"

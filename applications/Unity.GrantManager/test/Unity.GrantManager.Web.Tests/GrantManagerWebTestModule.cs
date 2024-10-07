@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Globalization;
-using AutoMapper.Internal.Mappers;
 using Localization.Resources.AbpUi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Localization;

@@ -1,5 +1,5 @@
 ﻿.drop-layout {
-    height: 400px;
+    height: 464px;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -17,6 +17,7 @@
     border: 1px solid gray;
     border-radius: 5px;
     height: calc(100% - 25px);
+    overflow-y: auto;
 }
 
 .slots-col {

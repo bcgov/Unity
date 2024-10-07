@@ -155,7 +155,7 @@
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
                         <div class="w-100 px-2" id="PaymentInfoWidget">
-                            @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId })
+                            @await Component.InvokeAsync("PaymentInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                         </div>
                     </abp-tab>
                 }
@@ -250,7 +250,12 @@
                         </div>
 
                         <div class="m-3">
-                            <h6 class="fw-bold py-2 m-0">Recommendation</h6>
+                            <div class="d-flex flex-row align-items-center">
+                                <h6 class="fw-bold py-2 m-0 flex-grow-1">Recommendation</h6>
+                                <div class="p-0 recommendation_reset_wrapper">
+                                    <button id="recommendation_reset_btn" class="btn btn-outline-danger recom-reset-button px-2 py-0 fw-bold" type="button" aria-label="Reset selection">RESET</button>
+                                </div>
+                            </div>
                             <abp-select id="recommendation_select" name="recommendation_select" asp-for="SelectedAction" suppress-label="true" asp-items="@Model.ActionList" class="">
                                 <option value="null" disabled>Please choose...</option>
                             </abp-select>

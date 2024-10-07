@@ -91,9 +91,11 @@ function initializeDataTable(dt, defaultVisibleColumns, listColumns, maxRowsPerP
                 $('#search').val(data.search.search);
 
                 data.columns.forEach((column, index) => {
-                    const title = settings.aoColumns[index].sTitle;
-                    const value = column.search.search;
-                    filterData[title] = value;
+                    if(settings.aoColumns[index] +"" != "undefined") {
+                        const title = settings.aoColumns[index].sTitle;
+                        const value = column.search.search;
+                        filterData[title] = value;
+                    }
                 });
             }
         })

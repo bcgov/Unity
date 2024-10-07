@@ -198,7 +198,7 @@ parameters:
 - description: The registry path of the container image used.
   displayName: Registry location to pull from
   name: IMAGEPULL_REGISTRY
-  value: image-registry.openshift-image-registry.svc:5000/
+  value: image-registry.openshift-image-registry.svc:5000
 # Resource limits control how much CPU and memory a container will consume
 - description: The minimum amount of CPU the Container is guaranteed.
   displayName: CPU Request
@@ -209,17 +209,17 @@ parameters:
   displayName: CPU Limit
   name: CPU_LIMIT
   required: true
-  value: 1000m
+  value: 400m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
   required: true
-  value: 256Mi
+  value: 128Mi
 - description: The maximum amount of Memory the Container is allowed to use when running.
   displayName: Memory Limit
   name: MEMORY_LIMIT
   required: true
-  value: 1Gi
+  value: 512Mi
 # Template objects to instantiate the project application.
 objects:
 # Secrets 
@@ -305,7 +305,7 @@ objects:
         port: 80
         targetPort: 8080
     selector:
-      deploymentConfig: ${APPLICATION_NAME}
+      app: ${APPLICATION_NAME}
 # Route
 - apiVersion: route.openshift.io/v1
   id: ${APPLICATION_NAME}-http
@@ -352,15 +352,17 @@ objects:
         storage: ${VOLUME_CAPACITY}
       storageClassName: netapp-file-standard
       volumeMode: Filesystem
-# Deployment Config
-- apiVersion: apps.openshift.io/v1
-  kind: DeploymentConfig
+# Deployment 
+- apiVersion: apps/v1
+  kind: Deployment
   metadata:
     name: ${APPLICATION_NAME}
     annotations:
       app.openshift.io/route-disabled: "false"
       app.openshift.io/vcs-ref: ${SOURCE_REPOSITORY_REF}
       app.openshift.io/vcs-uri: ${SOURCE_REPOSITORY_URL}
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}","namespace":"${IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${APPLICATION_NAME}\")].image","pause":"false"}]
     labels:
       app: ${APPLICATION_NAME}
       app.openshift.io/runtime: dotnet
@@ -371,49 +373,44 @@ objects:
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ${APPLICATION_NAME}
+      matchLabels:
+        app: ${APPLICATION_NAME}
     strategy:
       type: Recreate
     template:
       metadata:
         labels:
           application: ${APPLICATION_NAME}
-          deploymentConfig: ${APPLICATION_NAME}
-        name: ${APPLICATION_NAME}
+          app: ${APPLICATION_NAME}
       spec:
         volumes:
           - name: ${APPLICATION_NAME}-logfiles
             persistentVolumeClaim:
               claimName: ${APPLICATION_NAME}-logfiles
         containers:
-        ## Add single environment values
-        - env:
+        - name: ${APPLICATION_NAME}
+          image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+          imagePullPolicy: Always
+          env:
             - name: ConnectionStrings__Default
               value: >-
                 Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_POSTGRES_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
             - name: ConnectionStrings__Tenant
               value: >-
                 Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_TENANT_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
-          ## Add all values from ConfigMaps and Secrets
           envFrom:
-            ## Add all values from ${APPLICATION_NAME}
             - configMapRef:
                 name: ${APPLICATION_NAME}
             - secretRef:
                 name: ${APPLICATION_NAME}
-            ## Add all from ${DATABASE_SERVICE_NAME}
             - configMapRef:
                 name: ${DATABASE_SERVICE_NAME}
             - secretRef:
                 name: ${DATABASE_SERVICE_NAME}
-            ## Add all from ${STORAGE_OBJECT_NAME}
             - configMapRef:
                 name: ${STORAGE_OBJECT_NAME}
             - secretRef:
                 name: ${STORAGE_OBJECT_NAME}
-          image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
-          imagePullPolicy: Always
-          name: ${APPLICATION_NAME}
           resources:
             limits:
               cpu: ${CPU_LIMIT}
@@ -434,11 +431,6 @@ objects:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 3
-          ports:
-            - containerPort: 443
-              protocol: TCP
-            - containerPort: 80
-              protocol: TCP
           startupProbe:
             httpGet:
               path: /healthz/startup
@@ -452,21 +444,14 @@ objects:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 12
+          ports:
+            - containerPort: 443
+              protocol: TCP
+            - containerPort: 80
+              protocol: TCP
           volumeMounts:
-          - mountPath: /app/logs
-            name: ${APPLICATION_NAME}-logfiles
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
-      dnsPolicy: ClusterFirst
-    triggers:
-    - type: ImageChange
-      imageChangeParams:
-        automatic: true
-        containerNames:
-        - ${APPLICATION_NAME}
-        from:
-          kind: ImageStreamTag
-          name: ${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
-          namespace: ${IMAGEPULL_NAMESPACE}
-    - type: ConfigChange
-  status: {}
+            - mountPath: /app/logs
+              name: ${APPLICATION_NAME}-logfiles
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst

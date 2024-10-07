@@ -14,7 +14,7 @@ namespace Unity.GrantManager.Web.Exceptions
             LogLevel = LogLevel.Error;
         }
 
-        protected AutoRegisterUserException(SerializationInfo serializationEntries, StreamingContext context) : base(serializationEntries, context)
+        protected AutoRegisterUserException(SerializationInfo serializationEntries, StreamingContext context) : base("Auto Register User Error")
         {
             LogLevel = LogLevel.Error;
         }

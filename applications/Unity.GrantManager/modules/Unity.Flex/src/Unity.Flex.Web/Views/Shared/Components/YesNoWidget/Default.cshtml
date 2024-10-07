@@ -9,8 +9,8 @@
             id="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
             name="@($"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}")"
             onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")">
-        <option selected="@Model.Field?.CurrentValue?.CompareSelectListValue("Please choose...")">Please choose...</option>
-        <option selected="@Model.Field?.CurrentValue?.CompareSelectListValue("Yes")">Yes</option>
-        <option selected="@Model.Field?.CurrentValue?.CompareSelectListValue("No")">No</option>
+        <option selected="@Model.Field?.CurrentValue?.CompareYesNoSelectListValue("Please choose...")">Please choose...</option>
+        <option selected="@Model.Field?.CurrentValue?.CompareYesNoSelectListValue("Yes")">Yes</option>
+        <option selected="@Model.Field?.CurrentValue?.CompareYesNoSelectListValue("No")">No</option>
     </select>
 }

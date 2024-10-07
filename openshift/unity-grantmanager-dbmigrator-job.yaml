@@ -58,7 +58,28 @@ parameters:
 - description: The registry path of the container image used.
   displayName: Registry location to pull from
   name: IMAGEPULL_REGISTRY
-  value: image-registry.openshift-image-registry.svc:5000/
+  value: image-registry.openshift-image-registry.svc:5000
+# Resource limits
+- description: The minimum amount of CPU the container is guaranteed.
+  displayName: CPU Request
+  name: CPU_REQUEST
+  required: true
+  value: 50m
+- description: The maximum amount of CPU the container is allowed to use.
+  displayName: CPU Limit
+  name: CPU_LIMIT
+  required: true
+  value: 400m
+- description: The minimum amount of memory the container is guaranteed.
+  displayName: Memory Request
+  name: MEMORY_REQUEST
+  required: true
+  value: 64Mi
+- description: The maximum amount of memory the container is allowed to use.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 512Mi
 # Template objects to instantiate the project.
 objects:
 # RunOnce Job for Database Migrator
@@ -90,7 +111,7 @@ objects:
       spec:
         containers:
           - name: ${APPLICATION_NAME}
-            image: ${IMAGEPULL_REGISTRY}${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
+            image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
             env:
               - name: ConnectionStrings__Default
                 value: >-
@@ -104,4 +125,11 @@ objects:
                   name: ${DATABASE_SERVICE_NAME}
               - secretRef:
                   name: ${DATABASE_SERVICE_NAME}
+            resources:
+              limits:
+                cpu: ${CPU_LIMIT}
+                memory: ${MEMORY_LIMIT}
+              requests:
+                cpu: ${CPU_REQUEST}
+                memory: ${MEMORY_REQUEST}
         restartPolicy: Never

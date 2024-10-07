@@ -1,6 +1,4 @@
-﻿using Unity.GrantManager.GrantApplications;
-
-namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget
+﻿namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget
 {
     public class ApplicationBreadcrumbWidgetViewModel
     {        

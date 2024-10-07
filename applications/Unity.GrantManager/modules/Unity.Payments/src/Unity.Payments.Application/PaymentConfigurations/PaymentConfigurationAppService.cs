@@ -55,6 +55,7 @@ namespace Unity.Payments.PaymentConfigurations
             var newPaymentConfiguration = await _paymentConfigurationRepository.InsertAsync(new PaymentConfiguration
             (
                 createPaymentConfigurationDto.PaymentThreshold,
+                createPaymentConfigurationDto.PaymentIdPrefix,
                 AccountCoding.Create(
                     createPaymentConfigurationDto.MinistryClient,
                     createPaymentConfigurationDto.Responsibility,
@@ -73,6 +74,7 @@ namespace Unity.Payments.PaymentConfigurations
                 throw new ConfigurationExistsException(L[ErrorConsts.ConfigurationDoesNotExist]);
 
             paymentConfiguration.PaymentThreshold = updatePaymentConfigurationDto.PaymentThreshold;
+            paymentConfiguration.PaymentIdPrefix = updatePaymentConfigurationDto.PaymentIdPrefix;
 
             paymentConfiguration.SetAccountCoding(AccountCoding.Create(updatePaymentConfigurationDto.MinistryClient,
                 updatePaymentConfigurationDto.Responsibility,

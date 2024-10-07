@@ -20,7 +20,7 @@ namespace Unity.Flex.Worksheets.Values
         internal static string ConvertDecimal(object? value)
         {
             var valid = decimal.TryParse(value?.ToString(), out decimal decimalValue);
-            if (valid) return decimalValue.ToString();
+            if (valid) return decimalValue.ToString("0.00");
             return string.Empty;
         }
 
