@@ -469,6 +469,7 @@ input.form-control, textarea.form-control, .form-select {
     color: var(--bc-colors-grey-text-500);
     border-radius: var(--bc-layout-margin-small) !important;
     border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
 }
 
     input.form-control:hover, textarea.form-control:hover, .form-select:hover {
@@ -771,4 +772,8 @@ input.form-control.disabled:read-only, textarea.form-control.disabled:read-only,
         overflow-y: scroll !important;
         max-height: calc(100vh - 30vh);
     }
+}
+
+.overflow-tooltip {
+    text-overflow: ellipsis;
 }

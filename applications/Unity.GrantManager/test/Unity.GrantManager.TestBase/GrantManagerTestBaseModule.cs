@@ -13,7 +13,6 @@ using System;
 using Microsoft.Extensions.Logging.Abstractions;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
-using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager;
 

@@ -4,7 +4,7 @@
         let formData = $("#assessmentResultForm").serializeArray();
         let assessmentResultObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();     
-        let worksheetId = $("#WorksheetId").val();       
+        let worksheetId = $("#AssessmentInfo_WorksheetId").val();       
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -125,7 +125,7 @@
     PubSub.subscribe(
         'fields_assessmentinfo',
         () => {
-            enableResultSaveBtn();
+            enableAssessmentResultsSaveBtn();
         }
     );
 
@@ -138,17 +138,17 @@ let notificationDateHasChanged = false;
 
 function validateDueDate() {
     dueDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function validateNotificationDate() {
     notificationDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function validateDecisionDate() {
     decisionDateHasChanged = true;
-    enableResultSaveBtn();
+    enableAssessmentResultsSaveBtn();
 }
 
 function hasInvalidExplicitValidations() {
@@ -208,7 +208,7 @@ function hasInvalidCustomFields() {
     return invalidFieldsFound;
 }
 
-function enableResultSaveBtn() {
+function enableAssessmentResultsSaveBtn() {
     if (hasInvalidCustomFields()) {
         $('#saveAssessmentResultBtn').prop('disabled', true);
         return;

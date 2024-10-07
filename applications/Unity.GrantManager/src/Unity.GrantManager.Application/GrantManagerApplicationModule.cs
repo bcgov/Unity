@@ -140,9 +140,11 @@ public class GrantManagerApplicationModule : AbpModule
         });
 
         // Set the max defaults as max - we are using non serverside paging and this effect this
-        PagedAndSortedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
-        PagedAndSortedResultRequestDto.MaxMaxResultCount = int.MaxValue;
+        ExtensibleLimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
+        ExtensibleLimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
 
+        LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
+        LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
         Configure<AbpDistributedCacheOptions>(options =>
         {
             options.KeyPrefix = configuration["Redis:KeyPrefix"] ?? "unity";

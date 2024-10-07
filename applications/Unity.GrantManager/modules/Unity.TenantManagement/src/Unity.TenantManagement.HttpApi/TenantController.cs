@@ -24,19 +24,30 @@ public class TenantController : AbpControllerBase, ITenantAppService
     [Route("{id}")]
     public virtual Task<TenantDto> GetAsync(Guid id)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->GetAsync: ModelState Invalid");
+        }
         return TenantAppService.GetAsync(id);
     }
 
     [HttpGet]
     public virtual Task<PagedResultDto<TenantDto>> GetListAsync(GetTenantsInput input)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->GetListAsync: ModelState Invalid");
+        }
         return TenantAppService.GetListAsync(input);
     }
 
     [HttpPost]
     public virtual Task<TenantDto> CreateAsync(TenantCreateDto input)
     {
-        ValidateModel();
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->CreateAsync: ModelState Invalid");
+        }
         return TenantAppService.CreateAsync(input);
     }
 
@@ -44,6 +55,10 @@ public class TenantController : AbpControllerBase, ITenantAppService
     [Route("{id}")]
     public virtual Task<TenantDto> UpdateAsync(Guid id, TenantUpdateDto input)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->UpdateAsync: ModelState Invalid");
+        }
         return TenantAppService.UpdateAsync(id, input);
     }
 
@@ -51,6 +66,10 @@ public class TenantController : AbpControllerBase, ITenantAppService
     [Route("{id}")]
     public virtual Task DeleteAsync(Guid id)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->DeleteAsync: ModelState Invalid");
+        }
         return TenantAppService.DeleteAsync(id);
     }
 
@@ -58,6 +77,10 @@ public class TenantController : AbpControllerBase, ITenantAppService
     [Route("{id}/default-connection-string")]
     public virtual Task<string> GetDefaultConnectionStringAsync(Guid id)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->GetDefaultConnectionStringAsync: ModelState Invalid");
+        }
         return TenantAppService.GetDefaultConnectionStringAsync(id);
     }
 
@@ -65,6 +88,10 @@ public class TenantController : AbpControllerBase, ITenantAppService
     [Route("{id}/default-connection-string")]
     public virtual Task UpdateDefaultConnectionStringAsync(Guid id, string defaultConnectionString)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->UpdateDefaultConnectionStringAsync: ModelState Invalid");
+        }
         return TenantAppService.UpdateDefaultConnectionStringAsync(id, defaultConnectionString);
     }
 
@@ -72,6 +99,10 @@ public class TenantController : AbpControllerBase, ITenantAppService
     [Route("{id}/default-connection-string")]
     public virtual Task DeleteDefaultConnectionStringAsync(Guid id)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->DeleteDefaultConnectionStringAsync: ModelState Invalid");
+        }
         return TenantAppService.DeleteDefaultConnectionStringAsync(id);
     }
 
@@ -79,6 +110,10 @@ public class TenantController : AbpControllerBase, ITenantAppService
     [Route("{id}/assign-manager")]
     public virtual Task AssignManagerAsync(TenantAssignManagerDto managerAssignment)
     {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->AssignManagerAsync: ModelState Invalid");
+        }
         return TenantAppService.AssignManagerAsync(managerAssignment);
     }
 }

@@ -20,6 +20,16 @@ $(function () {
         }
     }
 
+    function waitFor(conditionFunction) {
+
+        const poll = resolve => {
+            if (conditionFunction()) resolve();
+            else setTimeout(_ => poll(resolve), 400);
+        }
+
+        return new Promise(poll);
+    }
+
     async function getSubmission() {
         try {
             $('.spinner-grow').hide();
@@ -42,12 +52,20 @@ $(function () {
                 form.refresh();
                 form.on('render', function () {
                     addEventListeners();
-                    storeRenderedHtml();
                 });
-            });
+
+                waitFor(_ => isFormChanging(form))
+                    .then(_ => 
+                        storeRenderedHtml()
+                    );
+                });
         } catch (error) {
             console.error(error);
         }
+    }
+
+    function isFormChanging(form) {
+        return form.changing === false;
     }
 
     async function storeRenderedHtml() {
