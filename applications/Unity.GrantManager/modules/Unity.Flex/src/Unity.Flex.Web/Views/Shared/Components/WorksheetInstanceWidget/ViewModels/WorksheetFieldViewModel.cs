@@ -5,7 +5,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewMod
 {
     public class WorksheetFieldViewModel
     {
-        public required Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.Empty;
         public string Name { get; set; } = string.Empty;
         public string Label { get; set; } = string.Empty;
         public CustomFieldType Type { get; set; } = CustomFieldType.Undefined;
