@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Unity.GrantManager.Controllers
 {
     // This is designed to download configuration files for the user for app setup
+    [Route("/api/app/configurationFile")]
     public class ConfigurationFileController : AbpController
     {
         private readonly IApplicationFormConfigurationAppService _applicationFormConfigurationAppService;
@@ -28,8 +29,7 @@ namespace Unity.GrantManager.Controllers
             _currentTenant = currentTenant;
         }
 
-        [HttpGet]
-        [Route("/api/app/configurationFile/{type}")]
+        [HttpGet("{type}")]
         public async Task<IActionResult> DownloadConfiguration(string type)
         {
             if (!ModelState.IsValid)
