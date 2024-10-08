@@ -1,5 +1,3 @@
-version: '3.8'
-
 name: unity_local
 
 # Add docker runtime environment variables from the .env file these are not included in the docker builds. 
