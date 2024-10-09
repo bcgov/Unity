@@ -13,10 +13,13 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Profiling;
+using StackExchange.Profiling.Storage;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
@@ -434,18 +437,32 @@ public class GrantManagerWebModule : AbpModule
         );
     }
 
-    private void ConfigureMiniProfiler(ServiceConfigurationContext context)
+    private static void ConfigureMiniProfiler(ServiceConfigurationContext context)
     {
         context.Services.Configure<AbpLayoutHookOptions>(options =>
         {
             options.Add(LayoutHooks.Body.Last, typeof(MiniProfilerViewComponent));
         });
 
-        context.Services.AddMiniProfiler(options =>
+        context.Services.AddMiniProfiler(static options =>
         {
             options.RouteBasePath = "/profiler";
             options.EnableMvcFilterProfiling = true;
             options.EnableMvcViewProfiling = true;
+            options.PopupRenderPosition = StackExchange.Profiling.RenderPosition.Right;
+            options.PopupStartHidden = true;
+            options.PopupToggleKeyboardShortcut = "Alt+P";
+            options.PopupShowTimeWithChildren = true;
+            options.ShowControls = true;
+            options.PopupShowTrivial = true;
+
+            ((MemoryCacheStorage)options.Storage).CacheDuration = TimeSpan.FromMinutes(30);
+
+            options.SqlFormatter = new StackExchange.Profiling.SqlFormatters.InlineFormatter();
+            options.ColorScheme = ColorScheme.Dark;
+
+            options.IgnoredPaths.AddIfNotContains("/libs/");
+            options.IgnoredPaths.AddIfNotContains("/themes/");
         }).AddEntityFramework();
     }
 
