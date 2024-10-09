@@ -1,11 +1,10 @@
-@using Unity.GrantManager.Comments;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidget;
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
-@using Unity.GrantManager.Web.Pages.GrantApplications;
+
 @model ApplicationContactsWidgetViewModel
 @{
     Layout = null;
 }
+
 <div>
     @if (Model.ApplicationContacts.Count > 0) {
         <p class="px-2 mb-0 fw-bold text-muted">Info</p>

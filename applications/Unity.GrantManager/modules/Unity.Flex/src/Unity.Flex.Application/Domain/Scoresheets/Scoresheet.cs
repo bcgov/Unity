@@ -94,5 +94,11 @@ namespace Unity.Flex.Domain.Scoresheets
             section.SetName(name);
             return this;
         }
+
+        internal Scoresheet CloneSection(ScoresheetSection clonedSection)
+        {
+            Sections.Add(clonedSection);
+            return this;
+        }
     }
 }

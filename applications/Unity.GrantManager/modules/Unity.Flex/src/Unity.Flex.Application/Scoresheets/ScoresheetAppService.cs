@@ -3,10 +3,10 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
+using Unity.Flex.Domain.Utils;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
@@ -100,7 +100,7 @@ namespace Unity.Flex.Scoresheets
             using var unitOfWork = _unitOfWorkManager.Begin();
 
             var originalScoresheet = await _scoresheetRepository.GetWithChildrenAsync(scoresheetIdToClone) ?? throw new AbpValidationException("Scoresheet not found.");
-            var versionSplit = originalScoresheet.Name.Split('-');
+            var versionSplit = SheetParserFunctions.SplitSheetNameAndVersion(originalScoresheet.Name);
             var clonedScoresheet = new Scoresheet(Guid.NewGuid(), originalScoresheet.Title, $"{versionSplit[0]}-v{originalScoresheet.Version + 1}")
             {
                 Version = originalScoresheet.Version + 1,
@@ -234,33 +234,55 @@ namespace Unity.Flex.Scoresheets
             }
 
             var json = scoresheetImportDto.Content;
+
             var scoresheet = JsonConvert.DeserializeObject<Scoresheet>(json, new JsonSerializerSettings
             {
                 ContractResolver = new PrivateSetterContractResolver(),
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
-            string? name;
-            
-            var scoresheets = await _scoresheetRepository.GetByNameStartsWithAsync(RemoveTrailingNumbers(scoresheet.Name));
-            var maxVersion = scoresheets.Max(s => s.Version);
-            var newVersion = maxVersion + 1;
-            name = scoresheet.Name.Replace($"-v{scoresheet.Version}", $"-v{newVersion}");
-            scoresheet.Version = newVersion;
-            _ = scoresheet.SetName(name);
-            scoresheet.Published = false;
-            await _scoresheetRepository.InsertAsync(scoresheet);
-        }
 
-        private static string RemoveTrailingNumbers(string input)
-        {
-            if (string.IsNullOrEmpty(input))
+            string? name;
+
+            var scoresheets = await _scoresheetRepository.GetByNameStartsWithAsync(SheetParserFunctions.RemoveTrailingNumbers(scoresheet.Name));
+            uint maxVersion = 0;
+            uint newVersion = 0;
+
+            if (scoresheets.Count > 0)
             {
-                return input;
+                maxVersion = scoresheets.Max(s => s.Version);
+                newVersion = maxVersion + 1;
+            }
+            else
+            {
+                newVersion = scoresheet.Version;
             }
 
-            return TrailingZeroes().Replace(input, string.Empty);
+            name = scoresheet.Name.Replace($"-v{scoresheet.Version}", $"-v{newVersion}");
+
+            var newScoresheet = new Scoresheet(Guid.NewGuid(), scoresheet.Title, name)
+            {
+                Version = newVersion
+            };
+
+            foreach (var section in scoresheet.Sections)
+            {
+                var clonedSection = new ScoresheetSection(Guid.NewGuid(), section.Name, section.Order);
+
+                foreach (var question in section.Fields.OrderBy(s => s.Order))
+                {
+                    var clonedQuestion = new Question(Guid.NewGuid(), question.Name, question.Label, question.Type, question.Order, question.Description, question.Definition);
+                    clonedSection.CloneQuestion(clonedQuestion);
+                }
+                newScoresheet.CloneSection(clonedSection);
+            }
+
+            newScoresheet.Published = false;
+
+            await _scoresheetRepository.InsertAsync(newScoresheet);
         }
+
+
 
         public async Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck)
         {
@@ -278,8 +300,5 @@ namespace Unity.Flex.Scoresheets
                 await _scoresheetRepository.UpdateAsync(scoresheet);
             }
         }
-
-        [GeneratedRegex(@"\d+$")]
-        private static partial Regex TrailingZeroes();
     }
 }

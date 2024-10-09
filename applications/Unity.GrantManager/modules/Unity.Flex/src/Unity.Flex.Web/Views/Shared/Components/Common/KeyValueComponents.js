@@ -1,7 +1,3 @@
-
-const checkKeyInputRegexBase = '[a-zA-Z0-9 ]+';
-const checkKeyInputRegexVal = new RegExp('^' + checkKeyInputRegexBase + '$');
-
 function clearSummaryError() {
     $('#invalid-input-summary-text').text();
     $('#invalid-input-error-summary').addClass('hidden');
@@ -10,11 +6,6 @@ function clearSummaryError() {
 function addSummaryError(message) {
     $('#invalid-input-summary-text').text(message);
     $('#invalid-input-error-summary').removeClass('hidden');
-}
-
-function isAlphanumericWithSpace(str) {
-    // Regular expression to match alphanumeric characters and spaces        
-    return checkKeyInputRegexVal.test(str);
 }
 
 function getNewInputRow(controlName) {
@@ -33,18 +24,26 @@ function validateInputCharacters(controlName) {
     let existingRows = $('.key-input').toArray();
     let existing = existingRows.find(o => o.value.toLowerCase() == row.key.toLowerCase());
 
-    // validate format of row before adding                
-    if (!isAlphanumericWithSpace(row.key)) {
-        addSummaryError('Invalid key syntax provided');
+    if (existing) {
+        addSummaryError('Duplicate Keys are not allowed');
         return false;
     }
 
-    if (existing) {
-        addSummaryError('Duplicate keys are not allowed');
+    if (isEmptyOrSpaces(row.key)) {
+        addSummaryError('You must provide a Key');
+        return false;
+    }
+
+    if (isEmptyOrSpaces(row.label)) {
+        addSummaryError('You must provide a Value');
         return false;
     }
 
     return true;
+}
+
+function isEmptyOrSpaces(str) {
+    return str === null || str.match(/^ *$/) !== null;
 }
 
 function bindNewRowKeyCheck(newRowControl) {
@@ -102,4 +101,17 @@ function bindInputChanges(keys, validityClass) {
             }
         });
     }
+}
+
+function sanitizeInput(string) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        "/": '&#x2F;',
+    };
+    const reg = /[&<>"'/]/ig;
+    return string.replace(reg, (match) => (map[match]));
 }

@@ -10,7 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Volo.Abp.VirtualFileSystem" Version="8.1.0" />
+        <PackageReference Include="Volo.Abp.VirtualFileSystem" Version="8.3.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -23,7 +23,7 @@
 
     <ItemGroup>
       <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-      <PackageReference Update="Fody" Version="6.8.0">
+      <PackageReference Update="Fody" Version="6.8.1">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       </PackageReference>

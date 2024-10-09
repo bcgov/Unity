@@ -9,7 +9,7 @@
         let formData = $("#ApplicantInfoForm").serializeArray();
         let ApplicantInfoObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val(); 
-        let worksheetId = $("#WorksheetId").val();
+        let worksheetId = $("#ApplicantInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {            
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {                
@@ -110,7 +110,7 @@
     PubSub.subscribe(
         'fields_applicantinfo',
         () => {
-            enableSaveBtn();
+            enableApplicantInfoSaveBtn();
         }
     );
 
@@ -118,8 +118,8 @@
 });
 
 
-function enableSaveBtn(inputText) {
-    if (!$("#ApplicantInfoForm").valid()) {
+function enableApplicantInfoSaveBtn(inputText) {
+    if (!$("#ApplicantInfoForm").valid() || formHasInvalidCurrencyCustomFields("ApplicantInfoForm")) {
         $('#saveApplicantInfoBtn').prop('disabled', true);
         return;
     }

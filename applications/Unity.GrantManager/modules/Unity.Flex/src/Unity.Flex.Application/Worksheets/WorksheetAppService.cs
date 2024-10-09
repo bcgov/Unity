@@ -3,10 +3,10 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Settings;
+using Unity.Flex.Domain.Utils;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
 
@@ -115,7 +115,7 @@ namespace Unity.Flex.Worksheets
         public virtual async Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex)
         {
             if (oldIndex == newIndex) return;
-            var worksheet = await worksheetRepository.GetAsync(id);            
+            var worksheet = await worksheetRepository.GetAsync(id);
 
             var sections = worksheet.Sections.OrderBy(s => s.Order).ToList();
             var movedSection = sections[(int)oldIndex];
@@ -153,7 +153,7 @@ namespace Unity.Flex.Worksheets
             var json = JsonConvert.SerializeObject(worksheet, settings);
             var byteArray = System.Text.Encoding.UTF8.GetBytes(json);
 
-            return new ExportWorksheetDto { Content = byteArray, ContentType = "application/json", Name = "worksheet_"+worksheet.Title+"_"+worksheet.Name + ".json"};
+            return new ExportWorksheetDto { Content = byteArray, ContentType = "application/json", Name = "worksheet_" + worksheet.Title + "_" + worksheet.Name + ".json" };
         }
 
         public async Task ImportWorksheetAsync(WorksheetImportDto worksheetImportDto)
@@ -170,21 +170,41 @@ namespace Unity.Flex.Worksheets
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
-            var name = worksheet.Title.ToLower().Trim() + "-v1";
-            _ = worksheet.SetName(NameRegex().Replace(name, ""));
-            foreach(var section in worksheet.Sections)
+            string? name;
+
+            var worksheets = await worksheetRepository.GetByNameStartsWithAsync(SheetParserFunctions.RemoveTrailingNumbers(worksheet.Name));
+            uint maxVersion = 0;
+            uint newVersion = 0;
+
+            if (worksheets.Count > 0)
             {
-                foreach(var field in section.Fields)
-                {
-                    _ = field.UpdateFieldName(worksheet.Name);
-                }
+                maxVersion = worksheets.Max(s => s.Version);
+                newVersion = maxVersion + 1;
             }
-            worksheet.SetPublished(false);
-            await worksheetRepository.InsertAsync(worksheet);
+            else
+            {
+                newVersion = worksheet.Version;
+            }
+            name = worksheet.Name.Replace($"-v{worksheet.Version}", $"-v{newVersion}");
+
+            var newWorksheet = new Worksheet(Guid.NewGuid(), name, worksheet.Title);
+            newWorksheet.SetVersion(newVersion);
+            newWorksheet.SetPublished(false);
+
+            foreach (var section in worksheet.Sections)
+            {
+                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
+                clonedSection.SetOrder(section.Order);
+
+                foreach (var field in section.Fields.OrderBy(s => s.Order))
+                {
+                    var clonedField = new CustomField(Guid.NewGuid(), field.Key, newWorksheet.Name, field.Label, field.Type, field.Definition);
+                    clonedSection.CloneField(clonedField);
+                }
+                newWorksheet.CloneSection(clonedSection);
+            }
+
+            await worksheetRepository.InsertAsync(newWorksheet);
         }
-
-        [GeneratedRegex(@"\s+")]
-        private static partial Regex NameRegex();
-
     }
 }

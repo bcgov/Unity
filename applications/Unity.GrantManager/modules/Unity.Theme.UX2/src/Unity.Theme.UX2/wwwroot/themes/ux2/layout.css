@@ -469,6 +469,7 @@ input.form-control, textarea.form-control, .form-select {
     color: var(--bc-colors-grey-text-500);
     border-radius: var(--bc-layout-margin-small) !important;
     border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
 }
 
     input.form-control:hover, textarea.form-control:hover, .form-select:hover {
@@ -741,7 +742,14 @@ input[type=search]::-webkit-search-cancel-button {
     -webkit-appearance: button !important;
 }
 
-
+input.form-control.disabled:read-only, textarea.form-control.disabled:read-only, .form-select.disabled:read-only {
+    color: var(--bc-colors-grey-text-200);
+    pointer-events: none;
+    background-color: var(--bc-colors-grey-hover) !important;
+    opacity: var(--bs-btn-disabled-opacity);
+    background-blend-mode: difference;
+    border: none !important;
+}
 
 
 @media (max-height: 768px) {
@@ -764,4 +772,8 @@ input[type=search]::-webkit-search-cancel-button {
         overflow-y: scroll !important;
         max-height: calc(100vh - 30vh);
     }
+}
+
+.overflow-tooltip {
+    text-overflow: ellipsis;
 }

@@ -33,7 +33,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
             _featureChecker = featureChecker;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
             if (await _featureChecker.IsEnabledAsync("Unity.Payments"))
             {
@@ -43,6 +43,8 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                     RequestedAmount = application.RequestedAmount,
                     RecommendedAmount = application.RecommendedAmount,
                     ApprovedAmount = application.ApprovedAmount,
+                    ApplicationId = applicationId,
+                    ApplicationFormVersionId = applicationFormVersionId
                 };
                 var paymentRequests = await _paymentRequestService.GetListByApplicationIdAsync(applicationId);
 

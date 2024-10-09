@@ -12,7 +12,7 @@
         let formData = $("#projectInfoForm").serializeArray();
         let projectInfoObj = {};       
         let formVersionId = $("#ApplicationFormVersionId").val();
-        let worksheetId = $("#WorksheetId").val();
+        let worksheetId = $("#ProjectInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -185,7 +185,7 @@
 
 
 function enableProjectInfoSaveBtn(inputText) {
-    if (!$("#projectInfoForm").valid()) {
+    if (!$("#projectInfoForm").valid() || formHasInvalidCurrencyCustomFields("projectInfoForm")) {
         $('#saveProjectInfoBtn').prop('disabled', true);
         return;
     }

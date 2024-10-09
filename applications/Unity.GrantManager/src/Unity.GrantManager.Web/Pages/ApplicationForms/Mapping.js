@@ -102,7 +102,7 @@
     }
 
     function handleLinkWorksheets() {
-        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val() });        
+        worksheetsModal.open({ formVersionId: $('#chefsFormVersionId').val(), formName: $('#formName').val(), size: 'Large' });        
     }
 
     function handleEdit() {

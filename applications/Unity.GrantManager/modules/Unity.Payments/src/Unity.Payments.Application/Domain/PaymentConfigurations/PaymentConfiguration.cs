@@ -7,6 +7,7 @@ namespace Unity.Payments.Domain.PaymentConfigurations
     public class PaymentConfiguration : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
+        public string PaymentIdPrefix { get; set; } = string.Empty;
         public decimal? PaymentThreshold { get; set; }
         public string? MinistryClient { get; private set; }
         public string? Responsibility { get; private set; }
@@ -20,10 +21,13 @@ namespace Unity.Payments.Domain.PaymentConfigurations
             /* This constructor is for ORMs to be used while getting the entity from the database. */
         }
 
-        public PaymentConfiguration(decimal? paymentThreshold,
+        public PaymentConfiguration(
+            decimal? paymentThreshold,
+            string paymentIdPrefix,
             AccountCoding accountCoding)
         {
             PaymentThreshold = paymentThreshold;
+            PaymentIdPrefix = paymentIdPrefix;
             SetAccountCoding(accountCoding);
         }
 
