@@ -285,7 +285,7 @@ $(function () {
         // Fetch submission data
         fetchSubmissionData(submissionId)
             .done(function (result) {
-                handleSubmissionResult(result, submissionId);
+                openDataInNewTab(result, submissionId);
             })
             .fail(function (error) {
                 console.error('Error fetching submission data:', error);
@@ -303,67 +303,51 @@ $(function () {
     }
     
     // Handle the submission result
-    function handleSubmissionResult(result, submissionId) {
-        let newTab = openNewTabWithBasicStructure();
-        let hiddenInput = createHiddenInput(submissionId);
-        let newDiv = createNewDiv();
-    
-        // Write the hidden input and new div to the new tab
-        injectContentIntoTab(newTab, hiddenInput, newDiv);
-    
-        // Load external script and process data
-        loadExternalScript(newTab, '/Pages/GrantApplications/loadPrint.js', function () {
-            executeOperationsInNewTab(newTab, result);
-        });
-    }
-    
-    // Open a new tab and write basic HTML structure
-    function openNewTabWithBasicStructure() {
+    function openDataInNewTab(data, submissionId) {        
         let newTab = window.open('', '_blank');
+        let newDiv = $('<div>');
+
+        // Set the ID for the new div
+        newDiv.attr('id', 'new-rendering');
+
+        // Add some content to the new div if needed
+        newDiv.html('Content for the new div');
+
+        // Store the outer HTML of the new div in divToStore
+        let divToStore = newDiv.prop('outerHTML');
+        
         newTab.document.write('<html><head><title>Print</title>');
         newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
         newTab.document.write('<script src="/libs/formiojs/formio.form.js"></script>');
         newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
         newTab.document.write('<link rel="stylesheet" href="/libs/formiojs/formio.form.css">');
-        newTab.document.write('</head><body></body></html>');
-        newTab.document.close();
-        return newTab;
-    }
-    
-    // Create a hidden input element
-    function createHiddenInput(submissionId) {
-        return $('<input>').attr({
+        newTab.document.write('</head><body>');
+
+        let newHiddenInput = $('<input>');
+        // Set attributes for the hidden input
+        newHiddenInput.attr({
             'type': 'hidden',
             'name': 'ApplicationFormSubmissionId',
             'value': submissionId
-        }).prop('outerHTML');
-    }
-    
-    // Create a new div element
-    function createNewDiv() {
-        return $('<div>')
-            .attr('id', 'new-rendering')
-            .html('Content for the new div')
-            .prop('outerHTML');
-    }
-    
-    // Inject content (hidden input and div) into the new tab
-    function injectContentIntoTab(newTab, hiddenInput, newDiv) {
-        newTab.document.body.innerHTML += hiddenInput;
-        newTab.document.body.innerHTML += newDiv;
-    }
-    
-    // Load an external script into the new tab
-    function loadExternalScript(newTab, scriptUrl, callback) {
-        let script = newTab.document.createElement('script');
-        script.src = scriptUrl;
-        script.onload = callback;
-        newTab.document.head.appendChild(script);
-    }
-    
-    // Execute operations in the new tab
-    function executeOperationsInNewTab(newTab, data) {
-        newTab.executeOperations(data);
+        });
+
+        let inputToStore = newHiddenInput.prop('outerHTML');
+        newTab.document.write(inputToStore);
+        newTab.document.write(divToStore);
+        newTab.document.write('</body></html>');
+        newTab.onload = function () {
+            let script = newTab.document.createElement('script');
+            script.src = '/Pages/GrantApplications/loadPrint.js';
+            script.onload = function () {
+                newTab.executeOperations(data);
+
+            };
+
+            newTab.document.head.appendChild(script);
+
+        };
+
+        newTab.document.close();
     }
 
     let applicationBreadcrumbWidgetManager = new abp.WidgetManager({
