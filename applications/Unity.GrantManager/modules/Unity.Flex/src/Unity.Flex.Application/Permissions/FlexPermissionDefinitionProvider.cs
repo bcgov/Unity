@@ -8,7 +8,7 @@ public class FlexPermissionDefinitionProvider : PermissionDefinitionProvider
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        var myGroup = context.AddGroup(FlexPermissions.GroupName, L("Permission:Flex"));
+        context.AddGroup(FlexPermissions.GroupName, L("Permission:Flex"));
     }
 
     private static LocalizableString L(string name)
