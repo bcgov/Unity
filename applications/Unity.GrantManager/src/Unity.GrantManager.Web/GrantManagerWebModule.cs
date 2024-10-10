@@ -131,7 +131,7 @@ public class GrantManagerWebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
-        ConfigureUtils(context);                
+        ConfigureUtils(context);
         ConfigureDistributedCache(context, configuration);
         ConfigureDataProtection(context, configuration);
 
@@ -200,6 +200,9 @@ public class GrantManagerWebModule : AbpModule
 
     private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
     {
+        var redisEnabled = bool.Parse(configuration["Redis:IsEnabled"] ?? "false");
+        if (!redisEnabled) return;
+
         context.Services.AddStackExchangeRedisCache(options =>
         {
             options.InstanceName = configuration["Redis:InstanceName"];
@@ -220,6 +223,9 @@ public class GrantManagerWebModule : AbpModule
 
     private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)
     {
+        var redisEnabled = bool.Parse(configuration["Redis:IsEnabled"] ?? "false");
+        if (!redisEnabled) return;
+
         var redisConfiguration = configuration["Redis:InstanceName"];
 
         if (redisConfiguration != null)

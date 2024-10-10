@@ -55,26 +55,31 @@ public class GrantManagerApplicationModule : AbpModule
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
-        PreConfigure<AbpQuartzOptions>(options =>
+        var useQuartzCluster = bool.Parse(configuration["BackgroundJobs:Quartz:UseCluster"] ?? "false");
+
+        if (useQuartzCluster)
         {
-            options.Configurator = configure =>
-            {                                         
-                configure.UsePersistentStore(storeOptions =>
-                {                    
-                    storeOptions.UseProperties = true;
-                    storeOptions.UsePostgres(configuration.GetConnectionString("Default") ?? string.Empty);                    
-                    storeOptions.UseClustering(t =>
+            PreConfigure<AbpQuartzOptions>(options =>
+            {
+                options.Configurator = configure =>
+                {
+                    configure.UsePersistentStore(storeOptions =>
                     {
-                        t.CheckinMisfireThreshold = TimeSpan.FromSeconds(20);
-                        t.CheckinInterval = TimeSpan.FromSeconds(10);
+                        storeOptions.UseProperties = true;
+                        storeOptions.UsePostgres(configuration.GetConnectionString("Default") ?? string.Empty);
+                        storeOptions.UseClustering(t =>
+                        {
+                            t.CheckinMisfireThreshold = TimeSpan.FromSeconds(20);
+                            t.CheckinInterval = TimeSpan.FromSeconds(10);
+                        });
+                        storeOptions.UseJsonSerializer();
+                        storeOptions.SetProperty("quartz.jobStore.tablePrefix", "qrtz_");
+                        storeOptions.SetProperty("quartz.scheduler.instanceName", "UnityQuartz");
+                        storeOptions.SetProperty("quartz.scheduler.instanceId", "AUTO");
                     });
-                    storeOptions.UseJsonSerializer();
-                    storeOptions.SetProperty("quartz.jobStore.tablePrefix", "qrtz_");
-                    storeOptions.SetProperty("quartz.scheduler.instanceName", "UnityQuartz");
-                    storeOptions.SetProperty("quartz.scheduler.instanceId", "AUTO");
-                });
-            };
-        });
+                };
+            });
+        }
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -170,6 +175,7 @@ public class GrantManagerApplicationModule : AbpModule
 
         LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
+
         Configure<AbpDistributedCacheOptions>(options =>
         {
             options.KeyPrefix = configuration["Redis:KeyPrefix"] ?? "unity";
@@ -185,7 +191,7 @@ public class GrantManagerApplicationModule : AbpModule
 
         Configure<AbpBackgroundWorkerQuartzOptions>(options =>
         {
-            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");            
+            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
         });
 
         /*
