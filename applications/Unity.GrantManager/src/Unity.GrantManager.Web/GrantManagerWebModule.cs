@@ -132,7 +132,6 @@ public class GrantManagerWebModule : AbpModule
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
         ConfigureUtils(context);
-        ConfigureDistributedCache(context, configuration);
         ConfigureDataProtection(context, configuration);
 
         Configure<AbpAntiForgeryOptions>(options =>
@@ -196,29 +195,6 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddHealthChecks()
            .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
-    }
-
-    private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
-    {
-        var redisEnabled = bool.Parse(configuration["Redis:IsEnabled"] ?? "false");
-        if (!redisEnabled) return;
-
-        context.Services.AddStackExchangeRedisCache(options =>
-        {
-            options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = configuration["Redis:Configuration"];
-        });
-
-        Configure<RedisCacheOptions>(options =>
-        {
-            options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = configuration["Redis:Configuration"];
-        });
-
-        Configure<AbpDistributedCacheOptions>(options =>
-        {
-            options.KeyPrefix = configuration["Redis:KeyPrefix"] ?? "unity";
-        });
     }
 
     private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)

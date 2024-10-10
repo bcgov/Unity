@@ -41,14 +41,6 @@ public class PaymentsApplicationModule : AbpModule
         {
             mvcBuilder.AddApplicationPartIfNotExists(typeof(PaymentsApplicationModule).Assembly);
         });
-
-        PreConfigure<AbpQuartzOptions>(options =>
-        {
-            options.Configurator = configure =>
-            {
-                configure.SchedulerName = Guid.NewGuid().ToString();
-            };
-        });
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
