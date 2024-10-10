@@ -1,21 +1,41 @@
 (function () {
     abp.widgets.ApplicationActionWidget = function ($wrapper) {
+
         let widgetManager = $wrapper.data('abp-widget-manager');
         let $actionButtons = $wrapper.find('.details-dropdown-action');
         let widgetAppId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
        
-        function init (filters) {
+        function init() {
             $actionButtons.each(function () {
-                let $this = $(this);
-                $this.on("click", function () {
-                    $(this).buttonBusy();
-                    $('#ApplicationActionDropdown .dropdown-toggle').buttonBusy();
-                    let triggerAction = $(this).data('appAction');
-                    customConfirmation(triggerAction);
-
-                });
+                let $button = $(this);
+                attachClickEvent($button);
             });
-        };
+        }
+
+        function attachClickEvent($button) {
+            $button.on("click", function () {
+                handleButtonClick($button);
+            });
+        }
+
+        function handleButtonClick($button) {
+            setButtonBusy($button);
+            triggerAction($button);
+        }
+
+        function setButtonBusy($button) {
+            $button.buttonBusy();
+            $('#ApplicationActionDropdown .dropdown-toggle').buttonBusy();
+        }
+
+        function triggerAction($button) {
+            let action = getActionData($button);
+            customConfirmation(action);
+        }
+
+        function getActionData($button) {
+            return $button.data('appAction');
+        }
 
         function getFilters() {
             return {
@@ -70,8 +90,6 @@
                     return { isConfirmationRequired: false };
             }
         }
-
-
 
         function triggerStatusAction(triggerAction) {
             unity.grantManager.grantApplications.grantApplication
