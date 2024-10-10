@@ -89,45 +89,75 @@ $(function () {
 
     // Wait for the DOM to be fully loaded
     function addEventListeners() {
-        // Get all the card headers
-        const cardHeaders = document.querySelectorAll('.card-header:not(.card-body .card-header)');
-        if (cardHeaders.length) {
-            cardHeaders.forEach((header) => {
-                header.addEventListener('click', function () {
-                    // Toggle the display of the corresponding card body
+        const cardHeaders = getCardHeaders();
+        const cardBodies = getCardBodies();
+        
+        // Collapse all card bodies initially
+        hideAllCardBodies(cardBodies);
+        
+        // Add event listeners to headers
+        cardHeaders.forEach(header => {
+            header.addEventListener('click', () => onCardHeaderClick(header, cardHeaders));
+        });
+    }
 
-                    const cardBody = this.nextElementSibling;
-                    if (
-                        cardBody.style.display === 'none' ||
-                        cardBody.style.display === ''
-                    ) {
-                        cardBody.style.display = 'block';
-                        header.classList.add('custom-active');
+    // Get all card headers
+    function getCardHeaders() {
+        return document.querySelectorAll('.card-header:not(.card-body .card-header)');
+    }
 
+    // Get all card bodies
+    function getCardBodies() {
+        return document.querySelectorAll('.card-body:not(.card-body .card-body)');
+    }
 
-                    } else {
-                        cardBody.style.display = 'none';
-                        header.classList.remove('custom-active');
-                    }
+    // Hide all card bodies initially
+    function hideAllCardBodies(cardBodies) {
+        cardBodies.forEach(body => body.classList.add('hidden'));
+    }
 
-                    // Hide all other card bodies except the one that is being clicked
-                    cardHeaders.forEach((otherHeader) => {
-                        if (otherHeader !== header) {
-                            const otherCardBody = otherHeader.nextElementSibling;
-                            otherCardBody.style.display = 'none';
-                            otherHeader.classList.remove('custom-active');
-                        }
-                    });
-                });
-            });
+    // Handle the card header click event
+    function onCardHeaderClick(clickedHeader, cardHeaders) {
+        const clickedCardBody = getNextCardBody(clickedHeader);
+        const isVisible = toggleCardBodyVisibility(clickedCardBody);
+        toggleHeaderActiveClass(clickedHeader, isVisible);
+        hideOtherCardBodies(clickedHeader, cardHeaders);
+    }
 
-            // Collapse all card bodies initially
-            const cardBodies = document.querySelectorAll('.card-body:not(.card-body .card-body)');
-            cardBodies.forEach((body) => {
-                body.style.display = 'none';
-            });
-        }
-        // Add click event listeners to each card header
+    // Get the next sibling card body
+    function getNextCardBody(header) {
+        return header.nextElementSibling;
+    }
+
+    // Toggle visibility of the card body
+    function toggleCardBodyVisibility(cardBody) {
+        return !cardBody.classList.toggle('hidden');
+    }
+
+    // Toggle active class for the header
+    function toggleHeaderActiveClass(header, isVisible) {
+        header.classList.toggle('custom-active', isVisible);
+    }
+
+    // Hide all other card bodies
+    function hideOtherCardBodies(currentHeader, cardHeaders) {
+        cardHeaders.forEach(otherHeader => {
+            if (otherHeader !== currentHeader) {
+                const otherCardBody = getNextCardBody(otherHeader);
+                hideCardBody(otherCardBody);
+                removeHeaderActiveClass(otherHeader);
+            }
+        });
+    }
+
+    // Hide a specific card body
+    function hideCardBody(cardBody) {
+        cardBody.classList.add('hidden');
+    }
+
+    // Remove active class from a specific header
+    function removeHeaderActiveClass(header) {
+        header.classList.remove('custom-active');
     }
 
     $('#assessment_upload_btn').click(function () { $('#assessment_upload').trigger('click'); });
@@ -250,65 +280,75 @@ $(function () {
     });
 
     $('#printPdf').click(function () {
-        let submissionId = document.getElementById('ChefsSubmissionId').value;
-        unity.grantManager.intakes.submission
-            .getSubmission(submissionId)
+        let submissionId = getSubmissionId();
+    
+        // Fetch submission data
+        fetchSubmissionData(submissionId)
             .done(function (result) {
-
-                let data = result;
-                let newHiddenInput = $('<input>');
-
-                // Set attributes for the hidden input
-                newHiddenInput.attr({
-                    'type': 'hidden',
-                    'name': 'ApplicationFormSubmissionId',
-                    'value': submissionId
-                });
-
-                let newDiv = $('<div>');
-
-                // Set the ID for the new div
-                newDiv.attr('id', 'new-rendering');
-
-                // Add some content to the new div if needed
-                newDiv.html('Content for the new div');
-
-                // Store the outer HTML of the new div in divToStore
-                let divToStore = newDiv.prop('outerHTML');
-                let inputToStore = newHiddenInput.prop('outerHTML');
-
-                // Open a new tab
-                let newTab = window.open('', '_blank');
-
-                // Start writing the HTML content to the new tab
-                newTab.document.write('<html><head><title>Print</title>');
-                newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
-                newTab.document.write('<script src="/libs/formiojs/formio.form.js"></script>');
-                newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
-                newTab.document.write('<link rel="stylesheet" href="/libs/formiojs/formio.form.css">');
-                newTab.document.write('</head><body>');
-                newTab.document.write(inputToStore);
-                newTab.document.write(divToStore);
-                newTab.document.write('</body></html>');
-
-                newTab.onload = function () {
-                    let script = newTab.document.createElement('script');
-                    script.src = '/Pages/GrantApplications/loadPrint.js';
-                    script.onload = function () {
-                        newTab.executeOperations(data);
-
-                    };
-
-                    newTab.document.head.appendChild(script);
-
-                };
-
-                newTab.document.close();
+                openDataInNewTab(result, submissionId);
+            })
+            .fail(function (error) {
+                console.error('Error fetching submission data:', error);
             });
-
-
     });
+    
+    // Get submission ID from the input field
+    function getSubmissionId() {
+        return document.getElementById('ChefsSubmissionId').value;
+    }
+    
+    // Fetch the submission data
+    function fetchSubmissionData(submissionId) {
+        return unity.grantManager.intakes.submission.getSubmission(submissionId);
+    }
+    
+    // Handle the submission result
+    function openDataInNewTab(data, submissionId) {        
+        let newTab = window.open('', '_blank');
+        let newDiv = $('<div>');
 
+        // Set the ID for the new div
+        newDiv.attr('id', 'new-rendering');
+
+        // Add some content to the new div if needed
+        newDiv.html('Content for the new div');
+
+        // Store the outer HTML of the new div in divToStore
+        let divToStore = newDiv.prop('outerHTML');
+        
+        newTab.document.write('<html><head><title>Print</title>');
+        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
+        newTab.document.write('<script src="/libs/formiojs/formio.form.js"></script>');
+        newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
+        newTab.document.write('<link rel="stylesheet" href="/libs/formiojs/formio.form.css">');
+        newTab.document.write('</head><body>');
+
+        let newHiddenInput = $('<input>');
+        // Set attributes for the hidden input
+        newHiddenInput.attr({
+            'type': 'hidden',
+            'name': 'ApplicationFormSubmissionId',
+            'value': submissionId
+        });
+
+        let inputToStore = newHiddenInput.prop('outerHTML');
+        newTab.document.write(inputToStore);
+        newTab.document.write(divToStore);
+        newTab.document.write('</body></html>');
+        newTab.onload = function () {
+            let script = newTab.document.createElement('script');
+            script.src = '/Pages/GrantApplications/loadPrint.js';
+            script.onload = function () {
+                newTab.executeOperations(data);
+
+            };
+
+            newTab.document.head.appendChild(script);
+
+        };
+
+        newTab.document.close();
+    }
 
     let applicationBreadcrumbWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationBreadcrumbWidget',

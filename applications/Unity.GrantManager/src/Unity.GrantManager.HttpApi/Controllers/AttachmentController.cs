@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Controllers
 {
+    [Route("api/app/attachment")]
     public class AttachmentController : AbpController
     {
         private readonly IFileAppService _fileAppService;
@@ -31,8 +32,7 @@ namespace Unity.GrantManager.Controllers
             _submissionAppService = submissionAppService;
         }
 
-        [HttpGet]
-        [Route("/api/app/attachment/application/{applicationId}/download/{fileName}")]
+        [HttpGet("application/{applicationId}/download/{fileName}")]
         public async Task<IActionResult> DownloadApplicationAttachment(string applicationId, string fileName)
         {
             if (!ModelState.IsValid)
@@ -79,8 +79,7 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("/api/app/attachment/assessment/{assessmentId}/download/{fileName}")]
+        [HttpGet("assessment/{assessmentId}/download/{fileName}")]
         public async Task<IActionResult> DownloadAssessmentAttachment(string assessmentId, string fileName)
         {
             if (!ModelState.IsValid)
@@ -127,8 +126,7 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("/api/app/attachment/chefs/{formSubmissionId}/download/{chefsFileId}/{fileName}")]
+        [HttpGet("chefs/{formSubmissionId}/download/{chefsFileId}/{fileName}")]
         public async Task<IActionResult> DownloadChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
         {
             if (!ModelState.IsValid)
@@ -160,8 +158,7 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
-        [HttpPost]
-        [Route("/api/app/attachment/assessment/{assessmentId}/upload")]
+        [HttpPost("assessment/{assessmentId}/upload")]
 #pragma warning disable IDE0060 // Remove unused parameter
         public async Task<IActionResult> UploadAssessmentAttachments(Guid assessmentId, IList<IFormFile> files)
 #pragma warning restore IDE0060 // Remove unused parameter
@@ -179,8 +176,7 @@ namespace Unity.GrantManager.Controllers
             return await UploadFiles(files);
         }
 
-        [HttpPost]
-        [Route("/api/app/attachment/application/{applicationId}/upload")]
+        [HttpPost("application/{applicationId}/upload")]
 #pragma warning disable IDE0060 // Remove unused parameter
         public async Task<IActionResult> UploadApplicationAttachments(Guid applicationId, IList<IFormFile> files, string userId, string userName)
 #pragma warning restore IDE0060 // Remove unused parameter

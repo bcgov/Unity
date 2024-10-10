@@ -126,8 +126,8 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
         using GetObjectResponse response = await _amazonS3Client.GetObjectAsync(getObjectRequest);
         MemoryStream memoryStream = new();
         using Stream responseStream = response.ResponseStream;
-        responseStream.CopyTo(memoryStream);
-        return memoryStream;              
+        await responseStream.CopyToAsync(memoryStream);
+        return memoryStream;
     }    
 
     private static string GetMimeType(string fileName)

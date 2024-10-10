@@ -346,3 +346,11 @@ form label.error {
 .formio-editor-read-only-content {
     word-break: normal !important;
 }
+
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}
