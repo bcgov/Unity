@@ -9,6 +9,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
+using static Unity.GrantManager.Locality.CommunityAppService;
 
 namespace Unity.GrantManager.Locality
 {
@@ -16,15 +17,15 @@ namespace Unity.GrantManager.Locality
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(CommunityAppService), typeof(ICommunityService))]
     public class CommunityAppService(ICommunityRepository communityRepository,
-        IDistributedCache<CommunityAppService.CommunityCache, string> cache) : ApplicationService, ICommunityService
-    {        
+        IDistributedCache<CommunityCache, string> cache) : ApplicationService, ICommunityService
+    {
         public async Task<IList<CommunityDto>> GetListAsync()
         {
             var communitiesCache = await cache.GetOrAddAsync(
                 SettingsConstants.CommunitiesCacheKey,
                 GetCommunitiesAsync,
                 () => new DistributedCacheEntryOptions
-                {                    
+                {
                     AbsoluteExpiration = DateTimeOffset.Now.AddHours(SettingsConstants.DefaultLocalityCacheHours)
                 }
             );
@@ -36,7 +37,10 @@ namespace Unity.GrantManager.Locality
         {
             var communities = await communityRepository.GetListAsync();
 
-            return new CommunityCache() { Communities = ObjectMapper.Map<List<Community>, List<CommunityDto>>([.. communities.OrderBy(c => c.Name)]) };
+            return new CommunityCache()
+            {
+                Communities = ObjectMapper.Map<List<Community>, List<CommunityDto>>([.. communities.OrderBy(c => c.Name)])
+            };
         }
 
         [IgnoreMultiTenancy]

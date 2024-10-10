@@ -26,7 +26,6 @@ namespace Unity.Notifications;
     typeof(AbpBackgroundJobsModule),
     typeof(AbpBackgroundWorkersQuartzModule)
     )]
-[DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
 public class NotificationsApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

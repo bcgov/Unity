@@ -70,7 +70,6 @@ using Microsoft.Extensions.Caching.StackExchangeRedis;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
 using Volo.Abp.Caching;
-using Volo.Abp.Quartz;
 
 namespace Unity.GrantManager.Web;
 
@@ -114,24 +113,6 @@ public class GrantManagerWebModule : AbpModule
         {
             options.IsCleanupEnabled = false; // not used
         });
-
-        //PreConfigure<AbpQuartzOptions>(options =>
-        //{
-        //    options.Configurator = configure =>
-        //    {
-        //        configure.UsePersistentStore(storeOptions =>
-        //        {
-        //            storeOptions.UseProperties = true;
-        //            storeOptions.UseJsonSerializer();
-        //            storeOptions.UseSqlServer(configuration.GetConnectionString("Quartz"));
-        //            storeOptions.UseClustering(c =>
-        //            {
-        //                c.CheckinMisfireThreshold = TimeSpan.FromSeconds(20);
-        //                c.CheckinInterval = TimeSpan.FromSeconds(10);
-        //            });
-        //        });
-        //    };
-        //});
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -154,17 +135,6 @@ public class GrantManagerWebModule : AbpModule
         ConfigureDistributedCache(context, configuration);
         ConfigureDataProtection(context, configuration);
 
-        Configure<AbpBackgroundJobOptions>(options =>
-        {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
-        });
-
-        Configure<AbpBackgroundWorkerQuartzOptions>(options =>
-        {
-            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");    
-            
-        });
-
         Configure<AbpAntiForgeryOptions>(options =>
         {
             options.TokenCookie.Expiration = TimeSpan.FromDays(365);
@@ -172,6 +142,7 @@ public class GrantManagerWebModule : AbpModule
             options.TokenCookie.SameSite = SameSiteMode.Lax;
             options.TokenCookie.HttpOnly = false;
         });
+
         Configure<AbpClockOptions>(options =>
         {
             options.Kind = DateTimeKind.Utc;

@@ -13,22 +13,13 @@ namespace Unity.GrantManager.Locality
     [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(RegionalDistrictAppService), typeof(IRegionalDistrictService))]
-    public class RegionalDistrictAppService : ApplicationService, IRegionalDistrictService
+    public class RegionalDistrictAppService(IRegionalDistrictRepository regionalDistricRepository,
+        IDistributedCache<IList<RegionalDistrictDto>, LocalityCacheKey> cache) : ApplicationService, IRegionalDistrictService
     {
-        private readonly IRegionalDistrictRepository _regionalDistrictRepository;
-        private readonly IDistributedCache<IList<RegionalDistrictDto>, LocalityCacheKey> _cache;
-
-        public RegionalDistrictAppService(IRegionalDistrictRepository regionalDistricRepository,
-            IDistributedCache<IList<RegionalDistrictDto>, LocalityCacheKey> cache)
-        {
-            _regionalDistrictRepository = regionalDistricRepository;
-            _cache = cache;
-        }
-
         public virtual async Task<IList<RegionalDistrictDto>> GetListAsync()
         {
             var cacheKey = new LocalityCacheKey(SettingsConstants.RegionalDistrictsCacheKey, null);
-            return await _cache.GetOrAddAsync(
+            return await cache.GetOrAddAsync(
                 cacheKey,
                 GetRegionalDistricts
             ) ?? [];
@@ -36,7 +27,7 @@ namespace Unity.GrantManager.Locality
 
         protected virtual async Task<IList<RegionalDistrictDto>> GetRegionalDistricts()
         {
-            var regionalDistrict = await _regionalDistrictRepository.GetListAsync();
+            var regionalDistrict = await regionalDistricRepository.GetListAsync();
 
             return ObjectMapper.Map<List<RegionalDistrict>, List<RegionalDistrictDto>>([.. regionalDistrict.OrderBy(r => r.RegionalDistrictName)]);
         }
