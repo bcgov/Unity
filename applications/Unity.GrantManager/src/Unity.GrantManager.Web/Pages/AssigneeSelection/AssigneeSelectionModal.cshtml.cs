@@ -130,14 +130,14 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             CurrentAssigneeList = JsonConvert.SerializeObject(currentAssigneeList);
         }
 
-        private void CategorizeAssignees(List<GrantApplicationAssigneeDto> assignees,
+        private static void CategorizeAssignees(List<GrantApplicationAssigneeDto> assignees,
             List<Guid> selectedApplicationIds,
             ListResultDto<UserData> users,
             out List<GrantApplicationAssigneeDto> commonAssigneeList,
             out List<GrantApplicationAssigneeDto> unCommonAssigneeList)
         {
-            commonAssigneeList = new List<GrantApplicationAssigneeDto>();
-            unCommonAssigneeList = new List<GrantApplicationAssigneeDto>();
+            commonAssigneeList = [];
+            unCommonAssigneeList = [];
 
             var commonArray = assignees
                 .Where(a => selectedApplicationIds.Contains(a.ApplicationId))
@@ -208,8 +208,8 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
                 var applicationIds = DeserializeJson<List<Guid>>(SelectedApplicationIds);
                 if (applicationIds == null) return NoContent();
 
-                var currentAssigneeList = DeserializeJson<List<GrantApplicationAssigneeDto>>(CurrentAssigneeList) ?? new List<GrantApplicationAssigneeDto>();
-                var selectedAssignees = DeserializeJson<List<AssigneeDuty>>(SelectedAssignees) ?? new List<AssigneeDuty>();
+                var currentAssigneeList = DeserializeJson<List<GrantApplicationAssigneeDto>>(CurrentAssigneeList) ?? [];
+                var selectedAssignees = SelectedAssignees == null ? [] : DeserializeJson<List<AssigneeDuty>>(SelectedAssignees) ?? [];
 
                 await ProcessAssigneesForApplications(applicationIds, currentAssigneeList, selectedAssignees);
                 await UpdateOwnerForApplications(applicationIds);
@@ -232,7 +232,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             }
             else if (currentAssigneeList?.Count > 0)
             {
-                await RemoveAssignees(applicationIds, currentAssigneeList, selectedAssignees, false);
+                await RemoveAssignees(applicationIds, currentAssigneeList, selectedAssignees ?? [], false);
             }
         }
 
@@ -242,7 +242,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             foreach (var applicationId in applicationIds)
             {
                 var currentAssigneesForApplication = currentAssigneeList?.Where(x => x.ApplicationId == applicationId).ToList();
-                if (currentAssigneesForApplication == null || !currentAssigneesForApplication.Any()) continue;
+                if (currentAssigneesForApplication == null || currentAssigneesForApplication.Count == 0) continue;
 
                 var assigneesToRemove = unselected
                     ? currentAssigneesForApplication.Where(assignee => selectedAssignees.TrueForAll(x => x.Id != assignee.AssigneeId.ToString())).ToList()
