@@ -24,7 +24,7 @@ namespace Unity.GrantManager.Repositories
         {
             var dbSet = await GetDbSetAsync();
             return await dbSet.AsQueryable()
-                .Where(u => EF.Functions.Like(EF.Property<string>(u, "OidcSub"), $"{oidcSub.ToSubjectWithoutIdp()}%"))
+                .Where(u => EF.Functions.ILike(EF.Property<string>(u, "OidcSub"), $"{oidcSub.ToSubjectWithoutIdp()}%"))
                 .ToListAsync();
         }
     }
