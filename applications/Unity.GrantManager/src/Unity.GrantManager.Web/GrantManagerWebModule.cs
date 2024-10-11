@@ -316,7 +316,7 @@ public class GrantManagerWebModule : AbpModule
                 return Task.CompletedTask;
             };
             if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"])
-                || Convert.ToBoolean(configuration["AuthServer:SpecifyOdicParameters"]))
+                || Convert.ToBoolean(configuration["AuthServer:SpecifyOidcParameters"]))
             {
                 // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested
                 options.Events.OnRedirectToIdentityProvider = context =>
