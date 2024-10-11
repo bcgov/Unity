@@ -1,6 +1,5 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Locality
 {

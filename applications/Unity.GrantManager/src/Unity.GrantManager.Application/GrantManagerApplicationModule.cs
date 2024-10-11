@@ -33,9 +33,6 @@ using System;
 using Quartz;
 using Volo.Abp.BackgroundJobs;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
-using RabbitMQ.Client;
-using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
-using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Shared.MessageBrokers.RabbitMQ;
 
 namespace Unity.GrantManager;
