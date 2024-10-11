@@ -31,14 +31,16 @@ using Volo.Abp.Caching;
 using Volo.Abp.Quartz;
 using System;
 using Quartz;
-using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
+using RabbitMQ.Client;
+using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
+using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Shared.MessageBrokers.RabbitMQ;
 
 namespace Unity.GrantManager;
 
 [DependsOn(
-    typeof(AbpAutofacModule),
     typeof(GrantManagerDomainModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
@@ -135,6 +137,8 @@ public class GrantManagerApplicationModule : AbpModule
 
         ConfigureBackgroundServices(configuration);
         ConfigureDistributedCache(context, configuration);
+
+        context.Services.ConfigureRabbitMQ();
 
         _ = context.Services.AddSingleton(provider =>
         {

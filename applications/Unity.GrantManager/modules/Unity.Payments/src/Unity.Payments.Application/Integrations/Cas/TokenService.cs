@@ -21,7 +21,7 @@ namespace Unity.Payments.Integrations.Cas
     public class TokenService(
         IOptions<CasClientOptions> casClientOptions,
         IHttpClientFactory httpClientFactory,
-        DistributedCache<TokenValidationResponse, string> castokenCache) : ApplicationService, ITokenService
+        IDistributedCache<TokenValidationResponse, string> castokenCache) : ApplicationService, ITokenService
     {
         private const string OAUTH_PATH = "oauth/token";
         private const int ONE_MINUTE_SECONDS = 60;

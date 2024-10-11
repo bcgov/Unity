@@ -10,13 +10,8 @@ using Volo.Abp.BackgroundJobs;
 using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Unity.Payments.PaymentRequests;
-using Volo.Abp.Quartz;
-using System;
 using Volo.Abp.TenantManagement;
 using Unity.Shared.MessageBrokers.RabbitMQ;
-using RabbitMQ.Client;
-using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
-using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Payments.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
@@ -54,27 +49,7 @@ public class PaymentsApplicationModule : AbpModule
             options.FinancialNotificationSummaryOptions.ProducerExpression = configuration.GetValue<string>("BackgroundJobs:CasFinancialNotificationSummary:ProducerExpression") ?? "";            
         });
 
-        context.Services.AddSingleton<IAsyncConnectionFactory>(provider =>
-        {
-            var factory = new ConnectionFactory
-            {
-                UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "",
-                Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "",
-                HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "",
-                VirtualHost = configuration.GetValue<string>("RabbitMQ:VirtualHost") ?? "/",
-                Port = configuration.GetValue<int>("RabbitMQ:Port"),
-                DispatchConsumersAsync = true,
-                AutomaticRecoveryEnabled = true,
-                // Configure the amount of concurrent consumers within one host
-                ConsumerDispatchConcurrency = QueueingConstants.MAX_RABBIT_CONCURRENT_CONSUMERS,
-            };
-            return factory;
-        });
-
-        context.Services.AddSingleton<IConnectionProvider, ConnectionProvider>();
-        context.Services.AddScoped<IChannelProvider, ChannelProvider>();
-        context.Services.AddScoped(typeof(IQueueChannelProvider<>), typeof(QueueChannelProvider<>));
-        context.Services.AddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
+        context.Services.ConfigureRabbitMQ();
         context.Services.AddQueueMessageConsumer<InvoiceConsumer, InvoiceMessages>();
         context.Services.AddQueueMessageConsumer<ReconciliationConsumer, ReconcilePaymentMessages>();
 
