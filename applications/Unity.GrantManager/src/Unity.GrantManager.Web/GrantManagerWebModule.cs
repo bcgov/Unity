@@ -46,8 +46,6 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
-using Volo.Abp.BackgroundJobs;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict.Tokens;
@@ -66,14 +64,13 @@ using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 using Unity.Flex.Web;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
-using Volo.Abp.Caching;
 
 namespace Unity.GrantManager.Web;
 
 [DependsOn(
+    typeof(AbpAutofacModule),
     typeof(GrantManagerHttpApiModule),
     typeof(GrantManagerApplicationModule),
     typeof(GrantManagerEntityFrameworkCoreModule),
