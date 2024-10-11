@@ -196,11 +196,8 @@ public class GrantManagerWebModule : AbpModule
 
     private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        var configureDataProtection = bool.Parse(configuration["DataProtection:IsEnabled"] ?? "false");
-        if (!configureDataProtection) return;
-
-        var redisEnabled = bool.Parse(configuration["Redis:IsEnabled"] ?? "false");
-        if (!redisEnabled) return;
+        if (!Convert.ToBoolean(configuration["DataProtection:IsEnabled"])) return;
+        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
 
         var redisConfiguration = configuration["Redis:InstanceName"];
 
@@ -525,8 +522,7 @@ public class GrantManagerWebModule : AbpModule
             options.SupportedUICultures = supportedCultures;
         });
 
-        var configureDataProtection = bool.Parse(configuration["DataProtection:IsEnabled"] ?? "false");
-        if (configureDataProtection)
+        if (Convert.ToBoolean(configuration["DataProtection:IsEnabled"]))
         {
             app.UseSession();
         }

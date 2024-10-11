@@ -55,7 +55,6 @@ public class GrantManagerApplicationModule : AbpModule
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
-        var useQuartzCluster = bool.Parse(configuration["BackgroundJobs:Quartz:UseCluster"] ?? "false");
 
         PreConfigure<AbpQuartzOptions>(options =>
         {
@@ -65,7 +64,7 @@ public class GrantManagerApplicationModule : AbpModule
             };
         });
 
-        if (useQuartzCluster)
+        if (Convert.ToBoolean(configuration["BackgroundJobs:Quartz:UseCluster"]))
         {
             PreConfigure<AbpQuartzOptions>(options =>
             {
@@ -190,8 +189,7 @@ public class GrantManagerApplicationModule : AbpModule
 
     private void ConfigureBackgroundServices(IConfiguration configuration)
     {
-        var backgroundServicesEnabled = bool.Parse(configuration["BackgroundJobs:IsJobExecutionEnabled"] ?? "false");
-        if (!backgroundServicesEnabled) return;
+        if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"])) return;
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
@@ -218,9 +216,8 @@ public class GrantManagerApplicationModule : AbpModule
 
     private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        var redisEnabled = bool.Parse(configuration["Redis:IsEnabled"] ?? "false");
-        if (!redisEnabled) return;
-
+        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
+        
         context.Services.AddStackExchangeRedisCache(options =>
         {
             options.InstanceName = configuration["Redis:InstanceName"];
