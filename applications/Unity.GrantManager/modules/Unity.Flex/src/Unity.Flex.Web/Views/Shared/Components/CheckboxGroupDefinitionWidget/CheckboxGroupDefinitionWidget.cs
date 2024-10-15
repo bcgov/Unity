@@ -23,7 +23,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
         AutoInitialize = true)]
     public partial class CheckboxGroupDefinitionWidget : AbpViewComponent
     {
-        private static readonly Regex _regex = MyRegex();
+        const string validInputPattern = @"^[ə̀ə̩ə̥ɛæə̌ə̂ə̧ə̕ə̓ᵒə̄ə̱·ʷəŧⱦʸʋɨⱡɫʔʕⱥɬθᶿɣɔɩłə̈ʼə̲ᶻꭓȼƛλŋƚə̨ə̣ə́ `1234567890-=qwertyuiop[]asdfghjkl;_'_\\zxcvbnm,.~!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:""||ZXCVBNM<>?]+$";
+
+        [GeneratedRegex(validInputPattern)]
+        private static partial Regex MyRegex();
 
         internal static object? ParseFormValues(IFormCollection form)
         {
@@ -52,16 +55,36 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 
         private static void ValidateInput(StringValues keys, StringValues labels)
         {
-            ValidateValuesAdded(keys, labels);
+            ValidateLabelsAdded(keys, labels);
             ValidateKeysUnique(keys);
             ValidateKeysFormat(keys);
+            ValidateLabelsFormat(labels);
+        }
+
+        private static void ValidateLabelsFormat(StringValues values)
+        {
+            foreach (var key in values)
+            {
+                if (!IsValidInput(key ?? string.Empty))
+                {
+                    throw new UserFriendlyException("The following characters are allowed for Values: " + validInputPattern);
+                }
+            }
         }
 
         private static void ValidateKeysFormat(StringValues keys)
         {
-            if (keys.Any(key => !_regex.IsMatch(key ?? string.Empty)))
+            foreach (var key in keys)
             {
-                throw new UserFriendlyException("Checkbox keys must match input pattern");
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    throw new UserFriendlyException("There are empty Keys captured which are required");
+                }
+
+                if (!IsValidInput(key))
+                {
+                    throw new UserFriendlyException("The following characters are allowed for Keys: " + validInputPattern);
+                }
             }
         }
 
@@ -73,7 +96,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
             }
         }
 
-        private static void ValidateValuesAdded(StringValues keys, StringValues labels)
+        private static void ValidateLabelsAdded(StringValues keys, StringValues labels)
         {
             if (keys.Count == 0 || labels.Count == 0)
             {
@@ -101,8 +124,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
             return View(await Task.FromResult(new CheckboxGroupDefinitionViewModel()));
         }
 
-        [GeneratedRegex(@"^[a-zA-Z0-9 ]+$", RegexOptions.Compiled)]
-        private static partial Regex MyRegex();
+        public static bool IsValidInput(string input)
+        {
+            Regex regex = MyRegex();
+            return regex.IsMatch(input);
+        }
     }
 
     public class CheckboxGroupDefinitionWidgetStyleBundleContributor : BundleContributor
