@@ -288,10 +288,6 @@
             data: 'status',
             name: 'status',
             className: 'data-table-header',
-            render: function (data, type, row) {
-                let fill = row.assessmentReviewCount > 0 ? 'fas' : 'far';
-                return `<span class="d-flex align-items-center"><i class="${fill} fa-bookmark text-primary"></i><span class="ps-2 flex-fill">${row.status}</span></span>`;
-            },
             index: 10
         }
     }
