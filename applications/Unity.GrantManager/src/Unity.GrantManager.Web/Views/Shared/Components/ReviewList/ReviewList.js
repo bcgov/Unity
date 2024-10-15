@@ -4,9 +4,8 @@ const nullPlaceholder = '—';
 
 const actionButtonConfigMap = {
     Create: { buttonType: 'createButton', order: 1 },
-    SendToTeamLead: { buttonType: 'unityWorkflow', order: 2 },
+    Confirm: { buttonType: 'unityWorkflow', order: 2 },
     SendBack: { buttonType: 'unityWorkflow', order: 3 },
-    Confirm: { buttonType: 'unityWorkflow', order: 4 },
     _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }
 
@@ -46,7 +45,7 @@ $(function () {
 
     $.extend(DataTable.ext.buttons, {
         unityWorkflow: {
-            className: 'btn btn-light',            
+            className: 'btn btn-light',
             enabled: false,
             text: unityWorkflowButtonText,
             action: unityWorkflowButtonAction
@@ -198,7 +197,7 @@ $(function () {
         return !finalApplicationStates.includes(applicationStatus.statusCode);
     }
 
-    reviewListTable.buttons(0, null).container().prependTo("#DetailsActionBarStart");
+    reviewListTable.buttons(0, null).container().appendTo("#DetailsActionBarStart");
     $("#DetailsActionBarStart .dt-buttons").contents().unwrap();
 
     reviewListTable.on('select', function (e, dt, type, indexes) {
