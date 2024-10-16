@@ -199,17 +199,22 @@ public class GrantManagerWebModule : AbpModule
         if (!Convert.ToBoolean(configuration["DataProtection:IsEnabled"])) return;
         if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
 
-        var redisConfiguration = configuration["Redis:InstanceName"];
-
-        if (redisConfiguration != null)
+        var configurationOptions = new ConfigurationOptions
         {
-            IDataProtectionBuilder dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("UnityGrantManagerWeb");
+            EndPoints = { $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]}" },
+            Password = configuration["Redis:Password"],
+            ClientName = configuration["Redis:InstanceName"]
+        };
 
-            var redis = ConnectionMultiplexer
-              .Connect(redisConfiguration);
+        IDataProtectionBuilder dataProtectionBuilder = context
+            .Services
+            .AddDataProtection()
+            .SetApplicationName("UnityGrantManagerWeb");
 
-            dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Unity-DataKeys");
-        }
+        var redis = ConnectionMultiplexer
+          .Connect(configurationOptions);
+
+        dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Unity-DataKeys");
 
         context.Services.AddSession(options =>
         {

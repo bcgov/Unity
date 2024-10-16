@@ -81,6 +81,8 @@ services:
       - 6379:6379
     networks:
       - common-network
+    command: >
+          --requirepass ${REDIS_PASSWORD}
 
   redis_commander:
     depends_on:
@@ -88,7 +90,8 @@ services:
     image: ghcr.io/joeferner/redis-commander:latest
     restart: always
     environment:
-    - REDIS_HOST=redis
+      - REDIS_HOST=redis      
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
     - "8081:8081"
     networks:

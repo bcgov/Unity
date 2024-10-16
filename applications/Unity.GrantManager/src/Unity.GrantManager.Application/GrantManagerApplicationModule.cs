@@ -37,7 +37,7 @@ using Unity.Shared.MessageBrokers.RabbitMQ;
 
 namespace Unity.GrantManager;
 
-[DependsOn(
+[DependsOn(    
     typeof(GrantManagerDomainModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
@@ -217,17 +217,17 @@ public class GrantManagerApplicationModule : AbpModule
     private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
     {
         if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
-        
+
         context.Services.AddStackExchangeRedisCache(options =>
         {
             options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = configuration["Redis:Configuration"];
+            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
         });
 
         Configure<RedisCacheOptions>(options =>
         {
             options.InstanceName = configuration["Redis:InstanceName"];
-            options.Configuration = configuration["Redis:Configuration"];
+            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
         });
 
         Configure<AbpDistributedCacheOptions>(options =>
