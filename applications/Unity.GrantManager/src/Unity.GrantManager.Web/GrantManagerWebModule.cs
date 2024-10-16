@@ -218,8 +218,7 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddSession(options =>
         {
-            options.IdleTimeout = TimeSpan.FromHours(8);
-            options.Cookie.Name = "UnityGrantManagerWebSession";
+            options.IdleTimeout = TimeSpan.FromHours(8);            
         });
     }
 
