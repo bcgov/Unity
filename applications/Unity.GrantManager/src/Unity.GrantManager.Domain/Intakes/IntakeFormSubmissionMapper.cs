@@ -74,7 +74,7 @@ namespace Unity.GrantManager.Intakes
             catch (Exception ex)
             {                
                 string ExceptionMessage = ex.Message;
-                Logger.LogInformation("An exception orccured adding components: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogInformation(ex, "An exception orccured adding components: {ExceptionMessage}", ExceptionMessage);
             }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
@@ -187,12 +187,12 @@ namespace Unity.GrantManager.Intakes
                 catch (Exception ex)
                 {
                     Logger.LogException(ex);
-                    return ApplyDefaultConfigurationMapping(data, form);
+                    return ApplyDefaultConfigurationMapping(data);
                 }
             }
             else
             {
-                return ApplyDefaultConfigurationMapping(data, form);
+                return ApplyDefaultConfigurationMapping(data);
             }
         }
 
@@ -243,7 +243,7 @@ namespace Unity.GrantManager.Intakes
             return nodes;
         }
 
-        private static IntakeMapping ApplyDefaultConfigurationMapping(dynamic data, dynamic form)
+        private static IntakeMapping ApplyDefaultConfigurationMapping(dynamic data)
         {
             return new IntakeMapping()
             {
@@ -253,13 +253,14 @@ namespace Unity.GrantManager.Intakes
                 RequestedAmount = data.requestedAmount is string ? data.requestedAmount : null,
                 PhysicalCity = data.city is string ? data.city : null,
                 EconomicRegion = data.economicRegion is string ? data.economicRegion : null,
+                ApplicantAgent = data.applicantAgent
             };
         }
 
         private static IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data, dynamic form)
         {
             var configMap = JsonConvert.DeserializeObject<dynamic>(submissionHeaderMapping)!;
-            IntakeMapping intakeMapping = ApplyDefaultConfigurationMapping(data, form);
+            IntakeMapping intakeMapping = ApplyDefaultConfigurationMapping(data);
 
             if (configMap != null)
             {
@@ -314,7 +315,7 @@ namespace Unity.GrantManager.Intakes
             return files;
         }
 
-        private List<string> GetFileKeys(dynamic version)
+        private static List<string> GetFileKeys(dynamic version)
         {
             var fileKeys = new List<string>();
             fileKeys.AddRange(FindFileKeys(version, "type", "simplefile"));
