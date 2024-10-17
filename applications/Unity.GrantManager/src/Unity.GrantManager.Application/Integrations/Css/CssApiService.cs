@@ -84,7 +84,7 @@ namespace Unity.GrantManager.Integrations.Sso
                 && response.IsSuccessStatusCode)
             {
                 string content = response.Content;
-                var result = JsonSerializer.Deserialize<UserSearchResult>(content) ?? throw new Exception();
+                var result = JsonSerializer.Deserialize<UserSearchResult>(content) ?? throw new UserFriendlyException("SearchSsoAsync -> Could not Deserialize");
 
                 result.Success = true;
                 return result;
@@ -131,7 +131,7 @@ namespace Unity.GrantManager.Integrations.Sso
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                Logger.LogError("Error fetching Css API token {statusCode} {errorMessage} {errorException}", response.StatusCode, response.ErrorMessage, response.ErrorException);
+                Logger.LogError(response.ErrorException, "Error fetching Css API token {StatusCode} {ErrorMessage} {ErrorException}", response.StatusCode, response.ErrorMessage, response.ErrorException);
 
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {                    

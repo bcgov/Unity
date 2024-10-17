@@ -5,11 +5,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewMod
 {
     public class WorksheetFieldViewModel
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.Empty;
         public string Name { get; set; } = string.Empty;
         public string Label { get; set; } = string.Empty;
         public CustomFieldType Type { get; set; } = CustomFieldType.Undefined;
-        public uint Order { get; set; }
+        public uint? Order { get; set; }
         public bool Enabled { get; set; } = true;
         public string? Definition { get; set; } = "{}";
         public string? CurrentValue { get; set; }

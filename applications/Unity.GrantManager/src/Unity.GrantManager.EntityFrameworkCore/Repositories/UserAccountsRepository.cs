@@ -22,11 +22,10 @@ namespace Unity.GrantManager.Repositories
 
         public async Task<IList<IdentityUser>> GetListByOidcSub(string oidcSub)
         {
-            var dbSet = await GetDbSetAsync();            
-            return dbSet.AsQueryable().Where(u => EF.Property<string>(u, "OidcSub")
-                .ToUpper()
-                .StartsWith(oidcSub.ToSubjectWithoutIdp()))
-                .ToList();
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.AsQueryable()
+                .Where(u => EF.Functions.ILike(EF.Property<string>(u, "OidcSub"), $"{oidcSub.ToSubjectWithoutIdp()}%"))
+                .ToListAsync();
         }
     }
 }

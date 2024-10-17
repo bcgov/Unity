@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Controllers
 {
+    [Route("/api/app")]
     public partial class FormController : AbpController
     {
         private readonly IApplicationFormRepository _applicationFormRepository;
@@ -35,8 +36,7 @@ namespace Unity.GrantManager.Controllers
             _formsApiService = formsApiService;
         }
 
-        [HttpPost]
-        [Route("/api/app/form/{formId}/version/{formVersionId}")]
+        [HttpPost("form/{formId}/version/{formVersionId}")]
         public async Task<IActionResult> SynchronizeChefsAvailableFields(string formId, string formVersionId)
         {
             // Check for model state validity (if you have a model to validate)

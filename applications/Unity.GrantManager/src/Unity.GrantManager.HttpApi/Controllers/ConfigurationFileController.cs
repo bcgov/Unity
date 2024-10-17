@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Unity.GrantManager.Controllers
 {
     // This is designed to download configuration files for the user for app setup
+    [Route("/api/app/configurationFile")]
     public class ConfigurationFileController : AbpController
     {
         private readonly IApplicationFormConfigurationAppService _applicationFormConfigurationAppService;
@@ -28,8 +29,7 @@ namespace Unity.GrantManager.Controllers
             _currentTenant = currentTenant;
         }
 
-        [HttpGet]
-        [Route("/api/app/configurationFile/{type}")]
+        [HttpGet("{type}")]
         public async Task<IActionResult> DownloadConfiguration(string type)
         {
             if (!ModelState.IsValid)
@@ -69,13 +69,13 @@ namespace Unity.GrantManager.Controllers
             using (var ms = new MemoryStream())
             {
                 using TextWriter tw = new StreamWriter(ms);
-                tw.Write(JsonSerializer.Serialize(await _applicationFormConfigurationAppService.GetConfiguration(),
+                await tw.WriteAsync(JsonSerializer.Serialize(await _applicationFormConfigurationAppService.GetConfiguration(),
                     options: new JsonSerializerOptions()
                     {
                         WriteIndented = true,
                         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     }));
-                tw.Flush();
+                await tw.FlushAsync();
                 ms.Position = 0;
                 bytes = ms.ToArray();
                 ms.Close();
