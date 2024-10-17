@@ -79,6 +79,7 @@ namespace Unity.GrantManager.Intakes
                 RequestedAmount = data.requestedAmount is string ? data.requestedAmount : null,
                 PhysicalCity = data.city is string ? data.city : null,
                 EconomicRegion = data.economicRegion is string ? data.economicRegion : null,
+                ApplicantAgent = data.applicantAgent
             };
         }
 

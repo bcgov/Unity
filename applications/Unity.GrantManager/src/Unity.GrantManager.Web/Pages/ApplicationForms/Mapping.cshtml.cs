@@ -119,16 +119,19 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             foreach (var property in intakeMapping.GetType().GetProperties())
             {
+                var browsable = property.GetCustomAttributes(typeof(BrowsableAttribute), true).Cast<BrowsableAttribute>().SingleOrDefault();
                 var displayName = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault();
                 var fieldType = property.GetCustomAttributes(typeof(MapFieldTypeAttribute), true).Cast<MapFieldTypeAttribute>().SingleOrDefault();
-
-                properties.Add(new MapField()
-                {
-                    Name = property.Name,
-                    Type = fieldType?.Type ?? "String",
-                    IsCustom = false,
-                    Label = displayName?.DisplayName ?? property.Name
-                });
+                
+                if(browsable != null && browsable.IsDefaultAttribute()) {
+                    properties.Add(new MapField()
+                    {
+                        Name = property.Name,
+                        Type = fieldType?.Type ?? "String",
+                        IsCustom = false,
+                        Label = displayName?.DisplayName ?? property.Name
+                    });
+                }
             }
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))

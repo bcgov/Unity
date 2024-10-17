@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.EntityFrameworkCore;
 using Volo.Abp.DependencyInjection;
@@ -16,6 +18,13 @@ namespace Unity.GrantManager.Repositories
     {
         public ApplicantRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
         {
+        }
+
+        public async Task<Applicant?> GetByUnityApplicantId(string? unityApplicantId)
+        {
+            var dbContext = await GetDbContextAsync();
+
+            return await dbContext.Applicants.FirstOrDefaultAsync(x => x.UnityApplicantId == unityApplicantId);
         }
     }
 }

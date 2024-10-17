@@ -27,4 +27,13 @@ public class ApplicantAgent : AuditedAggregateRoot<Guid>, IMultiTenant
     public string Email { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public Guid? TenantId { get; set; }
+
+    // CHEFS - applicantAgent - Login Token
+    public Guid? BceidBusinessGuid { get; set; }
+    public Guid? BceidUserGuid { get; set; }
+    public string? BceidUserName { get; set; } = string.Empty;
+    public string? BceidBusinessName { get; set; } = string.Empty;
+    public string? IdentityName { get; set; } = string.Empty;
+    public string? IdentityEmail { get; set; } = string.Empty;
+    public string? IdentityProvider { get; set; } = string.Empty;
 }
