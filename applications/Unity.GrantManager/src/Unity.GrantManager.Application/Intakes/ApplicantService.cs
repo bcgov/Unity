@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Intakes
                 }
 
                 string operatingDate = applicant.StartedOperatingDate != null ? ((DateOnly)applicant.StartedOperatingDate).ToString("o", CultureInfo.InvariantCulture) : ""; // Specify a format
-                string bcSocietyNumber = applicant.OrgNumber.StartsWith("S") ? applicant.OrgNumber : string.Empty;
+                string bcSocietyNumber = applicant.OrgNumber.StartsWith('S') ? applicant.OrgNumber : string.Empty;
                 var result = new ApplicantResult
                 {
                     id = applicant.Id.ToString(),

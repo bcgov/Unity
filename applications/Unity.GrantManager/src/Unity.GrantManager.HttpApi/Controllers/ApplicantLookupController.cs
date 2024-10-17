@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Volo.Abp.TenantManagement;
 using Microsoft.AspNetCore.Authorization;
 using Unity.GrantManager.Data;
-using Newtonsoft.Json;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Intakes;
 
@@ -18,8 +17,7 @@ namespace Unity.GrantManager.Controllers
                                 IApplicantService applicantService) : AbpControllerBase
     {
 
-        [Route("{__tenant}")]
-        [HttpGet]
+        [HttpGet("{__tenant}")]
         [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
         public async Task<dynamic> GetApplicantAsync([FromQuery] ApplicantLookup applicantLookup)
         {
