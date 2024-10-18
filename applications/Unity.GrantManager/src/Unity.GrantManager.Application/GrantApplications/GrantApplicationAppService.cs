@@ -8,7 +8,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -641,8 +640,8 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             IQueryable<ApplicationFormSubmission> queryableFormSubmissions = await _applicationFormSubmissionRepository.GetQueryableAsync();
             if (queryableFormSubmissions != null)
             {
-                var dbResult = queryableFormSubmissions
-                    .FirstOrDefault(a => a.ApplicationId.Equals(applicationId));
+                var dbResult = await queryableFormSubmissions
+                    .FirstOrDefaultAsync(a => a.ApplicationId.Equals(applicationId));
 
                 if (dbResult != null)
                 {
@@ -705,7 +704,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
     }
 
-    public async Task<IList<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
+    public async Task<List<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
     {
         var applications = await
             (await _applicationRepository.WithDetailsAsync())
@@ -917,8 +916,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
-    #endregion APPLICATION WORKFLOW    
-
+    #endregion APPLICATION WORKFLOW
 
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
     {

@@ -1,0 +1,98 @@
+# This is a basic workflow that is manually triggered
+
+name: Workflow - Run manual trigger
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      name:
+        # Friendly description to be shown in the UI instead of 'name'
+        description: 'Environment'
+        # Default value if no value is explicitly provided
+        default: 'dev'
+        # Input has to be provided for the workflow to run
+        required: true
+        # The data type of the input
+        type: string
+env:
+  TARGET_ENV: ${{ inputs.name }} 
+  OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
+  OC_REGISTRY: ${{ vars.OPENSHIFT_REGISTRY }}
+  OC_AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+  OC_TARGET_PROJECT: ${{ vars.OPENSHIFT_NAMESPACE }}
+  JFROG_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+  JFROG_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+  JFROG_REPO_PATH: ${{ vars.ARTIFACTORY_REPO }}
+  JFROG_SERVICE:  ${{ vars.ARTIFACTORY_SERVICE }}
+  UGM_BUILD_VERSION: ${{vars.UGM_BUILD_VERSION}}
+  UGM_BUILD_REVISION: ${{vars.UGM_BUILD_REVISION}}
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  setup:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    environment: ${{ inputs.name }}
+    steps:
+    # Runs commands using the runners shell
+    - name: Get variables
+      run: |
+        echo "target=$TARGET_ENV "
+        echo "base=$GITHUB_REF_NAME"
+        echo "Environment: $TARGET_ENV OC_TARGET_PROJECT=$OC_TARGET_PROJECT"
+        echo "Environment: $TARGET_ENV JFROG_REPO_PATH=$JFROG_REPO_PATH"
+        echo "..."
+        env | sort
+  build:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.name }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build dotnetapp docker images
+      run: docker compose build
+      working-directory: ./applications/dotnetapp
+    - name: Build aspnetapp docker images
+      run: docker compose build
+      working-directory: ./applications/aspnetapp
+    - name: Get BuildId
+      id: commit
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: Set buildArgs
+      run:  |
+        echo "buildArgs UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}"
+    - name: Build Docker images
+      run: |
+        rm -f ./docker-compose.override.yml
+        docker compose build --build-arg UNITY_BUILD_VERSION=${{env.UGM_BUILD_VERSION}} --build-arg UNITY_BUILD_REVISION=${{env.UGM_BUILD_REVISION}}
+      working-directory: ./applications/Unity.GrantManager
+
+    - name: Connect to JFrog Artifactory non-interactive login using --password-stdin
+      run: |
+        echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
+    - name: Push application images to Artifactory container registry
+      run:  |
+        docker tag unity-grantmanager-dbmigrator $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
+        docker tag unity-grantmanager-web $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web
+    - name: Disconnect docker from JFrog Artifactory
+      run: |
+        docker logout
+    - name: Connect to OpenShift API non-interactive login using current session token
+      run: |
+        oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER
+        oc registry login
+        docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
+    - name: Push application images to OpenShift container registry
+      run:  |
+        docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator
+        docker tag unity-grantmanager-web $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web
+    - name: Disconnect docker from OpenShift container registry
+      run: |
+        docker logout

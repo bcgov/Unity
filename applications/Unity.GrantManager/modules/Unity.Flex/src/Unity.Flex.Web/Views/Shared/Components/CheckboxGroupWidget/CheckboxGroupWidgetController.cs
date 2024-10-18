@@ -12,7 +12,17 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupWidget
         [Route("Refresh")]
         public IActionResult Refresh(WorksheetFieldViewModel? fieldModel, string modelName)
         {
-            return ViewComponent(typeof(CheckboxGroupWidget), new { fieldModel, modelName });
+            
+            if (ModelState.IsValid)
+            {
+                return ViewComponent(typeof(CheckboxGroupWidget), new { fieldModel, modelName });
+
+            }
+            else
+            {
+                return ViewComponent(typeof(CheckboxGroupWidget));
+
+            }            
         }
     }
 }

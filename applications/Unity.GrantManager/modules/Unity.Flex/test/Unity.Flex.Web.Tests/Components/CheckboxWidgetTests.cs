@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
 using Shouldly;
 using Unity.Flex.Web.Views.Shared.Components.CheckboxWidget;
-using Unity.Flex.Web.Views.Shared.Components.CurrencyWidget;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Unity.GrantManager;
 using Volo.Abp.DependencyInjection;

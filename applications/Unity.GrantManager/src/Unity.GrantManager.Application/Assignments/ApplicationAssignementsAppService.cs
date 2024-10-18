@@ -21,7 +21,7 @@ public class ApplicationAssignmentsAppService : ApplicationService, IApplication
         _applicationAssignmentsRepository = repository;
     }
 
-    public async Task<IList<GrantApplicationAssigneeDto>> GetListWithApplicationIdsAsync(List<Guid> ids)
+    public async Task<List<GrantApplicationAssigneeDto>> GetListWithApplicationIdsAsync(List<Guid> ids)
     {
         var assignments = await _applicationAssignmentsRepository.GetListAsync(e => ids.Contains(e.ApplicationId));
 

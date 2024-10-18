@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
-using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

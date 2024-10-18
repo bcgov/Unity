@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
@@ -12,6 +14,12 @@ namespace Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
         [Route("Refresh")]
         public IActionResult Refresh(WorksheetFieldViewModel? fieldModel, string modelName)
         {
+            if (!ModelState.IsValid)
+            {
+                Logger.LogWarning("Invalid model state for Refresh: {ModelName}, {FieldModel}", modelName.RemoveNewLines(), fieldModel);                
+                return ViewComponent(typeof(BCAddressWidget));
+            }
+
             return ViewComponent(typeof(BCAddressWidget), new { fieldModel, modelName });
         }
     }

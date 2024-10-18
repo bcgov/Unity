@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
@@ -235,12 +234,14 @@ namespace Unity.Flex.Scoresheets
             }
 
             var json = scoresheetImportDto.Content;
+
             var scoresheet = JsonConvert.DeserializeObject<Scoresheet>(json, new JsonSerializerSettings
             {
                 ContractResolver = new PrivateSetterContractResolver(),
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             }) ?? throw new UserFriendlyException("Invalid JSON content.");
+
             string? name;
 
             var scoresheets = await _scoresheetRepository.GetByNameStartsWithAsync(SheetParserFunctions.RemoveTrailingNumbers(scoresheet.Name));
@@ -258,13 +259,27 @@ namespace Unity.Flex.Scoresheets
             }
 
             name = scoresheet.Name.Replace($"-v{scoresheet.Version}", $"-v{newVersion}");
-            scoresheet.Version = newVersion;
 
-            _ = scoresheet.SetName(name);
+            var newScoresheet = new Scoresheet(Guid.NewGuid(), scoresheet.Title, name)
+            {
+                Version = newVersion
+            };
 
-            scoresheet.Published = false;
+            foreach (var section in scoresheet.Sections)
+            {
+                var clonedSection = new ScoresheetSection(Guid.NewGuid(), section.Name, section.Order);
 
-            await _scoresheetRepository.InsertAsync(scoresheet);
+                foreach (var question in section.Fields.OrderBy(s => s.Order))
+                {
+                    var clonedQuestion = new Question(Guid.NewGuid(), question.Name, question.Label, question.Type, question.Order, question.Description, question.Definition);
+                    clonedSection.CloneQuestion(clonedQuestion);
+                }
+                newScoresheet.CloneSection(clonedSection);
+            }
+
+            newScoresheet.Published = false;
+
+            await _scoresheetRepository.InsertAsync(newScoresheet);
         }
 
 

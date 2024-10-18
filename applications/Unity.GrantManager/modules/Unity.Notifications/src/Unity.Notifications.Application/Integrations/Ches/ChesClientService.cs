@@ -74,23 +74,27 @@ namespace Unity.Notifications.Integrations.Ches
             request.AddParameter("application/x-www-form-urlencoded", $"grant_type={grantType}", ParameterType.RequestBody);
 
             var response = await _restClient.ExecuteAsync(request, Method.Post);
+            var statusCode = response.StatusCode;
+            var errorMessage = response.ErrorMessage ?? "No error message provided";
+            var errorException = response.ErrorException ?? new Exception("No exception provided");
 
             if (response.Content == null)
             {
-                throw new UserFriendlyException($"Error fetching Ches API token - content empty {response.StatusCode} {response.ErrorMessage}");
+                throw new UserFriendlyException($"Error fetching CHES API token - content empty. Status: {statusCode}, Error: {errorMessage}");
             }
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                Logger.LogError("Error fetching CHES API token {statusCode} {errorMessage} {errorException}", response.StatusCode, response.ErrorMessage, response.ErrorException);
+                Logger.LogError(response.ErrorException, "Error fetching CHES API token. Status: {StatusCode}, Error: {ErrorMessage}, Exception: {ErrorException}",
+                    statusCode, errorMessage, errorException);
 
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    throw new UnauthorizedAccessException(response.ErrorMessage);
+                    throw new UnauthorizedAccessException(errorMessage);
                 }
             }
 
-            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
+            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {statusCode} {errorMessage}");
             return tokenResponse;
         }
     }

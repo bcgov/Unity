@@ -5,7 +5,6 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidget;
