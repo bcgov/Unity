@@ -10,6 +10,3 @@ public class MiniProfilerViewComponent : AbpViewComponent
         return View("~/Components/MiniProfiler/Default.cshtml");
     }
 }
-
-
-
