@@ -16,7 +16,6 @@ using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
-using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
