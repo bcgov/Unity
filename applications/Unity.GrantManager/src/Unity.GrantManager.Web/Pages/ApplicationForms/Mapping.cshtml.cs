@@ -122,8 +122,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 var browsable = property.GetCustomAttributes(typeof(BrowsableAttribute), true).Cast<BrowsableAttribute>().SingleOrDefault();
                 var displayName = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault();
                 var fieldType = property.GetCustomAttributes(typeof(MapFieldTypeAttribute), true).Cast<MapFieldTypeAttribute>().SingleOrDefault();
-                
-                if(browsable != null && browsable.IsDefaultAttribute()) {
+
+                if (browsable != null && browsable.IsDefaultAttribute())
+                {
                     properties.Add(new MapField()
                     {
                         Name = property.Name,
@@ -141,10 +142,10 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
                 foreach (var scoresheet in scoresheets)
                 {
-                    ScoresheetOptionsList.Add(new SelectListItem 
-                    { 
-                        Text = $"{scoresheet.Title} ({scoresheet.Name})", 
-                        Value = scoresheet.Id.ToString() 
+                    ScoresheetOptionsList.Add(new SelectListItem
+                    {
+                        Text = $"{scoresheet.Title} ({scoresheet.Name})",
+                        Value = scoresheet.Id.ToString()
                     });
                 }
 

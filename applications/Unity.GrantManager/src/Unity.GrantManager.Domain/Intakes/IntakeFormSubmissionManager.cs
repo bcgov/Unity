@@ -325,10 +325,11 @@ namespace Unity.GrantManager.Intakes
                 Title = intakeMap.ContactTitle ?? string.Empty,
             });
 
-            if (intakeMap.ApplicantAgent != null) {
+            if (intakeMap.ApplicantAgent != null)
+            {
                 applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent.bceid_user_guid ?? "";
                 applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent.bceid_business_guid ?? "";
-                applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent.bceid_business_name ?? "";                    
+                applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent.bceid_business_name ?? "";
                 applicantAgent.BceidUserName = intakeMap.ApplicantAgent.bceid_username ?? "";
                 applicantAgent.IdentityProvider = intakeMap.ApplicantAgent.identity_provider ?? "";
                 applicantAgent.IdentityName = intakeMap.ApplicantAgent.name ?? "";
