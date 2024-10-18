@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System;
 using Microsoft.AspNetCore.Http;
 using Unity.Flex.Scoresheets;
+using Unity.Flex.Worksheets.Definitions;
+using Unity.Flex.Worksheets.Values;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
 {
@@ -21,10 +23,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
         {
             return type switch
             {
-                QuestionType.Number => NumericDefinitionWidget.NumericDefinitionWidget.ParseFormValues(form),
-                QuestionType.Text => TextDefinitionWidget.TextDefinitionWidget.ParseFormValues(form),
-                QuestionType.YesNo => QuestionYesNoDefinitionWidget.QuestionYesNoDefinitionWidget.ParseFormValues(form),
-                QuestionType.SelectList => QuestionSelectListDefinitionWidget.QuestionSelectListDefinitionWidget.ParseFormValues(form),
+                QuestionType.Number => (CustomFieldDefinition?)NumericDefinitionWidget.NumericDefinitionWidget.ParseFormValues(form),
+                QuestionType.Text => (CustomFieldDefinition?)TextDefinitionWidget.TextDefinitionWidget.ParseFormValues(form),
+                QuestionType.YesNo => (CustomFieldDefinition?)QuestionYesNoDefinitionWidget.QuestionYesNoDefinitionWidget.ParseFormValues(form),
+                QuestionType.SelectList => (CustomFieldDefinition?)QuestionSelectListDefinitionWidget.QuestionSelectListDefinitionWidget.ParseFormValues(form),
                 _ => null,
             };
         }
@@ -32,12 +34,17 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
         public async Task<IViewComponentResult> InvokeAsync(string type, string? definition)
         {
             var parsed = Enum.TryParse(type, out QuestionType questionType);
+
             if (!parsed)
             {
-                throw new ArgumentException("Invalid Question Type:"+type);
+                throw new ArgumentException("Invalid Question Type:" + type);
             }
 
-            return View(await Task.FromResult(new QuestionDefinitionViewModel() { Type = questionType, Definition = definition }));
+            return View(await Task.FromResult(new QuestionDefinitionViewModel()
+            {
+                Type = questionType,
+                Definition = definition
+            }));
         }
 
         public class QuestionDefinitionWidgetStyleBundleContributor : BundleContributor
@@ -56,6 +63,16 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
                 context.Files
                   .AddIfNotContains("/Views/Shared/Components/QuestionDefinitionWidget/Default.js");
             }
+        }
+    }
+
+    public static class FormParserHelpers
+    {
+        public static CustomFieldDefinition? ApplyRequired(this CustomFieldDefinition? customFieldDefinition, IFormCollection formCollection)
+        {
+            if (customFieldDefinition == null) return null;
+            customFieldDefinition.Required = formCollection["Required"].ToString().IsTruthy();
+            return customFieldDefinition;
         }
     }
 }

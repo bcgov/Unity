@@ -1,11 +1,10 @@
-﻿@* #pragma warning disable S1128 *@
+﻿@using Unity.Flex.Web.Views.Shared.Components
 @using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 @using Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget
 @using Unity.Flex.Worksheets.Definitions;
-@* #pragma warning restore S1128 *@
 
 @model QuestionDefinitionViewModel;
 
@@ -35,3 +34,7 @@
         break;
 }
 
+<div class="form-control border-none">
+    <input class="cursor-pointer" type="checkbox" id="Required" name="Required" checked="@Model.Definition?.ConvertDefinition(Model.Type)?.GetIsRequired()" />
+    <label for="Required">Required</label>
+</div>

@@ -126,5 +126,10 @@ namespace Unity.Flex.Web.Views.Shared.Components
         {
             return DefinitionResolver.ResolveMaxLength(field);
         }
+
+        public static bool GetIsRequired(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveIsRequired(field);
+        }
     }
 }

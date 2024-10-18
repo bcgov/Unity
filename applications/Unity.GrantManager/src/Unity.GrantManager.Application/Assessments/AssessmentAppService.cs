@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,7 @@ using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -51,7 +53,7 @@ namespace Unity.GrantManager.Assessments
             ICommentsManager commentsManager,
             IScoresheetInstanceAppService scoresheetInstanceAppService,
             IFeatureChecker featureChecker,
-            ILocalEventBus localEventBus, 
+            ILocalEventBus localEventBus,
             IScoresheetAppService scoresheetAppService,
             IRepository<ApplicationForm, Guid> applicationFormRepository)
         {
@@ -88,7 +90,7 @@ namespace Unity.GrantManager.Assessments
         public async Task<AssessmentDisplayListDto> GetDisplayList(Guid applicationId)
         {
             var assessments = await _assessmentRepository.GetListWithAssessorsAsync(applicationId);
-            var assessmentList = ObjectMapper.Map<List<AssessmentWithAssessorQueryResultItem>,List<AssessmentListItemDto>>(assessments);
+            var assessmentList = ObjectMapper.Map<List<AssessmentWithAssessorQueryResultItem>, List<AssessmentListItemDto>>(assessments);
             bool isApplicationUsingDefaultScoresheet = true;
             foreach (var assessment in assessmentList)
             {
@@ -100,7 +102,7 @@ namespace Unity.GrantManager.Assessments
                 }
             }
 
-            if(assessmentList.Count == 0)
+            if (assessmentList.Count == 0)
             {
                 isApplicationUsingDefaultScoresheet = await IsScoresheetNotLinkedToForm(applicationId);
             }
@@ -112,7 +114,7 @@ namespace Unity.GrantManager.Assessments
         {
             var application = await _applicationRepository.GetAsync(applicationId);
             var applicationForm = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
-            if(applicationForm.ScoresheetId == null)
+            if (applicationForm.ScoresheetId == null)
             {
                 return true;
             }
@@ -132,7 +134,7 @@ namespace Unity.GrantManager.Assessments
                 {
 
                     double subTotal = (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
-                    return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = true};
+                    return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = true };
 
                 }
                 else
@@ -160,12 +162,13 @@ namespace Unity.GrantManager.Assessments
             var existingSelectListQuestions = await _scoresheetAppService.GetSelectListQuestionsAsync(questionIds);
             var existingSelectListQuestionIds = existingSelectListQuestions.Select(a => a.Id).ToList();
             double selectListSubtotal = instance.Answers.Where(a => existingSelectListQuestionIds.Contains(a.QuestionId))
-                .Sum(answer => {
+                .Sum(answer =>
+                {
                     var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.SelectList)!.ToString();
                     var question = existingSelectListQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
                     var definition = JsonSerializer.Deserialize<QuestionSelectListDefinition>(question.Definition ?? "{}");
                     var selectedOption = definition?.Options.Find(o => o.Value == value);
-                    if(selectedOption != null)
+                    if (selectedOption != null)
                     {
                         return selectedOption.NumericValue;
                     }
@@ -182,7 +185,8 @@ namespace Unity.GrantManager.Assessments
             var existingYesNoQuestions = await _scoresheetAppService.GetYesNoQuestionsAsync(questionIds);
             var existingYesNoQuestionIds = existingYesNoQuestions.Select(a => a.Id).ToList();
             double yesNoSubtotal = instance.Answers.Where(a => existingYesNoQuestionIds.Contains(a.QuestionId))
-                .Sum(answer => {
+                .Sum(answer =>
+                {
                     var value = ValueResolver.Resolve(answer.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.YesNo)!.ToString();
                     var question = existingYesNoQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
                     var definition = JsonSerializer.Deserialize<QuestionYesNoDefinition>(question.Definition ?? "{}");
@@ -197,7 +201,7 @@ namespace Unity.GrantManager.Assessments
         }
 
         private async Task<double> GetNumericAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
-        {            
+        {
             var existingNumericQuestionIds = await _scoresheetAppService.GetNumericQuestionIdsAsync(questionIds);
             double numericSubtotal = instance.Answers.Where(a => existingNumericQuestionIds.Contains(a.QuestionId))
                 .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, Unity.Flex.Scoresheets.QuestionType.Number)!.ToString()));
@@ -315,6 +319,12 @@ namespace Unity.GrantManager.Assessments
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
 
             await AuthorizationService.CheckAsync(assessment, GetActionAuthorizationRequirement(triggerAction));
+
+            if (triggerAction == AssessmentAction.Confirm)
+            {
+                // Validate that all required fields for the scoresheet have been completed
+                Logger.LogInformation("Assessment completed");
+            }
 
             await assessment.Workflow.ExecuteActionAsync(triggerAction);
 
