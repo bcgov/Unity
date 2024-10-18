@@ -19,7 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
@@ -70,6 +69,7 @@ using Volo.Abp.Timing;
 using Volo.Abp.Ui.LayoutHooks;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
+using Volo.Abp.Users;
 using Volo.Abp.VirtualFileSystem;
 
 namespace Unity.GrantManager.Web;
@@ -463,7 +463,33 @@ public class GrantManagerWebModule : AbpModule
 
             options.IgnoredPaths.AddIfNotContains("/libs/");
             options.IgnoredPaths.AddIfNotContains("/themes/");
+            options.IgnoredPaths.AddIfNotContains("/profiler/");
+            options.IgnoredPaths.AddIfNotContains("/Abp/");
+            options.IgnoredPaths.AddIfNotContains("/Index");
+
+            options.ShouldProfile = (request) =>
+                !request.Path.Equals("/") 
+                && !request.Path.StartsWithSegments("/profiler")
+                && !request.Path.StartsWithSegments("/healthz")
+                && !request.Path.StartsWithSegments("/api/chefs");
+
+            options.UserIdProvider = static (request) =>
+            {   
+
+                var currentUser = request.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
+                return currentUser?.FindClaimValue("idir_username") ?? "NO_USERNAME";
+            };
+
+            options.ResultsAuthorize = IsUserAuthenticated;
+            options.ResultsListAuthorize = IsUserAuthenticated;
+
         }).AddEntityFramework();
+    }
+
+    private static bool IsUserAuthenticated(HttpRequest request)
+    {
+        var currentUser = request.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
+        return currentUser?.IsAuthenticated ?? false;
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
@@ -503,7 +529,6 @@ public class GrantManagerWebModule : AbpModule
             });
         }
 
-        app.UseMiniProfiler();
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
@@ -516,6 +541,7 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseUnitOfWork();
         app.UseAuthorization();
+        app.UseMiniProfiler();
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
