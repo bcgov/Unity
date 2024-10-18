@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
@@ -97,8 +96,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().Applicant);
             appDto.Category = grouping.First().ApplicationForm.Category ?? string.Empty;
-            appDto.AssessmentCount = grouping.First().Assessments?.Count ?? 0;
-            appDto.AssessmentReviewCount = grouping.First().Assessments?.Count(a => a.Status == AssessmentState.IN_REVIEW) ?? 0;
             appDto.ApplicationTag = grouping.First().ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
             appDto.Owner = BuildApplicationOwner(grouping.First().Owner);
             appDto.OrganizationName = grouping.First().Applicant?.OrgName ?? string.Empty;

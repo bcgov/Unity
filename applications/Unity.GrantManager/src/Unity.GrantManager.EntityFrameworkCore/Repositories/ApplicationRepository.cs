@@ -26,7 +26,6 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
             .AsNoTracking()
             .Include(s => s.ApplicationStatus)
             .Include(s => s.ApplicationForm)
-            .Include(s => s.Assessments)
             .Include(s => s.ApplicationTags)
             .Include(s => s.Owner)
             .Include(s => s.ApplicationAssignments!)
