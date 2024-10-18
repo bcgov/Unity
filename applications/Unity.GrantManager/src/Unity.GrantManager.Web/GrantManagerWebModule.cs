@@ -13,11 +13,16 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Profiling;
+using StackExchange.Profiling.Storage;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+using Unity.Flex.Web;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission;
@@ -26,6 +31,7 @@ using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.HealthChecks;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
+using Unity.GrantManager.Web.Components.MiniProfiler;
 using Unity.GrantManager.Web.Exceptions;
 using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
@@ -33,6 +39,9 @@ using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Services;
 using Unity.Identity.Web;
+using Unity.Notifications.Web;
+using Unity.Payments;
+using Unity.Payments.Web;
 using Unity.TenantManagement.Web;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Auditing;
@@ -49,23 +58,19 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.BlobStoring;
+using Volo.Abp.Identity;
+using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict.Tokens;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.Timing;
+using Volo.Abp.Ui.LayoutHooks;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
+using Volo.Abp.Users;
 using Volo.Abp.VirtualFileSystem;
-using Unity.Notifications.Web;
-using Unity.Payments.Web;
-using Unity.Payments;
-using Unity.AspNetCore.Mvc.UI.Theme.UX2;
-using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
-using Unity.Flex.Web;
-using Volo.Abp.Identity;
-using Volo.Abp.Localization;
 
 namespace Unity.GrantManager.Web;
 
@@ -128,6 +133,7 @@ public class GrantManagerWebModule : AbpModule
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
         ConfigureUtils(context);
+        ConfigureMiniProfiler(context, configuration);
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
@@ -249,7 +255,7 @@ public class GrantManagerWebModule : AbpModule
 
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
-            options.MaxAge = TimeSpan.FromHours(8); 
+            options.MaxAge = TimeSpan.FromHours(8);
 
             options.ClaimActions.MapClaimTypes();
             options.TokenValidationParameters = new TokenValidationParameters
@@ -385,8 +391,6 @@ public class GrantManagerWebModule : AbpModule
         {
             Configure<AbpVirtualFileSystemOptions>(options =>
             {
-                // TODO: Not used but raises error in container: System.IO.DirectoryNotFoundException: /Unity.GrantManager.Domain.Shared/
-                // options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Domain.Shared"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Domain"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Application.Contracts"));
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Unity.GrantManager.Application"));
@@ -431,6 +435,74 @@ public class GrantManagerWebModule : AbpModule
                 });
             }
         );
+    }
+
+    private static bool IsUserAuthenticated(HttpRequest request)
+    {
+        var currentUser = request.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
+        return currentUser?.IsAuthenticated ?? false;
+    }
+
+    private static bool IsProfilingAllowed(IWebHostEnvironment env, IConfiguration configuration) =>
+        !configuration.GetValue("MiniProfiler:Disabled", false) && (env.IsDevelopment() || env.IsEnvironment("Test"));
+
+    private static void ConfigureMiniProfiler(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        if (!IsProfilingAllowed(context.Services.GetHostingEnvironment(), configuration))
+        {
+            return;
+        }
+
+        context.Services.Configure<AbpLayoutHookOptions>(options =>
+        {
+            options.Add(LayoutHooks.Body.Last, typeof(MiniProfilerViewComponent));
+        });
+
+        context.Services.AddMiniProfiler(options =>
+        {
+            options.RouteBasePath = configuration.GetValue("MiniProfiler:RouteBasePath", "/profiler");
+            options.EnableMvcViewProfiling = configuration.GetValue("MiniProfiler:ViewProfiling", true);
+            options.EnableMvcFilterProfiling = configuration.GetValue("MiniProfiler:FilterProfiling", true);
+            options.TrackConnectionOpenClose = configuration.GetValue("MiniProfiler:TrackConnectionOpenClose", true);
+            // Optional MiniProfiler Debug Mode - Heavy Memory Use - Not Recommended
+            options.EnableDebugMode = configuration.GetValue("MiniProfiler:DebugMode", false);
+
+            ((MemoryCacheStorage)options.Storage).CacheDuration
+                = TimeSpan.FromMinutes(configuration.GetValue("MiniProfiler:CacheDuration", 30));
+
+            options.PopupRenderPosition = StackExchange.Profiling.RenderPosition.Right;
+            options.PopupStartHidden = true;
+            options.PopupToggleKeyboardShortcut = configuration.GetValue("MiniProfiler:PopupToggleKeyboardShortcut", "Alt+P") ?? "Alt+P";
+            options.PopupShowTimeWithChildren = true;
+            options.ShowControls = true;
+            options.PopupShowTrivial = true;
+
+            options.SqlFormatter = new StackExchange.Profiling.SqlFormatters.InlineFormatter();
+            options.ColorScheme = ColorScheme.Dark;
+
+            options.IgnoredPaths.AddIfNotContains("/libs/");
+            options.IgnoredPaths.AddIfNotContains("/themes/");
+            options.IgnoredPaths.AddIfNotContains("/profiler/");
+            options.IgnoredPaths.AddIfNotContains("/Abp/");
+            options.IgnoredPaths.AddIfNotContains("/Index");
+
+            options.ShouldProfile = (request) =>
+                !request.Path.Equals("/")
+                && !request.Path.StartsWithSegments("/profiler")
+                && !request.Path.StartsWithSegments("/healthz")
+                && !request.Path.StartsWithSegments("/api/chefs");
+
+            options.UserIdProvider = static (request) =>
+            {
+
+                var currentUser = request.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
+                return currentUser?.FindClaimValue("idir_username") ?? "NO_USERNAME";
+            };
+
+            options.ResultsAuthorize = IsUserAuthenticated;
+            options.ResultsListAuthorize = IsUserAuthenticated;
+
+        }).AddEntityFramework();
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
@@ -482,6 +554,10 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseUnitOfWork();
         app.UseAuthorization();
+        if (IsProfilingAllowed(env, configuration))
+        {
+            app.UseMiniProfiler();
+        }
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {

@@ -80,7 +80,7 @@ namespace Unity.GrantManager.Intakes
             var application = await CreateNewApplicationAsync(intakeMap, applicationForm);
             _intakeFormSubmissionMapper.SaveChefsFiles(formSubmission, application.Id);
 
-            var applicationFormSubmission = await _applicationFormSubmissionRepository.InsertAsync(
+            _ = await _applicationFormSubmissionRepository.InsertAsync(
             new ApplicationFormSubmission
             {
                 OidcSub = Guid.Empty.ToString(),
@@ -98,8 +98,7 @@ namespace Unity.GrantManager.Intakes
                 formVersionSubmissionHeaderMapping);
 
             await uow.SaveChangesAsync();
-
-            return applicationFormSubmission.Id;
+            return application.Id;
         }
 
         private static string ReplaceAdvancedFormIoControls(dynamic formSubmission)
@@ -231,7 +230,7 @@ namespace Unity.GrantManager.Intakes
 
             if (!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength)
             {
-                Logger.LogWarning("Truncation: {fieldName} has been truncated! - Max length: {length}", defaultFieldName, maxLength);
+                Logger.LogWarning("Truncation: {FieldName} has been truncated! - Max length: {Length}", defaultFieldName, maxLength);
                 fieldValue = valueString.Substring(0, maxLength);
             }
             else if (!string.IsNullOrEmpty(valueString))
@@ -242,7 +241,7 @@ namespace Unity.GrantManager.Intakes
             return fieldValue;
         }
 
-        private int? ConvertToIntFromString(string? intString)
+        private static int? ConvertToIntFromString(string? intString)
         {
             if (int.TryParse(intString, out int intParse))
             {
@@ -252,7 +251,7 @@ namespace Unity.GrantManager.Intakes
             return null;
         }
 
-        private decimal ConvertToDecimalFromStringDefaultZero(string? decimalString)
+        private static decimal ConvertToDecimalFromStringDefaultZero(string? decimalString)
         {
             decimal decimalValue;
             if (decimal.TryParse(decimalString, out decimal decimalParse))
@@ -266,7 +265,7 @@ namespace Unity.GrantManager.Intakes
             return decimalValue;
         }
 
-        private DateTime? ConvertDateTimeNullableFromString(string? dateTime)
+        private static DateTime? ConvertDateTimeNullableFromString(string? dateTime)
         {
             DateTime? dateTimeValue = null;
 
@@ -278,7 +277,7 @@ namespace Unity.GrantManager.Intakes
             return dateTimeValue;
         }
 
-        private DateTime ConvertDateTimeFromStringDefaultNow(string? dateTime)
+        private static DateTime ConvertDateTimeFromStringDefaultNow(string? dateTime)
         {
             DateTime dateTimeValue;
             DateTime.TryParse(dateTime, out dateTimeValue);
@@ -315,21 +314,26 @@ namespace Unity.GrantManager.Intakes
 
         private async Task<ApplicantAgent> CreateApplicantAgentAsync(IntakeMapping intakeMap, Applicant applicant, Application application)
         {
-            var applicantAgent = new ApplicantAgent();
-            if (!string.IsNullOrEmpty(intakeMap.ContactName) || !string.IsNullOrEmpty(intakeMap.ContactPhone) || !string.IsNullOrEmpty(intakeMap.ContactPhone2)
-                || !string.IsNullOrEmpty(intakeMap.ContactEmail) || !string.IsNullOrEmpty(intakeMap.ContactTitle))
+            var applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
             {
+                ApplicantId = applicant.Id,
+                ApplicationId = application.Id,
+                Name = intakeMap.ContactName ?? string.Empty,
+                Phone = intakeMap.ContactPhone ?? string.Empty,
+                Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
+                Email = intakeMap.ContactEmail ?? string.Empty,
+                Title = intakeMap.ContactTitle ?? string.Empty,
+            });
 
-                applicantAgent = await _applicantAgentRepository.InsertAsync(new ApplicantAgent
-                {
-                    ApplicantId = applicant.Id,
-                    ApplicationId = application.Id,
-                    Name = intakeMap.ContactName ?? string.Empty,
-                    Phone = intakeMap.ContactPhone ?? string.Empty,
-                    Phone2 = intakeMap.ContactPhone2 ?? string.Empty,
-                    Email = intakeMap.ContactEmail ?? string.Empty,
-                    Title = intakeMap.ContactTitle ?? string.Empty,
-                });
+            if (intakeMap.ApplicantAgent != null)
+            {
+                applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent.bceid_user_guid ?? "";
+                applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent.bceid_business_guid ?? "";
+                applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent.bceid_business_name ?? "";
+                applicantAgent.BceidUserName = intakeMap.ApplicantAgent.bceid_username ?? "";
+                applicantAgent.IdentityProvider = intakeMap.ApplicantAgent.identity_provider ?? "";
+                applicantAgent.IdentityName = intakeMap.ApplicantAgent.name ?? "";
+                applicantAgent.IdentityEmail = intakeMap.ApplicantAgent.email ?? "";
             }
 
             return applicantAgent;
