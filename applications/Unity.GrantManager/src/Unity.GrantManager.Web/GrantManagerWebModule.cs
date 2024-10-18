@@ -133,7 +133,7 @@ public class GrantManagerWebModule : AbpModule
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
         ConfigureUtils(context);
-        ConfigureMiniProfiler(context);
+        ConfigureMiniProfiler(context, configuration);
 
         Configure<AbpBackgroundJobOptions>(options =>
         {
@@ -437,26 +437,45 @@ public class GrantManagerWebModule : AbpModule
         );
     }
 
-    private static void ConfigureMiniProfiler(ServiceConfigurationContext context)
+    private static bool IsUserAuthenticated(HttpRequest request)
     {
+        var currentUser = request.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
+        return currentUser?.IsAuthenticated ?? false;
+    }
+
+    private static bool IsProfilingAllowed(IWebHostEnvironment env, IConfiguration configuration) =>
+        !configuration.GetValue("MiniProfiler:Disabled", false) && (env.IsDevelopment() || env.IsEnvironment("Test"));
+
+    private static void ConfigureMiniProfiler(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        if (!IsProfilingAllowed(context.Services.GetHostingEnvironment(), configuration))
+        {
+            return;
+        }
+
         context.Services.Configure<AbpLayoutHookOptions>(options =>
         {
             options.Add(LayoutHooks.Body.Last, typeof(MiniProfilerViewComponent));
         });
 
-        context.Services.AddMiniProfiler(static options =>
+        context.Services.AddMiniProfiler(options =>
         {
-            options.RouteBasePath = "/profiler";
-            options.EnableMvcFilterProfiling = true;
-            options.EnableMvcViewProfiling = true;
+            options.RouteBasePath = configuration.GetValue("MiniProfiler:RouteBasePath", "/profiler");
+            options.EnableMvcViewProfiling = configuration.GetValue("MiniProfiler:ViewProfiling", true);
+            options.EnableMvcFilterProfiling = configuration.GetValue("MiniProfiler:FilterProfiling", true);
+            options.TrackConnectionOpenClose = configuration.GetValue("MiniProfiler:TrackConnectionOpenClose", true);
+            // Optional MiniProfiler Debug Mode - Heavy Memory Use - Not Recommended
+            options.EnableDebugMode = configuration.GetValue("MiniProfiler:DebugMode", false);
+
+            ((MemoryCacheStorage)options.Storage).CacheDuration
+                = TimeSpan.FromMinutes(configuration.GetValue("MiniProfiler:CacheDuration", 30));
+
             options.PopupRenderPosition = StackExchange.Profiling.RenderPosition.Right;
             options.PopupStartHidden = true;
-            options.PopupToggleKeyboardShortcut = "Alt+P";
+            options.PopupToggleKeyboardShortcut = configuration.GetValue("MiniProfiler:PopupToggleKeyboardShortcut", "Alt+P") ?? "Alt+P";
             options.PopupShowTimeWithChildren = true;
             options.ShowControls = true;
             options.PopupShowTrivial = true;
-
-            ((MemoryCacheStorage)options.Storage).CacheDuration = TimeSpan.FromMinutes(30);
 
             options.SqlFormatter = new StackExchange.Profiling.SqlFormatters.InlineFormatter();
             options.ColorScheme = ColorScheme.Dark;
@@ -468,13 +487,13 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredPaths.AddIfNotContains("/Index");
 
             options.ShouldProfile = (request) =>
-                !request.Path.Equals("/") 
+                !request.Path.Equals("/")
                 && !request.Path.StartsWithSegments("/profiler")
                 && !request.Path.StartsWithSegments("/healthz")
                 && !request.Path.StartsWithSegments("/api/chefs");
 
             options.UserIdProvider = static (request) =>
-            {   
+            {
 
                 var currentUser = request.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
                 return currentUser?.FindClaimValue("idir_username") ?? "NO_USERNAME";
@@ -484,12 +503,6 @@ public class GrantManagerWebModule : AbpModule
             options.ResultsListAuthorize = IsUserAuthenticated;
 
         }).AddEntityFramework();
-    }
-
-    private static bool IsUserAuthenticated(HttpRequest request)
-    {
-        var currentUser = request.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
-        return currentUser?.IsAuthenticated ?? false;
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
@@ -541,7 +554,10 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseUnitOfWork();
         app.UseAuthorization();
-        app.UseMiniProfiler();
+        if (IsProfilingAllowed(env, configuration))
+        {
+            app.UseMiniProfiler();
+        }
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
