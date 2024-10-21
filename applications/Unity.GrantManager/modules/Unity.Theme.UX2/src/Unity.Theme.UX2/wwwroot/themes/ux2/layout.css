@@ -777,3 +777,7 @@ input.form-control.disabled:read-only, textarea.form-control.disabled:read-only,
 .overflow-tooltip {
     text-overflow: ellipsis;
 }
+
+.multi-line {
+    white-space: pre-wrap !important;
+}
