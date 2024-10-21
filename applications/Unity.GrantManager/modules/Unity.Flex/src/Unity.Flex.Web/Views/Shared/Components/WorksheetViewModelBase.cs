@@ -2,8 +2,9 @@
 
 namespace Unity.Flex.Web.Views.Shared.Components
 {
-    public abstract class WorksheetViewModelBase
+    public class WorksheetViewModelBase
     {
+        protected WorksheetViewModelBase() { }
         public WorksheetFieldViewModel? Field { get; internal set; }
         public string Name { get; internal set; } = string.Empty;
     }

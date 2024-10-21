@@ -4,7 +4,7 @@
 
 <div class="mb-3">
     <label for="answer-number-@Model.QuestionId" class="form-label">Answer</label>
-    <input type="number" class="form-control answer-number-input" min="@Model.Min" max="@Model.Max" disabled="@Model.IsDisabled" id="answer-number-@Model.QuestionId" name="Answers[@Model.QuestionId]" value="@Model.Answer" data-original-value="@Model.Answer" oninput="handleInputChange('@Model.QuestionId','answer-number-','save-number-','discard-number-')" />
+    <input type="number" required="@Model.Required" class="form-control answer-number-input" min="@Model.Min" max="@Model.Max" disabled="@Model.IsDisabled" id="answer-number-@Model.QuestionId" name="Answers[@Model.QuestionId]" value="@Model.Answer" data-original-value="@Model.Answer" oninput="handleInputChange('@Model.QuestionId','answer-number-','save-number-','discard-number-')" />
     <span id="error-message-@Model.QuestionId" class="text-danger field-validation-error" ></span>
 </div>
 <div class="btn-group">

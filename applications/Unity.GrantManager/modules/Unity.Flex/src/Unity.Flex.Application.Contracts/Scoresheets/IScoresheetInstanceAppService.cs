@@ -8,5 +8,6 @@ namespace Unity.Flex.Scoresheets
     {
         Task<ScoresheetInstanceDto?> CreateAsync(CreateScoresheetInstanceDto dto);
         Task<ScoresheetInstanceDto?> GetByCorrelationAsync(Guid id);
+        Task<ScoresheetInstanceValidationDto?> ValidateAnswersAsync(Guid correlationId);
     }
 }

@@ -9,6 +9,7 @@ using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
 using System.Linq;
 using Unity.Flex.Scoresheets;
+using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWidget
 {
@@ -26,6 +27,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWid
             var options = new List<QuestionSelectListOption>();
             var seenKeys = new HashSet<string>();
             var counter = 1;
+
             foreach (var key in form.Keys)
             {
                 if (key.StartsWith("Options[") && key.EndsWith("].Text"))
@@ -54,9 +56,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWid
             }
 
             questionDefinition.Options = options;
-            return questionDefinition;
+
+            return questionDefinition.ApplyRequired(form);
         }
-        
+
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
         {
             if (definition != null)
@@ -66,7 +69,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWid
                 {
                     return View(await Task.FromResult(new QuestionSelectListDefinitionViewModel()
                     {
-                        Options = selectDefinition.Options.Select(option => new QuestionSelectListOptionDto { Text = option.Value, Score = option.NumericValue }).ToList()
+                        Options = selectDefinition.Options.Select(option => new QuestionSelectListOptionDto { Text = option.Value, Score = option.NumericValue }).ToList(),
+                        Required = selectDefinition.Required
                     }));
                 }
             }

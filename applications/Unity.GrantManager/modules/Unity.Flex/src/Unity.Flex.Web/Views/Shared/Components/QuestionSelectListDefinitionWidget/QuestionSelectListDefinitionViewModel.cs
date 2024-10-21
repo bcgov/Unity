@@ -4,7 +4,7 @@ using Unity.Flex.Scoresheets;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWidget
 {
-    public class QuestionSelectListDefinitionViewModel 
+    public class QuestionSelectListDefinitionViewModel : RequiredFieldViewModel
     {     
         [BindProperty]
         public List<QuestionSelectListOptionDto> Options { get; set; } = [];

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Text.Json;
 using Unity.Flex.Scoresheets;
+using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Values;
 
-namespace Unity.Flex.Worksheets.Values
+namespace Unity.Flex
 {
     public static class ValueConverter
     {
@@ -35,7 +37,7 @@ namespace Unity.Flex.Worksheets.Values
                 QuestionType.Text => JsonSerializer.Serialize(new TextValue(currentValue)),
                 QuestionType.Number => JsonSerializer.Serialize(new NumericValue(currentValue)),
                 QuestionType.YesNo => JsonSerializer.Serialize(new YesNoValue(ValueConverterHelpers.ConvertYesNo(currentValue))),
-                QuestionType.SelectList => JsonSerializer.Serialize(new SelectListValue( currentValue)),
+                QuestionType.SelectList => JsonSerializer.Serialize(new SelectListValue(currentValue)),
                 _ => throw new NotImplementedException()
             };
         }

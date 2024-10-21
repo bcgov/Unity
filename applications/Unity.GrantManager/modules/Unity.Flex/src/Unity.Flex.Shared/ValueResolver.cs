@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Text.Json;
 using Unity.Flex.Scoresheets;
+using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Values;
 
-namespace Unity.Flex.Worksheets.Values
+namespace Unity.Flex
 {
     public static class ValueResolver
     {
