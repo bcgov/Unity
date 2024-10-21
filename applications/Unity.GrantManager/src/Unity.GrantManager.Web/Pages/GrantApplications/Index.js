@@ -155,6 +155,7 @@
             getSigningAuthorityCellPhoneColumn(),
             getPlaceColumn(),
             getRiskRankingColumn(),
+            getNotesColumn(),
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -922,6 +923,23 @@
                 return titleCase(data ?? '') ?? '';
             },
             index: 55
+        }
+    }
+
+    function getNotesColumn() {
+        return {
+            title: 'Notes',
+            name: 'notes',
+            data: 'notes',
+            className: 'data-table-header multi-line',
+            width: "20rem",
+            createdCell: function (td) {
+                $(td).css('min-width', '20rem');
+            },
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 56
         }
     }
 
