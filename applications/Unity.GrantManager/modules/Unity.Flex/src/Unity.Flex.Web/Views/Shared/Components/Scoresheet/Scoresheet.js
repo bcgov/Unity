@@ -94,8 +94,7 @@ $(function () {
                 setTimeout(updateUnsortedPreview, 500); 
             });
         });
-    }
-       
+    }       
     
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
@@ -207,7 +206,7 @@ $(function () {
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="nested-panel-${hashCode(item.innerText)}">
                             <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse-${hashCode(item.innerText)}">
-                                ${sectionNumber}.${questionNumber}  ${item.innerText}
+                                ${sectionNumber}.${questionNumber}  ${item.innerText} ${item.dataset.required == 'True' ? '*' : ''}
                             </button>
                         </h2>
                         <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}">
