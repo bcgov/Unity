@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
+using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget
 {
@@ -24,7 +25,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget
             {
                 YesValue = long.Parse(form["YesValue"].ToString()),
                 NoValue = long.Parse(form["NoValue"].ToString())
-            };
+            }
+            .ApplyRequired(form);
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
@@ -37,7 +39,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget
                     return View(await Task.FromResult(new QuestionYesNoDefinitionViewModel()
                     {
                         YesValue = yesNoDefinition.YesValue,
-                        NoValue = yesNoDefinition.NoValue
+                        NoValue = yesNoDefinition.NoValue,
+                        Required = yesNoDefinition.Required
                     }));
                 }
             }

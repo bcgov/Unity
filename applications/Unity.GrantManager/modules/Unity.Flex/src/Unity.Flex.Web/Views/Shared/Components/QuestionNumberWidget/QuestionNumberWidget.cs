@@ -16,9 +16,22 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
         AutoInitialize = true)]
     public class QuestionNumberWidget : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, double? answer, string? min, string? max)
+        public async Task<IViewComponentResult> InvokeAsync(Guid questionId,
+            bool isDisabled,
+            double? answer,
+            string? min,
+            string? max,
+            bool required = false)
         {
-            return View(await Task.FromResult(new QuestionNumberViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer, Min = min, Max = max }));
+            return View(await Task.FromResult(new QuestionNumberViewModel()
+            {
+                QuestionId = questionId,
+                IsDisabled = isDisabled,
+                Answer = answer,
+                Min = min,
+                Max = max,
+                Required = required
+            }));
         }
 
         public class QuestionNumberWidgetStyleBundleContributor : BundleContributor
