@@ -5,9 +5,9 @@ using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
 using Unity.Flex.Worksheets.Values;
 
-namespace Unity.Flex.Web.Views.Shared.Components
+namespace Unity.Flex
 {
-    public static class InputExtensions
+    public static class FlexTypeExtensions
     {
         public static string ConvertInputType(this CustomFieldType type)
         {

@@ -3,19 +3,21 @@ using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.Flex.Worksheets.Values;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -319,15 +321,29 @@ namespace Unity.GrantManager.Assessments
 
             await AuthorizationService.CheckAsync(assessment, GetActionAuthorizationRequirement(triggerAction));
 
-            if (triggerAction == AssessmentAction.Confirm)
-            {
-                // Validate that all required fields for the scoresheet have been completed
-                Logger.LogInformation("Assessment completed");
-            }
+            await ApplyAdditionalValidationsAsync(assessmentId, triggerAction);
 
             await assessment.Workflow.ExecuteActionAsync(triggerAction);
 
             return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentRepository.UpdateAsync(assessment, autoSave: true));
+        }
+
+        private async Task ApplyAdditionalValidationsAsync(Guid assessmentId, AssessmentAction triggerAction)
+        {
+            await ValidateValidScoresheetAsync(assessmentId, triggerAction);
+        }
+
+        private async Task ValidateValidScoresheetAsync(Guid assessmentId, AssessmentAction triggerAction)
+        {
+            if (await _featureChecker.IsEnabledAsync("Unity.Flex") && triggerAction == AssessmentAction.Confirm)
+            {
+                var requirementsMetResult = await _scoresheetInstanceAppService.ValidateAnswersAsync(assessmentId);
+
+                if (requirementsMetResult?.Errors?.Count > 0)
+                {
+                    throw new InvalidScoresheetAnswersException([.. requirementsMetResult.Errors]);
+                }
+            }
         }
 
         private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(AssessmentAction triggerAction)
@@ -406,3 +422,4 @@ namespace Unity.GrantManager.Assessments
         }
     }
 }
+

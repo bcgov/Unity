@@ -8,7 +8,6 @@ using System;
 using Microsoft.AspNetCore.Http;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.Flex.Worksheets.Values;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget
 {

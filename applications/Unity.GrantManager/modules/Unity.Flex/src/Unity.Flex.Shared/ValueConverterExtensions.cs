@@ -1,4 +1,4 @@
-﻿namespace Unity.Flex.Worksheets.Values
+﻿namespace Unity.Flex
 {
     public static class ValueConverterExtensions
     {
