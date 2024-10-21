@@ -13,7 +13,12 @@ namespace Unity.GrantManager.Exceptions
     {
         private const string InvalidScoresheetMessage = "Scoresheet invalid";
 
-        public InvalidScoresheetAnswersException(string? message, string[]? validationMessages = null)
+        public InvalidScoresheetAnswersException(string[]? validationMessages = null)
+            : this(null, validationMessages)
+        {
+        }
+
+        public InvalidScoresheetAnswersException(string? message = null, string[]? validationMessages = null)
             : base(ParseMessage(message), ParseValidationMessages(validationMessages))
         {
         }
