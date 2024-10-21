@@ -10,14 +10,15 @@ namespace Unity.GrantManager.Exceptions
     [Serializable]
     public class InvalidScoresheetAnswersException : AbpValidationException, IUserFriendlyException
     {
-        private const string InvalidScoresheetMessage = "Scoresheet incomplete";
+        private const string InvalidScoresheetMessage = "Scoresheet invalid";
 
         public InvalidScoresheetAnswersException(string[]? validationMessages = null)
             : base(InvalidScoresheetMessage, validationMessages?.Select(msg => new ValidationResult(msg)).ToList() ?? [])
         {
         }
 
-        protected InvalidScoresheetAnswersException(SerializationInfo serializationEntries, StreamingContext context) : base()
+        protected InvalidScoresheetAnswersException(SerializationInfo serializationEntries, StreamingContext context)
+            : base(InvalidScoresheetMessage, [])
         {
         }
     }
