@@ -119,16 +119,20 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
             foreach (var property in intakeMapping.GetType().GetProperties())
             {
+                var browsable = property.GetCustomAttributes(typeof(BrowsableAttribute), true).Cast<BrowsableAttribute>().SingleOrDefault();
                 var displayName = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault();
                 var fieldType = property.GetCustomAttributes(typeof(MapFieldTypeAttribute), true).Cast<MapFieldTypeAttribute>().SingleOrDefault();
 
-                properties.Add(new MapField()
+                if (browsable != null && browsable.IsDefaultAttribute())
                 {
-                    Name = property.Name,
-                    Type = fieldType?.Type ?? "String",
-                    IsCustom = false,
-                    Label = displayName?.DisplayName ?? property.Name
-                });
+                    properties.Add(new MapField()
+                    {
+                        Name = property.Name,
+                        Type = fieldType?.Type ?? "String",
+                        IsCustom = false,
+                        Label = displayName?.DisplayName ?? property.Name
+                    });
+                }
             }
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
@@ -138,10 +142,10 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
 
                 foreach (var scoresheet in scoresheets)
                 {
-                    ScoresheetOptionsList.Add(new SelectListItem 
-                    { 
-                        Text = $"{scoresheet.Title} ({scoresheet.Name})", 
-                        Value = scoresheet.Id.ToString() 
+                    ScoresheetOptionsList.Add(new SelectListItem
+                    {
+                        Text = $"{scoresheet.Title} ({scoresheet.Name})",
+                        Value = scoresheet.Id.ToString()
                     });
                 }
 

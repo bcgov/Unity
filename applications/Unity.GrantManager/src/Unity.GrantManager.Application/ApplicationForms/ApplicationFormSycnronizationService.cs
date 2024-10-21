@@ -131,7 +131,7 @@ namespace Unity.GrantManager.ApplicationForms
                         // Process the form submission.
                         ApplicationForm applicationForm = ObjectMapper.Map<ApplicationFormDto, ApplicationForm>(applicationFormDto);
                         var result = await _intakeFormSubmissionManager.ProcessFormSubmissionAsync(applicationForm, submissionData);
-                        AddFact("Synchronizing Data - Form Version: ", $"{version} Unity Submission ID: {result}");
+                        AddFact("Synchronizing Data - Form Version: ", $"{version} Unity Application ID: {result}");
                     }
                 }
             }
