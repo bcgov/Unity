@@ -4,8 +4,8 @@ const nullPlaceholder = '—';
 
 const actionButtonConfigMap = {
     Create: { buttonType: 'createButton', order: 1 },
-    Confirm: { buttonType: 'unityWorkflow', order: 2 },
-    SendBack: { buttonType: 'unityWorkflow', order: 3 },
+    SendBack: { buttonType: 'unityWorkflow', order: 2 },
+    Confirm: { buttonType: 'unityWorkflow', order: 3 },
     _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }
 
@@ -186,7 +186,7 @@ $(function () {
     }
     async function CreateAssessmentButton() {
         let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
-        createButtons.container().prependTo("#DetailsActionBarStart");
+        createButtons.container().prependTo("#AdjudicationTeamLeadActionBar");
         let isPermitted = await CheckAssessmentCreateButton();
         if (!isPermitted) {
             reviewListTable.buttons('Create:name').disable();
@@ -197,8 +197,8 @@ $(function () {
         return !finalApplicationStates.includes(applicationStatus.statusCode);
     }
 
-    reviewListTable.buttons(0, null).container().appendTo("#DetailsActionBarStart");
-    $("#DetailsActionBarStart .dt-buttons").contents().unwrap();
+    reviewListTable.buttons(0, null).container().appendTo("#AdjudicationTeamLeadActionBar");
+    $("#AdjudicationTeamLeadActionBar .dt-buttons").contents().unwrap();
 
     reviewListTable.on('select', function (e, dt, type, indexes) {
         handleRowSelection(e, dt, type, indexes, reviewListTable);
