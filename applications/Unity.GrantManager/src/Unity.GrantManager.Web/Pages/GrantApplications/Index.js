@@ -932,6 +932,10 @@
             name: 'notes',
             data: 'notes',
             className: 'data-table-header multi-line',
+            width: "20rem",
+            createdCell: function (td) {
+                $(td).css('min-width', '20rem');
+            },
             render: function (data) {
                 return data ?? '';
             },
