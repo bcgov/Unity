@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace Unity.Flex.Worksheets.Values
+namespace Unity.Flex
 {
     internal static class ValueConverterHelpers
     {

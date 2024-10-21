@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoDefinitionWidget
 {
-    public class QuestionYesNoDefinitionViewModel : WorksheetFieldDefinitionViewModelBase
+    public class QuestionYesNoDefinitionViewModel : RequiredFieldViewModel
     {
         public QuestionYesNoDefinitionViewModel() : base()
         {

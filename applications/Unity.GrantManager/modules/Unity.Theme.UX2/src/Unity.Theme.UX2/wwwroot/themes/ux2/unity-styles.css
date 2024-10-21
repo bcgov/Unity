@@ -721,3 +721,11 @@ div.dataTables_wrapper div.dataTables_filter {
 #btnClearFilter {
     background-color: var(--bc-colors-blue-background);
 }
+
+.border-none {
+    border: none;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
