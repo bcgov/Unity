@@ -240,10 +240,10 @@ namespace Unity.GrantManager.Assessments
 
             // Act
             var transitionedAssessment =
-                await _assessmentAppService.ExecuteAssessmentAction(assessment.Id, AssessmentAction.SendToTeamLead);
+                await _assessmentAppService.ExecuteAssessmentAction(assessment.Id, AssessmentAction.Confirm);
 
             // Assert            
-            Assert.Equal(AssessmentState.IN_REVIEW, transitionedAssessment.Status);
+            Assert.Equal(AssessmentState.COMPLETED, transitionedAssessment.Status);
         }
 
         [Fact]
@@ -259,7 +259,7 @@ namespace Unity.GrantManager.Assessments
 
             // Assert            
             await Assert.ThrowsAsync<BusinessException>(async () =>
-                await _assessmentAppService.ExecuteAssessmentAction(assessment.Id, AssessmentAction.Confirm)
+                await _assessmentAppService.ExecuteAssessmentAction(assessment.Id, AssessmentAction.SendBack)
             );
         }
     }
