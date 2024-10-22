@@ -190,6 +190,15 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
+        context.Services.AddCors(options =>
+        {
+            options.AddPolicy("CHEFS-POLICY", builder => builder
+                .WithOrigins("*")
+                .AllowAnyMethod()
+                .AllowCredentials()
+                .WithHeaders("*"));
+        });
+
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
 
@@ -569,6 +578,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseCors("CHEFS-POLICY");
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)

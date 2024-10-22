@@ -19,14 +19,6 @@ public static class Program
             Console.WriteLine("Starting web host.");
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddCors(options =>
-                {
-                    options.AddPolicy("CHEFS-POLICY", builder => builder
-                        .WithOrigins("https://chefs-dev.apps.silver.devops.gov.bc.ca")
-                        .AllowAnyMethod()
-                        .AllowCredentials()
-                        .WithHeaders("Accept", "Content-Type", "Origin", "X-API-KEY"));
-                });
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog((hostingContext, loggerConfiguration) =>
