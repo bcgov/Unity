@@ -4,8 +4,8 @@ const nullPlaceholder = '—';
 
 const actionButtonConfigMap = {
     Create: { buttonType: 'createButton', order: 1 },
-    SendBack: { buttonType: 'unityWorkflow', order: 2 },
-    Confirm: { buttonType: 'unityWorkflow', order: 3 },
+    Confirm: { buttonType: 'unityWorkflow', order: 2 },
+    SendBack: { buttonType: 'unityWorkflow', order: 3 },
     _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }
 
@@ -327,16 +327,14 @@ function renderUnityWorkflowButton(actionValue) {
         extend: buttonConfig.buttonType,
         name: actionValue,
         sortOrder: buttonConfig.order ?? 100,
-        buttonIcon: buttonConfig.icon,
         attr: { id: `${actionValue}Button` }
     };
 }
 
 /* Cutom Unity Workflow Buttons */
 function unityWorkflowButtonText(dt, button, config) {
-    let buttonIcon = `<i class="fl ${config.buttonIcon}"></i>`;
     let buttonText = l(`Enum:AssessmentAction.${config.name}`);
-    return buttonIcon + '<span>' + buttonText + '</span>';
+    return '<span>' + buttonText + '</span>';
 }
 
 function unityWorkflowButtonAction(e, dt, button, config) {
