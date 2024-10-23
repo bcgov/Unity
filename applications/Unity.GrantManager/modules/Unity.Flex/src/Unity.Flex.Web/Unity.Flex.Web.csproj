@@ -47,6 +47,10 @@
     <None Remove="Views\Shared\Components\CustomFieldDefinitionWidget\Default.js" />
     <None Remove="Views\Shared\Components\CustomTabWidget\Default.css" />
     <None Remove="Views\Shared\Components\CustomTabWidget\Default.js" />
+    <None Remove="Views\Shared\Components\DataGridDefinitionWidget\Default.css" />
+    <None Remove="Views\Shared\Components\DataGridDefinitionWidget\Default.js" />
+    <None Remove="Views\Shared\Components\DataGridWidget\Default.css" />
+    <None Remove="Views\Shared\Components\DataGridWidget\Default.js" />
     <None Remove="Views\Shared\Components\DateWidget\Default.css" />
     <None Remove="Views\Shared\Components\DateWidget\Default.js" />
     <None Remove="Views\Shared\Components\NumericDefinitionWidget\Default.css" />
@@ -100,6 +104,14 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\Shared\Components\CustomTabWidget\Default.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\Shared\Components\DataGridDefinitionWidget\Default.css" />
+    <EmbeddedResource Include="Views\Shared\Components\DataGridDefinitionWidget\Default.js" />
+    <EmbeddedResource Include="Views\Shared\Components\DataGridWidget\Default.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\Shared\Components\DataGridWidget\Default.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\Shared\Components\DateWidget\Default.css" />

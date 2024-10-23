@@ -3,11 +3,11 @@ using Microsoft.Extensions.Logging;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Volo.Abp.AspNetCore.Mvc;
 
-namespace Unity.Flex.Web.Views.Shared.Components.SelectListWidget
-{
+namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
+{    
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("Flex/Widgets/SelectList")]
-    public class SelectListWidgetController : AbpController
+    [Route("Flex/Widgets/DataGrid")]
+    public class DataGridWidgetController : AbpController
     {
         [HttpGet]
         [Route("Refresh")]
@@ -15,13 +15,13 @@ namespace Unity.Flex.Web.Views.Shared.Components.SelectListWidget
         {
             // Check if the model state is valid
             if (!ModelState.IsValid)
-            {       
-                Logger.LogWarning("Invalid model state for WorksheetFieldViewModel:Refresh");
-                return ViewComponent(typeof(SelectListWidget));
+            {
+                Logger.LogWarning("Invalid model state for DataGridWidget:Refresh");
+                return ViewComponent(typeof(DataGridWidget));
             }
 
             // If the model state is valid, render the view component
-            return ViewComponent(typeof(SelectListWidget), new { fieldModel, modelName });
+            return ViewComponent(typeof(DataGridWidget), new { fieldModel, modelName });
         }
     }
 }

@@ -32,11 +32,11 @@ public class WorksheetWidget : AbpViewComponent
                 { "SelectList", "fl fl-list" },
                 { "BCAddress", "fl fl-globe" },
                 { "TextArea", "fl fl-text-area" },
-                { "Text", "fl fl-font" },                
+                { "Text", "fl fl-font" },
                 { "Currency", "custom-icon-text custom-dollar" },
                 { "YesNo", "custom-icon-text custom-yesno" },
                 { "Numeric", "custom-icon-text custom-numeric" },
-
+                { "DataGrid", "fl fl-datagrid" }
             }
         });
         return View(worksheet);

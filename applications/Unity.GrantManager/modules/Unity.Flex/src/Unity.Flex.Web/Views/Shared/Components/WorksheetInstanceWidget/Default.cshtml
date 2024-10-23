@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Authorization;
 @using Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
+@using Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 @using Unity.Flex.Web.Views.Shared.Components.TextAreaWidget
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 @using Unity.Flex.Worksheets;
@@ -77,6 +78,11 @@
                                     case CustomFieldType.TextArea:
                                         {
                                             @await Component.InvokeAsync(typeof(TextAreaWidget), new { fieldModel = field, modelName = Model.Name })
+                                            break;
+                                        }
+                                    case CustomFieldType.DataGrid:
+                                        {
+                                            @await Component.InvokeAsync(typeof(DataGridWidget), new { fieldModel = field, modelName = Model.Name })
                                             break;
                                         }
                                     default:

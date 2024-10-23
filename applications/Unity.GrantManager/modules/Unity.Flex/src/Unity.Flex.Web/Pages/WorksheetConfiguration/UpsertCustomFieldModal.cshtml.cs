@@ -164,6 +164,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
             new SelectListItem("Select List", "SelectList"),
             new SelectListItem("Radio", "Radio"),
             new SelectListItem("Yes/No Select", "YesNo"),
+            new SelectListItem("Data Grid", "DataGrid"),
             new SelectListItem("BC Address", "BCAddress")];
     }
 

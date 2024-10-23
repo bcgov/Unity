@@ -19,11 +19,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Domain\Enums\" />
-		<Folder Include="Integration\" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
 		<PackageReference Update="Fody" Version="6.8.1">
 			<PrivateAssets>all</PrivateAssets>
