@@ -37,7 +37,6 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             // Assessments
             var assessmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assessments.Default, L("Permission:GrantApplicationPermissions.Assessments.Default"));
             assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Create, L("Permission:GrantApplicationPermissions.Assessments.Create"));
-            assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.SendToTeamLead, L("Permission:GrantApplicationPermissions.Assessments.SendToTeamLead"));
             assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.SendBack, L("Permission:GrantApplicationPermissions.Assessments.SendBack"));
             assessmentPermissions.AddChild(GrantApplicationPermissions.Assessments.Confirm, L("Permission:GrantApplicationPermissions.Assessments.Confirm"));
 

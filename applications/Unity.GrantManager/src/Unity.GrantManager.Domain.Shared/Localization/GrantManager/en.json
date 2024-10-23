@@ -106,7 +106,6 @@
 
     "Enum:AssessmentAction.Create": "Create Assessment",
     "Enum:AssessmentAction.SendTo": "Send To...",
-    "Enum:AssessmentAction.SendToTeamLead": "Send for Team Lead Review",
     "Enum:AssessmentAction.Confirm": "Complete Assessment",
     "Enum:AssessmentAction.SendBack": "Send Back",
 
@@ -154,8 +153,7 @@
 
     "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
     "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
-    "Permission:GrantApplicationPermissions.Assessments.SendToTeamLead": "Send Assessment to Team Lead",
-    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
+    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment",
     "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
 
     "Permission:GrantApplicationPermissions.AssessmentResults.Default": "Assessment Results",

@@ -273,7 +273,7 @@ namespace Unity.GrantManager.Assessments
         public List<AssessmentAction> GetAllActions()
         {
             var blankAssessment = new Assessment();
-            return blankAssessment.Workflow.GetAllActions().ToList();
+            return blankAssessment.Workflow.GetAllActions().Distinct().ToList();
         }
 
         /// <summary>

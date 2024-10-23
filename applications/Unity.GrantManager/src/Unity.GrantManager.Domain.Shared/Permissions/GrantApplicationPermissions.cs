@@ -46,7 +46,6 @@ namespace Unity.GrantManager.Permissions
         {
             public const string Default = GroupName + ".Assessments";
             public const string Create = Default + ".Create";
-            public const string SendToTeamLead = Default + ".SendToTeamLead";
             public const string SendBack = Default + ".SendBack";
             public const string Confirm = Default + ".Confirm";
         }

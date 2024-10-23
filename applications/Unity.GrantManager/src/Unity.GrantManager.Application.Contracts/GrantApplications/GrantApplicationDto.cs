@@ -26,10 +26,6 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public decimal TotalProjectBudget { get; set; }
     public string? Sector { get; set; } = string.Empty;
     public string? SubSector { get; set; } = string.Empty;
-
-    public int AssessmentCount { get; set; } = 0;
-    public int AssessmentReviewCount { get; set; } = 0;
-
     public string ProjectSummary { get; set; } = string.Empty;
     public int TotalScore { get; set; } = 0;
     public decimal RecommendedAmount { get; set; } = 0;
