@@ -192,11 +192,14 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddCors(options =>
         {
-            options.AddPolicy("CHEFS-POLICY", builder => builder
-                .WithOrigins("*")
-                .AllowAnyMethod()
-                .AllowCredentials()
-                .WithHeaders("Accept", "Content-Type", "Origin", "X-API-KEY"));
+            options.AddPolicy("ChefsOrigin",
+                builder =>
+                {
+                    builder.WithOrigins("https://chefs-dev.apps.silver.devops.gov.bc.ca") // Specify your exact origin
+                           .AllowAnyMethod() // Allow all methods (GET, POST, etc.)
+                           .AllowAnyHeader() // Allow all headers
+                           .AllowCredentials(); // Allow credentials
+                });
         });
 
         context.Services.AddHealthChecks()
@@ -578,7 +581,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
-        app.UseCors("CHEFS-POLICY");
+        app.UseCors("ChefsOrigin");
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)
