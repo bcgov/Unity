@@ -196,7 +196,7 @@ public class GrantManagerWebModule : AbpModule
                 .WithOrigins("https://chefs-dev.apps.silver.devops.gov.bc.ca")
                 .AllowAnyMethod()
                 .AllowCredentials()
-                .WithHeaders("Accept", "Content-Type", "Origin", "X-API-KEY"));
+                .WithHeaders("*"));
         });
 
         context.Services.AddHealthChecks()
