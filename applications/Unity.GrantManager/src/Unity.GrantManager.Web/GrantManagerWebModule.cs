@@ -193,10 +193,10 @@ public class GrantManagerWebModule : AbpModule
         context.Services.AddCors(options =>
         {
             options.AddPolicy("CHEFS-POLICY", builder => builder
-                .WithOrigins("*")
+                .WithOrigins("https://chefs-dev.apps.silver.devops.gov.bc.ca")
                 .AllowAnyMethod()
                 .AllowCredentials()
-                .WithHeaders("*"));
+                .WithHeaders("Accept", "Content-Type", "Origin", "X-API-KEY"));
         });
 
         context.Services.AddHealthChecks()
