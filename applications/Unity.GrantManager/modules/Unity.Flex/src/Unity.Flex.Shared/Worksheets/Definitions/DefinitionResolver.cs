@@ -85,7 +85,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 return type switch
                 {
                     QuestionType.Number => JsonSerializer.Serialize(new NumericDefinition()),
-                    QuestionType.Text => JsonSerializer.Serialize(new TextDefinition()),                    
+                    QuestionType.Text => JsonSerializer.Serialize(new TextDefinition()),
                     QuestionType.YesNo => JsonSerializer.Serialize(new QuestionYesNoDefinition()),
                     QuestionType.SelectList => JsonSerializer.Serialize(new QuestionSelectListDefinition()),
                     _ => throw new NotImplementedException(),
@@ -97,7 +97,7 @@ namespace Unity.Flex.Worksheets.Definitions
                 {
                     QuestionType.Number => JsonSerializer.Serialize((NumericDefinition)definition),
                     QuestionType.Text => JsonSerializer.Serialize((TextDefinition)definition),
-                    QuestionType.YesNo => JsonSerializer.Serialize((QuestionYesNoDefinition)definition), 
+                    QuestionType.YesNo => JsonSerializer.Serialize((QuestionYesNoDefinition)definition),
                     QuestionType.SelectList => JsonSerializer.Serialize((QuestionSelectListDefinition)definition),
                     _ => throw new NotImplementedException(),
                 };
@@ -107,12 +107,13 @@ namespace Unity.Flex.Worksheets.Definitions
                 return type switch
                 {
                     QuestionType.Number => JsonSerializer.Serialize(element.ToString()),
-                    QuestionType.Text => JsonSerializer.Serialize(element.ToString()),                    
+                    QuestionType.Text => JsonSerializer.Serialize(element.ToString()),
                     QuestionType.YesNo => JsonSerializer.Serialize(element.ToString()),
                     QuestionType.SelectList => JsonSerializer.Serialize(element.ToString()),
                     _ => throw new NotImplementedException(),
                 };
-            } else if (definition is string)
+            }
+            else if (definition is string)
             {
                 return type switch
                 {
@@ -130,7 +131,7 @@ namespace Unity.Flex.Worksheets.Definitions
         public static string? ResolveMin(CustomFieldDefinition field)
         {
             return field switch
-            {                
+            {
                 NumericDefinition numeric => numeric.Min.ToString(),
                 CurrencyDefinition currency => currency.Min.ToString(),
                 _ => null,
@@ -183,6 +184,11 @@ namespace Unity.Flex.Worksheets.Definitions
                 TextAreaDefinition textArea => textArea.MaxLength.ToString(),
                 _ => null,
             };
+        }
+
+        public static bool ResolveIsRequired(CustomFieldDefinition field)
+        {
+            return field.Required;
         }
     }
 }

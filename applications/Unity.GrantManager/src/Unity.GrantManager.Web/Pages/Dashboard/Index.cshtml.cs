@@ -141,11 +141,11 @@ namespace Unity.GrantManager.Web.Pages.Dashboard
 
             var distinctOrderedUsers = assignees.Distinct().OrderBy(s => s.FullName);
 
-            AssigneesOptionList = distinctOrderedUsers.Select(user => new SelectListItem
+            AssigneesOptionList = await distinctOrderedUsers.Select(user => new SelectListItem
             {
                 Value = user.Id.ToString(),
                 Text = !string.IsNullOrEmpty(user.FullName) ? user.FullName : DashboardConsts.EmptyValue,
-            }).ToList();
+            }).ToListAsync();
 
             AssigneesOptionList.Add(new SelectListItem { Value = string.Empty, Text = DashboardConsts.EmptyValue });
             Assignees = AssigneesOptionList.Select(s => s.Value).Distinct().ToArray();

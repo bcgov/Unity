@@ -8,13 +8,15 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.Integration;
+using Volo.Abp.Users;
+using Unity.GrantManager.Web.Models;
 
 namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 {
-
     public class AssigneeSelectionModalModel : AbpPageModel
     {
         [BindProperty]
@@ -28,6 +30,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
         [BindProperty]
         public string CommonAssigneeList { get; set; } = string.Empty;
+
         [BindProperty]
         public string UnCommonAssigneeList { get; set; } = string.Empty;
 
@@ -36,6 +39,7 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 
         [BindProperty]
         public string ActionType { get; set; } = string.Empty;
+
         [BindProperty]
         [DisplayName("Assignees")]
         public string? SelectedAssignees { get; set; } = string.Empty;
@@ -43,16 +47,8 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
         [BindProperty]
         public string AllAssignees { get; set; } = string.Empty;
 
-        [BindProperty]
-        public string CurrentAssignees { get; set; } = string.Empty;
-
         public Guid OwnerUserId { get; set; }
 
-        public class AssigneeDuty
-        {
-            public required string Id { get; set; }
-            public string? Duty { get; set; }
-        }
 
         private readonly GrantApplicationAppService _applicationService;
         private readonly IIdentityUserIntegrationService _identityUserLookupAppService;
@@ -67,335 +63,230 @@ namespace Unity.GrantManager.Web.Pages.AssigneeSelection
             _applicationAssigneeService = applicationAssigneeService;
         }
 
-        public IEnumerable<SelectListItem> GetSelectListItems(ApplicationStatusDto[] statuses)
-        {
-            return statuses.Select(status => new SelectListItem
-            {
-                Value = status.Id.ToString(),
-                Text = status.InternalStatus.ToString(),
-            });
-        }
-
         public async Task OnGetAsync(string applicationIds, string actionType)
         {
             SelectedApplicationIds = applicationIds;
             ActionType = actionType;
-            AssigneeList ??= new List<SelectListItem>();
-            AllAssigneeList ??= new List<GrantApplicationAssigneeDto>();
-            var currentAssigneeList = new List<GrantApplicationAssigneeDto>();
-            var commonAssigneeList = new List<GrantApplicationAssigneeDto>();
-            var unCommonAssigneeList = new List<GrantApplicationAssigneeDto>();
 
             try
             {
                 var users = await _identityUserLookupAppService.SearchAsync(new UserLookupSearchInputDto());
+                PopulateAssigneeList(users);
+
                 var selectedApplicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
+                if (selectedApplicationIds == null) return;
 
-                foreach (var user in users.Items.OrderBy(s => s.UserName))
-                {
-                    AssigneeList.Add(new SelectListItem()
-                    {
-                        Value = user.Id.ToString(),
-                        Text = $"{user.Name} {user.Surname}",
+                var assignees = await _applicationAssigneeService.GetListWithApplicationIdsAsync(selectedApplicationIds);
+                var applications = await _applicationService.GetApplicationListAsync(selectedApplicationIds);
 
-                    });
-                    AllAssigneeList.Add(new GrantApplicationAssigneeDto()
-                    {
-                        Id = user.Id,
-                        FullName = $"{user.Name} {user.Surname}",
-
-                    });
-
-                }
-                AllAssignees = JsonConvert.SerializeObject(AllAssigneeList.ToArray());
-
-                if (selectedApplicationIds != null)
-                {
-                    var assignees = await _applicationAssigneeService.GetListWithApplicationIdsAsync(selectedApplicationIds);
-                    var applications = await _applicationService.GetApplicationListAsync(selectedApplicationIds);
-
-                    foreach (var assignee in assignees)
-                    {
-                        var user = users.Items.FirstOrDefault(s => s.Id == assignee.AssigneeId);
-                        if (user != null)
-                        {
-
-                            currentAssigneeList.Add(new GrantApplicationAssigneeDto()
-                            {
-                                Id = assignee.Id,
-                                FullName = $"{user.Name} {user.Surname}",
-                                Duty = assignee.Duty,
-                                AssigneeId = assignee.AssigneeId,
-                                ApplicationId = assignee.ApplicationId,
-                            });
-                        }
-                    }                   
-
-                    // Step 2: Iterate through the second list and categorize Assignees
-                    var commonArray = assignees
-                   .Where(a => selectedApplicationIds.Contains(a.ApplicationId))
-                   .GroupBy(a => new { a.AssigneeId, a.Duty })
-                   .Where(group => group.Count() == selectedApplicationIds.Count)
-                   .Select(group => new { AssigneeId = group.Key.AssigneeId, Duty = group.Key.Duty })
-                   .ToList();
-                    foreach (var common in commonArray)
-                    {
-                        var user = users.Items.FirstOrDefault(s => s.Id == common.AssigneeId);
-                        if(user != null)
-                        {
-                            commonAssigneeList.Add(new GrantApplicationAssigneeDto()
-                            {
-                                Id = user.Id,
-                                FullName = $"{user.Name} {user.Surname}",
-                                Duty = common.Duty,
-                                AssigneeId = user.Id,
-                            });
-                        }
-                      
-                    }
-                    var uncommonAssignees = assignees
-                                            .Where(a => selectedApplicationIds.Contains(a.ApplicationId))
-                                            .Where(a => !commonArray.Exists(c => c.AssigneeId == a.AssigneeId && c.Duty == a.Duty))
-                                            .GroupBy(a => new { a.AssigneeId, a.FullName, a.Duty })
-                                            .Select(group => new { AssigneeId = group.Key.AssigneeId, FullName = group.Key.FullName, Duty = group.Key.Duty })
-                                            .ToList();
-
-                    foreach (var uncommon in uncommonAssignees)
-                    {
-                        var user = users.Items.FirstOrDefault(s => s.Id == uncommon.AssigneeId);
-                        if (user != null)
-                        {
-                            unCommonAssigneeList.Add(new GrantApplicationAssigneeDto()
-                            {
-                                Id = user.Id,
-                                FullName = $"{user.Name} {user.Surname}",
-                                Duty = uncommon.Duty,
-                                AssigneeId = user.Id,
-                            });
-                        }
-
-                    }
-
-                
-                    
-
-                    if (selectedApplicationIds.Count == 1)
-                    {
-                        var owner = applications[0].OwnerId;
-                        if (owner != null)
-                        {
-                            AssigneeId = owner;
-                        }
-
-
-
-                    }
-                    else
-                    {
-                        bool allHaveSameValue = applications.Select(item => item.OwnerId).Distinct().Count() == 1;
-                        if (allHaveSameValue)
-                        {
-                            Guid? commonValue = applications[0].OwnerId;
-                            if (commonValue != null)
-                            {
-                                AssigneeId = commonValue;
-                            }
-
-                        }
-                        else
-                        {
-                            AssigneeList.Add(new SelectListItem()
-                            {
-                                Value = Guid.Empty.ToString(),
-                                Text = "Various Owners",
-
-                            });
-                            AssigneeId = Guid.Empty;
-
-                        }
-
-                    }
-
-                    CommonAssigneeList = JsonConvert.SerializeObject(commonAssigneeList);
-                    UnCommonAssigneeList = JsonConvert.SerializeObject(unCommonAssigneeList);
-                    CurrentAssigneeList = JsonConvert.SerializeObject(currentAssigneeList);
-                   
-                }
-
+                PopulateAssignees(users, assignees, selectedApplicationIds);
+                AssignOwnerForApplications(applications);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, message: "Error loading users select list");
+                Logger.LogError(ex, "Error loading users select list");
             }
-
-            await Task.CompletedTask;
         }
 
+        private void PopulateAssigneeList(ListResultDto<UserData> users)
+        {
+            AssigneeList = users.Items
+                .OrderBy(s => s.UserName)
+                .Select(user => new SelectListItem
+                {
+                    Value = user.Id.ToString(),
+                    Text = $"{user.Name} {user.Surname}"
+                }).ToList();
+
+            AllAssigneeList = users.Items
+                .Select(user => new GrantApplicationAssigneeDto
+                {
+                    Id = user.Id,
+                    FullName = $"{user.Name} {user.Surname}"
+                }).ToList();
+
+            AllAssignees = JsonConvert.SerializeObject(AllAssigneeList);
+        }
+
+        private void PopulateAssignees(ListResultDto<UserData> users,
+            List<GrantApplicationAssigneeDto> assignees,
+            List<Guid> selectedApplicationIds)
+        {
+            var currentAssigneeList = assignees
+                .Select(assignee => new GrantApplicationAssigneeDto
+                {
+                    Id = assignee.Id,
+                    FullName = $"{users.Items.FirstOrDefault(s => s.Id == assignee.AssigneeId)?.Name} {users.Items.FirstOrDefault(s => s.Id == assignee.AssigneeId)?.Surname}",
+                    Duty = assignee.Duty,
+                    AssigneeId = assignee.AssigneeId,
+                    ApplicationId = assignee.ApplicationId,
+                }).ToList();
+
+            // Categorize Assignees
+            CategorizeAssignees(assignees, selectedApplicationIds, users, out var commonAssigneeList, out var unCommonAssigneeList);
+
+            CommonAssigneeList = JsonConvert.SerializeObject(commonAssigneeList);
+            UnCommonAssigneeList = JsonConvert.SerializeObject(unCommonAssigneeList);
+            CurrentAssigneeList = JsonConvert.SerializeObject(currentAssigneeList);
+        }
+
+        private static void CategorizeAssignees(List<GrantApplicationAssigneeDto> assignees,
+            List<Guid> selectedApplicationIds,
+            ListResultDto<UserData> users,
+            out List<GrantApplicationAssigneeDto> commonAssigneeList,
+            out List<GrantApplicationAssigneeDto> unCommonAssigneeList)
+        {
+            commonAssigneeList = [];
+            unCommonAssigneeList = [];
+
+            var commonArray = assignees
+                .Where(a => selectedApplicationIds.Contains(a.ApplicationId))
+                .GroupBy(a => new { a.AssigneeId, a.Duty })
+                .Where(group => group.Count() == selectedApplicationIds.Count)
+                .Select(group => group.Key);
+
+            // Populate common assignees
+            foreach (var common in commonArray)
+            {
+                var user = users.Items.FirstOrDefault(s => s.Id == common.AssigneeId);
+                if (user != null)
+                {
+                    commonAssigneeList.Add(new GrantApplicationAssigneeDto
+                    {
+                        Id = user.Id,
+                        FullName = $"{user.Name} {user.Surname}",
+                        Duty = common.Duty,
+                        AssigneeId = user.Id,
+                    });
+                }
+            }
+
+            // Populate uncommon assignees
+            var uncommonAssignees = assignees
+                .Where(a => selectedApplicationIds.Contains(a.ApplicationId))
+                .Where(a => !commonArray.Any(c => c.AssigneeId == a.AssigneeId && c.Duty == a.Duty))
+                .GroupBy(a => new { a.AssigneeId, a.FullName, a.Duty })
+                .Select(group => group.Key);
+
+            foreach (var uncommon in uncommonAssignees)
+            {
+                var user = users.Items.FirstOrDefault(s => s.Id == uncommon.AssigneeId);
+                if (user != null)
+                {
+                    unCommonAssigneeList.Add(new GrantApplicationAssigneeDto
+                    {
+                        Id = user.Id,
+                        FullName = $"{user.Name} {user.Surname}",
+                        Duty = uncommon.Duty,
+                        AssigneeId = user.Id,
+                    });
+                }
+            }
+        }
+
+        private void AssignOwnerForApplications(List<GrantApplicationDto> applications)
+        {
+            if (applications.Count == 1)
+            {
+                AssigneeId = applications[0].OwnerId ?? AssigneeId;
+            }
+            else
+            {
+                var allHaveSameOwner = applications.Select(a => a.OwnerId).Distinct().Count() == 1;
+                AssigneeId = allHaveSameOwner ? applications[0].OwnerId : Guid.Empty;
+                if (!allHaveSameOwner)
+                {
+                    AssigneeList.Add(new SelectListItem { Value = Guid.Empty.ToString(), Text = "Various Owners" });
+                }
+            }
+        }
 
         public async Task<IActionResult> OnPostAsync()
         {
             try
             {
-                var uncommonId = "uncommonAssignees";
-                var applicationIds = JsonConvert.DeserializeObject<List<Guid>>(SelectedApplicationIds);
-                if (applicationIds != null)
-                {
-                    var currentAssigneeList = JsonConvert.DeserializeObject<List<GrantApplicationAssigneeDto>>(CurrentAssigneeList);
-                    if (SelectedAssignees != null)
-                    {
-                        var selectedAssignees = JsonConvert.DeserializeObject<List<AssigneeDuty>>(SelectedAssignees);
-                        if (selectedAssignees != null && selectedAssignees.Count > 0)
-                        {
-                            var elementToRemove = selectedAssignees.Find(e => e.Id.ToString() == uncommonId);
-                            if (elementToRemove != null)
-                            {
-                                selectedAssignees.Remove(elementToRemove);
-                                if (selectedAssignees.Count > 0)
-                                {
-                                    foreach (var applicationId in applicationIds)
-                                    {
-                                        foreach (var assignee in selectedAssignees)
-                                        {
-                                            await _applicationService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Duty);
+                var applicationIds = DeserializeJson<List<Guid>>(SelectedApplicationIds);
+                if (applicationIds == null) return NoContent();
 
-                                        }
+                var currentAssigneeList = DeserializeJson<List<GrantApplicationAssigneeDto>>(CurrentAssigneeList) ?? [];
+                var selectedAssignees = SelectedAssignees == null ? [] : DeserializeJson<List<AssigneeDuty>>(SelectedAssignees) ?? [];
 
-                                    }
-                                }
-                                else
-                                {
-                                    var uncommonAssignees = JsonConvert.DeserializeObject<List<AssigneeDuty>>(UnCommonAssigneeList);
-                                    if (uncommonAssignees != null)
-                                    {
-
-                               
-                                    foreach (var applicationId in applicationIds)
-                                    {
-                                        if (currentAssigneeList != null && currentAssigneeList.Count > 0)
-                                        {
-                                            var currentAssigneeListSelectedApplication = currentAssigneeList.FindAll(x => x.ApplicationId == applicationId);
-                                            if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
-                                            {
-
-                                                    foreach (var assignee in currentAssigneeListSelectedApplication)
-                                                    {
-                                                        var assigneeDetails = uncommonAssignees.Find(x => x.Id == assignee.AssigneeId.ToString());
-                                                        if (assigneeDetails == null)
-                                                        {
-                                                            await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
-                                                        }
-                                                    };
-                                              
-                                            }
-                                        }
-                                    }
-                                }
-                                }
-
-                              
-                               
-
-
-
-                            }
-                            else
-                            {
-                                if (selectedAssignees.Count > 0)
-                                {
-                                    foreach (var applicationId in applicationIds)
-                                    {
-                                        foreach (var assignee in selectedAssignees)
-                                        {
-                                            await _applicationService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Duty);
-
-                                        }
-                                        if (currentAssigneeList != null && currentAssigneeList.Count > 0)
-                                        {
-                                            var currentAssigneeListSelectedApplication = currentAssigneeList.FindAll(x => x.ApplicationId == applicationId);
-                                            if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
-                                            {
-                                               
-                                                foreach(var assignee in currentAssigneeListSelectedApplication)
-                                                {
-                                                    var assigneeDetails = selectedAssignees.Find(x => x.Id == assignee.AssigneeId.ToString());
-                                                    if (assigneeDetails == null)
-                                                    {
-                                                        await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
-                                                    }
-
-
-                                                };
-                                            }
-                                        }
-
-
-                                    }
-                                }
-
-                            }
-
-
-
-                        }
-                        else
-                        {
-                            if (currentAssigneeList != null && currentAssigneeList.Count > 0)
-                            {
-                                foreach (var applicationId in applicationIds)
-                                {
-                                    var currentAssigneeListSelectedApplication = currentAssigneeList.FindAll(x => x.ApplicationId == applicationId);
-                                    if (currentAssigneeListSelectedApplication != null && currentAssigneeListSelectedApplication.Count > 0)
-                                    {
-                                        foreach (var assignee in currentAssigneeListSelectedApplication)
-                                        {
-
-                                            await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
-
-                                        };
-                                    }
-
-
-                                }
-                            }
-                        }
-                           
-                    }
-                    if (AssigneeId != Guid.Empty)
-                    {
-                        if (AssigneeId != null)
-                        {
-                            foreach (var applicationId in applicationIds)
-                            {
-
-                                await _applicationService.InsertOwnerAsync(applicationId, AssigneeId);
-
-                            }
-                        }
-                        else
-                        {
-
-                            foreach (var applicationId in applicationIds)
-                            {
-
-                                await _applicationService.DeleteOwnerAsync(applicationId);
-
-                            }
-                        }
-                    }
-
-
-
-                }
-
+                await ProcessAssigneesForApplications(applicationIds, currentAssigneeList, selectedAssignees);
+                await UpdateOwnerForApplications(applicationIds);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, message: "Error updating application status");
+                Logger.LogError(ex, "Error updating application status");
             }
 
-            await Task.CompletedTask;
-
             return NoContent();
+        }
+
+        private async Task ProcessAssigneesForApplications(List<Guid> applicationIds, List<GrantApplicationAssigneeDto> currentAssigneeList,
+            List<AssigneeDuty> selectedAssignees)
+        {
+            if (selectedAssignees?.Count > 0)
+            {
+                await AddOrUpdateAssignees(applicationIds, selectedAssignees);
+                await RemoveAssignees(applicationIds, currentAssigneeList, selectedAssignees, true);
+            }
+            else if (currentAssigneeList?.Count > 0)
+            {
+                await RemoveAssignees(applicationIds, currentAssigneeList, selectedAssignees ?? [], false);
+            }
+        }
+
+        private async Task RemoveAssignees(List<Guid> applicationIds, List<GrantApplicationAssigneeDto> currentAssigneeList,
+            List<AssigneeDuty> selectedAssignees, bool unselected)
+        {
+            foreach (var applicationId in applicationIds)
+            {
+                var currentAssigneesForApplication = currentAssigneeList?.Where(x => x.ApplicationId == applicationId).ToList();
+                if (currentAssigneesForApplication == null || currentAssigneesForApplication.Count == 0) continue;
+
+                var assigneesToRemove = unselected
+                    ? currentAssigneesForApplication.Where(assignee => selectedAssignees.TrueForAll(x => x.Id != assignee.AssigneeId.ToString())).ToList()
+                    : currentAssigneesForApplication;
+
+                foreach (var assignee in assigneesToRemove)
+                {
+                    await _applicationService.DeleteAssigneeAsync(applicationId, assignee.AssigneeId);
+                }
+            }
+        }
+
+        private async Task AddOrUpdateAssignees(List<Guid> applicationIds, List<AssigneeDuty> selectedAssignees)
+        {
+            foreach (var applicationId in applicationIds)
+            {
+                foreach (var assignee in selectedAssignees)
+                {
+                    await _applicationService.InsertAssigneeAsync(applicationId, new Guid(assignee.Id), assignee.Duty);
+                }
+            }
+        }
+
+        private async Task UpdateOwnerForApplications(List<Guid> applicationIds)
+        {
+            if (AssigneeId == null || AssigneeId == Guid.Empty)
+            {
+                foreach (var applicationId in applicationIds)
+                {
+                    await _applicationService.DeleteOwnerAsync(applicationId);
+                }
+            }
+            else
+            {
+                foreach (var applicationId in applicationIds)
+                {
+                    await _applicationService.InsertOwnerAsync(applicationId, AssigneeId.Value);
+                }
+            }
+        }
+
+        private static T? DeserializeJson<T>(string jsonString) where T : class
+        {
+            return string.IsNullOrEmpty(jsonString) ? null : JsonConvert.DeserializeObject<T>(jsonString);
         }
     }
 }

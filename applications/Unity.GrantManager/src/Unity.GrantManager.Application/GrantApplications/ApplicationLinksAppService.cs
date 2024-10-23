@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,54 +14,39 @@ namespace Unity.GrantManager.GrantApplications;
 [Authorize]
 [ExposeServices(typeof(ApplicationLinksAppService), typeof(IApplicationLinksService))]
 public class ApplicationLinksAppService : CrudAppService<
-            ApplicationLink,
-            ApplicationLinksDto,
-            Guid>, IApplicationLinksService
+        ApplicationLink,
+        ApplicationLinksDto,
+        Guid>, IApplicationLinksService
 {
-    private readonly IApplicationLinksRepository _applicationLinksRepository;
-    private readonly IApplicationRepository _applicationRepository;
-    private readonly IApplicationFormRepository _applicationFormRepository;
+    public IApplicationLinksRepository ApplicationLinksRepository { get; set; } = null!;
+    public IApplicationRepository ApplicationRepository { get; set; } = null!;
+    public IApplicationFormRepository ApplicationFormRepository { get; set; } = null!;
 
-    public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository,
-        IApplicationLinksRepository applicationLinksRepository,
-        IApplicationFormRepository applicationFormRepository,
-        IApplicationRepository applicationRepository) : base(repository)
-    {
-        _applicationLinksRepository = applicationLinksRepository;
-        _applicationRepository = applicationRepository;
-        _applicationFormRepository = applicationFormRepository;
-    }
-    
+    // Constructor for the required repository
+    public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : base(repository) { }
+
     public async Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId)
     {
-        var query1 = from applicationLinks in await _applicationLinksRepository.GetQueryableAsync()
-                    join application in await _applicationRepository.GetQueryableAsync() on applicationLinks.LinkedApplicationId equals application.Id
-                    join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
-                    where applicationLinks.ApplicationId == applicationId
-                    select new ApplicationLinksInfoDto{
-                        Id = applicationLinks.Id,
-                        ApplicationId = application.Id,
-                        ApplicationStatus = application.ApplicationStatus.InternalStatus,
-                        ReferenceNumber = application.ReferenceNo,
-                        Category = appForm.Category!,
-                        ProjectName = application.ProjectName
-                    };
-                
-        var query2 = from applicationLinks in await _applicationLinksRepository.GetQueryableAsync()
-                    join application in await _applicationRepository.GetQueryableAsync() on applicationLinks.ApplicationId equals application.Id
-                    join appForm in await _applicationFormRepository.GetQueryableAsync() on application.ApplicationFormId equals appForm.Id
-                    where applicationLinks.LinkedApplicationId == applicationId
-                    select new ApplicationLinksInfoDto{
-                        Id = applicationLinks.Id,
-                        ApplicationId = application.Id,
-                        ApplicationStatus = application.ApplicationStatus.InternalStatus,
-                        ReferenceNumber = application.ReferenceNo,
-                        Category = appForm.Category!,
-                        ProjectName = application.ProjectName
-                    };
+        var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();
+        var applicationsQuery = await ApplicationRepository.GetQueryableAsync();
+        var applicationFormsQuery = await ApplicationFormRepository.GetQueryableAsync();
 
-        var combinedQuery = query1.Union(query2);
+        var combinedQuery = from applicationLinks in applicationLinksQuery
+                            join application in applicationsQuery on applicationLinks.LinkedApplicationId equals application.Id into appLinks
+                            from application in appLinks.DefaultIfEmpty() // Left join for safety
+                            join appForm in applicationFormsQuery on application.ApplicationFormId equals appForm.Id into appForms
+                            from appForm in appForms.DefaultIfEmpty() // Left join for safety
+                            where applicationLinks.ApplicationId == applicationId || applicationLinks.LinkedApplicationId == applicationId
+                            select new ApplicationLinksInfoDto
+                            {
+                                Id = applicationLinks.Id,
+                                ApplicationId = application.Id,
+                                ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                                ReferenceNumber = application.ReferenceNo,
+                                Category = appForm.Category ?? "Unknown", // Handle potential nulls
+                                ProjectName = application.ProjectName
+                            };
 
-        return combinedQuery.ToList();
+        return await combinedQuery.ToListAsync();
     }
 }

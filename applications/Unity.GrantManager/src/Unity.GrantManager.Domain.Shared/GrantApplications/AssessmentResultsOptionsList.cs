@@ -8,7 +8,7 @@ public static class AssessmentResultsOptionsList
 
     public static Dictionary<string, string> DueDiligenceList => new() { { "COMPLETE", "Complete" }, { "FAILED", "Failed" }, { "INELIGIBLE", "Ineligible" }, { "PAUSED", "Paused" }, { "UNDERWAY", "Underway" }, { "WITHDRAWN", "Withdrawn" } };
 
-    public static Dictionary<string, string> AssessmentResultStatusList => new() { { "FAIL", "Fail" }, { "INELIGIBLE", "Ineligible" }, { "PASS", "Pass" } };
+    public static Dictionary<string, string> AssessmentResultStatusList => new() { { "PASS", "Pass" }, { "FAIL", "Fail" }, { "ELIGIBLE", "Eligible" }, { "INELIGIBLE", "Ineligible" } };
 
     public static Dictionary<string, string> DeclineRationalActionList => new() { { "INELIGIBLE_PROJECT", "Ineligible Project" }, { "INELIGIBLE_APPLICANT", "Ineligible Applicant" }, { "INSUFFICIENT_READINESS", "Insufficient Readiness" }, { "LOW_PRIORITY", "Lower Priority Relative To Other Requests" }, { "NOT_ENOUGH_INFO", "Insufficient Information Provided" }, { "NOT_ALIGNED", "Not Aligned" }, { "OVERSUBSCRIBED", "Oversubscribed" }, { "OTHER", "Other" } };
 

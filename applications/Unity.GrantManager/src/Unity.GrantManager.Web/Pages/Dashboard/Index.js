@@ -265,7 +265,7 @@ function initializeBarChart(config, dataArray, labelsArray) {
         }
     }
 
-    option = {
+    let option = {
         textStyle: {
             fontFamily: 'BCSans'
         },

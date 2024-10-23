@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
+using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget
 {
@@ -23,7 +24,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget
             {
                 MinLength = uint.Parse(form["MinLength"].ToString()),
                 MaxLength = uint.Parse(form["MaxLength"].ToString())
-            };
+            }
+            .ApplyRequired(form);
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
@@ -36,7 +38,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextDefinitionWidget
                     return View(await Task.FromResult(new TextDefinitionViewModel()
                     {
                         MinLength = textDefinition.MinLength,
-                        MaxLength = textDefinition.MaxLength
+                        MaxLength = textDefinition.MaxLength,
+                        Required = textDefinition.Required                        
                     }));
                 }
             }

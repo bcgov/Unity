@@ -8,6 +8,6 @@ namespace Unity.GrantManager.GrantApplications;
 public interface IApplicationAssignmentsService : IApplicationService
 {
   
-    Task<IList<GrantApplicationAssigneeDto>> GetListWithApplicationIdsAsync(List<Guid> ids);
+    Task<List<GrantApplicationAssigneeDto>> GetListWithApplicationIdsAsync(List<Guid> ids);
 
 }
