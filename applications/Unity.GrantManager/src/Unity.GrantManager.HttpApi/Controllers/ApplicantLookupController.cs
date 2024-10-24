@@ -7,6 +7,7 @@ using Unity.GrantManager.Data;
 using Unity.GrantManager.Controllers.Auth.FormSubmission;
 using Unity.GrantManager.Intakes;
 
+
 namespace Unity.GrantManager.Controllers
 {
     [ApiController]
@@ -14,29 +15,40 @@ namespace Unity.GrantManager.Controllers
     [AllowAnonymous]
     public class ApplicantLookupController(
                                 ITenantRepository tenantRepository,
-                                IApplicantService applicantService) : AbpControllerBase
+                                IApplicantLookupService applicantService) : AbpControllerBase
     {
 
         [HttpGet("{__tenant}")]
         [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
-        public async Task<dynamic> GetApplicantAsync([FromQuery] ApplicantLookup applicantLookup)
+        public async Task<IActionResult> GetApplicantAsync([FromQuery] ApplicantLookup applicantLookup)
         {
-
             if (applicantLookup.UnityApplicantId == null)
             {
-                return "Applicant NotFound";
+                return NotFound("Applicant Not Found");
             }
 
+            // Handle tenant context
             if (CurrentTenant.Id == null)
             {
                 var defaultTenant = await tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
                 using (CurrentTenant.Change(defaultTenant.Id, defaultTenant.Name))
                 {
-                    var currentResult = await applicantService.ApplicantLookupByApplicantId(applicantLookup.UnityApplicantId);
-                    return Content(currentResult, "application/json");
+                    return await GetApplicantContent(applicantLookup.UnityApplicantId);
                 }
-            } 
-            var result = await applicantService.ApplicantLookupByApplicantId(applicantLookup.UnityApplicantId);
+            }
+
+            return await GetApplicantContent(applicantLookup.UnityApplicantId);
+        }
+
+        private async Task<IActionResult> GetApplicantContent(string unityApplicantId)
+        {
+            var result = await applicantService.ApplicantLookupByApplicantId(unityApplicantId);
+            
+            if (result == null)
+            {
+                return NotFound("Applicant Not Found");
+            }
+
             return Content(result, "application/json");
         }
     }

@@ -10,8 +10,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Intakes
 {
-    [RemoteService(false)]
-    public class ApplicantService(IApplicantRepository applicantRepository) : GrantManagerAppService, IApplicantService
+    [RemoteService(true)]
+    public class ApplicantLookupService(IApplicantRepository applicantRepository) : GrantManagerAppService, IApplicantLookupService
     {
 
         protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
