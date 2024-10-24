@@ -67,10 +67,9 @@ namespace Unity.GrantManager.Intakes.Mapping
 
 
         /// <summary>
-        /// Converts a nullable string to a nullable DateTime using a specified format and culture.
+        /// Converts a nullable string to a nullable DateTime using a specified culture.
         /// </summary>
         /// <param name="dateTime">The date and time string to convert.</param>
-        /// <param name="format">The expected date format.</param>
         /// <param name="culture">The culture information.</param>
         /// <returns>A nullable DateTime, or null if conversion fails.</returns>
         public static DateTime? ConvertDateTimeNullableFromStringWithCulture(string? dateTime, CultureInfo culture)
