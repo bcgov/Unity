@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -43,7 +41,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
 
     private async Task<Applicant> CreateNewApplicantAsync(IntakeMapping intakeMap)
     {
-        if (intakeMap == null) throw new ArgumentNullException(nameof(intakeMap));
+        ArgumentNullException.ThrowIfNull(intakeMap);
 
         var applicant = new Applicant
         {
@@ -65,9 +63,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
 
     private async Task CreateApplicantAddressesAsync(IntakeMapping intakeMap, Applicant applicant)
     {
-        if(intakeMap == null) {
-            throw new ArgumentNullException(nameof(intakeMap));
-        }
+        ArgumentNullException.ThrowIfNull(intakeMap);
 
         if (!intakeMap.PhysicalStreet.IsNullOrEmpty()
             || !intakeMap.PhysicalStreet2.IsNullOrEmpty())

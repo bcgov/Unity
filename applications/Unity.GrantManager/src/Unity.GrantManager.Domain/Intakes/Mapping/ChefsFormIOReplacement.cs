@@ -1,11 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Unity.GrantManager.Intakes.Mapping
 {
     public static class ChefsFormIOReplacement
     {
+        private static ILogger logger = NullLogger.Instance;
+
+        // Method to initialize the logger (if needed)
+        public static void InitializeLogger(ILoggerFactory loggerFactory)
+        {
+            logger = loggerFactory.CreateLogger("ChefsFormIOReplacement");
+        }
+
         private static int OneMinuteMilliseconds = 60000;
         public static string ReplaceAdvancedFormIoControls(dynamic formSubmission)
         {
@@ -82,7 +92,8 @@ namespace Unity.GrantManager.Intakes.Mapping
                     }
                     catch (RegexMatchTimeoutException ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        string ExceptionMessage = ex.Message;
+                        logger.LogWarning(ex, "ReplaceAdvancedFormIoControls RegEx Exception {ExceptionMessage}", ExceptionMessage);
                     }
                 }
 
