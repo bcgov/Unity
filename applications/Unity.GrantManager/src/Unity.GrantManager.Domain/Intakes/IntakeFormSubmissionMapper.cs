@@ -73,6 +73,7 @@ namespace Unity.GrantManager.Intakes
         {
             return new IntakeMapping()
             {
+                UnityApplicantId = data.unityApplicantId,
                 ApplicantName = data.applicantName is string ? data.applicantName : null,
                 Sector = data.sector is string ? data.sector : null,
                 TotalProjectBudget = data.totalProjectBudget is string ? data.totalProjectBudget : null,

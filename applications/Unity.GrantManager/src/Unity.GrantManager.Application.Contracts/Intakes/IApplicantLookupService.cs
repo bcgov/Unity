@@ -2,7 +2,7 @@
 
 namespace Unity.GrantManager.Intakes
 {
-    public interface IApplicantService
+    public interface IApplicantLookupService
     {
         Task<string> ApplicantLookupByApplicantId(string? unityApplicantId);
     }
