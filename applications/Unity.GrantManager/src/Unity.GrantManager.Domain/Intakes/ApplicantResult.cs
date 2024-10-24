@@ -1,15 +1,34 @@
-﻿namespace Unity.GrantManager.Intakes
+﻿using System.Text.Json.Serialization;
+
+namespace Unity.GrantManager.Intakes
 {
     public class ApplicantResult
     {
-        public string? id { get; set; }
-        public string? applicant_name { get; set; }
-        public string? unity_applicant_id { get; set; }
-        public string? bc_society_number { get; set; }
-        public string? org_number { get; set; }
-        public string? sector { get; set; }
-        public string? operating_start_date { get; set; }
-        public string? fiscal_year_day { get; set; }
-        public string? fiscal_year_month { get; set; }
+        [JsonPropertyName("id")]
+        public string? Id { get; set; }
+
+        [JsonPropertyName("applicant_name")]
+        public string? ApplicantName { get; set; }
+
+        [JsonPropertyName("unity_applicant_id")]
+        public string? UnityApplicantId { get; set; }
+
+        [JsonPropertyName("bc_society_number")]
+        public string? BcSocietyNumber { get; set; }
+
+        [JsonPropertyName("org_number")]
+        public string? OrgNumber { get; set; }
+
+        [JsonPropertyName("sector")]
+        public string? Sector { get; set; }
+
+        [JsonPropertyName("operating_start_date")]
+        public string? OperatingStartDate { get; set; }
+
+        [JsonPropertyName("fiscal_year_day")]
+        public string? FiscalYearDay { get; set; }
+
+        [JsonPropertyName("fiscal_year_month")]
+        public string? FiscalYearMonth { get; set; }
     }
 }

@@ -17,8 +17,10 @@ namespace Unity.GrantManager.Controllers
                                 ITenantRepository tenantRepository,
                                 IApplicantLookupService applicantService) : AbpControllerBase
     {
-
+#pragma warning disable ASP0018
+        // Needed for the Database Context
         [HttpGet("{__tenant}")]
+#pragma warning restore ASP0018
         [ServiceFilter(typeof(FormsApiTokenAuthFilter))]
         public async Task<IActionResult> GetApplicantAsync([FromQuery] ApplicantLookup applicantLookup)
         {

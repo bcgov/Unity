@@ -9,5 +9,10 @@ namespace Unity.Modules.Shared.Utils
         {
             return inputString.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
         }
+
+        public static string SanitizeField(this string inputString)
+        {
+            return inputString.RemoveNewLines();
+        }
     }
 }

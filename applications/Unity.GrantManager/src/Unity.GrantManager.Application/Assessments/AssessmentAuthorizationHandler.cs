@@ -24,17 +24,16 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         OperationAuthorizationRequirement requirement,
         Assessment resource)
     {
-
-        if (requirement.Name.Equals(GrantApplicationPermissions.Assessments.SendToTeamLead)
-            && await HasSendToTeamLeadPermissionAsync(context, resource))
+        if (requirement.Name.Equals(GrantApplicationPermissions.Assessments.SendBack)
+            && await CheckPolicyAsync(requirement.Name, context))
         {
             context.Succeed(requirement);
             return;
         }
 
-        if ((requirement.Name.Equals(GrantApplicationPermissions.Assessments.Confirm) ||
-            requirement.Name.Equals(GrantApplicationPermissions.Assessments.SendBack)) &&
-            await CheckPolicyAsync(requirement.Name, context))
+        // Complete only if Assessor/Reviewer and current user
+        if (requirement.Name.Equals(GrantApplicationPermissions.Assessments.Confirm)
+            && await HasConfirmPermissionAsync(context, resource))
         {
             context.Succeed(requirement);
             return;
@@ -43,8 +42,7 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         context.Fail();
     }
 
-
-    protected virtual async Task<bool> HasSendToTeamLeadPermissionAsync(AuthorizationHandlerContext context, Assessment resource)
+    protected virtual async Task<bool> HasConfirmPermissionAsync(AuthorizationHandlerContext context, Assessment resource)
     {
         // NOTE: This should be replaced by mapping a claim of the userId to 'sub'
         var currentUserId = FindUserIdirId(context.User);
@@ -57,7 +55,7 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
         if (resource.AssessorId == currentUserId || resource.CreatorId == currentUserId)
         {
             return await PermissionChecker.IsGrantedAsync(context.User,
-                   GrantApplicationPermissions.Assessments.SendToTeamLead);
+                   GrantApplicationPermissions.Assessments.Confirm);
         }
 
         return false;
