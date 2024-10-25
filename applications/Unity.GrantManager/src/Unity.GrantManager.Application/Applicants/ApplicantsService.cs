@@ -20,7 +20,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
 
     public async Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap)
     {
-        if (intakeMap == null) throw new ArgumentNullException(nameof(intakeMap));
+        ArgumentNullException.ThrowIfNull(intakeMap);
 
         Applicant? applicant = await GetExistingApplicantAsync(intakeMap.UnityApplicantId);
         if (applicant != null)
