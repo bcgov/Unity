@@ -8,5 +8,5 @@ namespace Unity.GrantManager.Applicants;
 public interface IApplicantsService : IApplicationService
 {
     Task<Applicant> CreateOrRetrieveApplicantAsync(IntakeMapping intakeMap);
-    Task<ApplicantAgent> CreateOrUpdteApplicantAgentAsync(ApplicantAgentDto applicantAgentDto);
+    Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto);
 }

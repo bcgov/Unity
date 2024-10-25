@@ -100,7 +100,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
         }
     }
 
-    public async Task<ApplicantAgent> CreateOrUpdteApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
+    public async Task<ApplicantAgent> CreateOrUpdateApplicantAgentAsync(ApplicantAgentDto applicantAgentDto)
     {
         var applicant = applicantAgentDto.Applicant;
         var application = applicantAgentDto.Application;
