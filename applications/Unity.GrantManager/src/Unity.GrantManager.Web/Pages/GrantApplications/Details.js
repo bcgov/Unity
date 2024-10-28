@@ -57,7 +57,9 @@ $(function () {
 
                 waitFor(_ => isFormChanging(form))
                     .then(_ => 
-                        storeRenderedHtml()
+                        setTimeout(function () {
+                            storeRenderedHtml();
+                        }, 2000)
                     );
                 });
         } catch (error) {
