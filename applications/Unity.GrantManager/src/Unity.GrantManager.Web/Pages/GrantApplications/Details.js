@@ -1,5 +1,6 @@
 $(function () {
     let selectedReviewDetails = null;
+    let renderFormIoToHtml = document.getElementById('RenderFormIoToHtml').value;
     let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
@@ -12,7 +13,7 @@ $(function () {
     initializeDetailsPage();
 
     function renderSubmission() {
-        if (hasRenderedHtml == "False") {
+        if (renderFormIoToHtml == "False" || hasRenderedHtml == "False") {
             getSubmission();
         } else {
             $('.spinner-grow').hide();
@@ -56,7 +57,9 @@ $(function () {
 
                 waitFor(_ => isFormChanging(form))
                     .then(_ => 
-                        storeRenderedHtml()
+                        setTimeout(function () {
+                            storeRenderedHtml();
+                        }, 2000)
                     );
                 });
         } catch (error) {
@@ -69,6 +72,9 @@ $(function () {
     }
 
     async function storeRenderedHtml() {
+        if(renderFormIoToHtml == "False") {
+            return;
+        }
         let innerHTML = document.getElementById('formio').innerHTML;
         let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
         $.ajax(
@@ -399,7 +405,7 @@ $(function () {
         (msg, data) => {            
             applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
-            assessmentResultWidgetManager.refresh();            
+            assessmentResultWidgetManager.refresh();
         }
     );
 

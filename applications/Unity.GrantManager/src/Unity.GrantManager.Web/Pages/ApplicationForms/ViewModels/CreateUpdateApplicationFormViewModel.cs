@@ -15,7 +15,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels
         [Required]
         public List<SelectListItem> IntakesList { get; set; } = new List<SelectListItem>();
 
-        [DisabledInput]
+        [ReadOnlyInput]
         [DisplayName("Common:Name")]
         public string ApplicationFormName { get; set; } = string.Empty;
 
@@ -35,5 +35,8 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels
 
         [DisplayName("ApplicationForms:Payable")]
         public bool Payable { get; set; }
+
+        [DisplayName("ApplicationForms:RenderFormIoToHtml")]
+        public bool RenderFormIoToHtml { get; set; }
     }
 }
