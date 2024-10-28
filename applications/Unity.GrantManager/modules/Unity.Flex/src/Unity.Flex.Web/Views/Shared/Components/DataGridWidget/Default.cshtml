@@ -2,54 +2,47 @@
 
 @model DataGridViewModel;
 
-<abp-row class="m-0 p-0">
-    <table style="border: 1px solid black;">
-        <caption>Sample DataGrid</caption>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>LastName</th>
-                <th>DOB</th>
-                <th>Requested Amount</th>
-                <th>Approved Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>John</td>
-                <td>Doe</td>
-                <td>1990-01-01</td>
-                <td>$1000</td>
-                <td>$900</td>
-            </tr>
-            <tr>
-                <td>Jane</td>
-                <td>Smith</td>
-                <td>1985-05-15</td>
-                <td>$2000</td>
-                <td>$2000</td>
-            </tr>
-            <tr>
-                <td>Michael</td>
-                <td>Brown</td>
-                <td>1992-07-23</td>
-                <td>$1500</td>
-                <td>$1000</td>
-            </tr>
-            <tr>
-                <td>Emily</td>
-                <td>Davis</td>
-                <td>1988-03-12</td>
-                <td>$3000</td>
-                <td>$2500</td>
-            </tr>
-            <tr>
-                <td>Chris</td>
-                <td>Johnson</td>
-                <td>1995-09-30</td>
-                <td>$500</td>
-                <td>$500</td>
-            </tr>
-        </tbody>
-    </table>
-</abp-row>
+@if (Model.Field != null)
+{
+    <abp-row class="m-0 p-0">
+        <table id="gridToBeExplicitNamed" class="display">
+            <caption></caption>
+            <thead>
+                <tr>
+                    @foreach (var column in Model.Columns)
+                    {
+                        <th>@column</th>
+                    }
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        @foreach (var cell in row.Cells)
+                        {
+                            <td>
+                                @cell.Value
+                            </td>
+                        }
+                        <td>                            
+                            <abp-button id="editRowDataBtn"
+                                        class="btn btn-edit"
+                                        text="Edit"
+                                        onclick="openEditModal()"
+                                        type="button"></abp-button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </abp-row>
+    <abp-row>
+        @foreach (var field in Model.Summary.Fields)
+        {
+            <label for="@field.Key">@field.Label</label>
+            <input type="text" name="@field.Key" id="@field.Key" disabled value="@field.Value" />
+        }
+    </abp-row>
+}

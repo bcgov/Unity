@@ -19,8 +19,8 @@ namespace Unity.GrantManager.Intakes
             logger = loggerFactory.CreateLogger(typeof(InputComponentProcessor));
         }
 
-        private static readonly List<string> AllowableContainerTypes = new List<string>
-        {
+        private static readonly List<string> allowableContainerTypes =
+        [
             "tabs",
             "table",
             "simplecols2",
@@ -32,15 +32,20 @@ namespace Unity.GrantManager.Intakes
             "simpletabs",
             "container",
             "columns"
-        };
+        ];
 
-        private static readonly List<string> ColumnTypes = new List<string>
-        {
+        private static readonly List<string> columnTypes =
+        [
             "simplecols2",
             "simplecols3",
             "simplecols4",
             "columns"
-        };
+        ];
+
+        private static readonly List<string> dynamicTypes =
+        [
+            "datagrid"
+        ];
 
         private static void AddComponentToDictionary(string key, string? tokenType, string label)
         {
@@ -59,7 +64,7 @@ namespace Unity.GrantManager.Intakes
             return tokenInput == "True" &&
                    tokenType != null &&
                    tokenType != "button" &&
-                   !AllowableContainerTypes.Contains(tokenType);
+                   !allowableContainerTypes.Contains(tokenType);
         }
 
         public static string GetSubLookupType(string? tokenType)
@@ -71,7 +76,7 @@ namespace Unity.GrantManager.Intakes
             }
 
             // Check if tokenType is part of ColumnTypes
-            if (ColumnTypes.Contains(tokenType))
+            if (columnTypes.Contains(tokenType))
             {
                 return "columns";
             }
@@ -112,6 +117,7 @@ namespace Unity.GrantManager.Intakes
             if (token != null)
             {
                 var subTokenType = token["type"]?.ToString();
+
                 string subSubTokenString = GetSubLookupType(subTokenType);
 
                 var nestedComponentsComponents = ((JObject)token).SelectToken(subSubTokenString);
@@ -145,13 +151,22 @@ namespace Unity.GrantManager.Intakes
             // Add the component if applicable
             AddComponent(childToken);
 
-            if (tokenType != null && AllowableContainerTypes.Contains(tokenType.ToString()))
+            if (tokenType != null
+                && allowableContainerTypes.Contains(tokenType.ToString())
+                && !dynamicTypes.Contains(tokenType.ToString()))
             {
                 ProcessNestedComponents(childToken, tokenType);
             }
             else
             {
-                ConsumeToken(childToken);
+                if (tokenType != null && dynamicTypes.Contains(tokenType.ToString()))
+                {
+                    AddComponent(childToken);
+                }
+                else
+                {
+                    ConsumeToken(childToken);
+                }
             }
         }
 

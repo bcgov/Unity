@@ -49,7 +49,8 @@
         'simplecurrencyadvanced',
         'simpletextarea',
         'simpletextareaadvanced',
-        'bcaddress'];
+        'bcaddress',
+        'datagrid'];
 
     const UIElements = {
         btnBack: $('#btn-back'),
