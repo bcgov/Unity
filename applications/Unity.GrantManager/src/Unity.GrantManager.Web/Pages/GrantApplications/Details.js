@@ -73,7 +73,6 @@ $(function () {
 
     async function storeRenderedHtml() {
         if(renderFormIoToHtml == "False") {
-            alert("false - do not store");
             return;
         }
         let innerHTML = document.getElementById('formio').innerHTML;
