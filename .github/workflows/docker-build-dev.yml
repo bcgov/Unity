@@ -51,7 +51,8 @@ jobs:
         env | sort
     - name: Get current date
       id: date_selector
-      run: echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
+      run: |
+        echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
     outputs:
       DATE: ${{steps.date_selector.outputs.DATE}}
   Branch:
@@ -65,14 +66,15 @@ jobs:
           fetch-depth: '1'
     - name: Get short commitId
       id: get_commit
-      run:  |
+      run: |
         echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
     - name: List merged branch
       id: get_branch
       run: |
-        MERGED_BRANCH=$(git log --merges --pretty=format:"%s" -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
+        git log -1
+        MERGED_BRANCH=$(git log -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
         if [ -z "$MERGED_BRANCH" ]; then
-          echo "Direct push no pull request from bcgov/branch"
+          echo "Direct push into --env ${{env.TARGET_ENV}}"
           echo "MERGED_BRANCH=push" >> $GITHUB_OUTPUT
         else
           echo "Merged branch: $MERGED_BRANCH"
@@ -117,7 +119,7 @@ jobs:
       run: |
         echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
     - name: Push application images to Artifactory container registry
-      run:  |
+      run: |
         docker tag unity-grantmanager-dbmigrator $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
         docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
         docker tag unity-grantmanager-web $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web
@@ -131,7 +133,7 @@ jobs:
         oc registry login
         docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
     - name: Push application images to OpenShift container registry
-      run:  |
+      run: |
         docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator
         docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator
         docker tag unity-grantmanager-web $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web

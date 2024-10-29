@@ -1,5 +1,5 @@
-# This is a workflow that is PR merge to "main" triggered
-name: Test - Tag and Build
+name: Main - Build & Push docker images
+
 on:
   push:
     branches: [ "main" ]
@@ -51,7 +51,8 @@ jobs:
         env | sort
     - name: Get current date
       id: date_selector
-      run: echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
+      run: |
+        echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
     outputs:
       DATE: ${{steps.date_selector.outputs.DATE}}
   Branch:
@@ -65,14 +66,15 @@ jobs:
           fetch-depth: '1'
     - name: Get short commitId
       id: get_commit
-      run:  |
+      run: |
         echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
     - name: List merged branch
       id: get_branch
       run: |
-        MERGED_BRANCH=$(git log --merges --pretty=format:"%s" -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
+        git log -1
+        MERGED_BRANCH=$(git log -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
         if [ -z "$MERGED_BRANCH" ]; then
-          echo "Direct push no pull request from bcgov/branch"
+          echo "Direct push into --env ${{env.TARGET_ENV}}"
           echo "MERGED_BRANCH=push" >> $GITHUB_OUTPUT
         else
           echo "Merged branch: $MERGED_BRANCH"
@@ -93,40 +95,44 @@ jobs:
     - name: Generate Next Git Tag
       id: tag_selector
       run: |
-        # Extract the major.minor.patch version parts using grep
-        MAJOR_VERSION=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '^[0-9]+')
-        MINOR_VERSION=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '\.[0-9]+\.' | grep -oE '[0-9]+')
-        VERSION_PATCH=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '[0-9]+$')
-        # Echo the current version
-        echo "${{env.UGM_RELEASE_PREFIX}}$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH"
+        echo "Current release: ${{env.UGM_BUILD_VERSION}}"
         # Check the merged branch and set versions accordingly
         if [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == "test" ]]; then
-          echo "Test version tagged as stable release"
+          UGM_DEPLOY_VERSION=$(gh variable get UGM_BUILD_VERSION --env test)
+          gh variable set UGM_BUILD_VERSION --env main --body "$UGM_DEPLOY_VERSION"
         elif [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == hotfix/* ]]; then
-          echo "Incrementing patch version for hotfix version tagged as stable release"
+          # Extract the major.minor.patch version parts using grep
+          MAJOR_VERSION=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '^[0-9]+')
+          MINOR_VERSION=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '\.[0-9]+\.' | grep -oE '[0-9]+')
+          VERSION_PATCH=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '[0-9]+$')
+          echo "Incrementing patch version for hotfix release"
           VERSION_PATCH=$((VERSION_PATCH + 1))
+          UGM_DEPLOY_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH"
+        else
+          echo "WARNING: Compare branch pattern != test|hotfix/* unable to process build from ${{ needs.Branch.outputs.MERGED_BRANCH }}"
+          exit 1
         fi
-        # Echo the updated version
-        echo "${{env.UGM_RELEASE_PREFIX}}$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH"
-        # Prepare tags
-        echo "TAGNAME=${{env.UGM_RELEASE_PREFIX}}${MAJOR_VERSION}.${MINOR_VERSION}.${VERSION_PATCH}" >> $GITHUB_OUTPUT
+        echo "Main branch tagged as stable release: $UGM_DEPLOY_VERSION"
+        echo "TAGNAME=${{env.UGM_RELEASE_PREFIX}}$UGM_DEPLOY_VERSION" >> $GITHUB_OUTPUT
+        echo "TAGVERSION=$UGM_DEPLOY_VERSION" >> $GITHUB_OUTPUT
         echo "TAGMSG=${{env.UGM_RELEASE_MESSAGE}} ${{needs.Setup.outputs.DATE}}" >> $GITHUB_OUTPUT
-        echo "TAGVERSION=$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH" >> $GITHUB_OUTPUT
     - name: Create Git Tag
       id: tag_create
       run: |
         git config user.name "GitHub Actions"
         git config user.email "github-actions@users.noreply.github.com"
         if [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == "test" ]]; then
-          echo "Test version tagged as stable release"
+          echo "Test branch tagged as stable release -m Test to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git tag -a "${{steps.tag_selector.outputs.TAGNAME}}" -m "Test to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git push origin "${{steps.tag_selector.outputs.TAGNAME}}"
         elif [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == hotfix/* ]]; then
-          echo "Push tag for hotfix as stable release"
-          git tag -a "${{steps.tag_selector.outputs.TAGNAME}}" -m "${{steps.tag_selector.outputs.TAGMSG}}"
+          echo "Hotfix branch tagged as stable release -m Hotfix to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git tag -a "${{steps.tag_selector.outputs.TAGNAME}}" -m "Hotfix to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
           git push origin "${{steps.tag_selector.outputs.TAGNAME}}"
         fi
     outputs:
-      TAGNAME: ${{steps.tag_selector.outputs.TAGNAME}}
       TAGMSG: ${{steps.tag_selector.outputs.TAGMSG}}
+      TAGNAME: ${{steps.tag_selector.outputs.TAGNAME}}
       TAGVERSION: ${{steps.tag_selector.outputs.TAGVERSION}}
   PushVariables:
     needs: [Setup,Branch,GenerateTag]
@@ -147,7 +153,9 @@ jobs:
     - name: Get repository version variables
       id: get_version
       run: |
-        gh variable list --env ${{env.TARGET_ENV}}
+        gh variable list --env dev
+        echo "..."
+        gh variable list --env test
         echo "..."
         echo "buildArgs --env ${{env.TARGET_ENV}} UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}, Merged Branch: ${{needs.Branch.outputs.MERGED_BRANCH}}"
   Build:
@@ -166,7 +174,7 @@ jobs:
       run: |
         echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
     - name: Push application images to Artifactory container registry
-      run:  |
+      run: |
         docker tag unity-grantmanager-dbmigrator $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator:stable
         docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator:stable
         docker tag unity-grantmanager-web $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web:stable
@@ -180,7 +188,7 @@ jobs:
         oc registry login
         docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
     - name: Push application images to OpenShift container registry
-      run:  |
+      run: |
         docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator:stable
         docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator:stable
         docker tag unity-grantmanager-web $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web:stable

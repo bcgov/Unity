@@ -34,7 +34,7 @@ env:
   UGM_BUILD_REVISION: ${{vars.UGM_BUILD_REVISION}}
 
   UGM_RELEASE_PREFIX: Unity_Grant_Manager_v
-  UGM_RELEASE_MESSAGE: "QA Test and UAT Deployments"
+  UGM_RELEASE_MESSAGE: "Test deployment"
 
 jobs:
   Setup:
@@ -65,14 +65,15 @@ jobs:
           fetch-depth: '1'
     - name: Get short commitId
       id: get_commit
-      run:  |
+      run: |
         echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
     - name: List merged branch
       id: get_branch
       run: |
-        MERGED_BRANCH=$(git log --merges --pretty=format:"%s" -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
+        git log -1
+        MERGED_BRANCH=$(git log -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
         if [ -z "$MERGED_BRANCH" ]; then
-          echo "Direct push no pull request from bcgov/branch"
+          echo "Direct push into --env ${{env.TARGET_ENV}}"
           echo "MERGED_BRANCH=push" >> $GITHUB_OUTPUT
         else
           echo "Merged branch: $MERGED_BRANCH"
@@ -93,29 +94,18 @@ jobs:
     - name: Generate Next Git Tag
       id: tag_selector
       run: |
+        echo "Current release: ${{env.UGM_BUILD_VERSION}}"
+        # Set version according to branching strategy, increment minor version, zero patch, pull to test/dev
         # Extract the major.minor.patch version parts using grep
         MAJOR_VERSION=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '^[0-9]+')
         MINOR_VERSION=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '\.[0-9]+\.' | grep -oE '[0-9]+')
         VERSION_PATCH=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '[0-9]+$')
-        # Echo the current version
-        echo "${{env.UGM_RELEASE_PREFIX}}$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH"
         MINOR_VERSION=$((MINOR_VERSION + 1))
         VERSION_PATCH=0
-        echo "${{env.UGM_RELEASE_PREFIX}}$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH"
-        # Prepare tags
-        echo "TAGNAME=${{env.UGM_RELEASE_PREFIX}}${MAJOR_VERSION}.${MINOR_VERSION}.${VERSION_PATCH}" >> $GITHUB_OUTPUT
-        echo "TAGMSG=${{env.UGM_RELEASE_MESSAGE}} ${{needs.Setup.outputs.DATE}}" >> $GITHUB_OUTPUT
-        echo "TAGVERSION=$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH" >> $GITHUB_OUTPUT
-    - name: Create Git Tag
-      id: tag_create
-      run: |
-        git config user.name "GitHub Actions"
-        git config user.email "github-actions@users.noreply.github.com"
-        git tag -a "${{steps.tag_selector.outputs.TAGNAME}}" -m "${{steps.tag_selector.outputs.TAGMSG}}"
-        git push origin "${{steps.tag_selector.outputs.TAGNAME}}"
+        UGM_DEPLOY_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH"
+        echo "Test branch tagged as latest release: $UGM_DEPLOY_VERSION"
+        echo "TAGVERSION=$UGM_DEPLOY_VERSION" >> $GITHUB_OUTPUT
     outputs:
-      TAGNAME: ${{steps.tag_selector.outputs.TAGNAME}}
-      TAGMSG: ${{steps.tag_selector.outputs.TAGMSG}}
       TAGVERSION: ${{steps.tag_selector.outputs.TAGVERSION}}
   PushVariables:
     needs: [Setup,Branch,GenerateTag]
@@ -133,8 +123,8 @@ jobs:
         echo "UGM_BUILD_REVISION=${{needs.Branch.outputs.SHA_SHORT}}" >> $GITHUB_ENV
         gh variable set UGM_BUILD_VERSION --env ${{env.TARGET_ENV}} --body "${{needs.GenerateTag.outputs.TAGVERSION}}"
         echo "UGM_BUILD_VERSION=${{needs.GenerateTag.outputs.TAGVERSION}}" >> $GITHUB_ENV
+        # Sync dev with test UGM_BUILD_VERSION
         gh variable set UGM_BUILD_VERSION --env dev --body "${{needs.GenerateTag.outputs.TAGVERSION}}"
-        gh variable set UGM_BUILD_VERSION --env main --body "${{needs.GenerateTag.outputs.TAGVERSION}}"
     - name: Get repository version variables
       id: get_version
       run: |
@@ -161,7 +151,7 @@ jobs:
       run: |
         echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
     - name: Push application images to Artifactory container registry
-      run:  |
+      run: |
         docker tag unity-grantmanager-dbmigrator $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
         docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
         docker tag unity-grantmanager-web $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web
@@ -175,7 +165,7 @@ jobs:
         oc registry login
         docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
     - name: Push application images to OpenShift container registry
-      run:  |
+      run: |
         docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator
         docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator
         docker tag unity-grantmanager-web $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web
