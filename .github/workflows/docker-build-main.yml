@@ -1,111 +1,198 @@
-# This is a workflow that is PR merge to "main" triggered
-name: Test - Tag and Build
+name: Main - Build & Push docker images
+
 on:
   push:
     branches: [ "main" ]
     paths-ignore:
       - '.github/**'
       - '.gitignore'
-      - 'applications/Unity.Metabase/**'
       - 'database/**'
       - 'documentation/**'
       - 'openshift/**'
+      - 'tests/**'
+      - 'CODE_OF_CONDUCT.md'
       - 'COMPLIANCE.yaml'
       - 'CONTRIBUTING.md'
       - 'LICENSE'
       - 'README.md'
       - 'SECURITY.md'
-
-# Repository secrets GH_API_TOKEN {GitHub PAT} OPENSHIFT_TOKEN_{DEV|TEST|PROD|TOOLS}
-# Repository variables VERSION_PREFIX {text} VERSION_MAJOR 0 VERSION_MINOR 1 VERSION_PATCH 1 VERSION_MESSAGE {Dev to Test} 
+  # Allow manual workflow triggering
+  workflow_dispatch:
+# Workflow dependencies
 env:
-  GITHUB_TOKEN: ${{secrets.GH_API_TOKEN}}
-  OPENSHIFT_CLUSTER: https://api.silver.devops.gov.bc.ca:6443
-  OPENSHIFT_AUTH_TOKEN: ${{secrets.OPENSHIFT_TOKEN_TEST}}
-  RELEASE_PREFIX: ${{vars.VERSION_PREFIX}}
-  RELEASE_VERSION: ${{vars.VERSION_MAJOR}}.${{vars.VERSION_MINOR}}
-  RELEASE_MESSAGE: ${{vars.VERSION_MESSAGE}} 
-  RELEASE_PATCH: ${{vars.VERSION_PATCH}} 
+  TARGET_ENV: main
+  GH_TOKEN: ${{secrets.GH_API_TOKEN}}
+  OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
+  OC_REGISTRY: ${{ vars.OPENSHIFT_REGISTRY }}
+  OC_AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+  OC_TARGET_PROJECT: ${{ vars.OPENSHIFT_NAMESPACE }}
+  JFROG_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+  JFROG_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+  JFROG_REPO_PATH: ${{ vars.ARTIFACTORY_REPO }}
+  JFROG_SERVICE:  ${{ vars.ARTIFACTORY_SERVICE }}
+  UGM_BUILD_VERSION: ${{vars.UGM_BUILD_VERSION}}
+  UGM_BUILD_REVISION: ${{vars.UGM_BUILD_REVISION}}
+
+  UGM_RELEASE_PREFIX: Unity_Grant_Manager_v
+  UGM_RELEASE_MESSAGE: "Production deployment"
+
 jobs:
-  # This workflow contains jobs called "GenerateTag" "PushTag" "Build"
-  GenerateTag:
+  Setup:
     runs-on: ubuntu-latest
+    environment: main
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-          fetch-depth: '0'
-    - name: Get current date
-      id: date-selector
-      run: echo "date=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
-    - name: Generate Next Git Tag
-      id: tag-selector
+    - name: Get variables
       run: |
-        VERSION_PATCH=$(git tag --list "${{env.RELEASE_PREFIX}}${{env.RELEASE_VERSION}}.*" --sort=-version:refname | head -n 1 | grep -oE '[0-9]+$')
-        if [ -z "$VERSION_PATCH" ]; then
-          VERSION_PATCH=0
-        else
-          VERSION_PATCH=$((VERSION_PATCH + 1))
-        fi
-        echo "gittag=${{env.RELEASE_PREFIX}}${{env.RELEASE_VERSION}}.${VERSION_PATCH}" >> $GITHUB_OUTPUT
-        echo "tagmsg=${{env.RELEASE_MESSAGE}} ${{steps.date-selector.outputs.date}}" >> $GITHUB_OUTPUT
-        echo "tagpatch=${VERSION_PATCH}" >> $GITHUB_OUTPUT
-    outputs: 
-      TAGNAME: ${{steps.tag-selector.outputs.gittag}}
-      TAGMESSAGE: ${{steps.tag-selector.outputs.tagmsg}}
-      TAGPATCH: ${{steps.tag-selector.outputs.tagpatch}}
-  PushTag:
-    needs: [GenerateTag]
+        echo "Target: $TARGET_ENV"
+        echo "BaseRef: $GITHUB_REF_NAME"
+        echo "Environment: $TARGET_ENV OC_TARGET_PROJECT=$OC_TARGET_PROJECT"
+        echo "Environment: $TARGET_ENV JFROG_REPO_PATH=$JFROG_REPO_PATH"
+        echo "..."
+        env | sort
+    - name: Get current date
+      id: date_selector
+      run: |
+        echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
+    outputs:
+      DATE: ${{steps.date_selector.outputs.DATE}}
+  Branch:
+    needs: [Setup]
     runs-on: ubuntu-latest
+    environment: main
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-          fetch-depth: '1'   
-    - name: Push Git Tag
-      id: settag
-      env:
-        TAGNAME: ${{needs.GenerateTag.outputs.TAGNAME}}
-        TAGMESSAGE: ${{needs.GenerateTag.outputs.TAGMESSAGE}}
+          fetch-depth: '1'
+    - name: Get short commitId
+      id: get_commit
+      run: |
+        echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: List merged branch
+      id: get_branch
+      run: |
+        git log -1
+        MERGED_BRANCH=$(git log -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
+        if [ -z "$MERGED_BRANCH" ]; then
+          echo "Direct push into --env ${{env.TARGET_ENV}}"
+          echo "MERGED_BRANCH=push" >> $GITHUB_OUTPUT
+        else
+          echo "Merged branch: $MERGED_BRANCH"
+          echo "MERGED_BRANCH=$MERGED_BRANCH" >> $GITHUB_OUTPUT
+        fi
+    outputs:
+      SHA_SHORT: ${{steps.get_commit.outputs.SHA_SHORT}}
+      MERGED_BRANCH: ${{steps.get_branch.outputs.MERGED_BRANCH}}
+  GenerateTag:
+    needs: [Setup,Branch]
+    runs-on: ubuntu-latest
+    environment: main
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: '1'
+    - name: Generate Next Git Tag
+      id: tag_selector
+      run: |
+        echo "Current release: ${{env.UGM_BUILD_VERSION}}"
+        # Check the merged branch and set versions accordingly
+        if [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == "test" ]]; then
+          UGM_DEPLOY_VERSION=$(gh variable get UGM_BUILD_VERSION --env test)
+          gh variable set UGM_BUILD_VERSION --env main --body "$UGM_DEPLOY_VERSION"
+        elif [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == hotfix/* ]]; then
+          # Extract the major.minor.patch version parts using grep
+          MAJOR_VERSION=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '^[0-9]+')
+          MINOR_VERSION=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '\.[0-9]+\.' | grep -oE '[0-9]+')
+          VERSION_PATCH=$(echo "${{env.UGM_BUILD_VERSION}}" | grep -oE '[0-9]+$')
+          echo "Incrementing patch version for hotfix release"
+          VERSION_PATCH=$((VERSION_PATCH + 1))
+          UGM_DEPLOY_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH"
+        else
+          echo "WARNING: Compare branch pattern != test|hotfix/* unable to process build from ${{ needs.Branch.outputs.MERGED_BRANCH }}"
+          exit 1
+        fi
+        echo "Main branch tagged as stable release: $UGM_DEPLOY_VERSION"
+        echo "TAGNAME=${{env.UGM_RELEASE_PREFIX}}$UGM_DEPLOY_VERSION" >> $GITHUB_OUTPUT
+        echo "TAGVERSION=$UGM_DEPLOY_VERSION" >> $GITHUB_OUTPUT
+        echo "TAGMSG=${{env.UGM_RELEASE_MESSAGE}} ${{needs.Setup.outputs.DATE}}" >> $GITHUB_OUTPUT
+    - name: Create Git Tag
+      id: tag_create
       run: |
         git config user.name "GitHub Actions"
         git config user.email "github-actions@users.noreply.github.com"
-        git tag ${{env.TAGNAME}} -m "${{env.TAGMESSAGE}}"
-        git push origin ${{env.TAGNAME}}
-    - name: Set repository patch variable
-      id: setpatch
-      env:
-        TAGPATCH: ${{needs.GenerateTag.outputs.TAGPATCH}}
-        # Depends on GITHUB_TOKEN enviroment variable PAT access
-      run: | 
-        gh variable set VERSION_PATCH --body "${{env.TAGPATCH}}"
-        gh variable list   
-  Build:
-    needs: [GenerateTag, PushTag]
+        if [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == "test" ]]; then
+          echo "Test branch tagged as stable release -m Test to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git tag -a "${{steps.tag_selector.outputs.TAGNAME}}" -m "Test to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git push origin "${{steps.tag_selector.outputs.TAGNAME}}"
+        elif [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == hotfix/* ]]; then
+          echo "Hotfix branch tagged as stable release -m Hotfix to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git tag -a "${{steps.tag_selector.outputs.TAGNAME}}" -m "Hotfix to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git push origin "${{steps.tag_selector.outputs.TAGNAME}}"
+        fi
+    outputs:
+      TAGMSG: ${{steps.tag_selector.outputs.TAGMSG}}
+      TAGNAME: ${{steps.tag_selector.outputs.TAGNAME}}
+      TAGVERSION: ${{steps.tag_selector.outputs.TAGVERSION}}
+  PushVariables:
+    needs: [Setup,Branch,GenerateTag]
     runs-on: ubuntu-latest
-    outputs: 
-      PROJECT: ${{steps.project.outputs.TARGET_PROJECT}}
+    environment: main
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: '1'
+    - name: Set repository version variables
+      id: set_version
+      run: |
+        gh variable set UGM_BUILD_REVISION --env ${{env.TARGET_ENV}} --body "${{needs.Branch.outputs.SHA_SHORT}}"
+        echo "UGM_BUILD_REVISION=${{needs.Branch.outputs.SHA_SHORT}}" >> $GITHUB_ENV
+        gh variable set UGM_BUILD_VERSION --env ${{env.TARGET_ENV}} --body "${{needs.GenerateTag.outputs.TAGVERSION}}"
+        echo "UGM_BUILD_VERSION=${{needs.GenerateTag.outputs.TAGVERSION}}" >> $GITHUB_ENV
+    - name: Get repository version variables
+      id: get_version
+      run: |
+        gh variable list --env dev
+        echo "..."
+        gh variable list --env test
+        echo "..."
+        echo "buildArgs --env ${{env.TARGET_ENV}} UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}, Merged Branch: ${{needs.Branch.outputs.MERGED_BRANCH}}"
+  Build:
+    needs: [Setup,Branch,GenerateTag,PushVariables]
+    runs-on: ubuntu-latest
+    environment: main
     steps:
     - uses: actions/checkout@v4
-    - name: Get BuildId
-      id: commit
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-    - name: Set buildArgs
-      run:  |
-        echo "buildArgs UNITY_BUILD_VERSION: ${{env.RELEASE_VERSION}}, UNITY_BUILD_REVISION: ${{steps.commit.outputs.sha_short}}"
     - name: Build Docker images
       run: |
         rm -f ./docker-compose.override.yml
-        docker compose build --build-arg UNITY_BUILD_VERSION=${{env.RELEASE_VERSION}} --build-arg UNITY_BUILD_REVISION=${{steps.commit.outputs.sha_short}}
+        echo "buildArgs UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}"
+        docker compose build --build-arg UNITY_BUILD_VERSION=${{env.UGM_BUILD_VERSION}} --build-arg UNITY_BUILD_REVISION=${{env.UGM_BUILD_REVISION}}
       working-directory: ./applications/Unity.GrantManager
-    - name: Connect to OpenShift API
-      id: project
+    - name: Connect to JFrog Artifactory non-interactive login using --password-stdin
       run: |
-        oc login --token=${{env.OPENSHIFT_AUTH_TOKEN}} --server=${{env.OPENSHIFT_CLUSTER}}
-        echo "PROJECT=$(oc project | grep -oE '[0-9a-z]*-[dev\|test\|prod\|tools]*')" >> $GITHUB_OUTPUT
+        echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
+    - name: Push application images to Artifactory container registry
+      run: |
+        docker tag unity-grantmanager-dbmigrator $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator:stable
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator:stable
+        docker tag unity-grantmanager-web $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web:stable
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web:stable
+    - name: Disconnect docker from JFrog Artifactory
+      run: |
+        docker logout
+    - name: Connect to OpenShift API non-interactive login using current session token
+      run: |
+        oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER
         oc registry login
-    - name: Push images to container registry
-      run: | 
-        echo project = ${{steps.project.outputs.PROJECT}}
-        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:github-latest
-        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:github-latest
+        docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
+    - name: Push application images to OpenShift container registry
+      run: |
+        docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator:stable
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator:stable
+        docker tag unity-grantmanager-web $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web:stable
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web:stable
+    - name: Disconnect docker from OpenShift container registry
+      run: |
+        docker logout
