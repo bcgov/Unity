@@ -8,66 +8,65 @@
         $(this).maskMoney('mask', this.value);
     });
     $('body').on('click', '#saveFundingAgreementInfoBtn', function () {
-        let applicationId = document.getElementById('ProjectInfoViewApplicationId').value;
+        let applicationId = document.getElementById('FundingAgreementInfoViewApplicationId').value;
         let formData = $("#fundingAgreementInfoForm").serializeArray();
-        let projectInfoObj = {};
+        let fundingAgreementInfoObj = {};
         let formVersionId = $("#ApplicationFormVersionId").val();
         let worksheetId = $("#ProjectInfo_WorksheetId").val();
 
         $.each(formData, function (_, input) {
-            console.log(formData);
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
-                Flex.includeCustomFieldObj(projectInfoObj, input);
+                Flex.includeCustomFieldObj(fundingAgreementInfoObj, input);
             }
             else if ((input.name == "ProjectInfo.ProjectName") || (input.name == "ProjectInfo.ProjectSummary") || (input.name == "ProjectInfo.Community")) {
-                projectInfoObj[input.name.split(".")[1]] = input.value;
+                fundingAgreementInfoObj[input.name.split(".")[1]] = input.value;
             } else {
-                buildFormData(projectInfoObj, input)
+                buildFormData(fundingAgreementInfoObj, input)
             }
         });
 
         // Update checkboxes which are serialized if unchecked
         $(`#fundingAgreementInfoForm input:checkbox`).each(function () {
-            projectInfoObj[this.name] = (this.checked).toString();
+            fundingAgreementInfoObj[this.name] = (this.checked).toString();
         });
 
-        projectInfoObj['correlationId'] = formVersionId;
-        projectInfoObj['worksheetId'] = worksheetId;
-        updateProjectInfo(applicationId, projectInfoObj);
+        fundingAgreementInfoObj['correlationId'] = formVersionId;
+        fundingAgreementInfoObj['worksheetId'] = worksheetId;
+        updateProjectInfo(applicationId, fundingAgreementInfoObj);
     });
 
-    function buildFormData(projectInfoObj, input) {
+    function buildFormData(fundingAgreementInfoObj, input) {
 
         let inputElement = $('[name="' + input.name + '"]');
         // This will not work if the culture is different and uses a different decimal separator
         if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
-            projectInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+            fundingAgreementInfoObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
         }
         else {
-            projectInfoObj[input.name.split(".")[1]] = input.value;
+            fundingAgreementInfoObj[input.name.split(".")[1]] = input.value;
         }
         if (isNumberField(input)) {
-            if (projectInfoObj[input.name.split(".")[1]] == '') {
-                projectInfoObj[input.name.split(".")[1]] = 0;
-            } else if (projectInfoObj[input.name.split(".")[1]] > getMaxNumberField(input)) {
-                projectInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
+            if (fundingAgreementInfoObj[input.name.split(".")[1]] == '') {
+                fundingAgreementInfoObj[input.name.split(".")[1]] = 0;
+            } else if (fundingAgreementInfoObj[input.name.split(".")[1]] > getMaxNumberField(input)) {
+                fundingAgreementInfoObj[input.name.split(".")[1]] = getMaxNumberField(input);
             }
         }
-        else if (projectInfoObj[input.name.split(".")[1]] == '') {
-            projectInfoObj[input.name.split(".")[1]] = null;
+        else if (fundingAgreementInfoObj[input.name.split(".")[1]] == '') {
+            fundingAgreementInfoObj[input.name.split(".")[1]] = null;
         }
     }
 
-    function updateProjectInfo(applicationId, projectInfoObj) {
+    function updateProjectInfo(applicationId, fundingAgreementInfoObj) {
         try {
             unity.grantManager.grantApplications.grantApplication
-                .updateProjectInfo(applicationId, projectInfoObj)
+                .updateProjectInfo(applicationId, fundingAgreementInfoObj)
                 .done(function () {
                     abp.notify.success(
                         'The funding agreement info has been updated.'
                     );
                     $('#saveFundingAgreementInfoBtn').prop('disabled', true);
-                    PubSub.publish('project_info_saved', projectInfoObj);
+                    PubSub.publish('project_info_saved', fundingAgreementInfoObj);
                     PubSub.publish('refresh_detail_panel_summary');
                 });
         }
@@ -175,7 +174,7 @@
     );
 
     PubSub.subscribe(
-        'fields_projectinfo',
+        'fields_fundingagreementinfo',
         () => {
             enableFundingAgreementInfoSaveBtn();
         }
@@ -187,21 +186,21 @@
 
 function enableFundingAgreementInfoSaveBtn(inputText) {
     if (!$("#fundingAgreementInfoForm").valid() || formHasInvalidCurrencyCustomFields("fundingAgreementInfoForm")) {
-        $('#fundingAgreementInfoForm').prop('disabled', true);
+        $('#saveFundingAgreementInfoBtn').prop('disabled', true);
         return;
     }
 
     $('#saveFundingAgreementInfoBtn').prop('disabled', false);
 }
 
-function calculatePercentage() {
-    const requestedAmount = parseFloat(document.getElementById("RequestedAmountInputPI")?.value.replace(/,/g, ''));
-    const totalProjectBudget = parseFloat(document.getElementById("TotalBudgetInputPI")?.value.replace(/,/g, ''));
-    if (isNaN(requestedAmount) || isNaN(totalProjectBudget) || totalProjectBudget == 0) {
-        document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
-        return;
-    }
-    const percentage = ((requestedAmount / totalProjectBudget) * 100.00).toFixed(2);
-    $("#ProjectInfo_PercentageTotalProjectBudget").maskMoney('mask', parseFloat(percentage));
+//function calculatePercentage() {
+//    const requestedAmount = parseFloat(document.getElementById("RequestedAmountInputPI")?.value.replace(/,/g, ''));
+//    const totalProjectBudget = parseFloat(document.getElementById("TotalBudgetInputPI")?.value.replace(/,/g, ''));
+//    if (isNaN(requestedAmount) || isNaN(totalProjectBudget) || totalProjectBudget == 0) {
+//        document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
+//        return;
+//    }
+//    const percentage = ((requestedAmount / totalProjectBudget) * 100.00).toFixed(2);
+//    $("#ProjectInfo_PercentageTotalProjectBudget").maskMoney('mask', parseFloat(percentage));
 
-}
+//}
