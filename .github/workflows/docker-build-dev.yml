@@ -1,15 +1,16 @@
-# This is a workflow that is either manually or PR merge to "dev" triggered 
-name: Dev - Build
+name: Dev - Build & Push docker images
+
 on:
   push:
     branches: [ "dev" ]
     paths-ignore:
       - '.github/**'
       - '.gitignore'
-      - 'applications/Unity.Metabase/**'
       - 'database/**'
       - 'documentation/**'
       - 'openshift/**'
+      - 'tests/**'
+      - 'CODE_OF_CONDUCT.md'
       - 'COMPLIANCE.yaml'
       - 'CONTRIBUTING.md'
       - 'LICENSE'
@@ -17,40 +18,126 @@ on:
       - 'SECURITY.md'
   # Allow manual workflow triggering
   workflow_dispatch:
-# Workflow dependencies are repository service connector and product version + commit buildId
+# Workflow dependencies
 env:
-  OPENSHIFT_CLUSTER: https://api.silver.devops.gov.bc.ca:6443
-  OPENSHIFT_AUTH_TOKEN: ${{secrets.OPENSHIFT_TOKEN_DEV}}
-  RELEASE_VERSION: ${{vars.VERSION_MAJOR}}.${{vars.VERSION_MINOR}}.${{vars.VERSION_PATCH}}
+  TARGET_ENV: dev
+  GH_TOKEN: ${{secrets.GH_API_TOKEN}}
+  OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
+  OC_REGISTRY: ${{ vars.OPENSHIFT_REGISTRY }}
+  OC_AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+  OC_TARGET_PROJECT: ${{ vars.OPENSHIFT_NAMESPACE }}
+  JFROG_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+  JFROG_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+  JFROG_REPO_PATH: ${{ vars.ARTIFACTORY_REPO }}
+  JFROG_SERVICE:  ${{ vars.ARTIFACTORY_SERVICE }}
+  UGM_BUILD_VERSION: ${{vars.UGM_BUILD_VERSION}}
+  UGM_BUILD_REVISION: ${{vars.UGM_BUILD_REVISION}}
+
+  UGM_RELEASE_PREFIX: Unity_Grant_Manager_v
+  UGM_RELEASE_MESSAGE: "Development deployment"
+
 jobs:
-  # This workflow contains a job called "Build" with steps to set buildArgs, build and push images to container registry
-  Build:
+  Setup:
     runs-on: ubuntu-latest
-    outputs: 
-      PROJECT: ${{steps.project.outputs.TARGET_PROJECT}}
+    environment: dev
+    steps:
+    - name: Get variables
+      run: |
+        echo "Target: $TARGET_ENV"
+        echo "BaseRef: $GITHUB_REF_NAME"
+        echo "Environment: $TARGET_ENV OC_TARGET_PROJECT=$OC_TARGET_PROJECT"
+        echo "Environment: $TARGET_ENV JFROG_REPO_PATH=$JFROG_REPO_PATH"
+        echo "..."
+        env | sort
+    - name: Get current date
+      id: date_selector
+      run: |
+        echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
+    outputs:
+      DATE: ${{steps.date_selector.outputs.DATE}}
+  Branch:
+    needs: [Setup]
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: '1'
+    - name: Get short commitId
+      id: get_commit
+      run: |
+        echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: List merged branch
+      id: get_branch
+      run: |
+        git log -1
+        MERGED_BRANCH=$(git log -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
+        if [ -z "$MERGED_BRANCH" ]; then
+          echo "Direct push into --env ${{env.TARGET_ENV}}"
+          echo "MERGED_BRANCH=push" >> $GITHUB_OUTPUT
+        else
+          echo "Merged branch: $MERGED_BRANCH"
+          echo "MERGED_BRANCH=$MERGED_BRANCH" >> $GITHUB_OUTPUT
+        fi
+    outputs:
+      SHA_SHORT: ${{steps.get_commit.outputs.SHA_SHORT}}
+      MERGED_BRANCH: ${{steps.get_branch.outputs.MERGED_BRANCH}}
+  PushVariables:
+    needs: [Setup,Branch]
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+          fetch-depth: '1'
+    - name: Set repository version variables
+      id: set_version
+      run: |
+        gh variable set UGM_BUILD_REVISION --env ${{env.TARGET_ENV}} --body "${{needs.Branch.outputs.SHA_SHORT}}"
+        echo "UGM_BUILD_REVISION=${{needs.Branch.outputs.SHA_SHORT}}" >> $GITHUB_ENV
+    - name: Get repository version variables
+      id: get_version
+      run: |
+        gh variable list --env ${{env.TARGET_ENV}}
+        echo "..."
+        echo "buildArgs --env ${{env.TARGET_ENV}} UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}, Merged Branch: ${{needs.Branch.outputs.MERGED_BRANCH}}"
+  Build:
+    needs: [Setup,Branch,PushVariables]
+    runs-on: ubuntu-latest
+    environment: dev
     steps:
     - uses: actions/checkout@v4
-    - name: Get BuildId
-      id: commit
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-    - name: Set buildArgs
-      run:  |
-        echo "buildArgs UNITY_BUILD_VERSION: ${{env.RELEASE_VERSION}}, UNITY_BUILD_REVISION: ${{steps.commit.outputs.sha_short}}"
     - name: Build Docker images
       run: |
         rm -f ./docker-compose.override.yml
-        docker compose build --build-arg UNITY_BUILD_VERSION=${{env.RELEASE_VERSION}} --build-arg UNITY_BUILD_REVISION=${{steps.commit.outputs.sha_short}}
+        echo "buildArgs UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}"
+        docker compose build --build-arg UNITY_BUILD_VERSION=${{env.UGM_BUILD_VERSION}} --build-arg UNITY_BUILD_REVISION=${{env.UGM_BUILD_REVISION}}
       working-directory: ./applications/Unity.GrantManager
-    - name: Connect to OpenShift API
-      id: project
+    - name: Connect to JFrog Artifactory non-interactive login using --password-stdin
       run: |
-        oc login --token=${{env.OPENSHIFT_AUTH_TOKEN}} --server=${{env.OPENSHIFT_CLUSTER}}
-        echo "PROJECT=$(oc project | grep -oE '[0-9a-z]*-[dev\|test\|prod\|tools]*')" >> $GITHUB_OUTPUT
+        echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
+    - name: Push application images to Artifactory container registry
+      run: |
+        docker tag unity-grantmanager-dbmigrator $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
+        docker tag unity-grantmanager-web $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web
+    - name: Disconnect docker from JFrog Artifactory
+      run: |
+        docker logout
+    - name: Connect to OpenShift API non-interactive login using current session token
+      run: |
+        oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER
         oc registry login
-    - name: Push build images to container registry
-      run: | 
-        echo project = ${{steps.project.outputs.PROJECT}}
-        docker tag unity-grantmanager-web image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:github-latest
-        docker tag unity-grantmanager-dbmigrator image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:github-latest
-#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-web:github-latest
-#        docker push image-registry.apps.silver.devops.gov.bc.ca/${{steps.project.outputs.PROJECT}}/unity-grantmanager-dbmigrator:github-latest
+        docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
+    - name: Push application images to OpenShift container registry
+      run: |
+        docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-dbmigrator
+        docker tag unity-grantmanager-web $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/unity-grantmanager-web
+    - name: Disconnect docker from OpenShift container registry
+      run: |
+        docker logout
