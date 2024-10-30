@@ -9,8 +9,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Intakes
 {
-    [RemoteService(true)]
-    public class ApplicantLookupService(IApplicantRepository applicantRepository) : GrantManagerAppService, IApplicantLookupService
+    [RemoteService(false)]
+    public class ApplicantService(IApplicantRepository applicantRepository) : GrantManagerAppService, IApplicantService
     {
 
         public async Task<string> ApplicantLookupByApplicantId(string? unityApplicantId)

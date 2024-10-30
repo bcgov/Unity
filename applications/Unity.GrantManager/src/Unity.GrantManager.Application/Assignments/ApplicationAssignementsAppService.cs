@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.GrantApplications;
 

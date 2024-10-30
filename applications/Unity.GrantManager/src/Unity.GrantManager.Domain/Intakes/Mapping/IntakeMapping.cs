@@ -8,9 +8,6 @@ namespace Unity.GrantManager.Intakes
         [Browsable(false)]
         public dynamic? ApplicantAgent { get; set; }
 
-        [Browsable(false)]
-        public string? UnityApplicantId { get; set; }
-
         [DisplayName("Acquisition")]
         [MapFieldType("String")]
         [Browsable(true)]
