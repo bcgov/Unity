@@ -49,5 +49,10 @@ namespace Unity.Flex.Scoresheets
         {
             return JsonSerializer.Deserialize<QuestionYesNoDefinition>(Definition ?? "{}")?.NoValue.ToString();
         }
+
+        public string? GetIsRequiredValue()
+        {
+            return JsonSerializer.Deserialize<CustomFieldDefinition>(Definition ?? "{}")?.Required.ToString();
+        }
     }
 }

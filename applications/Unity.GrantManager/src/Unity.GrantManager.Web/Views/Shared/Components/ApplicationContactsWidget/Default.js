@@ -29,30 +29,46 @@
     });
 
     let setupContactModal = function (args) {
-        $('#DeleteContactButton').click(function (e) {
+        $('#DeleteContactButton').click(handleDeleteContact);
+
+        function handleDeleteContact(e) {
             e.preventDefault();
+            showDeleteConfirmation();
+        }
+        
+        function showDeleteConfirmation() {
             abp.message.confirm('Are you sure to delete this contact?')
-                .then(function(confirmed){
-                    if(confirmed){
-                        try {
-                            unity.grantManager.grantApplications.applicationContact
-                            .delete(args.id)
-                            .done(function () {
-                                PubSub.publish("refresh_application_contacts");
-                                contactModal.close();
-                                abp.notify.success(
-                                    'The contact has been deleted.'
-                                );
-                            });
-                        } catch (error) {
-                            abp.notify.error(
-                                'Contact deletion failed.'
-                            );
-                            console.log(error);
-                        }
-                        
-                    }
-            });
-        });
+                .then(processDeleteConfirmation);
+        }
+        
+        function processDeleteConfirmation(confirmed) {
+            if (confirmed) {
+                deleteContact();
+            }
+        }
+        
+        function deleteContact() {
+            try {
+                unity.grantManager.grantApplications.applicationContact
+                    .delete(args.id)
+                    .done(onContactDeleted)
+                    .fail(onDeleteFailure);
+            } catch (error) {
+                onDeleteFailure(error);
+            }
+        }
+        
+        function onContactDeleted() {
+            PubSub.publish("refresh_application_contacts");
+            contactModal.close();
+            abp.notify.success('The contact has been deleted.');
+        }
+        
+        function onDeleteFailure(error) {
+            abp.notify.error('Contact deletion failed.');
+            if (error) {
+                console.log(error);
+            }
+        }
     }
 });

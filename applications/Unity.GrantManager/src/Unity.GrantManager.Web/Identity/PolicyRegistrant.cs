@@ -109,9 +109,6 @@ internal static class PolicyRegistrant
             options.AddPolicy(GrantApplicationPermissions.Assessments.Create,
             policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.Create)));
         context.Services.AddAuthorization(options =>
-            options.AddPolicy(GrantApplicationPermissions.Assessments.SendToTeamLead,
-            policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.SendToTeamLead)));
-        context.Services.AddAuthorization(options =>
             options.AddPolicy(GrantApplicationPermissions.Assessments.SendBack,
             policy => policy.RequireClaim("Permission", GrantApplicationPermissions.Assessments.SendBack)));
         context.Services.AddAuthorization(options =>

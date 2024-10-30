@@ -25,10 +25,11 @@ $(function () {
                     return;
 
                 let santizedLabel = sanitizeInput(row.label);
+                let sanitizedKey = sanitizeInput(row.key);
 
                 // Add valid row to table
                 $('#selectlist-options-table').find('tbody')
-                    .append(getRowTemplate(row.key, santizedLabel));
+                    .append(getRowTemplate(sanitizedKey, santizedLabel));
 
                 cancelAddRow();
 
