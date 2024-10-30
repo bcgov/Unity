@@ -209,7 +209,7 @@ $(function () {
                     abp.notify.success(
                         'The recommendation has been updated.'
                     );
-                    PubSub.publish('refresh_review_list_without_select', id);
+                    PubSub.publish('refresh_review_list_without_sidepanel', id);
                 })
                 .always(function () {
                     // Re-enable the select and reset button
@@ -477,7 +477,7 @@ $(function () {
             applicationRecordsWidgetManager.refresh();
             updateLinksCounters();
         }
-    );
+    );    
 
     // custom fields
     $('body').on('click', '.custom-tab-save', function (event) {
@@ -752,7 +752,6 @@ function initCommentsWidget() {
             tagsWidgetManager.refresh();
         }
     );
-
 }
 
 function setDetailsContext(context) {
