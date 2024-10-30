@@ -21,7 +21,6 @@ namespace Unity.Payments.Web.Pages.Payments
         [DisplayName("ApplicationPaymentRequest:SiteNumber")]
         public Guid SiteId { get; set; }
         public bool? Payable { get; set; }
-        public bool RenderFormIoToHtml { get; set; } = false;
         public string? ApplicantName { get; set; }
         public decimal PaymentThreshold { get; set; }
         public List<SelectListItem> SiteList { get; set; } = new List<SelectListItem>{};

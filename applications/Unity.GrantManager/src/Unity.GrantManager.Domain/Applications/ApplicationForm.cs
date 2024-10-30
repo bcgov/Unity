@@ -22,5 +22,4 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public bool Payable {  get; set; }
     public Guid? ScoresheetId {  get; set; }
     public Guid? TenantId { get; set; }
-    public bool RenderFormIoToHtml { get; set; } = false;
 }

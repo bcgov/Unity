@@ -207,11 +207,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return appDto;
     }
 
-    public async Task<ApplicationForm?> GetApplicationFormAsync(Guid applicationFormId)
-    {
-        return await (await _applicationFormRepository.GetQueryableAsync()).FirstOrDefaultAsync(s => s.Id == applicationFormId);
-    }
-
     public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
     {
         var query = from application in await _applicationRepository.GetQueryableAsync()
