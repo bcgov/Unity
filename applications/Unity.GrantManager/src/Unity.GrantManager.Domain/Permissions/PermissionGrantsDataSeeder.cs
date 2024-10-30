@@ -61,15 +61,15 @@ namespace Unity.GrantManager.Permissions
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.SendToTeamLead,
+                    GrantApplicationPermissions.Assessments.Confirm,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                 }, context.TenantId);
 
             // - Assessor
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Assessor,
-               new List<string>
-               {
+                new List<string>
+                {
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Reviews.StartInitial,
@@ -79,16 +79,16 @@ namespace Unity.GrantManager.Permissions
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.SendToTeamLead,
+                    GrantApplicationPermissions.Assessments.Confirm,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
-               }, context.TenantId);
+                }, context.TenantId);
 
             // - TeamLead
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.TeamLead,
-               new List<string>
-               {
+                new List<string>
+                {
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Assignments.AssignInitial,
@@ -101,18 +101,17 @@ namespace Unity.GrantManager.Permissions
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.SendToTeamLead,
                     GrantApplicationPermissions.Assessments.SendBack,
                     GrantApplicationPermissions.Assessments.Confirm,
 
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
-               }, context.TenantId);
+                }, context.TenantId);
 
             // - Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Approver,
-              new List<string>
-              {
+                new List<string>
+                {
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Approvals.Complete,
@@ -121,12 +120,12 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.AssessmentResults.Default,
                     GrantApplicationPermissions.AssessmentResults.Edit,
                     GrantApplicationPermissions.AssessmentResults.EditFinalStateFields,
-              }, context.TenantId);
+                }, context.TenantId);
 
             // - SystemAdmin
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.SystemAdmin,
-             new List<string>
-             {
+                new List<string>
+                {
                     GrantManagerPermissions.Default,
                     SettingManagementSeedPermissions.Emailing,
                     SettingManagementSeedPermissions.EmailingTest,
@@ -138,44 +137,43 @@ namespace Unity.GrantManager.Permissions
                     // Assessments
                     GrantApplicationPermissions.Assessments.Default,
                     GrantApplicationPermissions.Assessments.Create,
-                    GrantApplicationPermissions.Assessments.SendToTeamLead,
                     GrantApplicationPermissions.Assessments.SendBack,
                     GrantApplicationPermissions.Assessments.Confirm
-             }, context.TenantId);
+                }, context.TenantId);
 
 
             // -L1 Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L1Approver,
-              new List<string>
-              {
+                new List<string>
+                {
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
                     PaymentsPermissions.Payments.L1ApproveOrDecline
 
-              }, context.TenantId);
+                }, context.TenantId);
 
             // -L2 Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L2Approver,
-              new List<string>
-              {
+                new List<string>
+                {
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
                     PaymentsPermissions.Payments.L2ApproveOrDecline
 
-              }, context.TenantId);
+                }, context.TenantId);
 
             // -L3 Approver
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L3Approver,
-              new List<string>
-              {
+                new List<string>
+                {
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     PaymentsPermissions.Payments.Default,
                     PaymentsPermissions.Payments.L3ApproveOrDecline
 
-              }, context.TenantId);
+                }, context.TenantId);
         }
     }
 }

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
 {
-    public class NumericDefinitionViewModel : WorksheetFieldDefinitionViewModelBase
+    public class NumericDefinitionViewModel : RequiredFieldViewModel
     {
         public NumericDefinitionViewModel() : base()
         {

@@ -5,163 +5,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Volo.Abp.Domain.Services;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Unity.GrantManager.Intakes
 {
-    public class IntakeFormSubmissionMapper : DomainService, IIntakeFormSubmissionMapper
+    public class IntakeFormSubmissionMapper : InputComponentProcessor, IIntakeFormSubmissionMapper
     {
-        private readonly Dictionary<string, string> components = new Dictionary<string, string>();
         private readonly IApplicationChefsFileAttachmentRepository _iApplicationChefsFileAttachmentRepository;
 
         public IntakeFormSubmissionMapper(IApplicationChefsFileAttachmentRepository iApplicationChefsFileAttachmentRepository)
         {
             _iApplicationChefsFileAttachmentRepository = iApplicationChefsFileAttachmentRepository;
-        }
-
-        private readonly List<string> AllowableContainerTypes = new List<string>(new string[]
-            {
-                "tabs",
-                "table",
-                "simplecols2",
-                "simplecols3",
-                "simplecols4",
-                "simplecontent",
-                "simplepanel",
-                "simpleparagraph",
-                "simpletabs",
-                "container",
-                "columns" }
-        );
-
-        private readonly List<string> ColumnTypes = new List<string>(new string[]
-        {
-                "simplecols2",
-                "simplecols3",
-                "simplecols4",
-                "columns" }
-        );
-
-        public void addComponent(JToken childToken)
-        {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            try
-            {
-                dynamic? tokenInput = childToken["input"];
-                dynamic? tokenType = childToken["type"];
-
-                if (tokenInput != null && tokenInput.ToString() == "True")
-                {
-                    dynamic? key = childToken["key"];
-                    dynamic? label = childToken["label"];
-
-                    if (key != null 
-                        && label != null 
-                        && tokenType != null 
-                        && tokenType.ToString() != "button"
-                        && !components.ContainsKey(key.ToString())
-                        && !AllowableContainerTypes.Contains(tokenType.ToString()))
-                    {
-                        var jsonValue = "{ \"type\": \"" + tokenType.ToString() + " \", \"label\":  \"" + label.ToString() + "\" }";
-                        components.Add(key.ToString(), jsonValue);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {                
-                string ExceptionMessage = ex.Message;
-                Logger.LogInformation("An exception orccured adding components: {ExceptionMessage}", ExceptionMessage);
-            }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-        }
-
-        public string GetSubLookupType(dynamic? tokenType)
-        {
-            string subTokenString = "components";
-#pragma warning disable CS8602 
-            if (tokenType != null && ColumnTypes.Contains(tokenType.ToString()))
-            {
-                subTokenString = "columns";
-            }
-            else if (tokenType != null && tokenType.ToString().Equals("table"))
-            {
-                subTokenString = "rows";
-            }
-#pragma warning restore CS8602
-            return subTokenString;
-        }
-
-        public void ConsumeToken(JToken? token)
-        {
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            if (token != null)
-            {
-                dynamic? subTokenType = token["type"];
-                string subSubTokenString = GetSubLookupType(subTokenType);
-                dynamic nestedComponentsComponents = ((JObject)token).SelectToken(subSubTokenString);
-                if (nestedComponentsComponents != null)
-                {
-                    GetAllInputComponents(nestedComponentsComponents);
-                }
-                else
-                {
-                    addComponent(token);
-                }
-            }
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-        }
-
-        public void GetAllInputComponents(JToken? tokenComponents)
-        {
-            // check if the type is in 'datagrid', 'editgrid', 'dynamicWizard' 
-            // check the visibility comp._visible
-            // check if the nestedComp.component.type equals 'panel'
-            if (tokenComponents != null)
-            {
-                // Iterate through tokenComponents.ChildTokens
-                foreach (JToken? childToken in tokenComponents.Children())
-                {
-                    if (childToken != null && childToken.Type == JTokenType.Object)
-                    {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                        dynamic? tokenType = childToken["type"];
-                        addComponent(childToken);
-
-                        if (tokenType != null && AllowableContainerTypes.Contains(tokenType.ToString()))
-                        {
-                            string subTokenString = GetSubLookupType(tokenType);
-
-                            // For each nested component container
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-                            dynamic nestedTokenComponents = childToken.SelectToken(subTokenString);
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-                            if (nestedTokenComponents != null)
-                            {
-                                foreach (JToken nestedTokenComponent in nestedTokenComponents.Children())
-                                {
-                                    if (subTokenString == "rows")
-                                    {
-                                        GetAllInputComponents(nestedTokenComponent);
-                                    }
-                                    else
-                                    {
-                                        ConsumeToken(nestedTokenComponent);
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ConsumeToken(childToken);
-                        }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-                    }
-                }
-            }
         }
 
         public string InitializeAvailableFormFields(dynamic formVersion)
@@ -176,23 +32,22 @@ namespace Unity.GrantManager.Intakes
         {
             var submission = formSubmission.submission;
             var data = submission.submission.data;
-            var form = formSubmission.form;
 
             if (mapFormSubmissionFields != null)
             {
                 try
                 {
-                    return ApplyConfigurationMapping(mapFormSubmissionFields!, data, form);
+                    return ApplyConfigurationMapping(mapFormSubmissionFields!, data);
                 }
                 catch (Exception ex)
                 {
                     Logger.LogException(ex);
-                    return ApplyDefaultConfigurationMapping(data, form);
+                    return ApplyDefaultConfigurationMapping(data);
                 }
             }
             else
             {
-                return ApplyDefaultConfigurationMapping(data, form);
+                return ApplyDefaultConfigurationMapping(data);
             }
         }
 
@@ -211,55 +66,28 @@ namespace Unity.GrantManager.Intakes
                         ChefsSumbissionId = submissionId,
                         Name = file.Value,
                     });
-            }            
-        }
-
-        private static void FindNodes(JToken json, string name, List<JToken> nodes)
-        {
-            if (json.Type == JTokenType.Object)
-            {
-                foreach (JProperty child in json.Children<JProperty>())
-                {
-                    if (child.Name.StartsWith(name))
-                    {
-                        nodes.Add(child);
-                    }
-                    FindNodes(child.Value, name, nodes);
-                }
-            }
-            else if (json.Type == JTokenType.Array)
-            {
-                foreach (JToken child in json.Children())
-                {
-                    FindNodes(child, name, nodes);
-                }
             }
         }
 
-        private static List<JToken> FindNodes(JToken json, string name)
-        {
-            var nodes = new List<JToken>();
-            FindNodes(json, name, nodes);
-            return nodes;
-        }
-
-        private static IntakeMapping ApplyDefaultConfigurationMapping(dynamic data, dynamic form)
+        private static IntakeMapping ApplyDefaultConfigurationMapping(dynamic data)
         {
             return new IntakeMapping()
             {
+                UnityApplicantId = data.unityApplicantId,
                 ApplicantName = data.applicantName is string ? data.applicantName : null,
                 Sector = data.sector is string ? data.sector : null,
                 TotalProjectBudget = data.totalProjectBudget is string ? data.totalProjectBudget : null,
                 RequestedAmount = data.requestedAmount is string ? data.requestedAmount : null,
                 PhysicalCity = data.city is string ? data.city : null,
                 EconomicRegion = data.economicRegion is string ? data.economicRegion : null,
+                ApplicantAgent = data.applicantAgent
             };
         }
 
-        private static IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data, dynamic form)
+        private static IntakeMapping ApplyConfigurationMapping(string submissionHeaderMapping, dynamic data)
         {
             var configMap = JsonConvert.DeserializeObject<dynamic>(submissionHeaderMapping)!;
-            IntakeMapping intakeMapping = ApplyDefaultConfigurationMapping(data, form);
+            IntakeMapping intakeMapping = ApplyDefaultConfigurationMapping(data);
 
             if (configMap != null)
             {
@@ -310,49 +138,15 @@ namespace Unity.GrantManager.Intakes
                     }
                 }
             }
-
             return files;
         }
 
-        private List<string> GetFileKeys(dynamic version)
+        private static List<string> GetFileKeys(dynamic version)
         {
             var fileKeys = new List<string>();
-            fileKeys.AddRange(FindFileKeys(version, "type", "simplefile"));
-            fileKeys.AddRange(FindFileKeys(version, "type", "file"));
+            fileKeys.AddRange(FileKeyFinder.FindFileKeys(version, "type", "simplefile"));
+            fileKeys.AddRange(FileKeyFinder.FindFileKeys(version, "type", "file"));
             return fileKeys;
-        }
-
-        private static List<string> FindFileKeys(JToken json, string key, string value)
-        {
-            var nodes = new List<JToken>();
-            FindFileKeyNodes(json, key, value, nodes);
-            return nodes.Select(s => s.ToString()).ToList();
-        }
-
-        private static void FindFileKeyNodes(JToken json, string key, string value, List<JToken> nodes)
-        {
-            if (json.Type == JTokenType.Object)
-            {
-                foreach (JProperty child in json.Children<JProperty>())
-                {
-                    if (child.Name.StartsWith(key) && child.Value.ToString().Equals(value) && json!["key"] != null)
-                    {
-                        JToken? node = json!["key"];
-                        if (node != null)
-                        {
-                            nodes.Add(node);
-                        }
-                    }
-                    FindFileKeyNodes(child.Value, key, value, nodes);
-                }
-            }
-            else if (json.Type == JTokenType.Array)
-            {
-                foreach (JToken child in json.Children())
-                {
-                    FindFileKeyNodes(child, key, value, nodes);
-                }
-            }
         }
 
         public async Task ResyncSubmissionAttachments(Guid applicationId, dynamic formSubmission)
@@ -371,36 +165,6 @@ namespace Unity.GrantManager.Intakes
             {
                 await _iApplicationChefsFileAttachmentRepository.DeleteAsync(chefsAttachmentGuid);
             }
-        }
-    }
-
-    public static class MapperExtensions
-    {
-        public static JsonElement GetJsonElement(this JsonElement jsonElement, string path)
-        {
-            if (jsonElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-                return default;
-
-            string[] segments = path.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var segment in segments)
-            {
-                if (int.TryParse(segment, out var index) && jsonElement.ValueKind == JsonValueKind.Array)
-                {
-                    jsonElement = jsonElement.EnumerateArray().ElementAtOrDefault(index);
-                    if (jsonElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-                        return default;
-
-                    continue;
-                }
-
-                jsonElement = jsonElement.TryGetProperty(segment, out var value) ? value : default;
-
-                if (jsonElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-                    return default;
-            }
-
-            return jsonElement;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget;
 
-public class QuestionNumberViewModel 
+public class QuestionNumberViewModel : RequiredFieldViewModel
 {
     public Guid QuestionId { get; set; }
     public bool IsDisabled { get; set; }
