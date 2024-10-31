@@ -21,7 +21,6 @@ namespace Unity.GrantManager.Intakes
                                              IApplicationFormVersionRepository _applicationFormVersionRepository,
                                              CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper) : DomainService, IIntakeFormSubmissionManager
     {
-
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
         {
             var applicationFormVersion = (await _applicationFormVersionRepository
