@@ -1,18 +1,16 @@
 using System;
-using Microsoft.Extensions.Logging;
 using System.Globalization;
 
 namespace Unity.GrantManager.Intakes.Mapping
 {
     public static class MappingUtil
     {
-        public static string ResolveAndTruncateField(int maxLength, string defaultFieldName, string? valueString, ILogger logger)
+        public static string ResolveAndTruncateField(int maxLength, string defaultFieldName, string? valueString)
         {
             string fieldValue = defaultFieldName;
 
             if (!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength)
             {
-                logger.LogError("Truncation: {FieldName} has been truncated! - Max length: {Length}", defaultFieldName, maxLength);
                 fieldValue = valueString.Substring(0, maxLength);
             }
             else if (!string.IsNullOrEmpty(valueString))

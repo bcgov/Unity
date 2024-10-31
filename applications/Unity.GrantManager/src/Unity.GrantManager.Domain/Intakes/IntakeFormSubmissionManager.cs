@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Intakes.Mapping;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
@@ -192,7 +192,7 @@ namespace Unity.GrantManager.Intakes
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
+                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName),
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
@@ -202,12 +202,12 @@ namespace Unity.GrantManager.Intakes
                     ForestryFocus = intakeMap.ForestryFocus,
                     City = intakeMap.PhysicalCity, // To be determined from the applicant
                     EconomicRegion = intakeMap.EconomicRegion,
-                    CommunityPopulation = ConvertToIntFromString(intakeMap.CommunityPopulation),
-                    RequestedAmount = ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
-                    SubmissionDate = ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
-                    ProjectStartDate = ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
-                    ProjectEndDate = ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
-                    TotalProjectBudget = ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
+                    CommunityPopulation = MappingUtil.ConvertToIntFromString(intakeMap.CommunityPopulation),
+                    RequestedAmount = MappingUtil.ConvertToDecimalFromStringDefaultZero(intakeMap.RequestedAmount),
+                    SubmissionDate = MappingUtil.ConvertDateTimeFromStringDefaultNow(intakeMap.SubmissionDate),
+                    ProjectStartDate = MappingUtil.ConvertDateTimeNullableFromString(intakeMap.ProjectStartDate),
+                    ProjectEndDate = MappingUtil.ConvertDateTimeNullableFromString(intakeMap.ProjectEndDate),
+                    TotalProjectBudget = MappingUtil.ConvertToDecimalFromStringDefaultZero(intakeMap.TotalProjectBudget),
                     Community = intakeMap.Community,
                     ElectoralDistrict = intakeMap.ElectoralDistrict,
                     RegionalDistrict = intakeMap.RegionalDistrict,
@@ -225,77 +225,12 @@ namespace Unity.GrantManager.Intakes
             return application;
         }
 
-        private string ResolveAndTruncateField(int maxLength, string defaultFieldName, string? valueString)
-        {
-            string fieldValue = defaultFieldName;
-
-            if (!string.IsNullOrEmpty(valueString) && valueString.Length > maxLength)
-            {
-                Logger.LogWarning("Truncation: {fieldName} has been truncated! - Max length: {length}", defaultFieldName, maxLength);
-                fieldValue = valueString.Substring(0, maxLength);
-            }
-            else if (!string.IsNullOrEmpty(valueString))
-            {
-                fieldValue = valueString.Trim();
-            }
-
-            return fieldValue;
-        }
-
-        private int? ConvertToIntFromString(string? intString)
-        {
-            if (int.TryParse(intString, out int intParse))
-            {
-                return intParse;
-            }
-
-            return null;
-        }
-
-        private decimal ConvertToDecimalFromStringDefaultZero(string? decimalString)
-        {
-            decimal decimalValue;
-            if (decimal.TryParse(decimalString, out decimal decimalParse))
-            {
-                decimalValue = decimalParse;
-            }
-            else
-            {
-                decimalValue = Convert.ToDecimal("0");
-            }
-            return decimalValue;
-        }
-
-        private DateTime? ConvertDateTimeNullableFromString(string? dateTime)
-        {
-            DateTime? dateTimeValue = null;
-
-            if (DateTime.TryParse(dateTime, out DateTime testDateTimeParse))
-            {
-                dateTimeValue = testDateTimeParse;
-            }
-
-            return dateTimeValue;
-        }
-
-        private DateTime ConvertDateTimeFromStringDefaultNow(string? dateTime)
-        {
-            DateTime dateTimeValue;
-            DateTime.TryParse(dateTime, out dateTimeValue);
-
-            if (string.IsNullOrEmpty(dateTime))
-            {
-                dateTimeValue = DateTime.Parse(DateTime.UtcNow.ToString("u"));
-            }
-
-            return dateTimeValue;
-        }
 
         private async Task<Applicant> CreateApplicantAsync(IntakeMapping intakeMap)
         {
             var applicant = await _applicantRepository.InsertAsync(new Applicant
             {
-                ApplicantName = ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
+                ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
                 NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
                 OrgName = intakeMap.OrgName,
                 OrgNumber = intakeMap.OrgNumber,
