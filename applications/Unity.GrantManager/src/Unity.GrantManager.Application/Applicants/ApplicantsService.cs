@@ -45,7 +45,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
 
         var applicant = new Applicant
         {
-            ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName, Logger),
+            ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
             NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
             OrgNumber = intakeMap.OrgNumber,
