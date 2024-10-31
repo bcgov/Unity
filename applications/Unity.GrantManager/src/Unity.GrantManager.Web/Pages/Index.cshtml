@@ -18,8 +18,8 @@
     PageLayout.Content.Title = "Home";
 }
 
-<div style="position: fixed; top: 0; font-size: x-small; opacity: 0.5;">
-    @Model.InstanceId
+<div class="home-instance-details">
+    @Model.InstanceId - @Model.StartupTime
 </div>
 <div class="home-container">    
     <div id="welcomeContent" style="display: block;">
