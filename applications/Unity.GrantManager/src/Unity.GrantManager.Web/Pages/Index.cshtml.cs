@@ -1,7 +1,10 @@
-﻿namespace Unity.GrantManager.Web.Pages;
+﻿using System;
+
+namespace Unity.GrantManager.Web.Pages;
 
 public class IndexModel : GrantManagerPageModel
 {
+    public Guid InstanceId { get; set; } = StartupUtils.InstanceId;
     public void OnGet()
     {
         //Placeholder. Nothing to do here yet.
