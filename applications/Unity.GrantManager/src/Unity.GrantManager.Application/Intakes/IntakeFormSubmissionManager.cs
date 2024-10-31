@@ -80,7 +80,7 @@ namespace Unity.GrantManager.Intakes
             var application = await _applicationRepository.InsertAsync(
                 new Application
                 {
-                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName, Logger), 
+                    ProjectName = MappingUtil.ResolveAndTruncateField(255, string.Empty, intakeMap.ProjectName), 
                     ApplicantId = applicant.Id,
                     ApplicationFormId = applicationForm.Id,
                     ApplicationStatusId = submittedStatus.Id,
