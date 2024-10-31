@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
@@ -52,8 +51,10 @@ namespace Unity.Flex.Domain.Services
         public static bool IsProvided(this Answer answer)
         {
             if (answer.Question == null) return false;
-            var currentValue = ValueConverter.Convert(answer.CurrentValue ?? string.Empty, answer.Question.Type);
-            return !currentValue.IsNullOrEmpty(); // Is provided, if the currentvalue is not null or empty
+            var currentValue = ValueResolver.Resolve(answer.CurrentValue ?? string.Empty, answer.Question.Type);
+            if (currentValue == null) return false;
+            if (string.IsNullOrEmpty(currentValue.ToString())) return false;
+            return true;
         }
     }
 }

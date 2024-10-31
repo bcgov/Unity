@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels
 
         [DisabledInput]
         [DisplayName("Common:Name")]
-        public string ApplicationFormName { get; set; } = string.Empty;
+        public string? ApplicationFormName { get; set; } = string.Empty;
 
         [Required]
         [DisplayName("ApplicationForms:ChefsFormId")]
