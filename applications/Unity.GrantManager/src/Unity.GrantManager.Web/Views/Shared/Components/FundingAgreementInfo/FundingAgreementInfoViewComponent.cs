@@ -1,16 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.AspNetCore.Mvc;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
-using Unity.GrantManager.GrantApplications;
-using System.Linq;
-using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Threading.Tasks;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Locality;
-using Unity.GrantManager.Permissions;
-using Microsoft.AspNetCore.Authorization;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.FundingAgreementInfo
 {
@@ -47,33 +44,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.FundingAgreementInfo
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
-            //const decimal ProjectFundingMax = 10000000;
-            //const decimal ProjectFundingMultiply = 0.2M;
+
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
-
-            //bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-            //bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
-            //bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
-
-            //List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
-
-            //List<ElectoralDistrictDto> ElectoralDistricts = (await _applicationElectoralDistrictAppService.GetListAsync()).ToList();
-
-            //List<RegionalDistrictDto> RegionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
-
-            //List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();
 
             FundingAgreementInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
                 ApplicationFormId = application.ApplicationForm.Id,
                 ApplicationFormVersionId = applicationFormVersionId,
-                //RegionalDistricts = RegionalDistricts,
-                //Communities = Communities,
-                //EconomicRegions = EconomicRegions,
-                //IsFinalDecisionMade = finalDecisionState,
-                //IsEditGranted = isEditGranted,
-                //IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
             };
 
             model.FundingAgreementInfo = new()
