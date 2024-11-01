@@ -147,6 +147,7 @@
     "ApplicationForms:DownloadAPIConfiguration": "Download API Configuration",
     "ApplicationForms:UpdateAPIToken": "Update API Token",
     "ApplicationForms:Payable": "Payable",
+    "ApplicationForms:RenderFormIoToHtml": "Render FormIO to HTML",
     "ApplicationForms:ConfigureWorksheets": "Configure Worksheets",
 
     "Intakes": "Intakes",

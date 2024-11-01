@@ -35,5 +35,8 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels
 
         [DisplayName("ApplicationForms:Payable")]
         public bool Payable { get; set; }
+
+        [DisplayName("ApplicationForms:RenderFormIoToHtml")]
+        public bool RenderFormIoToHtml { get; set; }
     }
 }
