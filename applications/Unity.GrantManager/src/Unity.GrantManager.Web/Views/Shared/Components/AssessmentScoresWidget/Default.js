@@ -13,7 +13,7 @@
                     'Assessment scores has been updated.'
                 );
                 PubSub.publish('refresh_assessment_scores', null);
-                PubSub.publish('refresh_review_list_without_select', $("#AssessmentId").val());
+                PubSub.publish('refresh_review_list_without_sidepanel', $("#AssessmentId").val());
             });
 
     }
@@ -153,7 +153,7 @@ function updateSubtotal() {
 }
 
 
-function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType, discardButtonPrefix) {
+function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType, discardButtonPrefix) {    
     const inputField = document.getElementById(inputFieldPrefix + questionId);
     const saveButton = document.getElementById(saveButtonPrefix + questionId);
     const discardButton = document.getElementById(discardButtonPrefix + questionId);
@@ -172,7 +172,7 @@ function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionTyp
             saveButton.disabled = true;
             discardButton.disabled = true;
             updateSubtotal();
-            PubSub.publish('refresh_review_list_without_select', assessmentId);
+            PubSub.publish('refresh_review_list_without_sidepanel', assessmentId);            
         });
 
 }
