@@ -28,7 +28,7 @@
                 .updateFundingAgreementInfo(applicationId, fundingAgreementInfoObj)
                 .done(function () {
                     abp.notify.success(
-                        'The funding agreement info has been updated.'
+                        'The funding agreement has been updated.'
                     );
                     $('#saveFundingAgreementInfoBtn').prop('disabled', true);
                     PubSub.publish('funding_agreement_info_saved', fundingAgreementInfoObj);

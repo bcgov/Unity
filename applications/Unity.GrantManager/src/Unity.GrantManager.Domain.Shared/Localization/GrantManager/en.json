@@ -300,7 +300,7 @@
     "ApplicantInfoView:ApplicantInfo.Province": "Province",
     "ApplicantInfoView:ApplicantInfo.PostalCode": "Postal Code",
 
-    "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement Info",
+    "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement",
     "FundingAgreementInfoView:FundingAgreementInfoContract": "Contract",
     "FundingAgreementInfoView:FundingAgreementInfo.ContractNumber": "Contract #",
     "FundingAgreementInfoView:FundingAgreementInfo.ContractExecutionDate": "Execution Date",
