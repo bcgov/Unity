@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
-using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Volo.Abp.DependencyInjection;
@@ -14,18 +13,15 @@ namespace Unity.GrantManager.Events
 {
     internal class ApplicationChangedHandler : ILocalEventHandler<ApplicationChangedEvent>, ITransientDependency
     {
-
-        private readonly IEmailNotificationService _emailNotificationService;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly IFeatureChecker _featureChecker;
         private readonly ILocalEventBus _localEventBus;
 
-        public ApplicationChangedHandler(IEmailNotificationService emailNotificationService,
+        public ApplicationChangedHandler(
             IApplicantAgentRepository applicantAgentRepository,
             ILocalEventBus localEventBus,
             IFeatureChecker featureChecker)
         {
-            _emailNotificationService = emailNotificationService;
             _applicantAgentRepository = applicantAgentRepository;
             _localEventBus = localEventBus;
             _featureChecker = featureChecker;

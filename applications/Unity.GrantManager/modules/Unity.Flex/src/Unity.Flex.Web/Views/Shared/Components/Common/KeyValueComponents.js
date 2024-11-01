@@ -12,8 +12,10 @@ function getNewInputRow(controlName) {
     let newRow = $('#' + controlName);
     let inputs = newRow.find('input');
     let row = {};
+
     row.key = inputs[0].value;
     row.label = inputs[1].value;
+
     return row;
 }
 
@@ -104,6 +106,7 @@ function bindInputChanges(keys, validityClass) {
 }
 
 function sanitizeInput(string) {
+    let jString = $("<p>").text(string).text();
     const map = {
         '&': '&amp;',
         '<': '&lt;',
@@ -113,5 +116,5 @@ function sanitizeInput(string) {
         "/": '&#x2F;',
     };
     const reg = /[&<>"'/]/ig;
-    return string.replace(reg, (match) => (map[match]));
+    return jString.replace(reg, (match) => (map[match]));
 }

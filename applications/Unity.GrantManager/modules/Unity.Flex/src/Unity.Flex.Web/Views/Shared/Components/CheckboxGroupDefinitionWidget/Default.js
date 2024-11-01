@@ -38,7 +38,7 @@ $(function () {
     }
 
     function getRowTemplate(key, label) {
-        return `<tr><td><input type="text" class="form-control key-input" name="CheckboxKeys" pattern="${checkKeyInputRegexBase}" value="${key}" minlength="1" maxlength="25" required id="new-chk-key-${key}" />
+        return `<tr><td><input type="text" class="form-control key-input" name="CheckboxKeys" value="${key}" minlength="1" maxlength="25" required id="new-chk-key-${key}" />
         </td><td><input type="text" class="form-control" name="CheckboxLabels" value="${label}" maxlength="25" required id="new-chk-label-${key}" />
         </td><td><button id="data-btn-${key}" class="delete-checkbox-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
         <i class="fl fl-delete"></i></button></td></tr>`

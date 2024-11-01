@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
+using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
 {
@@ -24,7 +25,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
             {
                 Min = long.Parse(form["Min"].ToString()),
                 Max = long.Parse(form["Max"].ToString())
-            };
+            }
+            .ApplyRequired(form);
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
@@ -37,7 +39,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
                     return View(await Task.FromResult(new NumericDefinitionViewModel()
                     {
                         Min = numericDefinition.Min,
-                        Max = numericDefinition.Max
+                        Max = numericDefinition.Max,
+                        Required = numericDefinition.Required
                     }));
                 }
             }

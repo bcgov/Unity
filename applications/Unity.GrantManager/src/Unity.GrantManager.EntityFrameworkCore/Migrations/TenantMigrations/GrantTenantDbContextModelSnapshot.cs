@@ -797,6 +797,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<int?>("FiscalDay")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FiscalMonth")
+                        .HasColumnType("text");
+
                     b.Property<string>("IndigenousOrgInd")
                         .HasColumnType("text");
 
@@ -832,6 +838,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("SectorSubSectorIndustryDesc")
                         .HasColumnType("text");
 
+                    b.Property<DateOnly?>("StartedOperatingDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
@@ -841,6 +850,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
+
+                    b.Property<string>("UnityApplicantId")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -932,6 +944,18 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("BceidBusinessGuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BceidBusinessName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("BceidUserGuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BceidUserName")
+                        .HasColumnType("text");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -958,6 +982,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("IdentityEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IdentityName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IdentityProvider")
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -1541,6 +1574,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<bool>("Payable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("RenderFormIoToHtml")
                         .HasColumnType("boolean");
 
                     b.Property<Guid?>("ScoresheetId")
@@ -2409,6 +2445,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("MinistryClient")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PaymentIdPrefix")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<decimal?>("PaymentThreshold")

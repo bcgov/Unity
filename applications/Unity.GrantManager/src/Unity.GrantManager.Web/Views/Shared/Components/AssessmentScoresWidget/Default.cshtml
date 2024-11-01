@@ -3,10 +3,10 @@
 @using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionSelectListWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.GrantApplications;
 @using Unity.Flex.Scoresheets;
 @using Unity.Flex.Web.Views.Shared.Components;
+@using Unity.Flex;
 
 @model AssessmentScoresWidgetViewModel
 @{
@@ -51,6 +51,10 @@
                                                             <h2 class="accordion-header" id="question-heading-@question.Id">
                                                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
                                                                     @sectionNumber.@questionNumber @question.Label
+                                                                    @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
+                                                                    {
+                                                                        <span> *</span>                                                                     
+                                                                    }
                                                                 </button>
                                                             </h2>
                                                             <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id">
@@ -62,22 +66,54 @@
                                                                         {
                                                                             case QuestionType.Number:
                                                                                 {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionNumberWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = Convert.ToDouble(string.IsNullOrEmpty(question.Answer) ? 0 : question.Answer), Min = question.Definition?.ConvertDefinition(question.Type)?.GetMinValueOrNull(), Max = question.Definition?.ConvertDefinition(question.Type)?.GetMaxValueOrNull() })
+                                                                                    @await Component.InvokeAsync(typeof(QuestionNumberWidget),
+                                                                                             new
+                                                                                             {
+                                                                                                 QuestionId = question.Id,
+                                                                                                 IsDisabled = Model.IsDisabled(),
+                                                                                                 Answer = Convert.ToDouble(string.IsNullOrEmpty(question.Answer) ? 0 : question.Answer),
+                                                                                                 Min = question.Definition?.ConvertDefinition(question.Type)?.GetMinValueOrNull(),
+                                                                                                 Max = question.Definition?.ConvertDefinition(question.Type)?.GetMaxValueOrNull(),
+                                                                                                 Required = question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired()
+                                                                                             })
                                                                                     break;
                                                                                 }
                                                                             case QuestionType.YesNo:
                                                                                 {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, YesValue = question.Definition?.ConvertDefinition(question.Type)?.GetYesValueOrNull(), NoValue = question.Definition?.ConvertDefinition(question.Type)?.GetNoValueOrNull() })
+                                                                                    @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new
+                                                                                        {
+                                                                                            QuestionId = question.Id,
+                                                                                            IsDisabled = Model.IsDisabled(),
+                                                                                            Answer = question.Answer,
+                                                                                            YesValue = question.Definition?.ConvertDefinition(question.Type)?.GetYesValueOrNull(),
+                                                                                            NoValue = question.Definition?.ConvertDefinition(question.Type)?.GetNoValueOrNull(),
+                                                                                            Required = question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired()
+                                                                                        })
                                                                                     break;
                                                                                 }
                                                                             case QuestionType.Text:
                                                                                 {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionTextWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, MinLength = question.Definition?.ConvertDefinition(question.Type)?.GetMinLengthValueOrNull(), MaxLength = question.Definition?.ConvertDefinition(question.Type)?.GetMaxLengthValueOrNull() })
+                                                                                    @await Component.InvokeAsync(typeof(QuestionTextWidget), new
+                                                                                        {
+                                                                                            QuestionId = question.Id,
+                                                                                            IsDisabled = Model.IsDisabled(),
+                                                                                            Answer = question.Answer,
+                                                                                            MinLength = question.Definition?.ConvertDefinition(question.Type)?.GetMinLengthValueOrNull(),
+                                                                                            MaxLength = question.Definition?.ConvertDefinition(question.Type)?.GetMaxLengthValueOrNull(),
+                                                                                            Required = question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired()
+                                                                                        })
                                                                                     break;
                                                                                 }
                                                                             case QuestionType.SelectList:
                                                                                 {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionSelectListWidget), new { QuestionId = question.Id, IsDisabled = Model.IsDisabled(), Answer = question.Answer, Definition = question.Definition })
+                                                                                    @await Component.InvokeAsync(typeof(QuestionSelectListWidget), new
+                                                                                        {
+                                                                                            QuestionId = question.Id,
+                                                                                            IsDisabled = Model.IsDisabled(),
+                                                                                            Answer = question.Answer,
+                                                                                            Definition = question.Definition,
+                                                                                            Required = question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired()
+                                                                                        })
                                                                                     break;
                                                                                 }
                                                                         }
