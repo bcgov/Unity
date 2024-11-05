@@ -10,7 +10,7 @@ namespace Unity.GrantManager.Intakes
 {
     public class InputComponentProcessor : DomainService
     {
-        protected static readonly Dictionary<string, string> components = new Dictionary<string, string>();
+        protected readonly Dictionary<string, string> components = new Dictionary<string, string>();
         private static ILogger logger = NullLogger.Instance;
 
         // Method to initialize the logger (if needed)
