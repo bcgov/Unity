@@ -99,6 +99,7 @@ $(function () {
         const cardBodies = getCardBodies();
 
         // Collapse all card bodies initially
+        //This also affects textarea in datagrid
         hideAllCardBodies(cardBodies);
 
         // Add event listeners to headers
