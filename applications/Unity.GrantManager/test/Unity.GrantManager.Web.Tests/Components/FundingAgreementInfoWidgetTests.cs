@@ -26,10 +26,11 @@ namespace Unity.GrantManager.Components
         [Fact]
         public async Task ContactInfoReturnsStatus()
         {
+            DateTime executionDateVal = DateTime.UtcNow;
             var applicationDto = new GrantApplicationDto()
             {
                 ContractNumber = "123456789",
-                ContractExecutionDate = DateTime.UtcNow,
+                ContractExecutionDate = executionDateVal,
             };
 
             // Arrange
@@ -66,8 +67,8 @@ namespace Unity.GrantManager.Components
             //Assert
 
             var expectedContractNumber = "123456789";
-            var expectedContractExecutionDate = DateTime.UtcNow;
-          
+            var expectedContractExecutionDate = executionDateVal;
+
 
             resultModel!.FundingAgreementInfo!.ContractNumber.ShouldBe(expectedContractNumber);
             resultModel!.FundingAgreementInfo!.ContractExecutionDate.ShouldBe(expectedContractExecutionDate);
