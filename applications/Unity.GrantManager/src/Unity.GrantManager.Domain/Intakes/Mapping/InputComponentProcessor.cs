@@ -10,7 +10,7 @@ namespace Unity.GrantManager.Intakes
 {
     public class InputComponentProcessor : DomainService
     {
-        protected static readonly Dictionary<string, string> components = new Dictionary<string, string>();
+        protected readonly Dictionary<string, string> components = new Dictionary<string, string>();
         private static ILogger logger = NullLogger.Instance;
 
         // Method to initialize the logger (if needed)
@@ -47,7 +47,7 @@ namespace Unity.GrantManager.Intakes
             "datagrid"
         ];
 
-        private static void AddComponentToDictionary(string key, string? tokenType, string label)
+        private void AddComponentToDictionary(string key, string? tokenType, string label)
         {
             if (!components.ContainsKey(key))
             {
@@ -91,7 +91,7 @@ namespace Unity.GrantManager.Intakes
             return "components";
         }
 
-        public static void AddComponent(JToken childToken)
+        public void AddComponent(JToken childToken)
         {
             try
             {
@@ -112,7 +112,7 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        public static void ConsumeToken(JToken? token)
+        public void ConsumeToken(JToken? token)
         {
             if (token != null)
             {
@@ -132,7 +132,7 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        public static void GetAllInputComponents(JToken? tokenComponents)
+        public void GetAllInputComponents(JToken? tokenComponents)
         {
             if (tokenComponents == null) return;
 
@@ -144,7 +144,7 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        private static void ProcessChildToken(JToken childToken)
+        private void ProcessChildToken(JToken childToken)
         {
             var tokenType = childToken["type"];
 
@@ -170,7 +170,7 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        private static void ProcessNestedComponents(JToken childToken, JToken? tokenType)
+        private void ProcessNestedComponents(JToken childToken, JToken? tokenType)
         {
             // Get the sub-token string using a safe conversion of tokenType
             var subTokenString = GetSubLookupType(tokenType?.ToString());
@@ -188,7 +188,7 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        private static void ProcessNestedTokenComponent(JToken nestedTokenComponent, string subTokenString)
+        private void ProcessNestedTokenComponent(JToken nestedTokenComponent, string subTokenString)
         {
             if (subTokenString == "rows")
             {
