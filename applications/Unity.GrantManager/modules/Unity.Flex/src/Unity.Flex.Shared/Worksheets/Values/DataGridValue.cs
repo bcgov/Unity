@@ -45,22 +45,22 @@ namespace Unity.Flex.Worksheets.Values
         }
 
         [JsonPropertyName("key")]
-        public string? Key { get; set; }
+        public string Key { get; set; } = "Key";
 
         [JsonPropertyName("value")]
-        public string? Value { get; set; }
+        public string Value { get; set; } = "Value";
     }
 
     public class DataGridColumn
     {
         [JsonPropertyName("key")]
-        public string? Key { get; set; }
+        public string Key { get; set; } = "Key";
 
         [JsonPropertyName("name")]
-        public string? Name { get; set; }
+        public string Name { get; set; } = "Name";
 
         [JsonPropertyName("type")]
-        public string? Type { get; set; }
+        public string Type { get; set; } = "Type";
 
         [JsonPropertyName("format")]
         public string? Format { get; set; }

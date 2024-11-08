@@ -193,5 +193,14 @@ namespace Unity.Flex.Worksheets.Definitions
         {
             return field.Required;
         }
+
+        public static bool ResolveIsDynamic(CustomFieldDefinition field)
+        {
+            return field switch
+            {
+                DataGridDefinition dataGrid => dataGrid.Dynamic,
+                _ => false
+            };
+        }
     }
 }

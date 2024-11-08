@@ -1,7 +1,81 @@
-﻿@using Unity.Flex.Web.Views.Shared.Components.DataGridDefinitionWidget;
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex
+@using Unity.Flex.Localization
+@using Unity.Flex.Web.Views.Shared.Components.DataGridDefinitionWidget;
+
+@inject IHtmlLocalizer<FlexResource> L
 
 @model DataGridDefinitionViewModel;
 
+<input type="hidden" value="@Model.SupportedFieldsList" id="SupportedFieldsList" />
 <abp-row class="m-0 p-0">
-    <div>Placeholder for a Data Grid Definition</div>
+
+    <div class="definition-widget-section-title">Mapping:</div>
+    <div class="check-layout-wrap"><abp-input asp-for="@Model.Dynamic" /></div>
+
+    <div class="definition-widget-section-title">Summary:</div>
+    <abp-radio asp-for="@Model.SummaryOption" asp-items="@Model.SummaryOptions" inline="true" />
+
+    <div class="definition-widget-section-title">Columns:</div>
+
+    <table id="column-options-table">
+        <caption></caption>
+        <thead>
+            <tr>
+                <th class="half-width">Name</th>
+                <th>Type</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="column-options-body">
+            @foreach (var option in Model.Columns)
+            {
+                <tr>
+                    <td><input type="text" class="form-control key-input" name="ColumnKeys" value="@option.Name" minlength="1" maxlength="50" required id="key-@option.Name" /></td>
+                    <td><abp-select asp-for="@option.Type" suppress-label="true" asp-items="@Model.SupportedFieldTypes" id="column-type-@option.Name" name="ColumnTypes" /></td>
+                    <td>
+                        <abp-button id="data-btn-@option.Name"
+                                    class="delete-column-option btn-danger"
+                                    icon-type="Other"
+                                    icon="fl fl-delete"
+                                    abp-tooltip="Delete"
+                                    button-type="Danger" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <table id="add-new-column-table" class="hidden">
+        <caption></caption>
+        <thead>
+        <th></th>
+        <th></th>
+        <th></th></thead>
+        <tr id="new-column-row">
+            <td><input type="text" class="form-control" id="new-row-key" placeholder="Name" /></td>
+            <td>
+                <select class="form-control form-select" id="new-row-type" asp-items="@Model.SupportedFieldTypes"></select>
+            </td>
+            <td class="new-row-actions">
+                <abp-button id="save-column-option-btn" icon-type="Other" icon="fl fl-checkmark"
+                            abp-tooltip="Confirm"
+                            button-type="Primary" />
+                <abp-button id="cancel-column-option-btn" icon-type="Other" icon="fl fl-cancel"
+                            abp-tooltip="Cancel"
+                            button-type="Secondary" />
+            </td>
+        </tr>
+    </table>
+    <div id="invalid-input-error-summary" class="input-errors hidden"><p id="invalid-input-summary-text"></p></div>
+    <div class="column-options-edit-controls">
+        <abp-button id="add-column-option-btn"
+                    text="@L["Worksheet:Configuration:AddColumnOptionText"].Value"
+                    button-type="Secondary" />
+    </div>
 </abp-row>
+<script>
+    if (PubSub) {
+        PubSub.publish('datagrid_widget_fired');
+    }
+</script>

@@ -82,7 +82,7 @@
                                         }
                                     case CustomFieldType.DataGrid:
                                         {
-                                            @await Component.InvokeAsync(typeof(DataGridWidget), new { fieldModel = field, modelName = Model.Name })
+                                            @await Component.InvokeAsync(typeof(DataGridWidget), new { fieldModel = field, modelName = Model.Name })                                            
                                             break;
                                         }
                                     default:

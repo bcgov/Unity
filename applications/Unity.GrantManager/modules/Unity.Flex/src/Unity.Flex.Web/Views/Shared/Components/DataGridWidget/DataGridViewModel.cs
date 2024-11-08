@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
+using Unity.Flex.Worksheets.Definitions;
 
 namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 {
     public class DataGridViewModel : WorksheetViewModelBase
     {
+        public bool AllowEdit { get; set; }
         public string[] Columns { get; set; } = [];
         public DataGridViewModelRow[] Rows { get; set; } = [];
+        public DataGridDefinitionSummaryOption SummaryOption { get; set; }
         public DataGridViewSummary Summary { get; set; } = new DataGridViewSummary();
 
         public DataGridViewModel() : base()
@@ -15,6 +18,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 
     public class DataGridViewModelRow
     {
+        public string Id { get; set; }
         public List<DataGridViewModelCell> Cells { get; set; } = [];
     }
 

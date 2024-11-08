@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Unity.Flex.Worksheets.Definitions
 {
@@ -8,10 +9,30 @@ namespace Unity.Flex.Worksheets.Definitions
         {
         }
 
-        public bool IsDynamic { get; set; }
+        [JsonPropertyName("dynamic")]
+        public bool Dynamic { get; set; }
 
-        // Placeholder for now, these will be blank for dyamic datagrids
-        public List<string> Columns { get; set; } = [];
-        public List<string> Rows { get; set; } = [];
+
+        [JsonPropertyName("columns")]
+        public List<DataGridDefinitionColumn> Columns { get; set; } = [];
+
+        [JsonPropertyName("summaryOption")]
+        public string SummaryOption { get; set; } = DataGridDefinitionSummaryOption.None.ToString();
+    }
+
+    public class DataGridDefinitionColumn
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = string.Empty;
+    }
+
+    public enum DataGridDefinitionSummaryOption
+    {
+        None,
+        Above,
+        Below
     }
 }
