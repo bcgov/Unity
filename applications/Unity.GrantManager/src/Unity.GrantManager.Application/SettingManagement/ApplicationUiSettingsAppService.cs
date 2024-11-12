@@ -14,7 +14,7 @@ using Volo.Abp.Settings;
 namespace Unity.GrantManager.SettingManagement;
 
 //[Authorize(SettingManagementPermissions.UserInterface)]
-public class ApplicationUiSettingsAppService : IApplicationUiSettingsAppService
+public class ApplicationUiSettingsAppService : GrantManagerAppService, IApplicationUiSettingsAppService
 {
     private readonly ISettingProvider _settingProvider;
     private readonly ISettingManager _settingManager;

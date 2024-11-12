@@ -1,10 +1,7 @@
-﻿using AspNetCore;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Unity.GrantManager.SettingManagement;
 using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.SettingManagement;
-using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.Web.Components.ApplicationTabsSettingGroup;
 
