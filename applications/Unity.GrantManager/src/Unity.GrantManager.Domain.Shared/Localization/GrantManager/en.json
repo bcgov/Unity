@@ -281,9 +281,6 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-    "ProjectInfoView:ProjectInfoContract": "Contract",
-    "ProjectInfoView:ProjectInfo.ContractNumber": "Contract #",
-    "ProjectInfoView:ProjectInfo.ContractExecutionDate": "Execution Date",
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
@@ -315,6 +312,11 @@
     "ApplicantInfoView:ApplicantInfo.City": "City",
     "ApplicantInfoView:ApplicantInfo.Province": "Province",
     "ApplicantInfoView:ApplicantInfo.PostalCode": "Postal Code",
+
+    "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement",
+    "FundingAgreementInfoView:FundingAgreementInfoContract": "Contract",
+    "FundingAgreementInfoView:FundingAgreementInfo.ContractNumber": "Contract #",
+    "FundingAgreementInfoView:FundingAgreementInfo.ContractExecutionDate": "Execution Date",
 
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",

@@ -343,9 +343,28 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.EconomicRegion = input.EconomicRegion;
             application.ElectoralDistrict = input.ElectoralDistrict;
             application.RegionalDistrict = input.RegionalDistrict;
+            application.Place = input.Place;
+
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
+
+            await _applicationRepository.UpdateAsync(application);
+
+            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+        }
+        else
+        {
+            throw new EntityNotFoundException();
+        }
+    }
+
+    public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+
+        if (application != null)
+        {
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
-            application.Place = input.Place;
 
             await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
 

@@ -33,6 +33,7 @@
         'simplenumberadvanced',
         'simplephonenumber',
         'simplephonenumberadvanced',
+        'simpleselect',
         'simpleselectadvanced',
         'simpleday',
         'simpledayadvanced',
