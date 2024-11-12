@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Unity.Flex.Worksheets.Definitions;
 
 namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
@@ -19,14 +20,14 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 
     public class DataGridViewModelRow
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = Guid.Empty.ToString();
         public List<DataGridViewModelCell> Cells { get; set; } = [];
     }
 
     public class DataGridViewModelCell
     {
-        public string Key { get; set; }
-        public string Value { get; set; }
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
     }
 
     public class DataGridViewSummary
@@ -36,9 +37,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 
     public class DataGridViewModelSummaryField
     {
-        public string Label { get; set; }
-        public string Key { get; set; }
-        public string Value { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
     }
 }
 

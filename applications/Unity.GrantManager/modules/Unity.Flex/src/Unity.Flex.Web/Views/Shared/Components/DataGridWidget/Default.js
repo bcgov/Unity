@@ -86,6 +86,7 @@ $(function () {
     }
 
     function handleEditRowClick(e) {        
+        console.info('edit tbd');
     }
 
     PubSub.subscribe(

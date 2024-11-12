@@ -349,13 +349,16 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return summary;
         }
 
-        private string SumCells(string? key, DataGridViewModelRow[] rows)
+        private static string SumCells(string? key, DataGridViewModelRow[] rows)
         {
             decimal sum = 0;
             foreach (var row in rows)
             {
                 var cell = row.Cells.Find(x => x.Key == key);
-                sum += decimal.Parse(cell.Value.Replace("$", "").Replace(",", ""));
+                if (cell != null)
+                {
+                    sum += decimal.Parse(cell.Value.Replace("$", "").Replace(",", ""));
+                }
             }
             return sum.ToString();
         }
