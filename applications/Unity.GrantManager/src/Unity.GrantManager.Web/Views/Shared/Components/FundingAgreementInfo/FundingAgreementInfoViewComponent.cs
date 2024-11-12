@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.Locality;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
@@ -19,27 +17,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.FundingAgreementInfo
         AutoInitialize = true)]
     public class FundingAgreementInfoViewComponent : AbpViewComponent
     {
-        private readonly IGrantApplicationAppService _grantApplicationAppService;
-        private readonly IEconomicRegionService _applicationEconomicRegionAppService;
-        private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
-        private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
-        private readonly ICommunityService _applicationCommunityAppService;
-        private readonly IAuthorizationService _authorizationService;        
+        private readonly IGrantApplicationAppService _grantApplicationAppService;      
 
         public FundingAgreementInfoViewComponent(
-            IGrantApplicationAppService grantApplicationAppService,
-            IEconomicRegionService applicationEconomicRegionAppService,
-            IElectoralDistrictService applicationElectoralDistrictAppService,
-            IRegionalDistrictService applicationRegionalDistrictAppService,
-            ICommunityService applicationCommunityAppService,
-            IAuthorizationService authorizationService)
+            IGrantApplicationAppService grantApplicationAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
-            _applicationEconomicRegionAppService = applicationEconomicRegionAppService;
-            _applicationElectoralDistrictAppService = applicationElectoralDistrictAppService;
-            _applicationRegionalDistrictAppService = applicationRegionalDistrictAppService;
-            _applicationCommunityAppService = applicationCommunityAppService;
-            _authorizationService = authorizationService;
+
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
