@@ -332,7 +332,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return [_dynamicLabel];
         }
 
-        private DataGridViewSummary GenerateSummary(DataGridColumn[]? dataColumns, DataGridViewModelRow[] rows)
+        private static DataGridViewSummary GenerateSummary(DataGridColumn[]? dataColumns, DataGridViewModelRow[] rows)
         {
             var summary = new DataGridViewSummary();
 
