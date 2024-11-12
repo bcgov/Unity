@@ -4,6 +4,7 @@
 
 @if (Model.Field != null)
 {
+    <input type="hidden" id="table-options-@Model.Field.Id" value="@Model.TableOptions" />
     <div class="custom-grid-container">
         @if (Model.SummaryOption != Unity.Flex.Worksheets.Definitions.DataGridDefinitionSummaryOption.None)
         {

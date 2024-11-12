@@ -161,10 +161,6 @@ namespace Unity.GrantManager.Intakes
             {
                 if (tokenType != null && dynamicTypes.Contains(tokenType.ToString()))
                 {
-                    AddComponent(childToken);
-                }
-                else
-                {
                     ConsumeToken(childToken);
                 }
             }

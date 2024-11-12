@@ -7,6 +7,13 @@ $(function () {
 
     let actionButtons = [
         {
+            id: 'AddRecord',
+            text: 'Add',
+            title: 'Add Record',
+            className: 'custom-table-btn flex-none btn btn-secondary'
+        },
+        {
+            id: 'ExportData',
             extend: 'csv',
             text: 'Export',
             title: 'Data Export',
@@ -36,10 +43,16 @@ $(function () {
                 info: false,
                 lengthChange: false,
                 dom: 'Bftip',
-                buttons: actionButtons
+                buttons: configureButtons($element[0].id)
             });
             configureTable(table, $element[0].id);
         });
+    }
+
+    function configureButtons(fieldId) {
+        let options = ($(`#table-options-${fieldId}`).val()).split(',');
+        let availableOptions = actionButtons.filter(item => options.includes(item.id));
+        return availableOptions;
     }
 
     function configureTable(table, fieldId) {
@@ -61,7 +74,7 @@ $(function () {
 
     function bindUIEvents() {
         UIElements.editRowBtns.on('click', handleEditRowClick);
-        UIElements.tableSearches.on('keyup', function () {            
+        UIElements.tableSearches.on('keyup', function () {
             let table = $(`#${this.dataset.tableId}`).DataTable();
             table.search(this.value).draw();
         });
@@ -72,8 +85,7 @@ $(function () {
         });
     }
 
-    function handleEditRowClick(e) {
-        window.alert(e);
+    function handleEditRowClick(e) {        
     }
 
     PubSub.subscribe(

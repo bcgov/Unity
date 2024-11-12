@@ -11,6 +11,7 @@ using System.Globalization;
 using System;
 using Unity.Flex.Worksheets.Definitions;
 using Unity.Flex.Worksheets;
+using System.Text;
 
 namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 {
@@ -92,10 +93,22 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 Rows = [.. dataRows],
                 AllowEdit = true,
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
-                Summary = GenerateSummary([.. dataColumns], [.. dataRows])
+                Summary = GenerateSummary([.. dataColumns], [.. dataRows]),
+                TableOptions = GenerateAvailableTableOptions(!dataGridDefinition.Dynamic)
             };
 
             return View(viewModel);
+        }
+
+        private static string GenerateAvailableTableOptions(bool allowAdd)
+        {
+            var stringBuilder = new StringBuilder();
+            stringBuilder.Append("ExportData");
+            if (allowAdd)
+            {
+                stringBuilder.Append(",AddRecord");
+            }
+            return stringBuilder.ToString();
         }
 
         private static List<DataGridColumn> GenerateDataColumns(DataGridValue? dataGridValue, DataGridDefinition dataGridDefinition)
@@ -189,7 +202,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 Rows = [.. previewRows],
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
                 Field = fieldModel,
-                AllowEdit = true
+                AllowEdit = true,
+                TableOptions = GenerateAvailableTableOptions(true)
             });
         }
 
@@ -210,7 +224,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 Rows = [.. previewRows],
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
                 Field = fieldModel,
-                AllowEdit = true
+                AllowEdit = true,
+                TableOptions = GenerateAvailableTableOptions(false)
             });
         }
 
@@ -223,7 +238,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 Summary = GenerateDynamicPlaceholderSummary(),
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
                 Field = fieldModel,
-                AllowEdit = false
+                AllowEdit = false,
+                TableOptions = GenerateAvailableTableOptions(false)
             });
         }
 
