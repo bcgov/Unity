@@ -12,6 +12,7 @@
         {
             public static class Tabs
             {
+                public const string Default = "GrantManager.UI.Tabs";
                 public const string Submission = "GrantManager.UI.Tabs.Submission";
                 public const string Assessment = "GrantManager.UI.Tabs.Assessment";
                 public const string Project = "GrantManager.UI.Tabs.Project";
