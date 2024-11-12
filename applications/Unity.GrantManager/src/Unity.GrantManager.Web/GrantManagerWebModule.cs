@@ -38,6 +38,7 @@ using Unity.GrantManager.Web.Identity;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Services;
+using Unity.GrantManager.Web.Settings;
 using Unity.Identity.Web;
 using Unity.Notifications.Web;
 using Unity.Payments;
@@ -64,6 +65,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict.Tokens;
 using Volo.Abp.SecurityLog;
 using Volo.Abp.SettingManagement.Web;
+using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.Timing;
 using Volo.Abp.Ui.LayoutHooks;
@@ -205,6 +207,11 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddHealthChecks()
            .AddCheck<StartupHealthCheck>("startup", tags: new[] { "startup" });
+
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new ApplicationTabsSettingPageContributor());
+        });
     }
 
     private static void ConfigureUtils(ServiceConfigurationContext context)
