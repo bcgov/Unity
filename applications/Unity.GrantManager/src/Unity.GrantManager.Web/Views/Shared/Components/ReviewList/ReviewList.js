@@ -4,9 +4,8 @@ const nullPlaceholder = '—';
 
 const actionButtonConfigMap = {
     Create: { buttonType: 'createButton', order: 1 },
-    SendToTeamLead: { buttonType: 'unityWorkflow', order: 2 },
+    Confirm: { buttonType: 'unityWorkflow', order: 2 },
     SendBack: { buttonType: 'unityWorkflow', order: 3 },
-    Confirm: { buttonType: 'unityWorkflow', order: 4 },
     _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }
 
@@ -46,7 +45,7 @@ $(function () {
 
     $.extend(DataTable.ext.buttons, {
         unityWorkflow: {
-            className: 'btn btn-light',            
+            className: 'btn btn-light',
             enabled: false,
             text: unityWorkflowButtonText,
             action: unityWorkflowButtonAction
@@ -56,6 +55,11 @@ $(function () {
             init: createButtonInit,
             action: createButtonAction
         }
+    });
+
+    $.fn.dataTable.Api.register('row().selectWithParams()', function (params) {        
+        this.params = params;
+        return this.select();
     });
 
     const actionArray = getActionArray();
@@ -187,7 +191,7 @@ $(function () {
     }
     async function CreateAssessmentButton() {
         let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
-        createButtons.container().prependTo("#DetailsActionBarStart");
+        createButtons.container().prependTo("#AdjudicationTeamLeadActionBar");
         let isPermitted = await CheckAssessmentCreateButton();
         if (!isPermitted) {
             reviewListTable.buttons('Create:name').disable();
@@ -198,10 +202,10 @@ $(function () {
         return !finalApplicationStates.includes(applicationStatus.statusCode);
     }
 
-    reviewListTable.buttons(0, null).container().prependTo("#DetailsActionBarStart");
-    $("#DetailsActionBarStart .dt-buttons").contents().unwrap();
+    reviewListTable.buttons(0, null).container().appendTo("#AdjudicationTeamLeadActionBar");
+    $("#AdjudicationTeamLeadActionBar .dt-buttons").contents().unwrap();
 
-    reviewListTable.on('select', function (e, dt, type, indexes) {
+    reviewListTable.on('select', function (e, dt, type, indexes) {        
         handleRowSelection(e, dt, type, indexes, reviewListTable);
     });
 
@@ -213,7 +217,7 @@ $(function () {
         refreshReviewList(data, reviewListTable);
     });
 
-    PubSub.subscribe('refresh_review_list_without_select', (msg, data) => {
+    PubSub.subscribe('refresh_review_list_without_sidepanel', (msg, data) => {
         refreshReviewList(data, reviewListTable, false);
     });
 
@@ -239,11 +243,14 @@ $(function () {
 });
 
 function handleRowSelection(e, dt, type, indexes, reviewListTable) {
+    let refreshSidePanel = dt?.params?.refreshSidePanel ?? true;
     if (type === 'row') {
         let selectedData = reviewListTable.row(indexes).data();
         document.getElementById("AssessmentId").value = selectedData.id;
-        PubSub.publish('select_application_review', selectedData);
-        PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
+        if (refreshSidePanel) {            
+            PubSub.publish('select_application_review', selectedData);
+            PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
+        }
         e.currentTarget.classList.toggle('selected');
         refreshActionButtons(dt, selectedData.id);
     }
@@ -258,15 +265,14 @@ function handleRowDeselection(e, dt, type, indexes, reviewListTable) {
     }
 }
 
-function refreshReviewList(data, reviewListTable, isSelect = true) {
+function refreshReviewList(data, reviewListTable, refreshSidePanel = true) {
     reviewListTable.ajax.reload(function (json) {
         if (data) {
             let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
                 return reviewListTable.cell(rowIdx, 0).data() === data;
             });
-            if(isSelect) {
-                reviewListTable.row(indexes).select();
-            }
+
+            reviewListTable.row(indexes).selectWithParams({ refreshSidePanel: refreshSidePanel });
         }
     });
 }
@@ -328,16 +334,14 @@ function renderUnityWorkflowButton(actionValue) {
         extend: buttonConfig.buttonType,
         name: actionValue,
         sortOrder: buttonConfig.order ?? 100,
-        buttonIcon: buttonConfig.icon,
         attr: { id: `${actionValue}Button` }
     };
 }
 
 /* Cutom Unity Workflow Buttons */
 function unityWorkflowButtonText(dt, button, config) {
-    let buttonIcon = `<i class="fl ${config.buttonIcon}"></i>`;
     let buttonText = l(`Enum:AssessmentAction.${config.name}`);
-    return buttonIcon + '<span>' + buttonText + '</span>';
+    return '<span>' + buttonText + '</span>';
 }
 
 function unityWorkflowButtonAction(e, dt, button, config) {

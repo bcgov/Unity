@@ -16,7 +16,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxWidget
         {
             if (!ModelState.IsValid)
             {
-                Logger.LogWarning("Invalid model state for Refresh: {ModelName}", modelName.RemoveNewLines());
+                Logger.LogWarning("Invalid model state for Refresh: {ModelName}", modelName.SanitizeField());
                 return ViewComponent(typeof(CheckboxWidget));
             }
 

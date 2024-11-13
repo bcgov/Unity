@@ -68,12 +68,15 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public bool? HasRenderedHTML { get; set; } = false;
 
         [BindProperty(SupportsGet = true)]
+        public bool RenderFormIoToHtml { get; set; } = false;
+
+        [BindProperty(SupportsGet = true)]
         public Guid? CurrentUserId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string? CurrentUserName { get; set; }
         public string Extensions { get; set; }
-        public string MaxFileSize { get; set; }                
+        public string MaxFileSize { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public List<BoundWorksheet> CustomTabs { get; set; } = [];
@@ -100,11 +103,11 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
 
             if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
-            {                
+            {
                 // Need to look at finding another way to extract / store this info on intake
                 JObject submission = JObject.Parse(applicationFormSubmission.Submission);
                 JToken? tokenFormVersionId = submission.SelectToken("submission.formVersionId");
-                var sformVersionId = Guid.Parse(tokenFormVersionId?.Value<string>() ?? Guid.Empty.ToString());                
+                var sformVersionId = Guid.Parse(tokenFormVersionId?.Value<string>() ?? Guid.Empty.ToString());
 
                 var formVersion = await _applicationFormVersionAppService.GetByChefsFormVersionId(sformVersionId);
                 ApplicationFormVersionId = formVersion?.Id ?? Guid.Empty;
@@ -123,12 +126,12 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
                 ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
                 HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
-                if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML))
-                {
+                ApplicationForm? applicationForm = await _grantApplicationAppService.GetApplicationFormAsync(ApplicationFormId);
+                ArgumentNullException.ThrowIfNull(applicationForm);
+                RenderFormIoToHtml = applicationForm.RenderFormIoToHtml;
+                if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML) && RenderFormIoToHtml) {
                     ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
-                }
-                else
-                {
+                } else {
                     ApplicationFormSubmissionData = applicationFormSubmission.Submission;
                 }
             }
