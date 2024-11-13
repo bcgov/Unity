@@ -12,9 +12,6 @@
     });
 
     function buildFormData(fundingAgreementInfoObj, input) {
-
-        let inputElement = $('[name="' + input.name + '"]');
-
         fundingAgreementInfoObj[input.name.split(".")[1]] = input.value;
 
         if (fundingAgreementInfoObj[input.name.split(".")[1]] == '') {
