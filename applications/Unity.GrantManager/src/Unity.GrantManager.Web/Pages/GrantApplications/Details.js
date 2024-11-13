@@ -7,6 +7,7 @@ $(function () {
     function initializeDetailsPage() {
         initCommentsWidget();
         updateLinksCounters();
+        updateTabDisplay();
         renderSubmission();
     }
 
@@ -810,3 +811,17 @@ function clearCurrencyError(input) {
     input.attr('aria-invalid', 'false');
 }
 
+function updateTabDisplay() {
+    let tabMapping = {
+        "GrantManager.UI.Tabs.Submission": "nav-summery",
+        "GrantManager.UI.Tabs.Assessment": "nav-review-and-assessment-tab",
+        "GrantManager.UI.Tabs.Project": "nav-project-info-tab",
+        "GrantManager.UI.Tabs.Applicant": "nav-organization-info-tab",
+        "GrantManager.UI.Tabs.FundingAgreement": "nav-funding-agreement-info-tab"
+    };
+
+    Object.keys(tabMapping).forEach(key => {
+        const elementId = tabMapping[key];
+        $(`#${elementId}`).closest('.nav-item').toggleClass('d-none', abp.setting.values[key] === "False");
+    });
+}

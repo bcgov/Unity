@@ -1,6 +1,7 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @* #pragma warning disable S1128 *@
 @using Unity.GrantManager.Localization
+@using Unity.GrantManager.Settings
 @using Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget;
 @using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
@@ -17,6 +18,7 @@
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
+@using Volo.Abp.Settings
 @* #pragma warning restore S1128 *@
 
 
@@ -25,6 +27,7 @@
 @inject IPageLayout PageLayout
 @inject IFeatureChecker FeatureChecker
 @inject ICurrentTenant CurrentTenant
+@inject ISettingProvider SettingProvider
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
@@ -147,11 +150,14 @@
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Funding Agreement Info Section ---------*@
+                @if (await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.FundingAgreement))
+                {
                 <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
                     <div class="w-100 px-2" id="FundingAgreementInfoWidget">
                         @await Component.InvokeAsync("FundingAgreementInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
                     </div>
                 </abp-tab>
+                }
                 @*-------- Funding Agreement Section END ---------*@
 
                 @*-------- Approval Section ---------*@
