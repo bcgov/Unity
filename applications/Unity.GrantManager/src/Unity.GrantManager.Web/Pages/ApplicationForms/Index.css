@@ -20,3 +20,8 @@
 #FormsManageDropdown a {
     cursor: pointer;
 }
+
+input:read-only {
+    border: inherit;
+    background-color: var(--bc--surface-color-brand-gray-30);
+}
