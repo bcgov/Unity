@@ -545,10 +545,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        var configuration = context.GetConfiguration();
-        
-        StartupUtils.InstanceId = Guid.NewGuid();
-        StartupUtils.StartupTime = DateTime.UtcNow;
+        var configuration = context.GetConfiguration();       
 
         if (!env.IsProduction())
         {
