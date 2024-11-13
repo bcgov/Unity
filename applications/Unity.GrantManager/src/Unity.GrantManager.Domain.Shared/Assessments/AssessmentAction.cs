@@ -7,7 +7,6 @@ public enum AssessmentAction
 {
     Create,
     SendTo,
-    SendToTeamLead,
     SendBack,
     Confirm
 }

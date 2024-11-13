@@ -1,5 +1,6 @@
 $(function () {
     let selectedReviewDetails = null;
+    let renderFormIoToHtml = document.getElementById('RenderFormIoToHtml').value;
     let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
@@ -12,7 +13,7 @@ $(function () {
     initializeDetailsPage();
 
     function renderSubmission() {
-        if (hasRenderedHtml == "False") {
+        if (renderFormIoToHtml == "False" || hasRenderedHtml == "False") {
             getSubmission();
         } else {
             $('.spinner-grow').hide();
@@ -37,7 +38,7 @@ $(function () {
             let submissionData = JSON.parse(submissionString);
             Formio.icons = 'fontawesome';
 
-            Formio.createForm(
+            await Formio.createForm(
                 document.getElementById('formio'),
                 submissionData.version.schema,
                 {
@@ -46,29 +47,34 @@ $(function () {
                     flatten: true,
                 }
             ).then(function (form) {
-                // Set Example Submission Object
-                form.submission = submissionData.submission.submission;
-                form.resetValue();
-                form.refresh();
-                form.on('render', function () {
-                    addEventListeners();
-                });
+                handleForm(form, submissionData.submission.submission);
+            });
 
-                waitFor(_ => isFormChanging(form))
-                    .then(_ => 
-                        storeRenderedHtml()
-                    );
-                });
         } catch (error) {
             console.error(error);
         }
     }
+
+    function handleForm(form, submission) {
+        form.submission = submission;
+        form.resetValue();
+        form.refresh();
+        form.on('render', addEventListeners);
+
+        waitFor(() => isFormChanging(form)).then(() => {
+            setTimeout(storeRenderedHtml, 2000);
+        });
+    }
+
 
     function isFormChanging(form) {
         return form.changing === false;
     }
 
     async function storeRenderedHtml() {
+        if (renderFormIoToHtml == "False") {
+            return;
+        }
         let innerHTML = document.getElementById('formio').innerHTML;
         let submissionId = document.getElementById('ApplicationFormSubmissionId').value;
         $.ajax(
@@ -91,10 +97,11 @@ $(function () {
     function addEventListeners() {
         const cardHeaders = getCardHeaders();
         const cardBodies = getCardBodies();
-        
+
         // Collapse all card bodies initially
+        //This also affects textarea in datagrid
         hideAllCardBodies(cardBodies);
-        
+
         // Add event listeners to headers
         cardHeaders.forEach(header => {
             header.addEventListener('click', () => onCardHeaderClick(header, cardHeaders));
@@ -203,7 +210,7 @@ $(function () {
                     abp.notify.success(
                         'The recommendation has been updated.'
                     );
-                    PubSub.publish('refresh_review_list_without_select', id);
+                    PubSub.publish('refresh_review_list_without_sidepanel', id);
                 })
                 .always(function () {
                     // Re-enable the select and reset button
@@ -281,7 +288,7 @@ $(function () {
 
     $('#printPdf').click(function () {
         let submissionId = getSubmissionId();
-    
+
         // Fetch submission data
         fetchSubmissionData(submissionId)
             .done(function (result) {
@@ -291,19 +298,19 @@ $(function () {
                 console.error('Error fetching submission data:', error);
             });
     });
-    
+
     // Get submission ID from the input field
     function getSubmissionId() {
         return document.getElementById('ChefsSubmissionId').value;
     }
-    
+
     // Fetch the submission data
     function fetchSubmissionData(submissionId) {
         return unity.grantManager.intakes.submission.getSubmission(submissionId);
     }
-    
+
     // Handle the submission result
-    function openDataInNewTab(data, submissionId) {        
+    function openDataInNewTab(data, submissionId) {
         let newTab = window.open('', '_blank');
         let newDiv = $('<div>');
 
@@ -315,7 +322,7 @@ $(function () {
 
         // Store the outer HTML of the new div in divToStore
         let divToStore = newDiv.prop('outerHTML');
-        
+
         newTab.document.write('<html><head><title>Print</title>');
         newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
         newTab.document.write('<script src="/libs/formiojs/formio.form.js"></script>');
@@ -385,7 +392,7 @@ $(function () {
     const widgetCallback = function (mutationsList, observer) {
         for (const mutation of mutationsList) {
             if (mutation.type === 'childList') {
-                initCustomFieldCurrencies(); 
+                initCustomFieldCurrencies();
                 break;
             }
         }
@@ -396,10 +403,10 @@ $(function () {
 
     PubSub.subscribe(
         'application_status_changed',
-        (msg, data) => {            
+        (msg, data) => {
             applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
-            assessmentResultWidgetManager.refresh();            
+            assessmentResultWidgetManager.refresh();
         }
     );
 
@@ -409,7 +416,7 @@ $(function () {
             decimal: '.'
         }).maskMoney('mask');
     }
-    
+
     PubSub.subscribe('application_assessment_results_saved',
         (msg, data) => {
             assessmentResultWidgetManager.refresh();
@@ -426,7 +433,7 @@ $(function () {
             }
         }
     });
-    
+
     const summaryWidgetTargetNode = document.querySelector('#' + summaryWidgetDiv);
     const summaryWidgetObserver = new MutationObserver(widgetCallback);
     summaryWidgetObserver.observe(summaryWidgetTargetNode, widgetConfig);
@@ -471,7 +478,7 @@ $(function () {
             applicationRecordsWidgetManager.refresh();
             updateLinksCounters();
         }
-    );
+    );    
 
     // custom fields
     $('body').on('click', '.custom-tab-save', function (event) {
@@ -482,7 +489,7 @@ $(function () {
         let applicationId = decodeURIComponent($("#DetailsViewApplicationId").val());
         let formData = $(`#${formDataName}`).serializeArray();
         let customFormObj = {};
-        let formVersionId = $("#ApplicationFormVersionId").val();        
+        let formVersionId = $("#ApplicationFormVersionId").val();
 
         $.each(formData, function (_, input) {
             customFormObj[input.name] = input.value;
@@ -497,11 +504,11 @@ $(function () {
 
     PubSub.subscribe(
         'fields_tab',
-        (_, data) => {          
+        (_, data) => {
             let formDataName = data.worksheet + '_form';
-            let formValid = $(`form#${formDataName}`).valid();               
+            let formValid = $(`form#${formDataName}`).valid();
             let saveBtn = $(`#save_${data.worksheet}_btn`);
-            if (formValid && !formHasInvalidCurrencyCustomFields(`${formDataName}`)) {                
+            if (formValid && !formHasInvalidCurrencyCustomFields(`${formDataName}`)) {
                 saveBtn.prop('disabled', false);
             } else {
                 saveBtn.prop('disabled', true);
@@ -746,7 +753,6 @@ function initCommentsWidget() {
             tagsWidgetManager.refresh();
         }
     );
-
 }
 
 function setDetailsContext(context) {

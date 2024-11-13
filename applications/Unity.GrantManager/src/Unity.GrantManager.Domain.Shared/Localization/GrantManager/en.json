@@ -106,7 +106,6 @@
 
     "Enum:AssessmentAction.Create": "Create Assessment",
     "Enum:AssessmentAction.SendTo": "Send To...",
-    "Enum:AssessmentAction.SendToTeamLead": "Send for Team Lead Review",
     "Enum:AssessmentAction.Confirm": "Complete Assessment",
     "Enum:AssessmentAction.SendBack": "Send Back",
 
@@ -148,14 +147,14 @@
     "ApplicationForms:DownloadAPIConfiguration": "Download API Configuration",
     "ApplicationForms:UpdateAPIToken": "Update API Token",
     "ApplicationForms:Payable": "Payable",
+    "ApplicationForms:RenderFormIoToHtml": "Render FormIO to HTML",
     "ApplicationForms:ConfigureWorksheets": "Configure Worksheets",
 
     "Intakes": "Intakes",
 
     "Permission:GrantApplicationPermissions.Assessments.Default": "Grant Application Assessments",
     "Permission:GrantApplicationPermissions.Assessments.Create": "Create Assessment",
-    "Permission:GrantApplicationPermissions.Assessments.SendToTeamLead": "Send Assessment to Team Lead",
-    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment to Reviewer",
+    "Permission:GrantApplicationPermissions.Assessments.SendBack": "Send Back Assessment",
     "Permission:GrantApplicationPermissions.Assessments.Confirm": "Complete Assessment",
 
     "Permission:GrantApplicationPermissions.AssessmentResults.Default": "Assessment Results",
@@ -269,9 +268,6 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-    "ProjectInfoView:ProjectInfoContract": "Contract",
-    "ProjectInfoView:ProjectInfo.ContractNumber": "Contract #",
-    "ProjectInfoView:ProjectInfo.ContractExecutionDate": "Execution Date",
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
@@ -303,6 +299,11 @@
     "ApplicantInfoView:ApplicantInfo.City": "City",
     "ApplicantInfoView:ApplicantInfo.Province": "Province",
     "ApplicantInfoView:ApplicantInfo.PostalCode": "Postal Code",
+
+    "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement",
+    "FundingAgreementInfoView:FundingAgreementInfoContract": "Contract",
+    "FundingAgreementInfoView:FundingAgreementInfo.ContractNumber": "Contract #",
+    "FundingAgreementInfoView:FundingAgreementInfo.ContractExecutionDate": "Execution Date",
 
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",

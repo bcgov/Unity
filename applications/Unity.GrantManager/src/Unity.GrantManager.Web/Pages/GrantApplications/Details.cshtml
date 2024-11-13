@@ -56,6 +56,7 @@
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+<input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 @functions
 {
@@ -143,6 +144,14 @@
                     </div>
                 </abp-tab>
                 @*-------- Applicant Info Section END ---------*@
+
+                @*-------- Funding Agreement Info Section ---------*@
+                <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
+                    <div class="w-100 px-2" id="FundingAgreementInfoWidget">
+                        @await Component.InvokeAsync("FundingAgreementInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                    </div>
+                </abp-tab>
+                @*-------- Funding Agreement Section END ---------*@
 
                 @*-------- Approval Section ---------*@
                 @* <abp-tab name="nav-approval" title="Approval">

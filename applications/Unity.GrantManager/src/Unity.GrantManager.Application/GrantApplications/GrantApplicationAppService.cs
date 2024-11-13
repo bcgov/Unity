@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Exceptions;
@@ -97,8 +96,6 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
             appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(grouping.First().Applicant);
             appDto.Category = grouping.First().ApplicationForm.Category ?? string.Empty;
-            appDto.AssessmentCount = grouping.First().Assessments?.Count ?? 0;
-            appDto.AssessmentReviewCount = grouping.First().Assessments?.Count(a => a.Status == AssessmentState.IN_REVIEW) ?? 0;
             appDto.ApplicationTag = grouping.First().ApplicationTags?.FirstOrDefault()?.Text ?? string.Empty;
             appDto.Owner = BuildApplicationOwner(grouping.First().Owner);
             appDto.OrganizationName = grouping.First().Applicant?.OrgName ?? string.Empty;
@@ -208,6 +205,11 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         }
 
         return appDto;
+    }
+
+    public async Task<ApplicationForm?> GetApplicationFormAsync(Guid applicationFormId)
+    {
+        return await (await _applicationFormRepository.GetQueryableAsync()).FirstOrDefaultAsync(s => s.Id == applicationFormId);
     }
 
     public async Task<GetSummaryDto> GetSummaryAsync(Guid applicationId)
@@ -341,9 +343,28 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.EconomicRegion = input.EconomicRegion;
             application.ElectoralDistrict = input.ElectoralDistrict;
             application.RegionalDistrict = input.RegionalDistrict;
+            application.Place = input.Place;
+
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
+
+            await _applicationRepository.UpdateAsync(application);
+
+            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+        }
+        else
+        {
+            throw new EntityNotFoundException();
+        }
+    }
+
+    public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+
+        if (application != null)
+        {
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
-            application.Place = input.Place;
 
             await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
 

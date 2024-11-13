@@ -27,6 +27,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupDefinition()),
                     CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),
                     CustomFieldType.TextArea => JsonSerializer.Serialize(new TextAreaDefinition()),
+                    CustomFieldType.DataGrid => JsonSerializer.Serialize(new DataGridDefinition()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -49,6 +50,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize((CheckboxGroupDefinition)definition),
                     CustomFieldType.SelectList => JsonSerializer.Serialize((SelectListDefinition)definition),
                     CustomFieldType.TextArea => JsonSerializer.Serialize((TextAreaDefinition)definition),
+                    CustomFieldType.DataGrid => JsonSerializer.Serialize((DataGridDefinition)definition),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -71,6 +73,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.TextArea => JsonSerializer.Serialize(element.ToString()),
+                    CustomFieldType.DataGrid => JsonSerializer.Serialize(element.ToString()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -189,6 +192,15 @@ namespace Unity.Flex.Worksheets.Definitions
         public static bool ResolveIsRequired(CustomFieldDefinition field)
         {
             return field.Required;
+        }
+
+        public static bool ResolveIsDynamic(CustomFieldDefinition field)
+        {
+            return field switch
+            {
+                DataGridDefinition dataGrid => dataGrid.Dynamic,
+                _ => false
+            };
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using Volo.Abp.AspNetCore.Mvc;
 
@@ -10,8 +9,6 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
     [Route("GrantApplications/Widgets/QuestionNumber")]
     public class CurrencyWidgetController : AbpController
     {
-        protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
-
         [HttpGet]
         [Route("Refresh")]
         public IActionResult Refresh(Guid questionId, bool isDisabled, double? answer, int? min, int? max)
@@ -19,7 +16,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
             // Check if the model state is valid
             if (!ModelState.IsValid)
             {       
-                logger.LogWarning("Invalid model state for CurrencyWidgetController:Refresh");
+                Logger.LogWarning("Invalid model state for CurrencyWidgetController:Refresh");
                 return ViewComponent(typeof(QuestionNumberWidget));
             }
 

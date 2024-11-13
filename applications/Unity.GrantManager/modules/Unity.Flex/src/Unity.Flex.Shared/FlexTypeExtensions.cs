@@ -21,7 +21,8 @@ namespace Unity.Flex
                 CustomFieldType.Radio => "radio",
                 CustomFieldType.Checkbox => "checkbox",
                 CustomFieldType.CheckboxGroup => "checkbox",
-                CustomFieldType.Email => "email",                
+                CustomFieldType.Email => "email",
+                CustomFieldType.DataGrid => "datagrid",
                 _ => "text",
             };
         }
@@ -49,6 +50,7 @@ namespace Unity.Flex
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListDefinition>(definition),
                 CustomFieldType.BCAddress => JsonSerializer.Deserialize<BCAddressDefinition>(definition),
                 CustomFieldType.TextArea => JsonSerializer.Deserialize<TextAreaDefinition>(definition),
+                CustomFieldType.DataGrid => JsonSerializer.Deserialize<DataGridDefinition>(definition),
                 _ => null,
             };
         }
@@ -99,7 +101,7 @@ namespace Unity.Flex
 
         public static string? GetMinValueOrNull(this CustomFieldDefinition field)
         {
-            return DefinitionResolver.ResolveMin(field);                                    
+            return DefinitionResolver.ResolveMin(field);
         }
 
         public static string? GetMaxValueOrNull(this CustomFieldDefinition field)
@@ -130,6 +132,11 @@ namespace Unity.Flex
         public static bool GetIsRequired(this CustomFieldDefinition field)
         {
             return DefinitionResolver.ResolveIsRequired(field);
+        }
+
+        public static bool GetIsDynamic(this CustomFieldDefinition field)
+        {
+            return DefinitionResolver.ResolveIsDynamic(field);
         }
     }
 }

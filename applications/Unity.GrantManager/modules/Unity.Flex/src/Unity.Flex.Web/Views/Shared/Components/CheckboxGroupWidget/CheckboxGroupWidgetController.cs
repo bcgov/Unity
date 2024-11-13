@@ -21,7 +21,6 @@ namespace Unity.Flex.Web.Views.Shared.Components.CheckboxGroupWidget
             else
             {
                 return ViewComponent(typeof(CheckboxGroupWidget));
-
             }            
         }
     }

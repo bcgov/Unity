@@ -57,6 +57,11 @@
     /* Add more common styles as needed */
 }
 
+/*Targets specific textarea to remove hidden by default*/
+.formio-component-textarea div .card-body { 
+    display:inherit !important;
+}
+
 .nav-tabs .nav-item .nav-link.active {
     color: #003366;
     border-bottom: 3px solid #003366;

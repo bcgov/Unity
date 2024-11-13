@@ -150,9 +150,9 @@ namespace Unity.Flex.Domain.Services
             var newWorksheetInstances = new List<(Worksheet, WorksheetInstance)>();
 
             // naming convention custom_worksheetname_fieldname
-            foreach (var field in eventData.CustomFields)
+            foreach (var (fieldName, chefsPropertyName, value) in eventData.CustomFields)
             {
-                var split = field.Key.Split('_', StringSplitOptions.RemoveEmptyEntries);
+                var split = fieldName.Split('_', StringSplitOptions.RemoveEmptyEntries);
 
                 if (!worksheetNames.Contains(split[1]))
                 {
@@ -182,9 +182,9 @@ namespace Unity.Flex.Domain.Services
 
                         foreach (var field in allFields)
                         {
-                            var match = eventData.CustomFields.Find(s => s.Key == field.Name);
+                            var match = eventData.CustomFields.Find(s => s.fieldName == field.Name);
                             newInstance.AddValue(field.Id,
-                                ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
+                                ValueConverter.Convert(match.value?.ToString() ?? string.Empty, field.Type, match.chefsPropertyName, eventData.VersionData));
                         }
 
                         var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);
