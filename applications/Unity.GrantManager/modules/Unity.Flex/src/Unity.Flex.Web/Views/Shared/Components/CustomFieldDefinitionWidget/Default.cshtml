@@ -2,6 +2,7 @@
 @using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.CurrencyDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget;
+@using Unity.Flex.Web.Views.Shared.Components.DataGridDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.NumericDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.RadioDefinitionWidget
 @using Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget
@@ -45,6 +46,11 @@
     case Unity.Flex.Worksheets.CustomFieldType.TextArea:
         <abp-row class"m-0 p-0">
             @await Component.InvokeAsync(typeof(TextAreaDefinitionWidget), new { Model.Definition })
+        </abp-row>
+        break;
+    case Unity.Flex.Worksheets.CustomFieldType.DataGrid:
+        <abp-row class"m-0 p-0">
+            @await Component.InvokeAsync(typeof(DataGridDefinitionWidget), new { Model.Definition })
         </abp-row>
         break;
     default:

@@ -8,7 +8,7 @@ namespace Unity.Flex
 {
     public static class ValueConverter
     {
-        public static string Convert(string currentValue, CustomFieldType type)
+        public static string Convert(string currentValue, CustomFieldType type, string? chefsFieldName = null, string? versionData = null)
         {
             return type switch
             {
@@ -26,6 +26,7 @@ namespace Unity.Flex
                 CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListValue(currentValue)),
                 CustomFieldType.BCAddress => JsonSerializer.Serialize(new BCAddressValue(currentValue)),
                 CustomFieldType.TextArea => JsonSerializer.Serialize(new TextAreaValue(currentValue)),
+                CustomFieldType.DataGrid => JsonSerializer.Serialize(DynamicDataBuilder.BuildDataGrid(currentValue, chefsFieldName, versionData)),
                 _ => throw new NotImplementedException()
             };
         }

@@ -16,6 +16,7 @@
         CheckboxGroup = 11,
         SelectList = 12,
         BCAddress = 13,
-        TextArea = 14
+        TextArea = 14,
+        DataGrid = 15
     }
 }

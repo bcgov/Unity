@@ -30,6 +30,7 @@
     "Worksheet:Configuration:DeleteWorksheetButtonText": "Delete Worksheet",
     "Worksheet:Configuration:AddCheckboxOptionText": "Add Option",
     "Worksheet:Configuration:ExportWorksheetButtonText": "Export Worksheet",
-    "Worksheet:Configuration:AddSelectListOptionText": "Add Option"
+    "Worksheet:Configuration:AddSelectListOptionText": "Add Option",
+    "Worksheet:Configuration:AddColumnOptionText": "Add Column"
   }
 }
