@@ -5,18 +5,12 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Web.Components.ApplicationTabsSettingGroup;
 
-public class ApplicationTabsSettingGroupViewComponent : AbpViewComponent
+public class ApplicationTabsSettingGroupViewComponent(IApplicationUiSettingsAppService settingsAppService) : AbpViewComponent
 {
-    private readonly IApplicationUiSettingsAppService _settingsAppService;
-    public ApplicationTabsSettingGroupViewComponent(IApplicationUiSettingsAppService settingsAppService)
-    {
-        _settingsAppService = settingsAppService;
-    }
-
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
-        var model = await _settingsAppService.GetAsync();
-        return View("~/Components/ApplicationTabsSettingGroup/Default.cshtml", model);
+        var model = await settingsAppService.GetAsync();
+        var viewModel = ObjectMapper.Map<ApplicationUiSettingsDto, ApplicationUiSettingsViewModel>(model!);
+        return View("~/Components/ApplicationTabsSettingGroup/Default.cshtml", viewModel);
     }
 }
-

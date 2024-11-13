@@ -1,8 +1,39 @@
-﻿@using Volo.Abp.SettingManagement
+﻿@model Unity.GrantManager.Web.Components.ApplicationTabsSettingGroup.ApplicationUiSettingsViewModel
 
+<abp-script src="/Components/ApplicationTabsSettingGroup/Default.js" />
 
-<div class="unity-page-titlebar">
-    <h4>Forms</h4>
-<div>
-    <p>My test setting group page</p>
+<div class="container-fluid px-0">
+    <div class="unity-page-titlebar">
+        <h4 class="m-0">Application Tabs Configuration</h4>
+    </div>
+    <div class="p-3">
+        <p>
+            <strong>Note:</strong> Customize your tab view by enabling or disabling the display of tabs in the application page.
+        </p>
+        <form id="ApplicationTabsSettingsForm">
+            <abp-row>
+                <abp-column size-md="_12" class="mx-2 fw-bold">
+                    <abp-input asp-for="@Model.Submission" role="switch" />
+                    <abp-input asp-for="@Model.Assessment" role="switch" />
+                    <abp-input asp-for="@Model.Project" role="switch" />
+                    <abp-input asp-for="@Model.Applicant" role="switch" />
+                    <abp-input asp-for="@Model.Payments" role="switch" />
+                    <abp-input asp-for="@Model.FundingAgreement" role="switch" />
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <hr class="my-4" />
+                <div class="d-flex p-2">
+                    <abp-button id="ApplicationTabsSaveButton"
+                                text="Save Changes"
+                                button-type="Primary" class="me-2"
+                                type="submit" />
+                    <abp-button id="ApplicationTabsDiscardButton"
+                                text="Discard Changes"
+                                button-type="Light" class="me-2"
+                                disabled="true"/>
+                </div>
+            </abp-row>
+        </form>
+    </div>
 </div>

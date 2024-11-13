@@ -213,6 +213,7 @@
     "Setting:GrantManager.Locality.SectorFilter.DisplayName": "SectorFilter",
     "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
 
+    "Setting:GrantManager.UI.PageTitle": "Application Tabs",
     "Setting:GrantManager.UI.Tabs.Submission.Description": "Submission",
     "Setting:GrantManager.UI.Tabs.Submission.DisplayName": "Toggle visibility of the Submission tab for the tenant",
     "Setting:GrantManager.UI.Tabs.Assessment.Description": "Review & Assessment",
