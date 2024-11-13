@@ -506,7 +506,7 @@ public class GrantManagerWebModule : AbpModule
             ((MemoryCacheStorage)options.Storage).CacheDuration
                 = TimeSpan.FromMinutes(configuration.GetValue("MiniProfiler:CacheDuration", 30));
 
-            options.PopupRenderPosition = StackExchange.Profiling.RenderPosition.Right;
+            options.PopupRenderPosition = RenderPosition.Right;
             options.PopupStartHidden = true;
             options.PopupToggleKeyboardShortcut = configuration.GetValue("MiniProfiler:PopupToggleKeyboardShortcut", "Alt+P") ?? "Alt+P";
             options.PopupShowTimeWithChildren = true;
@@ -545,10 +545,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        var configuration = context.GetConfiguration();
-        
-        StartupUtils.InstanceId = Guid.NewGuid();
-        StartupUtils.StartupTime = DateTime.UtcNow;
+        var configuration = context.GetConfiguration();       
 
         if (!env.IsProduction())
         {

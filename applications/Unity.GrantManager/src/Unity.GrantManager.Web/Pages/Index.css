@@ -194,10 +194,3 @@
 .mb-9 {
     margin-bottom: 9rem;
 }
-
-.home-instance-details {
-    position: fixed;
-    top: 0;
-    font-size: x-small;
-    opacity: 0.5;
-}
