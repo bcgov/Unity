@@ -7,10 +7,8 @@ using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Web.Views.Shared.Components.FundingAgreementInfo;
-using Unity.GrantManager.Locality;
 using Volo.Abp.DependencyInjection;
 using Xunit;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Unity.GrantManager.Components
 {
@@ -24,7 +22,7 @@ namespace Unity.GrantManager.Components
         }
 
         [Fact]
-        public async Task ContactInfoReturnsStatus()
+        public async Task ContractInfoReturnsCorrectly()
         {
             DateTime executionDateVal = DateTime.UtcNow;
             var applicationDto = new GrantApplicationDto()
@@ -35,13 +33,7 @@ namespace Unity.GrantManager.Components
 
             // Arrange
             var appService = Substitute.For<IGrantApplicationAppService>();
-            appService.GetAsync(Arg.Any<Guid>()).Returns(applicationDto);
-            var economicRegionService = Substitute.For<IEconomicRegionService>();
-            var electoralDistrictService = Substitute.For<IElectoralDistrictService>();
-            var regionalDistrictService = Substitute.For<IRegionalDistrictService>();
-            var communitiesService = Substitute.For<ICommunityService>();
-            var authorizationService = GetRequiredService<IAuthorizationService>();
-            
+            appService.GetAsync(Arg.Any<Guid>()).Returns(applicationDto);            
 
             var viewContext = new ViewContext
             {
@@ -52,7 +44,7 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new FundingAgreementInfoViewComponent(appService, economicRegionService, electoralDistrictService, regionalDistrictService, communitiesService, authorizationService)
+            var viewComponent = new FundingAgreementInfoViewComponent(appService)
             {
                 ViewComponentContext = viewComponentContext,
                 LazyServiceProvider = lazyServiceProvider

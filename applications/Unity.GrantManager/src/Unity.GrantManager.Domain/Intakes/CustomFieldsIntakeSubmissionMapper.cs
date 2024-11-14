@@ -27,10 +27,11 @@ namespace Unity.GrantManager.Intakes
             {
                 if (formVersionSubmissionHeaderMapping == null) return;
 
-                List<KeyValuePair<string, object?>> customIntakeValues = [];
+                List<(string fieldName, string chefsPropertyName, object? value)> customIntakeValues = [];
 
                 var submission = formSubmission.submission;
                 var data = submission.submission.data;
+                var version = formSubmission.version;
 
                 var configMap = JsonConvert.DeserializeObject<dynamic>(formVersionSubmissionHeaderMapping)!;
 
@@ -47,7 +48,7 @@ namespace Unity.GrantManager.Intakes
                                 var token = data.SelectToken(property.Value.ToString());
                                 var fieldType = ResolveFieldType(dataKey);
                                 var value = ((JToken)token).ApplyTransformer(fieldType);                                
-                                customIntakeValues.Add(new(field, value.ApplySerializer()));
+                                customIntakeValues.Add(new(field, property.Value.ToString(), value.ApplySerializer()));
                             }
                         }
                     }
@@ -63,7 +64,8 @@ namespace Unity.GrantManager.Intakes
                     SheetCorrelationProvider = CorrelationConsts.FormVersion,
                     InstanceCorrelationId = applicationId,
                     InstanceCorrelationProvider = CorrelationConsts.Application,
-                    CustomFields = customIntakeValues
+                    CustomFields = customIntakeValues,
+                    VersionData = version?.ToString()                    
                 });
             }
         }

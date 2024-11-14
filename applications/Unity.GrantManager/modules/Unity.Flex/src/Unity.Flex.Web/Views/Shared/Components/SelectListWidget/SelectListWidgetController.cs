@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Volo.Abp.AspNetCore.Mvc;
 
@@ -10,8 +9,6 @@ namespace Unity.Flex.Web.Views.Shared.Components.SelectListWidget
     [Route("Flex/Widgets/SelectList")]
     public class SelectListWidgetController : AbpController
     {
-        protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
-
         [HttpGet]
         [Route("Refresh")]
         public IActionResult Refresh(WorksheetFieldViewModel? fieldModel, string modelName)
@@ -19,7 +16,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.SelectListWidget
             // Check if the model state is valid
             if (!ModelState.IsValid)
             {       
-                logger.LogWarning("Invalid model state for WorksheetFieldViewModel:Refresh");
+                Logger.LogWarning("Invalid model state for WorksheetFieldViewModel:Refresh");
                 return ViewComponent(typeof(SelectListWidget));
             }
 
