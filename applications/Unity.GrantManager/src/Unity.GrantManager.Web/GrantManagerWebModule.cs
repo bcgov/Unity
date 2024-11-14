@@ -210,7 +210,7 @@ public class GrantManagerWebModule : AbpModule
 
         Configure<SettingManagementPageOptions>(options =>
         {
-            options.Contributors.Add(new ApplicationTabsSettingPageContributor());
+            options.Contributors.Add(new ApplicationUiSettingPageContributor());
         });
     }
 

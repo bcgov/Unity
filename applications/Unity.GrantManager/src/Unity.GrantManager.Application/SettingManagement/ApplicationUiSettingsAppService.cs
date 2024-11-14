@@ -1,19 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
-using Unity.GrantManager.Assessments;
+﻿using System.Threading.Tasks;
 using Unity.GrantManager.Settings;
-using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.SettingManagement;
 
-//[Authorize(SettingManagementPermissions.UserInterface)]
+//[Authorize(UnitySettingManagementPermissions.UserInterface)]
 public class ApplicationUiSettingsAppService(
     ISettingManager settingManager) : GrantManagerAppService, IApplicationUiSettingsAppService
 {

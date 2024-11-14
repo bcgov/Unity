@@ -8,11 +8,11 @@
             discardButton: $("#ApplicationTabsDiscardButton")
         }
 
-        var initialFormState = TabsUiElements.settingForm.serialize();
+        let initialFormState = TabsUiElements.settingForm.serialize();
 
         function checkFormChanges() {
-            var currentFormState = TabsUiElements.settingForm.serialize();
-            var isFormChanged = currentFormState !== initialFormState;
+            let currentFormState = TabsUiElements.settingForm.serialize();
+            let isFormChanged = currentFormState !== initialFormState;
 
             TabsUiElements.saveButton.prop('disabled', !isFormChanged);
             TabsUiElements.discardButton.prop('disabled', !isFormChanged);
@@ -29,7 +29,7 @@
                 return;
             }
 
-            var form = $(this).serializeFormToObject();
+            let form = $(this).serializeFormToObject();
             unity.grantManager.settingManagement.applicationUiSettings.update(form).then(function (result) {
                 $(document).trigger("AbpSettingSaved");
                 initialFormState = TabsUiElements.settingForm.serialize();

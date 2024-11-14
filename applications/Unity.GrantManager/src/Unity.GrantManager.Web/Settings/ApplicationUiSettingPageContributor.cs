@@ -6,11 +6,10 @@ using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 
 namespace Unity.GrantManager.Web.Settings;
 
-public class ApplicationTabsSettingPageContributor : SettingPageContributorBase
+public class ApplicationUiSettingPageContributor : SettingPageContributorBase
 {
-    public ApplicationTabsSettingPageContributor()
+    public ApplicationUiSettingPageContributor()
     {
-        // TODO
         RequiredPermissions(GrantManagerPermissions.ApplicationForms.Default);
     }
 
@@ -20,7 +19,7 @@ public class ApplicationTabsSettingPageContributor : SettingPageContributorBase
            new SettingPageGroup(
                SettingsConstants.UI.Tabs.Default,
                "Application Tabs",
-               typeof(ApplicationTabsSettingGroupViewComponent),
+               typeof(ApplicationUiSettingGroupViewComponent),
                order: 1
            )
         );

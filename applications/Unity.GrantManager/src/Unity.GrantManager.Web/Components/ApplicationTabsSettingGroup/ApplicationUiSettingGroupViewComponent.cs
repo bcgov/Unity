@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Web.Components.ApplicationTabsSettingGroup;
 
-public class ApplicationTabsSettingGroupViewComponent(IApplicationUiSettingsAppService settingsAppService) : AbpViewComponent
+public class ApplicationUiSettingGroupViewComponent(IApplicationUiSettingsAppService settingsAppService) : AbpViewComponent
 {
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
