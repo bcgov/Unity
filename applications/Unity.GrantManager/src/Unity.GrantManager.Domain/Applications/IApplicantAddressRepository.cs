@@ -7,5 +7,5 @@ namespace Unity.GrantManager.Applications;
 
 public interface IApplicantAddressRepository : IBasicRepository<ApplicantAddress, Guid>
 {
-    Task<List<ApplicantAddress>> FindByApplicantIdAsync(Guid applicantId);
+    Task<List<ApplicantAddress?>> FindByApplicantIdAsync(Guid applicantId);
 }
