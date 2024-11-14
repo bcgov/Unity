@@ -43,7 +43,8 @@ $(function () {
                 info: false,
                 lengthChange: false,
                 dom: 'Bftip',
-                buttons: configureButtons($element[0].id)
+                buttons: configureButtons($element[0].id),
+                order: [[0, 'desc']]
             });
             configureTable(table, $element[0].id);
         });
