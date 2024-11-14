@@ -20,10 +20,18 @@ namespace Unity.GrantManager.Repositories
         {
         }
 
-        public async Task<Applicant?> GetByUnityApplicantIdAsync(string? unityApplicantId)
+        public async Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId)
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants.FirstOrDefaultAsync(x => x.UnityApplicantId == unityApplicantId);
+        }
+
+        public async Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName)
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.Applicants
+                .FirstOrDefaultAsync(a => a.ApplicantName != null && a.ApplicantName.ToLower() == unityApplicantName.ToLower());
+            
         }
     }
 }
