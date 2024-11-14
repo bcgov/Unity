@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Settings;
-using Unity.GrantManager.Web.Components.ApplicationTabsSettingGroup;
+using Unity.GrantManager.Web.Components.ApplicationUiSettingGroup;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 

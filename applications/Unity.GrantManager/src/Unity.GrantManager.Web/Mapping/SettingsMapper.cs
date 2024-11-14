@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Unity.GrantManager.SettingManagement;
-using Unity.GrantManager.Web.Components.ApplicationTabsSettingGroup;
+using Unity.GrantManager.Web.Components.ApplicationUiSettingGroup;
 
 namespace Unity.GrantManager.Web.Mapping;
 

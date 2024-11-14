@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Unity.GrantManager.Web.Components.ApplicationTabsSettingGroup;
+namespace Unity.GrantManager.Web.Components.ApplicationUiSettingGroup;
 
 public class ApplicationUiSettingsViewModel
 {
