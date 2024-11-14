@@ -1,4 +1,4 @@
-﻿namespace Unity.GrantManager.SettingManagement;
+﻿namespace Unity.GrantManager.Permissions;
 public static class UnitySettingManagementPermissions
 {
     public const string GroupName = "SettingManagement";

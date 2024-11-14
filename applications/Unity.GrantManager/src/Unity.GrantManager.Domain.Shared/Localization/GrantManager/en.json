@@ -213,7 +213,7 @@
     "Setting:GrantManager.Locality.SectorFilter.DisplayName": "SectorFilter",
     "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
 
-    "Permission:UnitySettingManagementPermissions.UserInterface": "Modify Application Tabs",
+    "Permission:UnitySettingManagementPermissions.UserInterface": "Application Tabs",
     "Setting:GrantManager.UI.PageTitle": "Application Tabs Configuration",
     "Setting:GrantManager.UI.Tabs.Submission.DisplayName": "Submission",
     "Setting:GrantManager.UI.Tabs.Submission.Description": "Toggle visibility of the Submission tab for the tenant",

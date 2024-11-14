@@ -2,6 +2,7 @@
 using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Settings;
 using Unity.GrantManager.Web.Components.ApplicationTabsSettingGroup;
+using Volo.Abp.SettingManagement;
 using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 
 namespace Unity.GrantManager.Web.Settings;
@@ -10,7 +11,8 @@ public class ApplicationUiSettingPageContributor : SettingPageContributorBase
 {
     public ApplicationUiSettingPageContributor()
     {
-        RequiredPermissions(GrantManagerPermissions.ApplicationForms.Default);
+        RequiredFeatures(SettingManagementFeatures.Enable);
+        RequiredPermissions(UnitySettingManagementPermissions.UserInterface);
     }
 
     public override Task ConfigureAsync(SettingPageCreationContext context)
@@ -23,7 +25,6 @@ public class ApplicationUiSettingPageContributor : SettingPageContributorBase
                order: 1
            )
         );
-
         return Task.CompletedTask;
     }
 }

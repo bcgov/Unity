@@ -1,11 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
+using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Settings;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.SettingManagement;
 
-//[Authorize(UnitySettingManagementPermissions.UserInterface)]
+[Authorize]
 public class ApplicationUiSettingsAppService(
     ISettingManager settingManager) : GrantManagerAppService, IApplicationUiSettingsAppService
 {
@@ -24,6 +26,7 @@ public class ApplicationUiSettingsAppService(
         return settingsDto;
     }
 
+    [Authorize(UnitySettingManagementPermissions.UserInterface)]
     public async Task UpdateAsync(ApplicationUiSettingsDto input)
     {
         if (CurrentTenant.IsAvailable)
