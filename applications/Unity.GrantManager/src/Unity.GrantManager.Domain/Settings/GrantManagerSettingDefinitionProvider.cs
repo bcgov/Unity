@@ -1,4 +1,5 @@
-﻿using Unity.GrantManager.Localization;
+﻿using System.Collections.Generic;
+using Unity.GrantManager.Localization;
 using Volo.Abp.Localization;
 using Volo.Abp.Settings;
 
@@ -16,26 +17,40 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 L("Setting:GrantManager.Locality.SectorFilter.Description"),
                 isVisibleToClients: true,
                 isInherited: false,
-                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName),
-            TabSettingDefinition(SettingsConstants.UI.Tabs.Submission, "true"),
-            TabSettingDefinition(SettingsConstants.UI.Tabs.Assessment, "true"),
-            TabSettingDefinition(SettingsConstants.UI.Tabs.Project, "true"),
-            TabSettingDefinition(SettingsConstants.UI.Tabs.Applicant, "true"),
-            TabSettingDefinition(SettingsConstants.UI.Tabs.Payments, "true"),
-            TabSettingDefinition(SettingsConstants.UI.Tabs.FundingAgreement, "false")
+                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName)
         );
+
+        var tabSettings = new Dictionary<string, bool>
+        {
+            { SettingsConstants.UI.Tabs.Submission, true },
+            { SettingsConstants.UI.Tabs.Assessment, true },
+            { SettingsConstants.UI.Tabs.Project, true },
+            { SettingsConstants.UI.Tabs.Applicant, true },
+            { SettingsConstants.UI.Tabs.Payments, true },
+            { SettingsConstants.UI.Tabs.FundingAgreement, false }
+        };
+
+        foreach (var setting in tabSettings)
+        {
+            AddSettingDefinition(context, setting.Key, setting.Value.ToString());
+        }
     }
 
-    private static SettingDefinition TabSettingDefinition(string settingName, string defaultValue = "true")
+    private static void AddSettingDefinition(ISettingDefinitionContext currentContext, string settingName, string defaultValue = "True")
     {
-        return new SettingDefinition(
+        var displayName = L($"Setting:{settingName}.DisplayName");
+        var description = L($"Setting:{settingName}.Description");
+
+        currentContext.Add(
+            new SettingDefinition(
                 settingName,
                 defaultValue,
-                L($"Setting:{settingName}.DisplayName"),
-                L($"Setting:{settingName}.Description"),
+                displayName,
+                description,
                 isVisibleToClients: true,
                 isInherited: false,
-                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName);
+                isEncrypted: false)
+        );
     }
 
     private static LocalizableString L(string name)

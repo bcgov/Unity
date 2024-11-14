@@ -152,21 +152,15 @@
                 @*-------- Funding Agreement Info Section ---------*@
                 @if (await SettingProvider.IsTrueAsync(SettingsConstants.UI.Tabs.FundingAgreement))
                 {
-                <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
-                    <div class="w-100 px-2" id="FundingAgreementInfoWidget">
-                        @await Component.InvokeAsync("FundingAgreementInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
-                    </div>
-                </abp-tab>
+                    <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
+                        <div class="w-100 px-2" id="FundingAgreementInfoWidget">
+                            @await Component.InvokeAsync("FundingAgreementInfo", new { applicationId = Model.ApplicationId, applicationFormVersionId = Model.ApplicationFormVersionId })
+                        </div>
+                    </abp-tab>
                 }
                 @*-------- Funding Agreement Section END ---------*@
 
-                @*-------- Approval Section ---------*@
-                @* <abp-tab name="nav-approval" title="Approval">
-                <div style="text-align:center">
-                <img src="/images/under-construction.png" alt="under-construction">
-                </div>
-                </abp-tab> *@
-                @*-------- Approval Section END ---------*@
+                @*-------- Payments Section ---------*@
                 @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
                 {
                     <abp-tab name="nav-payment-info" title="Payment Info">
@@ -175,6 +169,7 @@
                         </div>
                     </abp-tab>
                 }
+                @*-------- Payments Section END ---------*@
 
                 @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
                 {

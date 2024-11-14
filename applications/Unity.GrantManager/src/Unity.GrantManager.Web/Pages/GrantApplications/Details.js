@@ -5,9 +5,9 @@ $(function () {
     abp.localization.getResource('GrantManager');
 
     function initializeDetailsPage() {
+        updateTabDisplay();
         initCommentsWidget();
         updateLinksCounters();
-        updateTabDisplay();
         renderSubmission();
     }
 
