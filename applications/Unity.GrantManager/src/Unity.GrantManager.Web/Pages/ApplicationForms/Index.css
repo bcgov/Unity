@@ -22,6 +22,10 @@
 }
 
 input:read-only {
-    border: inherit;
-    background-color: var(--bc--surface-color-brand-gray-30);
+    color: var(--bc-colors-grey-text-200);
+    pointer-events: none;
+    background-color: var(--bc-colors-grey-hover) !important;
+    opacity: var(--bs-btn-disabled-opacity);
+    background-blend-mode: difference;
+    border: none !important;
 }
