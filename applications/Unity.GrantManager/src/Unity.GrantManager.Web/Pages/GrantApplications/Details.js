@@ -11,6 +11,11 @@ $(function () {
     const detailsTabContent = document.getElementById('detailsTabContent');
     const detailsTabs = $('ul#detailsTab');
 
+    $('.fade-in-load').each(function () {
+        // Add the visible class to trigger the fade-in effect
+        $(this).addClass('visible');
+    });
+
     function initializeDetailsPage() {
         setStoredDividerWidth();
         updateTabDisplay();
@@ -27,18 +32,10 @@ $(function () {
             const leftWidth = localStorage.getItem('leftWidth');
             const rightWidth = container.clientWidth - leftWidth;
 
-            // Set initial widths to 50% for the animation effect 
-            left.style.width = "50%";
-            right.style.width = "50%";
-
             left.style.width = `${leftWidth}px`;
             right.style.width = `${rightWidth}px`;
 
-            // Remove the transition after the initial load 
-            setTimeout(() => {
-                left.style.transition = "none";
-                right.style.transition = "none";
-            }, 250);
+            applyTabHeightOffset();
         }
     }
 
@@ -561,14 +558,19 @@ $(function () {
         left.style.width = `${leftWidth}px`;
         right.style.width = `${rightWidth}px`;
 
-        const detailsTabHeight = 235 + detailsTabs[0].clientHeight;
-        detailsTabContent.style.height = `calc(100vh - ${detailsTabHeight}px)`
+        // Apply the height offset depending on tabs height
+        applyTabHeightOffset();
 
         // Resize DataTables 
         debouncedResizeDataTables();
 
         // Save the left width to localStorage
         localStorage.setItem("leftWidth", leftWidth);
+    }
+
+    function applyTabHeightOffset() {
+        const detailsTabHeight = 235 + detailsTabs[0].clientHeight;
+        detailsTabContent.style.height = `calc(100vh - ${detailsTabHeight}px)`
     }
 
     // Debounced DataTable resizing function
@@ -589,7 +591,6 @@ $(function () {
         // Call the debounced DataTable resizing function
         debouncedResizeDataTables();
     });
-
 
     function stopResize() {
         document.removeEventListener("mousemove", resize);

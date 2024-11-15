@@ -44,7 +44,7 @@
     <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
 }
 
-<div id="applicationBreadcrumbWidget">
+<div id="applicationBreadcrumbWidget" class="fade-in-load">
     @await Component.InvokeAsync("ApplicationBreadcrumbWidget", new { applicationId = @Model.ApplicationId })
 </div>
 @await Component.InvokeAsync(typeof(DetailsActionBar), new { applicationId = @Model.ApplicationId })
@@ -78,7 +78,10 @@
         return initials;
     }
 }
-<div class="m-0 h-100 application-details-container" id="main-container">
+<div id="main-loading">    
+    <img src="/images/homepage/unity.svg" alt="unity-application-loading">
+</div>
+<div class="m-0 h-100 application-details-container fade-in-load" id="main-container">
     <div id="main-left">
         <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">

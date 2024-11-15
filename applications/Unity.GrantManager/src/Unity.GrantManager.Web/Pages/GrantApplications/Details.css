@@ -370,7 +370,6 @@ form label.error {
 
 #main-left, #main-right {
     width: 50%;
-    transition: width 0.25s ease-in-out; /* Adjust duration and easing as needed */
 }
 
 #main-divider {
@@ -383,3 +382,24 @@ form label.error {
     #main-divider:hover {
         background-color: #aaa;
     }
+
+#myTab {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.fade-in-load {
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out; /* Adjust the duration and easing as needed */
+}
+
+    .fade-in-load.visible {
+        opacity: 0;
+    }
+
+#main-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Adjust the height as needed */
+}
