@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241112172908_ApplicantImportColumn")]
+    partial class ApplicantImportColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -777,9 +780,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("ApproxNumberOfEmployees")
                         .HasColumnType("text");
 
-                    b.Property<string>("BusinessNumber")
-                        .HasColumnType("text");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -944,7 +944,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("ApplicantId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("BceidBusinessGuid")
@@ -978,6 +978,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnName("CreatorId");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ExtraProperties")
@@ -1016,15 +1017,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("Phone")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Phone2")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneExtension")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneExtension2")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("RoleForApplicant")
@@ -1036,6 +1033,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnName("TenantId");
 
                     b.Property<string>("Title")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -3256,8 +3254,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.Applicant", b =>
                 {
                     b.Navigation("ApplicantAddresses");
-
-                    b.Navigation("ApplicantAgent");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>

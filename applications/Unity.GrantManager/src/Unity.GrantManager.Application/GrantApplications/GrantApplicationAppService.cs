@@ -572,9 +572,12 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
     {
-        var applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+        List<ApplicantAddress> applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
+        if (applicantAddresses != null)
+        {
+            await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
+            await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+        }
     }
 
     protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId)
