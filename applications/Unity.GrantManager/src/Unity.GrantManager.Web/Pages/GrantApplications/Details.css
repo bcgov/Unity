@@ -368,8 +368,9 @@ form label.error {
     display: flex;
 }
 
-#main-right {
+#main-left, #main-right {
     width: 50%;
+    transition: width 0.25s ease-in-out; /* Adjust duration and easing as needed */
 }
 
 #main-divider {

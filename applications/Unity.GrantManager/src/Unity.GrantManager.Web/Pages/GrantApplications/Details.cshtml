@@ -220,7 +220,7 @@
             <div class="tab-content details-scrollable" id="myTabContent">
 
                 @*-------- Details Tab Section ---------*@
-                <div class="tab-pane  fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
+                <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
                     <div id="applicationDetails">
                         <div id="applicationStatusWidget">
                             @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
@@ -286,7 +286,7 @@
 
 
                 @*-------- Comments Tab Section ---------*@
-                <div class="tab-pane" id="comments" role="tabpanel" aria-labelledby="comments-tab">
+                <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Comments</h6>
                     <div class="px-3 pb-2" id="applicationCommentsWidget">
                         @await Component.InvokeAsync("CommentsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
@@ -295,7 +295,7 @@
                 @*-------- Comments Tab Section END ---------*@
 
                 @*-------- Attachments Tab Section ---------*@
-                <div class="tab-pane" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
+                <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Assessment Attachments</h6>
                     @await Component.InvokeAsync("ApplicationAttachments")
 
@@ -314,7 +314,7 @@
                 @*-------- Attachments Tab Section END ---------*@
 
                 @*-------- Links Tab Section ---------*@
-                <div class="tab-pane" id="links" role="tabpanel" aria-labelledby="links-tab">
+                <div class="tab-pane fade" id="links" role="tabpanel" aria-labelledby="links-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-3 m-0">Links</h6>
                     <div class="px-3 pb-2" id="applicationRecordsWidget">
                         @await Component.InvokeAsync("ApplicationLinksWidget", new { applicationId = Model.ApplicationId })
@@ -323,7 +323,7 @@
                 @*------- Links Tab Section END ---------*@
 
                 @*-------- History Tab Section ---------*@
-                <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
+                <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
                     <div class="px-3 pb-2" id="applicationHistoryWidget">
                         @await Component.InvokeAsync("HistoryWidget", new { applicationId = Model.ApplicationId })
                     </div>

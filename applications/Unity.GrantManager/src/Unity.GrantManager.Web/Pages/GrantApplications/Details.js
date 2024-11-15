@@ -26,8 +26,19 @@ $(function () {
         if (localStorage.getItem('leftWidth')) {
             const leftWidth = localStorage.getItem('leftWidth');
             const rightWidth = container.clientWidth - leftWidth;
+
+            // Set initial widths to 50% for the animation effect 
+            left.style.width = "50%";
+            right.style.width = "50%";
+
             left.style.width = `${leftWidth}px`;
             right.style.width = `${rightWidth}px`;
+
+            // Remove the transition after the initial load 
+            setTimeout(() => {
+                left.style.transition = "none";
+                right.style.transition = "none";
+            }, 250);
         }
     }
 
@@ -552,9 +563,33 @@ $(function () {
 
         const detailsTabHeight = 235 + detailsTabs[0].clientHeight;
         detailsTabContent.style.height = `calc(100vh - ${detailsTabHeight}px)`
-        // Save the left width to localStorage 
+
+        // Resize DataTables 
+        debouncedResizeDataTables();
+
+        // Save the left width to localStorage
         localStorage.setItem("leftWidth", leftWidth);
     }
+
+    // Debounced DataTable resizing function
+    const debouncedResizeDataTables = debounce(() => {
+        $('table.dataTable.resizeAware').each(function () {
+            const table = $(this).DataTable();
+            try {
+                table.columns.adjust().draw();
+            }
+            catch {
+                console.log(`adjust width failed ${tableId}`);
+            }
+        });
+    }, 10); // Adjust the delay as needed
+
+    // Add event listeners to the li items under #detailsTab and #myTab
+    $('#detailsTab li, #myTab li').on('click', function () {
+        // Call the debounced DataTable resizing function
+        debouncedResizeDataTables();
+    });
+
 
     function stopResize() {
         document.removeEventListener("mousemove", resize);
