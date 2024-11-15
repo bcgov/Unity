@@ -10,11 +10,14 @@ $(function () {
     const right = document.getElementById('main-right');
     const detailsTabContent = document.getElementById('detailsTabContent');
     const detailsTabs = $('ul#detailsTab');
+    const mainLoading = document.getElementById('main-loading');
 
     $('.fade-in-load').each(function () {
         // Add the visible class to trigger the fade-in effect
         $(this).addClass('visible');
     });
+
+    mainLoading.classList.add('hidden');
 
     function initializeDetailsPage() {
         setStoredDividerWidth();

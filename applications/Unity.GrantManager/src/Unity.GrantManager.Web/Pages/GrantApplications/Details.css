@@ -394,12 +394,10 @@ form label.error {
 }
 
     .fade-in-load.visible {
-        opacity: 0;
+        opacity: 1;
     }
 
 #main-loading {
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh; /* Adjust the height as needed */
 }
