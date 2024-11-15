@@ -30,8 +30,9 @@ namespace Unity.GrantManager.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
-                .FirstOrDefaultAsync(a => a.ApplicantName != null && a.ApplicantName.ToLower() == unityApplicantName.ToLower());
-            
+                .FirstOrDefaultAsync(a => a.ApplicantName != null &&
+                                        a.ApplicantName.Equals(unityApplicantName, StringComparison.OrdinalIgnoreCase));
+
         }
     }
 }

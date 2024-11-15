@@ -78,7 +78,7 @@ namespace Unity.GrantManager.Intakes
             string bcSocietyNumber = applicant.OrgNumber?.StartsWith('S') == true ? applicant.OrgNumber : string.Empty;
 
             // Fetch address and agent information
-            List<ApplicantAddress?> applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
+            List<ApplicantAddress> applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
             ApplicantAddress? applicantAddress = applicantAddresses?.FirstOrDefault();
             ApplicantAgent? applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(x => x.ApplicantId == applicant.Id);
 
