@@ -94,15 +94,15 @@ namespace Unity.GrantManager.Intakes
                 FiscalYearDay = applicant.FiscalDay.ToString(),
                 FiscalYearMonth = applicant.FiscalMonth,
                 BusinessNumber = applicant.BusinessNumber,
-                PyhsicalAddressUnit = applicantAddress?.Unit ?? "N/A",
-                PyhsicalAddressLine1 = applicantAddress?.Street ?? "N/A",
-                PyhsicalAddressLine2 = applicantAddress?.Street2 ?? "N/A",
-                PyhsicalAddressPostal = applicantAddress?.Postal ?? "N/A",
-                PyhsicalAddressCity = applicantAddress?.City ?? "N/A",
-                PyhsicalAddressProvince = applicantAddress?.Province ?? "N/A",
-                PyhsicalAddressCountry = applicantAddress?.Country ?? "N/A",
-                PhoneNumber = applicantAgent?.Phone ?? "N/A",
-                PhoneExtension = applicantAgent?.PhoneExtension ?? "N/A"
+                PyhsicalAddressUnit = applicantAddress?.Unit ?? "",
+                PyhsicalAddressLine1 = applicantAddress?.Street ?? "",
+                PyhsicalAddressLine2 = applicantAddress?.Street2 ?? "",
+                PyhsicalAddressPostal = applicantAddress?.Postal ?? "",
+                PyhsicalAddressCity = applicantAddress?.City ?? "",
+                PyhsicalAddressProvince = applicantAddress?.Province ?? "",
+                PyhsicalAddressCountry = applicantAddress?.Country ?? "",
+                PhoneNumber = applicantAgent?.Phone ?? "",
+                PhoneExtension = applicantAgent?.PhoneExtension ?? ""
             };
 
             return JsonConvert.SerializeObject(result);
