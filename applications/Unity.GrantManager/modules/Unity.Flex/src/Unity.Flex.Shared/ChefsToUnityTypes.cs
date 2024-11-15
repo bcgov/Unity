@@ -7,7 +7,7 @@ namespace Unity.Flex
     {
         internal static string Convert(string input, string defaultValue)
         {
-            var found = TypePairs.TryGetValue(input, out string value);
+            var found = TypePairs.TryGetValue(input, out string? value);
             if (found)
                 return value ?? CustomFieldType.Text.ToString();
             else
