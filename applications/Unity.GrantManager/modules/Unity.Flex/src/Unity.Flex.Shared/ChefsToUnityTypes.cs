@@ -9,9 +9,9 @@ namespace Unity.Flex
         {
             var found = TypePairs.TryGetValue(input, out string value);
             if (found)
-                return value;
+                return value ?? CustomFieldType.Text.ToString();
             else
-                return defaultValue;
+                return defaultValue ?? CustomFieldType.Text.ToString();
         }
 
         // Define the pairs collection
