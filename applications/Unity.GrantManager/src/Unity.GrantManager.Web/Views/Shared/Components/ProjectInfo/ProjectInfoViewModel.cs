@@ -137,14 +137,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             [RegularExpression(@"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$", ErrorMessage = "Invalid Phone Number.")]
             public string? ContactCellPhone { get; set; }
 
-
-
-            [Display(Name = "ProjectInfoView:ProjectInfo.ContractNumber")]
-            [RegularExpression(@"^[a-zA-Z0-9]*$", ErrorMessage = "Invalid Contract Number.")]
-            public string? ContractNumber { get; set; }
-
-            [Display(Name = "ProjectInfoView:ProjectInfo.ContractExecutionDate")]
-            public DateTime? ContractExecutionDate { get; set; }
             [Display(Name = "ProjectInfoView:ProjectInfo.Place")]
             [StringLength(50)]
             public string? Place { get; set; }

@@ -6,5 +6,6 @@ namespace Unity.GrantManager.Applications;
 
 public interface IApplicantRepository : IRepository<Applicant, Guid>
 {
-    Task<Applicant?> GetByUnityApplicantId(string? unityApplicantId);
+    Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId);
+    Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName);
 }

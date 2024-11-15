@@ -28,6 +28,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget
                 CustomFieldType.Radio => RadioDefinitionWidget.RadioDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.SelectList => SelectListDefinitionWidget.SelectListDefinitionWidget.ParseFormValues(form),
                 CustomFieldType.TextArea => TextAreaDefinitionWidget.TextAreaDefinitionWidget.ParseFormValues(form),
+                CustomFieldType.DataGrid => DataGridDefinitionWidget.DataGridDefinitionWidget.ParseFormValues(form),
                 _ => null,
             };
         }

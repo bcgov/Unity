@@ -22,8 +22,10 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? SectorSubSectorIndustryDesc { get; set; }
     public string? UnityApplicantId { get; set; }
     public string? FiscalMonth { get; set; }
+    public string? BusinessNumber { get; set; }
     public int? FiscalDay { get; set; }
     public DateOnly? StartedOperatingDate { get; set; }
     public Guid? TenantId { get; set; }
     public virtual Collection<ApplicantAddress>? ApplicantAddresses { get; set; }
+    public decimal? MatchPercentage { get; set; }
 }

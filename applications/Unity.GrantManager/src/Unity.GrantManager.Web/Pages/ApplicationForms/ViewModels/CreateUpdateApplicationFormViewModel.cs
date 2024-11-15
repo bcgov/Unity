@@ -15,7 +15,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels
         [Required]
         public List<SelectListItem> IntakesList { get; set; } = new List<SelectListItem>();
 
-        [DisabledInput]
+        [ReadOnlyInput]
         [DisplayName("Common:Name")]
         public string? ApplicationFormName { get; set; } = string.Empty;
 

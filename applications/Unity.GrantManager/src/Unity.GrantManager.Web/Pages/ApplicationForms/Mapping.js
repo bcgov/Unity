@@ -33,6 +33,7 @@
         'simplenumberadvanced',
         'simplephonenumber',
         'simplephonenumberadvanced',
+        'simpleselect',
         'simpleselectadvanced',
         'simpleday',
         'simpledayadvanced',
@@ -49,7 +50,8 @@
         'simplecurrencyadvanced',
         'simpletextarea',
         'simpletextareaadvanced',
-        'bcaddress'];
+        'bcaddress',
+        'datagrid'];
 
     const UIElements = {
         btnBack: $('#btn-back'),
@@ -345,7 +347,7 @@
     }
 
     function initializeIntakeMap(availableChefsFields) {
-        try {
+        try {            
             let intakeFields = JSON.parse(intakeFieldsString);
 
             for (let intakeField of intakeFields) {
@@ -387,6 +389,7 @@
             case 'SelectList':
             case 'BCAddress':
             case 'TextArea':
+            case 'DataGrid':
                 return `<i class="${setTypeIcon(intakeField)}"></i> `;
             case 'Number':
                 return setTypeIndicatorText('123');
@@ -421,6 +424,8 @@
                 return 'fl fl-globe';
             case 'TextArea':
                 return 'fl fl-text-area';
+            case 'DataGrid':
+                return 'fl fl-datagrid';
             default:
                 return '';
         }

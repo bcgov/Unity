@@ -1,0 +1,44 @@
+﻿@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.Web.Views.Shared.Components.FundingAgreementInfo;
+
+@inject IStringLocalizer<GrantManagerResource> L
+
+@model FundingAgreementInfoViewModel
+@{
+    Layout = null;
+}
+
+<input type="hidden" id="FundingAgreementInfoViewApplicationId" value="@Model.ApplicationId" />
+
+<abp-row class="px-1 pb-2 mb-4 funding-agreement-info-container">
+    <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2">
+        <div id="FundingAgreementInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+            <h6 class="ps-1 fw-bold">@L["FundingAgreementInfoView:FundingAgreementInfoTitle"].Value</h6>
+        </div>
+        <abp-button text="Save" id="saveFundingAgreementInfoBtn" class="floating-save-btn" icon-type="Other"
+                    icon="fl fl-save" button-type="Primary" disabled="true" />
+    </abp-column>
+    <form id="fundingAgreementInfoForm">
+        <abp-row class="m-0 p-0">
+            <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
+                <div id="FundingAgreementInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
+                    <h6 class="ps-1 fw-bold">@L["FundingAgreementInfoView:FundingAgreementInfoContract"].Value</h6>
+                </div>
+            </abp-column>
+        </abp-row>
+        <abp-row class="m-0 project-info-location">
+            <abp-row class="m-0 p-0">
+                <abp-column size="_4" class="px-1">
+                    <abp-input asp-for="@Model.FundingAgreementInfo.ContractNumber" onchange="enableFundingAgreementInfoSaveBtn(this)" />
+                </abp-column>
+                <abp-column size="_4" class="px-1">
+                    <abp-input type="date" asp-for="@Model.FundingAgreementInfo.ContractExecutionDate" onchange="enableFundingAgreementInfoSaveBtn(this)" abp-data-datepicker="false">
+                    </abp-input>
+                </abp-column>
+            </abp-row>
+        </abp-row>
+
+    </form>
+</abp-row>
+
