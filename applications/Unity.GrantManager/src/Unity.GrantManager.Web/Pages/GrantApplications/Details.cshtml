@@ -75,8 +75,8 @@
         return initials;
     }
 }
-<abp-row class="m-0 h-100 application-details-container">
-    <abp-column size="_8" class="p-0">
+<div class="m-0 h-100 application-details-container" id="main-container">
+    <div id="main-left">
         <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
 
@@ -190,8 +190,9 @@
                 }
             </abp-tabs>
         </abp-card>
-    </abp-column>
-    <abp-column size="_4" class="pe-0 ps-2">
+    </div>
+    <div id="main-divider" class="divider"></div>
+    <div id="main-right">
         <abp-card class="right-card">
             <ul class="nav nav-tabs details-nav flex-nowrap" id="myTab" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -211,7 +212,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
-                </li>                
+                </li>
             </ul>
 
 
@@ -321,7 +322,7 @@
                 @*------- Links Tab Section END ---------*@
 
                 @*-------- History Tab Section ---------*@
-                <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">                    
+                <div class="tab-pane" id="history" role="tabpanel" aria-labelledby="history-tab">
                     <div class="px-3 pb-2" id="applicationHistoryWidget">
                         @await Component.InvokeAsync("HistoryWidget", new { applicationId = Model.ApplicationId })
                     </div>
@@ -330,8 +331,8 @@
             </div>
 
         </abp-card>
-    </abp-column>
-</abp-row>
+    </div>
+</div>
 
 
 

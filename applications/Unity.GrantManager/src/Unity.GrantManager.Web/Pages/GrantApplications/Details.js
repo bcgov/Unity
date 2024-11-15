@@ -4,13 +4,31 @@ $(function () {
     let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
+    const divider = document.getElementById('main-divider');
+    const container = document.getElementById('main-container');
+    const left = document.getElementById('main-left');
+    const right = document.getElementById('main-right');
+    const detailsTabContent = document.getElementById('detailsTabContent');
+    const detailsTabs = $('ul#detailsTab');
+
     function initializeDetailsPage() {
+        setStoredDividerWidth();
         initCommentsWidget();
         updateLinksCounters();
         renderSubmission();
     }
 
     initializeDetailsPage();
+
+    function setStoredDividerWidth() {
+        // Check if there's a saved width in localStorage 
+        if (localStorage.getItem('leftWidth')) {
+            const leftWidth = localStorage.getItem('leftWidth');
+            const rightWidth = container.clientWidth - leftWidth;
+            left.style.width = `${leftWidth}px`;
+            right.style.width = `${rightWidth}px`;
+        }
+    }
 
     function renderSubmission() {
         if (renderFormIoToHtml == "False" || hasRenderedHtml == "False") {
@@ -478,7 +496,7 @@ $(function () {
             applicationRecordsWidgetManager.refresh();
             updateLinksCounters();
         }
-    );    
+    );
 
     // custom fields
     $('body').on('click', '.custom-tab-save', function (event) {
@@ -515,6 +533,32 @@ $(function () {
             }
         }
     );
+
+    divider.addEventListener("mousedown", function (e) {
+        e.preventDefault();
+
+        document.addEventListener("mousemove", resize);
+        document.addEventListener("mouseup", stopResize);
+    });
+
+    function resize(e) {
+        const containerRect = container.getBoundingClientRect();
+        const leftWidth = e.clientX - containerRect.left;
+        const rightWidth = containerRect.right - e.clientX;
+
+        left.style.width = `${leftWidth}px`;
+        right.style.width = `${rightWidth}px`;
+
+        const detailsTabHeight = 235 + detailsTabs[0].clientHeight;
+        detailsTabContent.style.height = `calc(100vh - ${detailsTabHeight}px)`
+        // Save the left width to localStorage 
+        localStorage.setItem("leftWidth", leftWidth);
+    }
+
+    function stopResize() {
+        document.removeEventListener("mousemove", resize);
+        document.removeEventListener("mouseup", stopResize);
+    }
 });
 
 function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, saveId, formDataName, worksheetId) {
