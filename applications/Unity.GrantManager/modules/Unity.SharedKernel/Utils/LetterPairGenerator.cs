@@ -22,15 +22,10 @@ namespace Unity.Modules.Shared.Utils
             }
         }
 
-        // Async method to split the string with a timeout using a CancellationToken
+        // Method to split the string with a timeout
         private static string[] SplitWithTimeout(string str, int timeoutSeconds)
         {
-
-            // Start a task to perform the Regex.Split asynchronously
-#pragma warning disable SYSLIB1045
             var task = Regex.Split(str, @"\s+", RegexOptions.None, TimeSpan.FromSeconds(timeoutSeconds));
-#pragma warning restore SYSLIB1045
-            // Await the task result or cancel if timeout occurs
             return task;
         }
 
@@ -39,7 +34,7 @@ namespace Unity.Modules.Shared.Utils
         {
             var allPairs = new List<string>();
 
-            // Await the split operation with timeout
+            // split operation with timeout
             string[] words = SplitWithTimeout(str, timeoutSeconds);
 
             // Generate letter pairs for each word and add them to the list
