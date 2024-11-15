@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,8 +11,8 @@ namespace Unity.Modules.Shared.Utils
     {
         // Protected constructor to prevent direct instantiation
         protected LetterPairGenerator() { }
-        
-        private const int timeoutMilliseconds = 1000; // Set the timeout (1 second for this example)
+
+        private const int timeoutSeconds = 30; // Set the timeout (1 second for this example)
 
         // Generate letter pairs from a word
         private static IEnumerable<string> LetterPairs(string str)
@@ -24,26 +25,24 @@ namespace Unity.Modules.Shared.Utils
         }
 
         // Async method to split the string with a timeout using a CancellationToken
-        private static async Task<string[]> SplitWithTimeoutAsync(string str, int timeoutMilliseconds)
+        private static string[] SplitWithTimeout(string str, int timeoutSeconds)
         {
-            using (var cts = new CancellationTokenSource(timeoutMilliseconds))
-            {
-                // Start a task to perform the Regex.Split asynchronously
-                #pragma warning disable SYSLIB1045
-                var task = Task.Run(() => Regex.Split(str, @"\s+"), cts.Token);
-                #pragma warning restore SYSLIB1045
-                // Await the task result or cancel if timeout occurs
-                return await task;
-            }
+
+            // Start a task to perform the Regex.Split asynchronously
+#pragma warning disable SYSLIB1045
+            var task = Regex.Split(str, @"\s+", RegexOptions.None, TimeSpan.FromSeconds(timeoutSeconds));
+#pragma warning restore SYSLIB1045
+            // Await the task result or cancel if timeout occurs
+            return task;
         }
 
         // Public method to generate letter pairs from words, with timeout handling
-        public static async Task<List<string>> WordLetterPairs(string str)
+        public static List<string> WordLetterPairs(string str)
         {
             var allPairs = new List<string>();
 
             // Await the split operation with timeout
-            string[] words = await SplitWithTimeoutAsync(str, timeoutMilliseconds);
+            string[] words = SplitWithTimeout(str, timeoutSeconds);
 
             // Generate letter pairs for each word and add them to the list
             allPairs.AddRange(words.Where(word => !string.IsNullOrEmpty(word))  // Filter out empty words

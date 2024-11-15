@@ -19,14 +19,14 @@ namespace Unity.Modules.Shared.Utils
         }
 
         // Synchronous method to compare strings
-        public static async Task<double> CompareStringsAsync(this string str1, string str2)
+        public static double CompareStringsAsync(this string str1, string str2)
         {
             if (string.IsNullOrEmpty(str1) || string.IsNullOrEmpty(str2))
                 return 0.0;
 
             // Await the result of the async method
-            var pairs1 = await LetterPairGenerator.WordLetterPairs(str1.ToUpper());
-            var pairs2 = new HashSet<string>(await LetterPairGenerator.WordLetterPairs(str2.ToUpper()));
+            var pairs1 = LetterPairGenerator.WordLetterPairs(str1.ToUpper());
+            var pairs2 = new HashSet<string>(LetterPairGenerator.WordLetterPairs(str2.ToUpper()));
 
             // Calculate the intersection size using LINQ
             int intersection = pairs1.Count(pairs2.Remove);  // Remove matching pairs from pairs2
