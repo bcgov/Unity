@@ -6,8 +6,8 @@ $(function () {
 
     const divider = document.getElementById('main-divider');
     const container = document.getElementById('main-container');
-    const left = document.getElementById('main-left');
-    const right = document.getElementById('main-right');
+    const mainLeftDiv = document.getElementById('main-left');
+    const mainRightDiv = document.getElementById('main-right');
     const detailsTabContent = document.getElementById('detailsTabContent');
     const detailsTabs = $('ul#detailsTab');
     const mainLoading = document.getElementById('main-loading');
@@ -35,8 +35,8 @@ $(function () {
             const leftWidth = localStorage.getItem('leftWidth');
             const rightWidth = container.clientWidth - leftWidth;
 
-            left.style.width = `${leftWidth}px`;
-            right.style.width = `${rightWidth}px`;
+            mainLeftDiv.style.width = `${leftWidth}px`;
+            mainRightDiv.style.width = `${rightWidth}px`;
 
             applyTabHeightOffset();
         }
@@ -558,8 +558,8 @@ $(function () {
         const leftWidth = e.clientX - containerRect.left;
         const rightWidth = containerRect.right - e.clientX;
 
-        left.style.width = `${leftWidth}px`;
-        right.style.width = `${rightWidth}px`;
+        mainLeftDiv.style.width = `${leftWidth}px`;
+        mainRightDiv.style.width = `${rightWidth}px`;
 
         // Apply the height offset depending on tabs height
         applyTabHeightOffset();
@@ -578,7 +578,7 @@ $(function () {
 
     // Debounced DataTable resizing function
     const debouncedResizeDataTables = debounce(() => {
-        $('table.dataTable.resizeAware').each(function () {
+        $('table.dataTable.resize-aware').each(function () {
             const table = $(this).DataTable();
             try {
                 table.columns.adjust().draw();
@@ -599,6 +599,32 @@ $(function () {
         document.removeEventListener("mousemove", resize);
         document.removeEventListener("mouseup", stopResize);
     }
+
+    function recalcAndAdjustSplit() {
+        const containerWidth = container.clientWidth;
+        const savedLeftWidth = localStorage.getItem("leftWidth");
+
+        if (savedLeftWidth) {
+            const savedPercentage = savedLeftWidth / containerWidth;
+
+            // Recalculate the new widths based on the saved percentage
+            const newLeftWidth = containerWidth * savedPercentage;
+            const newRightWidth = containerWidth - newLeftWidth;
+
+            mainLeftDiv.style.width = `${newLeftWidth}px`;
+            mainRightDiv.style.width = `${newRightWidth}px`;
+
+            // Save the new left width to localStorage
+            localStorage.setItem("leftWidth", newLeftWidth);
+        }
+    }
+
+
+    function windowResize() {
+        recalcAndAdjustSplit();
+    }
+
+    window.addEventListener('resize', windowResize);
 });
 
 function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, saveId, formDataName, worksheetId) {
