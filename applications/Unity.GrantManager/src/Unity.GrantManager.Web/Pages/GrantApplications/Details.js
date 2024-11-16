@@ -578,7 +578,7 @@ $(function () {
 
     // Debounced DataTable resizing function
     const debouncedResizeAwareDataTables = debounce(() => {
-        $('table.dataTable.resize-aware:visible').each(function () {
+        $('table[data-resize-aware="all"]:visible, table[data-resize-aware="slider"]:visible' ).each(function () {
             const table = $(this).DataTable();
             try {
                 table.columns.adjust().draw();
@@ -587,7 +587,7 @@ $(function () {
                 console.log(`adjust width failed ${tableId}`);
             }
         });
-    }, 10); // Adjust the delay as needed
+    }, 15); // Adjust the delay as needed
 
     // Add event listeners to the li items under #detailsTab and #myTab
     $('#detailsTab li, #myTab li').on('click', function () {
@@ -622,11 +622,11 @@ $(function () {
         }
     }
 
-    const debouncedAdjustTables = debounce(adjustVisibleTablesInContainer, 5000);
+    const debouncedAdjustTables = debounce(adjustVisibleTablesInContainer, 15);
 
     function adjustVisibleTablesInContainer(containerId) {
         const activeTab = $(`#${containerId} div.active`);
-        activeTab.find('table.dataTable.tab-resize:visible').each(function () {
+        activeTab.find('table[data-resize-aware="all"]:visible').each(function () {
             const table = $(this).DataTable();            
             try {
                table.columns.adjust().draw();
