@@ -565,7 +565,7 @@ $(function () {
         applyTabHeightOffset();
 
         // Resize DataTables 
-        debouncedResizeDataTables();
+        debouncedResizeAwareDataTables();
 
         // Save the left width to localStorage
         localStorage.setItem("leftWidth", leftWidth);
@@ -577,8 +577,8 @@ $(function () {
     }
 
     // Debounced DataTable resizing function
-    const debouncedResizeDataTables = debounce(() => {
-        $('table.dataTable.resize-aware').each(function () {
+    const debouncedResizeAwareDataTables = debounce(() => {
+        $('table.dataTable.resize-aware:visible').each(function () {
             const table = $(this).DataTable();
             try {
                 table.columns.adjust().draw();
@@ -591,8 +591,11 @@ $(function () {
 
     // Add event listeners to the li items under #detailsTab and #myTab
     $('#detailsTab li, #myTab li').on('click', function () {
-        // Call the debounced DataTable resizing function
-        debouncedResizeDataTables();
+        debouncedAdjustTables('detailsTab');
+    });
+
+    $('#myTab li').on('click', function () {        
+        debouncedAdjustTables('myTab');
     });
 
     function stopResize() {
@@ -619,6 +622,19 @@ $(function () {
         }
     }
 
+    const debouncedAdjustTables = debounce(adjustVisibleTablesInContainer, 5000);
+
+    function adjustVisibleTablesInContainer(containerId) {
+        const activeTab = $(`#${containerId} div.active`);
+        activeTab.find('table.dataTable.tab-resize:visible').each(function () {
+            const table = $(this).DataTable();            
+            try {
+               table.columns.adjust().draw();
+            } catch (error) {
+                console.log(`Adjust width failed for table in container ${containerId}:`, error);
+            }
+        });
+    }
 
     function windowResize() {
         recalcAndAdjustSplit();
