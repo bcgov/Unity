@@ -590,7 +590,7 @@ $(function () {
     }, 15); // Adjust the delay as needed
 
     // Add event listeners to the li items under #detailsTab and #myTab
-    $('#detailsTab li, #myTab li').on('click', function () {
+    $('#detailsTab li').on('click', function () {
         debouncedAdjustTables('detailsTab');
     });
 
