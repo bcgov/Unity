@@ -46,7 +46,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridDefinitionWidget
                 AddGridSupportedCustomFieldType(CustomFieldType.Currency),
                 AddGridSupportedCustomFieldType(CustomFieldType.Numeric),
                 AddGridSupportedCustomFieldType(CustomFieldType.Date),
-                AddGridSupportedCustomFieldType(CustomFieldType.DateTime)
+                AddGridSupportedCustomFieldType(CustomFieldType.DateTime),
+                AddGridSupportedCustomFieldType(CustomFieldType.YesNo),
+                AddGridSupportedCustomFieldType(CustomFieldType.Checkbox),
+                AddGridSupportedCustomFieldType(CustomFieldType.Phone),
+                AddGridSupportedCustomFieldType(CustomFieldType.Email)
             ];
 
             _summaryOptions =
