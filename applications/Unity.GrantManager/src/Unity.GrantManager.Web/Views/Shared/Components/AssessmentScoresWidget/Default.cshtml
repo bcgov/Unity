@@ -59,7 +59,7 @@
                                                             </h2>
                                                             <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id">
                                                                 <div class="accordion-body">
-                                                                    <form method="post" id="question-form-@question.Id">
+                                                                    <form method="post" id="question-form-@question.Id" onSubmit="return false;">
                                                                         <p>@question.Description</p>
 
                                                                         @switch (question.Type)
