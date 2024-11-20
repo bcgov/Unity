@@ -35,6 +35,11 @@ public class CreateModalModel : GrantManagerPageModel
     public async Task<IActionResult> OnPostAsync()
     {
         var createDto = ObjectMapper.Map<CreateUpdateApplicationFormViewModel, CreateUpdateApplicationFormDto>(ApplicationForm!);
+        bool isFormNameNull = createDto.ApplicationFormName == null;
+        if (isFormNameNull)
+        {
+            createDto.ApplicationFormName = "";
+        }
         await _applicationFormAppService.CreateAsync(createDto);
         return NoContent();
     }

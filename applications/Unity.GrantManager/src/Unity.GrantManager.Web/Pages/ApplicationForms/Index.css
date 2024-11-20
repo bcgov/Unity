@@ -21,7 +21,7 @@
     cursor: pointer;
 }
 
-input:read-only {
+#ApplicationForm_ApplicationFormName {
     color: var(--bc-colors-grey-text-200);
     pointer-events: none;
     background-color: var(--bc-colors-grey-hover) !important;
