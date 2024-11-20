@@ -27,7 +27,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
             { SettingsConstants.UI.Tabs.Project, true },
             { SettingsConstants.UI.Tabs.Applicant, true },
             { SettingsConstants.UI.Tabs.Payments, true },
-            { SettingsConstants.UI.Tabs.FundingAgreement, false }
+            { SettingsConstants.UI.Tabs.FundingAgreement, true }
         };
 
         foreach (var setting in tabSettings)
