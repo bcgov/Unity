@@ -35,21 +35,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 nullable: true,
                 oldClrType: typeof(Guid),
                 oldType: "uuid");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ApplicantAgents_Applications_ApplicationId",
-                table: "ApplicantAgents",
-                column: "ApplicationId",
-                principalTable: "Applications",
-                principalColumn: "Id");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ApplicantAgents_Applications_ApplicationId",
-                table: "ApplicantAgents");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Title",
@@ -80,14 +70,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 oldClrType: typeof(Guid),
                 oldType: "uuid",
                 oldNullable: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ApplicantAgents_Applications_ApplicationId",
-                table: "ApplicantAgents",
-                column: "ApplicationId",
-                principalTable: "Applications",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
         }
     }
 }

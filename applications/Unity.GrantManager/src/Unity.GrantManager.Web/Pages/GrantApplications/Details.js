@@ -4,7 +4,23 @@ $(function () {
     let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
+    const divider = document.getElementById('main-divider');
+    const container = document.getElementById('main-container');
+    const mainLeftDiv = document.getElementById('main-left');
+    const mainRightDiv = document.getElementById('main-right');
+    const detailsTabContent = document.getElementById('detailsTabContent');
+    const detailsTabs = $('ul#detailsTab');
+    const mainLoading = document.getElementById('main-loading');
+
+    $('.fade-in-load').each(function () {
+        // Add the visible class to trigger the fade-in effect
+        $(this).addClass('visible');
+    });
+
+    mainLoading.classList.add('hidden');
+
     function initializeDetailsPage() {
+        setStoredDividerWidth();
         updateTabDisplay();
         initCommentsWidget();
         updateLinksCounters();
@@ -12,6 +28,19 @@ $(function () {
     }
 
     initializeDetailsPage();
+
+    function setStoredDividerWidth() {
+        // Check if there's a saved width in localStorage 
+        if (localStorage.getItem('leftWidth')) {
+            const leftWidth = localStorage.getItem('leftWidth');
+            const rightWidth = container.clientWidth - leftWidth;
+
+            mainLeftDiv.style.width = `${leftWidth}px`;
+            mainRightDiv.style.width = `${rightWidth}px`;
+
+            applyTabHeightOffset();
+        }
+    }
 
     function renderSubmission() {
         if (renderFormIoToHtml == "False" || hasRenderedHtml == "False") {
@@ -479,7 +508,7 @@ $(function () {
             applicationRecordsWidgetManager.refresh();
             updateLinksCounters();
         }
-    );    
+    );
 
     // custom fields
     $('body').on('click', '.custom-tab-save', function (event) {
@@ -516,6 +545,102 @@ $(function () {
             }
         }
     );
+
+    divider.addEventListener("mousedown", function (e) {
+        e.preventDefault();
+
+        document.addEventListener("mousemove", resize);
+        document.addEventListener("mouseup", stopResize);
+    });
+
+    function resize(e) {
+        const containerRect = container.getBoundingClientRect();
+        const leftWidth = e.clientX - containerRect.left;
+        const rightWidth = containerRect.right - e.clientX;
+
+        mainLeftDiv.style.width = `${leftWidth}px`;
+        mainRightDiv.style.width = `${rightWidth}px`;
+
+        // Apply the height offset depending on tabs height
+        applyTabHeightOffset();
+
+        // Resize DataTables 
+        debouncedResizeAwareDataTables();
+
+        // Save the left width to localStorage
+        localStorage.setItem("leftWidth", leftWidth);
+    }
+
+    function applyTabHeightOffset() {
+        const detailsTabHeight = 235 + detailsTabs[0].clientHeight;
+        detailsTabContent.style.height = `calc(100vh - ${detailsTabHeight}px)`
+    }
+
+    // Debounced DataTable resizing function
+    const debouncedResizeAwareDataTables = debounce(() => {
+        $('table[data-resize-aware="true"]:visible').each(function () {
+            const table = $(this).DataTable();
+            try {
+                table.columns.adjust().draw();                
+            }
+            catch {
+                console.error(`Adjust width failed for table ${$(this).id}:`, error);
+            }
+        });
+    }, 15); // Adjust the delay as needed
+
+    // Add event listeners to the li items under #detailsTab and #myTab
+    $('#detailsTab li').on('click', function () {
+        debouncedAdjustTables('detailsTab');
+    });
+
+    $('#myTab li').on('click', function () {
+        debouncedAdjustTables('myTabContent');
+    });
+
+    function stopResize() {
+        document.removeEventListener("mousemove", resize);
+        document.removeEventListener("mouseup", stopResize);
+    }
+
+    function recalcAndAdjustSplit() {
+        const containerWidth = container.clientWidth;
+        const savedLeftWidth = localStorage.getItem("leftWidth");
+
+        if (savedLeftWidth) {
+            const savedPercentage = savedLeftWidth / containerWidth;
+
+            // Recalculate the new widths based on the saved percentage
+            const newLeftWidth = containerWidth * savedPercentage;
+            const newRightWidth = containerWidth - newLeftWidth;
+
+            mainLeftDiv.style.width = `${newLeftWidth}px`;
+            mainRightDiv.style.width = `${newRightWidth}px`;
+
+            // Save the new left width to localStorage
+            localStorage.setItem("leftWidth", newLeftWidth);
+        }
+    }
+
+    const debouncedAdjustTables = debounce(adjustVisibleTablesInContainer, 15);
+
+    function adjustVisibleTablesInContainer(containerId) {
+        const activeTab = $(`#${containerId} div.active`);
+        activeTab.find('table[data-resize-aware="true"]:visible').each(function () {
+            const table = $(this).DataTable();
+            try {
+                table.columns.adjust().draw();
+            } catch (error) {
+                console.error(`Adjust width failed for table in container ${containerId}:`, error);
+            }
+        });
+    }
+
+    function windowResize() {
+        recalcAndAdjustSplit();
+    }
+
+    window.addEventListener('resize', windowResize);
 });
 
 function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor, saveId, formDataName, worksheetId) {

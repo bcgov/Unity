@@ -7,7 +7,7 @@ namespace Unity.Flex
     {
         internal static string Convert(string input, string defaultValue)
         {
-            var found = TypePairs.TryGetValue(input, out string value);
+            var found = TypePairs.TryGetValue(input, out string? value);
             if (found)
                 return value ?? CustomFieldType.Text.ToString();
             else
@@ -39,8 +39,8 @@ namespace Unity.Flex
                 { "simpletimeadvanced", CustomFieldType.Text.ToString() },
                 { "simplenumber", CustomFieldType.Numeric.ToString() },
                 { "simplenumberadvanced", CustomFieldType.Numeric.ToString() },
-                { "simplephonenumber", CustomFieldType.Numeric.ToString() },
-                { "simplephonenumberadvanced", CustomFieldType.Numeric.ToString() },
+                { "simplephonenumber", CustomFieldType.Phone.ToString() },
+                { "simplephonenumberadvanced", CustomFieldType.Phone.ToString() },
                 { "simpleselect", CustomFieldType.SelectList.ToString() },
                 { "simpleselectadvanced", CustomFieldType.SelectList.ToString() },
                 { "simpleday", CustomFieldType.Text.ToString() },
