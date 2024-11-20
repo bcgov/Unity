@@ -9,6 +9,6 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
         public string Answer { get; set; } = string.Empty;
         public string? MinLength { get; set; }
         public string? MaxLength { get; set; }
-        public uint? Rows { get; set; } = 0;
+        public uint? Rows { get; set; } = 1;
     }
 }

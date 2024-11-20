@@ -7,7 +7,7 @@ using System;
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
 {
     [Widget(
-        RefreshUrl = "Widgets/QuestionTextAreaWidget/Refresh",
+        RefreshUrl = "Widgets/QuestionTextArea/Refresh",
         AutoInitialize = true)]
     public class QuestionTextAreaWidget : AbpViewComponent
     {
@@ -16,7 +16,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
             string? answer,
             string? minLength,
             string? maxLength,
-            uint? rows = 0,
+            uint? rows = 1,
             bool required = false)
         {
             return View(await Task.FromResult(new QuestionTextAreaViewModel()
