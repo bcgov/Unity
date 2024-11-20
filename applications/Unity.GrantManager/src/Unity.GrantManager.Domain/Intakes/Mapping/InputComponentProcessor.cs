@@ -31,7 +31,8 @@ namespace Unity.GrantManager.Intakes
             "simpleparagraph",
             "simpletabs",
             "container",
-            "columns"
+            "columns",
+            "panel"
         ];
 
         private static readonly List<string> columnTypes =
@@ -120,6 +121,12 @@ namespace Unity.GrantManager.Intakes
 
                 string subSubTokenString = GetSubLookupType(subTokenType);
 
+                // Any dynamic types, get the parent and children tokens
+                if (subTokenType != null && dynamicTypes.Contains(subTokenType))
+                {
+                    AddComponent(token);
+                }
+
                 var nestedComponentsComponents = ((JObject)token).SelectToken(subSubTokenString);
                 if (nestedComponentsComponents != null)
                 {
@@ -174,7 +181,7 @@ namespace Unity.GrantManager.Intakes
             // Safely select nested components
             var nestedComponents = childToken.SelectToken(subTokenString);
 
-            // If there are nested components, process them
+            // If there are nested components, process them            
             if (nestedComponents != null)
             {
                 foreach (var nestedTokenComponent in nestedComponents.Children())
