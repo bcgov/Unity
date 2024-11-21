@@ -52,6 +52,7 @@
           "app.kubernetes.io/part-of": "${APPLICATION_GROUP}"
         },
         "annotations": {
+          "haproxy.router.openshift.io/hsts_header": "max-age=31536000;includeSubDomains;preload",
           "template.openshift.io/expose-uri": "http://{.spec.host}{.spec.path}"
         }
       },
@@ -64,7 +65,7 @@
         "tls": {
           "termination": "edge",
           "insecureEdgeTerminationPolicy": "Redirect"
-        }        
+        }
       }
     },
     {
@@ -74,11 +75,11 @@
         "name": "${APPLICATION_NAME}",
         "labels": {
           "app.openshift.io/runtime": "nginx",
-          "app.kubernetes.io/part-of": "${APPLICATION_GROUP}" 
+          "app.kubernetes.io/part-of": "${APPLICATION_GROUP}"
         },
         "annotations": {
           "description": "Defines how to deploy the application server",
-          "template.alpha.openshift.io/wait-for-ready": "true", 
+          "template.alpha.openshift.io/wait-for-ready": "true",
           "image.openshift.io/triggers": "[{\"from\":{\"kind\":\"ImageStreamTag\",\"name\":\"${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}\",\"namespace\":\"${IMAGEPULL_NAMESPACE}\"},\"fieldPath\":\"spec.template.spec.containers[?(@.name==\\\"${APPLICATION_NAME}\\\")].image\",\"pause\":\"true\"}]"
         }
       },
