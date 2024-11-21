@@ -15,6 +15,7 @@ public enum GrantApplicationAction
     StartReview,
     CompleteReview,
 
+    Internal_StartAssessment,
     StartAssessment,
     CompleteAssessment,
 

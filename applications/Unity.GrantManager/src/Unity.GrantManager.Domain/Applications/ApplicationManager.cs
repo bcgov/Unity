@@ -12,7 +12,7 @@ using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Applications;
 public class ApplicationManager : DomainService, IApplicationManager
-{
+{    
     private readonly IApplicationRepository _applicationRepository;
     private readonly IApplicationStatusRepository _applicationStatusRepository;
     private readonly IApplicationAssignmentRepository _applicationAssignmentRepository;
@@ -46,25 +46,29 @@ public class ApplicationManager : DomainService, IApplicationManager
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED);                      // 2.1 - Internal_Assign;            Role: Team Lead
+            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED)                      // 2.1 - Internal_Assign;            Role: Team Lead
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.ASSIGNED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW);              // 2.3 - Start Review;      Role: Reviewer 
+            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW)              // 2.3 - Start Review;      Role: Reviewer
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.UNDER_INITIAL_REVIEW)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED);
+            .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED)
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.INITITAL_REVIEW_COMPLETED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
+            .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.UNDER_ASSESSMENT)
             .SubstateOf(GrantApplicationState.OPEN)
@@ -144,6 +148,26 @@ public class ApplicationManager : DomainService, IApplicationManager
         return actionsList;
     }
 
+    public bool IsActionAllowed(Application application, GrantApplicationAction triggerAction)
+    {
+        var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
+            () => application.ApplicationStatus.StatusCode,
+            s => application.ApplicationStatus.StatusCode = s, ConfigureWorkflow);
+
+        return Workflow.GetPermittedActions().Contains(triggerAction);
+    }
+
+    public async Task<string> GetGraphAsync(Guid applicationId)
+    {
+        var application = await _applicationRepository.GetAsync(applicationId, true);
+
+        var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
+            () => application.ApplicationStatus.StatusCode,
+            s => application.ApplicationStatus.StatusCode = s, ConfigureWorkflow);
+
+        return Workflow.GetGraph();
+    }
+
     public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
         var application = await _applicationRepository.GetAsync(applicationId);
@@ -160,7 +184,6 @@ public class ApplicationManager : DomainService, IApplicationManager
         }
 
         // NOTE: Should be mapped to ApplicationStatus ID through enum value instead of nav property
-        // WARNING: DRAFT CODE - MAY NOT BE PERSISTING STATE TRANSITIONS CORRECTLY
         var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
             () => statusChange,
             s => statusChange = s,
@@ -170,7 +193,6 @@ public class ApplicationManager : DomainService, IApplicationManager
 
         var statusChangedTo = await _applicationStatusRepository.GetAsync(x => x.StatusCode.Equals(statusChange));
 
-        // NOTE: Is this required or can the navigation property be set on its own?
         application.ApplicationStatusId = statusChangedTo.Id;
         application.ApplicationStatus = statusChangedTo;
 
