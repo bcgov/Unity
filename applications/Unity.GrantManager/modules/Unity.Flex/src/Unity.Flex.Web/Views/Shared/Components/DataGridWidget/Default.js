@@ -5,6 +5,25 @@ $(function () {
         tableSearches: $('.custom-tbl-search')
     };
 
+    let editDatagridRowModal = new abp.ModalManager({
+        viewUrl: '../Components/DataGrid/EditDataRowModal'
+    });
+
+    editDatagridRowModal.onResult(function (response) {
+        // PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+        abp.notify.success(
+            'Update successful.',
+            'Update'
+        );
+    });
+
+    function openEditDatagridRowModal(fieldId, row) {
+        editDatagridRowModal.open({
+            fieldId: fieldId,
+            row: row
+        });
+    }
+
     let actionButtons = [
         {
             id: 'AddRecord',
@@ -86,8 +105,8 @@ $(function () {
         });
     }
 
-    function handleEditRowClick(e) {        
-        console.info('edit tbd');
+    function handleEditRowClick(e) {
+        openEditDatagridRowModal(e.currentTarget.dataset.fieldId, e.currentTarget.dataset.rowNo);
     }
 
     PubSub.subscribe(

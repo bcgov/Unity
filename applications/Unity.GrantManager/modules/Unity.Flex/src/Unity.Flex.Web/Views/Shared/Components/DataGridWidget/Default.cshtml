@@ -44,10 +44,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var row in Model.Rows)
+                    @for (int i = 0; i < Model.Rows.Length; i++)
                     {
                         <tr>
-                            @foreach (var cell in row.Cells)
+                            @foreach (var cell in Model.Rows[i].Cells)
                             {
                                 <td>
                                     @cell.Value
@@ -56,9 +56,9 @@
                             @if (Model.AllowEdit)
                             {
                                 <td>
-                                    <abp-button id="edit-row-btn-@row.Id"
+                                    <abp-button id="edit-row-btn-@Model.Field.Id-@i"
                                                 data-field-id="@Model.Field.Id"
-                                                data-row-id="@row.Id"
+                                                data-row-no="@i"
                                                 class="btn btn-edit row-edit-btn"
                                                 text="Edit"
                                                 type="button"></abp-button>
