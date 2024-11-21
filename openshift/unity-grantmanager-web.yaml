@@ -2,11 +2,11 @@
 kind: Template
 message: |-
   A new application been created in your project: unity-grantmanager-web
-  For more information about using this template, including OpenShift considerations, 
+  For more information about using this template, including OpenShift considerations,
   see template usage guide found in the project readme.md and wiki documents.
 metadata:
   name: unity-grantmanager-web
-  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # This template uses a separate parameter .env file to override the default values defined in this section.
   # oc process -f .\openshift\unity-grantmanager-web.yaml --param-file=namespace.env | oc create -f -
   labels:
     template: unity-grantmanager-web
@@ -155,7 +155,7 @@ parameters:
   value: 'https://cfs-systws.cas.gov.bc.ca:7025/ords/cas'
 - description: Payments__CasClientSecret
   displayName: Payments__CasClientSecret
-  from: '[a-zA-Z0-9]{22}..' 
+  from: '[a-zA-Z0-9]{22}..'
   generate: expression
   name: Payments__CasClientSecret
 - description: Payments__CasClientId
@@ -186,10 +186,10 @@ parameters:
   name: IMAGEPULL_NAMESPACE
   from: '[a-zA-Z0-9]{5}-tools'
   generate: expression
-- description: The ImageStream Name 
+- description: The ImageStream Name
   displayName: Registry imagestream name
   name: IMAGESTREAM_NAME
-  value: unity-grantmanager-build 
+  value: unity-grantmanager-build
 - description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
   displayName: Application Version
   name: IMAGESTREAM_TAG
@@ -222,7 +222,7 @@ parameters:
   value: 512Mi
 # Template objects to instantiate the project application.
 objects:
-# Secrets 
+# Secrets
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -248,8 +248,8 @@ objects:
     RabbitMQ__Password: ${RabbitMQ__Password}
   type: Opaque
 # Configmap
-- apiVersion: v1 
-  kind: ConfigMap 
+- apiVersion: v1
+  kind: ConfigMap
   metadata:
     name: ${APPLICATION_NAME}
     labels:
@@ -313,6 +313,10 @@ objects:
   metadata:
     annotations:
       description: Route for application's http service.
+      haproxy.router.openshift.io/balance: roundrobin
+      haproxy.router.openshift.io/hsts_header: max-age=31536000;includeSubDomains;preload
+      router.openshift.io/cookie-same-site: Strict
+      router.openshift.io/cookie_name: haproxy-ugm
     name: ${APPLICATION_NAME}
     labels:
       app: ${APPLICATION_NAME}
@@ -333,6 +337,29 @@ objects:
       termination: edge
       insecureEdgeTerminationPolicy: Redirect
     wildcardPolicy: None
+    httpHeaders:
+      actions:
+        response:
+          - name: X-Frame-Options
+            action:
+              type: Set
+              set:
+                value: SAMEORIGIN
+          - name: X-Content-Type-Options
+            action:
+              type: Set
+              set:
+                value: no-sniff
+          - name: Referrer-Policy
+            action:
+              type: Set
+              set:
+                value: strict-origin-when-cross-origin
+          - name: Content-Security-Policy
+            action:
+              type: Set
+              set:
+                value: object-src 'none'; frame-ancestors 'none'
 # Persistent storage for the application logfiles.
 - apiVersion: v1
   kind: PersistentVolumeClaim
@@ -352,7 +379,7 @@ objects:
         storage: ${VOLUME_CAPACITY}
       storageClassName: netapp-file-standard
       volumeMode: Filesystem
-# Deployment 
+# Deployment
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -418,6 +445,20 @@ objects:
             requests:
               cpu: ${CPU_REQUEST}
               memory: ${MEMORY_REQUEST}
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: 8080
+              scheme: HTTP
+              httpHeaders:
+                - name: content-type
+                  value: text/plain
+                - name: readiness
+                  value: healthy
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /healthz/live
