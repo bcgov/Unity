@@ -2,7 +2,7 @@ $(function () {
 
     function makeScoresheetsSortable() {
         document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
-            
+
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: function (evt) {
@@ -22,7 +22,7 @@ $(function () {
                     const isSecondItemSection = secondItem?.classList.contains('section-item');
 
                     if (isTopItem && !isSecondItemSection) {
-                        return false; 
+                        return false;
                     }
 
                     if (isDraggedSection) {
@@ -36,28 +36,28 @@ $(function () {
             });
         });
 
-        
+
         _ = new Sortable(document.getElementById('scoresheet-accordion'), {
             handle: '.draggable-header',
             animation: 150,
             ghostClass: 'blue-background',
             onEnd: function (evt) {
-                let itemEl = evt.item; 
+                let itemEl = evt.item;
                 itemEl.style.border = "";
                 updateScoresheetOrder();
             },
             onStart: function (evt) {
-                let itemEl = evt.item; 
-                itemEl.style.border = "2px solid lightblue"; 
+                let itemEl = evt.item;
+                itemEl.style.border = "2px solid lightblue";
             },
         });
-                
+
     }
 
     function updateScoresheetOrder() {
         let order = [];
         $("#scoresheet-accordion .accordion-item").each(function (index, element) {
-            let scoresheetId = $(element).find(".accordion-header").attr("id").replace("heading-","");
+            let scoresheetId = $(element).find(".accordion-header").attr("id").replace("heading-", "");
             order.push(scoresheetId);
         });
         unity.flex.scoresheets.scoresheet.saveScoresheetOrder(order)
@@ -86,16 +86,16 @@ $(function () {
 
         updatePreviewAccordion(sortedItems);
     }
-    
+
     function attachAccordionToggleListeners() {
         const accordionItems = document.querySelectorAll('#scoresheet-accordion .accordion-button');
         accordionItems.forEach(button => {
             button.addEventListener('click', function () {
-                setTimeout(updateUnsortedPreview, 500); 
+                setTimeout(updateUnsortedPreview, 500);
             });
         });
-    }       
-    
+    }
+
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('preview');
 
@@ -103,6 +103,14 @@ $(function () {
             previewDiv.innerHTML = '<p>No sections to display.</p>';
             return;
         }
+
+        const previewBuilders = {
+            "Text": buildTextFieldPreview,
+            "YesNo": buildYesNoFieldPreview,
+            "Number": buildNumberFieldPreview,
+            "SelectList": buildSelectListFieldPreview,
+            "TextArea": buildTextAreaFieldPreview
+        };
 
         let accordionHTML = '';
         let currentSectionItem = null;
@@ -130,78 +138,6 @@ $(function () {
                 currentSectionItem = item;
                 questionNumber = 1;
             } else {
-                let questionBody = '';
-                if (item.dataset.questiontype === "Text") {
-                    questionBody = `
-                    <p>${item.dataset.questiondesc}</p>
-                    <div class="mb-3">
-                        <label for="answer-text-${item.dataset.id}" class="form-label">Answer</label>
-                        <input type="text" class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" id="answer-text-${item.dataset.id}" name="Answers[${item.dataset.id}]" value="" data-original-value="" oninput="handleInputChange('${item.dataset.id}','answer-text-','save-text-','discard-text-')" />
-                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
-                    </div>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" disabled id="save-text-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">SAVE CHANGES</button>
-                        <button type="button" class="btn btn-secondary" id="discard-text-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">DISCARD CHANGES</button>
-                    </div>`;
-                } else if (item.dataset.questiontype === "YesNo") {
-                    questionBody = `
-                    <p>${item.dataset.questiondesc}</p>
-                    <div class="mb-3">
-                        <label for="answer-yesno-${item.dataset.id}" class="form-label">Answer</label>
-                        <select id="answer-yesno-${item.dataset.id}"
-                                class="form-select form-control answer-yesno-input"
-                                name="Answer-YesNo[${item.dataset.id}]"
-                                data-original-value=""
-                                data-yes-numeric-value="${item.dataset.yesvalue}"
-                                data-no-numeric-value="${item.dataset.novalue}"
-                                onchange="handleInputChange('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">
-                            <option value="">Please choose...</option>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                        </select>
-                    </div>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" disabled id="save-yesno-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">SAVE CHANGES</button>
-                        <button type="button" class="btn btn-secondary" id="discard-yesno-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">DISCARD CHANGES</button>
-                    </div>`;
-                } else if (item.dataset.questiontype === "Number") {
-                    questionBody = `
-                    <p>${item.dataset.questiondesc}</p>
-                    <div class="mb-3">
-                        <label for="answer-number-${item.dataset.id}" class="form-label">Answer</label>
-                        <input type="number" class="form-control answer-number-input" min="${item.dataset.min}" max="${item.dataset.max}" id="answer-number-${item.dataset.id}" name="Answers[${item.dataset.id}]" data-original-value="" oninput="handleInputChange('${item.dataset.id}','answer-number-','save-number-','discard-number-')" />
-                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error" ></span>
-                    </div>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" disabled id="save-number-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">SAVE CHANGES</button>
-                        <button type="button" class="btn btn-secondary" id="discard-number-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">DISCARD CHANGES</button>
-                    </div>`;
-                } else if (item.dataset.questiontype === "SelectList") {
-                    const options = JSON.parse(item.dataset.definition).options || [];
-                    let optionsHTML = `<option data-numeric-value="0" value="">Please choose...</option>`;
-                    optionsHTML += options.map(option => {
-                        const truncatedValue = option.value.length > 100 ? option.value.substring(0, 100) + " ..." : option.value;
-                        return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.value}">${truncatedValue}</option>`;
-                    }).join('');
-
-                    questionBody = `
-                    <p>${item.dataset.questiondesc}</p>
-                    <div class="mb-3">
-                        <label for="answer-selectlist-${item.dataset.id}" class="form-label">Answer</label>
-                        <select id="answer-selectlist-${item.dataset.id}"
-                                class="form-select form-control answer-selectlist-input"
-                                name="Answer-SelectList[${item.dataset.id}]"
-                                data-original-value=""
-                                onchange="handleInputChange('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">
-                            ${optionsHTML}
-                        </select>
-                    </div>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" disabled id="save-selectlist-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">SAVE CHANGES</button>
-                        <button type="button" class="btn btn-secondary" id="discard-selectlist-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">DISCARD CHANGES</button>
-                    </div>`;
-                }
-
                 accordionHTML += `
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="nested-panel-${hashCode(item.innerText)}">
@@ -211,7 +147,7 @@ $(function () {
                         </h2>
                         <div id="nested-collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel-${hashCode(item.innerText)}">
                             <div class="accordion-body">
-                                ${questionBody}
+                                ${buildFieldPreview(previewBuilders[item.dataset.questiontype], item)}
                             </div>
                         </div>
                     </div>`;
@@ -242,6 +178,100 @@ $(function () {
         updateSubtotal();
     }
 
+    function buildFieldPreview(builder, item) {
+        return builder ? builder(item) : null;
+    }
+
+    function buildTextAreaFieldPreview(item) {
+        return `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label for="answer-text-${item.dataset.id}" class="form-label">Answer</label>
+                        <textarea rows="${item.dataset.rows}" type="text" class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" id="answer-text-${item.dataset.id}" name="Answers[${item.dataset.id}]" value="" data-original-value="" oninput="handleInputChange('${item.dataset.id}','answer-text-','save-text-','discard-text-')"></textarea>
+                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" disabled id="save-text-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-text-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">DISCARD CHANGES</button>
+                    </div>`;
+    }
+
+    function buildSelectListFieldPreview(item) {
+        const options = JSON.parse(item.dataset.definition).options || [];
+        let optionsHTML = `<option data-numeric-value="0" value="">Please choose...</option>`;
+        optionsHTML += options.map(option => {
+            const truncatedValue = option.value.length > 100 ? option.value.substring(0, 100) + " ..." : option.value;
+            return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.value}">${truncatedValue}</option>`;
+        }).join('');
+
+        return `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label for="answer-selectlist-${item.dataset.id}" class="form-label">Answer</label>
+                        <select id="answer-selectlist-${item.dataset.id}"
+                                class="form-select form-control answer-selectlist-input"
+                                name="Answer-SelectList[${item.dataset.id}]"
+                                data-original-value=""
+                                onchange="handleInputChange('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">
+                            ${optionsHTML}
+                        </select>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" disabled id="save-selectlist-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-selectlist-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">DISCARD CHANGES</button>
+                    </div>`;
+    }
+
+    function buildNumberFieldPreview(item) {
+        return `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label for="answer-number-${item.dataset.id}" class="form-label">Answer</label>
+                        <input type="number" class="form-control answer-number-input" min="${item.dataset.min}" max="${item.dataset.max}" id="answer-number-${item.dataset.id}" name="Answers[${item.dataset.id}]" data-original-value="" oninput="handleInputChange('${item.dataset.id}','answer-number-','save-number-','discard-number-')" />
+                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error" ></span>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" disabled id="save-number-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-number-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">DISCARD CHANGES</button>
+                    </div>`;
+    }
+
+    function buildYesNoFieldPreview(item) {
+        return `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label for="answer-yesno-${item.dataset.id}" class="form-label">Answer</label>
+                        <select id="answer-yesno-${item.dataset.id}"
+                                class="form-select form-control answer-yesno-input"
+                                name="Answer-YesNo[${item.dataset.id}]"
+                                data-original-value=""
+                                data-yes-numeric-value="${item.dataset.yesvalue}"
+                                data-no-numeric-value="${item.dataset.novalue}"
+                                onchange="handleInputChange('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">
+                            <option value="">Please choose...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" disabled id="save-yesno-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-yesno-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">DISCARD CHANGES</button>
+                    </div>`;
+    }
+
+    function buildTextFieldPreview(item) {
+        return `
+                    <p>${item.dataset.questiondesc}</p>
+                    <div class="mb-3">
+                        <label for="answer-text-${item.dataset.id}" class="form-label">Answer</label>
+                        <input type="text" class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" id="answer-text-${item.dataset.id}" name="Answers[${item.dataset.id}]" value="" data-original-value="" oninput="handleInputChange('${item.dataset.id}','answer-text-','save-text-','discard-text-')" />
+                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" disabled id="save-text-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">SAVE CHANGES</button>
+                        <button type="button" class="btn btn-secondary" id="discard-text-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">DISCARD CHANGES</button>
+                    </div>`;
+    }
 
     function hashCode(str) {
         let hash = 0;
@@ -256,11 +286,11 @@ $(function () {
         return hash;
     }
 
-    
+
     makeScoresheetsSortable();
     attachAccordionToggleListeners();
     updateUnsortedPreview();
-    
+
     PubSub.subscribe(
         'refresh_scoresheet_configuration_page',
         (msg, data) => {
@@ -301,12 +331,10 @@ let sectionModal = new abp.ModalManager({
     viewUrl: 'ScoresheetConfiguration/SectionModal'
 });
 
-
-
 sectionModal.onResult(function (response) {
     const actionType = $(response.currentTarget).find('#ActionType').val();
     PubSub.publish('refresh_scoresheet_list', { scoresheetId: selectedScoresheetId });
-    
+
     abp.notify.success(
         actionType + ' is successful.',
         'Scoresheet Section'
@@ -382,7 +410,6 @@ function savePreviewChanges(questionId, inputFieldPrefix, saveButtonPrefix, disc
     discardButton.disabled = true;
 
     updateSubtotal();
-
 }
 
 

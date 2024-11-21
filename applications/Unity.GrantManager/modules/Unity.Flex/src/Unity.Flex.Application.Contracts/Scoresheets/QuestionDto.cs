@@ -54,5 +54,10 @@ namespace Unity.Flex.Scoresheets
         {
             return JsonSerializer.Deserialize<CustomFieldDefinition>(Definition ?? "{}")?.Required.ToString();
         }
+
+        public uint? GetRowsValue()
+        {
+            return JsonSerializer.Deserialize<TextAreaDefinition>(Definition ?? "{}")?.Rows;
+        }
     }
 }
