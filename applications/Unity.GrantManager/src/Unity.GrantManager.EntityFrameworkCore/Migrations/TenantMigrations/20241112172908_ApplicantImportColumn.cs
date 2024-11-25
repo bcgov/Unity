@@ -36,12 +36,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 type: "text",
                 nullable: true);
 
-            migrationBuilder.AddColumn<double>(
-                name: "MatchPercentage",
-                table: "Applicants",
-                type: "decimal",
-                nullable: true);
-
         }
 
         /// <inheritdoc />
@@ -63,9 +57,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                                 name: "RedStop",
                                 table: "Applicants");
 
-            migrationBuilder.DropColumn(
-                name: "MatchPercentage",
-                table: "Applicants");
         }
     }
 }

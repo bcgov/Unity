@@ -40,7 +40,7 @@
                             onchange="typeSelectionChanged(this)">
                 </abp-select>
             </abp-row>
-
+            
             <div id="definition-editor">
                 @await Component.InvokeAsync(typeof(CustomFieldDefinitionWidget), new { type = Model.FieldType, definition = Model.Definition })
             </div>
