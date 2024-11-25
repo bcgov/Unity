@@ -198,13 +198,16 @@
     <div id="main-divider" class="divider"></div>
     <div id="main-right">
         <abp-card class="right-card">
-            <ul class="nav nav-tabs details-nav flex-nowrap" id="myTab" role="tablist">
+            <ul class="nav nav-tabs details-nav flex-nowrap" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
                 @* <li class="nav-item" role="presentation">
                 <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
                 </li> *@
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
+                </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                 </li>
@@ -218,7 +221,6 @@
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
                 </li>
             </ul>
-
 
             <div class="tab-content details-scrollable" id="myTabContent">
 
@@ -287,6 +289,14 @@
                 </div>
                 @*-------- Details Tab Section END ---------*@
 
+                @*-------- Emails Tab Section ---------*@
+                <div class="tab-pane" id="emails" role="tabpanel" aria-labelledby="emails-tab">
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Emails</h6>
+                    <div class="px-3 pb-2" id="applicationEmailsWidget">
+                        @await Component.InvokeAsync("EmailsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
+                    </div>
+                </div>
+                @*-------- Emails Tab Section END ---------*@
 
                 @*-------- Comments Tab Section ---------*@
                 <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">

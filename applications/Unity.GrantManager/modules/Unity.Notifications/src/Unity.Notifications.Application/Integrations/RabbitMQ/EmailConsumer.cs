@@ -69,7 +69,8 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                         RestResponse response = await _emailNotificationService.SendEmailNotification(
                                                                                         emailLog.ToAddress,
                                                                                         emailLog.Body,
-                                                                                        emailLog.Subject);
+                                                                                        emailLog.Subject,
+                                                                                        emailLog.FromAddress);
                         if (ReprocessBasedOnStatusCode(response.StatusCode))
                         {
                             emailLog.RetryAttempts = emailLog.RetryAttempts + 1;

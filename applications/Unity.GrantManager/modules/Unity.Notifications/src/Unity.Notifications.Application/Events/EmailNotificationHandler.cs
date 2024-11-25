@@ -36,13 +36,14 @@ namespace Unity.GrantManager.Events
         }
 
 
-        private async Task InitializeAndSendEmailToQueue(string email, string body, string subject, Guid applicationId)
+        private async Task InitializeAndSendEmailToQueue(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
         {
             EmailLog emailLog = await _emailNotificationService.InitializeEmailLog(
-                                                email,
+                                                emailTo,
                                                 body,
                                                 subject,
-                                                applicationId) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
+                                                applicationId, 
+                                                emailFrom) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
 
             await _emailNotificationService.SendEmailToQueue(emailLog);            
         }
@@ -51,14 +52,14 @@ namespace Unity.GrantManager.Events
         {
             if (eventData == null) return;
 
-            string email = eventData.EmailAddress;
+            string emailTo = eventData.EmailAddress;
             switch (eventData.Action)
             {
                 case EmailAction.SendFailedSummary:
                     {
-                        foreach(string emailString in eventData.EmailAddressList)
+                        foreach(string emailToAddress in eventData.EmailAddressList)
                         {
-                            await InitializeAndSendEmailToQueue(emailString, eventData.Body, FAILED_PAYMENTS_SUBJECT, eventData.ApplicationId);
+                            await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, FAILED_PAYMENTS_SUBJECT, eventData.ApplicationId, eventData.EmailFrom);
                         }
   
                         break;
@@ -66,13 +67,22 @@ namespace Unity.GrantManager.Events
                 case EmailAction.SendApproval:
                     {
                         string body = _emailNotificationService.GetApprovalBody();
-                        await InitializeAndSendEmailToQueue(email, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId);
+                        await InitializeAndSendEmailToQueue(emailTo, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId, eventData.EmailFrom);
                         break;
                     }
                 case EmailAction.SendDecline:
                     {
                         string body = _emailNotificationService.GetDeclineBody();
-                        await InitializeAndSendEmailToQueue(email, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId);
+                        await InitializeAndSendEmailToQueue(emailTo, body, GRANT_APPLICATION_UPDATE_SUBJECT, eventData.ApplicationId, eventData.EmailFrom);
+                        break;
+                    }
+                case EmailAction.SendCustom:
+                    {
+                        foreach (string emailToAddress in eventData.EmailAddressList)
+                        {
+                            await InitializeAndSendEmailToQueue(emailToAddress, eventData.Body, eventData.Subject, eventData.ApplicationId, eventData.EmailFrom);
+                        }
+                        
                         break;
                     }
                 case EmailAction.Retry:

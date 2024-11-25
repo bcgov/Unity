@@ -72,13 +72,13 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return declineBody;
     }
 
-    public async Task<EmailLog?> InitializeEmailLog(string email, string body, string subject, Guid applicationId)
+    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
     {        
-        if (string.IsNullOrEmpty(email))
+        if (string.IsNullOrEmpty(emailTo))
         {
             return null;
         }
-        var emailObject = GetEmailObject(email, body, subject);
+        var emailObject = GetEmailObject(emailTo, body, subject, emailFrom);
         EmailLog emailLog = GetMappedEmailLog(emailObject);
         emailLog.ApplicationId = applicationId;
         
@@ -100,17 +100,18 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <summary>
     /// Send Email Notfication
     /// </summary>
-    /// <param name="email">The email address to send to</param>
+    /// <param name="emailTo">The email address to send to</param>
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
-    public async Task<RestResponse> SendEmailNotification(string email, string body, string subject)
+    /// <param name="emailFrom">From Email Address</param>
+    public async Task<RestResponse> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom)
     {
         RestResponse response = new RestResponse();
         try
         {
-            if (!string.IsNullOrEmpty(email))
+            if (!string.IsNullOrEmpty(emailTo))
             {
-                var emailObject = GetEmailObject(email, body, subject);
+                var emailObject = GetEmailObject(emailTo, body, subject, emailFrom);
                 response = await _chesClientService.SendAsync(emailObject);
                 await LogEmailResponse(emailObject, response);
             }
@@ -154,15 +155,21 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
-    protected virtual dynamic GetEmailObject(string email, string body, string subject)
+    protected virtual dynamic GetEmailObject(string emailTo, string body, string subject, string? emailFrom)
     {
-        List<string> toList = new() { email };
+        List<string> toList = new();
+        string[] emails = emailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (string email in emails) {
+            toList.Add(email.Trim());
+        }
+        
         var emailObject = new
         {
             body,
             bodyType = "html",
             encoding = "utf-8",
-            from = _configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca",
+            from = emailFrom ?? _configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca",
             priority = "normal",
             subject,
             tag = "tag",

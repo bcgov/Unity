@@ -23,6 +23,7 @@ $(function () {
         setStoredDividerWidth();
         updateTabDisplay();
         initCommentsWidget();
+        initEmailsWidget();
         updateLinksCounters();
         renderSubmission();
     }
@@ -494,6 +495,14 @@ $(function () {
         }
     );
 
+    PubSub.subscribe(
+        'update_application_emails_count',
+        (msg, data) => {
+            // Fix - set email count
+            $('#application_emails_count').html(data);
+        }
+    );
+
     let applicationRecordsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationRecordsWidget',
         filterCallback: function () {
@@ -802,6 +811,13 @@ const checkCurrentUser = function (data) {
     }
 };
 
+function updateEmailsCounters() {
+    setTimeout(() => {
+        $('.emails-container').map(function () {
+            $('#' + $(this).data('emailscounttag')).html($(this).data('count'));
+        }).get();
+    }, 100);
+}
 
 function updateCommentsCounters() {
     setTimeout(() => {
@@ -818,6 +834,47 @@ function updateLinksCounters() {
         }).get();
     }, 100);
 }
+
+function initEmailsWidget() {
+    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
+
+    let applicationEmailsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationEmailsWidget',
+        filterCallback: function () {
+            return {
+                'ownerId': $('#DetailsViewApplicationId').val(),
+                'currentUserId': currentUserId,
+            };
+        }
+    });
+
+    PubSub.subscribe(
+        'ApplicationEmail_refresh',
+        () => {
+            applicationEmailsWidgetManager.refresh();
+            updateEmailsCounters();
+        }
+    );
+
+    updateEmailsCounters();
+    let tagsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationTagsWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val() ?? "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    });
+
+    PubSub.subscribe(
+        'ApplicationTags_refresh',
+        () => {
+            tagsWidgetManager.refresh();
+        }
+    );
+}
+
+
 
 function initCommentsWidget() {
     const currentUserId = decodeURIComponent($("#CurrentUserId").val());
@@ -924,6 +981,7 @@ function isValidCurrencyCustomField(input) {
     }
 
 }
+
 function showCurrencyError(input, message) {
     let errorSpan = input.attr('id') + "-error";
     document.getElementById(errorSpan).textContent = message;
