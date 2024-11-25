@@ -78,8 +78,16 @@ namespace Unity.GrantManager.Intakes
             string bcSocietyNumber = applicant.OrgNumber?.StartsWith('S') == true ? applicant.OrgNumber : string.Empty;
 
             // Fetch address and agent information
-            List<ApplicantAddress> applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
-            ApplicantAddress? applicantAddress = applicantAddresses?.FirstOrDefault();
+            // Fetch all applicant addresses at once
+            List<ApplicantAddress>? applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
+
+            // Order by date (for example, DateCreated) in descending order
+            applicantAddresses = applicantAddresses?.OrderByDescending(x => x.LastModificationTime).ToList();
+
+            // Filter physical and mailing addresses from the sorted list
+            ApplicantAddress? applicantPhysicalAgent = applicantAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.PhysicalAddress);
+            ApplicantAddress? applicantMailingAgent = applicantAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.MailingAddress);
+
             ApplicantAgent? applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(x => x.ApplicantId == applicant.Id);
 
             var result = new ApplicantResult
@@ -94,13 +102,20 @@ namespace Unity.GrantManager.Intakes
                 FiscalYearDay = applicant.FiscalDay.ToString(),
                 FiscalYearMonth = applicant.FiscalMonth,
                 BusinessNumber = applicant.BusinessNumber,
-                PyhsicalAddressUnit = applicantAddress?.Unit ?? "",
-                PyhsicalAddressLine1 = applicantAddress?.Street ?? "",
-                PyhsicalAddressLine2 = applicantAddress?.Street2 ?? "",
-                PyhsicalAddressPostal = applicantAddress?.Postal ?? "",
-                PyhsicalAddressCity = applicantAddress?.City ?? "",
-                PyhsicalAddressProvince = applicantAddress?.Province ?? "",
-                PyhsicalAddressCountry = applicantAddress?.Country ?? "",
+                PhysicalAddressUnit = applicantPhysicalAgent?.Unit ?? "",
+                PhysicalAddressLine1 = applicantPhysicalAgent?.Street ?? "",
+                PhysicalAddressLine2 = applicantPhysicalAgent?.Street2 ?? "",
+                PhysicalAddressPostal = applicantPhysicalAgent?.Postal ?? "",
+                PhysicalAddressCity = applicantPhysicalAgent?.City ?? "",
+                PhysicalAddressProvince = applicantPhysicalAgent?.Province ?? "",
+                PhysicalAddressCountry = applicantPhysicalAgent?.Country ?? "",
+                MailingAddressUnit = applicantMailingAgent?.Unit ?? "",
+                MailingAddressLine1 = applicantMailingAgent?.Street ?? "",
+                MailingAddressLine2 = applicantMailingAgent?.Street2 ?? "",
+                MailingAddressPostal = applicantMailingAgent?.Postal ?? "",
+                MailingAddressCity = applicantMailingAgent?.City ?? "",
+                MailingAddressProvince = applicantMailingAgent?.Province ?? "",
+                MailingAddressCountry = applicantMailingAgent?.Country ?? "",
                 PhoneNumber = applicantAgent?.Phone ?? "",
                 PhoneExtension = applicantAgent?.PhoneExtension ?? ""
             };
