@@ -9,6 +9,8 @@ using System.Linq;
 using Unity.Flex.Web.Views.Shared.Components.Worksheets;
 using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget;
 using Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget;
+using Unity.Flex.Web.Views.Shared.Components.DataGridDefinitionWidget;
+using Unity.Flex.Web.Views.Shared.Components.DataGridWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetList;
 
@@ -18,13 +20,17 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetList;
         typeof(WorksheetListWidgetScriptBundleContributor),
         typeof(WorksheetWidgetScriptBundleContributor),
         typeof(CheckboxGroupDefinitionWidgetScriptBundleContributor),
-        typeof(SelectListDefinitionWidgetScriptBundleContributor)
+        typeof(SelectListDefinitionWidgetScriptBundleContributor),
+        typeof(DataGridDefinitionWidgetScriptBundleContributor),
+        typeof(DataGridWidgetScriptBundleContributor)
     ],
     StyleTypes = [
         typeof(WorksheetListWidgetStyleBundleContributor),
         typeof(WorksheetWidgetStyleBundleContributor),
         typeof(CheckboxGroupDefinitionWidgetStyleBundleContributor),
-        typeof(SelectListDefinitionWidgetStyleBundleContributor)
+        typeof(SelectListDefinitionWidgetStyleBundleContributor),
+        typeof(DataGridDefinitionWidgetStyleBundleContributor),
+        typeof(DataGridWidgetStyleBundleContributor)
     ],
     AutoInitialize = true)]
 public class WorksheetListWidget(IWorksheetAppService worksheetAppService) : AbpViewComponent

@@ -213,6 +213,21 @@
     "Setting:GrantManager.Locality.SectorFilter.DisplayName": "SectorFilter",
     "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
 
+    "Permission:UnitySettingManagementPermissions.UserInterface": "Application Tabs",
+    "Setting:GrantManager.UI.PageTitle": "Application Tabs Configuration",
+    "Setting:GrantManager.UI.Tabs.Submission.DisplayName": "Submission",
+    "Setting:GrantManager.UI.Tabs.Submission.Description": "Toggle visibility of the Submission tab for the tenant",
+    "Setting:GrantManager.UI.Tabs.Assessment.DisplayName": "Review & Assessment",
+    "Setting:GrantManager.UI.Tabs.Assessment.Description": "Toggle visibility of the Review & Assessment tab for the tenant",
+    "Setting:GrantManager.UI.Tabs.Project.DisplayName": "Project Info",
+    "Setting:GrantManager.UI.Tabs.Project.Description": "Toggle visibility of the Project Info tab for the tenant",
+    "Setting:GrantManager.UI.Tabs.Applicant.DisplayName": "Applicant Info",
+    "Setting:GrantManager.UI.Tabs.Applicant.Description": "Toggle visibility of the Applicant Info tab for the tenant",
+    "Setting:GrantManager.UI.Tabs.Payments.DisplayName": "Payment Info",
+    "Setting:GrantManager.UI.Tabs.Payments.Description": "Toggle visibility of the Payment Info tab for the tenant",
+    "Setting:GrantManager.UI.Tabs.FundingAgreement.DisplayName": "Funding Agreement",
+    "Setting:GrantManager.UI.Tabs.FundingAgreement.Description": "Toggle visibility of the Funding Agreement tab for the tenant",
+
     "Summary:ApplicationSummaryTitle": "Submission",
     "Summary:AssessmentSummaryTitle": "Assessment Summary",
     "Summary:ContactsTitle": "Additional Contact(s)",
@@ -268,9 +283,6 @@
     "ProjectInfoView:ProjectInfo.ContactEmail": "Contact Email",
     "ProjectInfoView:ProjectInfo.ContactBusinessPhone": "Contact Business Phone",
     "ProjectInfoView:ProjectInfo.ContactCellPhone": "Contact Cell Phone",
-    "ProjectInfoView:ProjectInfoContract": "Contract",
-    "ProjectInfoView:ProjectInfo.ContractNumber": "Contract #",
-    "ProjectInfoView:ProjectInfo.ContractExecutionDate": "Execution Date",
 
     "ApplicantInfoView:ApplicantInfoContactInfo": "Contact Info",
     "ApplicantInfoView:SigningAuthorityTitle": "Signing Authority",
@@ -302,6 +314,11 @@
     "ApplicantInfoView:ApplicantInfo.City": "City",
     "ApplicantInfoView:ApplicantInfo.Province": "Province",
     "ApplicantInfoView:ApplicantInfo.PostalCode": "Postal Code",
+
+    "FundingAgreementInfoView:FundingAgreementInfoTitle": "Funding Agreement",
+    "FundingAgreementInfoView:FundingAgreementInfoContract": "Contract",
+    "FundingAgreementInfoView:FundingAgreementInfo.ContractNumber": "Contract #",
+    "FundingAgreementInfoView:FundingAgreementInfo.ContractExecutionDate": "Execution Date",
 
     "UnityIdentity:ImportUser": "Import User",
     "UnityIdentity:FirstName": "First Name",
