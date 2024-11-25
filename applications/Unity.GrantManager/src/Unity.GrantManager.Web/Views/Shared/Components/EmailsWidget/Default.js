@@ -61,58 +61,55 @@
         const emailRegex = /^[\w.-]+@[a-z]+\.[a-z]{2,}$/;
         return emailRegex.exec(String(email).toLowerCase()) !== null;
     }
+
     function validateEmailTo() {
-        // Split on both semi-colon and comma, and trim the email values
-        let emailValue = UIElements.inputEmailToField.value.trim().replace(/[,;]+$/, '');  // Trim trailing commas and semicolons
+        // Get the email input value, trim trailing commas/semicolons, and split by comma or semicolon
+        let emailValue = UIElements.inputEmailToField.value.trim().replace(/[,;]+$/, ''); // Trim trailing commas and semicolons
         let emails = emailValue.split(/[,;]/g).map(email => email.trim()); // Split by comma or semicolon, and trim each email
         let emailToErrorSpan = $("span[data-valmsg-for*='EmailTo']")[0];
-    
+
         // Initialize as valid
         let valid = true;
-    
-        for (let i = 0; i < emails.length; i++) {
-            let emailStr = emails[i];
-    
-            // Check for empty or invalid email
+
+        // Iterate through the list of emails using for...of loop
+        for (let emailStr of emails) {
+            // Check if the email is empty or invalid
             if (emailStr === '' || !validateEmail(emailStr)) {
                 let emailToError = '';
-    
+
+                // Handle empty email input
                 if (emailStr === '') {
-                    if (emailValue.length > 0) {
-                        emailToError = 'An email is required after each comma or semicolon.';
-                    } else {
-                        emailToError = 'The Email To field is required.';
-                    }
+                    emailToError = emailValue.length > 0 ? 'An email is required after each comma or semicolon.' : 'The Email To field is required.';
                 } else {
-                    emailToError = 'Please enter a valid Email To: ' + emailStr;
+                    // Handle invalid email format
+                    emailToError = `Please enter a valid Email To: ${emailStr}`;
                 }
-    
-                // Display error message
+
+                // Display the error message
                 $(emailToErrorSpan).addClass('field-validation-error').removeClass('field-validation-valid');
                 $(emailToErrorSpan).html(emailToError);
-    
-                // Invalid, return false
+
+                // Mark the validation as invalid and exit the loop
                 valid = false;
                 break;
             }
         }
-    
+
         // Clear error message if all emails are valid
         if (valid) {
             $(emailToErrorSpan).addClass('field-validation-valid').removeClass('field-validation-error');
             $(emailToErrorSpan).html('');
         }
-    
+
         return valid;
     }
-    
 
     function handleConfirmSendEmail() {
         UIElements.confirmationModal.hide();
         UIElements.emailSpinner.show();
         unity.grantManager.emails.email
             .create({
-                applicationId: UIElements.applicationId, 
+                applicationId: UIElements.applicationId,
                 emailTo: UIElements.inputEmailTo[0].value,
                 emailFrom: UIElements.inputEmailFrom[0].value,
                 emailBody: UIElements.inputEmailBody[0].value,
@@ -121,9 +118,9 @@
             })
             .then(function () {
                 hideConfirmation();
-                handlCloseEmail();
+                handleCloseEmail();
                 abp.notify.success('Your email is being sent');
-            }).catch(function () { 
+            }).catch(function () {
                 hideConfirmation();
                 abp.notify.error('An error ocurred your email could not be sent.');
             });
@@ -144,18 +141,18 @@
         // Prevent form submission and stop propagation
         e.stopPropagation();
         e.preventDefault();
-    
+
         // Validate the "Email To" field
         if (!validateEmailTo()) {
             return false; // If validation fails, stop further processing
         }
-    
+
         // Check if the form is valid
         if (UIElements.emailForm.valid()) {
             showConfirmation(); // Show confirmation if the form is valid
             return true; // Return true to indicate success
         }
-    
+
         // If form is not valid, do not show confirmation
         return false; // Return false if validation or other conditions fail
     }

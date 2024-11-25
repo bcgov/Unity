@@ -113,7 +113,6 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             {
                 var emailObject = GetEmailObject(emailTo, body, subject, emailFrom);
                 response = await _chesClientService.SendAsync(emailObject);
-                await LogEmailResponse(emailObject, response);
             }
             else
             {
@@ -176,14 +175,6 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             to = toList
         };
         return emailObject;
-    }
-
-    protected virtual async Task<EmailLog> LogEmailResponse(object emailObject, RestResponse response)
-    {
-        EmailLog emailLog = GetMappedEmailLog(emailObject);
-        emailLog.ChesResponse = JsonConvert.SerializeObject(response);
-        emailLog.ChesStatus = response.StatusCode.ToString();
-        return await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);
     }
 
     protected virtual EmailLog GetMappedEmailLog(dynamic emailDynamicObject)

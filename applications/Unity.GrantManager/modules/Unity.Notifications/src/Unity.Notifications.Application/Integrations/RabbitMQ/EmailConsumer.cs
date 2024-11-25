@@ -13,6 +13,7 @@ using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Microsoft.Extensions.Logging;
 using RestSharp;
 using Unity.Notifications.EmailNotifications;
+using Newtonsoft.Json;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;
 
@@ -71,13 +72,20 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                                                                                         emailLog.Body,
                                                                                         emailLog.Subject,
                                                                                         emailLog.FromAddress);
+                        // Update the response
+                        emailLog.ChesResponse = JsonConvert.SerializeObject(response);
+                        emailLog.ChesStatus = response.StatusCode.ToString();
+
                         if (ReprocessBasedOnStatusCode(response.StatusCode))
                         {
                             emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
                             await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
-                            await uow.SaveChangesAsync();
+                            await uow.SaveChangesAsync(); // Timing of Retry update
                             emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
                             await _emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
+                        } else {
+                            await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                            await uow.SaveChangesAsync();
                         }
                     }
                 }
