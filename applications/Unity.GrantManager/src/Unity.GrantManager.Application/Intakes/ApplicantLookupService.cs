@@ -78,10 +78,16 @@ namespace Unity.GrantManager.Intakes
             string bcSocietyNumber = applicant.OrgNumber?.StartsWith('S') == true ? applicant.OrgNumber : string.Empty;
 
             // Fetch address and agent information
-            List<ApplicantAddress> applicantPhysicalAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
-            List<ApplicantAddress> applicantMailingAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
-            ApplicantAddress? applicantPhysicalAgent = applicantPhysicalAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.PhysicalAddress);
-            ApplicantAddress? applicantMailingAgent = applicantMailingAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.MailingAddress);
+            // Fetch all applicant addresses at once
+            List<ApplicantAddress>? applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
+
+            // Order by date (for example, DateCreated) in descending order
+            applicantAddresses = applicantAddresses?.OrderByDescending(x => x.LastModificationTime).ToList();
+
+            // Filter physical and mailing addresses from the sorted list
+            ApplicantAddress? applicantPhysicalAgent = applicantAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.PhysicalAddress);
+            ApplicantAddress? applicantMailingAgent = applicantAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.MailingAddress);
+
             ApplicantAgent? applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(x => x.ApplicantId == applicant.Id);
 
             var result = new ApplicantResult
