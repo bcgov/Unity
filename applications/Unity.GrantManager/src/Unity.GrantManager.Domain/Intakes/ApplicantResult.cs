@@ -14,13 +14,20 @@ namespace Unity.GrantManager.Intakes
         public string? FiscalYearDay { get; set; } = string.Empty;
         public string? FiscalYearMonth { get; set; } = string.Empty;
         public string? BusinessNumber { get; set; } = string.Empty;
-        public string? PyhsicalAddressUnit { get; set; } = string.Empty;
-        public string? PyhsicalAddressLine1 { get; set; } = string.Empty;
-        public string? PyhsicalAddressLine2 { get; set; } = string.Empty;
-        public string? PyhsicalAddressPostal { get; set; } = string.Empty;
-        public string? PyhsicalAddressCity { get; set; } = string.Empty;
-        public string? PyhsicalAddressProvince { get; set; } = string.Empty;
-        public string? PyhsicalAddressCountry { get; set; } = string.Empty;
+        public string? PhysicalAddressUnit { get; set; } = string.Empty;
+        public string? PhysicalAddressLine1 { get; set; } = string.Empty;
+        public string? PhysicalAddressLine2 { get; set; } = string.Empty;
+        public string? PhysicalAddressPostal { get; set; } = string.Empty;
+        public string? PhysicalAddressCity { get; set; } = string.Empty;
+        public string? PhysicalAddressProvince { get; set; } = string.Empty;
+        public string? PhysicalAddressCountry { get; set; } = string.Empty;
+        public string? MailingAddressUnit { get; set; } = string.Empty;
+        public string? MailingAddressLine1 { get; set; } = string.Empty;
+        public string? MailingAddressLine2 { get; set; } = string.Empty;
+        public string? MailingAddressPostal { get; set; } = string.Empty;
+        public string? MailingAddressCity { get; set; } = string.Empty;
+        public string? MailingAddressProvince { get; set; } = string.Empty;
+        public string? MailingAddressCountry { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; } = string.Empty;
         public string? PhoneExtension { get; set; } = string.Empty;
     }
