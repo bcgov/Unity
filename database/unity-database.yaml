@@ -11,14 +11,14 @@ message: |-
   For more information about using this template, including OpenShift considerations, see the project readme.md and wiki documents.
 metadata:
   name: unity-database
-  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # This template uses a separate parameter .env file to override the default values defined in this section.
   # Use command: oc process -f .\database\unity-database.yaml --param-file=.env | oc create -f -
   labels:
     template: unity-database
   annotations:
     description: |-
       PostgreSQL database service with persistent storage.
-      NOTE: Scaling to more than one replica is not supported. 
+      NOTE: Scaling to more than one replica is not supported.
     iconClass: icon-postgresql
     openshift.io/display-name: PostgreSQL
     openshift.io/documentation-url: https://docs.okd.io/latest/using_images/db_images/postgresql.html
@@ -44,6 +44,12 @@ parameters:
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
+- description: The host exposed for the database.
+  displayName: Database Service Host
+  name: DATABASE_HOST
+  required: true
+  from: 'develop-crunchy-postgres-primary[a-zA-Z0-9]{6}-dev.svc'
+  generate: expression
 - description: The port exposed for the database.
   displayName: Database Service Port
   name: DATABASE_PORT
@@ -122,7 +128,7 @@ parameters:
   value: 1024Mi
 # Template objects to instantiate the database.
 objects:
-# Secrets 
+# Secrets
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -136,7 +142,7 @@ objects:
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   stringData:
     UNITY_POSTGRES_DB: ${POSTGRESQL_DATABASE}
     UNITY_POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
@@ -154,7 +160,7 @@ objects:
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   data:
-    UNITY_DB_HOST: ${DATABASE_SERVICE_NAME}
+    UNITY_DB_HOST: ${DATABASE_HOST}
     UNITY_DB_PORT: ${DATABASE_PORT}
     UNITY_TENANT_DB: ${UNITY_TENANT_DB}
 # Service
@@ -169,7 +175,7 @@ objects:
       app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
       app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
       app.kubernetes.io/name: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/part-of: ${APPLICATION_GROUP}    
+      app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
     ports:
     - name: ${DATABASE_SERVICE_NAME}
@@ -316,4 +322,3 @@ objects:
             claimName: unity-data-backup
     strategy:
       type: Recreate
-
