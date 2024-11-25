@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Unity.Flex.Worksheets.Definitions
 {
@@ -11,7 +10,7 @@ namespace Unity.Flex.Worksheets.Definitions
         [JsonPropertyName("maxLength")]
         public uint MaxLength { get; set; } = uint.MaxValue;
 
-        [JsonProperty("rows")]
+        [JsonPropertyName("rows")]
         public uint Rows { get; set; } = uint.MinValue;
 
         public TextAreaDefinition() : base()
