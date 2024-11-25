@@ -19,13 +19,13 @@
 
     function bindUIEvents() {
         UIElements.btnNewEmail.on('click', showModalEmail);
-        UIElements.btnSend.on('click', handlSendEmail);
-        UIElements.btnConfirmSend.on('click', handlConfirmSendEmail);
-        UIElements.btnCancelEmail.on('click', handlCancelEmailSend);
-        UIElements.btnSendClose.on('click', handlCloseEmail);
-        UIElements.inputEmailSubject.on('change', handlKeyUpTrim);
-        UIElements.inputEmailFrom.on('change', handlKeyUpTrim);
-        UIElements.inputEmailBody.on('change', handlKeyUpTrim);
+        UIElements.btnSend.on('click', handleSendEmail);
+        UIElements.btnConfirmSend.on('click', handleConfirmSendEmail);
+        UIElements.btnCancelEmail.on('click', handleCancelEmailSend);
+        UIElements.btnSendClose.on('click', handleCloseEmail);
+        UIElements.inputEmailSubject.on('change', handleKeyUpTrim);
+        UIElements.inputEmailFrom.on('change', handleKeyUpTrim);
+        UIElements.inputEmailBody.on('change', handleKeyUpTrim);
         UIElements.inputEmailTo.on('change', validateEmailTo);
     }
 
@@ -36,19 +36,19 @@
         toastr.options.positionClass = 'toast-top-center';
     }
 
-    function handlKeyUpTrim(e) {
+    function handleKeyUpTrim(e) {
         let trimmedString = e.currentTarget.value.trim();
         e.currentTarget.value = trimmedString;
     }
 
-    function handlCloseEmail() {
+    function handleCloseEmail() {
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
         UIElements.btnNewEmail.removeClass('hide');
         UIElements.emailForm.trigger("reset");
     }
 
-    function handlCancelEmailSend() {
+    function handleCancelEmailSend() {
         $('#modal-content, #modal-background').removeClass('active');
     }
 
@@ -57,46 +57,57 @@
         UIElements.btnNewEmail.addClass('hide');
     }
 
-    function validateEmail(email)
-    {
-        return String(email)
-          .toLowerCase()
-          .match(
-            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-          );
-      };
-
+    function validateEmail(email) {
+        const emailRegex = /^[\w.-]+@[a-z]+\.[a-z]{2,}$/;
+        return emailRegex.exec(String(email).toLowerCase()) !== null;
+    }
     function validateEmailTo() {
-        // Split on both semi colon and comma
-        let emailValue = UIElements.inputEmailToField.value.trim().trimEnd(',').trimEnd(';');
-        let emails = emailValue.split(/;|,/g);
-        let valid = true;
+        // Split on both semi-colon and comma, and trim the email values
+        let emailValue = UIElements.inputEmailToField.value.trim().replace(/[,;]+$/, '');  // Trim trailing commas and semicolons
+        let emails = emailValue.split(/[,;]/g).map(email => email.trim()); // Split by comma or semicolon, and trim each email
         let emailToErrorSpan = $("span[data-valmsg-for*='EmailTo']")[0];
-
+    
+        // Initialize as valid
+        let valid = true;
+    
         for (let i = 0; i < emails.length; i++) {
-             let emailStr = emails[i].trim();
-             if( emailStr == '' || ! validateEmail(emailStr)){
-                let emailToError = 'Please enter a valid Email To : '+ emailStr;
-                if(emailStr == '') {
-                     if(emailValue.length > 0) {
+            let emailStr = emails[i];
+    
+            // Check for empty or invalid email
+            if (emailStr === '' || !validateEmail(emailStr)) {
+                let emailToError = '';
+    
+                if (emailStr === '') {
+                    if (emailValue.length > 0) {
                         emailToError = 'An email is required after each comma or semicolon.';
-                     } else {
+                    } else {
                         emailToError = 'The Email To field is required.';
-                     }
-                     
+                    }
+                } else {
+                    emailToError = 'Please enter a valid Email To: ' + emailStr;
                 }
-
+    
+                // Display error message
                 $(emailToErrorSpan).addClass('field-validation-error').removeClass('field-validation-valid');
                 $(emailToErrorSpan).html(emailToError);
-                return false;
-             }
+    
+                // Invalid, return false
+                valid = false;
+                break;
+            }
         }
-        $(emailToErrorSpan).addClass('field-validation-valid').removeClass('field-validation-error');
-        $(emailToErrorSpan).html('');
+    
+        // Clear error message if all emails are valid
+        if (valid) {
+            $(emailToErrorSpan).addClass('field-validation-valid').removeClass('field-validation-error');
+            $(emailToErrorSpan).html('');
+        }
+    
         return valid;
     }
+    
 
-    function handlConfirmSendEmail() {
+    function handleConfirmSendEmail() {
         UIElements.confirmationModal.hide();
         UIElements.emailSpinner.show();
         unity.grantManager.emails.email
@@ -129,20 +140,23 @@
         $('#modal-content, #modal-background').addClass('active');
     }
 
-    function handlSendEmail(e) {
-        UIElements.emailForm.valid();
+    function handleSendEmail(e) {
+        // Prevent form submission and stop propagation
         e.stopPropagation();
         e.preventDefault();
-
-        if(!validateEmailTo()) {
-            return false;
+    
+        // Validate the "Email To" field
+        if (!validateEmailTo()) {
+            return false; // If validation fails, stop further processing
         }
-        
-        if(UIElements.emailForm.valid()) {
-            showConfirmation();
-            return false;
+    
+        // Check if the form is valid
+        if (UIElements.emailForm.valid()) {
+            showConfirmation(); // Show confirmation if the form is valid
+            return true; // Return true to indicate success
         }
-
-        return false;
+    
+        // If form is not valid, do not show confirmation
+        return false; // Return false if validation or other conditions fail
     }
 });
