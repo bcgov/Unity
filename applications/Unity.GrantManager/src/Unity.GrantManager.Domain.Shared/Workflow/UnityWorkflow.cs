@@ -1,5 +1,4 @@
 ﻿using Stateless;
-using Stateless.Graph;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -36,18 +35,6 @@ public class UnityWorkflow<TStates, TTriggers>
         if (_stateMachine is not null)
         {
             return _stateMachine.State;
-        }
-        else
-        {
-            throw new InvalidOperationException($"The state machine hasn't been configured yet.");
-        }
-    }
-
-    public virtual string GetGraph()
-    {
-        if (_stateMachine is not null)
-        {
-            return UmlDotGraph.Format(_stateMachine.GetInfo());
         }
         else
         {

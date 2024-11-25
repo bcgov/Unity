@@ -14,20 +14,17 @@ using Volo.Abp.Users;
 namespace Unity.GrantManager.Assessments;
 public class AssessmentManager : DomainService
 {
-    private readonly IApplicationManager _applicationManager;
     private readonly IAssessmentRepository _assessmentRepository;
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly ILocalEventBus _localEventBus;
     private readonly IFeatureChecker _featureChecker;
 
     public AssessmentManager(
-        IApplicationManager applicationManager,
         IAssessmentRepository assessmentRepository,
         IApplicationFormRepository applicationFormRepository,
         ILocalEventBus localEventBus,
         IFeatureChecker featureChecker)
     {
-        _applicationManager = applicationManager;
         _assessmentRepository = assessmentRepository;
         _applicationFormRepository = applicationFormRepository;
         _localEventBus = localEventBus;
@@ -70,12 +67,7 @@ public class AssessmentManager : DomainService
                 application.Id,
                 assessorUser.Id),
             autoSave: true);
-
-        var isTransitionToAssessmentAllowed = _applicationManager.IsActionAllowed(application, GrantApplicationAction.Internal_StartAssessment);
-        if (!hasOtherAssessments && isTransitionToAssessmentAllowed)
-        {
-            await _applicationManager.TriggerAction(application.Id, GrantApplicationAction.Internal_StartAssessment);
-        }
+        
 
         if (form.ScoresheetId != null && await _featureChecker.IsEnabledAsync("Unity.Flex"))
         {
