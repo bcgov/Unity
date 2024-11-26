@@ -45,7 +45,7 @@ namespace Unity.GrantManager.Events
                                                 applicationId, 
                                                 emailFrom) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
 
-            await _emailNotificationService.SendEmailToQueue(emailLog);            
+            await _emailNotificationService.SendEmailToQueue(emailLog);
         }
 
         private async Task EmailNotificationEventAsync(EmailNotificationEvent eventData)
