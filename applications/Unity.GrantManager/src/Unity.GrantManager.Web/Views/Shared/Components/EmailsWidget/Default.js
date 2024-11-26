@@ -65,24 +65,25 @@
     function validateEmailTo() {
         // Ensure emailValue is not too large before applying regex
         let emailValue = UIElements.inputEmailToField.value.trim(); // Trim leading/trailing whitespace
-        // Remove trailing commas or semicolons (this regex is safe and doesn't cause backtracking issues)
-        emailValue = emailValue.replace(/[,;]+$/, ''); // Trim trailing commas and semicolons
+        // Remove trailing commas, semicolons, or spaces (safe regex)
+        emailValue = emailValue.replace(/[;,\s]+$/, ''); // Trim trailing commas, semicolons, or spaces
 
         let emails = emailValue.split(/[,;]/g).map(email => email.trim()); // Split by comma or semicolon, and trim each email
         let emailToErrorSpan = $("span[data-valmsg-for*='EmailTo']")[0];
 
         // Initialize as valid
-        let valid = true;
+        let isValid = true;
+        let emailToError = '';  // Initialize error message variable
 
         // Iterate through the list of emails using for...of loop
         for (let emailStr of emails) {
             // Check if the email is empty or invalid
             if (emailStr === '' || !validateEmail(emailStr)) {
-                let emailToError = '';
-
                 // Handle empty email input
                 if (emailStr === '') {
-                    emailToError = emailValue.length > 0 ? 'An email is required after each comma or semicolon.' : 'The Email To field is required.';
+                    emailToError = emailValue.length > 0
+                        ? 'An email is required after each comma or semicolon.'
+                        : 'The Email To field is required.';
                 } else {
                     // Handle invalid email format
                     emailToError = `Please enter a valid Email To: ${emailStr}`;
@@ -93,19 +94,20 @@
                 $(emailToErrorSpan).html(emailToError);
 
                 // Mark the validation as invalid and exit the loop
-                valid = false;
-                break;
+                isValid = false;
+                break; // No need to continue checking further emails
             }
         }
 
         // Clear error message if all emails are valid
-        if (valid) {
+        if (isValid) {
             $(emailToErrorSpan).addClass('field-validation-valid').removeClass('field-validation-error');
-            $(emailToErrorSpan).html('');
+            $(emailToErrorSpan).html('');  // Clear any existing error message
         }
 
-        return valid;
+        return isValid;
     }
+
 
     function handleConfirmSendEmail() {
         UIElements.confirmationModal.hide();

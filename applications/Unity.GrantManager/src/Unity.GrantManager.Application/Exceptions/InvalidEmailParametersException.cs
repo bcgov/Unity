@@ -11,23 +11,25 @@ namespace Unity.GrantManager.Exceptions
     {
         private const string InvalidCommentMessage = "Invalid Email Parameters";
 
-        // Constructor for creating a new exception with a message
+        // Constructor for creating a new exception with a custom message or default message
         public InvalidEmailParametersException(string? message = null)
             : base(new List<ValidationResult> { new ValidationResult(message ?? InvalidCommentMessage) })
         {
+            // Validation is performed only when the exception is created (not during deserialization)
         }
 
-        protected InvalidEmailParametersException(SerializationInfo serializationEntries, StreamingContext context) : base()
+        // Constructor for deserialization (restoring state, no validation)
+        protected InvalidEmailParametersException(SerializationInfo serializationEntries, StreamingContext context) 
+            : base()
         {
-            // After deserialization, do not trigger validation
-            // The base constructor takes care of restoring the exception state.
+            // Do not trigger validation here during deserialization
+            // This ensures validation is not re-triggered during deserialization.
         }
 
-        // Optionally, override ToString to provide more detail when the exception is logged
+        // Override ToString to provide additional details when the exception is serialized
         public override string ToString()
         {
-            var baseStr = base.ToString();
-            return $"{baseStr}\nDetails: {InvalidCommentMessage}";
+            return base.ToString() + $" | Details: {InvalidCommentMessage}";
         }
     }
 }
