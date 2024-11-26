@@ -202,9 +202,12 @@
                 <li class="nav-item">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications"))
+                {
                 <li class="nav-item">
                     <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
                 </li>
+                }
                 <li class="nav-item">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                 </li>
