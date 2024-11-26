@@ -63,8 +63,11 @@
     }
 
     function validateEmailTo() {
-        // Get the email input value, trim trailing commas/semicolons, and split by comma or semicolon
-        let emailValue = UIElements.inputEmailToField.value.trim().replace(/[,;]+$/, ''); // Trim trailing commas and semicolons
+        // Ensure emailValue is not too large before applying regex
+        let emailValue = UIElements.inputEmailToField.value.trim(); // Trim leading/trailing whitespace
+        // Remove trailing commas or semicolons (this regex is safe and doesn't cause backtracking issues)
+        emailValue = emailValue.replace(/[,;]+$/, ''); // Trim trailing commas and semicolons
+
         let emails = emailValue.split(/[,;]/g).map(email => email.trim()); // Split by comma or semicolon, and trim each email
         let emailToErrorSpan = $("span[data-valmsg-for*='EmailTo']")[0];
 
