@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Events
             var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == eventData.ApplicationId);
             if (applicantAgent == null) return;
 
-            string emailTo = applicantAgent.Email;
+            string? emailTo = applicantAgent.Email;
             string emailFrom =_configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca";
 
             if (!string.IsNullOrEmpty(emailTo))
