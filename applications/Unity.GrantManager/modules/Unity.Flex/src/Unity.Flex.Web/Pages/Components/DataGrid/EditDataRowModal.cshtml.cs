@@ -24,12 +24,17 @@ public class EditDataRowModalModel(ICustomFieldValueAppService customFieldValueA
     public uint Row { get; set; }
 
     [BindProperty]
+    public Guid FieldId { get; set; }
+
+    [BindProperty]
     public List<WorksheetFieldViewModel>? Properties { get; set; }
 
-    public async Task OnGetAsync(Guid valueId, uint row)
+    public async Task OnGetAsync(Guid valueId, Guid fieldId, uint row)
     {
         Row = row;
         ValueId = valueId;
+        FieldId = fieldId;
+
         Properties = await GetEditableDataRowFieldsAsync(valueId, row);
     }
 
@@ -107,7 +112,9 @@ public class EditDataRowModalModel(ICustomFieldValueAppService customFieldValueA
         return new OkObjectResult(new ModalResponse()
         {
             ValueId = ValueId,
-            Row = Row
+            FieldId = FieldId,
+            Row = Row,
+            Updates = keyValuePairs
         });
     }
 
@@ -160,5 +167,7 @@ public class EditDataRowModalModel(ICustomFieldValueAppService customFieldValueA
     {
         public uint Row { get; set; }
         public Guid ValueId { get; set; }
+        public Guid FieldId { get; set; }
+        public Dictionary<string, string> Updates { get; set; } = new Dictionary<string, string>();
     }
 }

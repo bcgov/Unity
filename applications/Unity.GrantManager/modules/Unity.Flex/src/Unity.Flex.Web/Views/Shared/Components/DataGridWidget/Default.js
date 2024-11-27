@@ -9,16 +9,43 @@ $(function () {
         viewUrl: '../Components/DataGrid/EditDataRowModal'
     });
 
-    editDatagridRowModal.onResult(function (response) {
-        // PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+    editDatagridRowModal.onResult(function (_, response) {
+        let table = $(`#${response.responseText.fieldId}`).DataTable();
+        let rowIndex = response.responseText.row;
+        let dataToUpdate = response.responseText.updates;
+
+        // Iterate through the JSON object and update the specified row
+        $.each(dataToUpdate, function (columnName, newValue) {
+            let columnIndex = getColumnIndex(table, columnName);
+            if (columnIndex !== -1) {
+                table.cell(rowIndex, columnIndex).data(newValue);
+            } else {
+                console.warn('Column not found:', columnName);
+            }
+        });
+
+        // Redraw the table to reflect the updates
+        table.draw();
+
         abp.notify.success(
             'Update successful.',
             'Update'
         );
     });
 
-    function openEditDatagridRowModal(valueId, row) {
+    // Function to get the index of a column by its name
+    function getColumnIndex(table, columnName) {
+        let headers = table.columns().header().toArray();
+        for (let i = 0; i < headers.length; i++) {
+            if ($(headers[i]).text() === columnName) {
+                return i;
+            }
+        } return -1; // Return -1 if the column is not found 
+    }
+
+    function openEditDatagridRowModal(valueId, fieldId, row) {
         editDatagridRowModal.open({
+            fieldId: fieldId,
             valueId: valueId,
             row: row
         });
@@ -106,7 +133,8 @@ $(function () {
     }
 
     function handleEditRowClick(e) {
-        openEditDatagridRowModal(e.currentTarget.dataset.valueId, e.currentTarget.dataset.rowNo);
+        let dataSet = e.currentTarget.dataset;
+        openEditDatagridRowModal(dataSet.valueId, dataSet.fieldId, dataSet.rowNo);
     }
 
     PubSub.subscribe(

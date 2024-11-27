@@ -23,6 +23,7 @@
         <abp-modal-body>
             <abp-input type="hidden" id="valueId" asp-for="@Model.ValueId" />
             <abp-input type="hidden" id="rowNumber" asp-for="@Model.Row" />
+            <abp-input type="hidden" id="fieldId" asp-for="@Model.FieldId" />
 
             @foreach (var field in Model.Properties ?? [])
             {
