@@ -77,7 +77,7 @@
     }
 
     function clearSlotId() {
-        switch (lastDragFromLocation.dataset.target) {
+        switch (lastDragFromLocation?.dataset?.target) {
             case 'assessmentInfo':
                 $('#AssessmentInfoSlotId').val(null);
                 break;
@@ -94,7 +94,7 @@
     }
 
     function updateSlotId(draggedEl) {
-        switch (lastDroppedLocation.dataset.target) {
+        switch (lastDroppedLocation?.dataset?.target) {
             case 'assessmentInfo':
                 $('#AssessmentInfoSlotId').val(draggedEl.dataset.worksheetId);
                 break;

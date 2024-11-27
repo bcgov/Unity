@@ -27,6 +27,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(new CheckboxGroupDefinition()),
                     CustomFieldType.SelectList => JsonSerializer.Serialize(new SelectListDefinition()),
                     CustomFieldType.TextArea => JsonSerializer.Serialize(new TextAreaDefinition()),
+                    CustomFieldType.DataGrid => JsonSerializer.Serialize(new DataGridDefinition()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -49,6 +50,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize((CheckboxGroupDefinition)definition),
                     CustomFieldType.SelectList => JsonSerializer.Serialize((SelectListDefinition)definition),
                     CustomFieldType.TextArea => JsonSerializer.Serialize((TextAreaDefinition)definition),
+                    CustomFieldType.DataGrid => JsonSerializer.Serialize((DataGridDefinition)definition),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -71,6 +73,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     CustomFieldType.CheckboxGroup => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.SelectList => JsonSerializer.Serialize(element.ToString()),
                     CustomFieldType.TextArea => JsonSerializer.Serialize(element.ToString()),
+                    CustomFieldType.DataGrid => JsonSerializer.Serialize(element.ToString()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -88,6 +91,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     QuestionType.Text => JsonSerializer.Serialize(new TextDefinition()),
                     QuestionType.YesNo => JsonSerializer.Serialize(new QuestionYesNoDefinition()),
                     QuestionType.SelectList => JsonSerializer.Serialize(new QuestionSelectListDefinition()),
+                    QuestionType.TextArea => JsonSerializer.Serialize(new TextAreaDefinition()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -99,6 +103,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     QuestionType.Text => JsonSerializer.Serialize((TextDefinition)definition),
                     QuestionType.YesNo => JsonSerializer.Serialize((QuestionYesNoDefinition)definition),
                     QuestionType.SelectList => JsonSerializer.Serialize((QuestionSelectListDefinition)definition),
+                    QuestionType.TextArea => JsonSerializer.Serialize((TextAreaDefinition)definition),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -110,6 +115,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     QuestionType.Text => JsonSerializer.Serialize(element.ToString()),
                     QuestionType.YesNo => JsonSerializer.Serialize(element.ToString()),
                     QuestionType.SelectList => JsonSerializer.Serialize(element.ToString()),
+                    QuestionType.TextArea => JsonSerializer.Serialize(element.ToString()),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -121,6 +127,7 @@ namespace Unity.Flex.Worksheets.Definitions
                     QuestionType.Text => JsonSerializer.Serialize(definition),
                     QuestionType.YesNo => JsonSerializer.Serialize(definition),
                     QuestionType.SelectList => JsonSerializer.Serialize(definition),
+                    QuestionType.TextArea => JsonSerializer.Serialize(definition),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -189,6 +196,24 @@ namespace Unity.Flex.Worksheets.Definitions
         public static bool ResolveIsRequired(CustomFieldDefinition field)
         {
             return field.Required;
+        }
+
+        public static bool ResolveIsDynamic(CustomFieldDefinition field)
+        {
+            return field switch
+            {
+                DataGridDefinition dataGrid => dataGrid.Dynamic,
+                _ => false
+            };
+        }
+
+        public static uint? ResolveRows(CustomFieldDefinition field)
+        {
+            return field switch
+            {                
+                TextAreaDefinition textArea => textArea.Rows,
+                _ => null,
+            };
         }
     }
 }

@@ -343,9 +343,28 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             application.EconomicRegion = input.EconomicRegion;
             application.ElectoralDistrict = input.ElectoralDistrict;
             application.RegionalDistrict = input.RegionalDistrict;
+            application.Place = input.Place;
+
+            await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
+
+            await _applicationRepository.UpdateAsync(application);
+
+            return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+        }
+        else
+        {
+            throw new EntityNotFoundException();
+        }
+    }
+
+    public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
+    {
+        var application = await _applicationRepository.GetAsync(id);
+
+        if (application != null)
+        {
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
-            application.Place = input.Place;
 
             await PublishCustomFieldUpdatesAsync(application.Id, FlexConsts.ProjectInfoUiAnchor, input);
 
@@ -553,9 +572,12 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     protected virtual async Task UpdateApplicantAddresses(CreateUpdateApplicantInfoDto input)
     {
-        var applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
-        await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+        List<ApplicantAddress> applicantAddresses = await _applicantAddressRepository.FindByApplicantIdAsync(input.ApplicantId);
+        if (applicantAddresses != null)
+        {
+            await UpsertAddress(input, applicantAddresses, AddressType.MailingAddress, input.ApplicantId);
+            await UpsertAddress(input, applicantAddresses, AddressType.PhysicalAddress, input.ApplicantId);
+        }
     }
 
     protected virtual async Task UpsertAddress(CreateUpdateApplicantInfoDto input, List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid applicantId)

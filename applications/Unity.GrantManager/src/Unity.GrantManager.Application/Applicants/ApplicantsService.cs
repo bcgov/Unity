@@ -36,7 +36,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
     private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
     {
         if (unityApplicantId.IsNullOrEmpty()) return null;
-        return await applicantRepository.GetByUnityApplicantId(unityApplicantId);
+        return await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
     }
 
     private async Task<Applicant> CreateNewApplicantAsync(IntakeMapping intakeMap)

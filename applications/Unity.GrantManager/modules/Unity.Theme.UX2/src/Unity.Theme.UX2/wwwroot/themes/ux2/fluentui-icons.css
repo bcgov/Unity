@@ -397,3 +397,7 @@
 .fl-text-area:before {
     content: '\E7BC';
 }
+
+.fl-datagrid:before {
+    content: '\F579';
+}

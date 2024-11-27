@@ -16,6 +16,8 @@ using Unity.GrantManager.Intakes;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Features;
 using Unity.Modules.Shared.Correlation;
+using Unity.Flex.Worksheets.Definitions;
+using Unity.Flex;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationForms
 {
@@ -163,16 +165,15 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                             .SelectMany(f => f.Fields)
                         .ToList();
 
-                    foreach (var field in fields)
-                    {
-                        properties.Add(new MapField()
-                        {
-                            Name = $"{field.Name}.{field.Type}",
-                            Type = ConvertCustomType(field.Type),
-                            IsCustom = true,
-                            Label = $"{field.Label} ({worksheet.Name})"
-                        });
-                    }
+                    properties.AddRange(from CustomFieldDto? field in fields
+                                        where field.IsMappable()
+                                        select new MapField()
+                                        {
+                                            Name = $"{field.Name}.{field.Type}",
+                                            Type = ConvertCustomType(field.Type),
+                                            IsCustom = true,
+                                            Label = $"{field.Label} ({worksheet.Name})"
+                                        });
                 }
             }
 
@@ -197,6 +198,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
                 CustomFieldType.SelectList => "SelectList",
                 CustomFieldType.BCAddress => "BCAddress",
                 CustomFieldType.TextArea => "TextArea",
+                CustomFieldType.DataGrid => "DataGrid",
                 _ => "",
             };
         }
@@ -207,6 +209,28 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
             public string Type { get; set; } = string.Empty;
             public bool IsCustom { get; set; }
             public string Label { get; set; } = string.Empty;
+        }
+    }
+
+    public static class MappingExtensionMethods
+    {
+        public static bool IsMappable(this CustomFieldDto? fieldDto)
+        {
+            if (fieldDto == null) return false;
+
+            // This is not effecient, needs to be moved.
+            return fieldDto.Type switch
+            {
+                CustomFieldType.DataGrid => IsDataGridMappable(fieldDto),
+                _ => true // default
+            };
+        }
+
+        private static bool IsDataGridMappable(CustomFieldDto fieldDto)
+        {
+            if (fieldDto.Definition == null) return true; // mappable by default
+            var definition = (DataGridDefinition?)(fieldDto.Definition?.ConvertDefinition(CustomFieldType.DataGrid));
+            return definition?.Dynamic ?? true;
         }
     }
 }

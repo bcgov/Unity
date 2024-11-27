@@ -2,11 +2,11 @@
 kind: Template
 message: |-
   A new application been created in your project: unity-applicantportal-web
-  For more information about using this template, including OpenShift considerations, 
+  For more information about using this template, including OpenShift considerations,
   see template usage guide found in the project readme.md and wiki documents.
 metadata:
   name: unity-applicantportal-web
-  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # This template uses a separate parameter .env file to override the default values defined in this section.
   # oc process -f .\openshift\unity-applicantportal-web.yaml --param-file=namespace.env | oc create -f -
   labels:
     template: unity-applicantportal-web
@@ -68,10 +68,10 @@ parameters:
   name: IMAGEPULL_NAMESPACE
   from: '[a-zA-Z0-9]{5}-tools'
   generate: expression
-- description: The ImageStream Name 
+- description: The ImageStream Name
   displayName: Registry imagestream name
   name: IMAGESTREAM_NAME
-  value: unity-applicantportal-build 
+  value: unity-applicantportal-build
 - description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
   displayName: Application Version
   name: IMAGESTREAM_TAG
@@ -105,8 +105,8 @@ parameters:
 # Template objects to instantiate the project application.
 objects:
 # Configmap
-- apiVersion: v1 
-  kind: ConfigMap 
+- apiVersion: v1
+  kind: ConfigMap
   metadata:
     name: ${APPLICATION_NAME}
     labels:
@@ -147,6 +147,11 @@ objects:
   metadata:
     annotations:
       description: Route for application's http service.
+      haproxy.router.openshift.io/balance: roundrobin
+      haproxy.router.openshift.io/hsts_header: max-age=31536000;includeSubDomains;preload
+      haproxy.router.openshift.io/ip_whitelist: 142.22.0.0/15 142.24.0.0/13 142.32.0.0/14 142.36.0.0/16
+      router.openshift.io/cookie-same-site: Strict
+      router.openshift.io/cookie_name: haproxy-uap
     name: ${APPLICATION_NAME}
     labels:
       app: ${APPLICATION_NAME}
@@ -167,6 +172,29 @@ objects:
       termination: edge
       insecureEdgeTerminationPolicy: Redirect
     wildcardPolicy: None
+    httpHeaders:
+      actions:
+        response:
+          - name: X-Frame-Options
+            action:
+              type: Set
+              set:
+                value: SAMEORIGIN
+          - name: X-Content-Type-Options
+            action:
+              type: Set
+              set:
+                value: no-sniff
+          - name: Referrer-Policy
+            action:
+              type: Set
+              set:
+                value: strict-origin-when-cross-origin
+          - name: Content-Security-Policy
+            action:
+              type: Set
+              set:
+                value: object-src 'none'; frame-ancestors 'none'
 # Persistent storage for the application logfiles.
 - apiVersion: v1
   kind: PersistentVolumeClaim

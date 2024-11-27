@@ -44,7 +44,7 @@ $(function () {
     }
 
     addWorksheetModal.onResult(function (result, response) {
-        PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });        
+        PubSub.publish('refresh_worksheet_list', { worksheetId: response.responseText.worksheetId, action: response.responseText.action });
         abp.notify.success(
             'Operation completed successfully.',
             response.responseText.action + ' Worksheet'
@@ -66,7 +66,7 @@ $(function () {
         fetch(url)
             .then(response => response.text())
             .then(data => {
-                document.getElementById('worksheet-info-widget-list').innerHTML = data;   
+                document.getElementById('worksheet-info-widget-list').innerHTML = data;
                 setTimeout(() => {
                     PubSub.publish('worksheet_list_refreshed');
                 }, 100);
@@ -101,7 +101,7 @@ $(function () {
             _ = new Sortable(div, {
                 animation: 150,
                 onEnd: function (evt) {
-                    updateSectionSequence(evt);                    
+                    updateSectionSequence(evt);
                 },
                 ghostClass: 'blue-background',
                 onMove: function (_) {
@@ -159,6 +159,7 @@ $(function () {
                 .then(data => {
                     previewPane.html(data);
                     $("#preview :input").prop("readonly", true);
+                    PubSub.publish('worksheet_preview_datagrid_refresh');
                 })
                 .catch(error => {
                     console.error('Error generating preview:', error);
@@ -171,10 +172,10 @@ $(function () {
 
     PubSub.subscribe(
         'refresh_worksheet_list',
-        () => {            
+        () => {
             refreshWorksheetListWidget();
             makeSectionsAndFieldsSortable();
-            updatePreview();            
+            updatePreview();
         }
     );
 

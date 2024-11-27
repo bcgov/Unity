@@ -3,7 +3,10 @@
 A chart to provision a [Crunchy Postgres](https://www.crunchydata.com/) cluster.
 
 ## Configuration
-
+Apply base configuration from values.yaml and make the necessary overrides in custom-values-example.yaml
+```Bash
+helm upgrade --install new-hippo-ha . -f values.yaml -f custom-values-example.yaml
+```
 ### Crunchy Options
 
 | Parameter          | Description            | Default            |

@@ -4,31 +4,31 @@ namespace Unity.GrantManager.Intakes
 {
     public class ApplicantResult
     {
-        [JsonPropertyName("id")]
-        public string? Id { get; set; }
-
-        [JsonPropertyName("applicant_name")]
-        public string? ApplicantName { get; set; }
-
-        [JsonPropertyName("unity_applicant_id")]
-        public string? UnityApplicantId { get; set; }
-
-        [JsonPropertyName("bc_society_number")]
-        public string? BcSocietyNumber { get; set; }
-
-        [JsonPropertyName("org_number")]
-        public string? OrgNumber { get; set; }
-
-        [JsonPropertyName("sector")]
-        public string? Sector { get; set; }
-
-        [JsonPropertyName("operating_start_date")]
-        public string? OperatingStartDate { get; set; }
-
-        [JsonPropertyName("fiscal_year_day")]
-        public string? FiscalYearDay { get; set; }
-
-        [JsonPropertyName("fiscal_year_month")]
-        public string? FiscalYearMonth { get; set; }
+        public string? Id { get; set; } = string.Empty;
+        public string? ApplicantName { get; set; } = string.Empty;
+        public string? UnityApplicantId { get; set; } = string.Empty;
+        public string? BcSocietyNumber { get; set; } = string.Empty;
+        public string? OrgNumber { get; set; } = string.Empty;
+        public string? Sector { get; set; } = string.Empty;
+        public string? OperatingStartDate { get; set; } = string.Empty;
+        public string? FiscalYearDay { get; set; } = string.Empty;
+        public string? FiscalYearMonth { get; set; } = string.Empty;
+        public string? BusinessNumber { get; set; } = string.Empty;
+        public string? PhysicalAddressUnit { get; set; } = string.Empty;
+        public string? PhysicalAddressLine1 { get; set; } = string.Empty;
+        public string? PhysicalAddressLine2 { get; set; } = string.Empty;
+        public string? PhysicalAddressPostal { get; set; } = string.Empty;
+        public string? PhysicalAddressCity { get; set; } = string.Empty;
+        public string? PhysicalAddressProvince { get; set; } = string.Empty;
+        public string? PhysicalAddressCountry { get; set; } = string.Empty;
+        public string? MailingAddressUnit { get; set; } = string.Empty;
+        public string? MailingAddressLine1 { get; set; } = string.Empty;
+        public string? MailingAddressLine2 { get; set; } = string.Empty;
+        public string? MailingAddressPostal { get; set; } = string.Empty;
+        public string? MailingAddressCity { get; set; } = string.Empty;
+        public string? MailingAddressProvince { get; set; } = string.Empty;
+        public string? MailingAddressCountry { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; } = string.Empty;
+        public string? PhoneExtension { get; set; } = string.Empty;
     }
 }

@@ -38,6 +38,7 @@ namespace Unity.Flex
                 QuestionType.Number => ResolveNumber(currentValue),
                 QuestionType.YesNo => JsonSerializer.Deserialize<YesNoValue>(currentValue)?.Value,
                 QuestionType.SelectList => JsonSerializer.Deserialize<SelectListValue>(currentValue)?.Value,
+                QuestionType.TextArea => JsonSerializer.Deserialize<TextAreaValue>(currentValue)?.Value,
                 _ => throw new NotImplementedException()
             };
 
