@@ -1,27 +1,6 @@
 
 function executeOperations(data) {
   
-                Formio.createForm(
-                    document.getElementById('new-rendering'),
-                    data.version.schema, {
-                    readOnly: true,
-                    renderMode: 'form',
-                    flatten: true,
-                }
-                ).then(async function (form) {
-                    await form.setSubmission(data.submission.submission);
-                    $('button[disabled="disabled"]').hide();
-                    disableLinks();
-
-                    setTimeout(function () {
-                        window.print();
-                    }, 1000);
-
-                });
-            
-}
-
-function printScoreSheet() {
     $('button').hide();
     $("input").attr("disabled", true);
     $("select").attr("disabled", true);
@@ -43,4 +22,5 @@ function disableLinks() {
         link.style.color = 'gray'; // Optionally change the color to indicate it's disabled
     });
 }
+
 

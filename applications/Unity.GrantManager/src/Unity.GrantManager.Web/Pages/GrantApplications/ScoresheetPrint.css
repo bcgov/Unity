@@ -1,0 +1,28 @@
+.unity-user-initials {
+    display: none !important;
+}
+
+#reviewDetailsCard div {
+    display: flex;
+}
+
+#reviewDetailsCard {
+    display: flex;
+}
+
+.btn {
+    display: none;
+}
+
+button {
+    display: none;
+}
+
+.user-role-full {
+    margin-left: 20px;
+}
+
+.form-control:disabled, .form-control[readonly] {
+    background-color: #ffffff;
+    opacity: 1;
+}

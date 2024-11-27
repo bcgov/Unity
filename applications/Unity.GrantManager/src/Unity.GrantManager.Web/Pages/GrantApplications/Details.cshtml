@@ -224,7 +224,10 @@
 
                 @*-------- Details Tab Section ---------*@
                 <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
+
+
                     <div id="applicationDetails">
+
                         <div id="applicationStatusWidget">
                             @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
                         </div>
@@ -238,6 +241,13 @@
                     <div id="reviewDetails" style="display:none">
                         <input type="hidden" id="AssessmentId" value="@Model.AssessmentId" />
                         <div id="assessmentUserDetailsWidget">
+                            <div class="container-fluid float-inline" >
+                                <abp-row>
+                                    <abp-column size="_12">
+                                        <abp-button icon="fl fl-pdf" icon-type="Other" id="printAssessmentPdf" class="pdf-icon"></abp-button>
+                                    </abp-column>
+                                </abp-row>
+                            </div>
                             @await Component.InvokeAsync("UserInfoWidget", new { displayName = "", badge = "", title = "" })
                         </div>
 
