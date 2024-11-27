@@ -17,9 +17,9 @@ $(function () {
         );
     });
 
-    function openEditDatagridRowModal(fieldId, row) {
+    function openEditDatagridRowModal(valueId, row) {
         editDatagridRowModal.open({
-            fieldId: fieldId,
+            valueId: valueId,
             row: row
         });
     }
@@ -106,7 +106,7 @@ $(function () {
     }
 
     function handleEditRowClick(e) {
-        openEditDatagridRowModal(e.currentTarget.dataset.fieldId, e.currentTarget.dataset.rowNo);
+        openEditDatagridRowModal(e.currentTarget.dataset.valueId, e.currentTarget.dataset.rowNo);
     }
 
     PubSub.subscribe(

@@ -20,7 +20,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 
     public class DataGridViewModelRow
     {
-        public string Id { get; set; } = Guid.Empty.ToString();
+        public uint RowNumber { get; set; }
         public List<DataGridViewModelCell> Cells { get; set; } = [];
     }
 

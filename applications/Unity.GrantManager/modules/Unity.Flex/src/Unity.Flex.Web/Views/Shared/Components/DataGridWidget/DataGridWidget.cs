@@ -289,7 +289,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 new()
                 {
                     Cells = cells,
-                    Id = Guid.NewGuid().ToString()
+                    RowNumber = 1
                 }
             ];
         }
@@ -301,7 +301,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 new()
                     {
                         Cells = [new DataGridViewModelCell() { Key = _dynamicLabel, Value = _dynamicLabel }],
-                        Id = Guid.NewGuid().ToString()
+                        RowNumber = 1
                     }
             ];
         }
@@ -357,7 +357,12 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 var cell = row.Cells.Find(x => x.Key == key);
                 if (cell != null)
                 {
-                    sum += decimal.Parse(cell.Value.Replace("$", "").Replace(",", ""));
+                    var preparse = cell.Value.Replace("$", "").Replace(",", "");
+                    if (string.IsNullOrEmpty(preparse))
+                    {
+                        preparse = "0";
+                    }
+                    sum += decimal.Parse(preparse);
                 }
             }
             return sum.ToString();
