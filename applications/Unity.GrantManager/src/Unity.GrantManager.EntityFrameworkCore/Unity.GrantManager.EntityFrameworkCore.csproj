@@ -12,6 +12,7 @@
 		<ProjectReference Include="..\..\modules\Unity.Flex\src\Unity.Flex.Application\Unity.Flex.Application.csproj" />
 		<ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Application\Unity.Payments.Application.csproj" />
 		<ProjectReference Include="..\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
+		<PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.1" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
