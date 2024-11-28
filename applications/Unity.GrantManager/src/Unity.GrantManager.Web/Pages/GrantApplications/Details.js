@@ -668,7 +668,7 @@ function updateCustomForm(applicationId, formVersionId, customFormObj, uiAnchor,
 function notifyFieldChange(worksheet, uianchor, field) {
     let value = document.getElementById(field.id).value;
     let anchor = uianchor.toLowerCase();
-    if (PubSub && anchor != '') {
+    if (PubSub) {
         if (isKnownAnchor(anchor)) {
             PubSub.publish('fields_' + anchor, value);
         } else {

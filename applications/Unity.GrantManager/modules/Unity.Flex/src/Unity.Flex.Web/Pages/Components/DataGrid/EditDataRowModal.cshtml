@@ -83,11 +83,12 @@
                     {
                         <span class="control-render-error">Error rendering component!</span>
                     }
+                    <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field?.Name}.{field?.Name}.{field?.Id}")" data-valmsg-replace="true"></span>
                 </div>
             }
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" class="btn btn-primary" name="saveRowValues" value="save">@AbpModalButtons.Save</button>
+            <button type="submit" class="btn btn-primary" id="saveRowValues" name="saveRowValues" value="save">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
         </abp-modal-footer>
     </abp-modal>
@@ -98,5 +99,33 @@
             thousands: ',',
             decimal: '.'
         }).maskMoney('mask');
+
+        let saveBtn = $(`#saveRowValues`);
+        let form = $(`#editRowData`);
+
+        // Remove any existing 'change' event handlers for inputs within the form inherited from custom fields
+        $('#editRowData input').removeAttr('onchange');
+
+        $('#editRowData input').on('change', function () {            
+            if (form.valid() && !rowEditFormHasInvalidCurrencyCustomFields('editRowData')) {
+                saveBtn.prop('disabled', false);
+            } else {
+                saveBtn.prop('disabled', true);
+            }
+        });
+
+        function rowEditFormHasInvalidCurrencyCustomFields(formId) {
+            let invalidFieldsFound = false;
+            $("#" + formId + " input:visible").each(function (i, el) {
+                let $field = $(this);
+                if ($field.hasClass('custom-currency-input')) {
+                    if (!isValidCurrencyCustomField($field)) {
+                        invalidFieldsFound = true;
+                    }
+                }
+            });
+
+            return invalidFieldsFound;
+        }
     })();
 </script>

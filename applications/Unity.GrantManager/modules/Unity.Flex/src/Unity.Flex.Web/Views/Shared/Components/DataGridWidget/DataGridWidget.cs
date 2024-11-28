@@ -358,11 +358,18 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 if (cell != null)
                 {
                     var preparse = cell.Value.Replace("$", "").Replace(",", "");
-                    if (string.IsNullOrEmpty(preparse))
+                    if (decimal.TryParse(preparse, out decimal value))
                     {
-                        preparse = "0";
+                        if (decimal.MaxValue - sum >= value)
+                        {
+                            sum += value;
+                        }
+                        else
+                        {
+                            sum = decimal.MaxValue;
+                            break;
+                        }
                     }
-                    sum += decimal.Parse(preparse);
                 }
             }
             return sum.ToString();
@@ -391,28 +398,49 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
     {
         public static string ApplyFormatting(this string value, string columnType, string? format)
         {
-            if (format == null) { return value; }
+            if (value == null) return string.Empty;
 
-            // We can format date fields based on a format
-            if ((columnType == CustomFieldType.Date.ToString() || columnType == CustomFieldType.DateTime.ToString())
-                && value != null
-                && DateTime.TryParse(value, new CultureInfo("en-CA"), out DateTime dateTime))
+            return columnType switch
             {
-                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "MM-dd-yyyy"; // Date vs DateTime?                
-                string formattedDateTime = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
-                return formattedDateTime;
-            }
+                var ct when IsDateColumn(ct) && TryParseDate(value, format, out string formattedDate) => formattedDate,
+                var ct when IsCurrencyColumn(ct) && TryParseCurrency(value, format, out string formattedCurrency) => formattedCurrency,
+                _ => value
+            };
+        }
 
-            // We format currency fields
-            if (columnType == "Currency" && value != null && decimal.TryParse(value, out decimal number))
+        private static bool IsDateColumn(string columnType)
+        {
+            return columnType == CustomFieldType.Date.ToString() || columnType == CustomFieldType.DateTime.ToString();
+        }
+
+        private static bool IsCurrencyColumn(string columnType)
+        {
+            return columnType == CustomFieldType.Currency.ToString();
+        }
+
+        private static bool TryParseDate(string value, string? format, out string formattedDate)
+        {
+            if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
+            {
+                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "MM-dd-yyyy";
+                formattedDate = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
+                return true;
+            }
+            formattedDate = string.Empty;
+            return false;
+        }
+
+        private static bool TryParseCurrency(string value, string? format, out string formattedCurrency)
+        {
+            if (decimal.TryParse(value, out decimal number))
             {
                 var currencyCode = !string.IsNullOrEmpty(format) ? format : "CAD";
                 var culture = GetCultureInfoByCurrencyCode(currencyCode);
-                string formattedNumber = number.ToString("C", culture);
-                return formattedNumber;
+                formattedCurrency = number.ToString("C", culture);
+                return true;
             }
-
-            return value ?? string.Empty;
+            formattedCurrency = string.Empty;
+            return false;
         }
 
         static CultureInfo GetCultureInfoByCurrencyCode(string currencyCode)
