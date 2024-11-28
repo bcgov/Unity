@@ -56,8 +56,6 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
-using Volo.Abp.BackgroundJobs;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
@@ -73,10 +71,13 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.Users;
 using Volo.Abp.VirtualFileSystem;
+using StackExchange.Redis;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Unity.GrantManager.Web;
 
 [DependsOn(
+    typeof(AbpAutofacModule),
     typeof(GrantManagerHttpApiModule),
     typeof(GrantManagerApplicationModule),
     typeof(GrantManagerEntityFrameworkCoreModule),
@@ -135,17 +136,8 @@ public class GrantManagerWebModule : AbpModule
         ConfigureSwaggerServices(context.Services);
         ConfigureAccessTokenManagement(context, configuration);
         ConfigureUtils(context);
+        ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
-
-        Configure<AbpBackgroundJobOptions>(options =>
-        {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
-        });
-
-        Configure<AbpBackgroundWorkerQuartzOptions>(options =>
-        {
-            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
-        });
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
@@ -154,6 +146,7 @@ public class GrantManagerWebModule : AbpModule
             options.TokenCookie.SameSite = SameSiteMode.Lax;
             options.TokenCookie.HttpOnly = false;
         });
+
         Configure<AbpClockOptions>(options =>
         {
             options.Kind = DateTimeKind.Utc;
@@ -199,6 +192,18 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
+        context.Services.AddCors(options =>
+        {
+            options.AddPolicy("ChefsOrigin",
+                builder =>
+                {
+                    builder.WithOrigins("https://chefs-dev.apps.silver.devops.gov.bc.ca") // Specify your exact origin
+                           .AllowAnyMethod() // Allow all methods (GET, POST, etc.)
+                           .AllowAnyHeader() // Allow all headers
+                           .AllowCredentials(); // Allow credentials
+                });
+        });
+
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
 
@@ -211,6 +216,34 @@ public class GrantManagerWebModule : AbpModule
         Configure<SettingManagementPageOptions>(options =>
         {
             options.Contributors.Add(new ApplicationUiSettingPageContributor());
+        });
+    }
+
+    private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        if (!Convert.ToBoolean(configuration["DataProtection:IsEnabled"])) return;
+        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
+
+        var configurationOptions = new ConfigurationOptions
+        {
+            EndPoints = { $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]}" },
+            Password = configuration["Redis:Password"],
+            ClientName = configuration["Redis:InstanceName"]
+        };
+
+        IDataProtectionBuilder dataProtectionBuilder = context
+            .Services
+            .AddDataProtection()
+            .SetApplicationName("UnityGrantManagerWeb");
+
+        var redis = ConnectionMultiplexer
+          .Connect(configurationOptions);
+
+        dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Unity-DataKeys");
+
+        context.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromHours(8);            
         });
     }
 
@@ -308,13 +341,15 @@ public class GrantManagerWebModule : AbpModule
                 context.HandleResponse(); // Suppress the default processing
                 return Task.CompletedTask;
             };
-            if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
+            if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"])
+                || Convert.ToBoolean(configuration["AuthServer:SpecifyOidcParameters"]))
             {
                 // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested
                 options.Events.OnRedirectToIdentityProvider = context =>
                 {
                     var host = context.Request.Host;
-                    context.ProtocolMessage.SetParameter("redirect_uri", $"https://{host}/signin-oidc");
+                    var explicitIn = configuration["AuthServer:OidcSignin"] ?? $"https://{host}/signin-oidc";
+                    context.ProtocolMessage.SetParameter("redirect_uri", explicitIn);
 
                     if (!string.IsNullOrEmpty(configuration["AuthServer:IdpHint"]))
                     {
@@ -327,7 +362,8 @@ public class GrantManagerWebModule : AbpModule
                 options.Events.OnRedirectToIdentityProviderForSignOut = ctx =>
                 {
                     var host = ctx.Request.Host;
-                    ctx.ProtocolMessage.SetParameter("post_logout_redirect_uri", $"https://{host}/signout-callback-oidc");
+                    var explicitCallback = configuration["AuthServer:OidcSignoutCallback"] ?? $"https://{host}/signout-callback-oidc";
+                    ctx.ProtocolMessage.SetParameter("post_logout_redirect_uri", explicitCallback);
 
                     return Task.CompletedTask;
                 };
@@ -516,7 +552,7 @@ public class GrantManagerWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        var configuration = context.GetConfiguration();
+        var configuration = context.GetConfiguration();       
 
         if (!env.IsProduction())
         {
@@ -552,6 +588,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseCors("ChefsOrigin");
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)
@@ -584,5 +621,10 @@ public class GrantManagerWebModule : AbpModule
             options.SupportedCultures = supportedCultures;
             options.SupportedUICultures = supportedCultures;
         });
+
+        if (Convert.ToBoolean(configuration["DataProtection:IsEnabled"]))
+        {
+            app.UseSession();
+        }
     }
 }

@@ -1,44 +1,57 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Unity.GrantManager.Caching;
+using Microsoft.Extensions.Caching.Distributed;
 using Unity.GrantManager.Settings;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.MultiTenancy;
+using static Unity.GrantManager.Locality.ElectoralDistrictAppService;
 
 namespace Unity.GrantManager.Locality
 {
     [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(ElectoralDistrictAppService), typeof(IElectoralDistrictService))]
-    public class ElectoralDistrictAppService : ApplicationService, IElectoralDistrictService
+    public class ElectoralDistrictAppService(IElectoralDistrictRepository electoralDistrictRepository,
+        IDistributedCache<ElectoralDistrictsCache, string> cache) : ApplicationService, IElectoralDistrictService
     {
-        private readonly IElectoralDistrictRepository _electoralDistrictRepository;
-        private readonly IDistributedCache<IList<ElectoralDistrictDto>, LocalityCacheKey> _cache;
-
-        public ElectoralDistrictAppService(IElectoralDistrictRepository electoralDistrictRepository,
-            IDistributedCache<IList<ElectoralDistrictDto>, LocalityCacheKey> cache)
-        {
-            _electoralDistrictRepository = electoralDistrictRepository;
-            _cache = cache;
-        }
-
         public virtual async Task<IList<ElectoralDistrictDto>> GetListAsync()
         {
-            var cacheKey = new LocalityCacheKey(SettingsConstants.ElectoralDistrictsCacheKey, null);
-            return await _cache.GetOrAddAsync(
-                cacheKey,
-                GetElectoralDistricts
-            ) ?? [];           
+            var electoralDistrictsCache = await cache.GetOrAddAsync(
+                SettingsConstants.EconomicRegionsCacheKey,
+                GetElectoralDistrictsAsync,
+                () => new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpiration = DateTimeOffset.Now.AddHours(SettingsConstants.DefaultLocalityCacheHours)
+                }
+            );
+
+            return electoralDistrictsCache?.ElectoralDistricts ?? [];
         }
 
-        protected virtual async Task<IList<ElectoralDistrictDto>> GetElectoralDistricts()
+        protected virtual async Task<ElectoralDistrictsCache> GetElectoralDistrictsAsync()
         {
-            var electoralDistricts = await _electoralDistrictRepository.GetListAsync();
+            var electoralDistricts = await electoralDistrictRepository.GetListAsync();
 
-            return ObjectMapper.Map<List<ElectoralDistrict>, List<ElectoralDistrictDto>>([.. electoralDistricts.OrderBy(s => s.ElectoralDistrictCode)]);
+            return new ElectoralDistrictsCache()
+            {
+                ElectoralDistricts = ObjectMapper.Map<List<ElectoralDistrict>, List<ElectoralDistrictDto>>([.. electoralDistricts.OrderBy(s => s.ElectoralDistrictCode)])
+            };
+        }
+
+        [IgnoreMultiTenancy]
+        public class ElectoralDistrictsCache
+        {
+            public ElectoralDistrictsCache()
+            {
+                ElectoralDistricts = [];
+            }
+
+            public List<ElectoralDistrictDto> ElectoralDistricts { get; set; }
         }
     }
 }

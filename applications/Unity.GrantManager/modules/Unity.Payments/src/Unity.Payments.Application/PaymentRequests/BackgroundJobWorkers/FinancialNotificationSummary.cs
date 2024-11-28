@@ -3,9 +3,9 @@ using Quartz;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Microsoft.Extensions.Options;
 
-
 namespace Unity.Payments.PaymentRequests;
 
+[DisallowConcurrentExecution]
 public class FinancialNotificationSummary : QuartzBackgroundWorkerBase
 {
     private readonly FinancialSummaryService _financialSummaryService;
@@ -16,20 +16,23 @@ public class FinancialNotificationSummary : QuartzBackgroundWorkerBase
         )
     {
 
-        JobDetail = JobBuilder.Create<FinancialNotificationSummary>().WithIdentity(nameof(FinancialNotificationSummary)).Build();
+        JobDetail = JobBuilder
+            .Create<FinancialNotificationSummary>()
+            .WithIdentity(nameof(FinancialNotificationSummary))
+            .Build();
+
         _financialSummaryService = financialSummaryService;
 
-        Trigger = TriggerBuilder.Create().WithIdentity(nameof(FinancialNotificationSummary))
-            .WithSchedule(CronScheduleBuilder.CronSchedule(
-                casPaymentsBackgroundJobsOptions.Value.FinancialNotificationSummaryOptions.ProducerExpression)
+        Trigger = TriggerBuilder
+            .Create()
+            .WithIdentity(nameof(FinancialNotificationSummary))
+            .WithSchedule(CronScheduleBuilder.CronSchedule(casPaymentsBackgroundJobsOptions.Value.FinancialNotificationSummaryOptions.ProducerExpression)
             .WithMisfireHandlingInstructionIgnoreMisfires())
             .Build();
     }
 
     public override async Task Execute(IJobExecutionContext context)
     {
-        await _financialSummaryService.NotifyFinancialAdvisorsOfNightlyFailedPayments();        
+        await _financialSummaryService.NotifyFinancialAdvisorsOfNightlyFailedPayments();
     }
-
-    
 }
