@@ -5,251 +5,188 @@ using System.Collections.Generic;
 using Volo.Abp.Domain.Services;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Linq;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Unity.GrantManager.Intakes
 {
     public class InputComponentProcessor : DomainService
     {
-        protected readonly Dictionary<string, string> components = new Dictionary<string, string>();
-        private static ILogger logger = NullLogger.Instance;
+        protected readonly Dictionary<string, string> _components = new Dictionary<string, string>();
+        private static ILogger _logger = NullLogger.Instance;
 
         // Method to initialize the logger (if needed)
         public static void InitializeLogger(ILoggerFactory loggerFactory)
         {
-            logger = loggerFactory.CreateLogger(typeof(InputComponentProcessor));
+            _logger = loggerFactory.CreateLogger(typeof(InputComponentProcessor));
         }
 
-        private static readonly List<string> allowableContainerTypes =
-        [
-            "tabs",
-            "table",
-            "simplecols2",
-            "simplecols3",
-            "simplecols4",
-            "simplecontent",
-            "simplepanel",
-            "simpleparagraph",
-            "simpletabs",
-            "container",
-            "columns",
-            "panel"
-        ];
+        private static readonly HashSet<string> _allowableContainerTypes = new HashSet<string>
+        {
+            "tabs", "table", "simplecols2", "simplecols3", "simplecols4", 
+            "simplecontent", "simplepanel", "simpleparagraph", "simpletabs", 
+            "container", "columns", "panel"
+        };
 
-        private static readonly List<string> columnTypes =
-        [
-            "simplecols2",
-            "simplecols3",
-            "simplecols4",
-            "columns"
-        ];
+        private static readonly HashSet<string> _columnTypes = new HashSet<string>
+        {
+            "simplecols2", "simplecols3", "simplecols4", "columns"
+        };
 
-        private static readonly List<string> dynamicTypes =
-        [
+        private static readonly HashSet<string> _dynamicTypes = new HashSet<string>
+        {
             "datagrid"
-        ];
+        };
 
         private void AddComponentToDictionary(string key, string? tokenType, string label)
         {
-            if (!components.ContainsKey(key))
+            if (key != null && !_components.ContainsKey(key))
             {
                 var jsonValue = JsonConvert.SerializeObject(new { type = tokenType, label });
-                components.Add(key, jsonValue);
+                _components[key] = jsonValue;
             }
         }
 
-        private static bool IsValidChildToken(JToken childToken)
+        // Centralized check for valid tokens, including 'input' and 'type' validation
+        private static bool IsValidToken(JToken childToken)
         {
             var tokenInput = childToken["input"]?.ToString();
             var tokenType = childToken["type"]?.ToString();
-
-            return tokenInput == "True" &&
-                   tokenType != null &&
-                   tokenType != "button" &&
-                   !allowableContainerTypes.Contains(tokenType);
+            return tokenInput == "True" && tokenType != null && tokenType != "button" && !_allowableContainerTypes.Contains(tokenType);
         }
 
+        // Determine the sub-lookup type based on the token type
         public static string GetSubLookupType(string? tokenType)
         {
-            // Default to "components" if tokenType is null or empty
             if (string.IsNullOrEmpty(tokenType))
             {
                 return "components";
             }
 
-            // Check if tokenType is part of ColumnTypes
-            if (columnTypes.Contains(tokenType))
+            if (_columnTypes.Contains(tokenType))
             {
                 return "columns";
             }
 
-            // Check for "table" case-insensitively
             if (tokenType.Equals("table", StringComparison.OrdinalIgnoreCase))
             {
                 return "rows";
             }
 
-            // Default return for any other tokenType
             return "components";
         }
 
-        public void AddComponent(JToken childToken)
+        // Process individual components (adding them to the dictionary and handling nested components)
+        public void ProcessComponent(JToken token)
         {
             try
             {
-                if (!IsValidChildToken(childToken)) return;
-
-                string? key = childToken["key"]?.ToString();
-                string? label = childToken["label"]?.ToString();
-                string? tokenType = childToken["type"]?.ToString();
-
-                if (key != null && label != null)
+                if (token.Type == JTokenType.Array)
                 {
-                    AddComponentToDictionary(key, tokenType, label);
+                    TraverseComponents(token); // Recurse into arrays
                 }
+
+                if (IsValidToken(token))
+                {
+                    // Safely retrieve key, label, and tokenType, and add to dictionary
+                    var key = token["key"]?.ToString();
+                    var label = token["label"]?.ToString();
+                    var tokenType = token["type"]?.ToString();
+
+                    // Only add to dictionary if key and label are both valid
+                    if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(label))
+                    {
+                        AddComponentToDictionary(key, tokenType, label);
+                    }
+                }
+
+                // Process nested components, if any
+                ProcessNestedComponents(token);
             }
             catch (Exception ex)
             {
-                logger.LogInformation(ex, "An exception occurred in {MethodName}: {ExceptionMessage}", nameof(AddComponent), ex.Message);
+                _logger.LogError(ex, "An error occurred while processing the token.");
             }
         }
 
-        public void ConsumeToken(JToken? token)
+        // Process nested components (dynamically or statically, depending on the type)
+        private void ProcessNestedComponents(JToken token)
         {
-            if (token != null)
+            var subTokenType = token["type"]?.ToString();
+            var subLookupType = GetSubLookupType(subTokenType);
+
+            // Handle dynamic types (e.g., datagrid)
+            if (!string.IsNullOrEmpty(subTokenType) && _dynamicTypes.Contains(subTokenType))
             {
-                var subTokenType = token["type"]?.ToString();
+                // Safely retrieve key and label, ensuring they're valid before calling AddComponentToDictionary
+                var key = token["key"]?.ToString();
+                var label = token["label"]?.ToString();
 
-                string subSubTokenString = GetSubLookupType(subTokenType);
-
-                // Any dynamic types, get the parent and children tokens
-                if (subTokenType != null && dynamicTypes.Contains(subTokenType))
+                if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(label))
                 {
-                    AddComponent(token);
+                    AddComponentToDictionary(key, subTokenType, label);
                 }
+            }
 
-                var nestedComponentsComponents = ((JObject)token).SelectToken(subSubTokenString);
-                if (nestedComponentsComponents != null)
+            // Process any nested components under the current token
+            var nestedComponents = token.SelectToken(subLookupType);
+            if (nestedComponents != null)
+            {
+                foreach (var nestedToken in nestedComponents.Children<JToken>())
                 {
-                    GetAllInputComponents(nestedComponentsComponents);
-                }
-                else
-                {
-                    AddComponent(token);
+                    ProcessComponent(nestedToken);
                 }
             }
         }
 
-        public void GetAllInputComponents(JToken? tokenComponents)
+        // Traverse through the components and process each one
+        public void TraverseComponents(JToken? tokenComponents)
         {
             if (tokenComponents == null) return;
 
             foreach (var childToken in tokenComponents.Children<JToken>())
             {
-                if (childToken.Type == JTokenType.Array)
+                // Process only valid objects (avoid unnecessary recursion)
+                if (childToken.Type == JTokenType.Object)
                 {
-                    GetAllInputComponents(childToken);
+                    ProcessComponent(childToken);
                 }
-                if (childToken.Type != JTokenType.Object) continue;
-
-                ProcessChildToken(childToken);
-            }
-        }
-
-        private void ProcessChildToken(JToken childToken)
-        {
-            var tokenType = childToken["type"];
-
-            // Add the component if applicable
-            AddComponent(childToken);
-
-            if (tokenType != null
-                && allowableContainerTypes.Contains(tokenType.ToString())
-                && !dynamicTypes.Contains(tokenType.ToString()))
-            {
-                ProcessNestedComponents(childToken, tokenType);
-            }
-            else if (tokenType != null && dynamicTypes.Contains(tokenType.ToString()))
-            {
-                ConsumeToken(childToken);
-            }
-            else if (childToken.Children().Any())
-            {
-                ProcessMultiNested(childToken);
-            }
-        }
-
-        private void ProcessMultiNested(JToken childToken)
-        {
-            foreach (JProperty grandChildToken in childToken.Children<JProperty>())
-            {
-                if (grandChildToken.Name == "components")
+                else if (childToken.Type == JTokenType.Array)
                 {
-                    GetAllInputComponents(grandChildToken);
+                    TraverseComponents(childToken); // Recurse into arrays
                 }
             }
         }
 
-        private void ProcessNestedComponents(JToken childToken, JToken? tokenType)
+        // Find all nodes by name, useful for dynamic or repeated structures
+        public static List<JToken> FindNodesByName(JToken json, string name)
         {
-            // Get the sub-token string using a safe conversion of tokenType
-            var subTokenString = GetSubLookupType(tokenType?.ToString());
-
-            // Safely select nested components
-            var nestedComponents = childToken.SelectToken(subTokenString);
-
-            // If there are nested components, process them            
-            if (nestedComponents != null)
-            {
-                foreach (var nestedTokenComponent in nestedComponents.Children())
-                {
-                    ProcessNestedTokenComponent(nestedTokenComponent, subTokenString);
-                }
-            }
+            var nodes = new List<JToken>();
+            FindNodesRecursive(json, name, nodes);
+            return nodes;
         }
 
-
-        private void ProcessNestedTokenComponent(JToken nestedTokenComponent, string subTokenString)
-        {
-            if (subTokenString == "rows")
-            {
-                GetAllInputComponents(nestedTokenComponent);
-            }
-            else
-            {
-                ConsumeToken(nestedTokenComponent);
-            }
-        }
-
-        private static void FindNodes(JToken json, string name, List<JToken> nodes)
+        // Recursively search for nodes based on the given name
+        protected static void FindNodesRecursive(JToken json, string name, List<JToken> nodes)
         {
             if (json.Type == JTokenType.Object)
             {
                 foreach (JProperty child in json.Children<JProperty>())
                 {
+                    // Add nodes that match the name prefix
                     if (child.Name.StartsWith(name))
                     {
-                        nodes.Add(child);
+                        nodes.Add(child.Value);
                     }
-                    FindNodes(child.Value, name, nodes);
+                    // Continue recursion for nested children
+                    FindNodesRecursive(child.Value, name, nodes);
                 }
             }
             else if (json.Type == JTokenType.Array)
             {
-                foreach (JToken child in json.Children())
+                foreach (var child in json.Children())
                 {
-                    FindNodes(child, name, nodes);
+                    FindNodesRecursive(child, name, nodes); // Continue recursion for array elements
                 }
             }
         }
-
-        public static List<JToken> FindNodes(JToken json, string name)
-        {
-            var nodes = new List<JToken>();
-            FindNodes(json, name, nodes);
-            return nodes;
-        }
-
     }
 }
