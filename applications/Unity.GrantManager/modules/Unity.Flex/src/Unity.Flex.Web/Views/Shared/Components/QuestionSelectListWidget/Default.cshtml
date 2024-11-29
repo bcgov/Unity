@@ -9,7 +9,7 @@
     <label for="answer-selectlist-@Model.QuestionId" class="form-label">Answer</label>
     <select id="answer-selectlist-@Model.QuestionId"
             class="form-select form-control answer-selectlist-input"
-            name="Answer-SelectList[@Model.QuestionId]"
+            name="Answer-SelectList-@Model.QuestionId"
             data-original-value="@Model.Answer"
             disabled="@Model.IsDisabled"
             onchange="handleInputChange('@Model.QuestionId','answer-selectlist-','save-selectlist-','discard-selectlist-')">
@@ -20,10 +20,6 @@
             <!option @(Model.Answer == @item.Value ? "selected" : "") data-numeric-value="@item.NumericValue" value="@item.Value" title="@item.Value">@truncatedValue</!option>
         }
     </select>
-</div>
-<div class="btn-group">
-    <button type="button" class="btn btn-primary" disabled="@Model.IsDisabled" disabled id="save-selectlist-@Model.QuestionId" onclick="saveChanges('@Model.QuestionId','answer-selectlist-','save-selectlist-',12,'discard-selectlist-')">SAVE CHANGES</button>
-    <button type="button" class="btn btn-secondary" disabled="@Model.IsDisabled" id="discard-selectlist-@Model.QuestionId" onclick="discardChanges('@Model.QuestionId','answer-selectlist-','save-selectlist-','discard-selectlist-')">DISCARD CHANGES</button>
 </div>
 
     
