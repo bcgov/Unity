@@ -8,7 +8,6 @@ using Unity.Flex.Scoresheets.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Volo.Abp.Validation;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Unity.Flex.Handlers
 {
@@ -17,7 +16,7 @@ namespace Unity.Flex.Handlers
         public async Task HandleEventAsync(PersistScoresheetSectionInstanceEto eventData)
         {
 
-            var instance = await scoresheetInstanceRepository.GetByCorrelationAsync(eventData.SectionId) ?? throw new AbpValidationException("Missing ScoresheetInstance.");
+            var instance = await scoresheetInstanceRepository.GetByCorrelationAsync(eventData.AssessmentId) ?? throw new AbpValidationException("Missing ScoresheetInstance.");
             var scoresheetAnswers = eventData.AssessmentAnswers.ToList();
 
             foreach (var item in scoresheetAnswers)

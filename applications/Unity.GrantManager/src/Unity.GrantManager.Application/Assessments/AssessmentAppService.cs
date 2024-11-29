@@ -419,7 +419,7 @@ namespace Unity.GrantManager.Assessments
 
         public async Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto)
         {
-            var assessment = await _assessmentRepository.GetAsync(dto.AssessmentSectionId);
+            var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
             try
             {
                 if (assessment != null)
@@ -437,14 +437,14 @@ namespace Unity.GrantManager.Assessments
                     {
                         await _localEventBus.PublishAsync(new PersistScoresheetSectionInstanceEto()
                         {
-                            SectionId = dto.AssessmentSectionId,
+                            AssessmentId = dto.AssessmentId,
                             AssessmentAnswers = dto.AssessmentAnswers
                         });
                     }
                 }
                 else
                 {
-                    throw new AbpValidationException("AssessmentId Not Found: " + dto.AssessmentSectionId + ".");
+                    throw new AbpValidationException("AssessmentId Not Found: " + dto.AssessmentId + ".");
                 }
 
             } catch (Exception ex)
