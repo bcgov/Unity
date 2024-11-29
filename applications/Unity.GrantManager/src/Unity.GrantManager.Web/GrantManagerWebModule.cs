@@ -192,17 +192,6 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
-        context.Services.AddCors(options =>
-        {
-            options.AddPolicy("ChefsOrigin",
-                builder =>
-                {
-                    builder.WithOrigins("https://chefs-dev.apps.silver.devops.gov.bc.ca") // Specify your exact origin
-                           .AllowAnyMethod() // Allow all methods (GET, POST, etc.)
-                           .AllowAnyHeader() // Allow all headers
-                           .AllowCredentials(); // Allow credentials
-                });
-        });
 
         context.Services.AddHealthChecks()
             .AddCheck<LiveHealthCheck>("live", tags: new[] { "live" });
@@ -588,7 +577,6 @@ public class GrantManagerWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
-        app.UseCors("ChefsOrigin");
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)
