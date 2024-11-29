@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using Volo.Abp.Domain.Services;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Linq;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Unity.GrantManager.Intakes
 {
@@ -145,6 +147,10 @@ namespace Unity.GrantManager.Intakes
 
             foreach (var childToken in tokenComponents.Children<JToken>())
             {
+                if (childToken.Type == JTokenType.Array)
+                {
+                    GetAllInputComponents(childToken);
+                }
                 if (childToken.Type != JTokenType.Object) continue;
 
                 ProcessChildToken(childToken);
@@ -164,11 +170,23 @@ namespace Unity.GrantManager.Intakes
             {
                 ProcessNestedComponents(childToken, tokenType);
             }
-            else
+            else if (tokenType != null && dynamicTypes.Contains(tokenType.ToString()))
             {
-                if (tokenType != null && dynamicTypes.Contains(tokenType.ToString()))
+                ConsumeToken(childToken);
+            }
+            else if (childToken.Children().Any())
+            {
+                ProcessMultiNested(childToken);
+            }
+        }
+
+        private void ProcessMultiNested(JToken childToken)
+        {
+            foreach (JProperty grandChildToken in childToken.Children<JProperty>())
+            {
+                if (grandChildToken.Name == "components")
                 {
-                    ConsumeToken(childToken);
+                    GetAllInputComponents(grandChildToken);
                 }
             }
         }
@@ -190,6 +208,7 @@ namespace Unity.GrantManager.Intakes
                 }
             }
         }
+
 
         private void ProcessNestedTokenComponent(JToken nestedTokenComponent, string subTokenString)
         {
