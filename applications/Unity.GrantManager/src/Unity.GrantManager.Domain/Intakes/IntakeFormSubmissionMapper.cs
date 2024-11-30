@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Intakes
             // Check The Version of the form to make sure it is current
             JToken? tokenComponents = ((JObject)formVersion).SelectToken("schema.components");
             TraverseComponents(tokenComponents);
-            return JsonSerializer.Serialize(_components);
+            return JsonSerializer.Serialize(components);
         }
 
         public IntakeMapping MapFormSubmissionFields(ApplicationForm applicationForm, dynamic formSubmission, string? mapFormSubmissionFields)
@@ -120,7 +120,7 @@ namespace Unity.GrantManager.Intakes
 
             foreach (var fileKey in GetFileKeys(version))
             {
-                var nodes = FindNodesByName(data, fileKey);
+                var nodes = FindNodes(data, fileKey);
 
                 foreach (JToken filesNode in nodes) //object containing array of files
                 {
