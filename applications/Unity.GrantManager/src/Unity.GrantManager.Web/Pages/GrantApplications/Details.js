@@ -406,7 +406,12 @@ $(function () {
     });
 
     let applicationActionWidgetManager = new abp.WidgetManager({
-        wrapper: '.abp-widget-wrapper[data-widget-name="ApplicationActionWidget"]'
+        wrapper: '.abp-widget-wrapper[data-widget-name="ApplicationActionWidget"]',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val()
+            };
+        }
     });
 
     const assessmentResultWidgetDiv = "assessmentResultWidget";
