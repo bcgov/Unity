@@ -405,6 +405,10 @@ $(function () {
         }
     });
 
+    let applicationActionWidgetManager = new abp.WidgetManager({
+        wrapper: '.abp-widget-wrapper[data-widget-name="ApplicationActionWidget"]'
+    });
+
     const assessmentResultWidgetDiv = "assessmentResultWidget";
 
     let assessmentResultWidgetManager = new abp.WidgetManager({
@@ -437,6 +441,7 @@ $(function () {
             applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
             assessmentResultWidgetManager.refresh();
+            applicationActionWidgetManager.refresh();
         }
     );
 
