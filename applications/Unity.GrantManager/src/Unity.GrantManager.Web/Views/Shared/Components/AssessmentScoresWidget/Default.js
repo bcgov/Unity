@@ -197,7 +197,7 @@ function compareObj(objA, objB) {
     return res;
 }
 
-function handleInputChange(questionId, inputFieldPrefix, saveButtonPrefix, discardButtonPrefix) {
+function handleInputChange(questionId, inputFieldPrefix) {
     const sectionFormId = $(`#${inputFieldPrefix + questionId}`).closest("form").attr("id"); 
     let sectionId = sectionFormId !== null ? sectionFormId.split('-').slice(2).join('-') : null;
     const secSaveButton = document.getElementById('scoresheet-section-save-' + sectionId);

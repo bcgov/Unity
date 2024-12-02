@@ -11,7 +11,7 @@
             data-yes-numeric-value="@Model.YesValue"
             data-no-numeric-value="@Model.NoValue"
             disabled="@Model.IsDisabled"
-            onchange="handleInputChange('@Model.QuestionId','answer-yesno-','save-yesno-','discard-yesno-')">
+            onchange="handleInputChange('@Model.QuestionId','answer-yesno-')">
         <option value="">Please choose...</option>
         <!option value="Yes" @(Model.Answer == "Yes" ? "selected" : "")>Yes</!option>
         <!option value="No" @(Model.Answer == "No" ? "selected" : "")>No</!option>

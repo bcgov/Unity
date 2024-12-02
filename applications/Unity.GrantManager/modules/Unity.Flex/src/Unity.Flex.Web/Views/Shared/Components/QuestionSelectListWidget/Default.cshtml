@@ -12,7 +12,7 @@
             name="Answer-SelectList-@Model.QuestionId"
             data-original-value="@Model.Answer"
             disabled="@Model.IsDisabled"
-            onchange="handleInputChange('@Model.QuestionId','answer-selectlist-','save-selectlist-','discard-selectlist-')">
+            onchange="handleInputChange('@Model.QuestionId','answer-selectlist-')">
         <option data-numeric-value="0" value="">Please choose...</option>
         @foreach (var item in ((QuestionSelectListDefinition?)Model.Definition?.ConvertDefinition(Unity.Flex.Scoresheets.QuestionType.SelectList))?.Options ?? [])
         {
