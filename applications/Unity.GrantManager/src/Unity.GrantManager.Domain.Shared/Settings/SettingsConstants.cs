@@ -7,7 +7,8 @@
         public const string ElectoralDistrictsCacheKey = "ElectoralDistrictCache";        
         public const string EconomicRegionsCacheKey = "EconomicRegionCache";
         public const string CommunitiesCacheKey = "CommunitiesCache";
-
+        public const double DefaultLocalityCacheHours = 48;
+        
         public static class UI
         {
             public static class Tabs

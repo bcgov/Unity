@@ -184,7 +184,7 @@ namespace Unity.GrantManager.Identity
             }            
 
             // Use identity user manager to create the user
-            var createUserResult = await _userManager.CreateAsync(identityUser) ?? throw new AbpException("Unxpected error importing user");
+            var createUserResult = await _userManager.CreateAsync(identityUser) ?? throw new AbpException("Unexpected error importing user");
 
             if (!createUserResult.Succeeded)
             {
@@ -193,7 +193,7 @@ namespace Unity.GrantManager.Identity
                 {
                     validationErrors.Add(new ValidationResult($"{error.Code} {error.Description}"));
                 }
-                throw new AbpValidationException("Error importing user", validationErrors);
+                throw new AbpValidationException($"Error importing user id:{newUserId} u:{username} f:{firstName} l:{lastName} e:{emailAddress}", validationErrors);
             }
 
             return identityUser;

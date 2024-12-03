@@ -4,11 +4,11 @@ name: unity_local
 services:
   unity-grantmanager-web:
     env_file:
-      - .env
+     - .env
 
   unity-data-dbmigrator:
     env_file:
-      - .env
+     - .env
 
   unity-data-postgres:
     env_file:
