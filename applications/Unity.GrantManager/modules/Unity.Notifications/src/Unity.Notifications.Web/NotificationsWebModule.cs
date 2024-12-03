@@ -11,13 +11,19 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
+using Unity.Notifications.Web.Settings;
+using Volo.Abp.SettingManagement.Web;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Unity.Notifications.Web.Settings.NotificationsSettingGroup;
 
 namespace Unity.Notifications.Web;
 
 [DependsOn(
     typeof(NotificationsApplicationContractsModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpAutoMapperModule),
+    typeof(AbpSettingManagementWebModule)
     )]
 public class NotificationsWebModule : AbpModule
 {
@@ -55,6 +61,21 @@ public class NotificationsWebModule : AbpModule
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
             options.FileSets.AddEmbedded<NotificationsWebModule>();
+        });
+
+        Configure<AbpBundlingOptions>(options =>
+        {
+            options.ScriptBundles.Configure(
+                typeof(Volo.Abp.SettingManagement.Web.Pages.SettingManagement.IndexModel).FullName,
+                configuration =>
+                {
+                    configuration.AddContributors(typeof(NotificationsSettingScriptBundleContributor));
+                });
+        });
+
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new NotificationsSettingPageContributor());
         });
 
         context.Services.AddAutoMapperObjectMapper<NotificationsWebModule>();

@@ -1,7 +1,12 @@
 {
   "culture": "en",
   "texts": {
-    "MyAccount":  "My account",
-    "SamplePageMessage": "A sample page for the Notifications module"
+    "MyAccount": "My account",
+    "SamplePageMessage": "A sample page for the Notifications module",
+    "Setting:Notifications": "Notifications",
+    "Setting:Notifications.Mailing.DefaultFromAddress.DisplayName": "Default From Address",
+    "Setting:Notifications.Mailing.DefaultFromAddress.Description": "The default From sender address",
+    "Setting:Notifications.Mailing.DefaultFromDisplayName.DisplayName": "Default From Display Name",
+    "Setting:Notifications.Mailing.DefaultFromDisplayName.Description": "The default From display name"
   }
 }
