@@ -27,10 +27,17 @@ using Unity.GrantManager.Intakes.BackgroundWorkers;
 using Unity.Payments.Integrations.Cas;
 using Unity.Flex;
 using Unity.Payments;
+using Volo.Abp.Caching;
+using Volo.Abp.Quartz;
+using System;
+using Quartz;
+using Volo.Abp.BackgroundJobs;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+using Unity.Shared.MessageBrokers.RabbitMQ;
 
 namespace Unity.GrantManager;
 
-[DependsOn(
+[DependsOn(    
     typeof(GrantManagerDomainModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
@@ -39,18 +46,53 @@ namespace Unity.GrantManager;
     typeof(AbpFeatureManagementApplicationModule),
     typeof(AbpSettingManagementApplicationModule),
     typeof(AbpBackgroundWorkersQuartzModule),
-    typeof(AbpBackgroundWorkersQuartzModule),
-    typeof(NotificationsApplicationModule),    
+    typeof(NotificationsApplicationModule),
     typeof(PaymentsApplicationModule),
     typeof(FlexApplicationModule)
     )]
 public class GrantManagerApplicationModule : AbpModule
 {
-    //Set some defaults 
+    public override void PreConfigureServices(ServiceConfigurationContext context)
+    {
+        var configuration = context.Services.GetConfiguration();
+
+        PreConfigure<AbpQuartzOptions>(options =>
+        {
+            options.Configurator = configure =>
+            {
+                configure.SchedulerName = Guid.NewGuid().ToString();
+            };
+        });
+
+        if (Convert.ToBoolean(configuration["BackgroundJobs:Quartz:UseCluster"]))
+        {
+            PreConfigure<AbpQuartzOptions>(options =>
+            {
+                options.Configurator = configure =>
+                {
+                    configure.UsePersistentStore(storeOptions =>
+                    {
+                        storeOptions.UseProperties = true;
+                        storeOptions.UsePostgres(configuration.GetConnectionString("Default") ?? string.Empty);
+                        storeOptions.UseClustering(t =>
+                        {
+                            t.CheckinMisfireThreshold = TimeSpan.FromSeconds(20);
+                            t.CheckinInterval = TimeSpan.FromSeconds(10);
+                        });
+                        storeOptions.UseJsonSerializer();
+                        storeOptions.SetProperty("quartz.jobStore.tablePrefix", "qrtz_");
+                        storeOptions.SetProperty("quartz.scheduler.instanceName", "UnityQuartz");
+                        storeOptions.SetProperty("quartz.scheduler.instanceId", "AUTO");
+                    });
+                };
+            });
+        }
+    }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
+
         Configure<AbpBlobStoringOptions>(options =>
         {
             options.Containers.Configure<S3Container>(container =>
@@ -66,6 +108,7 @@ public class GrantManagerApplicationModule : AbpModule
                 });
             });
         });
+
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<GrantManagerApplicationModule>();
@@ -87,13 +130,11 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.Configure<CasClientOptions>(configuration.GetSection(key: "Payments"));
         context.Services.Configure<CssApiOptions>(configuration.GetSection(key: "CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection(key: "Notifications"));
-        Configure<BackgroundJobsOptions>(options =>
-        {
-            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
-            options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
-            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";
-            options.IntakeResync.NumDaysToCheck = configuration.GetValue<string>("BackgroundJobs:IntakeResync:NumDaysToCheck") ?? "-2";
-        });
+
+        ConfigureBackgroundServices(configuration);
+        ConfigureDistributedCache(context, configuration);
+
+        context.Services.ConfigureRabbitMQ();
 
         _ = context.Services.AddSingleton(provider =>
         {
@@ -144,5 +185,54 @@ public class GrantManagerApplicationModule : AbpModule
 
         LimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;
         LimitedResultRequestDto.MaxMaxResultCount = int.MaxValue;
+    }
+
+    private void ConfigureBackgroundServices(IConfiguration configuration)
+    {
+        if (!Convert.ToBoolean(configuration["BackgroundJobs:IsJobExecutionEnabled"])) return;
+
+        Configure<AbpBackgroundJobOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+        });
+
+        Configure<AbpBackgroundWorkerQuartzOptions>(options =>
+        {
+            options.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
+        });
+
+        /*
+         * There are Global Retry Options that can be configured, configure if required, or if handled per job 
+        */
+
+        Configure<BackgroundJobsOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
+            options.Quartz.IsAutoRegisterEnabled = configuration.GetValue<bool>("BackgroundJobs:Quartz:IsAutoRegisterEnabled");
+            options.IntakeResync.Expression = configuration.GetValue<string>("BackgroundJobs:IntakeResync:Expression") ?? "";
+            options.IntakeResync.NumDaysToCheck = configuration.GetValue<string>("BackgroundJobs:IntakeResync:NumDaysToCheck") ?? "-2";
+        });
+    }
+
+    private void ConfigureDistributedCache(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"])) return;
+
+        context.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.InstanceName = configuration["Redis:InstanceName"];
+            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
+        });
+
+        Configure<RedisCacheOptions>(options =>
+        {
+            options.InstanceName = configuration["Redis:InstanceName"];
+            options.Configuration = $"{configuration["Redis:Host"]}:{configuration["Redis:Port"]},password={configuration["Redis:Password"]}";
+        });
+
+        Configure<AbpDistributedCacheOptions>(options =>
+        {
+            options.KeyPrefix = configuration["Redis:KeyPrefix"] ?? "unity";
+        });
     }
 }
