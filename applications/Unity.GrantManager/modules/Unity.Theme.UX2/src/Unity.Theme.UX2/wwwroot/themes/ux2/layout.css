@@ -492,6 +492,10 @@ input.form-control, textarea.form-control, .form-select {
         border: none !important;
     }
 
+    textarea.form-control:disabled {
+        pointer-events: auto;
+    }
+
 abp-date-picker .btn {
     position: absolute !important;
     right: 1px;
