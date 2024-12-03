@@ -9,6 +9,7 @@ using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.Intakes.BackgroundWorkers
 {
+    [DisallowConcurrentExecution]
     public class IntakeSyncWorker : QuartzBackgroundWorkerBase
     {
         private readonly ICurrentTenant _currentTenant;
@@ -26,12 +27,17 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
             _applicationFormSynchronizationService = applicationFormSynchronizationService;
             _backgroundJobsOptions = backgroundJobsOptions;
 
-            JobDetail = JobBuilder.Create<IntakeSyncWorker>().WithIdentity(nameof(IntakeSyncWorker)).Build();
+            JobDetail = JobBuilder
+                .Create<IntakeSyncWorker>()
+                .WithIdentity(nameof(IntakeSyncWorker))
+                .Build();
 
-            Trigger = TriggerBuilder.Create().WithIdentity(nameof(IntakeSyncWorker))
-            .WithSchedule(CronScheduleBuilder.CronSchedule(_backgroundJobsOptions.Value.IntakeResync.Expression)                     
-            .WithMisfireHandlingInstructionIgnoreMisfires())
-            .Build();
+            Trigger = TriggerBuilder
+                .Create()
+                .WithIdentity(nameof(IntakeSyncWorker))
+                .WithSchedule(CronScheduleBuilder.CronSchedule(_backgroundJobsOptions.Value.IntakeResync.Expression)
+                .WithMisfireHandlingInstructionIgnoreMisfires())
+                .Build();
         }
 
         public override async Task Execute(IJobExecutionContext context)
@@ -40,7 +46,8 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
 
             var tenants = await _tenantRepository.GetListAsync();
 
-            if(!int.TryParse(_backgroundJobsOptions.Value.IntakeResync.NumDaysToCheck, out int numberDaysBack)) {
+            if (!int.TryParse(_backgroundJobsOptions.Value.IntakeResync.NumDaysToCheck, out int numberDaysBack))
+            {
                 Logger.LogInformation("IntakeSyncWorker - Could not parse number of Days...");
                 return;
             }
