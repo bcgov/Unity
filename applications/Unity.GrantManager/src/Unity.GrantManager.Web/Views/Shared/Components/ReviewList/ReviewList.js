@@ -380,6 +380,9 @@ function createButtonAction(e, dt, button, config) {
         .done(function (data) {
             PubSub.publish('assessment_action_completed');
             PubSub.publish('refresh_review_list', data.id);
+            PubSub.publish("application_status_changed");
+            PubSub.publish("refresh_detail_panel_summary");
+            PubSub.publish("init_date_pickers");
         });
     this.disable();
 }
