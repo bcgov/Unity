@@ -198,8 +198,8 @@ function compareObj(objA, objB) {
 }
 
 function handleInputChange(questionId, inputFieldPrefix) {
-    const sectionFormId = $(`#${inputFieldPrefix + questionId}`).closest("form").attr("id"); 
-    let sectionId = sectionFormId !== null ? sectionFormId.split('-').slice(2).join('-') : null;
+    const sectionFormId = $(`#${inputFieldPrefix + questionId}`).closest("form").attr("id");
+    let sectionId = sectionFormId !== null ? sectionFormId?.split('-').slice(2).join('-') : null;
     const secSaveButton = document.getElementById('scoresheet-section-save-' + sectionId);
     const secDiscardButton = document.getElementById('scoresheet-section-discard-' + sectionId);
 
