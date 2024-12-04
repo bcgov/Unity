@@ -18,8 +18,8 @@
 }
 
 #preview .preview-btn:not(.collapsed) {
-    background-color: #007bff; 
-    color: #ffffff; 
+    background-color: #3470B1;
+    color: #ffffff;
 }
 
 #preview .preview-btn.collapsed::after {
@@ -91,6 +91,3 @@
 .scoresheet-name {
     font-size: 0.7rem;
 }
-
-
-
