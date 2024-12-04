@@ -416,6 +416,43 @@ namespace Unity.GrantManager.Assessments
                 throw new AbpValidationException("AssessmentId Not Found: " + assessmentId + ".");
             }
         }
+
+        public async Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto)
+        {
+            var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
+            try
+            {
+                if (assessment != null)
+                {
+                    if (CurrentUser.GetId() != assessment.AssessorId)
+                    {
+                        throw new AbpValidationException("Error: You do not own this assessment record.");
+                    }
+                    if (assessment.Status.Equals(AssessmentState.COMPLETED))
+                    {
+                        throw new AbpValidationException("Error: This assessment is already completed.");
+                    }
+
+                    if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+                    {
+                        await _localEventBus.PublishAsync(new PersistScoresheetSectionInstanceEto()
+                        {
+                            AssessmentId = dto.AssessmentId,
+                            AssessmentAnswers = dto.AssessmentAnswers
+                        });
+                    }
+                }
+                else
+                {
+                    throw new AbpValidationException("AssessmentId Not Found: " + dto.AssessmentId + ".");
+                }
+
+            } catch (Exception ex)
+            {
+                throw new AbpValidationException(ex.Message, ex);
+            }
+        }
+
     }
 }
 

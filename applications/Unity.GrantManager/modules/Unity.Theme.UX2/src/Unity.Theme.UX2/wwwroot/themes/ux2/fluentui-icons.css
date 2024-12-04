@@ -249,6 +249,10 @@
     content: '\E15F';
 }
 
+.fl-emails:before {
+    content: '\E8C3';
+}
+
 .fl-link:before {
     content: '\E167';
 }
@@ -312,6 +316,10 @@
 
 .fl-attachment-more:before {
     content: '\E712';
+}
+
+.fl-add:before {
+    content: '\E710';
 }
 
 .fl-attachment:before {

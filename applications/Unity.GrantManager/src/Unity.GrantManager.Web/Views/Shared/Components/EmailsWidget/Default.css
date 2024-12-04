@@ -1,0 +1,219 @@
+﻿﻿.single-email {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    border-left: 0.50px #D6D6D6 solid;
+    border-top: 0.50px #D6D6D6 solid;
+    border-right: 0.50px #D6D6D6 solid;
+    border-bottom: 1px #D6D6D6 solid;
+    padding: 10px 5px 5px 5px;
+    flex: 1;
+}
+
+.single-email.edit-mode {
+    width: 100%;
+}
+
+.email-input {
+    outline: 0;
+    margin-right: 8px;
+    margin-left: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+
+.email-form label {
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: 8px;
+    margin-bottom: 0;
+}
+
+.email-input:hover {
+    box-shadow: none !important;
+}
+
+.email-input.selected {
+    border: 0 !important;
+    outline: 0 !important;
+    border-bottom: 0.5px solid #D6D6D6 !important;
+    border-radius: 0px !important;
+}
+
+.email-button-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: right;
+    gap: 8px;
+}
+
+.email-input-multiple:hover {
+    box-shadow: none !important;
+    border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
+}
+
+.email-input::placeholder {
+    color: #b9b9b9 !important;
+}
+
+textarea::placeholder {
+    color: #b9b9b9 !important;
+}
+
+
+.email-btn {
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background: #E6EFF7;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: box-shadow .3s;
+}
+
+.email-btn:hover {
+    box-shadow: -3px 3px 11px -3px rgba(33, 33, 33, .2);
+}
+
+.email-lbl {
+    display: block;
+    margin-top: 0.25rem;
+    width: 99%;
+    max-height: 180px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    position: relative;
+    font-size: var(--bc-font-size);
+}
+
+.email-lbl-wrapper {
+    color: #666666;
+    font-size: 0.89rem;
+    font-weight: 400;
+    word-wrap: break-word;
+}
+
+.unity-email-block {
+    background: var(--bc-surface--color--brand--gold--20);
+    padding: 0.75rem 0.5rem 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-size: var(--bc-font-size-xs);
+    color: var(--bc-colors-grey-text-300);
+    flex: 1;
+    width: 90%;
+}
+
+.field-validation-error {
+    margin-left: 8px;
+}
+
+.confirmation-label {
+    font-size: 19px;
+    font-weight: 600;
+    text-align: center;
+    align-content: center;
+    margin: 30px;
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    padding-right: 0px;
+    color: var(--bc-colors-grey-text-500);
+}
+
+.btn-send-close {
+    margin: 4px;
+}
+
+#modal-background {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    opacity: .50;
+    -webkit-opacity: .5;
+    -moz-opacity: .5;
+    filter: alpha(opacity=50);
+    z-index: 1000;
+}
+
+#modal-content {
+    display: none;
+}
+
+#spinner-modal {
+    display: none;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    box-shadow: 0 0 20px 0 #222;
+    -webkit-box-shadow: 0 0 20px 0 #222;
+    -moz-box-shadow: 0 0 20px 0 #222;
+    height: fit-content;
+    left: 50%;
+    margin: -120px 0 0 -160px;
+    padding: 10px;
+    position: fixed;
+    top: 50%;
+    width: 320px;
+    z-index: 1000;
+}
+
+
+#EmailForm {
+    display: none;
+}
+
+#EmailForm.active {
+    display: block;
+}
+
+.hide {
+    display: none;
+}
+
+
+.toast-top-center { 
+    top: 220px;
+    margin: 0 auto;
+    left: 50%;
+    margin-left: -450px;
+}
+
+
+#modal-background.active,
+#modal-content.active {
+    display: block;
+}
+
+#email-spinner {
+	width: 40px;
+    height: 40px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+    margin-top: -20px;
+    margin-left: 40px;
+	border-radius: 50%;
+	border: 5px solid #eaf5fe;
+	border-right-color: #5597d4;
+	animation: rotateSpinner 800ms linear infinite;  
+}
+
+
+@keyframes rotateSpinner {
+	to {
+		transform: rotate(360deg);
+	}
+}
