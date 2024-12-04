@@ -47,14 +47,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="Settings\_ViewImports.cshtml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Settings\_ViewImports.cshtml" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
     <PackageReference Update="Fody" Version="6.8.1">
       <PrivateAssets>all</PrivateAssets>

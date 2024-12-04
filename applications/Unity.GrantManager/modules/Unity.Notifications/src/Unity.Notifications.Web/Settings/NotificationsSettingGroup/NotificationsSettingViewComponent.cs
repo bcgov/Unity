@@ -9,7 +9,6 @@ namespace Unity.Notifications.Web.Settings.NotificationsSettingGroup;
     ScriptTypes = [typeof(NotificationsSettingScriptBundleContributor)],
     AutoInitialize = true
 )]
-[ViewComponent(Name = "NotificationsSetting")]
 public class NotificationsSettingViewComponent : AbpViewComponent
 {
     public virtual async Task<IViewComponentResult> InvokeAsync()
