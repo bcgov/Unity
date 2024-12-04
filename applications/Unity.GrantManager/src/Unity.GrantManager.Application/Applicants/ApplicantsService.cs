@@ -129,6 +129,5 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
         await applicantAgentRepository.InsertAsync(applicantAgent);
 
         return applicantAgent;
-        
     }
 }
