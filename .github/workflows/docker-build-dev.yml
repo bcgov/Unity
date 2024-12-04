@@ -113,7 +113,9 @@ jobs:
       run: |
         rm -f ./docker-compose.override.yml
         echo "buildArgs UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}"
-        docker compose build --build-arg UNITY_BUILD_VERSION=${{env.UGM_BUILD_VERSION}} --build-arg UNITY_BUILD_REVISION=${{env.UGM_BUILD_REVISION}}
+        docker build --build-arg UNITY_BUILD_VERSION=${{env.UGM_BUILD_VERSION}} --build-arg UNITY_BUILD_REVISION=${{env.UGM_BUILD_REVISION}} -t unity-grantmanager-web -f src/Unity.GrantManager.Web/Dockerfile .
+        docker build -t unity-grantmanager-dbmigrator -f src/Unity.GrantManager.DbMigrator/Dockerfile .
+
       working-directory: ./applications/Unity.GrantManager
     - name: Connect to JFrog Artifactory non-interactive login using --password-stdin
       run: |
