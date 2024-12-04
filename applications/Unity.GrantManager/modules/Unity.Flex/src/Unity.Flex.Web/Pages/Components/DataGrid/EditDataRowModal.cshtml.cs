@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using System.Linq;
-using JetBrains.Annotations;
 
 namespace Unity.Flex.Web.Pages.Flex;
 
@@ -130,8 +129,8 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         var keyValuePairs = new Dictionary<string, string>();
         var pattern = @"^(?<prefix>.+?)\..*";
         foreach (var (prefix, value) in from string key in form.Keys
-                                        where Regex.IsMatch(key, pattern)
-                                        let match = Regex.Match(key, pattern)
+                                        where Regex.IsMatch(key, pattern, RegexOptions.None, TimeSpan.FromSeconds(30))
+                                        let match = Regex.Match(key, pattern, RegexOptions.None, TimeSpan.FromSeconds(30))
                                         let prefix = match.Groups["prefix"].Value
                                         let value = form[key]
                                         select (prefix, value))
