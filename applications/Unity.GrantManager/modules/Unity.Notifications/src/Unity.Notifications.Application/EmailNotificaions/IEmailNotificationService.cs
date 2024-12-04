@@ -8,9 +8,9 @@ namespace Unity.Notifications.EmailNotifications
 {
     public interface IEmailNotificationService: IApplicationService
     {
-        Task<EmailLog?> InitializeEmailLog(string email, string body, string subject, Guid applicationId);
+        Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom);
         Task<EmailLog?> GetEmailLogById(Guid id);
-        Task<RestResponse> SendEmailNotification(string email, string body, string subject);
+        Task<RestResponse> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom);
         Task SendEmailToQueue(EmailLog emailLog);
         string GetApprovalBody();
         string GetDeclineBody();
