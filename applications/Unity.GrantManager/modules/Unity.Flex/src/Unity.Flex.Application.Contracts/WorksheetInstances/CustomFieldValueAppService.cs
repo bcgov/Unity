@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Flex.WorksheetInstances
@@ -8,6 +9,13 @@ namespace Unity.Flex.WorksheetInstances
     {
         Task<CustomFieldValueDto> GetAsync(Guid id);
 
-        Task ExplicitSetAsync(Guid id, string value);
+        [RemoteService(false)]
+        Task ExplicitSetAsync(Guid valueId, string value);
+
+        [RemoteService(false)]
+        Task ExplicitAddAsync(CustomFieldValueDto value);
+
+        [RemoteService(false)]
+        Task SyncWorksheetInstanceValueAsync(Guid worksheetInstanceId);        
     }
 }

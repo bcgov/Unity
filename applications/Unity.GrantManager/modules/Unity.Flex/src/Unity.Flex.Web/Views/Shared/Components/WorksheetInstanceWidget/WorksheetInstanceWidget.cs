@@ -145,6 +145,7 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
             field.UiAnchor = uiAnchor;
         }
 
+        worksheetViewModel.WorksheetInstanceId = worksheetInstance.Id;
         return worksheetViewModel;
     }
 }

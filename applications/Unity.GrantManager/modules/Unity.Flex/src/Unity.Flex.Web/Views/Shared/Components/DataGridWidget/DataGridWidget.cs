@@ -27,9 +27,13 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         private const string _summaryLabelprefix = "Total:";
         private static readonly List<CustomFieldType> _validTotalSummaryTypes = [CustomFieldType.Numeric, CustomFieldType.Currency];
 
-        public IViewComponentResult Invoke(WorksheetFieldViewModel? fieldModel, string modelName)
+        public IViewComponentResult Invoke(WorksheetFieldViewModel? fieldModel,
+            string modelName,
+            Guid worksheetId,
+            Guid worksheetInstanceId)
         {
             if (fieldModel == null) return View(new DataGridViewModel());
+
             var dataGridValue = JsonSerializer.Deserialize<DataGridValue>(fieldModel.CurrentValue ?? "{}");
             var dataGridDefinition = (DataGridDefinition?)fieldModel.Definition?.ConvertDefinition(fieldModel.Type);
 
@@ -43,7 +47,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             }
             else
             {
-                return GenerateView(fieldModel, modelName, dataGridDefinition);
+                return GenerateView(fieldModel, modelName, dataGridDefinition, worksheetId, worksheetInstanceId);
             }
         }
 
@@ -62,7 +66,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return !dataGridDefinition.Dynamic && dataGridDefinition.Columns.Count > 0;
         }
 
-        private IViewComponentResult GenerateView(WorksheetFieldViewModel fieldModel, string modelName, DataGridDefinition dataGridDefinition)
+        private IViewComponentResult GenerateView(WorksheetFieldViewModel fieldModel,
+            string modelName,
+            DataGridDefinition dataGridDefinition,
+            Guid worksheetId,
+            Guid worksheetInstanceId)
         {
             var dataGridValue = JsonSerializer.Deserialize<DataGridValue>(fieldModel.CurrentValue ?? "{}");
             DataGridRowsValue? dataGridRowsValue = null;
@@ -72,14 +80,22 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 dataGridRowsValue = JsonSerializer.Deserialize<DataGridRowsValue>(dataGridValue.Value.ToString() ?? string.Empty);
             }
 
-            return GenerateGridView(fieldModel, modelName, dataGridValue, dataGridRowsValue, dataGridDefinition);
+            return GenerateGridView(fieldModel,
+                modelName,
+                dataGridValue,
+                dataGridRowsValue,
+                dataGridDefinition,
+                worksheetId,
+                worksheetInstanceId);
         }
 
         private IViewComponentResult GenerateGridView(WorksheetFieldViewModel fieldModel,
             string modelName,
             DataGridValue? dataGridValue,
             DataGridRowsValue? dataGridRowsValue,
-            DataGridDefinition dataGridDefinition)
+            DataGridDefinition dataGridDefinition,
+            Guid worksheetId,
+            Guid worksheetInstanceId)
         {
             var dataColumns = GenerateDataColumns(dataGridValue, dataGridDefinition);
             var dataRows = GenerateDataRows(dataColumns, dataGridRowsValue);
@@ -94,7 +110,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 AllowEdit = true,
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
                 Summary = GenerateSummary([.. dataColumns], [.. dataRows]),
-                TableOptions = GenerateAvailableTableOptions(!dataGridDefinition.Dynamic)
+                TableOptions = GenerateAvailableTableOptions(!dataGridDefinition.Dynamic),
+                WorksheetId = worksheetId,
+                WorksheetInstanceId = worksheetInstanceId,
+                UiAnchor = fieldModel.UiAnchor
             };
 
             return View(viewModel);
@@ -341,8 +360,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 summary.Fields.Add(new DataGridViewModelSummaryField()
                 {
                     Key = field.Key,
-                    Value = SumCells(field.Key, rows),
-                    Label = $"{_summaryLabelprefix} {field.Name}"
+                    Value = SumCells(field.Key, rows).ApplyFormatting(field.Type, null),
+                    Label = $"{_summaryLabelprefix} {field.Name}",
+                    Type = field.Type
                 });
             }
 

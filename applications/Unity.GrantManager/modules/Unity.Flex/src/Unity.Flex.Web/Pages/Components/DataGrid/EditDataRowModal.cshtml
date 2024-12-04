@@ -17,13 +17,19 @@
     Layout = null;
 }
 
-<form method="post" asp-page-handler="OnPostAsync" id="editRowData" spellcheck="false">
+<form method="post" asp-page-handler="OnPostAsync" id="editRowData-@Model.FieldId" spellcheck="false">
     <abp-modal size="Large" id="custom-field-info-modal">
         <abp-modal-header class="custom-field-info-modal-header" title="Edit"></abp-modal-header>
         <abp-modal-body>
             <abp-input type="hidden" id="valueId" asp-for="@Model.ValueId" />
             <abp-input type="hidden" id="rowNumber" asp-for="@Model.Row" />
             <abp-input type="hidden" id="fieldId" asp-for="@Model.FieldId" />
+            <abp-input type="hidden" id="worksheetId" asp-for="@Model.WorksheetId" />
+            <abp-input type="hidden" id="worksheetInstanceId" asp-for="@Model.WorksheetInstanceId" />
+            <abp-input type="hidden" id="FormVersionId" asp-for="@Model.FormVersionId" />
+            <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
+            <abp-input type="hidden" id="UiAnchor" asp-for="@Model.UiAnchor" />
+            <abp-input type="hidden" id="IsNew" asp-for="@Model.IsNew" />
 
             @foreach (var field in Model.Properties ?? [])
             {
@@ -88,7 +94,7 @@
             }
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" class="btn btn-primary" id="saveRowValues" name="saveRowValues" value="save">@AbpModalButtons.Save</button>
+            <button type="submit" class="btn btn-primary" id="saveRowValues-@Model.FieldId" name="saveRowValues-@Model.FieldId" value="save">@AbpModalButtons.Save</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
         </abp-modal-footer>
     </abp-modal>
@@ -100,17 +106,29 @@
             decimal: '.'
         }).maskMoney('mask');
 
-        let saveBtn = $(`#saveRowValues`);
-        let form = $(`#editRowData`);
+        let fieldId = $('#fieldId').val();
+        let formId = `editRowData-${fieldId}`;
+        let form = $(`#${formId}`);
+        let saveBtn = $(`#saveRowValues-${fieldId}`);
 
-        // Remove any existing 'change' event handlers for inputs within the form inherited from custom fields
-        $('#editRowData input').removeAttr('onchange');
+        // Select inputs, textareas, and selects within the form
+        let formElements = $(`#${formId} input, #${formId} textarea, #${formId} select`);
 
-        $('#editRowData input').on('change', function () {            
-            if (form.valid() && !rowEditFormHasInvalidCurrencyCustomFields('editRowData')) {
-                saveBtn.prop('disabled', false);
-            } else {
-                saveBtn.prop('disabled', true);
+        // Remove any existing 'change' event handlers
+        formElements.removeAttr('onchange');
+
+        // Add a new 'change' event handler
+        formElements.on('change', function () {
+            let isValid = form.valid();
+            let hasInvalidCurrency = rowEditFormHasInvalidCurrencyCustomFields(formId);
+            saveBtn.prop('disabled', !(isValid && !hasInvalidCurrency));
+
+            if (!isValid) {
+                form.find(':input').each(function () {
+                    if (!this.validity.valid) {
+                        console.log('Invalid field:', this.name || this.id);
+                    }
+                });
             }
         });
 

@@ -5,16 +5,15 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
-using Unity.Flex.WorksheetInstances;
 using System.Linq;
 
 namespace Unity.Flex.Web.Pages.Flex;
 
-public class EditDataRowModalModel(ICustomFieldValueAppService customFieldValueAppService,
-    DataGridService dataGridService) : FlexPageModel
+public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
+    DataGridReadService dataGridReadService) : FlexPageModel
 {
     [BindProperty]
-    public Guid ValueId { get; set; }
+    public Guid? ValueId { get; set; }
 
     [BindProperty]
     public uint Row { get; set; }
@@ -23,34 +22,92 @@ public class EditDataRowModalModel(ICustomFieldValueAppService customFieldValueA
     public Guid FieldId { get; set; }
 
     [BindProperty]
+    public Guid WorksheetId { get; set; }
+
+    [BindProperty]
+    public Guid WorksheetInstanceId { get; set; }
+
+    [BindProperty]
+    public string? UiAnchor { get; set; }
+
+    [BindProperty]
+    public Guid FormVersionId { get; set; }
+
+    [BindProperty]
+    public Guid ApplicationId { get; set; }
+
+    [BindProperty]
+    public bool IsNew { get; set; }
+
+    [BindProperty]
     public List<WorksheetFieldViewModel>? Properties { get; set; }
 
-    public async Task OnGetAsync(Guid valueId, Guid fieldId, uint row)
+    public async Task OnGetAsync(Guid valueId,
+        Guid fieldId,
+        uint row,
+        bool isNew,
+        Guid worksheetId,
+        Guid worksheetInstanceId,
+        Guid formVersionId,
+        Guid applicationId,
+        string uiAnchor)
     {
         Row = row;
         ValueId = valueId;
         FieldId = fieldId;
+        WorksheetId = worksheetId;
+        WorksheetInstanceId = worksheetInstanceId;
+        FormVersionId = formVersionId;
+        ApplicationId = applicationId;
+        UiAnchor = uiAnchor;
+        IsNew = isNew;
 
-        Properties = await dataGridService.GetEditableDataRowFieldsAsync(valueId, row);
+        var dataProps = new RowInputData()
+        {
+            FieldId = FieldId,
+            ValueId = ValueId,
+            Row = Row,
+            IsNew = isNew,
+            WorksheetId = worksheetId,
+            WorksheetInstanceId = worksheetInstanceId,
+            FormVersionId = formVersionId,
+            ApplicationId = applicationId,
+            UiAnchor = uiAnchor
+        };
+
+        Properties = await dataGridReadService.GetPropertiesAsync(dataProps);
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         var keyValuePairs = GetKeyValuePairs(Request.Form);
-        var keyValueTypes = await dataGridService.GenerateKeyValueTypesAsync(FieldId, keyValuePairs);
-        var calculatedDelta = await dataGridService.CalculateDeltaAsync(ValueId, Row, keyValueTypes);
 
-        if (calculatedDelta != null)
+        var dataProps = new RowInputData()
         {
-            await customFieldValueAppService.ExplicitSetAsync(ValueId, calculatedDelta);
-        }
+            FieldId = FieldId,
+            ValueId = ValueId,
+            Row = Row,
+            WorksheetId = WorksheetId,
+            WorksheetInstanceId = WorksheetInstanceId,
+            KeyValuePairs = keyValuePairs,
+            UiAnchor = UiAnchor ?? string.Empty,
+            FormVersionId = FormVersionId,
+            ApplicationId = ApplicationId,
+            IsNew = IsNew
+        };
+
+        var result = await dataGridWriteService.WriteRowAsync(dataProps);
 
         return new OkObjectResult(new ModalResponse()
         {
-            ValueId = ValueId,
+            ValueId = result.ValueId,
             FieldId = FieldId,
-            Row = Row,
-            Updates = dataGridService.ApplyPresentationFormat(keyValuePairs, keyValueTypes)
+            WorksheetInstanceId = result.WorksheetInstanceId,
+            WorksheetId = result.WorksheetId,
+            Row = result.Row,
+            IsNew = result.IsNew,            
+            Updates = DataGridReadService.ApplyPresentationFormat(keyValuePairs, result.MappedValues),
+            UiAnchor = UiAnchor
         });
     }
 
@@ -76,7 +133,11 @@ public class EditDataRowModalModel(ICustomFieldValueAppService customFieldValueA
         public uint Row { get; set; }
         public Guid ValueId { get; set; }
         public Guid FieldId { get; set; }
+        public bool IsNew { get; set; }
+        public Guid WorksheetInstanceId { get; set; }
+        public Guid WorksheetId { get; set; }
         public Dictionary<string, string> Updates { get; set; } = [];
+        public string? UiAnchor { get; set; }
     }
 }
 
