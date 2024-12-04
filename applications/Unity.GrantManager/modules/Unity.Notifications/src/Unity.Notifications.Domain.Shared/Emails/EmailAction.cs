@@ -9,5 +9,6 @@ public enum EmailAction
     SendByTemplateId,
     SendFailedSummary,
     SendApproval,
-    SendDecline
+    SendDecline,
+    SendCustom
 }

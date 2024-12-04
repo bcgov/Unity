@@ -41,6 +41,7 @@ namespace Unity.GrantManager.Assessments
         private readonly ILocalEventBus _localEventBus;
         private readonly IFeatureChecker _featureChecker;
         private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
+        private const string UnityFlex = "Unity.Flex";
 
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
@@ -123,7 +124,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task<SubTotalDto> GetSubTotal(AssessmentListItemDto assessment)
         {
-            if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+            if (await _featureChecker.IsEnabledAsync(UnityFlex))
             {
                 var instance = await _scoresheetInstanceAppService.GetByCorrelationAsync(assessment.Id);
 
@@ -331,7 +332,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task ValidateValidScoresheetAsync(Guid assessmentId, AssessmentAction triggerAction)
         {
-            if (await _featureChecker.IsEnabledAsync("Unity.Flex") && triggerAction == AssessmentAction.Confirm)
+            if (await _featureChecker.IsEnabledAsync(UnityFlex) && triggerAction == AssessmentAction.Confirm)
             {
                 var requirementsMetResult = await _scoresheetInstanceAppService.ValidateAnswersAsync(assessmentId);
 
@@ -400,7 +401,7 @@ namespace Unity.GrantManager.Assessments
                     throw new AbpValidationException("Error: This assessment is already completed.");
                 }
 
-                if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+                if (await _featureChecker.IsEnabledAsync(UnityFlex))
                 {
                     await _localEventBus.PublishAsync(new PersistScoresheetInstanceEto()
                     {
@@ -416,6 +417,43 @@ namespace Unity.GrantManager.Assessments
                 throw new AbpValidationException("AssessmentId Not Found: " + assessmentId + ".");
             }
         }
+
+        public async Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto)
+        {
+            var assessment = await _assessmentRepository.GetAsync(dto.AssessmentId);
+            try
+            {
+                if (assessment != null)
+                {
+                    if (CurrentUser.GetId() != assessment.AssessorId)
+                    {
+                        throw new AbpValidationException("Error: You do not own this assessment record.");
+                    }
+                    if (assessment.Status.Equals(AssessmentState.COMPLETED))
+                    {
+                        throw new AbpValidationException("Error: This assessment is already completed.");
+                    }
+
+                    if (await _featureChecker.IsEnabledAsync(UnityFlex))
+                    {
+                        await _localEventBus.PublishAsync(new PersistScoresheetSectionInstanceEto()
+                        {
+                            AssessmentId = dto.AssessmentId,
+                            AssessmentAnswers = dto.AssessmentAnswers
+                        });
+                    }
+                }
+                else
+                {
+                    throw new AbpValidationException("AssessmentId Not Found: " + dto.AssessmentId + ".");
+                }
+
+            } catch (Exception ex)
+            {
+                throw new AbpValidationException(ex.Message, ex);
+            }
+        }
+
     }
 }
 

@@ -13,6 +13,8 @@ namespace Unity.Notifications.Events
         public Guid ApplicationId { get; set; }
         public int RetryAttempts { get; set; } = 0;
         public string Body { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
+        public string? EmailFrom { get; set; } = string.Empty;
         public string EmailAddress { get; set; } = string.Empty;
         public List<string> EmailAddressList { get; set; } = new List<string>();
 

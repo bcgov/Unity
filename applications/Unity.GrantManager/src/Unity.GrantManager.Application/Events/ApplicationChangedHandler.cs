@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.Emails;
@@ -16,12 +17,15 @@ namespace Unity.GrantManager.Events
         private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly IFeatureChecker _featureChecker;
         private readonly ILocalEventBus _localEventBus;
+        private readonly IConfiguration _configuration;
 
         public ApplicationChangedHandler(
+            IConfiguration configuration,
             IApplicantAgentRepository applicantAgentRepository,
             ILocalEventBus localEventBus,
             IFeatureChecker featureChecker)
         {
+            _configuration = configuration;
             _applicantAgentRepository = applicantAgentRepository;
             _localEventBus = localEventBus;
             _featureChecker = featureChecker;
@@ -40,9 +44,10 @@ namespace Unity.GrantManager.Events
             var applicantAgent = await _applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == eventData.ApplicationId);
             if (applicantAgent == null) return;
 
-            string email = applicantAgent.Email;
+            string? emailTo = applicantAgent.Email;
+            string emailFrom =_configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca";
 
-            if (!string.IsNullOrEmpty(email))
+            if (!string.IsNullOrEmpty(emailTo))
             {
                 switch (eventData.Action)
                 {
@@ -54,7 +59,8 @@ namespace Unity.GrantManager.Events
                                     Action = EmailAction.SendApproval,
                                     ApplicationId = eventData.ApplicationId,
                                     RetryAttempts = 0,
-                                    EmailAddress = email
+                                    EmailAddress = emailTo,
+                                    EmailFrom = emailFrom
                                 }
                             );
                             break;
@@ -67,7 +73,8 @@ namespace Unity.GrantManager.Events
                                     Action = EmailAction.SendDecline,
                                     ApplicationId = eventData.ApplicationId,
                                     RetryAttempts = 0,
-                                    EmailAddress = email
+                                    EmailAddress = emailTo,
+                                    EmailFrom = emailFrom
                                 }
                             );
                             break;

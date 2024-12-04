@@ -28,10 +28,12 @@ namespace Unity.GrantManager.Repositories
 
         public async Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName)
         {
+            string unityApplicantNameNormalized = unityApplicantName.Trim().ToLower();  // Normalize the input
+
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
                 .FirstOrDefaultAsync(a => a.ApplicantName != null &&
-                                        a.ApplicantName.Equals(unityApplicantName, StringComparison.OrdinalIgnoreCase));
+                                          a.ApplicantName.ToLower() == unityApplicantNameNormalized);
 
         }
     }
