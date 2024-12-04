@@ -221,10 +221,6 @@ $(function () {
                             oninput="handleInputChange('${item.dataset.id}','answer-text-')"></textarea>
                         <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
                     </div>`;
-        //<div class="btn-group">
-        //    <button type="button" class="btn btn-primary" disabled id="save-text-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">SAVE CHANGES</button>
-        //    <button type="button" class="btn btn-secondary" id="discard-text-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">DISCARD CHANGES</button>
-        //</div>
     }
 
     function buildSelectListFieldPreview(item) {
@@ -247,11 +243,6 @@ $(function () {
                             ${optionsHTML}
                         </select>
                     </div>`;
-
-        //<div class="btn-group">
-        //    <button type="button" class="btn btn-primary" disabled id="save-selectlist-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">SAVE CHANGES</button>
-        //    <button type="button" class="btn btn-secondary" id="discard-selectlist-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-selectlist-','save-selectlist-','discard-selectlist-')">DISCARD CHANGES</button>
-        //</div>
     }
 
     function buildNumberFieldPreview(item) {
@@ -265,10 +256,6 @@ $(function () {
                             oninput="handleInputChange('${item.dataset.id}','answer-number-')" />
                         <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error" ></span>
                     </div>`;
-        //<div class="btn-group">
-        //    <button type="button" class="btn btn-primary" disabled id="save-number-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">SAVE CHANGES</button>
-        //    <button type="button" class="btn btn-secondary" id="discard-number-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-number-','save-number-','discard-number-')">DISCARD CHANGES</button>
-        //</div>
     }
 
     function buildYesNoFieldPreview(item) {
@@ -288,10 +275,6 @@ $(function () {
                             <option value="No">No</option>
                         </select>
                     </div>`;
-        //<div class="btn-group">
-        //    <button type="button" class="btn btn-primary" disabled id="save-yesno-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">SAVE CHANGES</button>
-        //    <button type="button" class="btn btn-secondary" id="discard-yesno-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-yesno-','save-yesno-','discard-yesno-')">DISCARD CHANGES</button>
-        //</div>
     }
 
     function buildTextFieldPreview(item) {
@@ -307,11 +290,6 @@ $(function () {
                             oninput="handleInputChange('${item.dataset.id}','answer-text-')" />
                         <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
                     </div>`;
-        //<div class="btn-group">
-        //    <button type="button" class="btn btn-primary" disabled id="save-text-${item.dataset.id}" onclick="savePreviewChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">SAVE CHANGES</button>
-        //    <button type="button" class="btn btn-secondary" id="discard-text-${item.dataset.id}" onclick="discardChanges('${item.dataset.id}','answer-text-','save-text-','discard-text-')">DISCARD CHANGES</button>
-        //</div>
-        
     }
 
     function hashCode(str) {
@@ -477,8 +455,5 @@ function savePreviewSectionChanges(formId, sectionId) {
 
     updateSubtotal();
 }
-
-
-
 
 
