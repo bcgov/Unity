@@ -1,7 +1,7 @@
 
 function executeOperations(data) {
   
-    $('button').hide();
+    $(".accordion-collapse").addClass("show");
     $("input").attr("disabled", true);
     $("select").attr("disabled", true);
     $("textarea").attr("disabled", true);
