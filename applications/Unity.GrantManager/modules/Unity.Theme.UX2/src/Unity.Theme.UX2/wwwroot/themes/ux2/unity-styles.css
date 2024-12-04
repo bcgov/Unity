@@ -729,3 +729,13 @@ div.dataTables_wrapper div.dataTables_filter {
 .cursor-pointer {
     cursor: pointer;
 }
+
+.custom-fields-checkbox-wrapper {
+    display: flex;
+    gap: 8px;
+}
+
+    .custom-fields-checkbox-wrapper input {
+        cursor: pointer;
+        transform: scale(1.3);
+    }

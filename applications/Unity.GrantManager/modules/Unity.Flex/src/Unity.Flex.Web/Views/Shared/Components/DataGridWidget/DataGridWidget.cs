@@ -423,14 +423,63 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return columnType switch
             {
                 var ct when IsDateColumn(ct) && TryParseDate(value, format, out string formattedDate) => formattedDate,
+                var ct when IsDateTimeColumn(ct) && TryParseDateTime(value, format, out string formattedDateTime) => formattedDateTime,
                 var ct when IsCurrencyColumn(ct) && TryParseCurrency(value, format, out string formattedCurrency) => formattedCurrency,
+                var ct when IsYesNoColumn(ct) && TryFormatYesNo(value, out string formattedYesNo) => formattedYesNo,
+                var ct when IsCheckBoxColumn(ct) && TryFormatCheckbox(value, out string formattedCheckbox) => formattedCheckbox,
                 _ => value
             };
         }
 
+        private static bool TryParseDateTime(string value, string? format, out string formattedDateTime)
+        {
+            if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
+            {
+                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "MM-dd-yyyy hh:mm:ss tt";
+                formattedDateTime = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
+                return true;
+            }
+            formattedDateTime = string.Empty;
+            return false;
+        }
+
+        private static bool IsDateTimeColumn(string columnType)
+        {
+            return columnType == CustomFieldType.DateTime.ToString();
+        }
+
+        private static bool TryFormatCheckbox(string value, out string formattedCheckbox)
+        {
+            if (value.IsTruthy()) formattedCheckbox = "true";
+            else
+                formattedCheckbox = "false";
+            return true;
+        }
+
+        private static bool IsCheckBoxColumn(string columnType)
+        {
+            return columnType == CustomFieldType.Checkbox.ToString();
+        }
+
+        private static bool TryFormatYesNo(string value, out string formattedYesNo)
+        {
+            if (string.IsNullOrEmpty(value) || value == "Please choose...")
+            {
+                formattedYesNo = string.Empty;
+                return true;
+            }
+            formattedYesNo = value;
+            return false;
+        }
+
+        private static bool IsYesNoColumn(string columnType)
+        {
+            return columnType == CustomFieldType.YesNo.ToString();
+        }
+
         private static bool IsDateColumn(string columnType)
         {
-            return columnType == CustomFieldType.Date.ToString() || columnType == CustomFieldType.DateTime.ToString();
+            return columnType == CustomFieldType.Date.ToString();
         }
 
         private static bool IsCurrencyColumn(string columnType)

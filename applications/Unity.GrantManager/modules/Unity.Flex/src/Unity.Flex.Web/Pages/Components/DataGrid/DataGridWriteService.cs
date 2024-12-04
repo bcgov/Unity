@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.Flex.Web.Views.Shared.Components.DataGridWidget;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
@@ -162,7 +163,7 @@ namespace Unity.Flex.Web.Pages.Flex
                 newCells.Add(new DataGridRowCell()
                 {
                     Key = value.Item1,
-                    Value = value.Item2
+                    Value = value.Item2.ApplyFormatting(value.Item3.ToString(), null)
                 });
             }
 

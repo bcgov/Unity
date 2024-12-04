@@ -30,6 +30,7 @@
             <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
             <abp-input type="hidden" id="UiAnchor" asp-for="@Model.UiAnchor" />
             <abp-input type="hidden" id="IsNew" asp-for="@Model.IsNew" />
+            <abp-input type="hidden" id="CheckboxKeys" asp-for="@Model.CheckboxKeys" />
 
             @foreach (var field in Model.Properties ?? [])
             {
@@ -130,6 +131,18 @@
                     }
                 });
             }
+        });
+
+        // Get all date/time elements
+        let datetimeElements = $(`#${formId} input[type="datetime-local"], #${formId} input[type="date"]`);
+        
+        // Loop through all the input elements
+        datetimeElements.each(function () {
+            // Find the <i> element within the same .custom-input-group
+            var icon = $(this).closest('.custom-input-group').find('i');
+
+            // Set the class of the <i> element to empty
+            icon.attr('class', '');
         });
 
         function rowEditFormHasInvalidCurrencyCustomFields(formId) {

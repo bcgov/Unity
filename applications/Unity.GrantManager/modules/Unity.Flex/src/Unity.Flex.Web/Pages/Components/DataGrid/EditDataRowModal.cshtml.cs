@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using System.Linq;
+using JetBrains.Annotations;
 
 namespace Unity.Flex.Web.Pages.Flex;
 
@@ -42,6 +43,9 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
     [BindProperty]
     public List<WorksheetFieldViewModel>? Properties { get; set; }
 
+    [BindProperty]
+    public string? CheckboxKeys { get; set; }
+
     public async Task OnGetAsync(Guid valueId,
         Guid fieldId,
         uint row,
@@ -76,11 +80,21 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         };
 
         Properties = await dataGridReadService.GetPropertiesAsync(dataProps);
+        CheckboxKeys = string.Join(',', Properties?.Where(s => s.Type == Worksheets.CustomFieldType.Checkbox).Select(s => s.Name) ?? []);
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         var keyValuePairs = GetKeyValuePairs(Request.Form);
+
+        if (CheckboxKeys != null)
+        {
+            var keysToCheck = CheckboxKeys.Split(',');
+            foreach (var key in keysToCheck)
+            {
+                keyValuePairs.TryAdd(key, "false");
+            }
+        } 
 
         var dataProps = new RowInputData()
         {
@@ -105,7 +119,7 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             WorksheetInstanceId = result.WorksheetInstanceId,
             WorksheetId = result.WorksheetId,
             Row = result.Row,
-            IsNew = result.IsNew,            
+            IsNew = result.IsNew,
             Updates = DataGridReadService.ApplyPresentationFormat(keyValuePairs, result.MappedValues),
             UiAnchor = UiAnchor
         });
