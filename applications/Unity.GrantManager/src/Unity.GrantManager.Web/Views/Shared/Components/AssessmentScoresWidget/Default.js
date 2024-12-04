@@ -18,7 +18,6 @@
         "AssessmentAnswers": 
             assessmentAnswersArr.map(({ questionId, questionType, answer }) => ({ questionId, questionType, answer }))
     };
-    console.log(data);
 
     //Calls an enpoint and disabled buttons
     unity.grantManager.assessments.assessment.saveScoresheetSectionAnswers(data)
@@ -81,7 +80,7 @@ function buildFormData(assessmentAnswersArr, inputData, inputFieldArr, origAnswe
         "Text" : 2,
         "YesNo" : 6,
         "SelectList" : 12,
-        "TextArea" : 14
+        "Textarea" : 14
     };
     const n = 2;
     const formAnsObj = {};
