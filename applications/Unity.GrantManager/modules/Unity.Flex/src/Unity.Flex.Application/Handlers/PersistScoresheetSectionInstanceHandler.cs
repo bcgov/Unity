@@ -29,16 +29,13 @@ namespace Unity.Flex.Handlers
                 }
                 else
                 {
-                    if (eventData != null)
+                    ans = new Answer(Guid.NewGuid())
                     {
-                        ans = new Answer(Guid.NewGuid())
-                        {
-                            CurrentValue = ValueConverter.Convert(item?.Answer?.ToString() ?? string.Empty, (QuestionType)item!.QuestionType),
-                            QuestionId = item.QuestionId,
-                            ScoresheetInstanceId = instance.Id
-                        };
-                        instance.Answers.Add(ans);
-                    }
+                        CurrentValue = ValueConverter.Convert(item?.Answer?.ToString() ?? string.Empty, (QuestionType)item!.QuestionType),
+                        QuestionId = item.QuestionId,
+                        ScoresheetInstanceId = instance.Id
+                    };
+                    instance.Answers.Add(ans);
                 }
 
                 await scoresheetInstanceRepository.UpdateAsync(instance);

@@ -7,6 +7,6 @@ namespace Unity.Flex.Scoresheets.Events
     {
         public Guid QuestionId { get; set; }
         public string? Answer { get; set; }
-        public int? QuestionType { get; set; }
+        public int QuestionType { get; set; }
     }
 }

@@ -445,11 +445,6 @@ function savePreviewSectionChanges(formId, sectionId) {
         buildFormData(assessmentAnswersArr, inputData, inputFieldArr, origAnswersArr);
     });
 
-    const data = {
-        "AssessmentAnswers":
-            assessmentAnswersArr.map(({ questionId, questionType, answer }) => ({ questionId, questionType, answer }))
-    };
-
     secSaveButton.disabled = true;
     secDiscardButton.disabled = true;
 

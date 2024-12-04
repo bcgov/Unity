@@ -41,6 +41,7 @@ namespace Unity.GrantManager.Assessments
         private readonly ILocalEventBus _localEventBus;
         private readonly IFeatureChecker _featureChecker;
         private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
+        private const string UnityFlex = "Unity.Flex";
 
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
@@ -123,7 +124,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task<SubTotalDto> GetSubTotal(AssessmentListItemDto assessment)
         {
-            if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+            if (await _featureChecker.IsEnabledAsync(UnityFlex))
             {
                 var instance = await _scoresheetInstanceAppService.GetByCorrelationAsync(assessment.Id);
 
@@ -331,7 +332,7 @@ namespace Unity.GrantManager.Assessments
 
         private async Task ValidateValidScoresheetAsync(Guid assessmentId, AssessmentAction triggerAction)
         {
-            if (await _featureChecker.IsEnabledAsync("Unity.Flex") && triggerAction == AssessmentAction.Confirm)
+            if (await _featureChecker.IsEnabledAsync(UnityFlex) && triggerAction == AssessmentAction.Confirm)
             {
                 var requirementsMetResult = await _scoresheetInstanceAppService.ValidateAnswersAsync(assessmentId);
 
@@ -400,7 +401,7 @@ namespace Unity.GrantManager.Assessments
                     throw new AbpValidationException("Error: This assessment is already completed.");
                 }
 
-                if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+                if (await _featureChecker.IsEnabledAsync(UnityFlex))
                 {
                     await _localEventBus.PublishAsync(new PersistScoresheetInstanceEto()
                     {
@@ -433,7 +434,7 @@ namespace Unity.GrantManager.Assessments
                         throw new AbpValidationException("Error: This assessment is already completed.");
                     }
 
-                    if (await _featureChecker.IsEnabledAsync("Unity.Flex"))
+                    if (await _featureChecker.IsEnabledAsync(UnityFlex))
                     {
                         await _localEventBus.PublishAsync(new PersistScoresheetSectionInstanceEto()
                         {
