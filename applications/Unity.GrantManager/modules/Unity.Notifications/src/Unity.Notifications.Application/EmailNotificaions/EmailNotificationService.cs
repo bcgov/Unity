@@ -155,8 +155,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         var sentByUserIds = dtoList
             .Where(d => d.CreatorId.HasValue)
             .Select(d => d.CreatorId!.Value)
-            .Distinct()
-            .ToList();
+            .Distinct();
 
         var userDictionary = new Dictionary<Guid, EmailHistoryUserDto>();
 
@@ -172,9 +171,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
 
         foreach (var item in dtoList)
         {
-            if (item.CreatorId.HasValue)
+            if (item.CreatorId.HasValue && userDictionary.TryGetValue(item.CreatorId.Value, out var userDto))
             {
-                item.SentBy = userDictionary[item.CreatorId.Value];
+                item.SentBy = userDto;
             }
         }
 
