@@ -785,3 +785,21 @@ input.form-control.disabled:read-only, textarea.form-control.disabled:read-only,
 .multi-line {
     white-space: pre-wrap !important;
 }
+
+table.dataTable td.dt-control:before {
+    display: inline-block;
+    box-sizing: border-box;
+    content: "" !important;
+    border-top: 5px solid transparent;
+    border-left: 10px solid rgba(0, 0, 0, 0.5);
+    border-bottom: 5px solid transparent;
+    border-right: 0px solid transparent;
+}
+
+table.dataTable tr.dt-hasChild td.dt-control:before {
+    border-top: 10px solid rgba(0, 0, 0, 0.5);
+    border-left: 5px solid transparent;
+    content: "" !important;
+    border-bottom: 0px solid transparent;
+    border-right: 5px solid transparent;
+}
