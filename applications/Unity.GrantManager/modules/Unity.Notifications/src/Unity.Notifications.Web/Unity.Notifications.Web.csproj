@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Unity.Notifications.Application\Unity.Notifications.Application.csproj" />
     <ProjectReference Include="..\Unity.Notifications.Application.Contracts\Unity.Notifications.Application.Contracts.csproj" />
   </ItemGroup>
 
