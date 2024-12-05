@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -11,12 +12,15 @@ using Unity.Notifications.Events;
 using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.Integrations.RabbitMQ;
 using Unity.Notifications.TeamsNotifications;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.Users;
 
 namespace Unity.Notifications.EmailNotifications;
 
+[Authorize]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(EmailNotificationService), typeof(IEmailNotificationService))]
 public class EmailNotificationService : ApplicationService, IEmailNotificationService
@@ -25,18 +29,21 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     private readonly IConfiguration _configuration;
     private readonly EmailQueueService _emailQueueService;
     private readonly IEmailLogsRepository _emailLogsRepository;
+    private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
 
     public EmailNotificationService(
         IEmailLogsRepository emailLogsRepository,
         IConfiguration configuration,
         IChesClientService chesClientService,
-        EmailQueueService emailQueueService
+        EmailQueueService emailQueueService,
+        IExternalUserLookupServiceProvider externalUserLookupServiceProvider
         )
     {
         _emailLogsRepository = emailLogsRepository;
         _configuration = configuration;
         _chesClientService = chesClientService;
         _emailQueueService = emailQueueService;
+        _externalUserLookupServiceProvider = externalUserLookupServiceProvider;
     }
 
     private const string approvalBody =
@@ -73,7 +80,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     }
 
     public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom)
-    {        
+    {
         if (string.IsNullOrEmpty(emailTo))
         {
             return null;
@@ -81,7 +88,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         var emailObject = GetEmailObject(emailTo, body, subject, emailFrom);
         EmailLog emailLog = GetMappedEmailLog(emailObject);
         emailLog.ApplicationId = applicationId;
-        
+
         // When being called here the current tenant is in context - verified by looking at the tenant id
         EmailLog loggedEmail = await _emailLogsRepository.InsertAsync(emailLog, autoSave: true);
         return loggedEmail;
@@ -133,12 +140,43 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         try
         {
             emailLog = await _emailLogsRepository.GetAsync(id);
-        } 
-        catch (EntityNotFoundException ex) {
+        }
+        catch (EntityNotFoundException ex)
+        {
             string ExceptionMessage = ex.Message;
             Logger.LogInformation(ex, "Entity Not found for Email Log Must be in wrong context: {ExceptionMessage}", ExceptionMessage);
         }
         return emailLog;
+    }
+
+    public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId)
+    {
+        var entityList = await _emailLogsRepository.GetByApplicationIdAsync(applicationId);
+        var dtoList = ObjectMapper.Map<List<EmailLog>, List<EmailHistoryDto>>(entityList);
+
+        var sentByUserIds = dtoList
+            .Where(d => d.CreatorId.HasValue)
+            .Select(d => d.CreatorId!.Value)
+            .Distinct()
+            .ToList();
+
+        var userDictionary = new Dictionary<Guid, EmailHistoryUserDto>();
+
+        foreach (var userId in sentByUserIds)
+        {
+            var userInfo = await _externalUserLookupServiceProvider.FindByIdAsync(userId);
+            userDictionary[userId] = ObjectMapper.Map<IUserData, EmailHistoryUserDto>(userInfo);
+        }
+
+        foreach (var item in dtoList)
+        {
+            if (item.CreatorId.HasValue)
+            {
+                item.SentBy = userDictionary[item.CreatorId.Value];
+            }
+        }
+
+        return dtoList;
     }
 
     /// <summary>
@@ -146,7 +184,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// </summary>
     /// <param name="EmailLog">The email log to send to q</param>
     public async Task SendEmailToQueue(EmailLog emailLog)
-    {        
+    {
         EmailNotificationEvent emailNotificationEvent = new EmailNotificationEvent();
         emailNotificationEvent.Id = emailLog.Id;
         emailNotificationEvent.TenantId = emailLog.TenantId;
@@ -159,10 +197,11 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         List<string> toList = new();
         string[] emails = emailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
 
-        foreach (string email in emails) {
+        foreach (string email in emails)
+        {
             toList.Add(email.Trim());
         }
-        
+
         var emailObject = new
         {
             body,
