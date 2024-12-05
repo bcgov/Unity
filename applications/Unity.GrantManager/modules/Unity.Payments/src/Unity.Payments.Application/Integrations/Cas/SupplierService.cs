@@ -30,10 +30,10 @@ namespace Unity.Payments.Integrations.Cas
             _resilientRestClient = resilientHttpRequest;
             _casClientOptions = casClientOptions;
         }
-                
+
         public async Task<dynamic> GetCasSupplierInformationAsync(string? supplierNumber)
-        {   
-            if(!string.IsNullOrEmpty(supplierNumber))
+        {
+            if (!string.IsNullOrEmpty(supplierNumber))
             {
                 var authToken = await _iTokenService.GetAuthTokenAsync();
                 var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_SUPPLIER}/{supplierNumber}";
@@ -43,7 +43,7 @@ namespace Unity.Payments.Integrations.Cas
                 {
                     if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                     {
-                        var contentString = ResilientHttpRequest.ContentToString(response.Content);                        
+                        var contentString = ResilientHttpRequest.ContentToString(response.Content);
                         var result = JsonSerializer.Deserialize<dynamic>(contentString)
                             ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
                         return result;
@@ -72,7 +72,7 @@ namespace Unity.Payments.Integrations.Cas
             }
         }
 
-  
+
     }
 
 #pragma warning disable S125 // Sections of code should not be commented out

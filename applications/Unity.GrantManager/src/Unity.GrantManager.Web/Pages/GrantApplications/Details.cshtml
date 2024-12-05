@@ -100,7 +100,7 @@
                     </div>
                     <abp-row>
                         <abp-column size="_12" class="spinner-loader">
-                            <div class="spinner-grow" role="status">
+                            <div class="spinner-grow">
                                 <span class="sr-only">Loading...</span>
                             </div>
                         </abp-column>
@@ -198,33 +198,38 @@
     <div id="main-divider" class="divider"></div>
     <div id="main-right">
         <abp-card class="right-card">
-            <ul class="nav nav-tabs details-nav flex-nowrap" id="myTab" role="tablist">
-                <li class="nav-item" role="presentation">
+            <ul class="nav nav-tabs details-nav flex-nowrap">
+                <li class="nav-item">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
                 </li>
-                @* <li class="nav-item" role="presentation">
-                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"> <i class="fl fl-history" aria-hidden="true"></i> (0)</button>
-                </li> *@
-                <li class="nav-item" role="presentation">
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications"))
+                {
+                <li class="nav-item">
+                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
+                </li>
+                }
+                <li class="nav-item">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                 </li>
-                <li class="nav-item" role="presentation">
+                <li class="nav-item">
                     <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
                 </li>
-                <li class="nav-item" role="presentation">
+                <li class="nav-item">
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
-                <li class="nav-item" role="presentation">
+                <li class="nav-item">
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
                 </li>
             </ul>
-
 
             <div class="tab-content details-scrollable" id="myTabContent">
 
                 @*-------- Details Tab Section ---------*@
                 <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="home-tab">
+
+
                     <div id="applicationDetails">
+
                         <div id="applicationStatusWidget">
                             @await Component.InvokeAsync("ApplicationStatusWidget", new { applicationId = Model.ApplicationId })
                         </div>
@@ -238,6 +243,13 @@
                     <div id="reviewDetails" style="display:none">
                         <input type="hidden" id="AssessmentId" value="@Model.AssessmentId" />
                         <div id="assessmentUserDetailsWidget">
+                            <div class="container-fluid float-inline" >
+                                <abp-row>
+                                    <abp-column size="_12">
+                                        <abp-button icon="fl fl-pdf" icon-type="Other" id="printAssessmentPdf" class="pdf-icon"></abp-button>
+                                    </abp-column>
+                                </abp-row>
+                            </div>
                             @await Component.InvokeAsync("UserInfoWidget", new { displayName = "", badge = "", title = "" })
                         </div>
 
@@ -287,6 +299,14 @@
                 </div>
                 @*-------- Details Tab Section END ---------*@
 
+                @*-------- Emails Tab Section ---------*@
+                <div class="tab-pane" id="emails" role="tabpanel" aria-labelledby="emails-tab">
+                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Emails</h6>
+                    <div class="px-3 pb-2" id="applicationEmailsWidget">
+                        @await Component.InvokeAsync("EmailsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
+                    </div>
+                </div>
+                @*-------- Emails Tab Section END ---------*@
 
                 @*-------- Comments Tab Section ---------*@
                 <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">

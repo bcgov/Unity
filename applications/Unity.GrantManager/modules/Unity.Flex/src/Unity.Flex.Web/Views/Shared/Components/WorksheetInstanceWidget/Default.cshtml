@@ -20,7 +20,7 @@
 
 @if (Model.IsConfigured)
 {
-    <input type="hidden" id="@($"{Model.UiAnchor}_WorksheetId")" value="@Model.WorksheetId" />
+    <input type="hidden" id="@($"{Model.UiAnchor}_WorksheetId")" value="@Model.WorksheetId" />    
     <div class="@($"worksheet worksheet_{Model.UiAnchor}")">
         @foreach (var worksheetSection in Model.Sections)
         {
@@ -82,7 +82,7 @@
                                         }
                                     case CustomFieldType.DataGrid:
                                         {
-                                            @await Component.InvokeAsync(typeof(DataGridWidget), new { fieldModel = field, modelName = Model.Name })                                            
+                                            @await Component.InvokeAsync(typeof(DataGridWidget), new { fieldModel = field, modelName = Model.Name, worksheetInstanceId = Model.WorksheetInstanceId, worksheetId = Model.WorksheetId })
                                             break;
                                         }
                                     default:

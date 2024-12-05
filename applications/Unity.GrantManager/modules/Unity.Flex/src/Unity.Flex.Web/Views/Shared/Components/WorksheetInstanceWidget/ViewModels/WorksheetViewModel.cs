@@ -9,5 +9,6 @@ public class WorksheetViewModel
     public string UiAnchor { get; set; } = string.Empty;
     public bool IsConfigured { get; set; } = false;
     public Guid WorksheetId { get; set; }
+    public Guid WorksheetInstanceId { get; set; }
     public List<WorksheetInstanceSectionViewModel> Sections { get; set; } = [];
 }

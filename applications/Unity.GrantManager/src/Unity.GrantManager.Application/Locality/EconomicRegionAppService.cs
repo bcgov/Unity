@@ -1,44 +1,57 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Unity.GrantManager.Caching;
+using Microsoft.Extensions.Caching.Distributed;
 using Unity.GrantManager.Settings;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Caching;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.MultiTenancy;
+using static Unity.GrantManager.Locality.EconomicRegionAppService;
 
 namespace Unity.GrantManager.Locality
 {
     [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(EconomicRegionAppService), typeof(IEconomicRegionService))]
-    public class EconomicRegionAppService : ApplicationService, IEconomicRegionService
+    public class EconomicRegionAppService(IEconomicRegionRepository economicRegionRepository,
+        IDistributedCache<EconomicRegionCache, string> cache) : ApplicationService, IEconomicRegionService
     {
-        private readonly IEconomicRegionRepository _economicRegionRepository;
-        private readonly IDistributedCache<IList<EconomicRegionDto>, LocalityCacheKey> _cache;
-
-        public EconomicRegionAppService(IEconomicRegionRepository economicRegionRepository,
-            IDistributedCache<IList<EconomicRegionDto>, LocalityCacheKey> cache)
-        {
-            _economicRegionRepository = economicRegionRepository;
-            _cache = cache;
-        }
-
         public virtual async Task<IList<EconomicRegionDto>> GetListAsync()
         {
-            var cacheKey = new LocalityCacheKey(SettingsConstants.EconomicRegionsCacheKey, null);
-            return await _cache.GetOrAddAsync(
-                cacheKey,
-                GetEconomicRegions
-            ) ?? [];
+            var economicRegionsCache = await cache.GetOrAddAsync(
+                SettingsConstants.EconomicRegionsCacheKey,
+                GetEconomicRegionsAsync,
+                () => new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpiration = DateTimeOffset.Now.AddHours(SettingsConstants.DefaultLocalityCacheHours)
+                }
+            );
+
+            return economicRegionsCache?.EconomicRegions ?? [];
         }
 
-        protected virtual async Task<IList<EconomicRegionDto>> GetEconomicRegions()
+        protected virtual async Task<EconomicRegionCache> GetEconomicRegionsAsync()
         {
-            var economicRegions = await _economicRegionRepository.GetListAsync();
+            var economicRegions = await economicRegionRepository.GetListAsync();
 
-            return ObjectMapper.Map<List<EconomicRegion>, List<EconomicRegionDto>>([.. economicRegions.OrderBy(s => s.EconomicRegionName)]);
+            return new EconomicRegionCache()
+            {
+                EconomicRegions = ObjectMapper.Map<List<EconomicRegion>, List<EconomicRegionDto>>([.. economicRegions.OrderBy(s => s.EconomicRegionName)])
+            };
+        }
+
+        [IgnoreMultiTenancy]
+        public class EconomicRegionCache
+        {
+            public EconomicRegionCache()
+            {
+                EconomicRegions = [];
+            }
+
+            public List<EconomicRegionDto> EconomicRegions { get; set; }
         }
     }
 }

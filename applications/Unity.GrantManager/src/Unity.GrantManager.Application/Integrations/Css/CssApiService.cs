@@ -19,23 +19,12 @@ namespace Unity.GrantManager.Integrations.Sso
 {
     [IntegrationService]
     [ExposeServices(typeof(CssApiService), typeof(ICssUsersApiService))]
-    public class CssApiService : ApplicationService, ICssUsersApiService
+    public class CssApiService(IResilientHttpRequest resilientHttpRequest,
+        IDistributedCache<TokenValidationResponse, string> accessTokenCache,
+        IOptions<CssApiOptions> cssApiOptions,
+        RestClient restClient) : ApplicationService, ICssUsersApiService
     {
-        private readonly IResilientHttpRequest _resilientRestClient;
-        private readonly IDistributedCache<TokenValidationResponse, Guid> _accessTokenCache;
-        private readonly IOptions<CssApiOptions> _cssApiOptions;
-        private readonly RestClient _restClient;
-
-        public CssApiService(IResilientHttpRequest resilientHttpRequest,
-            IDistributedCache<TokenValidationResponse, Guid> accessTokenCache,
-            IOptions<CssApiOptions> cssApiOptions,
-            RestClient restClient)
-        {
-            _resilientRestClient = resilientHttpRequest;
-            _accessTokenCache = accessTokenCache;
-            _cssApiOptions = cssApiOptions;
-            _restClient = restClient;
-        }
+        private const string CSS_API_KEY = "CssApiKey";
 
         public async Task<UserSearchResult> FindUserAsync(string directory, string guid)
         {
@@ -70,14 +59,14 @@ namespace Unity.GrantManager.Integrations.Sso
         {
             var tokenResponse = await GetAccessTokenAsync();
 
-            var resource = BuildUrlWithQueryStringUsingUriBuilder($"{_cssApiOptions.Value.Url}/{_cssApiOptions.Value.Env}/{directory}/users?", paramDictionary);
+            var resource = BuildUrlWithQueryStringUsingUriBuilder($"{cssApiOptions.Value.Url}/{cssApiOptions.Value.Env}/{directory}/users?", paramDictionary);
 
             var authHeaders = new Dictionary<string, string>
             {
                 { "Authorization", $"Bearer {tokenResponse.AccessToken}" }
             };
 
-            var response = await _resilientRestClient.HttpAsync(Method.Get, resource, authHeaders);
+            var response = await resilientHttpRequest.HttpAsync(Method.Get, resource, authHeaders);
 
             if (response != null
                 && response.Content != null
@@ -106,7 +95,7 @@ namespace Unity.GrantManager.Integrations.Sso
 
         private async Task<TokenValidationResponse> GetAccessTokenAsync()
         {
-            var cachedTokenResponse = await _accessTokenCache.GetAsync(CurrentUser?.TenantId ?? Guid.Empty);
+            var cachedTokenResponse = await accessTokenCache.GetAsync(CSS_API_KEY);
 
             if (cachedTokenResponse != null)
             {
@@ -115,14 +104,14 @@ namespace Unity.GrantManager.Integrations.Sso
 
             var grantType = "client_credentials";
 
-            var request = new RestRequest($"{_cssApiOptions.Value.TokenUrl}")
+            var request = new RestRequest($"{cssApiOptions.Value.TokenUrl}")
             {
-                Authenticator = new HttpBasicAuthenticator(_cssApiOptions.Value.ClientId, _cssApiOptions.Value.ClientSecret)
+                Authenticator = new HttpBasicAuthenticator(cssApiOptions.Value.ClientId, cssApiOptions.Value.ClientSecret)
             };
             request.AddHeader("content-type", "application/x-www-form-urlencoded");
             request.AddParameter("application/x-www-form-urlencoded", $"grant_type={grantType}", ParameterType.RequestBody);
 
-            var response = await _restClient.ExecuteAsync(request, Method.Post);
+            var response = await restClient.ExecuteAsync(request, Method.Post);
 
             if (response.Content == null)
             {
@@ -140,7 +129,7 @@ namespace Unity.GrantManager.Integrations.Sso
             }
 
             var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(response.Content) ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {response.ErrorMessage}");
-            await _accessTokenCache.SetAsync(CurrentUser?.TenantId ?? Guid.Empty, tokenResponse, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions()
+            await accessTokenCache.SetAsync(CSS_API_KEY, tokenResponse, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions()
             {
                 AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
             });

@@ -3,24 +3,27 @@ name: unity_local
 services:
   unity-grantmanager-web:
     image: 'unity-grantmanager-web:latest'
+    deploy:
+      replicas: 3
+    ports:
+      - "${UNITY_WEB_PORT_INT}"   
+      - "${UNITY_WEB_PORT_INT_HTTPS}"
     build:
       context: .
       dockerfile: src/Unity.GrantManager.Web/Dockerfile
       args:
         UNITY_BUILD_VERSION: ${UNITY_BUILD_VERSION:-0.0.0}
         UNITY_BUILD_REVISION: ${UNITY_BUILD_REVISION:-0000000}
-    container_name: unity-grantmanager-web
     depends_on:
       unity-data-postgres:
         condition: service_healthy
       unity-data-dbmigrator:
         condition: service_completed_successfully
+      redis:
+        condition: service_started
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
-    ports:
-        - "${UNITY_WEB_PORT_EXT_HTTPS:-44342}:${UNITY_WEB_PORT_INT_HTTPS:-443}"
-        - "${UNITY_WEB_PORT_EXT:-8082}:${UNITY_WEB_PORT_INT:-80}"
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro         
     networks: 
       - common-network
 
@@ -36,6 +39,7 @@ services:
       - common-network
 
   unity-data-postgres:
+    container_name: unitydb
     image: ${UNITY_PGIMAGE:-postgres:latest}
     volumes:
       - postgres_data:${UNITY_PGDATA:-/var/lib/postgresql/data}
@@ -55,9 +59,99 @@ services:
     networks: 
       - common-network
 
+  nginx:
+    image: nginx:latest
+    ports:
+      - "42080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - unity-grantmanager-web
+    networks:
+      - common-network
+    env_file:
+      - .env
+
+  redis:
+    image: redis:latest
+    restart: always
+    volumes:
+      - redis_volume_data:/data
+    ports:
+      - 6379:6379
+    networks:
+      - common-network
+    command: >
+          --requirepass ${REDIS_PASSWORD}
+
+  redis_commander:
+    depends_on:
+      - redis
+    image: ghcr.io/joeferner/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOST=redis      
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+    - "8081:8081"
+    networks:
+      - common-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - rabbitmq_data:/var/lib/rabbitmq        
+    networks:
+        - common-network
+
+  keycloak_web:
+    image: quay.io/keycloak/keycloak:23.0.7
+    container_name: keycloak_web
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloakdb:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
+
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+
+      KC_LOG_LEVEL: info
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+    depends_on:
+      - keycloakdb
+    ports:
+      - 8080:8080
+    networks:
+      - common-network
+
+  keycloakdb:
+    container_name: keycloakdb
+    image: ${UNITY_PGIMAGE:-postgres:latest}
+    volumes:
+      - keycloak-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    networks:
+      - common-network
+
 volumes:
   postgres_data:
-    driver: local
+  redis_volume_data:
+  redis_insight_volume_data:
+  rabbitmq_data:
+  keycloak-data:
 
 networks:
   common-network:
