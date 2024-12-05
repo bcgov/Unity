@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Unity.Flex.Domain.WorksheetInstances
+namespace Unity.Flex.Worksheets.Values
 {
     public class WorksheetInstanceValue
     {

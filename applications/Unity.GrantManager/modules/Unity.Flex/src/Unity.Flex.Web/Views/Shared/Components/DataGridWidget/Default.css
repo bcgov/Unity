@@ -37,3 +37,7 @@
 .grid-position-below {
     order: 2;
 }
+
+.edit_row_field {
+    padding-bottom: 1rem;
+}

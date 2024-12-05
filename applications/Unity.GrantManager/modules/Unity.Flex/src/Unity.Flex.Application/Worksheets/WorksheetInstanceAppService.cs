@@ -1,4 +1,4 @@
-﻿ using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System;
 using Microsoft.AspNetCore.Authorization;
 using Unity.Flex.Domain.WorksheetInstances;
@@ -20,13 +20,16 @@ namespace Unity.Flex.WorksheetInstances
         public virtual async Task<WorksheetInstanceDto> CreateAsync(CreateWorksheetInstanceDto dto)
         {
             var newWorksheet = new WorksheetInstance(Guid.NewGuid(), dto.WorksheetId, dto.CorrelationId, dto.CorrelationProvider, dto.SheetCorrelationId, dto.SheetCorrelationProvider, dto.CorrelationAnchor);
+
+            if (!string.IsNullOrEmpty(dto.CurrentValue)) { newWorksheet.SetValue(dto.CurrentValue); }
+
             var dbWorksheet = await worksheetInstanceRepository.InsertAsync(newWorksheet);
 
             return ObjectMapper.Map<WorksheetInstance, WorksheetInstanceDto>(dbWorksheet);
         }
 
         public virtual async Task UpdateAsync(PersistWorksheetIntanceValuesDto dto)
-        {            
+        {
             await worksheetsManager.PersistWorksheetData(ObjectMapper.Map<PersistWorksheetIntanceValuesDto, PersistWorksheetIntanceValuesEto>(dto));
         }
     }
