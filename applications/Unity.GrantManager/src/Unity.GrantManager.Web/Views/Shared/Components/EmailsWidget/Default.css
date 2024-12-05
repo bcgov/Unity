@@ -1,4 +1,4 @@
-﻿﻿.single-email {
+﻿﻿#applicationEmailsWidget .single-email {
     position: relative;
     border-radius: 4px;
     overflow: hidden;
@@ -10,11 +10,11 @@
     flex: 1;
 }
 
-.single-email.edit-mode {
+#applicationEmailsWidget .single-email.edit-mode {
     width: 100%;
 }
 
-.email-input {
+#applicationEmailsWidget .email-input {
     outline: 0;
     margin-right: 8px;
     margin-left: 8px;
@@ -23,7 +23,7 @@
 }
 
 
-.email-form label {
+#applicationEmailsWidget .email-form label {
     color: var(--bc-colors-grey-text-300);
     white-space: nowrap;
     overflow: hidden;
@@ -32,39 +32,39 @@
     margin-bottom: 0;
 }
 
-.email-input:hover {
+#applicationEmailsWidget .email-input:hover {
     box-shadow: none !important;
 }
 
-.email-input.selected {
+#applicationEmailsWidget .email-input.selected {
     border: 0 !important;
     outline: 0 !important;
     border-bottom: 0.5px solid #D6D6D6 !important;
     border-radius: 0px !important;
 }
 
-.email-button-container {
+#applicationEmailsWidget .email-button-container {
     display: flex;
     align-items: flex-end;
     justify-content: right;
     gap: 8px;
 }
 
-.email-input-multiple:hover {
+#applicationEmailsWidget .email-input-multiple:hover {
     box-shadow: none !important;
     border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
 }
 
-.email-input::placeholder {
+#applicationEmailsWidget .email-input::placeholder {
     color: #b9b9b9 !important;
 }
 
-textarea::placeholder {
+#applicationEmailsWidget textarea::placeholder {
     color: #b9b9b9 !important;
 }
 
 
-.email-btn {
+#applicationEmailsWidget .email-btn {
     margin-top: 10px;
     padding-left: 14px;
     padding-right: 14px;
@@ -76,11 +76,11 @@ textarea::placeholder {
     transition: box-shadow .3s;
 }
 
-.email-btn:hover {
+#applicationEmailsWidget .email-btn:hover {
     box-shadow: -3px 3px 11px -3px rgba(33, 33, 33, .2);
 }
 
-.email-lbl {
+#applicationEmailsWidget .email-lbl {
     display: block;
     margin-top: 0.25rem;
     width: 99%;
@@ -91,14 +91,14 @@ textarea::placeholder {
     font-size: var(--bc-font-size);
 }
 
-.email-lbl-wrapper {
+#applicationEmailsWidget .email-lbl-wrapper {
     color: #666666;
     font-size: 0.89rem;
     font-weight: 400;
     word-wrap: break-word;
 }
 
-.unity-email-block {
+#applicationEmailsWidget .unity-email-block {
     background: var(--bc-surface--color--brand--gold--20);
     padding: 0.75rem 0.5rem 0.5rem 1rem;
     border-radius: 0.25rem;
@@ -108,11 +108,11 @@ textarea::placeholder {
     width: 90%;
 }
 
-.field-validation-error {
+#applicationEmailsWidget .field-validation-error {
     margin-left: 8px;
 }
 
-.confirmation-label {
+#applicationEmailsWidget .confirmation-label {
     font-size: 19px;
     font-weight: 600;
     text-align: center;
@@ -125,11 +125,11 @@ textarea::placeholder {
     color: var(--bc-colors-grey-text-500);
 }
 
-.btn-send-close {
+#applicationEmailsWidget .btn-send-close {
     margin: 4px;
 }
 
-#modal-background {
+#applicationEmailsWidget #modal-background {
     display: none;
     position: fixed;
     top: 0;
@@ -144,15 +144,15 @@ textarea::placeholder {
     z-index: 1000;
 }
 
-#modal-content {
+#applicationEmailsWidget #modal-content {
     display: none;
 }
 
-#spinner-modal {
+#applicationEmailsWidget #spinner-modal {
     display: none;
 }
 
-.modal-content {
+#applicationEmailsWidget  .modal-content {
     background-color: white;
     border-radius: 10px;
     -webkit-border-radius: 10px;
@@ -179,12 +179,12 @@ textarea::placeholder {
     display: block;
 }
 
-.hide {
+#applicationEmailsWidget .hide {
     display: none;
 }
 
 
-.toast-top-center { 
+#applicationEmailsWidget .toast-top-center { 
     top: 220px;
     margin: 0 auto;
     left: 50%;
@@ -192,12 +192,12 @@ textarea::placeholder {
 }
 
 
-#modal-background.active,
-#modal-content.active {
+#applicationEmailsWidget #modal-background.active,
+#applicationEmailsWidget #modal-content.active {
     display: block;
 }
 
-#email-spinner {
+#applicationEmailsWidget #email-spinner {
 	width: 40px;
     height: 40px;
 	position: absolute;

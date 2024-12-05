@@ -20,6 +20,19 @@ function executeOperations(data) {
                 });
             
 }
+
+function printScoreSheet() {
+    $('button').hide();
+    $("input").attr("disabled", true);
+    $("select").attr("disabled", true);
+    $("textarea").attr("disabled", true);
+    disableLinks();
+
+    setTimeout(function () {
+        window.print();
+    }, 1000);
+}
+
 function disableLinks() {
     let links = document.querySelectorAll('a');
     links.forEach(function (link) {
@@ -30,4 +43,4 @@ function disableLinks() {
         link.style.color = 'gray'; // Optionally change the color to indicate it's disabled
     });
 }
-    
+
