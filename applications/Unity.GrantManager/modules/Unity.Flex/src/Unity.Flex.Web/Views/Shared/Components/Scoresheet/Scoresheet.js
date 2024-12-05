@@ -217,8 +217,8 @@ $(function () {
                     <div class="mb-3">
                         <label for="answer-text-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
                         <textarea rows="${item.dataset.rows}" type="text" ${req} class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" 
-                            id="answer-text-${item.dataset.id}" name="Answer-Textarea-${item.dataset.id}" value="" data-original-value="" 
-                            oninput="handleInputChange('${item.dataset.id}','answer-text-')"></textarea>
+                            id="answer-textarea-${item.dataset.id}" name="Answer-Textarea-${item.dataset.id}" value="" data-original-value="" 
+                            oninput="handleInputChange('${item.dataset.id}','answer-textarea-')"></textarea>
                         <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
                     </div>`;
     }
