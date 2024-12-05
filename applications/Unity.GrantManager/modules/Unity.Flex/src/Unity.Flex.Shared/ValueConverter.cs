@@ -39,6 +39,7 @@ namespace Unity.Flex
                 QuestionType.Number => JsonSerializer.Serialize(new NumericValue(currentValue)),
                 QuestionType.YesNo => JsonSerializer.Serialize(new YesNoValue(ValueConverterHelpers.ConvertYesNo(currentValue))),
                 QuestionType.SelectList => JsonSerializer.Serialize(new SelectListValue(currentValue)),
+                QuestionType.TextArea => JsonSerializer.Serialize(new TextAreaValue(currentValue)),
                 _ => throw new NotImplementedException()
             };
         }
