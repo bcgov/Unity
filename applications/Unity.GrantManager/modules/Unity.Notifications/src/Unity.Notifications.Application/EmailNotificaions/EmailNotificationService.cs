@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,6 @@ using Unity.Notifications.Events;
 using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.Integrations.RabbitMQ;
 using Unity.Notifications.TeamsNotifications;
-using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -165,7 +163,11 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         foreach (var userId in sentByUserIds)
         {
             var userInfo = await _externalUserLookupServiceProvider.FindByIdAsync(userId);
-            userDictionary[userId] = ObjectMapper.Map<IUserData, EmailHistoryUserDto>(userInfo);
+            if (userInfo != null)
+            {
+                userDictionary[userId] = ObjectMapper.Map<IUserData, EmailHistoryUserDto>(userInfo);
+            }
+
         }
 
         foreach (var item in dtoList)
