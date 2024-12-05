@@ -3,12 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
-using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Notifications.EmailNotifications
 {
-    public interface IEmailNotificationService: IApplicationService
+    public interface IEmailNotificationService : IApplicationService
     {
         Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom);
         Task<EmailLog?> GetEmailLogById(Guid id);
