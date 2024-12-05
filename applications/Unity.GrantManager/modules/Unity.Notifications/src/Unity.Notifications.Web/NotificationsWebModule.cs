@@ -11,10 +11,12 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.Notifications.Web;
 
 [DependsOn(
+    typeof(NotificationsApplicationModule),
     typeof(NotificationsApplicationContractsModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
     typeof(AbpAutoMapperModule)
@@ -26,6 +28,11 @@ public class NotificationsWebModule : AbpModule
         context.Services.PreConfigure<AbpMvcDataAnnotationsLocalizationOptions>(options =>
         {
             options.AddAssemblyResource(typeof(NotificationsResource), typeof(NotificationsWebModule).Assembly);
+        });
+
+        Configure<AbpAspNetCoreMvcOptions>(options =>
+        {
+            options.ConventionalControllers.Create(typeof(NotificationsApplicationModule).Assembly);
         });
 
         PreConfigure<IMvcBuilder>(mvcBuilder =>

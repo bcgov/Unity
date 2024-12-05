@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
@@ -15,6 +15,7 @@ using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
 using Unity.Shared.MessageBrokers.RabbitMQ;
 using Unity.Notifications.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Http.Client;
 
 namespace Unity.Notifications;
 
@@ -24,7 +25,8 @@ namespace Unity.Notifications;
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
     typeof(AbpBackgroundJobsModule),
-    typeof(AbpBackgroundWorkersQuartzModule)
+    typeof(AbpBackgroundWorkersQuartzModule),
+    typeof(AbpHttpClientModule)
     )]
 [DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
 public class NotificationsApplicationModule : AbpModule
@@ -32,8 +34,18 @@ public class NotificationsApplicationModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
+        
         context.Services.AddAutoMapperObjectMapper<NotificationsApplicationModule>();
+        Configure<AbpAutoMapperOptions>(options =>
+        {
+            options.AddMaps<NotificationsApplicationModule>(validate: true);
+        });
+
         context.Services.AddScoped<IChesClientService, ChesClientService>();
+
+        context.Services.AddHttpClientProxies(
+           typeof(NotificationsApplicationContractsModule).Assembly
+        );
 
         Configure<EmailBackgroundJobsOptions>(options =>
         {
