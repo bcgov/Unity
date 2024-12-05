@@ -13,6 +13,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewMod
         public bool Enabled { get; set; } = true;
         public string? Definition { get; set; } = "{}";
         public string? CurrentValue { get; set; }
+        public Guid? CurrentValueId { get; set; }
         public string UiAnchor { get; set; } = string.Empty;
     }
 }
