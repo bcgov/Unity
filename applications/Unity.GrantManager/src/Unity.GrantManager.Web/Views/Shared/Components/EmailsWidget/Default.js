@@ -124,6 +124,7 @@
                 hideConfirmation();
                 handleCloseEmail();
                 abp.notify.success('Your email is being sent');
+                PubSub.publish('refresh_application_emails');
             }).catch(function () {
                 hideConfirmation();
                 abp.notify.error('An error ocurred your email could not be sent.');

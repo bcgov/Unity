@@ -477,29 +477,32 @@ $(function () {
     );
 
 
-    let attachCounters = {
+    let tabCounters = {
         files: 0,
-        chefs: 0
+        chefs: 0,
+        emails: 0
     };
 
     PubSub.subscribe(
         'update_application_attachment_count',
         (msg, data) => {
             if (data.files || data.files === 0) {
-                attachCounters.files = data.files;
+                tabCounters.files = data.files;
             }
             if (data.chefs || data.chefs === 0) {
-                attachCounters.chefs = data.chefs;
+                tabCounters.chefs = data.chefs;
             }
-            $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
+            $('#application_attachment_count').html(tabCounters.files + tabCounters.chefs);
         }
     );
 
     PubSub.subscribe(
         'update_application_emails_count',
         (msg, data) => {
-            // Fix - set email count
-            $('#application_emails_count').html(data);
+            if (data.itemCount || data.itemCount === 0) {
+                tabCounters.emails = data.itemCount;
+            }
+            $('#application_emails_count').html(tabCounters.emails);
         }
     );
 
