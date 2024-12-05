@@ -116,15 +116,18 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
             Title = intakeMap.ContactTitle ?? string.Empty,
         };
 
-        if (!string.IsNullOrEmpty(intakeMap.ApplicantAgent))
+        if (intakeMap.ApplicantAgent != null)
         {
-            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
-            applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
-            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
-            applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
-            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
+            string? applicantAgentString = (string?)intakeMap.ApplicantAgent;
+            if(!applicantAgentString.IsNullOrEmpty()) {
+                applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
+                applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
+                applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
+                applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
+                applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
+                applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
+                applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
+            }
         }
         await applicantAgentRepository.InsertAsync(applicantAgent);
 
