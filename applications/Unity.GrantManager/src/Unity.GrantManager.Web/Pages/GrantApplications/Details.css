@@ -1,5 +1,10 @@
 ﻿@media (min-width: 1400px) {
-    .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
+    .container-xxl,
+    .container-xl,
+    .container-lg,
+    .container-md,
+    .container-sm,
+    .container {
         max-width: 1600px;
     }
 }
@@ -121,13 +126,13 @@
     cursor: pointer;
 }
 
-    .dropdown-item:hover {
-        background-color: #f8f9fa;
-    }
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
 
-    .dropdown-item:disabled {
-        cursor: not-allowed;
-    }
+.dropdown-item:disabled {
+    cursor: not-allowed;
+}
 
 .adj-act-btn-ctnr {
     justify-content: center;
@@ -162,14 +167,14 @@
     box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25) !important;
 }
 
-    .recom-select:hover {
-        background: #FFFFFF;
-        color: #333;
-    }
+.recom-select:hover {
+    background: #FFFFFF;
+    color: #333;
+}
 
-    .recom-select:disabled {
-        color: #333;
-    }
+.recom-select:disabled {
+    color: #333;
+}
 
 .recom-reset-button {
     font-size: 0.8rem;
@@ -178,9 +183,9 @@
     min-height: 1.4rem;
 }
 
-    .recom-reset-button:hover {
-        border-color: var(--bs-btn-color);
-    }
+.recom-reset-button:hover {
+    border-color: var(--bs-btn-color);
+}
 
 .back-button-container {
     justify-content: left;
@@ -204,6 +209,12 @@
     margin-bottom: 4px;
 }
 
+.float-inline {
+    float: inline-end;
+    margin-top: 20px;
+    margin-bottom: -30px;
+}
+
 textarea::placeholder {
     color: #b9b9b9 !important;
 }
@@ -213,20 +224,21 @@ textarea::placeholder {
     position: relative;
 }
 
-    #widget #overlay {
-        position: absolute;
-        top: 0;
-        right: 0;
-        background-color: #FFFFFF;
-        box-shadow: 1px 1px 1px rgba(0,0,0,0.1);
-    }
+#widget #overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #FFFFFF;
+    box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+}
 
-    #widget textarea {
-        border: 1px solid #e7e9ec;
-        resize: vertical;
-    }
+#widget textarea {
+    border: 1px solid #e7e9ec;
+    resize: vertical;
+}
 
-.fa, .fas {
+.fa,
+.fas {
     padding: 5px;
 }
 
@@ -262,9 +274,9 @@ select.selected {
     display: flex;
 }
 
-    .details-nav .nav-link .fl {
-        margin-right: 4px;
-    }
+.details-nav .nav-link .fl {
+    margin-right: 4px;
+}
 
 .comments-title {
     margin: 0.5rem 0rem 0rem 0.4rem;
@@ -277,10 +289,10 @@ select.selected {
     padding-top: 0;
 }
 
-    .pdf-icon:hover {
-        cursor: pointer;
-        box-shadow: none;
-    }
+.pdf-icon:hover {
+    cursor: pointer;
+    box-shadow: none;
+}
 
 .details-scrollable {
     overflow-y: scroll;
@@ -306,9 +318,9 @@ select.selected {
     display: block;
 }
 
-    .chefs-attachment a:hover {
-        background-color: #f1f1f1;
-    }
+.chefs-attachment a:hover {
+    background-color: #f1f1f1;
+}
 
 #formio a {
     pointer-events: none;
@@ -368,7 +380,8 @@ form label.error {
     display: flex;
 }
 
-#main-left, #main-right {
+#main-left,
+#main-right {
     width: 50%;
 }
 
@@ -379,9 +392,9 @@ form label.error {
     border-radius: 10px;
 }
 
-    #main-divider:hover {
-        background-color: #aaa;
-    }
+#main-divider:hover {
+    background-color: #aaa;
+}
 
 #myTab {
     overflow-x: auto;
@@ -390,12 +403,13 @@ form label.error {
 
 .fade-in-load {
     opacity: 0;
-    transition: opacity 0.15s ease-in-out; /* Adjust the duration and easing as needed */
+    transition: opacity 0.15s ease-in-out;
+    /* Adjust the duration and easing as needed */
 }
 
-    .fade-in-load.visible {
-        opacity: 1;
-    }
+.fade-in-load.visible {
+    opacity: 1;
+}
 
 #main-loading {
     display: flex;

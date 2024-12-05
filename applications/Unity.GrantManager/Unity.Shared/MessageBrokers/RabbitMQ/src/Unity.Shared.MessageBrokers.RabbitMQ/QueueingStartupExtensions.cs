@@ -1,48 +1,41 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using RabbitMQ.Client;
+using Unity.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Shared.MessageBrokers.RabbitMQ
 {
     public static class QueueingStartupExtensions
     {
-        public static void AddQueueing(this IServiceCollection services, QueueingConfigurationSettings settings)
+        public static void ConfigureRabbitMQ(this IServiceCollection services)
         {
-            services.AddSingleton<QueueingConfigurationSettings>(settings);
-
-            services.AddSingleton<IAsyncConnectionFactory>(provider =>
+            var configuration = services.GetConfiguration();
+            services.TryAddSingleton<IAsyncConnectionFactory>(provider =>
             {
                 var factory = new ConnectionFactory
                 {
-                    UserName = settings.RabbitMqUsername,
-                    Password = settings.RabbitMqPassword,
-                    HostName = settings.RabbitMqHostname,
-                    Port = settings.RabbitMqPort.GetValueOrDefault(),
-
+                    UserName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "",
+                    Password = configuration.GetValue<string>("RabbitMQ:Password") ?? "",
+                    HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "",
+                    VirtualHost = configuration.GetValue<string>("RabbitMQ:VirtualHost") ?? "/",
+                    Port = configuration.GetValue<int>("RabbitMQ:Port"),
                     DispatchConsumersAsync = true,
                     AutomaticRecoveryEnabled = true,
-
                     // Configure the amount of concurrent consumers within one host
-                    ConsumerDispatchConcurrency = settings.RabbitMqConsumerConcurrency.GetValueOrDefault(),
+                    ConsumerDispatchConcurrency = QueueingConstants.MAX_RABBIT_CONCURRENT_CONSUMERS,
                 };
-
                 return factory;
             });
 
-            // The RabbitMQ documentation states that Connections are meant to be long lived
-            // and should be used to perform all operations. We chose to implement the connection as a Singleton to ensure that.
-            // In case of high concurrent usage multiple connections could be used, but for most usage one connection per host will be sufficient
-            // See https://www.rabbitmq.com/dotnet-api-guide.html#connecting and https://www.rabbitmq.com/dotnet-api-guide.html#concurrency-thread-usage
-            services.AddSingleton<IConnectionProvider, ConnectionProvider>();
+            services.TryAddSingleton<IConnectionProvider, ConnectionProvider>();
+            services.TryAddScoped<IChannelProvider, ChannelProvider>();
 
-            // The RabbitMQ documentation states that IModels (or Channels) should not be used between threads simultaniously.
-            // When using transactions in the consumers, giving each scope its own Channel will insure reliability in the processing of a Queue message
-            // See https://www.rabbitmq.com/dotnet-api-guide.html#concurrency-channel-sharing
-            services.AddScoped<IChannelProvider, ChannelProvider>();
-            services.AddScoped(typeof(IQueueChannelProvider<>), typeof(QueueChannelProvider<>));
-
-            services.AddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
+            services.TryAddScoped(typeof(IQueueChannelProvider<>), typeof(QueueChannelProvider<>));
+            services.TryAddScoped(typeof(IQueueProducer<>), typeof(QueueProducer<>));
         }
+
         public static void AddQueueMessageConsumer<TMessageConsumer, TQueueMessage>(this IServiceCollection services) where TMessageConsumer : IQueueConsumer<TQueueMessage> where TQueueMessage : class, IQueueMessage
         {
             services.AddScoped(typeof(TMessageConsumer));

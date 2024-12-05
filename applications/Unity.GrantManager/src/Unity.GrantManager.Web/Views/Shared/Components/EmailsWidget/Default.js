@@ -58,7 +58,7 @@
     }
 
     function validateEmail(email) {
-        const emailRegex = /^[\w.-]+@[a-z]+\.[a-z]{2,}$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.exec(String(email).toLowerCase()) !== null;
     }
 

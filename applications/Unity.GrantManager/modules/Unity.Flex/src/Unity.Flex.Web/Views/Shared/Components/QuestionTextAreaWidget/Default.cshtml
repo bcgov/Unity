@@ -3,7 +3,7 @@
 @model QuestionTextAreaViewModel;
 
 <div class="mb-3">
-    <label for="answer-text-@Model.QuestionId" class="form-label">Answer</label>
+    <label for="answer-text-@Model.QuestionId" class="form-label unt-form-label">Answer</label>
     <textarea rows="@Model.Rows"
               required="@Model.Required"
               class="form-control answer-text-input"
@@ -11,12 +11,8 @@
               maxlength="@Model.MaxLength"
               disabled="@Model.IsDisabled"
               id="answer-text-@Model.QuestionId"
-              name="Answers[@Model.QuestionId]"
+              name="Answer-Textarea-@Model.QuestionId"
               data-original-value="@Model.Answer"
-              oninput="handleInputChange('@Model.QuestionId','answer-text-','save-text-','discard-text-')">@Model.Answer</textarea>
+              oninput="handleInputChange('@Model.QuestionId','answer-text-')">@Model.Answer</textarea>
     <span id="error-message-@Model.QuestionId" class="text-danger field-validation-error"></span>
-</div>
-<div class="btn-group">
-    <button type="button" class="btn btn-primary" disabled="@Model.IsDisabled" disabled id="save-text-@Model.QuestionId" onclick="saveChanges('@Model.QuestionId','answer-text-','save-text-',2,'discard-text-')">SAVE CHANGES</button>
-    <button type="button" class="btn btn-secondary" disabled="@Model.IsDisabled" id="discard-text-@Model.QuestionId" onclick="discardChanges('@Model.QuestionId','answer-text-','save-text-','discard-text-')">DISCARD CHANGES</button>
 </div>

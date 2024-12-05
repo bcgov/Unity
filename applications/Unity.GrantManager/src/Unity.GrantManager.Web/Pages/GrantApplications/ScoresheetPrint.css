@@ -1,0 +1,72 @@
+.unity-user-initials {
+    display: none !important;
+}
+
+#reviewDetailsCard div {
+    display: flex;
+}
+
+#reviewDetailsCard {
+    display: flex;
+}
+
+.btn {
+    display: none;
+}
+
+button {
+    display: none;
+}
+
+
+.user-role-full {
+    margin-left: 20px;
+}
+
+
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: #ffffff;
+    opacity: 1;
+}
+
+.accordion-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    overflow-anchor: none;
+}
+
+&:hover {
+    z-index: 2;
+}
+
+&:focus {
+    z-index: 3;
+    outline: 0;
+
+}
+
+
+.accordion-header {
+    margin-bottom: 0;
+}
+
+
+#assessment-scoresheet #section-button::after {
+    -webkit-filter: grayscale(1) invert(0);
+    filter: grayscale(1) invert(0);
+}
+
+#assessment-scoresheet #section-button:not(.collapsed)::after {
+    -webkit-filter: grayscale(1) invert(1);
+    filter: grayscale(1) invert(1);
+}
+
+#assessment-scoresheet .preview-btn:not(.collapsed) {
+    background-color: #007bff;
+    color: #ffffff;
+}
