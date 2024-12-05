@@ -18,9 +18,6 @@ button {
     display: none;
 }
 
-.accordion-button {
-    display: block !important;
-}
 
 .user-role-full {
     margin-left: 20px;
@@ -38,13 +35,9 @@ button {
     display: flex;
     align-items: center;
     width: 100%;
-
     text-align: left;
-
     border: 0;
-
     overflow-anchor: none;
-
 }
 
 &:hover {
