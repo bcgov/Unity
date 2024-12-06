@@ -188,13 +188,15 @@ $(function () {
 
                 // Access the data attributes
                 let tableElement = $('#' + tableId);
-                let dataValueId = tableElement.data('value-id');
-                let dataFieldId = tableElement.data('field-id');
-                let dataWsId = tableElement.data('ws-id');
-                let dataWsiId = tableElement.data('wsi-id');
-                let dataUiAnchor = tableElement.data('ws-anchor');
+                let tableDataSet = tableElement[0].dataset;
 
-                openEditDatagridRowModal(dataValueId, dataFieldId, dataWsId, dataWsiId, 0, true, dataUiAnchor);
+                openEditDatagridRowModal(tableDataSet.valueId,
+                    tableDataSet.fieldId,
+                    tableDataSet.wsId,
+                    tableDataSet.wsiId,
+                    0,
+                    true,
+                    tableDataSet.wsAnchor);
             }
         },
         {
@@ -299,7 +301,7 @@ $(function () {
         let tableDataSet = table[0].dataset;
 
         openEditDatagridRowModal(tableDataSet.valueId,
-            tableDataSet.fieldId,            
+            tableDataSet.fieldId,
             tableDataSet.wsId,
             tableDataSet.wsiId,
             rowDataSet.rowNo,
