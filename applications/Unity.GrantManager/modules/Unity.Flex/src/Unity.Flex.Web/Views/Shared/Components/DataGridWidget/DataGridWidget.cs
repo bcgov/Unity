@@ -163,7 +163,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                         cells.Add(new DataGridViewModelCell()
                         {
                             Key = fieldMatch.Key,
-                            Value = fieldMatch.Value.ApplyFormatting(column.Type, column.Format)
+                            Value = fieldMatch.Value.ApplyPresentationFormatting(column.Type, column.Format)
                         });
                     }
                     else
@@ -360,7 +360,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 summary.Fields.Add(new DataGridViewModelSummaryField()
                 {
                     Key = field.Key,
-                    Value = SumCells(field.Key, rows).ApplyFormatting(field.Type, null),
+                    Value = SumCells(field.Key, rows).ApplyPresentationFormatting(field.Type, null),
                     Label = $"{_summaryLabelprefix} {field.Name}",
                     Type = field.Type
                 });
@@ -416,7 +416,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 
     public static class DataGridExtensions
     {
-        public static string ApplyFormatting(this string value, string columnType, string? format)
+        public static string ApplyPresentationFormatting(this string value, string columnType, string? format)
         {
             if (value == null) return string.Empty;
 
@@ -431,11 +431,25 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             };
         }
 
+
+        public static string ApplyStoreFormatting(this string value, string columnType)
+        {
+            return columnType switch
+            {
+                var ct when IsDateColumn(ct) => ValueConverterHelpers.ConvertDate(value),
+                var ct when IsDateTimeColumn(ct) => ValueConverterHelpers.ConvertDateTime(value),
+                var ct when IsCurrencyColumn(ct) => ValueConverterHelpers.ConvertDecimal(value),
+                var ct when IsYesNoColumn(ct) => ValueConverterHelpers.ConvertYesNo(value),
+                var ct when IsCheckBoxColumn(ct) => ValueConverterHelpers.ConvertCheckbox(value),
+                _ => value
+            };
+        }
+
         private static bool TryParseDateTime(string value, string? format, out string formattedDateTime)
         {
             if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
             {
-                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "MM-dd-yyyy hh:mm:ss tt";
+                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "yyyy-MM-dd hh:mm:ss tt";
                 formattedDateTime = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
                 return true;
             }
@@ -491,7 +505,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         {
             if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
             {
-                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "MM-dd-yyyy";
+                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "yyyy-MM-dd";
                 formattedDate = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
                 return true;
             }

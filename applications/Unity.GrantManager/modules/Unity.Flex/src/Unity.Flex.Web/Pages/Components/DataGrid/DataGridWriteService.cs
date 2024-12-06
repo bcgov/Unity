@@ -163,7 +163,7 @@ namespace Unity.Flex.Web.Pages.Flex
                 newCells.Add(new DataGridRowCell()
                 {
                     Key = value.Item1,
-                    Value = value.Item2.ApplyFormatting(value.Item3.ToString(), null)
+                    Value = value.Item2.ApplyStoreFormatting(value.Item3.ToString())
                 });
             }
 
