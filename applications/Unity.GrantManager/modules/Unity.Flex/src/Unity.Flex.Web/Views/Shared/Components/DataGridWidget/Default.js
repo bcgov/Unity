@@ -45,6 +45,17 @@ $(function () {
             .attr('data-wsi-id', response.responseText.worksheetInstanceId)
             .attr('data-ws-id', response.responseText.worksheetId)
             .attr('data-ws-anchor', response.responseText.uiAnchor);
+
+        // Find the form containing the row
+        let form = row.closest('form');
+
+        // Find other tables within the same form with class 'custom-dynamic-table'
+        let otherTables = form.find('table.custom-dynamic-table');
+
+        // Set the worksheet instance ID for these tables
+        otherTables.each(function () {
+            $(this).attr('data-wsi-id', response.responseText.worksheetInstanceId);
+        });
     }
 
     // Function to update an existing row
