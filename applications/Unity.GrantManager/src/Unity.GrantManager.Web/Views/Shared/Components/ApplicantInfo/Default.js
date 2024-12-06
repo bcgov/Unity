@@ -52,7 +52,8 @@
                         'The Applicant info has been updated.'
                     );
                     $('#saveApplicantInfoBtn').prop('disabled', true);
-                    PubSub.publish("refresh_detail_panel_summary");                    
+                    PubSub.publish("refresh_detail_panel_summary");
+                    PubSub.publish('applicant_info_updated', ApplicantInfoObj);
                     refreshSupplierInfoWidget();
                 })
                 .then(function () {
