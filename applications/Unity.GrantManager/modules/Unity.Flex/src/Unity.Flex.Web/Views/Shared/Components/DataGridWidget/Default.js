@@ -45,6 +45,17 @@ $(function () {
             .attr('data-wsi-id', response.responseText.worksheetInstanceId)
             .attr('data-ws-id', response.responseText.worksheetId)
             .attr('data-ws-anchor', response.responseText.uiAnchor);
+
+        // Find the form containing the row
+        let form = row.closest('form');
+
+        // Find other tables within the same form with class 'custom-dynamic-table'
+        let otherTables = form.find('table.custom-dynamic-table');
+
+        // Set the worksheet instance ID for these tables
+        otherTables.each(function () {
+            $(this).attr('data-wsi-id', response.responseText.worksheetInstanceId);
+        });
     }
 
     // Function to update an existing row
@@ -188,13 +199,15 @@ $(function () {
 
                 // Access the data attributes
                 let tableElement = $('#' + tableId);
-                let dataValueId = tableElement.data('value-id');
-                let dataFieldId = tableElement.data('field-id');
-                let dataWsId = tableElement.data('ws-id');
-                let dataWsiId = tableElement.data('wsi-id');
-                let dataUiAnchor = tableElement.data('ws-anchor');
+                let tableDataSet = tableElement[0].dataset;
 
-                openEditDatagridRowModal(dataValueId, dataFieldId, dataWsId, dataWsiId, 0, true, dataUiAnchor);
+                openEditDatagridRowModal(tableDataSet.valueId,
+                    tableDataSet.fieldId,
+                    tableDataSet.wsId,
+                    tableDataSet.wsiId,
+                    0,
+                    true,
+                    tableDataSet.wsAnchor);
             }
         },
         {
@@ -299,7 +312,7 @@ $(function () {
         let tableDataSet = table[0].dataset;
 
         openEditDatagridRowModal(tableDataSet.valueId,
-            tableDataSet.fieldId,            
+            tableDataSet.fieldId,
             tableDataSet.wsId,
             tableDataSet.wsiId,
             rowDataSet.rowNo,
