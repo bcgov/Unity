@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.Settings;
 
 namespace Unity.Notifications.Web.Settings.NotificationsSettingGroup;
 
@@ -9,14 +10,16 @@ namespace Unity.Notifications.Web.Settings.NotificationsSettingGroup;
     ScriptTypes = [typeof(NotificationsSettingScriptBundleContributor)],
     AutoInitialize = true
 )]
-public class NotificationsSettingViewComponent : AbpViewComponent
+public class NotificationsSettingViewComponent(ISettingProvider settingProvider) : AbpViewComponent
 {
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
-        // Debugging mock
-        var model = new NotificationsSettingViewModel();
-        model.DefaultFromAddress = "noreply@gov.bc.ca";
-        model.DefaultFromDisplayName = "BC Gov NoReply";
+        var model = new NotificationsSettingViewModel
+        {
+            DefaultFromAddress = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromAddress) ?? "",
+            DefaultFromDisplayName = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromDisplayName) ?? ""
+        };
+
         return View("~/Settings/NotificationsSettingGroup/Default.cshtml", model);
     }
 }

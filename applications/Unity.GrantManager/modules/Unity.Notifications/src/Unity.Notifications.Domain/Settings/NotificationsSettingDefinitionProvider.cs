@@ -11,14 +11,18 @@ public class NotificationsSettingDefinitionProvider : SettingDefinitionProvider
         context.Add(
             new SettingDefinition(
                 NotificationsSettings.Mailing.DefaultFromAddress,
-                string.Empty,
-                L("DisplayName:Notifications.Mailing.DefaultFromAddress"),
-                L("Description:Notifications.Mailing.DefaultFromAddress")),
+                "NoReply.Econ.Unity@gov.bc.ca",
+                L($"Setting:{NotificationsSettings.Mailing.DefaultFromAddress}.DisplayName"),
+                L($"Setting:{NotificationsSettings.Mailing.DefaultFromAddress}.Description"),
+                isVisibleToClients: false,
+                isInherited: false),
             new SettingDefinition(
                 NotificationsSettings.Mailing.DefaultFromDisplayName,
                 string.Empty,
-                L("DisplayName:Notifications.Mailing.DefaultFromDisplayName"),
-                L("Description:Notifications.Mailing.DefaultFromDisplayName"))
+                L($"Setting:{NotificationsSettings.Mailing.DefaultFromDisplayName}.DisplayName"),
+                L($"Setting:{NotificationsSettings.Mailing.DefaultFromDisplayName}.Description"),
+                isVisibleToClients: false,
+                isInherited: false)
             );
     }
 

@@ -5,6 +5,9 @@ using System;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Microsoft.Extensions.Configuration;
+using Volo.Abp.Settings;
+using Unity.Notifications.Settings;
+using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
 {
@@ -13,15 +16,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         ScriptTypes = [typeof( EmailsWidgetScriptBundleContributor)],
         StyleTypes = [typeof( EmailsWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class EmailsWidgetViewComponent(IConfiguration configuration) : AbpViewComponent
+    public class EmailsWidgetViewComponent(ISettingProvider settingProvider) : AbpViewComponent
     {
-        public IViewComponentResult Invoke(Guid ownerId, Guid currentUserId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid ownerId, Guid currentUserId)
         {
+            var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
             EmailsWidgetViewModel model = new()
             {
                 OwnerId = ownerId,
                 CurrentUserId = currentUserId,
-                EmailFrom = configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca",
+                EmailFrom = defaultFromAddress ?? "unity@gov.bc.ca",
             };
 
             return View(model);
