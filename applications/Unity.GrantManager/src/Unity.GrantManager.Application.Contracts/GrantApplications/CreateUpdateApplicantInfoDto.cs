@@ -14,6 +14,7 @@ namespace Unity.GrantManager.GrantApplications
         public string? Sector { get; set; }
         public string? SubSector { get; set; }        
         public string? SectorSubSectorIndustryDesc { get; set; } = string.Empty;
+        public bool? RedStop { get; set; }
 
         public string? ContactFullName { get; set; }
         public string? ContactTitle { get; set; }

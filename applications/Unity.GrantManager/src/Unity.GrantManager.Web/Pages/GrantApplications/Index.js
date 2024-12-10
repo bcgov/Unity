@@ -156,6 +156,7 @@
             getPlaceColumn(),
             getRiskRankingColumn(),
             getNotesColumn(),
+            getRedStopColumn(),
         ]
             .map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -938,6 +939,20 @@
             index: 56
         }
     }
+
+    function getRedStopColumn() {
+        return {
+            title: 'Red-Stop',
+            name: 'redstop',
+            data: 'applicant.redStop',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: 57
+        }
+    }
+
 
     window.addEventListener('resize', () => {
     });
