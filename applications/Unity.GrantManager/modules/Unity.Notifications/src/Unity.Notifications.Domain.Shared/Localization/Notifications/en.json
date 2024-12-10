@@ -3,10 +3,11 @@
   "texts": {
     "MyAccount": "My account",
     "SamplePageMessage": "A sample page for the Notifications module",
+    "Permission:NotificationsPermissions.Settings": "Configure Notifications",
     "Setting:Notifications": "Notifications",
-    "Setting:Notifications.Mailing.DefaultFromAddress.DisplayName": "Default From Address",
+    "Setting:Notifications.Mailing.DefaultFromAddress.DisplayName": "From Address",
     "Setting:Notifications.Mailing.DefaultFromAddress.Description": "The default From sender address",
-    "Setting:Notifications.Mailing.DefaultFromDisplayName.DisplayName": "Default From Display Name",
-    "Setting:Notifications.Mailing.DefaultFromDisplayName.Description": "The default From display name"
+    "Setting:Notifications.Mailing.DefaultFromDisplayName.DisplayName": "Display Name",
+    "Setting:Notifications.Mailing.DefaultFromDisplayName.Description": "The default From display name",
   }
 }

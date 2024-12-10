@@ -17,6 +17,7 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Users;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications.Settings;
+using Unity.Notifications.Permissions;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -235,7 +236,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return emailLog;
     }
 
-    [Authorize]
+    [Authorize(NotificationsPermissions.Settings)]
     public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
     {
         if (!settingsDto.DefaultFromAddress.IsNullOrWhiteSpace())
