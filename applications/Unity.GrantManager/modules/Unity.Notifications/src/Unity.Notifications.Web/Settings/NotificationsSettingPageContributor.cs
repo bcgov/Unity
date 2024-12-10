@@ -6,6 +6,11 @@ using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 
 public class NotificationsSettingPageContributor : SettingPageContributorBase
 {
+    public NotificationsSettingPageContributor()
+    {
+        RequiredFeatures("Unity.Notifications");
+    }
+
     public override Task ConfigureAsync(SettingPageCreationContext context)
     {
         context.Groups.Add(
