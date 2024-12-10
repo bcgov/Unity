@@ -29,8 +29,6 @@
                 return;
             }
 
-            // Add email validation
-
             let form = $(this).serializeFormToObject();
             unity.notifications.emailNotifications.emailNotification.updateSettings(form).then(function (result) {
                 $(document).trigger("AbpSettingSaved");

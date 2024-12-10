@@ -1,8 +1,8 @@
-﻿namespace Unity.Notifications.Web.Settings;
+﻿namespace Unity.Notifications.Web.Views.Settings;
 
 using System.Threading.Tasks;
 using Unity.Notifications.Permissions;
-using Unity.Notifications.Web.Settings.NotificationsSettingGroup;
+using Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 

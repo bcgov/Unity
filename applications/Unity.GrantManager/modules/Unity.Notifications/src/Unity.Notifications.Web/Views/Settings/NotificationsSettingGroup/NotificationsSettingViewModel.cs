@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Unity.Notifications.Web.Settings.NotificationsSettingGroup;
+namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
 
 public class NotificationsSettingViewModel
 {

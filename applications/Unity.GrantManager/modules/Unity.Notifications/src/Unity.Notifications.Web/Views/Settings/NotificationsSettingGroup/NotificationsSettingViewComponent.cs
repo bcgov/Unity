@@ -4,7 +4,7 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.Settings;
 
-namespace Unity.Notifications.Web.Settings.NotificationsSettingGroup;
+namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
 
 [Widget(
     ScriptTypes = [typeof(NotificationsSettingScriptBundleContributor)],
@@ -20,6 +20,6 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
             DefaultFromDisplayName = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromDisplayName) ?? ""
         };
 
-        return View("~/Settings/NotificationsSettingGroup/Default.cshtml", model);
+        return View("~/Views/Settings/NotificationsSettingGroup/Default.cshtml", model);
     }
 }

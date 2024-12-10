@@ -3,20 +3,18 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.Notifications.Localization;
 using Unity.Notifications.Web.Menus;
+using Unity.Notifications.Web.Views.Settings;
+using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AutoMapper;
-using Volo.Abp.Modularity;
-using Volo.Abp.UI.Navigation;
-using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers.Quartz;
-using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
-using Unity.Notifications.Web.Settings;
+using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
-using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Unity.Notifications.Web.Settings.NotificationsSettingGroup;
-using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
+using Volo.Abp.UI.Navigation;
+using Volo.Abp.VirtualFileSystem;
 
 namespace Unity.Notifications.Web;
 
@@ -68,20 +66,6 @@ public class NotificationsWebModule : AbpModule
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
             options.FileSets.AddEmbedded<NotificationsWebModule>();
-        });
-
-        Configure<AbpBundlingOptions>(options =>
-        {
-            var bundleName = typeof(Volo.Abp.SettingManagement.Web.Pages.SettingManagement.IndexModel).FullName;
-            if (bundleName != null)
-            {
-                options.ScriptBundles.Configure(
-                bundleName,
-                configuration =>
-                {
-                    configuration.AddContributors(typeof(NotificationsSettingScriptBundleContributor));
-                });
-            }
         });
 
         Configure<SettingManagementPageOptions>(options =>
