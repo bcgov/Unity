@@ -72,12 +72,16 @@ public class NotificationsWebModule : AbpModule
 
         Configure<AbpBundlingOptions>(options =>
         {
-            options.ScriptBundles.Configure(
-                typeof(Volo.Abp.SettingManagement.Web.Pages.SettingManagement.IndexModel).FullName,
+            var bundleName = typeof(Volo.Abp.SettingManagement.Web.Pages.SettingManagement.IndexModel).FullName;
+            if (bundleName != null)
+            {
+                options.ScriptBundles.Configure(
+                bundleName,
                 configuration =>
                 {
                     configuration.AddContributors(typeof(NotificationsSettingScriptBundleContributor));
                 });
+            }
         });
 
         Configure<SettingManagementPageOptions>(options =>
