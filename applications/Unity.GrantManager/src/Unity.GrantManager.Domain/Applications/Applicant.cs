@@ -20,6 +20,7 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? ApproxNumberOfEmployees { get; set; }
     public string? IndigenousOrgInd { get; set; }
     public string? SectorSubSectorIndustryDesc { get; set; }
+    public bool? RedStop { get; set; }
     public string? UnityApplicantId { get; set; }
     public string? FiscalMonth { get; set; }
     public string? BusinessNumber { get; set; }

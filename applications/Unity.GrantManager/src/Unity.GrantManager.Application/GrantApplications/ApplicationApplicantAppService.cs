@@ -40,6 +40,7 @@ namespace Unity.GrantManager.GrantApplications
                 Sector = applicantInfo.Applicant?.Sector ?? string.Empty,
                 SectorSubSectorIndustryDesc = applicantInfo.Applicant?.SectorSubSectorIndustryDesc ?? string.Empty,
                 SubSector = applicantInfo.Applicant?.SubSector ?? string.Empty,
+                RedStop = applicantInfo.Applicant?.RedStop ?? false,
 
                 SigningAuthorityBusinessPhone = applicantInfo.SigningAuthorityBusinessPhone ?? string.Empty,
                 SigningAuthorityCellPhone = applicantInfo.SigningAuthorityCellPhone ?? string.Empty,
