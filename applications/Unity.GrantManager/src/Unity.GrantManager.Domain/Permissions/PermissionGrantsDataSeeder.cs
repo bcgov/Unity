@@ -128,8 +128,6 @@ namespace Unity.GrantManager.Permissions
                 new List<string>
                 {
                     GrantManagerPermissions.Default,
-                    SettingManagementSeedPermissions.Emailing,
-                    SettingManagementSeedPermissions.EmailingTest,
                     UnitySettingManagementPermissions.UserInterface,
                     NotificationsPermissions.Settings,
                     GrantManagerPermissions.Organizations.Default,
