@@ -108,6 +108,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.ContactTitle = grouping.First().ApplicantAgent?.Title;
             appDto.ContactBusinessPhone = grouping.First().ApplicantAgent?.Phone;
             appDto.ContactCellPhone = grouping.First().ApplicantAgent?.Phone2;
+            appDto.AssessmentCount = grouping.First().Assessments?.Count ?? 0;
+            appDto.AssessmentReviewCount = grouping.First()
+                .Assessments?.Count(a => a.Status == Assessments.AssessmentState.IN_REVIEW) ?? 0;
             appDto.RowCount = rowCounter;
             appDtos.Add(appDto);
             rowCounter++;
@@ -203,6 +206,9 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
             appDto.SubSector = application.Applicant.SubSector;
             appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
+
+        appDto.AssessmentCount = application.Assessments?.Count ?? 0;
+        appDto.AssessmentReviewCount = application.Assessments?.Count(a => a.Status == Assessments.AssessmentState.IN_REVIEW) ?? 0;
 
         return appDto;
     }

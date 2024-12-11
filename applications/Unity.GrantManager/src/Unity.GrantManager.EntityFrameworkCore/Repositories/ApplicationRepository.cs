@@ -27,6 +27,7 @@ public class ApplicationRepository : EfCoreRepository<GrantTenantDbContext, Appl
             .Include(s => s.ApplicationStatus)
             .Include(s => s.ApplicationForm)
             .Include(s => s.ApplicationTags)
+            .Include(s => s.Assessments)
             .Include(s => s.Owner)
             .Include(s => s.ApplicationAssignments!)
                 .ThenInclude(t => t.Assignee)
