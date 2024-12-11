@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Events
 
             string? emailTo = applicantAgent.Email;
             var defaultFromAddress = await _settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
-            string emailFrom = defaultFromAddress ?? "unity@gov.bc.ca";
+            string emailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca";
 
             if (!string.IsNullOrEmpty(emailTo))
             {

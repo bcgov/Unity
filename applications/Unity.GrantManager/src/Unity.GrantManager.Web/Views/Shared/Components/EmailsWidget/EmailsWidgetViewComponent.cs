@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
             {
                 OwnerId = ownerId,
                 CurrentUserId = currentUserId,
-                EmailFrom = defaultFromAddress ?? "unity@gov.bc.ca",
+                EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
             };
 
             return View(model);

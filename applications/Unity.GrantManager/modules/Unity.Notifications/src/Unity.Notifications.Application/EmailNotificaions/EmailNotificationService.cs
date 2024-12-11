@@ -216,7 +216,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             body,
             bodyType = "html",
             encoding = "utf-8",
-            from = emailFrom ?? defaultFromAddress ?? "unity@gov.bc.ca",
+            from = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca",
             priority = "normal",
             subject,
             tag = "tag",
