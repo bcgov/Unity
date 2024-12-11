@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System;
-using Unity.Payments.Integrations.Http;
+using Unity.Notifications.Integrations.Http;
 using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
@@ -14,18 +14,17 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Caching.Distributed;
 using Volo.Abp.Caching;
 
-namespace Unity.Payments.Integrations.Cas
+namespace Unity.Notifications.Integrations.Ches
 {
     [IntegrationService]
     [ExposeServices(typeof(TokenService), typeof(ITokenService))]
     public class TokenService(
-        IOptions<CasClientOptions> casClientOptions,
+        IOptions<ChesClientOptions> chesClientOptions,
         IHttpClientFactory httpClientFactory,
-        IDistributedCache<TokenValidationResponse, string> castokenCache) : ApplicationService, ITokenService
+        IDistributedCache<TokenValidationResponse, string> chesTokenCache) : ApplicationService, ITokenService
     {
-        private const string OAUTH_PATH = "oauth/token";
         private const int ONE_MINUTE_SECONDS = 60;
-        private const string CAS_API_KEY = "CasApiKey";
+        private const string CHES_API_KEY = "ChesApiKey";
 
         public async Task<string> GetAuthTokenAsync()
         {
@@ -40,7 +39,7 @@ namespace Unity.Payments.Integrations.Cas
             try
             {
                 // Return cached access token
-                var cachedTokenResponse = await castokenCache.GetAsync(CAS_API_KEY);
+                var cachedTokenResponse = await chesTokenCache.GetAsync(CHES_API_KEY);
 
                 if (cachedTokenResponse != null)
                 {
@@ -61,7 +60,7 @@ namespace Unity.Payments.Integrations.Cas
 
         private async Task<TokenValidationResponse?> GetAndCacheAccessTokenAsync()
         {
-            string url = $"{casClientOptions.Value.CasBaseUrl}/{OAUTH_PATH}";
+            string url = $"{chesClientOptions.Value.ChesTokenUrl}";
             HttpRequestMessage requestMessage = new(HttpMethod.Post, url) { Version = new Version(3, 0) };
             List<KeyValuePair<string, string>> values =
             [
@@ -69,7 +68,7 @@ namespace Unity.Payments.Integrations.Cas
             ];
 
             FormUrlEncodedContent content = new(values);
-            string authenticationString = $"{casClientOptions.Value.CasClientId}:{casClientOptions.Value.CasClientSecret}";
+            string authenticationString = $"{chesClientOptions.Value.ChesClientId}:{chesClientOptions.Value.ChesClientSecret}";
             string base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(authenticationString));
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
             requestMessage.Content = content;
@@ -88,12 +87,12 @@ namespace Unity.Payments.Integrations.Cas
 
             if (response.Content == null)
             {
-                throw new UserFriendlyException($"Error fetching CAS API token - content empty {response.StatusCode} {response.RequestMessage}");
+                throw new UserFriendlyException($"Error fetching CHES API token - content empty {response.StatusCode} {response.RequestMessage}");
             }
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                Logger.LogError("Error fetching CAS API token");
+                Logger.LogError("Error fetching CHES API token");
 
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -106,7 +105,7 @@ namespace Unity.Payments.Integrations.Cas
 
             int expiresInSeconds = tokenResponse.ExpiresIn - ONE_MINUTE_SECONDS;
 
-            await castokenCache.SetAsync(CAS_API_KEY, tokenResponse, new DistributedCacheEntryOptions()
+            await chesTokenCache.SetAsync(CHES_API_KEY, tokenResponse, new DistributedCacheEntryOptions()
             {
                 AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(expiresInSeconds)
             });

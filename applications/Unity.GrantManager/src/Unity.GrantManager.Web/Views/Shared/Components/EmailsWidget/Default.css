@@ -1,4 +1,4 @@
-﻿﻿#applicationEmailsWidget .single-email {
+﻿#applicationEmailsWidget .single-email {
     position: relative;
     border-radius: 4px;
     overflow: hidden;
@@ -118,11 +118,37 @@
     text-align: center;
     align-content: center;
     margin: 30px;
+    display: flex;
     max-width: fit-content;
     margin-left: auto;
     margin-right: auto;
-    padding-right: 0px;
-    color: var(--bc-colors-grey-text-500);
+    padding-right: 114px;
+    color: inherit;
+}
+
+#confirmation-modal {
+    z-index: 1;
+    justify-content: center;
+    margin: 1em 1.6em .3em;
+    padding: 0;
+    overflow: auto;
+    color: inherit;
+    font-size: 1.125em;
+    font-weight: normal;
+    line-height: normal;
+    text-align: center;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+#btn-cancel-email {
+    border: 0;
+    border-radius: .25em;
+    background: initial;
+    background-color: #6e7881;
+    color: #fff;
+    font-size: 1em;
+    margin: 4px;
 }
 
 #applicationEmailsWidget .btn-send-close {
@@ -136,7 +162,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: white;
+    background-color: rgba(0, 0, 0, .8);
     opacity: .50;
     -webkit-opacity: .5;
     -moz-opacity: .5;
@@ -152,23 +178,33 @@
     display: none;
 }
 
-#applicationEmailsWidget  .modal-content {
-    background-color: white;
-    border-radius: 10px;
-    -webkit-border-radius: 10px;
-    -moz-border-radius: 10px;
-    box-shadow: 0 0 20px 0 #222;
-    -webkit-box-shadow: 0 0 20px 0 #222;
-    -moz-box-shadow: 0 0 20px 0 #222;
+#applicationEmailsWidget .modal-footer {
+    justify-content: center;
+}
+
+#applicationEmailsWidget .modal-content {
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
     height: fit-content;
     left: 50%;
     margin: -120px 0 0 -160px;
-    padding: 10px;
     position: fixed;
     top: 50%;
-    width: 320px;
     z-index: 1000;
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, 100%);
+    width: 32em;
+    max-width: 100%;
+    padding: 1.25em;
+    border: none;
+    background: #fff;
+    color: #545454;
+    font-family: inherit;
+    font-size: 1rem;
+    justify-content: center;
 }
+
 
 
 #EmailForm {
@@ -182,7 +218,6 @@
 #applicationEmailsWidget .hide {
     display: none;
 }
-
 
 #applicationEmailsWidget .toast-top-center { 
     top: 220px;
@@ -209,6 +244,11 @@
 	border: 5px solid #eaf5fe;
 	border-right-color: #5597d4;
 	animation: rotateSpinner 800ms linear infinite;  
+}
+
+#applicationEmailsWidget .email-spinner-text {
+    display: flex;
+    padding-right: 100px;
 }
 
 

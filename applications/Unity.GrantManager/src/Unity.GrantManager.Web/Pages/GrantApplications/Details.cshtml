@@ -303,7 +303,7 @@
                 <div class="tab-pane" id="emails" role="tabpanel" aria-labelledby="emails-tab">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Emails</h6>
                     <div class="px-3 pb-2" id="applicationEmailsWidget">
-                        @await Component.InvokeAsync("EmailsWidget", new { ownerId = Model.ApplicationId, commentType = 0, currentUserId = Model.CurrentUserId })
+                        @await Component.InvokeAsync("EmailsWidget", new { applicationId = Model.ApplicationId, currentUserId = Model.CurrentUserId })
                     </div>
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Email History</h6>
                     <div class="px-3 pb-2" id="applicationEmailsWidget">

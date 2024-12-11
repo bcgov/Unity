@@ -881,7 +881,7 @@ function initEmailsWidget() {
         wrapper: '#applicationEmailsWidget',
         filterCallback: function () {
             return {
-                'ownerId': $('#DetailsViewApplicationId').val(),
+                'applicationId': $('#DetailsViewApplicationId').val(),
                 'currentUserId': currentUserId,
             };
         }
