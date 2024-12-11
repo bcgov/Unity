@@ -9,7 +9,6 @@ The codebase is being roughed out, but finer details are likely to change.
     ├── Unity.ApplicantPortal/ - Applicant Information solution
     ├── Unity.AutoUI/          - Automated User Interface testing
     ├── Unity.GrantManager/    - Grant manager and adjudication solution
-    ├── Unity.Orchestrator/    - Workflow orchestrator solution
     ├── Unity.RabbitMQ/        - Messaging and streaming broker configuration
     ├── Unity.Tools/           - DevOps tools
     database/                  - Database configuration files
