@@ -837,11 +837,20 @@ div.dataTables_wrapper div.dataTables_filter {
     --bs-gradient: none;
 }
 
-
 /*Forms*/
 .unt-form-label {
     margin-bottom: unset;
     -webkit-font-smoothing: antialiased;
     font-weight: bold;
     font-size: 13px;
+}
+
+.unt-form-switch input {
+    height: 25px;
+    width: 45px !important;
+    margin: 0px 10px;
+}
+
+.unt-form-switch label {
+    opacity: 0.8 !important;
 }
