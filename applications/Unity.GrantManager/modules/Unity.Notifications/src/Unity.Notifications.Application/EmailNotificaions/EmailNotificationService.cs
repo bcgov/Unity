@@ -15,6 +15,9 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Users;
+using Volo.Abp.SettingManagement;
+using Unity.Notifications.Settings;
+using Unity.Notifications.Permissions;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -28,13 +31,15 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     private readonly EmailQueueService _emailQueueService;
     private readonly IEmailLogsRepository _emailLogsRepository;
     private readonly IExternalUserLookupServiceProvider _externalUserLookupServiceProvider;
+    private readonly ISettingManager _settingManager;
 
     public EmailNotificationService(
         IEmailLogsRepository emailLogsRepository,
         IConfiguration configuration,
         IChesClientService chesClientService,
         EmailQueueService emailQueueService,
-        IExternalUserLookupServiceProvider externalUserLookupServiceProvider
+        IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
+        ISettingManager settingManager
         )
     {
         _emailLogsRepository = emailLogsRepository;
@@ -42,6 +47,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         _chesClientService = chesClientService;
         _emailQueueService = emailQueueService;
         _externalUserLookupServiceProvider = externalUserLookupServiceProvider;
+        _settingManager = settingManager;
     }
 
     private const string approvalBody =
@@ -83,7 +89,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         {
             return null;
         }
-        var emailObject = GetEmailObject(emailTo, body, subject, emailFrom);
+        var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
         EmailLog emailLog = GetMappedEmailLog(emailObject);
         emailLog.ApplicationId = applicationId;
 
@@ -116,7 +122,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         {
             if (!string.IsNullOrEmpty(emailTo))
             {
-                var emailObject = GetEmailObject(emailTo, body, subject, emailFrom);
+                var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
                 response = await _chesClientService.SendAsync(emailObject);
             }
             else
@@ -155,8 +161,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         var sentByUserIds = dtoList
             .Where(d => d.CreatorId.HasValue)
             .Select(d => d.CreatorId!.Value)
-            .Distinct()
-            .ToList();
+            .Distinct();
 
         var userDictionary = new Dictionary<Guid, EmailHistoryUserDto>();
 
@@ -172,9 +177,9 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
 
         foreach (var item in dtoList)
         {
-            if (item.CreatorId.HasValue)
+            if (item.CreatorId.HasValue && userDictionary.TryGetValue(item.CreatorId.Value, out var userDto))
             {
-                item.SentBy = userDictionary[item.CreatorId.Value];
+                item.SentBy = userDto;
             }
         }
 
@@ -194,7 +199,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         await _emailQueueService.SendToEmailEventQueueAsync(emailNotificationEvent);
     }
 
-    protected virtual dynamic GetEmailObject(string emailTo, string body, string subject, string? emailFrom)
+    protected virtual async Task<dynamic> GetEmailObjectAsync(string emailTo, string body, string subject, string? emailFrom)
     {
         List<string> toList = new();
         string[] emails = emailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
@@ -204,12 +209,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
             toList.Add(email.Trim());
         }
 
+        var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+
         var emailObject = new
         {
             body,
             bodyType = "html",
             encoding = "utf-8",
-            from = emailFrom ?? _configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca",
+            from = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca",
             priority = "normal",
             subject,
             tag = "tag",
@@ -227,5 +234,14 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         emailLog.FromAddress = emailDynamicObject.from;
         emailLog.ToAddress = ((List<string>)emailDynamicObject.to).FirstOrDefault() ?? "";
         return emailLog;
+    }
+
+    [Authorize(NotificationsPermissions.Settings)]
+    public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
+    {
+        if (!settingsDto.DefaultFromAddress.IsNullOrWhiteSpace())
+        {
+            await _settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
+        }
     }
 }

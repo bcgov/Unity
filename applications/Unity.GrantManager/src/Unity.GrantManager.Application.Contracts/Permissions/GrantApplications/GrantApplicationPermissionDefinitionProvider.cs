@@ -48,6 +48,24 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
+
+            var emailingPermission = context.GetPermissionOrNull(SettingManagementPermissions.Emailing);
+            if (emailingPermission != null)
+            {
+                emailingPermission.IsEnabled = false;
+            }
+
+            var emailingTestPermission = context.GetPermissionOrNull(SettingManagementPermissions.EmailingTest);
+            if (emailingTestPermission != null)
+            {
+                emailingTestPermission.IsEnabled = false;
+            }
+
+            var timezonePermission = context.GetPermissionOrNull(SettingManagementPermissions.TimeZone);
+            if (timezonePermission != null)
+            {
+                timezonePermission.IsEnabled = false;
+            }
         }
 
         private static LocalizableString L(string name)
