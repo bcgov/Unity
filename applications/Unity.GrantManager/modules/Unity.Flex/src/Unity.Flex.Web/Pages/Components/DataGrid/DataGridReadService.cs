@@ -30,7 +30,7 @@ namespace Unity.Flex.Web.Pages.Flex
                 var typeTuple = keyValueTypes.Find(kvt => kvt.Item1 == key);
                 if (typeTuple != null)
                 {
-                    var formattedValue = value.ApplyFormatting(typeTuple.Item3.ToString(), null);
+                    var formattedValue = value.ApplyPresentationFormatting(typeTuple.Item3.ToString(), null);
                     formattedKeyValuePairs.Add(key, formattedValue);
                 }
                 else

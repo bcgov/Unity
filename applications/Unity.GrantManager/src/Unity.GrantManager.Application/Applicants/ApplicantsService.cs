@@ -116,7 +116,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
             Title = intakeMap.ContactTitle ?? string.Empty,
         };
 
-        if (!string.IsNullOrEmpty(intakeMap.ApplicantAgent))
+        if (IsJObject(intakeMap.ApplicantAgent))
         {
             applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
             applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
@@ -125,10 +125,28 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
             applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
             applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
             applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
+            
         }
         await applicantAgentRepository.InsertAsync(applicantAgent);
 
         return applicantAgent;
-        
+    }
+
+    private static bool IsJObject(dynamic? applicantAgent)
+    {
+        if(applicantAgent == null) 
+            return false;
+        try
+        {
+            if (applicantAgent is Newtonsoft.Json.Linq.JObject)
+            {
+                return true; 
+            }
+        }
+        catch {
+            return false;
+        }
+
+        return false;
     }
 }

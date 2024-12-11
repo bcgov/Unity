@@ -10,9 +10,9 @@
               minlength="@Model.MinLength"
               maxlength="@Model.MaxLength"
               disabled="@Model.IsDisabled"
-              id="answer-text-@Model.QuestionId"
+              id="answer-textarea-@Model.QuestionId"
               name="Answer-Textarea-@Model.QuestionId"
               data-original-value="@Model.Answer"
-              oninput="handleInputChange('@Model.QuestionId','answer-text-')">@Model.Answer</textarea>
+              oninput="handleInputChange('@Model.QuestionId','answer-textarea-')">@Model.Answer</textarea>
     <span id="error-message-@Model.QuestionId" class="text-danger field-validation-error"></span>
 </div>

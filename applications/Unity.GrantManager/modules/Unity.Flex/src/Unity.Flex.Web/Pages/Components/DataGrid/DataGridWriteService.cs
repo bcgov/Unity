@@ -20,6 +20,8 @@ namespace Unity.Flex.Web.Pages.Flex
     {
         internal async Task<WriteDataRowResponse> WriteRowAsync(RowInputData rowInputData)
         {
+            rowInputData.WorksheetInstanceId = await ValidateWorksheetInstanceId(rowInputData);
+
             if (IsAddFirstRow(rowInputData))
             {
                 return await AddFirstRowAsync(rowInputData);
@@ -32,6 +34,24 @@ namespace Unity.Flex.Web.Pages.Flex
             {
                 return await UpdateRowAsync(rowInputData);
             }
+        }
+
+        private async Task<Guid> ValidateWorksheetInstanceId(RowInputData rowInputData)
+        {
+            if (rowInputData.WorksheetInstanceId == Guid.Empty)
+            {
+                // Make sure we dont have an existing instance via another field within the same form
+
+                var worksheetInstance = await worksheetInstanceAppService
+                    .GetByCorrelationAnchorAsync(rowInputData.ApplicationId, CorrelationConsts.Application, rowInputData.WorksheetId, rowInputData.UiAnchor);
+
+                if (worksheetInstance != null)
+                {
+                    rowInputData.WorksheetInstanceId = worksheetInstance.Id;
+                }
+            }
+            
+            return rowInputData.WorksheetInstanceId;
         }
 
         private static bool IsAddFirstRow(RowInputData rowInputData)
@@ -163,7 +183,7 @@ namespace Unity.Flex.Web.Pages.Flex
                 newCells.Add(new DataGridRowCell()
                 {
                     Key = value.Item1,
-                    Value = value.Item2.ApplyFormatting(value.Item3.ToString(), null)
+                    Value = value.Item2.ApplyStoreFormatting(value.Item3.ToString())
                 });
             }
 

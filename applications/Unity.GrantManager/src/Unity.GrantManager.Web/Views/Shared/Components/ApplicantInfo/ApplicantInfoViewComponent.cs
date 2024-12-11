@@ -33,16 +33,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid applicationFormVersionId)
         {
-            var applicatInfoDto = await _applicationAppicantService.GetByApplicationIdAsync(applicationId);
+            var applicantInfoDto = await _applicationAppicantService.GetByApplicationIdAsync(applicationId);
             List<SectorDto> Sectors = [.. (await _applicationSectorAppService.GetListAsync())];
 
             ApplicantInfoViewModel model = new()
             {
                 ApplicationId = applicationId,
-                ApplicationFormId = applicatInfoDto.ApplicationFormId,
+                ApplicationFormId = applicantInfoDto.ApplicationFormId,
                 ApplicationFormVersionId = applicationFormVersionId,
                 ApplicationSectors = Sectors,
-                ApplicantId = applicatInfoDto.ApplicantId
+                ApplicantId = applicantInfoDto.ApplicantId
             };
 
             model.ApplicationSectorsList.AddRange(Sectors.Select(Sector =>
@@ -53,7 +53,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             {
                 List<SubSectorDto> SubSectors = [];
 
-                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == applicatInfoDto.Sector);
+                SectorDto? applicationSector = Sectors.Find(x => x.SectorName == applicantInfoDto.Sector);
                 SubSectors = applicationSector?.SubSectors ?? SubSectors;
 
                 model.ApplicationSubSectorsList.AddRange(SubSectors.Select(SubSector =>
@@ -63,29 +63,30 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
 
             model.ApplicantInfo = new()
             {
-                Sector = applicatInfoDto.Sector,
-                SubSector = applicatInfoDto.SubSector,
-                ContactFullName = applicatInfoDto.ContactFullName,
-                ContactTitle = applicatInfoDto.ContactTitle,
-                ContactEmail = applicatInfoDto.ContactEmail,
-                ContactBusinessPhone = applicatInfoDto.ContactBusinessPhone,
-                ContactCellPhone = applicatInfoDto.ContactCellPhone,
-                OrgName = applicatInfoDto.OrganizationName,
-                OrgNumber = applicatInfoDto.OrgNumber,
-                OrgStatus = applicatInfoDto.OrgStatus,
-                OrganizationType = applicatInfoDto.OrganizationType,
-                SigningAuthorityFullName = applicatInfoDto.SigningAuthorityFullName,
-                SigningAuthorityTitle = applicatInfoDto.SigningAuthorityTitle,
-                SigningAuthorityEmail = applicatInfoDto.SigningAuthorityEmail,
-                SigningAuthorityBusinessPhone = applicatInfoDto.SigningAuthorityBusinessPhone,
-                SigningAuthorityCellPhone = applicatInfoDto.SigningAuthorityCellPhone,
-                OrganizationSize = applicatInfoDto.OrganizationSize,
-                SectorSubSectorIndustryDesc = applicatInfoDto.SectorSubSectorIndustryDesc,
+                Sector = applicantInfoDto.Sector,
+                SubSector = applicantInfoDto.SubSector,
+                ContactFullName = applicantInfoDto.ContactFullName,
+                ContactTitle = applicantInfoDto.ContactTitle,
+                ContactEmail = applicantInfoDto.ContactEmail,
+                ContactBusinessPhone = applicantInfoDto.ContactBusinessPhone,
+                ContactCellPhone = applicantInfoDto.ContactCellPhone,
+                OrgName = applicantInfoDto.OrganizationName,
+                OrgNumber = applicantInfoDto.OrgNumber,
+                OrgStatus = applicantInfoDto.OrgStatus,
+                OrganizationType = applicantInfoDto.OrganizationType,
+                SigningAuthorityFullName = applicantInfoDto.SigningAuthorityFullName,
+                SigningAuthorityTitle = applicantInfoDto.SigningAuthorityTitle,
+                SigningAuthorityEmail = applicantInfoDto.SigningAuthorityEmail,
+                SigningAuthorityBusinessPhone = applicantInfoDto.SigningAuthorityBusinessPhone,
+                SigningAuthorityCellPhone = applicantInfoDto.SigningAuthorityCellPhone,
+                OrganizationSize = applicantInfoDto.OrganizationSize,
+                SectorSubSectorIndustryDesc = applicantInfoDto.SectorSubSectorIndustryDesc,
+                RedStop = applicantInfoDto.RedStop,
             };
 
-            if (applicatInfoDto.ApplicantAddresses.Count != 0)
+            if (applicantInfoDto.ApplicantAddresses.Count != 0)
             {
-                ApplicantAddressDto? physicalAddress = applicatInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.PhysicalAddress);
+                ApplicantAddressDto? physicalAddress = applicantInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.PhysicalAddress);
 
                 if (physicalAddress != null)
                 {
@@ -97,7 +98,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
                     model.ApplicantInfo.PhysicalAddressPostalCode = physicalAddress.Postal;
                 }
 
-                ApplicantAddressDto? mailingAddress = applicatInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.MailingAddress);
+                ApplicantAddressDto? mailingAddress = applicantInfoDto.ApplicantAddresses.Find(address => address.AddressType == AddressType.MailingAddress);
 
                 if (mailingAddress != null)
                 {

@@ -17,6 +17,18 @@ namespace Unity.Flex
             return string.Empty;
         }
 
+        public static string ConvertDateTime(object? value)
+        {
+            if (value == null) return string.Empty;
+            var strVal = value.ToString();
+            if (strVal == null) return string.Empty;
+
+            var culture = new CultureInfo("en-CA");
+            var parseDate = DateTime.TryParse(strVal, culture, DateTimeStyles.None, out DateTime date);
+            if (parseDate) return date.ToString("yyyy-MM-dd HH:mm:ss");
+            return string.Empty;
+        }
+
         public static string ConvertDecimal(object? value)
         {
             var valid = decimal.TryParse(value?.ToString(), out decimal decimalValue);
