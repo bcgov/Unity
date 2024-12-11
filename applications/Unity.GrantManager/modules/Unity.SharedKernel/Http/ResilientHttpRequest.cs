@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Polly;
+﻿using Polly;
 using Polly.Retry;
 using System;
 using System.Linq;
@@ -9,14 +8,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 
-namespace Unity.Notifications.Integrations.Http
+namespace Unity.Modules.Http
 {
     [IntegrationService]
-    public class ResilientHttpRequest : NotificationsAppService, IResilientHttpRequest
+    public class ResilientHttpRequest : IResilientHttpRequest
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private static int _maxRetryAttempts = 3;
-        private static int OneMinuteInSeconds = 60;
+        private static int OneMinuteInSeconds = 60;         
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
         private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(OneMinuteInSeconds);
 
@@ -90,41 +89,26 @@ namespace Unity.Notifications.Integrations.Http
             string? body,
             string? authToken)
         {
-            HttpResponseMessage restResponse = new HttpResponseMessage
+            //specify to use TLS 1.2 as default connection if 1.3 is not available
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            HttpRequestMessage requestMessage = new HttpRequestMessage(httpVerb, resource) { Version = new Version(3, 0) };
+            using HttpClient httpClient = _httpClientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.ConnectionClose = true;
+
+            if (!authToken.IsNullOrEmpty())
             {
-                StatusCode = HttpStatusCode.ServiceUnavailable
-            };
-
-            try
-            {
-                //specify to use TLS 1.2 as default connection if TLS 1.3 does not exist
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-                HttpRequestMessage requestMessage = new HttpRequestMessage(httpVerb, resource) { Version = new Version(3, 0) };
-                using HttpClient httpClient = _httpClientFactory.CreateClient();
-                httpClient.DefaultRequestHeaders.Accept.Clear();
-                httpClient.DefaultRequestHeaders.Clear();
-                httpClient.DefaultRequestHeaders.ConnectionClose = true;
-
-                if (!authToken.IsNullOrEmpty())
-                {
-                    httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {authToken}");
-                }
-
-                if (httpVerb != HttpMethod.Get && body != null)
-                {
-                    requestMessage.Content = new StringContent(body, Encoding.UTF8, "application/json");
-                }
-
-                restResponse = await _pipeline.ExecuteAsync(async ct => await httpClient.SendAsync(requestMessage, ct));
-            }
-            catch (Exception ex)
-            {
-                string ExceptionMessage = ex.Message;
-                Logger.LogInformation(ex, "An Exception was thrown from ExecuteRequestAsync: {ExceptionMessage}", ExceptionMessage);
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {authToken}");
             }
 
+            if (httpVerb != HttpMethod.Get && body != null)
+            {
+                requestMessage.Content = new StringContent(body, Encoding.UTF8, "application/json");
+            }
+
+            HttpResponseMessage restResponse = await _pipeline.ExecuteAsync(async ct => await httpClient.SendAsync(requestMessage, ct));
             return await Task.FromResult(restResponse);
         }
-
     }
 }
