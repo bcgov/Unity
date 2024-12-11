@@ -50,7 +50,7 @@
                 <abp-dropdown-item href="/ScoresheetConfiguration">Scoresheets Configuration</abp-dropdown-item>
                 <abp-dropdown-item href="/WorksheetConfiguration">Custom Fields Configuration</abp-dropdown-item>
             }
-            @if (await PermissionChecker.IsGrantedAsync("SettingManagement.UserInterface"))
+            @if (CurrentUser.IsInRole("system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
             {
                 <abp-dropdown-item href="/SettingManagement">Settings</abp-dropdown-item>
             }
