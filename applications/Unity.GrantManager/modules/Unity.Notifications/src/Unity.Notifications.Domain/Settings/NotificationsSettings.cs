@@ -8,6 +8,5 @@ public static class NotificationsSettings
     {
         public const string Default = "GrantManager.Notifications.Mailing";
         public const string DefaultFromAddress = "GrantManager.Notifications.Mailing.DefaultFromAddress";
-        public const string DefaultFromDisplayName = "GrantManager.Notifications.Mailing.DefaultFromDisplayName";
     }
 }

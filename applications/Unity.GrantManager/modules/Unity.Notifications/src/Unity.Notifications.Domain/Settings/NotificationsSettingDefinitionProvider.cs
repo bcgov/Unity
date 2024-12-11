@@ -15,13 +15,6 @@ public class NotificationsSettingDefinitionProvider : SettingDefinitionProvider
                 L($"Setting:{NotificationsSettings.Mailing.DefaultFromAddress}.DisplayName"),
                 L($"Setting:{NotificationsSettings.Mailing.DefaultFromAddress}.Description"),
                 isVisibleToClients: false,
-                isInherited: false),
-            new SettingDefinition(
-                NotificationsSettings.Mailing.DefaultFromDisplayName,
-                string.Empty,
-                L($"Setting:{NotificationsSettings.Mailing.DefaultFromDisplayName}.DisplayName"),
-                L($"Setting:{NotificationsSettings.Mailing.DefaultFromDisplayName}.Description"),
-                isVisibleToClients: false,
                 isInherited: false)
             );
     }

@@ -2,5 +2,4 @@
 public class NotificationsSettingsDto
 {
     public string DefaultFromAddress { get; set; } = string.Empty;
-    public string DefaultFromDisplayName { get; set; } = string.Empty;
 }

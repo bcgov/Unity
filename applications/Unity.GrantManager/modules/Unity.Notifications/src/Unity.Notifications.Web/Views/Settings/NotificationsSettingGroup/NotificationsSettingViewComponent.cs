@@ -16,8 +16,7 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
     {
         var model = new NotificationsSettingViewModel
         {
-            DefaultFromAddress = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromAddress) ?? "",
-            DefaultFromDisplayName = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromDisplayName) ?? ""
+            DefaultFromAddress = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromAddress) ?? ""
         };
 
         return View("~/Views/Settings/NotificationsSettingGroup/Default.cshtml", model);

@@ -243,6 +243,5 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         {
             await _settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
         }
-        await _settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.DefaultFromDisplayName, settingsDto.DefaultFromDisplayName);
     }
 }
