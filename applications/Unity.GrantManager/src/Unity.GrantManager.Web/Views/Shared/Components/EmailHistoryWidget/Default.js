@@ -9,7 +9,6 @@
             setTimeout(function () {
                 PubSub.publish('update_application_emails_count', { itemCount: result.length });
             }, 10);
-            console.log(result);
         }
 
         return {
@@ -97,7 +96,7 @@
         emailHistoryDataTable.ajax.reload();
     });
 
-    $('#attachments-tab').one('click', function () {
-        emailHistoryDataTable.columns.adjust();
+    $('#emails-tab').on('click', function () {
+        emailHistoryDataTable.columns.adjust().draw();
     });
 });

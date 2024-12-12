@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
@@ -21,8 +22,8 @@ using Unity.Notifications.Permissions;
 
 namespace Unity.Notifications.EmailNotifications;
 
-[Authorize]
-[Dependency(ReplaceServices = true)]
+
+[Dependency(ReplaceServices = false)]
 [ExposeServices(typeof(EmailNotificationService), typeof(IEmailNotificationService))]
 public class EmailNotificationService : ApplicationService, IEmailNotificationService
 {
@@ -115,27 +116,35 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
     /// <param name="body">The body of the email</param>
     /// <param name="subject">Subject Message</param>
     /// <param name="emailFrom">From Email Address</param>
-    public async Task<RestResponse> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom)
+    /// <returns>HttpResponseMessage indicating the result of the operation</returns>
+    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom)
     {
-        RestResponse response = new RestResponse();
         try
         {
-            if (!string.IsNullOrEmpty(emailTo))
+            if (string.IsNullOrEmpty(emailTo))
             {
-                var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
-                response = await _chesClientService.SendAsync(emailObject);
+                Logger.LogError("EmailNotificationService->SendEmailNotification: The 'emailTo' parameter is null or empty.");
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("'emailTo' cannot be null or empty.")
+                };
+
             }
-            else
-            {
-                Logger.LogError("EmailNotificationService->SendEmailNotification: Email To Found.");
-            }
+            // Send the email using the CHES client service
+            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom);
+            var response = await _chesClientService.SendAsync(emailObject);
+
+            // Assuming SendAsync returns a HttpResponseMessage or equivalent:
+            return response;
         }
         catch (Exception ex)
         {
-            string ExceptionMessage = ex.Message;
-            Logger.LogError(ex, "EmailNotificationService->SendEmailNotification Exception: {ExceptionMessage}", ExceptionMessage);
+            Logger.LogError(ex, "EmailNotificationService->SendEmailNotification: Exception occurred while sending email.");
+            return new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+            };
         }
-        return response;
     }
 
     public async Task<EmailLog?> GetEmailLogById(Guid id)
@@ -153,6 +162,7 @@ public class EmailNotificationService : ApplicationService, IEmailNotificationSe
         return emailLog;
     }
 
+    [Authorize]
     public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId)
     {
         var entityList = await _emailLogsRepository.GetByApplicationIdAsync(applicationId);

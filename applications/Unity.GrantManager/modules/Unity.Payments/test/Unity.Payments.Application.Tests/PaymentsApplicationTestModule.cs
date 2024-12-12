@@ -7,6 +7,10 @@ using Unity.Payments.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Volo.Abp.EntityFrameworkCore.Sqlite;
+using Unity.Modules.Http;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Unity.Payments;
 
@@ -20,6 +24,13 @@ public class PaymentsApplicationTestModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAlwaysDisableUnitOfWorkTransaction();
+  
+        context.Services.AddAutofac(builder =>
+        {
+            builder.RegisterType<ResilientHttpRequest>().As<IResilientHttpRequest>();
+        });
+
+        context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
 
         var sqliteConnection = CreateDatabaseAndGetConnection();
 

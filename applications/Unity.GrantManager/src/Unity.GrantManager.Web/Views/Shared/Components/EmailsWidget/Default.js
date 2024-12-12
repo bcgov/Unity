@@ -161,4 +161,15 @@
         // If form is not valid, do not show confirmation
         return false; // Return false if validation or other conditions fail
     }
+
+    PubSub.subscribe(
+        'applicant_info_updated',
+        (_, ApplicantInfoObj) => {
+            if(ApplicantInfoObj+"" !== "undefined" 
+                && ApplicantInfoObj.ContactEmail+"" != "undefined"
+                && ApplicantInfoObj.ContactEmail !== "") {
+                UIElements.inputEmailTo[0].value = ApplicantInfoObj.ContactEmail;
+            }
+        }
+    );
 });

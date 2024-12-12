@@ -1,13 +1,12 @@
-﻿using RestSharp;
+﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Notifications.Integrations.Ches
-{
+{    
     public interface IChesClientService : IApplicationService
     {
-        Task<RestResponse> SendAsync(object emailRequest);
-
-        Task<RestResponse> HealthCheckAsync();
+        Task<HttpResponseMessage?> SendAsync(object emailRequest);
     }
 }
+
