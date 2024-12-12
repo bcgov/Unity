@@ -10,19 +10,28 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
+            migrationBuilder.AlterColumn<bool>(
                 name: "RedStop",
                 table: "Applicants",
                 type: "boolean",
-                nullable: true);
+                nullable: true,
+                defaultValue: false,
+                oldType: "boolean",
+                oldNullable: false);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            migrationBuilder.AlterColumn<bool>(
                 name: "RedStop",
-                table: "Applicants");
+                table: "Applicants",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false,
+                oldType: "boolean",
+                oldNullable: true);
         }
+
     }
 }
