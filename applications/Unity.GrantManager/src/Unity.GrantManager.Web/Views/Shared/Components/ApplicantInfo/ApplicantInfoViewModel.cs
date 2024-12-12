@@ -62,6 +62,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo
             [SelectItems(nameof(ApplicationSubSectorsList))]
             public string? SubSector { get; set; }
 
+            public bool RedStop { get; set; }
+
             [Display(Name = "ApplicantInfoView:ApplicantInfo.ContactFullName")]
             [MaxLength(600, ErrorMessage = "Must be a maximum of 6 characters")]
             public string? ContactFullName { get; set; }

@@ -3,9 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System;
-using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using Volo.Abp.DependencyInjection;
@@ -14,33 +12,30 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Caching.Distributed;
 using Volo.Abp.Caching;
 
-namespace Unity.Payments.Integrations.Cas
+namespace Unity.Modules.Integrations
 {
     [IntegrationService]
     [ExposeServices(typeof(TokenService), typeof(ITokenService))]
     public class TokenService(
-        IOptions<CasClientOptions> casClientOptions,
         IHttpClientFactory httpClientFactory,
-        IDistributedCache<TokenValidationResponse, string> castokenCache) : ApplicationService, ITokenService
+        IDistributedCache<TokenValidationResponse, string> chesTokenCache) : ApplicationService, ITokenService
     {
-        private const string OAUTH_PATH = "oauth/token";
         private const int ONE_MINUTE_SECONDS = 60;
-        private const string CAS_API_KEY = "CasApiKey";
 
-        public async Task<string> GetAuthTokenAsync()
+        public async Task<string> GetAuthTokenAsync(ClientOptions clientOptions)
         {
-            var tokenResponse = await GetAccessTokenAsync() ?? throw new UserFriendlyException("GetAuthTokenAsync: Error retrieving Token");
+            var tokenResponse = await GetAccessTokenAsync(clientOptions) ?? throw new UserFriendlyException("GetAuthTokenAsync: Error retrieving Token");
             return tokenResponse.AccessToken ?? throw new UserFriendlyException("GetAuthTokenAsync: Error retrieving Access Token");
         }
 
-        private async Task<TokenValidationResponse?> GetAccessTokenAsync()
+        private async Task<TokenValidationResponse?> GetAccessTokenAsync(ClientOptions clientOptions)
         {
             TokenValidationResponse? tokenResponse = null;
 
             try
             {
                 // Return cached access token
-                var cachedTokenResponse = await castokenCache.GetAsync(CAS_API_KEY);
+                var cachedTokenResponse = await chesTokenCache.GetAsync(clientOptions.ApiKey);
 
                 if (cachedTokenResponse != null)
                 {
@@ -48,8 +43,7 @@ namespace Unity.Payments.Integrations.Cas
                 }
 
                 // Access token has expired or not cached yet
-
-                return await GetAndCacheCasAccessTokenAsync();
+                return await GetAndCacheAccessTokenAsync(clientOptions);
             }
             catch (Exception ex)
             {
@@ -60,25 +54,24 @@ namespace Unity.Payments.Integrations.Cas
             return tokenResponse;
         }
 
-        private async Task<TokenValidationResponse?> GetAndCacheCasAccessTokenAsync()
+        private async Task<TokenValidationResponse?> GetAndCacheAccessTokenAsync(ClientOptions clientOptions)
         {
-            string url = $"{casClientOptions.Value.CasBaseUrl}/{OAUTH_PATH}";
-            HttpRequestMessage requestMessage = new(HttpMethod.Post, url) { Version = new Version(3, 0) };
+            HttpRequestMessage requestMessage = new(HttpMethod.Post, clientOptions.Url) { Version = new Version(3, 0) };
             List<KeyValuePair<string, string>> values =
             [
                 new KeyValuePair<string, string>("grant_type", "client_credentials")
             ];
 
             FormUrlEncodedContent content = new(values);
-            string authenticationString = $"{casClientOptions.Value.CasClientId}:{casClientOptions.Value.CasClientSecret}";
+            string authenticationString = $"{clientOptions.ClientId}:{clientOptions.ClientSecret}";
             string base64EncodedAuthenticationString = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(authenticationString));
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
             requestMessage.Content = content;
 
-            //specify to use TLS 1.2 as default connection
+            //specify to use TLS 1.2 as default connection if TLS 1.3 does not exist
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
             HttpClient client = httpClientFactory.CreateClient();
-            client.BaseAddress = new Uri(url);
+            client.BaseAddress = new Uri(clientOptions.Url);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Clear();
             client.DefaultRequestHeaders.ConnectionClose = true;
@@ -89,12 +82,12 @@ namespace Unity.Payments.Integrations.Cas
 
             if (response.Content == null)
             {
-                throw new UserFriendlyException($"Error fetching CAS API token - content empty {response.StatusCode} {response.RequestMessage}");
+                throw new UserFriendlyException($"Error fetching CHES API token - content empty {response.StatusCode} {response.RequestMessage}");
             }
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                Logger.LogError("Error fetching CAS API token");
+                Logger.LogError("Error fetching CHES API token");
 
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -107,7 +100,7 @@ namespace Unity.Payments.Integrations.Cas
 
             int expiresInSeconds = tokenResponse.ExpiresIn - ONE_MINUTE_SECONDS;
 
-            await castokenCache.SetAsync(CAS_API_KEY, tokenResponse, new DistributedCacheEntryOptions()
+            await chesTokenCache.SetAsync(clientOptions.ApiKey, tokenResponse, new DistributedCacheEntryOptions()
             {
                 AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(expiresInSeconds)
             });

@@ -10,7 +10,7 @@
     Layout = null;
 }
 
-<div id=" emails-div@(Model.OwnerId)" class="mt-2  emails-container" data-count="0" data-counttag="application_emails_count">
+<div id=" emails-div@(Model.ApplicationId)" class="mt-2  emails-container" data-count="0" data-counttag="application_emails_count">
 
 <div id="modal-background"></div>
 
@@ -38,10 +38,10 @@
         </abp-column>
     </abp-row>
     <abp-row class="m-0 p-0">
-        <abp-column size="_11" class="px-1">
+        <abp-column size="_12" class="px-1">
             <abp-modal-footer>
-                <abp-button id="btn-confirm-send" text="Send Email" class="btn-send-close" type="button" button-type="Primary"></abp-button>
-                <abp-button id="btn-cancel-email" class="close btn-send-close" data-dismiss="modal" aria-label="Cancel" text="Cancel" button-type="Secondary"></abp-button>
+                <abp-button id="btn-confirm-send" text="Send Email" class="swal2-confirm btn btn-primary swal2-styled" type="button" button-type="Primary"></abp-button>
+                <abp-button id="btn-cancel-email" class="swal2-cancel btn btn-secondary swal2-styled" data-dismiss="modal" aria-label="Cancel" text="Cancel" button-type="Secondary"></abp-button>
             </abp-modal-footer>
         </abp-column>
     </abp-row>
@@ -49,7 +49,7 @@
 
 
 <form id="EmailForm" class="email-form">
-    <abp-input type="hidden" id="OwnerId" asp-for="@Model.OwnerId" />
+    <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
 
     <abp-row class="m-0 p-0">
         <abp-column size="_10" class="px-1">
@@ -75,8 +75,8 @@
     <abp-row class="m-0 p-0">
         <abp-column size="_10" class="px-1">
             <abp-modal-footer>
-                <abp-button id="btn-send"  class="btn-send" text="Send" type="submit" button-type="Primary" data-ownerId="@Model.OwnerId"></abp-button>
-                <abp-button id="btn-send-close" class="close btn-send-close" data-dismiss="modal" aria-label="Close" text="Close" button-type="Secondary" data-ownerId="@Model.OwnerId"></abp-button>
+                <abp-button id="btn-send"  class="btn-send" text="Send" type="submit" button-type="Primary" data-applicationId="@Model.ApplicationId"></abp-button>
+                    <abp-button id="btn-send-close" class="close btn-send-close" data-dismiss="modal" aria-label="Close" text="Close" button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
             </abp-modal-footer>
       </abp-column>
     </abp-row>

@@ -9,7 +9,6 @@
             setTimeout(function () {
                 PubSub.publish('update_application_emails_count', { itemCount: result.length });
             }, 10);
-            console.log(result);
         }
 
         return {
@@ -63,7 +62,7 @@
                     data: 'sentBy',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data.name + ' ' + data.surname;
+                        return data ? data.name + ' ' + data.surname : '—';
                     },
                 }
             ],
@@ -97,7 +96,7 @@
         emailHistoryDataTable.ajax.reload();
     });
 
-    $('#attachments-tab').one('click', function () {
-        emailHistoryDataTable.columns.adjust();
+    $('#emails-tab').on('click', function () {
+        emailHistoryDataTable.columns.adjust().draw();
     });
 });
