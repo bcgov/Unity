@@ -1,6 +1,5 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
-using Volo.Abp;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Notifications.Integrations.Ches
