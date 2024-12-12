@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk"> 
  <PropertyGroup><LangVersion>latest</LangVersion>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
     <AssemblyName>Unity.TenantManagement.Application.Contracts</AssemblyName>
     <PackageId>Unity.TenantManagement.Application.Contracts</PackageId>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>

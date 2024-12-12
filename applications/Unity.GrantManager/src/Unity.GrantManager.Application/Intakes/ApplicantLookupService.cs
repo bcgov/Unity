@@ -102,6 +102,7 @@ namespace Unity.GrantManager.Intakes
                 FiscalYearDay = applicant.FiscalDay.ToString(),
                 FiscalYearMonth = applicant.FiscalMonth,
                 BusinessNumber = applicant.BusinessNumber,
+                RedStop = applicant.RedStop,
                 PhysicalAddressUnit = applicantPhysicalAgent?.Unit ?? "",
                 PhysicalAddressLine1 = applicantPhysicalAgent?.Street ?? "",
                 PhysicalAddressLine2 = applicantPhysicalAgent?.Street2 ?? "",

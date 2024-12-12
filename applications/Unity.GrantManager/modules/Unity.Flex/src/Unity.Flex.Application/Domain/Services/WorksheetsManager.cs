@@ -10,6 +10,7 @@ using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetInstances;
+using Unity.Flex.Worksheets.Values;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
@@ -61,7 +62,7 @@ namespace Unity.Flex.Domain.Services
             }
         }
 
-        private async Task UpdateWorksheetInstanceValueAsync(WorksheetInstance instance)
+        public async Task UpdateWorksheetInstanceValueAsync(WorksheetInstance instance)
         {
             // Update and set the instance value for the worksheet - high level values serialized
             var worksheet = await worksheetRepository.GetAsync(instance.WorksheetId, true);

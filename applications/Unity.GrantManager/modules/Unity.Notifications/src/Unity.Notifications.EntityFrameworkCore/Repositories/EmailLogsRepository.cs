@@ -6,6 +6,7 @@ using Unity.Notifications.EntityFrameworkCore;
 using Unity.Notifications.Emails;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
+using System.Collections.Generic;
 
 
 namespace Unity.Notifications.Repositories
@@ -20,6 +21,12 @@ namespace Unity.Notifications.Repositories
         {
             var dbSet = await GetDbSetAsync();
             return await dbSet.FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public async Task<List<EmailLog>> GetByApplicationIdAsync(Guid applicationId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(x => x.ApplicationId == applicationId).ToListAsync();
         }
 
         public override async Task<IQueryable<EmailLog>> WithDetailsAsync()

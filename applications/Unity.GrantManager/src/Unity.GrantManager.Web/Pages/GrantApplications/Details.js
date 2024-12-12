@@ -23,6 +23,7 @@ $(function () {
         setStoredDividerWidth();
         updateTabDisplay();
         initCommentsWidget();
+        initEmailsWidget();
         updateLinksCounters();
         renderSubmission();
     }
@@ -316,6 +317,10 @@ $(function () {
             .columns.adjust();
     });
 
+    $('#printAssessmentPdf').click(function () {
+        openScoreSheetDataInNewTab($('#reviewDetails').html());
+    });
+
     $('#printPdf').click(function () {
         let submissionId = getSubmissionId();
 
@@ -387,6 +392,28 @@ $(function () {
         newTab.document.close();
     }
 
+    function openScoreSheetDataInNewTab(assessmentScoresheet) {
+        let newTab = window.open('', '_blank');
+        newTab.document.write('<html><head><title>Print</title>');
+        newTab.document.write('<script src="/libs/jquery/jquery.js"></script>');
+        newTab.document.write('<link rel="stylesheet" href="/libs/bootstrap-4/dist/css/bootstrap.min.css">');
+        newTab.document.write('<link rel="stylesheet" href="/Pages/GrantApplications/ScoresheetPrint.css">');
+        newTab.document.write('</head><body>');
+        newTab.document.write(assessmentScoresheet);
+        newTab.document.write('</body></html>');
+        newTab.onload = function () {
+            let script = newTab.document.createElement('script');
+            script.src = '/Pages/GrantApplications/loadScoresheetPrint.js';
+            script.onload = function () {
+                newTab.executeOperations();
+            };
+
+            newTab.document.head.appendChild(script);
+        };
+
+        newTab.document.close();
+    }
+
     let applicationBreadcrumbWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationBreadcrumbWidget',
         filterCallback: function () {
@@ -398,6 +425,15 @@ $(function () {
 
     let applicationStatusWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationStatusWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val()
+            };
+        }
+    });
+
+    let applicationActionWidgetManager = new abp.WidgetManager({
+        wrapper: '.abp-widget-wrapper[data-widget-name="ApplicationActionWidget"]',
         filterCallback: function () {
             return {
                 'applicationId': $('#DetailsViewApplicationId').val()
@@ -437,6 +473,7 @@ $(function () {
             applicationBreadcrumbWidgetManager.refresh();
             applicationStatusWidgetManager.refresh();
             assessmentResultWidgetManager.refresh();
+            applicationActionWidgetManager.refresh();
         }
     );
 
@@ -476,21 +513,32 @@ $(function () {
     );
 
 
-    let attachCounters = {
+    let tabCounters = {
         files: 0,
-        chefs: 0
+        chefs: 0,
+        emails: 0
     };
 
     PubSub.subscribe(
         'update_application_attachment_count',
         (msg, data) => {
             if (data.files || data.files === 0) {
-                attachCounters.files = data.files;
+                tabCounters.files = data.files;
             }
             if (data.chefs || data.chefs === 0) {
-                attachCounters.chefs = data.chefs;
+                tabCounters.chefs = data.chefs;
             }
-            $('#application_attachment_count').html(attachCounters.files + attachCounters.chefs);
+            $('#application_attachment_count').html(tabCounters.files + tabCounters.chefs);
+        }
+    );
+
+    PubSub.subscribe(
+        'update_application_emails_count',
+        (msg, data) => {
+            if (data.itemCount || data.itemCount === 0) {
+                tabCounters.emails = data.itemCount;
+            }
+            $('#application_emails_count').html(tabCounters.emails);
         }
     );
 
@@ -802,6 +850,13 @@ const checkCurrentUser = function (data) {
     }
 };
 
+function updateEmailsCounters() {
+    setTimeout(() => {
+        $('.emails-container').map(function () {
+            $('#' + $(this).data('emailscounttag')).html($(this).data('count'));
+        }).get();
+    }, 100);
+}
 
 function updateCommentsCounters() {
     setTimeout(() => {
@@ -818,6 +873,47 @@ function updateLinksCounters() {
         }).get();
     }, 100);
 }
+
+function initEmailsWidget() {
+    const currentUserId = decodeURIComponent($("#CurrentUserId").val());
+
+    let applicationEmailsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationEmailsWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val(),
+                'currentUserId': currentUserId,
+            };
+        }
+    });
+
+    PubSub.subscribe(
+        'ApplicationEmail_refresh',
+        () => {
+            applicationEmailsWidgetManager.refresh();
+            updateEmailsCounters();
+        }
+    );
+
+    updateEmailsCounters();
+    let tagsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationTagsWidget',
+        filterCallback: function () {
+            return {
+                'applicationId': $('#DetailsViewApplicationId').val() ?? "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    });
+
+    PubSub.subscribe(
+        'ApplicationTags_refresh',
+        () => {
+            tagsWidgetManager.refresh();
+        }
+    );
+}
+
+
 
 function initCommentsWidget() {
     const currentUserId = decodeURIComponent($("#CurrentUserId").val());
@@ -924,6 +1020,7 @@ function isValidCurrencyCustomField(input) {
     }
 
 }
+
 function showCurrencyError(input, message) {
     let errorSpan = input.attr('id') + "-error";
     document.getElementById(errorSpan).textContent = message;

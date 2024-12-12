@@ -26,6 +26,7 @@ namespace Unity.Flex
                 CustomFieldType.SelectList => JsonSerializer.Deserialize<SelectListValue>(currentValue)?.Value,
                 CustomFieldType.BCAddress => ValueResolverHelpers.ConvertBCAddress(JsonSerializer.Deserialize<BCAddressValue>(currentValue)?.Value),
                 CustomFieldType.TextArea => JsonSerializer.Deserialize<TextAreaValue>(currentValue)?.Value,
+                CustomFieldType.DataGrid => JsonSerializer.Deserialize<DataGridValue>(currentValue)?.Value,
                 _ => throw new NotImplementedException()
             };
         }

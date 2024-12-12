@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.Payments.Permissions;
+using Unity.Notifications.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -127,9 +128,8 @@ namespace Unity.GrantManager.Permissions
                 new List<string>
                 {
                     GrantManagerPermissions.Default,
-                    SettingManagementSeedPermissions.Emailing,
-                    SettingManagementSeedPermissions.EmailingTest,
                     UnitySettingManagementPermissions.UserInterface,
+                    NotificationsPermissions.Settings,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantManagerPermissions.Intakes.Default,

@@ -27,9 +27,13 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         private const string _summaryLabelprefix = "Total:";
         private static readonly List<CustomFieldType> _validTotalSummaryTypes = [CustomFieldType.Numeric, CustomFieldType.Currency];
 
-        public IViewComponentResult Invoke(WorksheetFieldViewModel? fieldModel, string modelName)
+        public IViewComponentResult Invoke(WorksheetFieldViewModel? fieldModel,
+            string modelName,
+            Guid worksheetId,
+            Guid worksheetInstanceId)
         {
             if (fieldModel == null) return View(new DataGridViewModel());
+
             var dataGridValue = JsonSerializer.Deserialize<DataGridValue>(fieldModel.CurrentValue ?? "{}");
             var dataGridDefinition = (DataGridDefinition?)fieldModel.Definition?.ConvertDefinition(fieldModel.Type);
 
@@ -43,7 +47,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             }
             else
             {
-                return GenerateView(fieldModel, modelName, dataGridDefinition);
+                return GenerateView(fieldModel, modelName, dataGridDefinition, worksheetId, worksheetInstanceId);
             }
         }
 
@@ -62,7 +66,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return !dataGridDefinition.Dynamic && dataGridDefinition.Columns.Count > 0;
         }
 
-        private IViewComponentResult GenerateView(WorksheetFieldViewModel fieldModel, string modelName, DataGridDefinition dataGridDefinition)
+        private IViewComponentResult GenerateView(WorksheetFieldViewModel fieldModel,
+            string modelName,
+            DataGridDefinition dataGridDefinition,
+            Guid worksheetId,
+            Guid worksheetInstanceId)
         {
             var dataGridValue = JsonSerializer.Deserialize<DataGridValue>(fieldModel.CurrentValue ?? "{}");
             DataGridRowsValue? dataGridRowsValue = null;
@@ -72,14 +80,22 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 dataGridRowsValue = JsonSerializer.Deserialize<DataGridRowsValue>(dataGridValue.Value.ToString() ?? string.Empty);
             }
 
-            return GenerateGridView(fieldModel, modelName, dataGridValue, dataGridRowsValue, dataGridDefinition);
+            return GenerateGridView(fieldModel,
+                modelName,
+                dataGridValue,
+                dataGridRowsValue,
+                dataGridDefinition,
+                worksheetId,
+                worksheetInstanceId);
         }
 
         private IViewComponentResult GenerateGridView(WorksheetFieldViewModel fieldModel,
             string modelName,
             DataGridValue? dataGridValue,
             DataGridRowsValue? dataGridRowsValue,
-            DataGridDefinition dataGridDefinition)
+            DataGridDefinition dataGridDefinition,
+            Guid worksheetId,
+            Guid worksheetInstanceId)
         {
             var dataColumns = GenerateDataColumns(dataGridValue, dataGridDefinition);
             var dataRows = GenerateDataRows(dataColumns, dataGridRowsValue);
@@ -94,7 +110,10 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 AllowEdit = true,
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
                 Summary = GenerateSummary([.. dataColumns], [.. dataRows]),
-                TableOptions = GenerateAvailableTableOptions(!dataGridDefinition.Dynamic)
+                TableOptions = GenerateAvailableTableOptions(!dataGridDefinition.Dynamic),
+                WorksheetId = worksheetId,
+                WorksheetInstanceId = worksheetInstanceId,
+                UiAnchor = fieldModel.UiAnchor
             };
 
             return View(viewModel);
@@ -144,7 +163,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                         cells.Add(new DataGridViewModelCell()
                         {
                             Key = fieldMatch.Key,
-                            Value = fieldMatch.Value.ApplyFormatting(column.Type, column.Format)
+                            Value = fieldMatch.Value.ApplyPresentationFormatting(column.Type, column.Format)
                         });
                     }
                     else
@@ -289,7 +308,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 new()
                 {
                     Cells = cells,
-                    Id = Guid.NewGuid().ToString()
+                    RowNumber = 1
                 }
             ];
         }
@@ -301,7 +320,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 new()
                     {
                         Cells = [new DataGridViewModelCell() { Key = _dynamicLabel, Value = _dynamicLabel }],
-                        Id = Guid.NewGuid().ToString()
+                        RowNumber = 1
                     }
             ];
         }
@@ -341,8 +360,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 summary.Fields.Add(new DataGridViewModelSummaryField()
                 {
                     Key = field.Key,
-                    Value = SumCells(field.Key, rows),
-                    Label = $"{_summaryLabelprefix} {field.Name}"
+                    Value = SumCells(field.Key, rows).ApplyPresentationFormatting(field.Type, null),
+                    Label = $"{_summaryLabelprefix} {field.Name}",
+                    Type = field.Type
                 });
             }
 
@@ -357,7 +377,19 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 var cell = row.Cells.Find(x => x.Key == key);
                 if (cell != null)
                 {
-                    sum += decimal.Parse(cell.Value.Replace("$", "").Replace(",", ""));
+                    var preparse = cell.Value.Replace("$", "").Replace(",", "");
+                    if (decimal.TryParse(preparse, out decimal value))
+                    {
+                        if (decimal.MaxValue - sum >= value)
+                        {
+                            sum += value;
+                        }
+                        else
+                        {
+                            sum = decimal.MaxValue;
+                            break;
+                        }
+                    }
                 }
             }
             return sum.ToString();
@@ -384,30 +416,114 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
 
     public static class DataGridExtensions
     {
-        public static string ApplyFormatting(this string value, string columnType, string? format)
+        public static string ApplyPresentationFormatting(this string value, string columnType, string? format)
         {
-            if (format == null) { return value; }
+            if (value == null) return string.Empty;
 
-            // We can format date fields based on a format
-            if ((columnType == CustomFieldType.Date.ToString() || columnType == CustomFieldType.DateTime.ToString())
-                && value != null
-                && DateTime.TryParse(value, new CultureInfo("en-CA"), out DateTime dateTime))
+            return columnType switch
             {
-                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "MM-dd-yyyy"; // Date vs DateTime?                
-                string formattedDateTime = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
-                return formattedDateTime;
-            }
+                var ct when IsDateColumn(ct) && TryParseDate(value, format, out string formattedDate) => formattedDate,
+                var ct when IsDateTimeColumn(ct) && TryParseDateTime(value, format, out string formattedDateTime) => formattedDateTime,
+                var ct when IsCurrencyColumn(ct) && TryParseCurrency(value, format, out string formattedCurrency) => formattedCurrency,
+                var ct when IsYesNoColumn(ct) && TryFormatYesNo(value, out string formattedYesNo) => formattedYesNo,
+                var ct when IsCheckBoxColumn(ct) && TryFormatCheckbox(value, out string formattedCheckbox) => formattedCheckbox,
+                _ => value
+            };
+        }
 
-            // We format currency fields
-            if (columnType == "Currency" && value != null && decimal.TryParse(value, out decimal number))
+
+        public static string ApplyStoreFormatting(this string value, string columnType)
+        {
+            return columnType switch
+            {
+                var ct when IsDateColumn(ct) => ValueConverterHelpers.ConvertDate(value),
+                var ct when IsDateTimeColumn(ct) => ValueConverterHelpers.ConvertDateTime(value),
+                var ct when IsCurrencyColumn(ct) => ValueConverterHelpers.ConvertDecimal(value),
+                var ct when IsYesNoColumn(ct) => ValueConverterHelpers.ConvertYesNo(value),
+                var ct when IsCheckBoxColumn(ct) => ValueConverterHelpers.ConvertCheckbox(value),
+                _ => value
+            };
+        }
+
+        private static bool TryParseDateTime(string value, string? format, out string formattedDateTime)
+        {
+            if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
+            {
+                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "yyyy-MM-dd hh:mm:ss tt";
+                formattedDateTime = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
+                return true;
+            }
+            formattedDateTime = string.Empty;
+            return false;
+        }
+
+        private static bool IsDateTimeColumn(string columnType)
+        {
+            return columnType == CustomFieldType.DateTime.ToString();
+        }
+
+        private static bool TryFormatCheckbox(string value, out string formattedCheckbox)
+        {
+            if (value.IsTruthy()) formattedCheckbox = "true";
+            else
+                formattedCheckbox = "false";
+            return true;
+        }
+
+        private static bool IsCheckBoxColumn(string columnType)
+        {
+            return columnType == CustomFieldType.Checkbox.ToString();
+        }
+
+        private static bool TryFormatYesNo(string value, out string formattedYesNo)
+        {
+            if (string.IsNullOrEmpty(value) || value == "Please choose...")
+            {
+                formattedYesNo = string.Empty;
+                return true;
+            }
+            formattedYesNo = value;
+            return false;
+        }
+
+        private static bool IsYesNoColumn(string columnType)
+        {
+            return columnType == CustomFieldType.YesNo.ToString();
+        }
+
+        private static bool IsDateColumn(string columnType)
+        {
+            return columnType == CustomFieldType.Date.ToString();
+        }
+
+        private static bool IsCurrencyColumn(string columnType)
+        {
+            return columnType == CustomFieldType.Currency.ToString();
+        }
+
+        private static bool TryParseDate(string value, string? format, out string formattedDate)
+        {
+            if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
+            {
+                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "yyyy-MM-dd";
+                formattedDate = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
+                return true;
+            }
+            formattedDate = string.Empty;
+            return false;
+        }
+
+        private static bool TryParseCurrency(string value, string? format, out string formattedCurrency)
+        {
+            if (decimal.TryParse(value, out decimal number))
             {
                 var currencyCode = !string.IsNullOrEmpty(format) ? format : "CAD";
                 var culture = GetCultureInfoByCurrencyCode(currencyCode);
-                string formattedNumber = number.ToString("C", culture);
-                return formattedNumber;
+                formattedCurrency = number.ToString("C", culture);
+                return true;
             }
-
-            return value ?? string.Empty;
+            formattedCurrency = string.Empty;
+            return false;
         }
 
         static CultureInfo GetCultureInfoByCurrencyCode(string currencyCode)

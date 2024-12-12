@@ -2,7 +2,11 @@
 
 public static class NotificationsSettings
 {
-    public const string GroupName = "Notifications";
+    public const string GroupName = "GrantManager.Notifications";
 
-    /* Add constants for setting names. Example: public const string MySettingName = GroupName + ".MySettingName" */
+    public static class Mailing
+    {
+        public const string Default = "GrantManager.Notifications.Mailing";
+        public const string DefaultFromAddress = "GrantManager.Notifications.Mailing.DefaultFromAddress";
+    }
 }
