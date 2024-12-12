@@ -3,6 +3,7 @@ using Unity.Notifications.Emails;
 using Microsoft.Extensions.Options;
 using System;
 using Volo.Abp.Uow;
+using System.Net.Http;
 using System.Net;
 using System.Linq;
 using Unity.Notifications.Events;
@@ -11,7 +12,6 @@ using Volo.Abp;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
 using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Microsoft.Extensions.Logging;
-using RestSharp;
 using Unity.Notifications.EmailNotifications;
 using Newtonsoft.Json;
 
@@ -67,7 +67,7 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                     // Resend the email - Update the RetryCount
                     if (emailLog.RetryAttempts <= _retryAttemptMax)
                     {
-                        RestResponse response = await _emailNotificationService.SendEmailNotification(
+                        HttpResponseMessage response = await _emailNotificationService.SendEmailNotification(
                                                                                         emailLog.ToAddress,
                                                                                         emailLog.Body,
                                                                                         emailLog.Subject,
