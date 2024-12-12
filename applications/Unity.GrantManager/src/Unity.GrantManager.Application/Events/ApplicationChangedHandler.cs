@@ -4,11 +4,13 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
+using Unity.Notifications.Settings;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.Events
 {
@@ -18,17 +20,20 @@ namespace Unity.GrantManager.Events
         private readonly IFeatureChecker _featureChecker;
         private readonly ILocalEventBus _localEventBus;
         private readonly IConfiguration _configuration;
+        private readonly ISettingProvider _settingProvider;
 
         public ApplicationChangedHandler(
             IConfiguration configuration,
             IApplicantAgentRepository applicantAgentRepository,
             ILocalEventBus localEventBus,
-            IFeatureChecker featureChecker)
+            IFeatureChecker featureChecker,
+            ISettingProvider settingProvider)
         {
             _configuration = configuration;
             _applicantAgentRepository = applicantAgentRepository;
             _localEventBus = localEventBus;
             _featureChecker = featureChecker;
+            _settingProvider = settingProvider;
         }
 
         public async Task HandleEventAsync(ApplicationChangedEvent eventData)
@@ -45,7 +50,8 @@ namespace Unity.GrantManager.Events
             if (applicantAgent == null) return;
 
             string? emailTo = applicantAgent.Email;
-            string emailFrom =_configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca";
+            var defaultFromAddress = await _settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+            string emailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca";
 
             if (!string.IsNullOrEmpty(emailTo))
             {

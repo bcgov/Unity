@@ -62,7 +62,7 @@
                     data: 'sentBy',
                     className: 'data-table-header',
                     render: function (data) {
-                        return data.name + ' ' + data.surname;
+                        return data ? data.name + ' ' + data.surname : '—';
                     },
                 }
             ],

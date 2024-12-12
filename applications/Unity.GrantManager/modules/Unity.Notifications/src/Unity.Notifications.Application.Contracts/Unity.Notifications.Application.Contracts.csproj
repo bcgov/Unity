@@ -12,6 +12,7 @@
     <PackageReference Include="RestSharp" Version="112.0.0" />
     <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="8.3.0" />
     <PackageReference Include="Volo.Abp.Authorization" Version="8.3.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Application.Contracts" Version="8.3.0" />
     <ProjectReference Include="..\Unity.Notifications.Domain.Shared\Unity.Notifications.Domain.Shared.csproj" />
   </ItemGroup>
 

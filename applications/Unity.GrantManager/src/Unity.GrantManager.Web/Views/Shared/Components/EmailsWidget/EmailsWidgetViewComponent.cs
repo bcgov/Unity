@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Microsoft.Extensions.Configuration;
 using Unity.GrantManager.Applications;
+using Volo.Abp.Settings;
+using Unity.Notifications.Settings;
 using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
@@ -15,19 +17,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         ScriptTypes = [typeof( EmailsWidgetScriptBundleContributor)],
         StyleTypes = [typeof( EmailsWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class EmailsWidgetViewComponent(IConfiguration configuration, IApplicationRepository applicationRepository) : AbpViewComponent
+    public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository) : AbpViewComponent
     {
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId)
         {
             // Lookup the applicant contact
             Application application = await applicationRepository.WithBasicDetailsAsync(applicationId);
 
+            var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
             EmailsWidgetViewModel model = new()
             {
                 ApplicationId = applicationId,
                 CurrentUserId = currentUserId,
-                EmailFrom = configuration["Notifications:ChesFromEmail"] ?? "unity@gov.bc.ca",
-                EmailTo = application?.ApplicantAgent?.Email ?? ""
+                EmailTo = application?.ApplicantAgent?.Email ?? "",
+                EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
             };
 
             return View(model);
