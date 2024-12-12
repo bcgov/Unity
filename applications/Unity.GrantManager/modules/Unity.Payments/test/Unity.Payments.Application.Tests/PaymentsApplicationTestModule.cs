@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Volo.Abp.EntityFrameworkCore.Sqlite;
 using Unity.Modules.Http;
 using Autofac;
+using Autofac.Extensions.DependencyInjection;
 
 namespace Unity.Payments;
 
