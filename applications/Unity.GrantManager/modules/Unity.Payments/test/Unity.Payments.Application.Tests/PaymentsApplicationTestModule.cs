@@ -10,6 +10,7 @@ using Volo.Abp.EntityFrameworkCore.Sqlite;
 using Unity.Modules.Http;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Unity.Payments;
 
@@ -28,6 +29,8 @@ public class PaymentsApplicationTestModule : AbpModule
         {
             builder.RegisterType<ResilientHttpRequest>().As<IResilientHttpRequest>();
         });
+
+        context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
 
         var sqliteConnection = CreateDatabaseAndGetConnection();
 
