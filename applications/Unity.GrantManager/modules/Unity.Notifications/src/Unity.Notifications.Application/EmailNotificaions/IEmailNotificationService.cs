@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
+using Unity.Notifications.Settings;
 using Volo.Abp.Application.Services;
 
 namespace Unity.Notifications.EmailNotifications
@@ -16,5 +17,6 @@ namespace Unity.Notifications.EmailNotifications
         string GetApprovalBody();
         string GetDeclineBody();
         Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId);
+        Task UpdateSettings(NotificationsSettingsDto settingsDto);
     }
 }
