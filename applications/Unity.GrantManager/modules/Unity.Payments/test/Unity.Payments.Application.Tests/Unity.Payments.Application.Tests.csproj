@@ -3,7 +3,7 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+		<TargetFrameworks>net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <RootNamespace>Unity.Payments</RootNamespace>
   </PropertyGroup>
@@ -13,6 +13,7 @@
     <ProjectReference Include="..\Unity.Payments.TestBase\Unity.Payments.TestBase.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.3.0" />
+    <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
   </ItemGroup>
 
   <ItemGroup>
