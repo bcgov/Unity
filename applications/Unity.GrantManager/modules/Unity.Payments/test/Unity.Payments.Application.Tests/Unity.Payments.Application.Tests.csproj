@@ -14,7 +14,7 @@
     <PackageReference Include="Autofac" Version="8.1.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.3.0" />
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.3.0" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
     <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
   </ItemGroup>
 

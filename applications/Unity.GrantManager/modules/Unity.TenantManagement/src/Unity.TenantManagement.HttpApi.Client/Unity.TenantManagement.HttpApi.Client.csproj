@@ -2,7 +2,7 @@
   
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <AssemblyName>Unity.TenantManagement.HttpApi.Client</AssemblyName>
     <PackageId>Unity.TenantManagement.HttpApi.Client</PackageId>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
