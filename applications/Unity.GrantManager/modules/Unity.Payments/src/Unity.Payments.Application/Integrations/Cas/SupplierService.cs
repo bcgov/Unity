@@ -2,11 +2,11 @@
 using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
-using Unity.Payments.Integrations.Http;
 using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
+using Unity.Modules.Http;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -14,15 +14,14 @@ namespace Unity.Payments.Integrations.Cas
     [ExposeServices(typeof(SupplierService), typeof(ISupplierService))]
     public class SupplierService : ApplicationService, ISupplierService
     {
-        private readonly ITokenService _iTokenService;
+        private readonly ICasTokenService _iTokenService;
         private readonly IResilientHttpRequest _resilientRestClient;
         private readonly IOptions<CasClientOptions> _casClientOptions;
-
         private const string CFS_SUPPLIER = "cfs/supplier";
 
 
         public SupplierService(
-            ITokenService iTokenService,
+            ICasTokenService iTokenService,
             IResilientHttpRequest resilientHttpRequest,
             IOptions<CasClientOptions> casClientOptions)
         {
@@ -30,10 +29,10 @@ namespace Unity.Payments.Integrations.Cas
             _resilientRestClient = resilientHttpRequest;
             _casClientOptions = casClientOptions;
         }
-                
+
         public async Task<dynamic> GetCasSupplierInformationAsync(string? supplierNumber)
-        {   
-            if(!string.IsNullOrEmpty(supplierNumber))
+        {
+            if (!string.IsNullOrEmpty(supplierNumber))
             {
                 var authToken = await _iTokenService.GetAuthTokenAsync();
                 var resource = $"{_casClientOptions.Value.CasBaseUrl}/{CFS_SUPPLIER}/{supplierNumber}";
@@ -43,7 +42,7 @@ namespace Unity.Payments.Integrations.Cas
                 {
                     if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                     {
-                        var contentString = ResilientHttpRequest.ContentToString(response.Content);                        
+                        var contentString = ResilientHttpRequest.ContentToString(response.Content);
                         var result = JsonSerializer.Deserialize<dynamic>(contentString)
                             ?? throw new UserFriendlyException("CAS SupplierService GetCasSupplierInformationAsync: " + response);
                         return result;
@@ -71,8 +70,6 @@ namespace Unity.Payments.Integrations.Cas
                 throw new UserFriendlyException("CAS Supplier Service: No Supplier Number");
             }
         }
-
-  
     }
 
 #pragma warning disable S125 // Sections of code should not be commented out

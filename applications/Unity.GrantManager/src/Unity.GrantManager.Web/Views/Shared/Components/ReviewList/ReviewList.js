@@ -57,6 +57,11 @@ $(function () {
         }
     });
 
+    $.fn.dataTable.Api.register('row().selectWithParams()', function (params) {        
+        this.params = params;
+        return this.select();
+    });
+
     const actionArray = getActionArray();
 
     let assessmentButtonsGroup = {
@@ -200,7 +205,7 @@ $(function () {
     reviewListTable.buttons(0, null).container().appendTo("#AdjudicationTeamLeadActionBar");
     $("#AdjudicationTeamLeadActionBar .dt-buttons").contents().unwrap();
 
-    reviewListTable.on('select', function (e, dt, type, indexes) {
+    reviewListTable.on('select', function (e, dt, type, indexes) {        
         handleRowSelection(e, dt, type, indexes, reviewListTable);
     });
 
@@ -212,7 +217,7 @@ $(function () {
         refreshReviewList(data, reviewListTable);
     });
 
-    PubSub.subscribe('refresh_review_list_without_select', (msg, data) => {
+    PubSub.subscribe('refresh_review_list_without_sidepanel', (msg, data) => {
         refreshReviewList(data, reviewListTable, false);
     });
 
@@ -238,11 +243,14 @@ $(function () {
 });
 
 function handleRowSelection(e, dt, type, indexes, reviewListTable) {
+    let refreshSidePanel = dt?.params?.refreshSidePanel ?? true;
     if (type === 'row') {
         let selectedData = reviewListTable.row(indexes).data();
         document.getElementById("AssessmentId").value = selectedData.id;
-        PubSub.publish('select_application_review', selectedData);
-        PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
+        if (refreshSidePanel) {            
+            PubSub.publish('select_application_review', selectedData);
+            PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
+        }
         e.currentTarget.classList.toggle('selected');
         refreshActionButtons(dt, selectedData.id);
     }
@@ -257,15 +265,14 @@ function handleRowDeselection(e, dt, type, indexes, reviewListTable) {
     }
 }
 
-function refreshReviewList(data, reviewListTable, isSelect = true) {
+function refreshReviewList(data, reviewListTable, refreshSidePanel = true) {
     reviewListTable.ajax.reload(function (json) {
         if (data) {
             let indexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
                 return reviewListTable.cell(rowIdx, 0).data() === data;
             });
-            if(isSelect) {
-                reviewListTable.row(indexes).select();
-            }
+
+            reviewListTable.row(indexes).selectWithParams({ refreshSidePanel: refreshSidePanel });
         }
     });
 }
@@ -373,6 +380,9 @@ function createButtonAction(e, dt, button, config) {
         .done(function (data) {
             PubSub.publish('assessment_action_completed');
             PubSub.publish('refresh_review_list', data.id);
+            PubSub.publish("application_status_changed");
+            PubSub.publish("refresh_detail_panel_summary");
+            PubSub.publish("init_date_pickers");
         });
     this.disable();
 }

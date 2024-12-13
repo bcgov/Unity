@@ -24,7 +24,7 @@ namespace Unity.GrantManager.Intakes
         {
             // Check The Version of the form to make sure it is current
             JToken? tokenComponents = ((JObject)formVersion).SelectToken("schema.components");
-            GetAllInputComponents(tokenComponents);
+            TraverseComponents(tokenComponents);
             return JsonSerializer.Serialize(components);
         }
 

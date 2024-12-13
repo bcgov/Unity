@@ -1,0 +1,259 @@
+﻿#applicationEmailsWidget .single-email {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    border-left: 0.50px #D6D6D6 solid;
+    border-top: 0.50px #D6D6D6 solid;
+    border-right: 0.50px #D6D6D6 solid;
+    border-bottom: 1px #D6D6D6 solid;
+    padding: 10px 5px 5px 5px;
+    flex: 1;
+}
+
+#applicationEmailsWidget .single-email.edit-mode {
+    width: 100%;
+}
+
+#applicationEmailsWidget .email-input {
+    outline: 0;
+    margin-right: 8px;
+    margin-left: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+
+#applicationEmailsWidget .email-form label {
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: 8px;
+    margin-bottom: 0;
+}
+
+#applicationEmailsWidget .email-input:hover {
+    box-shadow: none !important;
+}
+
+#applicationEmailsWidget .email-input.selected {
+    border: 0 !important;
+    outline: 0 !important;
+    border-bottom: 0.5px solid #D6D6D6 !important;
+    border-radius: 0px !important;
+}
+
+#applicationEmailsWidget .email-button-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: right;
+    gap: 8px;
+}
+
+#applicationEmailsWidget .email-input-multiple:hover {
+    box-shadow: none !important;
+    border-bottom: 1.5px solid var(--bc-colors-grey-text-500) !important;
+}
+
+#applicationEmailsWidget .email-input::placeholder {
+    color: #b9b9b9 !important;
+}
+
+#applicationEmailsWidget textarea::placeholder {
+    color: #b9b9b9 !important;
+}
+
+
+#applicationEmailsWidget .email-btn {
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background: #E6EFF7;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: box-shadow .3s;
+}
+
+#applicationEmailsWidget .email-btn:hover {
+    box-shadow: -3px 3px 11px -3px rgba(33, 33, 33, .2);
+}
+
+#applicationEmailsWidget .email-lbl {
+    display: block;
+    margin-top: 0.25rem;
+    width: 99%;
+    max-height: 180px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    position: relative;
+    font-size: var(--bc-font-size);
+}
+
+#applicationEmailsWidget .email-lbl-wrapper {
+    color: #666666;
+    font-size: 0.89rem;
+    font-weight: 400;
+    word-wrap: break-word;
+}
+
+#applicationEmailsWidget .unity-email-block {
+    background: var(--bc-surface--color--brand--gold--20);
+    padding: 0.75rem 0.5rem 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-size: var(--bc-font-size-xs);
+    color: var(--bc-colors-grey-text-300);
+    flex: 1;
+    width: 90%;
+}
+
+#applicationEmailsWidget .field-validation-error {
+    margin-left: 8px;
+}
+
+#applicationEmailsWidget .confirmation-label {
+    font-size: 19px;
+    font-weight: 600;
+    text-align: center;
+    align-content: center;
+    margin: 30px;
+    display: flex;
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    padding-right: 114px;
+    color: inherit;
+}
+
+#confirmation-modal {
+    z-index: 1;
+    justify-content: center;
+    margin: 1em 1.6em .3em;
+    padding: 0;
+    overflow: auto;
+    color: inherit;
+    font-size: 1.125em;
+    font-weight: normal;
+    line-height: normal;
+    text-align: center;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+#btn-cancel-email {
+    border: 0;
+    border-radius: .25em;
+    background: initial;
+    background-color: #6e7881;
+    color: #fff;
+    font-size: 1em;
+    margin: 4px;
+}
+
+#applicationEmailsWidget .btn-send-close {
+    margin: 4px;
+}
+
+#applicationEmailsWidget #modal-background {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, .8);
+    opacity: .50;
+    -webkit-opacity: .5;
+    -moz-opacity: .5;
+    filter: alpha(opacity=50);
+    z-index: 1000;
+}
+
+#applicationEmailsWidget #modal-content {
+    display: none;
+}
+
+#applicationEmailsWidget #spinner-modal {
+    display: none;
+}
+
+#applicationEmailsWidget .modal-footer {
+    justify-content: center;
+}
+
+#applicationEmailsWidget .modal-content {
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    height: fit-content;
+    left: 50%;
+    margin: -120px 0 0 -160px;
+    position: fixed;
+    top: 50%;
+    z-index: 1000;
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, 100%);
+    width: 32em;
+    max-width: 100%;
+    padding: 1.25em;
+    border: none;
+    background: #fff;
+    color: #545454;
+    font-family: inherit;
+    font-size: 1rem;
+    justify-content: center;
+}
+
+
+
+#EmailForm {
+    display: none;
+}
+
+#EmailForm.active {
+    display: block;
+}
+
+#applicationEmailsWidget .hide {
+    display: none;
+}
+
+#applicationEmailsWidget .toast-top-center { 
+    top: 220px;
+    margin: 0 auto;
+    left: 50%;
+    margin-left: -450px;
+}
+
+
+#applicationEmailsWidget #modal-background.active,
+#applicationEmailsWidget #modal-content.active {
+    display: block;
+}
+
+#applicationEmailsWidget #email-spinner {
+	width: 40px;
+    height: 40px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+    margin-top: -20px;
+    margin-left: 40px;
+	border-radius: 50%;
+	border: 5px solid #eaf5fe;
+	border-right-color: #5597d4;
+	animation: rotateSpinner 800ms linear infinite;  
+}
+
+#applicationEmailsWidget .email-spinner-text {
+    display: flex;
+    padding-right: 100px;
+}
+
+
+@keyframes rotateSpinner {
+	to {
+		transform: rotate(360deg);
+	}
+}

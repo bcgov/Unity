@@ -7,12 +7,13 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Unity.Flex.Worksheets.Definitions;
 using System.Text.Json;
+using Unity.Flex.Web.Views.Shared.Components.QuestionDefinitionWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
 {
     [Widget(
         RefreshUrl = "../Flex/Widgets/TextAreaDefinition/Refresh",
-        ScriptTypes = [typeof(TextAreaDefinitionWidgetScriptBundleContributor)],        
+        ScriptTypes = [typeof(TextAreaDefinitionWidgetScriptBundleContributor)],
         AutoInitialize = true)]
     public class TextAreaDefinitionWidget : AbpViewComponent
     {
@@ -23,7 +24,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
                 MinLength = uint.Parse(form["MinLength"].ToString()),
                 MaxLength = uint.Parse(form["MaxLength"].ToString()),
                 Rows = uint.Parse(form["Rows"].ToString()),
-            };
+            }
+            .ApplyRequired(form);
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string? definition)
@@ -37,7 +39,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.TextAreaDefinitionWidget
                     {
                         MinLength = textAreaDefinition.MinLength,
                         MaxLength = textAreaDefinition.MaxLength,
-                        Rows = textAreaDefinition.Rows
+                        Rows = textAreaDefinition.Rows,
+                        Required = textAreaDefinition.Required
                     }));
                 }
             }

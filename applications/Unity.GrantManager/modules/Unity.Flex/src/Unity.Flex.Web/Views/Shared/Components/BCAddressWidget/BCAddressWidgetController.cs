@@ -16,7 +16,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
         {
             if (!ModelState.IsValid)
             {
-                Logger.LogWarning("Invalid model state for Refresh: {ModelName}, {FieldModel}", modelName.SanitizeField(), fieldModel);
+                Logger.LogWarning("Invalid model state for Refresh: {ModelName}, {FieldModel}", modelName.SanitizeField(), fieldModel?.Id.ToString());
                 return ViewComponent(typeof(BCAddressWidget));
             }
             return ViewComponent(typeof(BCAddressWidget), new { fieldModel, modelName });

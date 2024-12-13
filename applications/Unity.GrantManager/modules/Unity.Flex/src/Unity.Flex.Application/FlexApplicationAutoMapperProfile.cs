@@ -23,7 +23,7 @@ public class FlexApplicationAutoMapperProfile : Profile
         CreateMap<WorksheetLink, WorksheetLinkDto>();
         CreateMap<WorksheetSection, WorksheetSectionDto>();
         CreateMap<WorksheetInstance, WorksheetInstanceDto>();
-        CreateMap<CustomFieldValue, CustomFieldValueDto>();
+        CreateMap<CustomFieldValue, CustomFieldValueDto>().ReverseMap();
         CreateMap<CustomField, CustomFieldDto>();
 
         CreateMap<Worksheet, WorksheetBasicDto>()

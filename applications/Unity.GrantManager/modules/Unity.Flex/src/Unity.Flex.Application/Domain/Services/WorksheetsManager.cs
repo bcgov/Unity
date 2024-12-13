@@ -10,6 +10,7 @@ using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.WorksheetInstances;
+using Unity.Flex.Worksheets.Values;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Flex.Domain.Services
@@ -61,7 +62,7 @@ namespace Unity.Flex.Domain.Services
             }
         }
 
-        private async Task UpdateWorksheetInstanceValueAsync(WorksheetInstance instance)
+        public async Task UpdateWorksheetInstanceValueAsync(WorksheetInstance instance)
         {
             // Update and set the instance value for the worksheet - high level values serialized
             var worksheet = await worksheetRepository.GetAsync(instance.WorksheetId, true);
@@ -150,9 +151,9 @@ namespace Unity.Flex.Domain.Services
             var newWorksheetInstances = new List<(Worksheet, WorksheetInstance)>();
 
             // naming convention custom_worksheetname_fieldname
-            foreach (var field in eventData.CustomFields)
+            foreach (var (fieldName, chefsPropertyName, value) in eventData.CustomFields)
             {
-                var split = field.Key.Split('_', StringSplitOptions.RemoveEmptyEntries);
+                var split = fieldName.Split('_', StringSplitOptions.RemoveEmptyEntries);
 
                 if (!worksheetNames.Contains(split[1]))
                 {
@@ -182,9 +183,9 @@ namespace Unity.Flex.Domain.Services
 
                         foreach (var field in allFields)
                         {
-                            var match = eventData.CustomFields.Find(s => s.Key == field.Name);
+                            var match = eventData.CustomFields.Find(s => s.fieldName == field.Name);
                             newInstance.AddValue(field.Id,
-                                ValueConverter.Convert(match.Value?.ToString() ?? string.Empty, field.Type));
+                                ValueConverter.Convert(match.value?.ToString() ?? string.Empty, field.Type, match.chefsPropertyName, eventData.VersionData));
                         }
 
                         var newWorksheetInstance = await worksheetInstanceRepository.InsertAsync(newInstance);

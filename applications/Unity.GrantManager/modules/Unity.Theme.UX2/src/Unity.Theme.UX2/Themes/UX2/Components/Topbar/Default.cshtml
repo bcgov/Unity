@@ -1,5 +1,6 @@
 ﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Menu
+@using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
 @using Volo.Abp.Users;
@@ -7,6 +8,7 @@
 @inject ICurrentUser CurrentUser
 @inject ICurrentTenant CurrentTenant
 @inject IFeatureChecker FeatureChecker
+@inject IPermissionChecker PermissionChecker
 
 <nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="main-navbar">
 
@@ -47,7 +49,11 @@
             {
                 <abp-dropdown-item href="/ScoresheetConfiguration">Scoresheets Configuration</abp-dropdown-item>
                 <abp-dropdown-item href="/WorksheetConfiguration">Custom Fields Configuration</abp-dropdown-item>
-            }            
+            }
+            @if (CurrentUser.IsInRole("system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
+            {
+                <abp-dropdown-item href="/SettingManagement">Settings</abp-dropdown-item>
+            }
             <abp-dropdown-item href="/Account/Logout">Logout</abp-dropdown-item>
         </abp-dropdown-menu>
     </abp-dropdown>

@@ -50,6 +50,11 @@ public class UpdateModalModel : GrantManagerPageModel
     public async Task<IActionResult> OnPostAsync()
     {
         var updateDto = ObjectMapper.Map<CreateUpdateApplicationFormViewModel, CreateUpdateApplicationFormDto>(ApplicationForm!);
+        bool isFormNameNull = updateDto.ApplicationFormName == null;
+        if (isFormNameNull)
+        {
+            updateDto.ApplicationFormName = "";
+        }
         await _applicationFormAppService.UpdateAsync(Id, updateDto);
         return NoContent();
     }

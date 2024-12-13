@@ -1,11 +1,10 @@
 ﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
+@using Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionSelectListWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
-@using Unity.GrantManager.Web.Pages.GrantApplications;
 @using Unity.Flex.Scoresheets;
-@using Unity.Flex.Web.Views.Shared.Components;
 @using Unity.Flex;
 
 @model AssessmentScoresWidgetViewModel
@@ -15,122 +14,141 @@
 
 @if (Model.Scoresheet != null)
 {
-    <form id="assessmentScoresheetForm" action="Widgets/AssessmentScoresheet/UpdateAssessmentScoresheet" method="post" enctype="multipart/form-data">
         <abp-input type="hidden" id="AssessmentId" asp-for="@Model.AssessmentId" />
         <div class="container-fluid px-3" id="assessment-scoresheet">
             @if (Model.Scoresheet.Sections.Any())
             {
-                <div class="d-flex justify-content-end mb-3">
-                    <button type="button" class="btn btn-primary me-2" onclick="expandAllAccordions('assessment-scoresheet')">Expand All</button>
-                    <button type="button" class="btn btn-secondary" onclick="collapseAllAccordions('assessment-scoresheet')">Collapse All</button>
+                <div class="d-flex justify-content-end mb-3 scoresheet-top-btn-group">
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" onclick="expandAllAccordions('assessment-scoresheet')"><i class="unt-icon-sm fa-solid fa-angles-down"></i>Expand All</button>
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="collapseAllAccordions('assessment-scoresheet')"><i class="unt-icon-sm fa-solid fa-angles-up"></i>Collapse All</button>
                 </div>
             }
             <div>
                 <div>
-                    <div class="accordion" id="scoresheetAccordion">
+                    <div class="accordion unt-accordion" id="scoresheetAccordion">
                         @if (Model.Scoresheet.Sections.Any())
                         {
                             var sectionNumber = 1;
                             @foreach (var sec in Model.Scoresheet.Sections.OrderBy(s => s.Order))
                             {
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="heading-@sec.Id">
-                                        <button id="section-button" class="accordion-button collapsed preview-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@sec.Id" aria-expanded="true" aria-controls="collapse-@sec.Id">
-                                            @sectionNumber. @sec.Name
-                                        </button>
-                                    </h2>
-                                    <div id="collapse-@sec.Id" class="accordion-collapse collapse" aria-labelledby="heading-@sec.Id">
-                                        <div class="accordion-body">
-                                            <div class="accordion" id="questionsAccordion-@sec.Id">
-                                                @if (sec.Fields != null && sec.Fields.Any())
-                                                {
-                                                    var questionNumber = 1;
-                                                    @foreach (var question in sec.Fields.OrderBy(q => q.Order))
+                                <div class="accordion-item unit-accordion-item my-2">
+                                    <form method="post" id="section-form-@sec.Id" onSubmit="return false;">
+                                        <h2 class="accordion-header" id="heading-@sec.Id">
+                                        <button id="section-button" class="accordion-button collapsed preview-btn unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@sec.Id" aria-expanded="true" aria-controls="collapse-@sec.Id">
+                                                @sectionNumber. @sec.Name
+                                            </button>
+                                        </h2>
+                                        <div id="collapse-@sec.Id" class="accordion-collapse collapse" aria-labelledby="heading-@sec.Id">
+                                            <div class="accordion-body">
+                                                <div class="accordion" id="questionsAccordion-@sec.Id">
+                                                    @if (sec.Fields != null && sec.Fields.Any())
                                                     {
-                                                        <div class="accordion-item">
-                                                            <h2 class="accordion-header" id="question-heading-@question.Id">
-                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
-                                                                    @sectionNumber.@questionNumber @question.Label
-                                                                    @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
-                                                                    {
-                                                                        <span> *</span>                                                                     
-                                                                    }
-                                                                </button>
-                                                            </h2>
-                                                            <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id">
-                                                                <div class="accordion-body">
-                                                                    <form method="post" id="question-form-@question.Id">
-                                                                        <p>@question.Description</p>
-
-                                                                        @switch (question.Type)
+                                                        var questionNumber = 1;
+                                                        @foreach (var question in sec.Fields.OrderBy(q => q.Order))
+                                                        {
+                                                            var convertedDefinition = question.Definition?.ConvertDefinition(question.Type);
+                                                        
+                                                            <div class="accordion-item">
+                                                                <h2 class="accordion-header" id="question-heading-@question.Id">
+                                                                <button class="accordion-button collapsed unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
+                                                                        @sectionNumber.@questionNumber @question.Label
+                                                                        @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
                                                                         {
-                                                                            case QuestionType.Number:
-                                                                                {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionNumberWidget),
-                                                                                             new
-                                                                                             {
-                                                                                                 QuestionId = question.Id,
-                                                                                                 IsDisabled = Model.IsDisabled(),
-                                                                                                 Answer = Convert.ToDouble(string.IsNullOrEmpty(question.Answer) ? 0 : question.Answer),
-                                                                                                 Min = question.Definition?.ConvertDefinition(question.Type)?.GetMinValueOrNull(),
-                                                                                                 Max = question.Definition?.ConvertDefinition(question.Type)?.GetMaxValueOrNull(),
-                                                                                                 Required = question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired()
-                                                                                             })
-                                                                                    break;
-                                                                                }
-                                                                            case QuestionType.YesNo:
-                                                                                {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new
-                                                                                        {
-                                                                                            QuestionId = question.Id,
-                                                                                            IsDisabled = Model.IsDisabled(),
-                                                                                            Answer = question.Answer,
-                                                                                            YesValue = question.Definition?.ConvertDefinition(question.Type)?.GetYesValueOrNull(),
-                                                                                            NoValue = question.Definition?.ConvertDefinition(question.Type)?.GetNoValueOrNull(),
-                                                                                            Required = question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired()
-                                                                                        })
-                                                                                    break;
-                                                                                }
-                                                                            case QuestionType.Text:
-                                                                                {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionTextWidget), new
-                                                                                        {
-                                                                                            QuestionId = question.Id,
-                                                                                            IsDisabled = Model.IsDisabled(),
-                                                                                            Answer = question.Answer,
-                                                                                            MinLength = question.Definition?.ConvertDefinition(question.Type)?.GetMinLengthValueOrNull(),
-                                                                                            MaxLength = question.Definition?.ConvertDefinition(question.Type)?.GetMaxLengthValueOrNull(),
-                                                                                            Required = question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired()
-                                                                                        })
-                                                                                    break;
-                                                                                }
-                                                                            case QuestionType.SelectList:
-                                                                                {
-                                                                                    @await Component.InvokeAsync(typeof(QuestionSelectListWidget), new
-                                                                                        {
-                                                                                            QuestionId = question.Id,
-                                                                                            IsDisabled = Model.IsDisabled(),
-                                                                                            Answer = question.Answer,
-                                                                                            Definition = question.Definition,
-                                                                                            Required = question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired()
-                                                                                        })
-                                                                                    break;
-                                                                                }
+                                                                            <span> *</span>
                                                                         }
-                                                                    </form>
+                                                                    </button>
+                                                                </h2>
+                                                                <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id">
+                                                                    <div class="accordion-body">
+                                                                            <p>@question.Description</p>
+
+                                                                            @switch (question.Type)
+                                                                            {
+                                                                                case QuestionType.Number:
+                                                                                    {
+                                                                                        @await Component.InvokeAsync(typeof(QuestionNumberWidget),
+                                                                                                 new
+                                                                                                 {
+                                                                                                     QuestionId = question.Id,
+                                                                                                     IsDisabled = Model.IsDisabled(),
+                                                                                                     Answer = Convert.ToDouble(string.IsNullOrEmpty(question.Answer) ? 0 : question.Answer),
+                                                                                                     Min = convertedDefinition?.GetMinValueOrNull(),
+                                                                                                     Max = convertedDefinition?.GetMaxValueOrNull(),
+                                                                                                     Required = convertedDefinition?.GetIsRequired()
+                                                                                                 })
+                                                                                        break;
+                                                                                    }
+                                                                                case QuestionType.YesNo:
+                                                                                    {
+                                                                                        @await Component.InvokeAsync(typeof(QuestionYesNoWidget), new
+                                                                                            {
+                                                                                                QuestionId = question.Id,
+                                                                                                IsDisabled = Model.IsDisabled(),
+                                                                                                Answer = question.Answer,
+                                                                                                YesValue = convertedDefinition?.GetYesValueOrNull(),
+                                                                                                NoValue = convertedDefinition?.GetNoValueOrNull(),
+                                                                                                Required = convertedDefinition?.GetIsRequired()
+                                                                                            })
+                                                                                        break;
+                                                                                    }
+                                                                                case QuestionType.Text:
+                                                                                    {
+                                                                                        @await Component.InvokeAsync(typeof(QuestionTextWidget), new
+                                                                                            {
+                                                                                                QuestionId = question.Id,
+                                                                                                IsDisabled = Model.IsDisabled(),
+                                                                                                Answer = question.Answer,
+                                                                                                MinLength = convertedDefinition?.GetMinLengthValueOrNull(),
+                                                                                                MaxLength = convertedDefinition?.GetMaxLengthValueOrNull(),
+                                                                                                Required = convertedDefinition?.GetIsRequired()
+                                                                                            })
+                                                                                        break;
+                                                                                    }
+                                                                                case QuestionType.SelectList:
+                                                                                    {
+                                                                                        @await Component.InvokeAsync(typeof(QuestionSelectListWidget), new
+                                                                                            {
+                                                                                                QuestionId = question.Id,
+                                                                                                IsDisabled = Model.IsDisabled(),
+                                                                                                Answer = question.Answer,
+                                                                                                Definition = question.Definition,
+                                                                                                Required = convertedDefinition?.GetIsRequired()
+                                                                                            })
+                                                                                        break;
+                                                                                    }
+                                                                                case QuestionType.TextArea:
+                                                                                    {
+                                                                                        @await Component.InvokeAsync(typeof(QuestionTextAreaWidget), new
+                                                                                            {
+                                                                                                QuestionId = question.Id,
+                                                                                                IsDisabled = Model.IsDisabled(),
+                                                                                                Answer = question.Answer,
+                                                                                                MinLength = convertedDefinition?.GetMinLengthValueOrNull(),
+                                                                                                MaxLength = convertedDefinition?.GetMaxLengthValueOrNull(),
+                                                                                                Rows = convertedDefinition?.GetRowsOrZero(),
+                                                                                                Required = convertedDefinition?.GetIsRequired()
+                                                                                            })
+                                                                                        break;
+                                                                                    }
+                                                                            }
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        questionNumber++;
+                                                            questionNumber++;
+                                                        }
                                                     }
-                                                }
-                                                else
-                                                {
-                                                    <p>No questions available.</p>
-                                                }
+                                                    else
+                                                    {
+                                                        <p>No questions available.</p>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="btn-group mx-3 py-2">
+                                                <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-save-@sec.Id" onclick="saveScoresSection('section-form-@sec.Id', '@sec.Id')">Save Changes</button>
+                                                <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-discard-@sec.Id" onclick="discardChangesScoresSection('section-form-@sec.Id', '@sec.Id')">Discard Changes</button>
                                             </div>
                                         </div>
-                                    </div>
+                                    </form>
                                 </div>
                                 sectionNumber++;
                             }
@@ -147,7 +165,6 @@
                 </div>
             </div>
         </div>
-    </form>
 }
 else
 {

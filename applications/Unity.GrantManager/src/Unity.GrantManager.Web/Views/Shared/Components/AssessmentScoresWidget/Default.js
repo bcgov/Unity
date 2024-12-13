@@ -1,4 +1,128 @@
-﻿function saveAssessmentScores() {
+﻿function saveScoresSection(formId, sectionId) {
+    const assessmentId = $("#AssessmentId").val();  
+    const secSaveButton = document.getElementById('scoresheet-section-save-' + sectionId);
+    const secDiscardButton = document.getElementById('scoresheet-section-discard-' + sectionId);
+
+    const assessmentAnswersArr = [];
+    const inputFieldArr = [];
+    const origAnswersArr = [];
+    const formData = $(`#${formId}`).serializeArray();
+
+    //Handle form object data
+    $.each(formData, function (_, inputData) {
+        buildFormData(assessmentAnswersArr, inputData, inputFieldArr, origAnswersArr);
+    });
+
+    const data = {
+        "AssessmentId": assessmentId,
+        "AssessmentAnswers": 
+            assessmentAnswersArr.map(({ questionId, questionType, answer }) => ({ questionId, questionType, answer }))
+    };
+
+    //Calls an enpoint and disabled buttons
+    unity.grantManager.assessments.assessment.saveScoresheetSectionAnswers(data)
+        .done(function () {
+            abp.notify.success(
+                'The answers have been saved successfully.',
+                'Save Answers'
+            );
+
+            if (inputFieldArr.length > 0) {
+                for (let item of inputFieldArr) {
+                    const inputField = document.getElementById(item);
+                    inputField.setAttribute('data-original-value', inputField.value);
+                }
+            }
+            
+            secSaveButton.disabled = true;
+            secDiscardButton.disabled = true;
+
+            updateSubtotal();
+            PubSub.publish('refresh_review_list_without_sidepanel', assessmentId);
+        });
+}
+
+function discardChangesScoresSection(formId, sectionId) {
+    const secSaveButton = document.getElementById('scoresheet-section-save-' + sectionId);
+    const secDiscardButton = document.getElementById('scoresheet-section-discard-' + sectionId);
+
+    const assessmentAnswersArr = [];
+    const inputFieldArr = [];
+    const origAnswersArr = [];
+    const formData = $(`#${formId}`).serializeArray();
+
+    $.each(formData, function (_, inputData) {
+        buildFormData(assessmentAnswersArr, inputData, inputFieldArr, origAnswersArr);
+    });
+
+    //Handle dynamic data to bring back original values
+    if (inputFieldArr.length > 0) { 
+        for (let item of inputFieldArr) {
+            let questionId = item.split('-').slice(2).join('-');
+            const inputField = document.getElementById(item)
+            const originalValue = inputField.getAttribute('data-original-value');
+            inputField.value = originalValue;
+
+            if (item.includes('answer-number-') || item.includes('answer-text-')) {
+                const errorMessage = document.getElementById('error-message-' + questionId);
+                errorMessage.textContent = '';
+            }
+        }
+    }
+
+    secSaveButton.disabled = true;
+    secDiscardButton.disabled = true;
+}
+
+function buildFormData(assessmentAnswersArr, inputData, inputFieldArr, origAnswersArr) {
+    const questionTypes = {
+        "Number" : 1,
+        "Text" : 2,
+        "YesNo" : 6,
+        "SelectList" : 12,
+        "Textarea" : 14
+    };
+    const n = 2;
+    const formAnsObj = {};
+    const origAnsObj = {};
+    const inputName = inputData.name.split('-');
+
+    if (formAnsObj[inputData.name.split("-")[0]] == '') {
+        formAnsObj["answer"] = null;
+    } 
+
+    if (inputName[0] === "Answer")
+    {
+        let answerValue = inputData.value;
+        let inputFieldValue = inputName.slice(0, n).join('-');
+        let questionIdValue = inputName.slice(n).join('-');
+        const questionTypeValue = questionTypes[inputName.slice(1, n).join('-')];
+
+        if (questionTypeValue === 1 && !answerValue) {
+            answerValue = 0;
+        }
+
+        let tempInputField = `${inputFieldValue.toLowerCase()}-${questionIdValue}`;
+
+        origAnsObj["questionId"] = inputName.slice(n).join('-');
+        origAnsObj["questionType"] = questionTypeValue;
+        origAnsObj["answer"] = $(`#${tempInputField}`).attr('data-original-value');
+        origAnsObj["isValid"] = true;
+        origAnsObj["isSame"] = true;
+
+        formAnsObj["questionId"] = inputName.slice(n).join('-');
+        formAnsObj["questionType"] = questionTypeValue;
+        formAnsObj["answer"] = answerValue;
+        formAnsObj["isValid"] = true;
+        formAnsObj["isSame"] = true;
+
+        inputFieldArr.push(tempInputField);
+        origAnswersArr.push(origAnsObj);
+        assessmentAnswersArr.push(formAnsObj);
+    }
+}
+
+function saveAssessmentScores() {
     try {        
         let data = {
             "financialAnalysis": parseScoreValueInput("financialAnalysis"),
@@ -13,7 +137,7 @@
                     'Assessment scores has been updated.'
                 );
                 PubSub.publish('refresh_assessment_scores', null);
-                PubSub.publish('refresh_review_list_without_select', $("#AssessmentId").val());
+                PubSub.publish('refresh_review_list_without_sidepanel', $("#AssessmentId").val());
             });
 
     }
@@ -62,34 +186,71 @@ function positiveIntegersOnly(e) {
     }
 }
 
-function handleInputChange(questionId, inputFieldPrefix, saveButtonPrefix, discardButtonPrefix) {
-    const inputField = document.getElementById(inputFieldPrefix + questionId);
-    const saveButton = document.getElementById(saveButtonPrefix + questionId);
-    const discardButton = document.getElementById(discardButtonPrefix + questionId);
-    const errorMessage = document.getElementById('error-message-' + questionId);
-    const originalValue = inputField.getAttribute('data-original-value');
+function compareObj(objA, objB) {
+    let res = true;
+    Object.keys(objB).forEach(key => {
+        if (!objA.hasOwnProperty(key) || objA[key] !== objB[key]) {
+            res = false;
+        }
+    })
+    return res;
+}
 
-    let valid = true;   
+function handleInputChange(questionId, inputFieldPrefix) {
+    const sectionFormId = $(`#${inputFieldPrefix + questionId}`).closest("form").attr("id");
+    let sectionId = sectionFormId !== null ? sectionFormId?.split('-').slice(2).join('-') : null;
+    const secSaveButton = document.getElementById('scoresheet-section-save-' + sectionId);
+    const secDiscardButton = document.getElementById('scoresheet-section-discard-' + sectionId);
 
-    if (inputFieldPrefix == 'answer-number-') {
-        valid = validateNumericField(inputField, errorMessage);
-    } else if (inputFieldPrefix == 'answer-text-') {
-        valid = validateTextField(inputField, errorMessage);
-    }      
+    const assessmentAnswersArr = [];
+    const inputFieldArr = [];
+    const origAnswersArr = [];
+    const formData = $(`#${sectionFormId}`).serializeArray();
 
-    if (inputField.value !== originalValue && valid) {
-        saveButton.disabled = false;
-        discardButton.disabled = false;
-    } else if (inputField.value !== originalValue && !valid) {
-        saveButton.disabled = true;
-        discardButton.disabled = false;
-    } else {
-        saveButton.disabled = true;
+    $.each(formData, function (_, inputData) {
+        buildFormData(assessmentAnswersArr, inputData, inputFieldArr, origAnswersArr);
+    });
+
+    //Handle values and objects comparison
+    for (let x = 0; x < assessmentAnswersArr.length; x++) {
+        if (assessmentAnswersArr[x].questionType === 1) {
+            let inputNumberField = document.getElementById('answer-number-' + assessmentAnswersArr[x].questionId);
+            let numberErrorMessage = document.getElementById('error-message-' + assessmentAnswersArr[x].questionId);
+
+            if (inputNumberField.required) { 
+                assessmentAnswersArr[x].isValid = validateNumericField(inputNumberField, numberErrorMessage);
+            }
+        } else if (assessmentAnswersArr[x].questionType === 2) {
+            let inputTextField = document.getElementById('answer-text-' + assessmentAnswersArr[x].questionId);
+            let textErrorMessage = document.getElementById('error-message-' + assessmentAnswersArr[x].questionId);
+
+            if (inputTextField.required) {
+                assessmentAnswersArr[x].isValid = validateTextField(inputTextField, textErrorMessage);
+            }
+        }
+        assessmentAnswersArr[x].isSame = compareObj(assessmentAnswersArr[x], origAnswersArr[x]);
     }
+
+    //Handle button events
+    let isNotSame = assessmentAnswersArr.some(item => item.isSame === false);
+    let isInValid = assessmentAnswersArr.some(item => item.isValid === false);
+
+    if (isNotSame && isInValid) {
+        secSaveButton.disabled = true;
+        secDiscardButton.disabled = false;
+    }
+
+    if (isNotSame && !isInValid) {
+        secSaveButton.disabled = false;
+        secDiscardButton.disabled = false;
+    } else {
+        secSaveButton.disabled = true;
+    }
+
 }
 
 function validateTextField(textInputField, errorMessage) {
-    if (textInputField.validity.tooShort) {
+    if (textInputField.validity.tooShort || textInputField.validity.valueMissing) {
         errorMessage.textContent = 'The answer is too short. Minimum length is ' + textInputField.minLength + ' characters.';
         return false;
     } else if (textInputField.validity.tooLong) {
@@ -153,7 +314,7 @@ function updateSubtotal() {
 }
 
 
-function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType, discardButtonPrefix) {
+function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionType, discardButtonPrefix) {    
     const inputField = document.getElementById(inputFieldPrefix + questionId);
     const saveButton = document.getElementById(saveButtonPrefix + questionId);
     const discardButton = document.getElementById(discardButtonPrefix + questionId);
@@ -172,7 +333,7 @@ function saveChanges(questionId, inputFieldPrefix, saveButtonPrefix, questionTyp
             saveButton.disabled = true;
             discardButton.disabled = true;
             updateSubtotal();
-            PubSub.publish('refresh_review_list_without_select', assessmentId);
+            PubSub.publish('refresh_review_list_without_sidepanel', assessmentId);            
         });
 
 }

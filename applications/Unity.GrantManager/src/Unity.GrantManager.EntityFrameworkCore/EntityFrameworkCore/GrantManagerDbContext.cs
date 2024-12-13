@@ -16,6 +16,8 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using AppAny.Quartz.EntityFrameworkCore.Migrations;
+using AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
 
@@ -85,6 +87,9 @@ public class GrantManagerDbContext :
         modelBuilder.ConfigureIdentity();
         modelBuilder.ConfigureFeatureManagement();
         modelBuilder.ConfigureTenantManagement();
+
+        // Adds Quartz.NET PostgreSQL schema to EntityFrameworkCore
+        modelBuilder.AddQuartz(builder => builder.UsePostgreSql("qrtz_", null));
 
         /* Configure your own tables/entities inside here */
 

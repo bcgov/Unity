@@ -1,0 +1,43 @@
+﻿.custom-grid-action-bar {
+    display: flex;
+    justify-content: space-between;
+}
+
+.custom-dynamic-table.custom-table-edit th:last-child {
+    width: 20px !important;
+    max-width: 20px !important;
+}
+
+.dynamic-grid-summary {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+    .dynamic-grid-summary .form-group {
+        width: 45%;
+    }
+
+.custom-grid-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.grid-position {
+    order: 1;
+}
+
+.grid-position-above {
+    order: 0;
+}
+
+.grid-position-below {
+    order: 2;
+}
+
+.edit_row_field {
+    padding-bottom: 1rem;
+}

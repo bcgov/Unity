@@ -3,6 +3,7 @@ using Unity.Notifications.Emails;
 using Microsoft.Extensions.Options;
 using System;
 using Volo.Abp.Uow;
+using System.Net.Http;
 using System.Net;
 using System.Linq;
 using Unity.Notifications.Events;
@@ -11,8 +12,8 @@ using Volo.Abp;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
 using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Microsoft.Extensions.Logging;
-using RestSharp;
 using Unity.Notifications.EmailNotifications;
+using Newtonsoft.Json;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;
 
@@ -66,17 +67,25 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                     // Resend the email - Update the RetryCount
                     if (emailLog.RetryAttempts <= _retryAttemptMax)
                     {
-                        RestResponse response = await _emailNotificationService.SendEmailNotification(
+                        HttpResponseMessage response = await _emailNotificationService.SendEmailNotification(
                                                                                         emailLog.ToAddress,
                                                                                         emailLog.Body,
-                                                                                        emailLog.Subject);
+                                                                                        emailLog.Subject,
+                                                                                        emailLog.FromAddress);
+                        // Update the response
+                        emailLog.ChesResponse = JsonConvert.SerializeObject(response);
+                        emailLog.ChesStatus = response.StatusCode.ToString();
+
                         if (ReprocessBasedOnStatusCode(response.StatusCode))
                         {
                             emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
                             await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
-                            await uow.SaveChangesAsync();
+                            await uow.SaveChangesAsync(); // Timing of Retry update
                             emailNotificationEvent.RetryAttempts = emailLog.RetryAttempts;
                             await _emailQueueService.SendToEmailDelayedQueueAsync(emailNotificationEvent);
+                        } else {
+                            await _emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                            await uow.SaveChangesAsync();
                         }
                     }
                 }

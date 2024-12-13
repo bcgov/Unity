@@ -36,7 +36,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
     private async Task<Applicant?> GetExistingApplicantAsync(string? unityApplicantId)
     {
         if (unityApplicantId.IsNullOrEmpty()) return null;
-        return await applicantRepository.GetByUnityApplicantId(unityApplicantId);
+        return await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
     }
 
     private async Task<Applicant> CreateNewApplicantAsync(IntakeMapping intakeMap)
@@ -45,7 +45,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
 
         var applicant = new Applicant
         {
-            ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName, Logger),
+            ApplicantName = MappingUtil.ResolveAndTruncateField(600, string.Empty, intakeMap.ApplicantName),
             NonRegisteredBusinessName = intakeMap.NonRegisteredBusinessName,
             OrgName = intakeMap.OrgName,
             OrgNumber = intakeMap.OrgNumber,
@@ -56,6 +56,7 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
             ApproxNumberOfEmployees = intakeMap.ApproxNumberOfEmployees,
             IndigenousOrgInd = intakeMap.IndigenousOrgInd ?? "N",
             OrgStatus = intakeMap.OrgStatus,
+            RedStop = false
         };
 
         return await applicantRepository.InsertAsync(applicant);
@@ -116,18 +117,37 @@ public class ApplicantsService(IApplicantRepository applicantRepository,
             Title = intakeMap.ContactTitle ?? string.Empty,
         };
 
-        if (intakeMap.ApplicantAgent != null)
+        if (IsJObject(intakeMap.ApplicantAgent))
         {
-            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent.bceid_user_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent.bceid_business_guid ?? Guid.Empty;
-            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent.bceid_business_name ?? "";
-            applicantAgent.BceidUserName = intakeMap.ApplicantAgent.bceid_username ?? "";
-            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent.identity_provider ?? "";
-            applicantAgent.IdentityName = intakeMap.ApplicantAgent.name ?? "";
-            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent.email ?? "";
+            applicantAgent.BceidUserGuid = intakeMap.ApplicantAgent?.bceid_user_guid ?? Guid.Empty;
+            applicantAgent.BceidBusinessGuid = intakeMap.ApplicantAgent?.bceid_business_guid ?? Guid.Empty;
+            applicantAgent.BceidBusinessName = intakeMap.ApplicantAgent?.bceid_business_name ?? "";
+            applicantAgent.BceidUserName = intakeMap.ApplicantAgent?.bceid_username ?? "";
+            applicantAgent.IdentityProvider = intakeMap.ApplicantAgent?.identity_provider ?? "";
+            applicantAgent.IdentityName = intakeMap.ApplicantAgent?.name ?? "";
+            applicantAgent.IdentityEmail = intakeMap.ApplicantAgent?.email ?? "";
+            
         }
         await applicantAgentRepository.InsertAsync(applicantAgent);
 
         return applicantAgent;
+    }
+
+    private static bool IsJObject(dynamic? applicantAgent)
+    {
+        if(applicantAgent == null) 
+            return false;
+        try
+        {
+            if (applicantAgent is Newtonsoft.Json.Linq.JObject)
+            {
+                return true; 
+            }
+        }
+        catch {
+            return false;
+        }
+
+        return false;
     }
 }

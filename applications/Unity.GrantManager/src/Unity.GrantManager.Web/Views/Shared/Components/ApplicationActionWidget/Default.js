@@ -45,6 +45,22 @@
 
         function customConfirmation(triggerAction) {
             let confirmationDetails = getConfirmationText(triggerAction);
+
+            let isRedStop = $('#redStop').prop("checked");
+            if (isRedStop && triggerAction === 'Approve') {
+                return Swal.fire({
+                    icon: "error",
+                    text: "This application is currently flagged as high risk. Approval is not permitted at this time",
+                    confirmButtonText: 'Ok',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    }
+                }).then((result) => {
+                    widgetManager.refresh();
+                });
+            }
+
+
             if (confirmationDetails.isConfirmationRequired) {
                 Swal.fire({
                     title: confirmationDetails.title,
@@ -68,15 +84,13 @@
             else {
                 triggerStatusAction(triggerAction);
             }
-
         }
+
         function getConfirmationText(triggerAction) {
             switch (triggerAction) {
                 case 'Approve':
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to approve the application?', confirmButtonText: 'Confirm', };
-
                 case 'Deny':
-
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to decline the application?', confirmButtonText: 'Confirm' };
                 case 'Withdraw':
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to Withdraw the application?', confirmButtonText: 'Confirm' };

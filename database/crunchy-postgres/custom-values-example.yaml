@@ -1,0 +1,43 @@
+# Apply base configuration from values.yaml and make the necessary overrides in custom-values-example.yaml
+# helm upgrade --install new-hippo-ha . -f values.yaml -f custom-values-example.yaml
+
+fullnameOverride: new-crunchy-postgres
+
+labels:
+  app.kubernetes.io/part-of: new-crunchydb-postgres
+
+dataSource:
+  enabled: false
+  # should have the same name and contain the same keys as the pgbackrest secret
+  secretName: new-s3-pgbackrest
+  repo:
+    path: "/habackup-new"
+    s3:
+      bucket: "sector-project-new"
+      endpoint: "https://sector.objectstore.gov.bc.ca"
+
+pgBackRest:
+  repos:
+   schedules:
+      full: 10 10 * * *
+      incremental: 10 3,15,19,23 * * *
+  s3:
+    enabled: false
+    createS3Secret: false
+    # the s3 secret name
+    s3Secret: new-s3-pgbackrest
+    # the path start with /, it will be created under bucket if it doesn't exist
+    s3Path: "/habackup-new"
+    # bucket specifies the S3 bucket to use,
+    bucket: "sector-project-new"
+    # endpoint specifies the S3 endpoint to use.
+    endpoint: "https://sector.objectstore.gov.bc.ca"
+    # key is the S3 key. This is stored in a Secret.
+    # Please DO NOT push this value to GitHub
+    key: "s3keyValue"
+    # keySecret is the S3 key secret. This is stored in a Secret.
+    # Please DO NOT push this value to GitHub
+    keySecret: "s3SecretValue"
+    # set the default schedule to avoid conflicts
+    fullSchedule: 30 11 * * *
+    incrementalSchedule: 30 3,15,19,23 * * *
