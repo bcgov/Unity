@@ -64,33 +64,28 @@ namespace Unity.Payments.PaymentRequests
                 }
             }
 
+            var batchNumber = await GetMaxBatchNumberAsync();
+            var batchName = $"{paymentIdPrefix}_UNITY_BATCH_{batchNumber}";
             var currentYear = DateTime.UtcNow.Year;
             var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
 
-            foreach (var item in paymentRequests.Select((value, i) => new { i, value }))
+            foreach (var paymentRequestItem in paymentRequests.Select((value, i) => new { i, value }))
             {
-                // referenceNumber + Chefs Confirmation ID + 4 digit sequence based on invoice number count
-                var dto = item.value;
-                int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
-                var sequenceForInvoice = applicationPaymentRequestCount.ToString("D4");
-                var referenceNumber = GeneratePaymentNumberAsync(sequenceNumber, item.i, paymentIdPrefix);
-
                 try
                 {
-                    var payment = new PaymentRequest(Guid.NewGuid(),
-                         $"{referenceNumber}-{dto.InvoiceNumber}-{sequenceForInvoice}",
-                         dto.Amount,
-                         dto.PayeeName,
-                         dto.ContractNumber,
-                         dto.SupplierNumber,
-                         dto.SiteId,
-                         dto.CorrelationId,
-                         dto.CorrelationProvider,
-                         referenceNumber,
-                         dto.Description,
-                         paymentThreshold
-                     );
+                    // referenceNumber + Chefs Confirmation ID + 4 digit sequence based on invoice number count
+                    CreatePaymentRequestDto paymentRequestDto = paymentRequestItem.value;
+                    int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(paymentRequestDto.CorrelationId) + 1;
+                    var sequenceForInvoice = applicationPaymentRequestCount.ToString("D4");
+                    string referenceNumber = GeneratePaymentNumberAsync(sequenceNumber, paymentRequestItem.i, paymentIdPrefix);
 
+                    paymentRequestDto.InvoiceNumber = $"{referenceNumber}-{paymentRequestDto.InvoiceNumber}-{sequenceForInvoice}";
+                    paymentRequestDto.ReferenceNumber = referenceNumber;
+                    paymentRequestDto.BatchName = batchName;
+                    paymentRequestDto.BatchNumber = batchNumber;
+                    paymentRequestDto.PaymentThreshold = paymentThreshold;
+
+                    var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
                     var result = await _paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
                     {
@@ -108,8 +103,6 @@ namespace Unity.Payments.PaymentRequests
                         Status = result.Status,
                         ReferenceNumber = result.ReferenceNumber,
                     });
-
-
                 }
                 catch (Exception ex)
                 {
@@ -117,6 +110,16 @@ namespace Unity.Payments.PaymentRequests
                 }
             }
             return createdPayments;
+        }
+
+        private async Task<decimal> GetMaxBatchNumberAsync() {
+            var paymentRequestList = await _paymentRequestsRepository.GetListAsync();
+            var maxBatchNumber = paymentRequestList.Max(s => s.BatchNumber);
+            decimal batchNumber = 1; // Lookup max plus 1
+            if(maxBatchNumber > 0) {
+                batchNumber = maxBatchNumber + 1;
+            }
+            return batchNumber;
         }
 
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
