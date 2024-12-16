@@ -9,7 +9,6 @@ using Unity.GrantManager.Intakes;
 using Xunit;
 using System.Linq;
 using System.Collections.Generic;
-using Amazon.Runtime;
 
 namespace Unity.GrantManager.Intake
 {
@@ -67,11 +66,10 @@ namespace Unity.GrantManager.Intake
         [InlineData("reportingFieldsSchema.json", "reportingFieldsSubmission.json")]
         public void GenerateReportableData(string schemafilename, string submissionfilename)
         {
+            // Get the schema keys
             var reportResult = new Dictionary<string, List<string>>();
-
             dynamic? formMapping = LoadTestData(schemafilename);
-            JObject schemaMapping = JObject.Parse(formMapping); // need to work with this.
-            
+
             string result = _intakeFormSubmissionMapper.InitializeAvailableFormFields(formMapping);
             JObject jObject = JObject.Parse(result);
 
@@ -79,33 +77,51 @@ namespace Unity.GrantManager.Intake
 
             // Exclusion array
             string[] exclusionArray = ["simplebuttonadvanced", "datagrid"];
-            string[] complexSchema = ["simplecheckboxes", "simplecheckboxadvanced"];
+            string[] nestedKeyFields = ["simplecheckboxes", "simplecheckboxadvanced"];
 
-            var keys = jObject.Properties()
-                      .SelectMany(p =>
-                      {
-                          string? typeValue = JObject.Parse(p.Value.ToString())?["type"]?.ToString();
-                          if (typeValue != null && exclusionArray.Contains(typeValue))
-                          {
-                              return Enumerable.Empty<string>();
-                          }
+            // Dictionary to store full key names and truncated key names
+            Dictionary<string, string> keyMapping = [];
 
-                          // Check if the node has a child of values which is an array of objects
-                          if (p.Value is JObject obj && obj["values"] is JArray valuesArray)
-                          {
-                              return valuesArray.Select(v => $"{p.Name}-{v["value"]}");
-                          }
+            // Filter out properties based on the exclusion array and extend child keys
+            var keys = jObject
+                .Properties()
+                .SelectMany(p =>
+                {
 
-                          return [p.Name];
-                      });
+                    string? typeValue = JObject.Parse(p.Value.ToString())?["type"]?.ToString();
+                    if (typeValue != null && exclusionArray.Contains(typeValue))
+                    {
+                        return [];
+                    }
 
+                    // Check for nested key fields and generate dashed keys
+                    if (typeValue != null && nestedKeyFields.Contains(typeValue))
+                    {
+                        return ExtractNestedKeys(p);
+                    }
 
+                    return [p.Name];
+                })
+                .Distinct()
+                .Select(fullKey =>
+                {
+                    string truncatedKey = fullKey.Length > 63 ? fullKey[..63] : fullKey;
+                    keyMapping[fullKey] = truncatedKey; 
+                    return fullKey;
+                });
+
+            // Get all keys and pipe separate them
             string pipeDelimitedKeys = string.Join("|", keys);
-            pipeDelimitedKeys += "|IshouldBeHere";
 
-            // 
+            // Truncate each key to a maximum of 63 characters and create a pipe-delimited string
+            string truncatedDelimitedKeys = string.Join("|", keys.Select(k => k.Length > 63 ? k[..63] : k));
 
-            // Get the schema
+            // create a column map
+            keys.ShouldNotContain("indicateWhichProcessListedBelowBestAlignsWithYourOrganizationsOperationsChooseAllThatApply");
+            keys.ShouldContain("cultivationExtractionIELoggingPlantCultivationMining");
+            keys.ShouldContain("advancedManufacturingTheUseOfInnovativeTechnologySuchAsRobotics3DPrintingAutomationOrOtherAdvancedTechnologiesToCreateValueAddedProductsSuchAsMassTimberOrBioproductsEtc");
+
+            // Get the submission
             dynamic? submissionData = LoadTestData(submissionfilename);
 
             if (submissionData == null) Assert.Fail();
@@ -152,9 +168,59 @@ namespace Unity.GrantManager.Intake
             jsonObject.ShouldNotBeNull();
 
             // Prep value for db            
-            string cleanedJsonString = jsonObject.ToString();                
+            string cleanedJsonString = jsonObject.ToString();
+
+            cleanedJsonString.ShouldNotBeNull();
         }
 
+        private static string[] ExtractNestedKeys(JProperty jProperty)
+        {
+            if (jProperty == null) return [];
+
+            string? valuesProp = JObject.Parse(jProperty.Value.ToString())?["values"]?.ToString();
+
+            return string.IsNullOrEmpty(valuesProp) ? [] : valuesProp.ToString().Split(',');
+        }
+
+        static void DeepSearch(JToken node, string[] exclusionArray, List<string> keys)
+        {
+            if (node.Type == JTokenType.Object)
+            {
+                foreach (var property in node.Children<JProperty>())
+                {
+                    string? typeValue = property.Value["type"]?.ToString();
+                    if (typeValue != null && exclusionArray.Contains(typeValue))
+                    {
+                        continue;
+                    }
+
+                    // Check if the node has a child of values which is an array of objects
+                    if (typeValue == "simplecheckboxes" && property.Value["values"] is JArray valuesArray)
+                    {
+                        foreach (var valueObj in valuesArray)
+                        {
+                            keys.Add($"{property.Name}-{valueObj["value"]}");
+                        }
+                    }
+                    else
+                    {
+                        // Add the key directly if no special handling is required
+                        keys.Add(property.Name);
+                    }
+
+                    // Recursively search the child nodes
+                    DeepSearch(property.Value, exclusionArray, keys);
+                }
+            }
+            else if (node.Type == JTokenType.Array)
+            {
+                foreach (var item in node.Children())
+                {
+                    // Recursively search each item in the array
+                    DeepSearch(item, exclusionArray, keys);
+                }
+            }
+        }
 
         static string CleanJsonString(string jsonString)
         {
@@ -163,7 +229,7 @@ namespace Unity.GrantManager.Intake
                 try
                 {
                     var parsedJson = JsonConvert.DeserializeObject<JObject>(jsonString);
-                    
+
                     // Serialize the JObject back to a JSON string without escape characters
                     var cleaned = parsedJson != null ? parsedJson.ToString(Formatting.None) : jsonString;
 

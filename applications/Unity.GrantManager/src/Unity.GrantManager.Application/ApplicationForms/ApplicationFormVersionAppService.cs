@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -8,8 +9,10 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integration.Chefs;
+using Unity.GrantManager.Reporting;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
@@ -31,13 +34,17 @@ namespace Unity.GrantManager.ApplicationForms
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IFormsApiService _formApiService;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
+        private readonly IApplicationFormRepository _applicationFormRepository;
+        private readonly IBackgroundJobManager _backgroundJobManager;
 
         public ApplicationFormVersionAppService(IRepository<ApplicationFormVersion, Guid> repository,
             IIntakeFormSubmissionMapper intakeFormSubmissionMapper,
             IUnitOfWorkManager unitOfWorkManager,
             IFormsApiService formsApiService,
             IApplicationFormVersionRepository applicationFormVersionRepository,
-            IApplicationFormSubmissionRepository applicationFormSubmissionRepository)
+            IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
+            IApplicationFormRepository applicationFormRepository,
+            IBackgroundJobManager backgroundJobManager)
             : base(repository)
         {
             _applicationFormVersionRepository = applicationFormVersionRepository;
@@ -45,6 +52,8 @@ namespace Unity.GrantManager.ApplicationForms
             _unitOfWorkManager = unitOfWorkManager;
             _formApiService = formsApiService;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
+            _applicationFormRepository = applicationFormRepository;
+            _backgroundJobManager = backgroundJobManager;
         }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input)
@@ -229,7 +238,8 @@ namespace Unity.GrantManager.ApplicationForms
         {
 
             var applicationFormVersion = await GetApplicationFormVersion(chefsFormVersionId);
-            bool formVersionEsists = true;
+            bool formVersionExists = true;
+
             if (applicationFormVersion == null)
             {
                 applicationFormVersion = (await _applicationFormVersionRepository
@@ -242,7 +252,7 @@ namespace Unity.GrantManager.ApplicationForms
                     applicationFormVersion = new ApplicationFormVersion();
                     applicationFormVersion.ApplicationFormId = applicationFormId;
                     applicationFormVersion.ChefsApplicationFormGuid = chefsFormId;
-                    formVersionEsists = false;
+                    formVersionExists = false;
                 }
 
                 applicationFormVersion.ChefsFormVersionGuid = chefsFormVersionId;
@@ -275,7 +285,7 @@ namespace Unity.GrantManager.ApplicationForms
                 throw new EntityNotFoundException("Application Form Not Registered");
             }
 
-            if (formVersionEsists)
+            if (formVersionExists)
             {
                 applicationFormVersion = await _applicationFormVersionRepository.UpdateAsync(applicationFormVersion);
             }
@@ -284,8 +294,84 @@ namespace Unity.GrantManager.ApplicationForms
                 applicationFormVersion = await _applicationFormVersionRepository.InsertAsync(applicationFormVersion);
             }
 
+            // Add keys and columns for report generation
+            await UpdateFormVersionWithReportKeysAndColumnsAsync(applicationFormVersion);
+            await QueueDynamicViewGeneratorAsync(applicationFormVersion);
+
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
         }
+
+        private async Task QueueDynamicViewGeneratorAsync(ApplicationFormVersion applicationFormVersion)
+        {
+            await _backgroundJobManager.EnqueueAsync(
+                new DynamicViewGenerationArgs
+                {
+                    ApplicationFormVersionId = applicationFormVersion.Id,
+                    TenantId = CurrentTenant.Id
+                });
+        }
+
+        private async Task UpdateFormVersionWithReportKeysAndColumnsAsync(ApplicationFormVersion applicationFormVersion)
+        {
+            if (applicationFormVersion.AvailableChefsFields == null) return;
+
+            var form = await _applicationFormRepository.GetAsync(applicationFormVersion.ApplicationFormId);
+            JObject jObject = JObject.Parse(applicationFormVersion.AvailableChefsFields);
+
+            // Exclusion array
+            string[] exclusionArray = ["simplebuttonadvanced", "datagrid", "hidden"];
+            string[] nestedKeyFields = ["simplecheckboxes", "simplecheckboxadvanced"];
+
+            // Dictionary to store full key names and truncated key names
+            Dictionary<string, string> keyMapping = [];
+
+            // Filter out properties based on the exclusion array and extend child keys
+            var keys = jObject
+                .Properties()
+                .SelectMany(p =>
+                {
+
+                    string? typeValue = JObject.Parse(p.Value.ToString())?["type"]?.ToString();
+                    if (typeValue != null && exclusionArray.Contains(typeValue))
+                    {
+                        return [];
+                    }
+
+                    // Check for nested key fields and generate dashed keys
+                    if (typeValue != null && nestedKeyFields.Contains(typeValue))
+                    {
+                        return ExtractNestedKeys(p);
+                    }
+
+                    return [p.Name];
+                })
+                .Distinct()
+                .Select(fullKey =>
+                {
+                    string truncatedKey = fullKey.Length > 63 ? fullKey[..63] : fullKey;
+                    keyMapping[fullKey] = truncatedKey;
+                    return fullKey;
+                });
+
+            // Get all keys and pipe separate them
+            string pipeDelimitedKeys = string.Join("|", keys);
+
+            // Truncate each key to a maximum of 63 characters and create a pipe-delimited string
+            string truncatedDelimitedKeys = string.Join("|", keys.Select(k => k.Length > 63 ? k[..63] : k));
+
+            applicationFormVersion.ReportColumns = truncatedDelimitedKeys;
+            applicationFormVersion.ReportKeys = pipeDelimitedKeys;
+            applicationFormVersion.ReportViewName = $"{form.ApplicationFormName}-V{applicationFormVersion.Version}";
+        }
+
+        private static string[] ExtractNestedKeys(JProperty jProperty)
+        {
+            if (jProperty == null) return [];
+
+            string? valuesProp = JObject.Parse(jProperty.Value.ToString())?["values"]?.ToString();
+            return string.IsNullOrEmpty(valuesProp) ? [] : valuesProp.Split(',');
+        }
+
 
         public async Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId)
         {
@@ -339,6 +425,11 @@ namespace Unity.GrantManager.ApplicationForms
         {
             var formVersion = await _applicationFormVersionRepository.GetByChefsFormVersionAsync(formVersionId);
             return formVersion?.Version ?? 0;
+        }
+
+        public Task GenerateDynamicViewAsync(Guid applicationFormVersionId)
+        {
+            throw new NotImplementedException();
         }
     }
 }
