@@ -43,7 +43,7 @@ namespace Unity.Notifications.Integrations.Ches
                 ApiKey = "ChesApiKey"
             };
 
-            TokenService tokenService = new TokenService(_httpClientFactory, _chesTokenCache);
+            TokenService tokenService = new(_httpClientFactory, _chesTokenCache, Logger);
             var authToken = await tokenService.GetAuthTokenAsync(clientOptions);
             var resource = $"{_chesClientOptions.Value.ChesUrl}/email";
             string jsonString = JsonSerializer.Serialize(emailRequest);

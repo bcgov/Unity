@@ -13,6 +13,7 @@ using Unity.Notifications.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Http.Client;
 using Unity.Modules.Shared.Http;
+using Unity.Modules.Shared;
 
 namespace Unity.Notifications;
 

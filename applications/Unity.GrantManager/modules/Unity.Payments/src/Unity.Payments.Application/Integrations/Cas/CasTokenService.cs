@@ -30,7 +30,7 @@ namespace Unity.Payments.Integrations.Cas
                 ApiKey = CAS_API_KEY,
             };
 
-            TokenService tokenService = new TokenService(httpClientFactory, chesTokenCache);
+            TokenService tokenService = new(httpClientFactory, chesTokenCache, Logger);
             return await tokenService.GetAuthTokenAsync(clientOptions);
         }
     }
