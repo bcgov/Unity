@@ -24,7 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="Volo.Abp.Autofac" Version="8.3.0" />
+	<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+	<PackageReference Include="Volo.Abp.Autofac" Version="8.3.4" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
@@ -32,15 +33,15 @@
 	 <PackageReference Include="Quartz.Serialization.Json" Version="3.2.3" />
     <PackageReference Include="RestSharp" Version="112.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Volo.Abp.BackgroundWorkers.Quartz" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.BlobStoring" Version="8.3.0" />
-	<PackageReference Include="Volo.Abp.Caching" Version="8.3.1" />
-    <PackageReference Include="Volo.Abp.Identity.Application" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.PermissionManagement.Application" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="8.3.0" />
-	<PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="8.3.1" />
+    <PackageReference Include="Volo.Abp.BackgroundWorkers.Quartz" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.BlobStoring" Version="8.3.4" />
+	<PackageReference Include="Volo.Abp.Caching" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.Identity.Application" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.Application" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="8.3.4" />
+	<PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="8.3.4" />
   </ItemGroup>
 
 </Project>

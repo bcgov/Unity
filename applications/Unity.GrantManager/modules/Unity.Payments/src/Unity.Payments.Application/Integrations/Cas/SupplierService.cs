@@ -6,7 +6,7 @@ using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;
 using System.Net.Http;
-using Unity.Modules.Http;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.Payments.Integrations.Cas
 {

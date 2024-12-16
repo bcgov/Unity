@@ -9,6 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="NSubstitute" Version="5.1.0" />
     <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
@@ -16,16 +18,16 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Shouldly" Version="4.2.1" />
-    <PackageReference Include="Volo.Abp.Features" Version="8.3.0" />
+    <PackageReference Include="Volo.Abp.Features" Version="8.3.4" />
     <PackageReference Include="xunit" Version="2.9.0" />
     <PackageReference Include="xunit.extensibility.execution" Version="2.9.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Volo.Abp.Autofac" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.Authorization" Version="8.3.0" />
-    <PackageReference Include="Volo.Abp.TestBase" Version="8.3.0" />
+    <PackageReference Include="Volo.Abp.Autofac" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.Authorization" Version="8.3.4" />
+    <PackageReference Include="Volo.Abp.TestBase" Version="8.3.4" />
     <ProjectReference Include="..\..\src\Unity.Notifications.Domain\Unity.Notifications.Domain.csproj" />
   </ItemGroup>
 

@@ -1,8 +1,8 @@
 ﻿using Volo.Abp;
 using System.Threading.Tasks;
 using System.Text.Json;
-using Unity.Modules.Integrations;
-using Unity.Modules.Http;
+using Unity.Modules.Shared.Integrations;
+using Unity.Modules.Shared.Http;
 using Volo.Abp.Application.Services;
 using Microsoft.Extensions.Options;
 using Volo.Abp.DependencyInjection;

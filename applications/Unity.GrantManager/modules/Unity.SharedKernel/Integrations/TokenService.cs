@@ -12,7 +12,7 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Caching.Distributed;
 using Volo.Abp.Caching;
 
-namespace Unity.Modules.Integrations
+namespace Unity.Modules.Shared.Integrations
 {
     [IntegrationService]
     [ExposeServices(typeof(TokenService), typeof(ITokenService))]

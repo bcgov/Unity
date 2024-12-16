@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
-namespace Unity.Modules.Integrations
+namespace Unity.Modules.Shared.Integrations
 {
     public interface ITokenService : IApplicationService
     {

@@ -8,11 +8,11 @@ using Microsoft.Extensions.Configuration;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
-using Unity.Shared.MessageBrokers.RabbitMQ;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Unity.Notifications.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Http.Client;
-using Unity.Modules.Http;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.Notifications;
 
