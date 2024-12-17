@@ -95,7 +95,7 @@ namespace Unity.GrantManager.Web;
     typeof(PaymentsWebModule),
     typeof(AbpBlobStoringModule),
     typeof(NotificationsWebModule),
-    typeof(FlexWebModule)
+    typeof(FlexWebModule)    
 )]
 public class GrantManagerWebModule : AbpModule
 {
@@ -134,7 +134,6 @@ public class GrantManagerWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
-        ConfigureAccessTokenManagement(context, configuration);
         ConfigureUtils(context);
         ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
@@ -266,11 +265,7 @@ public class GrantManagerWebModule : AbpModule
         {
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = false;
-            options.Events.OnSigningOut = async e =>
-            {
-                // revoke refresh token on sign-out
-                await e.HttpContext.RevokeUserRefreshTokenAsync();
-            };
+            options.Events.OnSigningOut = async e => { await Task.CompletedTask; };
         })
         .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
         {
@@ -365,26 +360,6 @@ public class GrantManagerWebModule : AbpModule
                 options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
             }
-        });
-    }
-
-    private static void ConfigureAccessTokenManagement(ServiceConfigurationContext context, IConfiguration configuration)
-    {
-        context.Services.AddAccessTokenManagement(options =>
-        {
-        })
-        .ConfigureBackchannelHttpClient();
-
-        // registers HTTP client that uses the managed user access token
-        context.Services.AddUserAccessTokenHttpClient("user_client", configureClient: client =>
-        {
-            client.BaseAddress = new Uri(configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"]);
-        });
-
-        // registers HTTP client that uses the managed client access token
-        context.Services.AddClientAccessTokenHttpClient("client", configureClient: client =>
-        {
-            client.BaseAddress = new Uri(configuration["AuthServer:ServerAddress"] + "/realms/" + configuration["AuthServer:Realm"]);
         });
     }
 

@@ -8,14 +8,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 
-namespace Unity.Modules.Http
+namespace Unity.Modules.Shared.Http
 {
     [IntegrationService]
     public class ResilientHttpRequest : IResilientHttpRequest
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private static int _maxRetryAttempts = 3;
-        private static int OneMinuteInSeconds = 60;         
+        private const int OneMinuteInSeconds = 60;       
         private static TimeSpan _pauseBetweenFailures = TimeSpan.FromSeconds(2);
         private static TimeSpan _httpRequestTimeout = TimeSpan.FromSeconds(OneMinuteInSeconds);
 

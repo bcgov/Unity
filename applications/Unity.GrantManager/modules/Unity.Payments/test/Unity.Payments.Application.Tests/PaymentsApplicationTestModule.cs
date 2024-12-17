@@ -7,7 +7,7 @@ using Unity.Payments.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Volo.Abp.EntityFrameworkCore.Sqlite;
-using Unity.Modules.Http;
+using Unity.Modules.Shared.Http;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;

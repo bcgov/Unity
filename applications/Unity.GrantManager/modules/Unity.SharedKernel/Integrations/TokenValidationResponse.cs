@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.Modules.Integrations
+namespace Unity.Modules.Shared.Integrations
 {
     public class TokenValidationResponse
     {

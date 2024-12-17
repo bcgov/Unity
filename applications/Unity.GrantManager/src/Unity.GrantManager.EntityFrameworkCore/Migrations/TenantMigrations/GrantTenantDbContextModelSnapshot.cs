@@ -2554,6 +2554,14 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("BatchName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BatchNumber")
+                        .IsRequired()
+                        .HasColumnType("numeric");
+
                     b.Property<int?>("CasHttpStatusCode")
                         .HasColumnType("integer");
 
