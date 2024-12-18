@@ -74,4 +74,115 @@ $(function () {
     $('#attachments-tab').one('click', function () {
         dataTable.columns.adjust();
     });
+
+    function extractFileName(url) {
+        const path = new URL(url).pathname;
+        return path.split('/').pop();
+    }
+   
+    $('#downloadAll').click(function () {
+        /*const zip = new JSZip();*/
+        const chefsAttactmentsTable = document.getElementById('ChefsAttachmentsTable');
+        const anchorTags = chefsAttactmentsTable.querySelectorAll('a');
+        const hrefValues = [];
+        anchorTags.forEach(anchor => {
+            hrefValues.push(anchor.href);
+        });
+
+        try {
+            // Loop through all the file URLs
+            for (const fileUrl of hrefValues) {
+                const fileName = decodeURIComponent(extractFileName(fileUrl));  // Get the file name from the URL
+                fetch(fileUrl).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                })
+
+                    //This downloads each file one by one
+                    .then(blob => {
+                        let url = window.URL.createObjectURL(blob);
+                        let a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                    })
+                    .catch(error => {
+                        console.error('There was a problem with the fetch operation:', error);
+                    });
+
+                // Add file to the zip
+               /* zip.file(fileName, blob); */
+            }
+
+            // Once all files are added, generate the zip file
+            //zip.generateAsync({ type: 'blob' }).then(function (content) {
+            //    // Create a link to download the zip file
+            //    const link = document.createElement('a');
+            //    link.href = URL.createObjectURL(content);
+            //    link.download = 'files.zip'; // The name of the downloaded zip file
+
+            //    // Trigger the download
+            //    link.click();
+            //}).catch(error => {
+            //            console.error('Error generating ZIP:', error);
+            //    });
+        } catch (error) {
+            console.error('Error downloading files: ', error);
+        }
+
+
+
+        //zip.generateAsync({ type: "blob" })
+        //    .then(function (content) {
+        //        const link = document.createElement('a');
+        //        link.href = URL.createObjectURL(content);
+        //        link.download = 'submissionAttachments.zip';
+        //        link.click();
+        //    });
+
+
+
+        //const fileList = [
+        //    { filename: 'sample budget form.pdf', url: 'https://localhost:44342/api/app/attachment/chefs/a7969aa0-f780-4d0a-8cdc-2e243bb1f1ba/download/3f4b94db-6f03-4fe1-a816-b8319a2489d0/sample%20budget%20form.pdf', id: 123 },
+        //    { filename: 'Test Direct Deposit application form.pdf', url: 'https://localhost:44342/api/app/attachment/chefs/a7969aa0-f780-4d0a-8cdc-2e243bb1f1ba/download/b672745e-1450-4f68-8577-d5e2fd6e7dcd/Test%20Direct%20Deposit%20application%20form.pdf', id: 456 },
+        //    // ... more file objects
+        //];
+
+        //downloadFilesAsZip(filePaths, 'TestZip');
+        //worker.postMessage(filePaths);
+
+        //worker.onmessage = (event) => {
+        //    const { filename, blob } = event.data;
+        //    zip.file(filename, blob);
+        //};
+
+        //worker.onerror = (event) => {
+        //    console.error('Error fetching file:', event.data);
+        //};
+
+        //worker.onmessage = (event) => {
+        //    if (event.data === 'all_files_added') {
+        //        zip.generateAsync({ type: "blob" })
+        //            .then(function (content) {
+        //                const link = document.createElement('a');
+        //                link.href = URL.createObjectURL(content);
+        //                link.download = 'my_archive.zip';
+        //                link.click();
+        //            })
+        //            .catch(error => {
+        //                console.error('Error generating ZIP:', error);
+        //            });
+        //        }
+        //    };
+
+          
+
+
+    });
+
 });
