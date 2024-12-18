@@ -26,10 +26,17 @@ namespace Unity.Payments.PaymentRequests
         public string SupplierNumber { get; set; }
         public  string CorrelationProvider { get;  set; } = string.Empty;
         public string? CasResponse { get; set; }
-        public string ReferenceNumber { get; set; }
+        public string BatchName { get; set; }
+        public decimal BatchNumber { get; set; }
+        public string ReferenceNumber { get;  set; } = string.Empty;
+
 
         public  Collection<ExpenseApprovalDto> ExpenseApprovals { get;  set; }
 
+        public static explicit operator PaymentRequestDto(CreatePaymentRequestDto v)
+        {
+            throw new NotImplementedException();
+        }
     }
 #pragma warning restore CS8618
 }

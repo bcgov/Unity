@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Volo.Abp;
 
-namespace Unity.Modules.Http
+namespace Unity.Modules.Shared.Http
 {
     public interface IResilientHttpRequest : IRemoteService
     {

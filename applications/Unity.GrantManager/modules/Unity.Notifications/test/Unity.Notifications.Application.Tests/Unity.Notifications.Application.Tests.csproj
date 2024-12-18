@@ -11,7 +11,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Unity.Notifications.Application\Unity.Notifications.Application.csproj" />
     <ProjectReference Include="..\Unity.Notifications.Domain.Tests\Unity.Notifications.Domain.Tests.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>
