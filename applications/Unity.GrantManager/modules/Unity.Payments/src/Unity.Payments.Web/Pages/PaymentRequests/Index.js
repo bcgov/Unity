@@ -105,6 +105,12 @@ $(function () {
         defaultVisibleColumns,
         listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
+    // Attach the draw event to the DataTable 
+    dataTable.on('draw', function () {
+        // Initialize tooltips 
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
     let history_button = dataTable.buttons(['.history']);
 
@@ -233,15 +239,23 @@ $(function () {
             data: 'referenceNumber',
             className: 'data-table-header',
             index: 0,
+            render: function (data, _, row) {
+                if (row.errorSummary != null && row.errorSummary !== '') {
+                    return `${data} <i class="fa fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
+                } else {
+                    return data;
+                }
+            }
         };
     }
+
     function getApplicantNameColumn() {
         return {
             title: l('ApplicationPaymentListTable:ApplicantName'),
             name: 'applicantName',
             data: 'payeeName',
             className: 'data-table-header',
-            index: 1,
+            index: 1
         };
     }
 
