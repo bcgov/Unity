@@ -10,6 +10,7 @@ namespace Unity.GrantManager.Web;
 
 public static class Program
 {
+    // Test Sonar Qube run
     public async static Task<int> Main(string[] args)
     {
         try
