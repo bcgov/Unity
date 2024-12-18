@@ -227,27 +227,17 @@ parameters:
   displayName: Registry location to pull from
   name: IMAGEPULL_REGISTRY
   value: image-registry.openshift-image-registry.svc:5000
-# Resource limits control how much CPU and memory a container will consume
+# Resources control how much CPU and memory a container will consume
 - description: The minimum amount of CPU the Container is guaranteed.
   displayName: CPU Request
   name: CPU_REQUEST
   required: true
   value: 50m
-- description: The maximum amount of CPU the Container is allowed to use when running.
-  displayName: CPU Limit
-  name: CPU_LIMIT
-  required: true
-  value: 400m
 - description: The minimum amount of Memory the Container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
   required: true
   value: 128Mi
-- description: The maximum amount of Memory the Container is allowed to use when running.
-  displayName: Memory Limit
-  name: MEMORY_LIMIT
-  required: true
-  value: 512Mi
 # Template objects to instantiate the project application.
 objects:
 # Secrets
@@ -489,12 +479,15 @@ objects:
       app.kubernetes.io/name: ${APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   spec:
-    replicas: 1
+    replicas: 3
     selector:
       matchLabels:
         app: ${APPLICATION_NAME}
     strategy:
-      type: Recreate
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 2
+        maxUnavailable: 1
     template:
       metadata:
         labels:
@@ -516,6 +509,11 @@ objects:
             - name: ConnectionStrings__Tenant
               value: >-
                 Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_TENANT_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
+            - name: Redis__Password
+              valueFrom:
+                secretKeyRef:
+                  name: ${Redis__HostName}
+                  key: database-password
           envFrom:
             - configMapRef:
                 name: ${APPLICATION_NAME}
@@ -530,9 +528,6 @@ objects:
             - secretRef:
                 name: ${STORAGE_OBJECT_NAME}
           resources:
-            limits:
-              cpu: ${CPU_LIMIT}
-              memory: ${MEMORY_LIMIT}
             requests:
               cpu: ${CPU_REQUEST}
               memory: ${MEMORY_REQUEST}
@@ -627,32 +622,35 @@ objects:
           image: ${IMAGEPULL_REGISTRY}/${REDIS_IMAGEPULL_NAMESPACE}/${REDIS_IMAGESTREAM_NAME}:${REDIS_IMAGESTREAM_TAG}
           imagePullPolicy: Always
           resources:
-            limits:
-              cpu: ${CPU_LIMIT}
-              memory: ${MEMORY_LIMIT}
             requests:
               cpu: ${CPU_REQUEST}
               memory: ${MEMORY_REQUEST}
-            readinessProbe:
-              exec:
-                command:
-                  - /bin/sh
-                  - '-i'
-                  - '-c'
-                  - test "$(redis-cli -h 127.0.0.1 -a $REDIS_PASSWORD ping)" == "PONG"
-              initialDelaySeconds: 5
-              timeoutSeconds: 1
-              periodSeconds: 10
-              successThreshold: 1
-              failureThreshold: 3
-            livenessProbe:
-              tcpSocket:
-                port: 6379
-              initialDelaySeconds: 30
-              timeoutSeconds: 1
-              periodSeconds: 10
-              successThreshold: 1
-              failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-i'
+                - '-c'
+                - test "$(redis-cli -h 127.0.0.1 -a $REDIS_PASSWORD ping)" == "PONG"
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${Redis__HostName}
+                  key: database-password
           ports:
             - containerPort: 6379
               protocol: TCP

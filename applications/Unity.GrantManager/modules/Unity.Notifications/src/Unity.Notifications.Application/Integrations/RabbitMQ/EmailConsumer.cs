@@ -10,7 +10,7 @@ using Unity.Notifications.Events;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
-using Unity.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Microsoft.Extensions.Logging;
 using Unity.Notifications.EmailNotifications;
 using Newtonsoft.Json;

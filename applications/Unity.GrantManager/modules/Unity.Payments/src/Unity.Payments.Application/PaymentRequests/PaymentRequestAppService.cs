@@ -45,11 +45,23 @@ namespace Unity.Payments.PaymentRequests
             _dataFilter = dataFilter;
         }
 
+        protected virtual async Task<(PaymentConfiguration? Config, decimal Threshold)> GetPaymentConfigurationWithThresholdAsync()
+        {
+            var paymentConfigs = await _paymentConfigurationRepository.GetListAsync();
+            var paymentConfig = paymentConfigs.FirstOrDefault();
+
+            if (paymentConfig == null)
+            {
+                return (null, PaymentSharedConsts.DefaultThresholdAmount);
+            }
+
+            return (paymentConfig, paymentConfig.PaymentThreshold ?? PaymentSharedConsts.DefaultThresholdAmount);
+        }
+
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
         {
             List<PaymentRequestDto> createdPayments = [];
-            var paymentConfig = await GetPaymentConfigurationAsync();
-            var paymentThreshold = PaymentSharedConsts.DefaultThresholdAmount;
+            var (paymentConfig, paymentThreshold) = await GetPaymentConfigurationWithThresholdAsync();
             var paymentIdPrefix = string.Empty;
 
             if (paymentConfig != null)
@@ -64,33 +76,28 @@ namespace Unity.Payments.PaymentRequests
                 }
             }
 
+            var batchNumber = await GetMaxBatchNumberAsync();
+            var batchName = $"{paymentIdPrefix}_UNITY_BATCH_{batchNumber}";
             var currentYear = DateTime.UtcNow.Year;
             var sequenceNumber = await GetNextSequenceNumberAsync(currentYear);
 
-            foreach (var item in paymentRequests.Select((value, i) => new { i, value }))
+            foreach (var paymentRequestItem in paymentRequests.Select((value, i) => new { i, value }))
             {
-                // referenceNumber + Chefs Confirmation ID + 4 digit sequence based on invoice number count
-                var dto = item.value;
-                int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(dto.CorrelationId) + 1;
-                var sequenceForInvoice = applicationPaymentRequestCount.ToString("D4");
-                var referenceNumber = GeneratePaymentNumberAsync(sequenceNumber, item.i, paymentIdPrefix);
-
                 try
                 {
-                    var payment = new PaymentRequest(Guid.NewGuid(),
-                         $"{referenceNumber}-{dto.InvoiceNumber}-{sequenceForInvoice}",
-                         dto.Amount,
-                         dto.PayeeName,
-                         dto.ContractNumber,
-                         dto.SupplierNumber,
-                         dto.SiteId,
-                         dto.CorrelationId,
-                         dto.CorrelationProvider,
-                         referenceNumber,
-                         dto.Description,
-                         paymentThreshold
-                     );
+                    // referenceNumber + Chefs Confirmation ID + 4 digit sequence based on invoice number count
+                    CreatePaymentRequestDto paymentRequestDto = paymentRequestItem.value;
+                    int applicationPaymentRequestCount = await _paymentRequestsRepository.GetCountByCorrelationId(paymentRequestDto.CorrelationId) + 1;
+                    var sequenceForInvoice = applicationPaymentRequestCount.ToString("D4");
+                    string referenceNumber = GeneratePaymentNumberAsync(sequenceNumber, paymentRequestItem.i, paymentIdPrefix);
 
+                    paymentRequestDto.InvoiceNumber = $"{referenceNumber}-{paymentRequestDto.InvoiceNumber}-{sequenceForInvoice}";
+                    paymentRequestDto.ReferenceNumber = referenceNumber;
+                    paymentRequestDto.BatchName = batchName;
+                    paymentRequestDto.BatchNumber = batchNumber;
+                    paymentRequestDto.PaymentThreshold = paymentThreshold;
+
+                    var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
                     var result = await _paymentRequestsRepository.InsertAsync(payment);
                     createdPayments.Add(new PaymentRequestDto()
                     {
@@ -108,8 +115,6 @@ namespace Unity.Payments.PaymentRequests
                         Status = result.Status,
                         ReferenceNumber = result.ReferenceNumber,
                     });
-
-
                 }
                 catch (Exception ex)
                 {
@@ -119,66 +124,115 @@ namespace Unity.Payments.PaymentRequests
             return createdPayments;
         }
 
+        private async Task<decimal> GetMaxBatchNumberAsync() {
+            var paymentRequestList = await _paymentRequestsRepository.GetListAsync();
+            decimal batchNumber = 1; // Lookup max plus 1
+            if (paymentRequestList != null && paymentRequestList.Count > 0)
+            {
+                var maxBatchNumber = paymentRequestList.Max(s => s.BatchNumber);
+
+                if (maxBatchNumber > 0)
+                {
+                    batchNumber = maxBatchNumber + 1;
+                }
+            }
+
+            return batchNumber;
+        }
+
         public virtual async Task<List<PaymentRequestDto>> UpdateStatusAsync(List<UpdatePaymentStatusRequestDto> paymentRequests)
         {
-            List<PaymentRequestDto> updatedPayments = [];
+            List<PaymentRequestDto> updatedPayments = new();
 
             var paymentThreshold = await GetPaymentThresholdAsync();
 
             foreach (var dto in paymentRequests)
             {
-                var payment = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
-
-                List<PaymentRequestStatus> level1Approvals = [PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined];
-                List<PaymentRequestStatus> level2Approvals = [PaymentRequestStatus.L2Pending, PaymentRequestStatus.L2Declined];
-                List<PaymentRequestStatus> level3Approvals = [PaymentRequestStatus.L3Pending, PaymentRequestStatus.L3Declined];
-
-                var triggerAction = PaymentApprovalAction.None;
-
-                if (await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L1ApproveOrDecline) && (payment.Status.IsIn(level1Approvals)))
+                try
                 {
-                    triggerAction = dto.IsApprove ? PaymentApprovalAction.L1Approve : PaymentApprovalAction.L1Decline;
-                }
+                    var payment = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
+                    var triggerAction = await DetermineTriggerActionAsync(dto, payment, paymentThreshold);
 
-
-                if (await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L2ApproveOrDecline) && (payment.Status.IsIn(level2Approvals)))
-                {
-                    if (payment.Amount > paymentThreshold)
+                    if (triggerAction != PaymentApprovalAction.None)
                     {
-                        triggerAction = dto.IsApprove ? (PaymentApprovalAction.L2Approve) : PaymentApprovalAction.L2Decline;
-                    }
-                    else
-                    {
-                        triggerAction = dto.IsApprove ? (PaymentApprovalAction.Submit) : PaymentApprovalAction.L2Decline;
+                        await _paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
+                        updatedPayments.Add(await CreatePaymentRequestDtoAsync(dto.PaymentRequestId));
                     }
                 }
-
-                if (await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && payment.Status.IsIn(level3Approvals))
+                catch (Exception ex)
                 {
-                    triggerAction = dto.IsApprove ? PaymentApprovalAction.Submit : PaymentApprovalAction.L3Decline;
+                    Logger.LogException(ex);
                 }
-
-                await _paymentsManager.UpdatePaymentStatusAsync(dto.PaymentRequestId, triggerAction);
-
-                var result = await _paymentRequestsRepository.GetAsync(dto.PaymentRequestId);
-                updatedPayments.Add(new PaymentRequestDto()
-                {
-                    Id = result.Id,
-                    InvoiceNumber = result.InvoiceNumber,
-                    InvoiceStatus = result.InvoiceStatus,
-                    Amount = result.Amount,
-                    PayeeName = result.PayeeName,
-                    SupplierNumber = result.SupplierNumber,
-                    ContractNumber = result.ContractNumber,
-                    CorrelationId = result.CorrelationId,
-                    CorrelationProvider = result.CorrelationProvider,
-                    Description = result.Description,
-                    CreationTime = result.CreationTime,
-                    Status = result.Status,
-                });
             }
 
             return updatedPayments;
+        }
+        private async Task<PaymentApprovalAction> DetermineTriggerActionAsync(
+            UpdatePaymentStatusRequestDto dto,
+            PaymentRequest payment,
+            decimal paymentThreshold)
+        {
+            if (await CanPerformLevel1ActionAsync(payment.Status))
+            {
+                return dto.IsApprove ? PaymentApprovalAction.L1Approve : PaymentApprovalAction.L1Decline;
+            }
+
+            if (await CanPerformLevel2ActionAsync(payment))
+            {
+                if (dto.IsApprove)
+                {
+                    return payment.Amount > paymentThreshold
+                        ? PaymentApprovalAction.L2Approve
+                        : PaymentApprovalAction.Submit;
+                }
+                return PaymentApprovalAction.L2Decline;
+            }
+
+            if (await CanPerformLevel3ActionAsync(payment.Status))
+            {
+                return dto.IsApprove ? PaymentApprovalAction.Submit : PaymentApprovalAction.L3Decline;
+            }
+
+            return PaymentApprovalAction.None;
+        }
+
+        private async Task<bool> CanPerformLevel1ActionAsync(PaymentRequestStatus status)
+        {
+            List<PaymentRequestStatus> level1Approvals = new() { PaymentRequestStatus.L1Pending, PaymentRequestStatus.L1Declined };
+            return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L1ApproveOrDecline) && level1Approvals.Contains(status);
+        }
+
+        private async Task<bool> CanPerformLevel2ActionAsync(PaymentRequest payment)
+        {
+            List<PaymentRequestStatus> level2Approvals = new() { PaymentRequestStatus.L2Pending, PaymentRequestStatus.L2Declined };
+            return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L2ApproveOrDecline) && level2Approvals.Contains(payment.Status);
+        }
+
+        private async Task<bool> CanPerformLevel3ActionAsync(PaymentRequestStatus status)
+        {
+            List<PaymentRequestStatus> level3Approvals = new() { PaymentRequestStatus.L3Pending, PaymentRequestStatus.L3Declined };
+            return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && level3Approvals.Contains(status);
+        }
+
+        private async Task<PaymentRequestDto> CreatePaymentRequestDtoAsync(Guid paymentRequestId)
+        {
+            var payment = await _paymentRequestsRepository.GetAsync(paymentRequestId);
+            return new PaymentRequestDto
+            {
+                Id = payment.Id,
+                InvoiceNumber = payment.InvoiceNumber,
+                InvoiceStatus = payment.InvoiceStatus,
+                Amount = payment.Amount,
+                PayeeName = payment.PayeeName,
+                SupplierNumber = payment.SupplierNumber,
+                ContractNumber = payment.ContractNumber,
+                CorrelationId = payment.CorrelationId,
+                CorrelationProvider = payment.CorrelationProvider,
+                Description = payment.Description,
+                CreationTime = payment.CreationTime,
+                Status = payment.Status,
+                ReferenceNumber = payment.ReferenceNumber,
+            };
         }
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -256,22 +310,30 @@ namespace Unity.Payments.PaymentRequests
 
         private async Task<int> GetNextSequenceNumberAsync(int currentYear)
         {
-            // Retrieve all payment requests and filter for the current year
+            // Retrieve all payment requests
             var payments = await _paymentRequestsRepository.GetListAsync();
-            var latestPayment = payments
+
+            // Filter payments for the current year
+            var filteredPayments = payments
                 .Where(p => p.CreationTime.Year == currentYear)
                 .OrderByDescending(p => p.CreationTime)
-                .FirstOrDefault();
+                .ToList();
 
-            if (latestPayment != null)
+            // Use the first payment in the sorted list (most recent) if available
+            if (filteredPayments.Count > 0)
             {
-                var latestSequenceNumber = int.Parse(latestPayment.ReferenceNumber.Split('-').Last());
-                return latestSequenceNumber + 1;
+                var latestPayment = filteredPayments[0]; // Access the most recent payment directly
+                var referenceParts = latestPayment.ReferenceNumber.Split('-');
+
+                // Extract the sequence number from the reference number safely
+                if (referenceParts.Length > 0 && int.TryParse(referenceParts[^1], out int latestSequenceNumber))
+                {
+                    return latestSequenceNumber + 1;
+                }
             }
-            else
-            {
-                return 1;
-            }
+
+            // If no payments exist or parsing fails, return the initial sequence number
+            return 1;
         }
     }
 }

@@ -16,7 +16,7 @@ using Unity.Payments.Codes;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Uow;
-using Unity.Modules.Http;
+using Unity.Modules.Shared.Http;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -83,6 +83,7 @@ namespace Unity.Payments.Integrations.Cas
                 casInvoice.DateInvoiceReceived = dateStringDayMonYear;
                 casInvoice.GlDate = dateStringDayMonYear;
                 casInvoice.InvoiceAmount = paymentRequest.Amount;
+                casInvoice.InvoiceBatchName = paymentRequest.BatchName;
 
                 InvoiceLineDetail invoiceLineDetail = new InvoiceLineDetail();
                 invoiceLineDetail.InvoiceLineNumber = 1;
@@ -174,7 +175,7 @@ namespace Unity.Payments.Integrations.Cas
             {
                 if(response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
                 {
-                    var contentString = Unity.Modules.Http.ResilientHttpRequest.ContentToString(response.Content);
+                    var contentString = Unity.Modules.Shared.Http.ResilientHttpRequest.ContentToString(response.Content);
                     var result = JsonSerializer.Deserialize<InvoiceResponse>(contentString)
                         ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
                     result.CASHttpStatusCode = response.StatusCode;
@@ -204,7 +205,7 @@ namespace Unity.Payments.Integrations.Cas
                 && response.Content != null
                 && response.IsSuccessStatusCode)
             {
-                string contentString = Unity.Modules.Http.ResilientHttpRequest.ContentToString(response.Content);
+                string contentString = Unity.Modules.Shared.Http.ResilientHttpRequest.ContentToString(response.Content);
                 var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(contentString);
                 return result ?? new CasPaymentSearchResult();
             }
