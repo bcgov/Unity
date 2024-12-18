@@ -32,6 +32,15 @@
     color: #42814A;
 }
 
-.error-icon {
-    color: #fa2828;
+#PaymentRequestListTable .error-icon {
+    color: var(--mp-alt-row-color);
+}
+
+#PaymentRequestListTable .error-icon-selected {
+    color: var(--mp-warning-color);
+}
+
+#PaymentRequestListTable .error-row td {
+    background-color: var(--mp-warning-color);
+    color: var(--mp-alt-row-color) !important;
 }
