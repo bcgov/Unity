@@ -84,6 +84,7 @@ namespace Unity.Payments.Integrations.Cas
                 casInvoice.GlDate = dateStringDayMonYear;
                 casInvoice.InvoiceAmount = paymentRequest.Amount;
                 casInvoice.InvoiceBatchName = paymentRequest.BatchName;
+                casInvoice.PaymentAdviceComments = paymentRequest.Description;
 
                 InvoiceLineDetail invoiceLineDetail = new InvoiceLineDetail();
                 invoiceLineDetail.InvoiceLineNumber = 1;
