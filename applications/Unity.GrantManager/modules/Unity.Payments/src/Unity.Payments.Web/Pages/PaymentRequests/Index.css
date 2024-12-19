@@ -33,14 +33,14 @@
 }
 
 #PaymentRequestListTable .error-icon {
-    color: var(--mp-alt-row-color);
+    color: #FF0909;
 }
 
 #PaymentRequestListTable .error-icon-selected {
-    color: var(--mp-warning-color);
+    color: #FF0909;
 }
 
 #PaymentRequestListTable .error-row td {
-    background-color: var(--mp-warning-color);
-    color: var(--mp-alt-row-color) !important;
+    background-color: #FEEAEA;
+    color: #FF0909 !important;
 }
