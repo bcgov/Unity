@@ -12,6 +12,7 @@ namespace Unity.Payments.Web.Pages.Payments
         [Required]
         public decimal Amount { get; set; }
         [DisplayName("ApplicationPaymentRequest:Description")]
+        [MaxLength(40)]
         public string? Description { get; set; }
         [Required(ErrorMessage = "This field is required.")]
         [DisplayName("ApplicationPaymentRequest:InvoiceNumber")]
