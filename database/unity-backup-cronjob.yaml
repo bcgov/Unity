@@ -2,45 +2,40 @@ apiVersion: template.openshift.io/v1
 kind: Template
 message: |-
   A scheduled cronjob has been created in your project: unity-backup.
-  For more information about using this template, including OpenShift considerations, 
+  For more information about using this template, including OpenShift considerations,
   see template usage guide found in the project readme.md and wiki documents.
 metadata:
   name: unity-backup-cronjob
-  # This template uses a separate parameter .env file to override the default values defined in this section. 
-  # oc process -f .\openshift\unity-backup-cronjob.yaml | oc create -f -
+  # This template uses a separate parameter .env file to override the default values defined in this section.
+  # oc process -f .\database\unity-backup-cronjob.yaml --param-file=backup-cronjob.env | oc create -f -
   labels:
-    template: unity-backup-cronjob  
+    template: unity-backup-cronjob
   annotations:
     description: |-
       Template for running a recurring backup script in OpenShift.
     iconClass: icon-build
     openshift.io/display-name: Database Backup Cronjob
     template.openshift.io/long-description: |-
-      This template defines resources needed to build and deploy a postgresql container application.
+      This template defines resources needed to run a Postgres-16 container application.
     tags: database,postgresql
 parameters:
 # Project namespace parameters
+- description: The name of the backup application.
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: true
+  value: unity-backup-cronjob
 - description: The name of the application grouping.
   displayName: Application Group
   name: APPLICATION_GROUP
   required: true
   value: unity-grantmanager
-- description: The name of the backup application.
-  displayName: Application Name
-  name: BACKUP_APPLICATION_NAME
-  required: true
-  value: unity-backup
-# Additional parameters for project database provisioning
+# Additional parameters for project database provisioning.
 - description: The name of the OpenShift Service exposed for the database.
   displayName: Database Service Name
   name: DATABASE_SERVICE_NAME
   required: true
   value: unity-data-postgres
-- description: Password for the PostgreSQL connection user.
-  displayName: PostgreSQL Connection Password
-  name: POSTGRESQL_PASSWORD
-  from: '[a-zA-Z0-9]{26}'
-  generate: expression
 - name: DATABASE_BACKUP_KEEP
   description: 'Number of backups to keep'
   value: '2'
@@ -57,16 +52,16 @@ parameters:
   name: STORAGE_OBJECT_NAME
   required: true
   value: s3-object-storage
-- description: The Namespace where the database container image resides default=redhat cluster=openshift, project=tools
+- description: The Namespace where the container image resides default=project-tools cluster=openshift, source=registry.redhat.io/rhel9/postgresql-16
   displayName: Registry Namespace
   name: IMAGEPULL_NAMESPACE
-  required: true
-  value: redhat
+  from: '[a-zA-Z0-9]{5}-tools'
+  generate: expression
 - description: The Openshift ImageStream Name
   displayName: Registry imagestream name
   name: IMAGESTREAM_NAME
   required: true
-  value: postgresql-15  
+  value: postgresql-16
 - description: The version of the postgresql container image to use.
   displayName: Registry container image  to pull
   name: IMAGESTREAM_TAG
@@ -76,43 +71,33 @@ parameters:
   displayName: Registry container image to pull
   name: IMAGEPULL_REGISTRY
   required: true
-  value: registry.redhat.io/rhel9/
-# Resource limits control how much CPU and memory a container will consume
-- description: The minimum amount of CPU the Container is guaranteed.
+  value: image-registry.apps.silver.devops.gov.bc.ca
+# Resource limits
+- description: The minimum amount of CPU the container is guaranteed.
   displayName: CPU Request
   name: CPU_REQUEST
   required: true
   value: 50m
-- description: The maximum amount of CPU the Container is allowed to use when running.
-  displayName: CPU Limit
-  name: CPU_LIMIT
-  required: true
-  value: 200m
-- description: The minimum amount of Memory the Container is guaranteed.
+- description: The minimum amount of memory the container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
   required: true
-  value: 256Mi
-- description: The maximum amount of Memory the Container is allowed to use when running.
-  displayName: Memory Limit
-  name: MEMORY_LIMIT
-  required: true
-  value: 512Mi
-# Template objects to instantiate the project database.
+  value: 64Mi
+# Template objects to instantiate the project.
 objects:
 # Recurring cronjob for Database Backups
 - apiVersion: batch/v1
   kind: CronJob
   metadata:
-    name: ${BACKUP_APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
     labels:
-      job-name: ${BACKUP_APPLICATION_NAME}
-      app.kubernetes.io/component: ${DATABASE_SERVICE_NAME}
-      app.kubernetes.io/instance: ${DATABASE_SERVICE_NAME}-1
-      app.kubernetes.io/name: ${BACKUP_APPLICATION_NAME}
+      job-name: ${APPLICATION_NAME}
+      app.kubernetes.io/component: ${APPLICATION_NAME}
+      app.kubernetes.io/instance: ${APPLICATION_NAME}-1
+      app.kubernetes.io/name: ${APPLICATION_NAME}
       app.kubernetes.io/part-of: ${APPLICATION_GROUP}
   # Cronjob script works with both database or instance backup commands
-  # pg_dump --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean --create ${DATABASE_SERVICE_NAME} 
+  # pg_dump --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean --create ${DATABASE_SERVICE_NAME}
   # pg_dumpall --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean
   spec:
     schedule: ${DATABASE_BACKUP_SCHEDULE}
@@ -124,27 +109,26 @@ objects:
         template:
           spec:
             volumes:
-              - name: ${BACKUP_APPLICATION_NAME}
+              - name: ${APPLICATION_NAME}
                 persistentVolumeClaim:
                   claimName: ${DATABASE_BACKUP_VOLUME_CLAIM}
             containers:
-              - name: ${BACKUP_APPLICATION_NAME}
+              - name: ${APPLICATION_NAME}
                 image: ${IMAGEPULL_REGISTRY}/${IMAGEPULL_NAMESPACE}/${IMAGESTREAM_NAME}:${IMAGESTREAM_TAG}
                 command:
                   - 'bash'
                   - '-eo'
                   - 'pipefail'
                   - '-c'
-                  - > 
+                  - >
                     trap "echo Backup failed; exit 0" ERR; date;
                     FILENAME=dumpall-${DATABASE_SERVICE_NAME}-`date +%Y-%m-%d_%H%M%S`.sql.gz;
-                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_SERVICE_NAME}-*"  -exec ls -1tr "{}" + | head -n -$DATABASE_BACKUP_KEEP | xargs rm -fr; 
-                    PGPASSWORD="$UNITY_POSTGRES_PASSWORD" pg_dumpall --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME); 
-                    echo "";
-                    echo "Backup successful"; du -h /var/lib/pgsql/backups/$FILENAME; 
-                    echo "to restore the backup to the serviced host use: $ psql --username=$UNITY_POSTGRES_USER --password --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT postgres < /var/lib/pgsql/backups/<backupfile> (unpacked with gunzip)";
-                    echo ""; du -hs /var/lib/pgsql/backups;/var/lib/pgsql/backups/bin/mc alias set $AccessKeyID $RestEndpoint $AccessKeyID $SecretKey;/var/lib/pgsql/backups/bin/mc cp /var/lib/pgsql/backups/$FILENAME $AccessKeyID/$BucketDisplayName/Unity/Backups
-                ## Add single and mapped environment values
+                    time (find /var/lib/pgsql/backups -type f -name "*-${DATABASE_SERVICE_NAME}-*"  -exec ls -1tr "{}" + | head -n -$DATABASE_BACKUP_KEEP | xargs rm -fr;
+                    PGPASSWORD="$UNITY_POSTGRES_PASSWORD" pg_dumpall --username=$UNITY_POSTGRES_USER --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --column-inserts --clean | gzip > /var/lib/pgsql/backups/$FILENAME);
+                    echo "";echo "Backup successful";du -h /var/lib/pgsql/backups/$FILENAME;
+                    echo "to restore the backup use: $ psql --username=$UNITY_POSTGRES_USER --password --host=$UNITY_DB_HOST --port=$UNITY_DB_PORT --username postgres < /var/lib/pgsql/backups/<backupfile> (unpacked with gunzip)";
+                    echo "";/var/lib/pgsql/backups/bin/mc alias set $AccessKeyID $RestEndpoint $AccessKeyID $SecretKey;/var/lib/pgsql/backups/bin/mc cp /var/lib/pgsql/backups/$FILENAME $AccessKeyID/$BucketDisplayName/Unity/Backups;
+                    echo "";ls -la /var/lib/pgsql/backups
                 env:
                   - name: RestEndpoint
                     valueFrom:
@@ -165,24 +149,18 @@ objects:
                     valueFrom:
                       secretKeyRef:
                         name: ${STORAGE_OBJECT_NAME}
-                        key: S3__SecretAccessKey                        
+                        key: S3__SecretAccessKey
                   - name: DATABASE_BACKUP_KEEP
                     value: ${DATABASE_BACKUP_KEEP}
                   - name: TZ
                     value: Canada/Pacific
                 envFrom:
-                  ## Add all from ${DATABASE_SERVICE_NAME}
-                  - configMapRef:
-                      name: ${DATABASE_SERVICE_NAME}
                   - secretRef:
                       name: ${DATABASE_SERVICE_NAME}
                 volumeMounts:
-                  - name: ${BACKUP_APPLICATION_NAME}
+                  - name: ${APPLICATION_NAME}
                     mountPath: /var/lib/pgsql/backups
                 resources:
-                  limits:
-                    cpu: ${CPU_LIMIT}
-                    memory: ${MEMORY_LIMIT} 
                   requests:
                     cpu: ${CPU_REQUEST}
                     memory: ${MEMORY_REQUEST}
