@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Unity.Payments.Suppliers;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Features;
+using Unity.GrantManager.Applicants;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
@@ -16,33 +17,22 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
         ScriptTypes = [typeof(SupplierInfoWidgetScriptBundleContributor)],
         StyleTypes = [typeof(SupplierInfosWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class SupplierInfoViewComponent : AbpViewComponent
+    public class SupplierInfoViewComponent(IApplicantsAppService applicantsService,
+                                           IFeatureChecker featureChecker) : AbpViewComponent
     {
-        private readonly ISupplierAppService _supplierService;
-        private readonly IFeatureChecker _featureChecker;
-
-        public SupplierInfoViewComponent(ISupplierAppService supplierService,
-            IFeatureChecker featureChecker)
-        {
-            _supplierService = supplierService;
-            _featureChecker = featureChecker;
-        }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
         {
-            if (await _featureChecker.IsEnabledAsync("Unity.Payments"))
-            {
-                var supplier = await _supplierService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
-                {
-                    CorrelationId = applicantId,
-                    CorrelationProvider = CorrelationConsts.Applicant
-                });
 
+            if (await featureChecker.IsEnabledAsync("Unity.Payments"))
+            {
+                SupplierDto? supplier = await GetSupplierByApplicantIdAsync(applicantId);
                 return View(new SupplierInfoViewModel()
                 {
+                    ApplicantId = applicantId,
                     SupplierCorrelationId = applicantId,
                     SupplierCorrelationProvider = CorrelationConsts.Applicant,
-                    SupplierId = supplier?.Id ?? Guid.Empty, 
+                    SupplierId = supplier?.Id ?? Guid.Empty,
                     SupplierNumber = supplier?.Number?.ToString(),
                     SupplierName = supplier?.Name?.ToString(),
                     Status = supplier?.Status?.ToString(),
@@ -52,6 +42,11 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
             {
                 return View(new SupplierInfoViewModel());
             }
+        }
+
+        public virtual async Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId)
+        {
+            return await applicantsService.GetSupplierByApplicantIdAsync(applicantId);
         }
     }
 

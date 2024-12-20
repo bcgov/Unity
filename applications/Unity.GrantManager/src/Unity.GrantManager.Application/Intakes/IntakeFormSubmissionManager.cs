@@ -13,7 +13,7 @@ using Volo.Abp.Uow;
 namespace Unity.GrantManager.Intakes
 {
     public class IntakeFormSubmissionManager(IUnitOfWorkManager _unitOfWorkManager,
-                                             IApplicantsService applicantsService,
+                                             IApplicantsAppService applicantsService,
                                              IApplicationRepository _applicationRepository,
                                              IApplicationStatusRepository _applicationStatusRepository,
                                              IApplicationFormSubmissionRepository _applicationFormSubmissionRepository,
