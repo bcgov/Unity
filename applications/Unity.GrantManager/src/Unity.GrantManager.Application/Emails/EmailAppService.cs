@@ -17,18 +17,31 @@ namespace Unity.GrantManager.Emails
     {
         public async Task<bool> CreateAsync(CreateEmailDto dto)
         {
+            EmailNotificationEvent emailNotificationEvent= getEmailNotificationEvent(dto);
+            emailNotificationEvent.Action = EmailAction.SendCustom;
+            await localEventBus.PublishAsync(emailNotificationEvent);
+            return true;
+        }
 
+        public async Task<bool> SaveDraftAsync(CreateEmailDto dto)
+        {
+            EmailNotificationEvent emailNotificationEvent= getEmailNotificationEvent(dto);
+            emailNotificationEvent.Action = EmailAction.SaveDraft;
+            await localEventBus.PublishAsync(emailNotificationEvent);
+            return true;
+        }
+
+        private EmailNotificationEvent getEmailNotificationEvent(CreateEmailDto dto) {
             List<string> toList = new();
             string[] emails = dto.EmailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
 
             foreach (string email in emails) {
                 toList.Add(email.Trim());
             }
-
-            await localEventBus.PublishAsync(
-                new EmailNotificationEvent
+            return 
+            new EmailNotificationEvent
                 {
-                    Action = EmailAction.SendCustom,
+
                     ApplicationId = dto.ApplicationId,
                     RetryAttempts = 0,
                     EmailAddress = dto.EmailTo, 
@@ -36,10 +49,7 @@ namespace Unity.GrantManager.Emails
                     EmailFrom = dto.EmailFrom,
                     Subject = dto.EmailSubject,
                     Body = dto.EmailBody
-                }
-            );
-
-            return true;
+                };
         }
     }
 }

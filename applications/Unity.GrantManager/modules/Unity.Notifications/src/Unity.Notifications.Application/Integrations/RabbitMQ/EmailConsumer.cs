@@ -76,6 +76,12 @@ public class EmailConsumer : IQueueConsumer<EmailMessages>
                         emailLog.ChesResponse = JsonConvert.SerializeObject(response);
                         emailLog.ChesStatus = response.StatusCode.ToString();
 
+                        if(response.StatusCode.ToString() == "Created") {
+                            emailLog.Status = EmailStatus.Created;
+                        } else if (response.StatusCode.ToString() == "0") {
+                            emailLog.Status = EmailStatus.Failed;
+                        }
+
                         if (ReprocessBasedOnStatusCode(response.StatusCode))
                         {
                             emailLog.RetryAttempts = emailLog.RetryAttempts + 1;
