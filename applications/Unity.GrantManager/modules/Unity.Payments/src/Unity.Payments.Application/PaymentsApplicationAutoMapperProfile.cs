@@ -12,7 +12,9 @@ public class PaymentsApplicationAutoMapperProfile : Profile
 {
     public PaymentsApplicationAutoMapperProfile()
     {
-        CreateMap<PaymentRequest, PaymentRequestDto>();
+        CreateMap<PaymentRequest, PaymentRequestDto>()
+            .ForMember(dest => dest.ErrorSummary, options => options.Ignore());
+
         CreateMap<PaymentRequest, PaymentDetailsDto>();
         CreateMap<ExpenseApproval, ExpenseApprovalDto>();
         CreateMap<Site, SiteDto>()
