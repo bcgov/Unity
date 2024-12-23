@@ -124,7 +124,8 @@ namespace Unity.Payments.PaymentRequests
             return createdPayments;
         }
 
-        private async Task<decimal> GetMaxBatchNumberAsync() {
+        private async Task<decimal> GetMaxBatchNumberAsync()
+        {
             var paymentRequestList = await _paymentRequestsRepository.GetListAsync();
             decimal batchNumber = 1; // Lookup max plus 1
             if (paymentRequestList != null && paymentRequestList.Count > 0)
@@ -240,10 +241,29 @@ namespace Unity.Payments.PaymentRequests
             var totalCount = await _paymentRequestsRepository.GetCountAsync();
             using (_dataFilter.Disable<ISoftDelete>())
             {
-                var payments = await _paymentRequestsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
-                return new PagedResultDto<PaymentRequestDto>(totalCount, ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments));
+                var payments = await _paymentRequestsRepository
+                    .GetPagedListAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty, true);
+
+                var mappedPayments = ObjectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments);
+
+                ApplyErrorSummary(mappedPayments);
+
+                return new PagedResultDto<PaymentRequestDto>(totalCount, mappedPayments);
             }
         }
+
+        private static void ApplyErrorSummary(List<PaymentRequestDto> mappedPayments)
+        {
+            mappedPayments.ForEach(mappedPayment =>
+            {
+                if (!string.IsNullOrWhiteSpace(mappedPayment.CasResponse) &&
+                    !mappedPayment.CasResponse.Equals("SUCCEEDED", StringComparison.OrdinalIgnoreCase))
+                {
+                    mappedPayment.ErrorSummary = mappedPayment.CasResponse;
+                }
+            });
+        }
+
         public async Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId)
         {
             using (_dataFilter.Disable<ISoftDelete>())

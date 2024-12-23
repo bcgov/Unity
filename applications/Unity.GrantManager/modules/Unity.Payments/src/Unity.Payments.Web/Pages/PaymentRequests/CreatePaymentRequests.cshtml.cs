@@ -109,16 +109,12 @@ namespace Unity.Payments.Web.Pages.Payments
         private static List<string> GetErrorlist(SupplierDto? supplier, GrantApplicationDto application, decimal remainingAmount)
         {
             bool missingFields = false;
+
             List<string> errorList = [];
             if (!(supplier != null
                                 && supplier.Sites != null
                                 && supplier.Sites.Count > 0
                                 && supplier.Number != null))
-            {
-                missingFields = true;
-            }
-
-            if (application.ContractNumber.IsNullOrEmpty())
             {
                 missingFields = true;
             }
@@ -130,7 +126,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
             if (missingFields)
             {
-                errorList.Add("Some payment information is missing for this applicant, please make sure Contract # and Supplier info are available.");
+                errorList.Add("Some payment information is missing for this applicant, please make sure Supplier info is provided.");
             }
 
             if (application.StatusCode != GrantApplicationState.GRANT_APPROVED)
@@ -142,6 +138,7 @@ namespace Unity.Payments.Web.Pages.Payments
             {
                 errorList.Add("The selected application is not Payable. To continue please remove the item from the list.");
             }
+
             return errorList;
         }
 
@@ -205,7 +202,6 @@ namespace Unity.Payments.Web.Pages.Payments
                     SupplierNumber = payment.SupplierNumber ?? string.Empty,
                     PayeeName = payment.ApplicantName ?? string.Empty,
                     CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicationCorrelationProvider,
-
                 });
             }
 

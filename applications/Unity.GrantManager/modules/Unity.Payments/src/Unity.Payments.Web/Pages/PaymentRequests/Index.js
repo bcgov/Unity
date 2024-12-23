@@ -105,6 +105,19 @@ $(function () {
         defaultVisibleColumns,
         listColumns, 10, 9, unity.payments.paymentRequests.paymentRequest.getList, {}, responseCallback, actionButtons, 'dynamicButtonContainerId');
 
+    // Attach the draw event to add custom row coloring logic
+    dataTable.on('draw', function () {
+        dataTable.rows().every(function () {
+            let data = this.data();
+            if (data.errorSummary != null && data.errorSummary !== '') {
+                $(this.node()).addClass('error-row'); // Change to your desired color
+            }
+        });
+
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
     let history_button = dataTable.buttons(['.history']);
 
@@ -132,6 +145,12 @@ $(function () {
                 if ($(".chkbox:checked").length == $(".chkbox").length) {
                     $(".select-all-payments").prop("checked", true);
                 }
+                let row = dataTable.row(index).node();
+                let data = dataTable.row(index).data();
+                if (data.errorSummary != null && data.errorSummary !== '') {
+                    $(row).removeClass('error-row');
+                    $(row).find('i.fa-flag').addClass('error-icon-selected');
+                }
                 selectApplication(type, index, 'select_batchpayment_application');
             });
         }
@@ -144,6 +163,12 @@ $(function () {
                 $("#row_" + index).prop("checked", false);
                 if ($(".chkbox:checked").length != $(".chkbox").length) {
                     $(".select-all-payments").prop("checked", false);
+                }
+                let row = dataTable.row(index).node();
+                let data = dataTable.row(index).data();
+                if (data.errorSummary != null && data.errorSummary !== '') {
+                    $(row).addClass('error-row');
+                    $(row).find('i.fa-flag').removeClass('error-icon-selected');
                 }
             });
         }
@@ -233,15 +258,23 @@ $(function () {
             data: 'referenceNumber',
             className: 'data-table-header',
             index: 0,
+            render: function (data, _, row) {
+                if (row.errorSummary != null && row.errorSummary !== '') {
+                    return `${data} <i class="fa fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
+                } else {
+                    return data;
+                }
+            }
         };
     }
+
     function getApplicantNameColumn() {
         return {
             title: l('ApplicationPaymentListTable:ApplicantName'),
             name: 'applicantName',
             data: 'payeeName',
             className: 'data-table-header',
-            index: 1,
+            index: 1
         };
     }
 
