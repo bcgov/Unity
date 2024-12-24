@@ -183,6 +183,13 @@ jobs:
     - name: Disconnect docker from JFrog Artifactory
       run: |
         docker logout
+    - name: Install OpenShift CLI
+      run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xvf oc.tar.gz
+          sudo mv oc /usr/local/bin
+    - name: Verify OpenShift CLI installation
+      run: oc version
     - name: Connect to OpenShift API non-interactive login using current session token
       run: |
         oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER
