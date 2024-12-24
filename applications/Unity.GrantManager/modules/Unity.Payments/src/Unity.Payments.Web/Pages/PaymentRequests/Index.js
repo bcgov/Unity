@@ -22,7 +22,8 @@ $(function () {
         'l1Approval',
         'l2Approval',
         'l3Approval',
-        'CASResponse'
+        'CASResponse',
+        'batchName',
     ];
 
     let paymentRequestStatusModal = new abp.ModalManager({
@@ -248,6 +249,7 @@ $(function () {
             getInvoiceStatusColumn(),
             getPaymentStatusColumn(),
             getCASResponseColumn(),
+            getBatchNameColumn(),
         ]
     }
 
@@ -491,6 +493,23 @@ $(function () {
         };
     }
 
+    function getBatchNameColumn() {
+        return {
+            title: l('ApplicationPaymentListTable:BatchName'),
+            name: 'batchName',
+            data: 'batchName',
+            className: 'data-table-header',
+            index: 19,
+            render: function (data) {
+                if (data + "" !== "undefined" && data?.length > 0) {
+                    return data;
+                } else {
+                    return "";
+                }
+            }
+        };
+    }
+
     function getCASResponseColumn() {
         // Add button to view response modal
         return {
@@ -521,8 +540,6 @@ $(function () {
     /* the resizer needs looking at again after ux2 refactor 
      window.addEventListener('resize', setTableHeighDynamic('PaymentRequestListTable'));
     */
-
-
 
     $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();
