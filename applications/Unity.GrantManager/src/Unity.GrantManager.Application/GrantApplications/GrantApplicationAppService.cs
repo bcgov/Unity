@@ -318,6 +318,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
         return await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields);
     }
 
+    [Authorize(GrantApplicationPermissions.ProjectInfo.Update)]
     public async Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input)
     {
         var application = await _applicationRepository.GetAsync(id);

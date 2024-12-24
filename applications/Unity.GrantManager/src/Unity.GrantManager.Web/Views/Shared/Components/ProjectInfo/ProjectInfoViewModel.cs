@@ -42,6 +42,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         public List<SelectListItem> CommunityList { get; set; } = new List<SelectListItem>();
         public List<CommunityDto> Communities { get; set; } = new List<CommunityDto>();
         public List<SelectListItem> RegionalDistrictList { get; set; } = new List<SelectListItem>();
+        public bool IsFormEditGranted { get; set; }
         public bool IsEditGranted { get; set; }
         public bool IsPostEditFieldsAllowed { get; set; }
 

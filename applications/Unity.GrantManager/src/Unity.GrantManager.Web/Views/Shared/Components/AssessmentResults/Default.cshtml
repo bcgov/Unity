@@ -25,6 +25,7 @@
     </abp-column>
     <form id="assessmentResultForm">
         <fieldset name="assessmentResults" @(!Model.IsFormEditGranted ? "disabled" : "")>
+            <legend class="d-none">@L["AssessmentResultsView:AssessmentResultsTitle"].Value</legend>
         <abp-row class="m-0 assessment-result-form">
             <abp-column size="_12" class="px-0">
                 <abp-row class="m-0">
