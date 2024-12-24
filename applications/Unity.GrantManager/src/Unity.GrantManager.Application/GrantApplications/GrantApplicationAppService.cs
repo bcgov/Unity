@@ -260,6 +260,7 @@ public class GrantApplicationAppService : GrantManagerAppService, IGrantApplicat
 
     }
 
+    [Authorize(GrantApplicationPermissions.AssessmentResults.Edit)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await _applicationRepository.GetAsync(id);

@@ -24,6 +24,7 @@
                     icon-type="Other" icon="fl fl-save" button-type="Primary" disabled="true" />
     </abp-column>
     <form id="assessmentResultForm">
+        <fieldset name="assessmentResults" @(!Model.IsFormEditGranted ? "disabled" : "")>
         <abp-row class="m-0 assessment-result-form">
             <abp-column size="_12" class="px-0">
                 <abp-row class="m-0">
@@ -139,7 +140,7 @@
                      })
             </div>
         }
-
+        </fieldset>
     </form>
 </abp-row>
 
