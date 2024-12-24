@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Emails
     {
         public async Task<bool> CreateAsync(CreateEmailDto dto)
         {
-            EmailNotificationEvent emailNotificationEvent= getEmailNotificationEvent(dto);
+            EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
             emailNotificationEvent.Action = EmailAction.SendCustom;
             await localEventBus.PublishAsync(emailNotificationEvent);
             return true;
@@ -25,31 +25,33 @@ namespace Unity.GrantManager.Emails
 
         public async Task<bool> SaveDraftAsync(CreateEmailDto dto)
         {
-            EmailNotificationEvent emailNotificationEvent= getEmailNotificationEvent(dto);
+            EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
             emailNotificationEvent.Action = EmailAction.SaveDraft;
             await localEventBus.PublishAsync(emailNotificationEvent);
             return true;
         }
 
-        private EmailNotificationEvent getEmailNotificationEvent(CreateEmailDto dto) {
-            List<string> toList = new();
+        private static EmailNotificationEvent GetEmailNotificationEvent(CreateEmailDto dto)
+        {
+            List<string> toList = [];
             string[] emails = dto.EmailTo.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (string email in emails) {
+            foreach (string email in emails)
+            {
                 toList.Add(email.Trim());
             }
-            return 
+            return
             new EmailNotificationEvent
-                {
+            {
 
-                    ApplicationId = dto.ApplicationId,
-                    RetryAttempts = 0,
-                    EmailAddress = dto.EmailTo, 
-                    EmailAddressList = toList,
-                    EmailFrom = dto.EmailFrom,
-                    Subject = dto.EmailSubject,
-                    Body = dto.EmailBody
-                };
+                ApplicationId = dto.ApplicationId,
+                RetryAttempts = 0,
+                EmailAddress = dto.EmailTo,
+                EmailAddressList = toList,
+                EmailFrom = dto.EmailFrom,
+                Subject = dto.EmailSubject,
+                Body = dto.EmailBody
+            };
         }
     }
 }

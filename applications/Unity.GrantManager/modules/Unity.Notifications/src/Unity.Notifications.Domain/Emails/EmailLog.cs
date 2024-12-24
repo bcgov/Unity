@@ -5,7 +5,6 @@ using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Notifications.Emails;
-
 public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     [Key]

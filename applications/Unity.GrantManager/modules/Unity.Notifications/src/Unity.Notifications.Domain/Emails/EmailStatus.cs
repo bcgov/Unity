@@ -1,3 +1,4 @@
+namespace Unity.Notifications.Emails;
 
 public static class EmailStatus
 {
