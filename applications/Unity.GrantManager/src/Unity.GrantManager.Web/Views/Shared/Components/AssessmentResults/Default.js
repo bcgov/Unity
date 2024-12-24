@@ -219,7 +219,9 @@ function enableAssessmentResultsSaveBtn() {
         return;
     }
 
-    $('#saveAssessmentResultBtn').prop('disabled', false);
+    if (abp.auth.isGranted('GrantApplicationManagement.AssessmentResults.Update')) {
+        $('#saveAssessmentResultBtn').prop('disabled', false);
+    }
 }
 
 
