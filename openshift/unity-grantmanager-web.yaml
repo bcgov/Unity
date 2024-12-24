@@ -519,8 +519,6 @@ objects:
                 name: ${APPLICATION_NAME}
             - secretRef:
                 name: ${APPLICATION_NAME}
-            - configMapRef:
-                name: ${DATABASE_SERVICE_NAME}
             - secretRef:
                 name: ${DATABASE_SERVICE_NAME}
             - configMapRef:
@@ -589,8 +587,6 @@ objects:
     name: ${Redis__HostName}
     annotations:
       app.openshift.io/route-disabled: "false"
-      app.openshift.io/vcs-ref: ${SOURCE_REPOSITORY_REF}
-      app.openshift.io/vcs-uri: ${SOURCE_REPOSITORY_URL}
       image.openshift.io/triggers: >-
         [{"from":{"kind":"ImageStreamTag","name":"${REDIS_IMAGESTREAM_NAME}:${REDIS_IMAGESTREAM_TAG}","namespace":"${REDIS_IMAGEPULL_NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"${Redis__HostName}\")].image","pause":"false"}]
     labels:

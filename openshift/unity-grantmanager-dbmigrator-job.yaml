@@ -2,11 +2,11 @@ apiVersion: template.openshift.io/v1
 kind: Template
 message: |-
   A job has been created in your project: unity-grantmanager-dbmigrator-job.
-  For more information about using this template, including OpenShift considerations, 
+  For more information about using this template, including OpenShift considerations,
   see template usage guide found in the project readme.md and wiki documents.
 metadata:
   name: unity-grantmanager-dbmigrator-job
-  # This template uses a separate parameter .env file to override the default values defined in this section. 
+  # This template uses a separate parameter .env file to override the default values defined in this section.
   # oc process -f .\openshift\unity-grantmanager-dbmigrator-job.yaml --param-file=.env | oc create -f -
   labels:
     template: unity-grantmanager-dbmigrator-job
@@ -46,10 +46,10 @@ parameters:
   name: IMAGEPULL_NAMESPACE
   from: '[a-zA-Z0-9]{5}-tools'
   generate: expression
-- description: The ImageStream Name 
+- description: The ImageStream Name
   displayName: Registry imagestream name
   name: IMAGESTREAM_NAME
-  value: unity-dbmigrator-build 
+  value: unity-dbmigrator-build
 - description: The version of the image to use, e.g. v1.0.0, v0.1.0, latest the ImageStream tag.
   displayName: Application Version
   name: IMAGESTREAM_TAG
@@ -65,21 +65,11 @@ parameters:
   name: CPU_REQUEST
   required: true
   value: 50m
-- description: The maximum amount of CPU the container is allowed to use.
-  displayName: CPU Limit
-  name: CPU_LIMIT
-  required: true
-  value: 400m
 - description: The minimum amount of memory the container is guaranteed.
   displayName: Memory Request
   name: MEMORY_REQUEST
   required: true
   value: 64Mi
-- description: The maximum amount of memory the container is allowed to use.
-  displayName: Memory Limit
-  name: MEMORY_LIMIT
-  required: true
-  value: 512Mi
 # Template objects to instantiate the project.
 objects:
 # RunOnce Job for Database Migrator
@@ -120,15 +110,9 @@ objects:
                 value: >-
                   Host=$(UNITY_DB_HOST);port=$(UNITY_DB_PORT);Database=$(UNITY_TENANT_DB);Username=$(UNITY_POSTGRES_USER);Password=$(UNITY_POSTGRES_PASSWORD)
             envFrom:
-              ## Add all from ${DATABASE_SERVICE_NAME}
-              - configMapRef:
-                  name: ${DATABASE_SERVICE_NAME}
               - secretRef:
                   name: ${DATABASE_SERVICE_NAME}
             resources:
-              limits:
-                cpu: ${CPU_LIMIT}
-                memory: ${MEMORY_LIMIT}
               requests:
                 cpu: ${CPU_REQUEST}
                 memory: ${MEMORY_REQUEST}
