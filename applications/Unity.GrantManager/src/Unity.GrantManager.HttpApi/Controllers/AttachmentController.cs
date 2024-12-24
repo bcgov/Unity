@@ -14,6 +14,7 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Validation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Unity.GrantManager.Models;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -156,6 +157,52 @@ namespace Unity.GrantManager.Controllers
                 logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, "An error occurred while downloading the file.");
             }
+        }
+
+        [HttpPost("chefs/download-all")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> DownloadAllChefsAttachment([FromBody] List<AttachmentsDto> input)
+        {
+            var files = new List<FileContentResult>();
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            foreach (var item in input)
+            {
+                if (string.IsNullOrWhiteSpace(item.FileName))
+                {
+                    return BadRequest("File name must be provided.");
+                }
+
+                try
+                {
+                    var fileDto = await _submissionAppService.GetChefsFileAttachment(item.FormSubmissionId, item.ChefsFileId, item.FileName);
+                    var x = File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+                    if (fileDto.Name == null || fileDto.Content == null)
+                    {
+                        return NotFound("File not found.");
+                    }
+
+                    byte[] fileBytes = fileDto.Content;
+                    using (var ms = new MemoryStream(fileBytes))
+                    {
+                        files.Add(new FileContentResult(ms.ToArray(), "application/octet-stream")
+                        {
+                            FileDownloadName = fileDto.Name
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    string ExceptionMessage = ex.Message;
+                    logger.LogError(ex, "AttachmentController->DownloadAllChefsAttachment: {ExceptionMessage}", ExceptionMessage);
+                    return StatusCode(500, "An error occurred while downloading the file.");
+                }
+            }
+            return Ok(files);
         }
 
         [HttpPost("assessment/{assessmentId}/upload")]
