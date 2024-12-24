@@ -4,7 +4,7 @@
         let widgetManager = $wrapper.data('abp-widget-manager');
         let $actionButtons = $wrapper.find('.details-dropdown-action');
         let widgetAppId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
-       
+
         function init() {
             $actionButtons.each(function () {
                 let $button = $(this);
@@ -43,11 +43,11 @@
             };
         }
 
-        function customConfirmation(triggerAction) {
-            let confirmationDetails = getConfirmationText(triggerAction);
+        function customConfirmation(triggerActionEnum) {
+            let confirmationDetails = getConfirmationText(triggerActionEnum);
 
             let isRedStop = $('#redStop').prop("checked");
-            if (isRedStop && triggerAction === 'Approve') {
+            if (isRedStop && triggerActionEnum === 'Approve') {
                 return Swal.fire({
                     icon: "error",
                     text: "This application is currently flagged as high risk. Approval is not permitted at this time",
@@ -60,7 +60,32 @@
                 });
             }
 
+            if (triggerActionEnum === 'CompleteAssessment') {
+                unity.grantManager.assessments.assessment.getDisplayList(widgetAppId)
+                    .then(function (response) {
+                        if (response.data.some(item => item.status !== "COMPLETED")) {
+                            confirmationDetails = {
+                                isConfirmationRequired: true,
+                                title: 'Confirm Action',
+                                text: 'One or more assessment records are incomplete. Are you sure you want to complete the assessment of the application?',
+                                confirmButtonText: 'Confirm'
+                            };
+                        } else {
+                            confirmationDetails = {
+                                isConfirmationRequired: true,
+                                title: 'Confirm Action',
+                                text: 'Are you sure you want to complete the assessment of the application?',
+                                confirmButtonText: 'Confirm'
+                            };
+                        }
+                        firePageAlert(confirmationDetails, triggerActionEnum);
+                    });
+            } else {
+                firePageAlert(confirmationDetails, triggerActionEnum);
+            }
+        }
 
+        function firePageAlert(confirmationDetails, triggerActionEnum) {
             if (confirmationDetails.isConfirmationRequired) {
                 Swal.fire({
                     title: confirmationDetails.title,
@@ -73,7 +98,7 @@
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        triggerStatusAction(triggerAction);
+                        triggerStatusAction(triggerActionEnum);
                     }
                     else {
                         widgetManager.refresh();
@@ -82,12 +107,12 @@
 
             }
             else {
-                triggerStatusAction(triggerAction);
+                triggerStatusAction(triggerActionEnum);
             }
         }
 
-        function getConfirmationText(triggerAction) {
-            switch (triggerAction) {
+        function getConfirmationText(triggerActionEnum) {
+            switch (triggerActionEnum) {
                 case 'Approve':
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to approve the application?', confirmButtonText: 'Confirm', };
                 case 'Deny':
@@ -98,23 +123,21 @@
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to Close the application?', confirmButtonText: 'Confirm' };
                 case 'CompleteReview':
                     return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to complete the review of the application?', confirmButtonText: 'Confirm' };
-                case 'CompleteAssessment':
-                    return { isConfirmationRequired: true, title: 'Confirm Action', text: 'Are you sure you want to complete the assessment of the application?', confirmButtonText: 'Confirm' };
                 default:
                     return { isConfirmationRequired: false };
             }
         }
 
-        function triggerStatusAction(triggerAction) {
+        function triggerStatusAction(triggerActionEnum) {
             unity.grantManager.grantApplications.grantApplication
-                .triggerAction(widgetAppId, triggerAction, {})
-                .then(function (_) {                
+                .triggerAction(widgetAppId, triggerActionEnum, {})
+                .then(function (_) {
                     widgetManager.refresh();
                     abp.notify.success(
-                        l(`Enum:GrantApplicationAction.Message.${triggerAction}`),
+                        l(`Enum:GrantApplicationAction.Message.${triggerActionEnum}`),
                         "Application Status Changed"
                     );
-                    PubSub.publish("application_status_changed", triggerAction);
+                    PubSub.publish("application_status_changed", triggerActionEnum);
                     PubSub.publish("refresh_detail_panel_summary");
                     PubSub.publish("init_date_pickers");
                 })
