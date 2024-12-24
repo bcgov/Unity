@@ -1,16 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System;
-using Unity.GrantManager.GrantApplications;
-using System.Linq;
-using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Permissions;
-using Microsoft.AspNetCore.Authorization;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 {
@@ -27,7 +27,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
         private readonly IElectoralDistrictService _applicationElectoralDistrictAppService;
         private readonly IRegionalDistrictService _applicationRegionalDistrictAppService;
         private readonly ICommunityService _applicationCommunityAppService;
-        private readonly IAuthorizationService _authorizationService;        
+        private readonly IAuthorizationService _authorizationService;
 
         public ProjectInfoViewComponent(
             IGrantApplicationAppService grantApplicationAppService,
@@ -52,8 +52,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
             GrantApplicationDto application = await _grantApplicationAppService.GetAsync(applicationId);
 
             bool finalDecisionState = GrantApplicationStateGroups.FinalDecisionStates.Contains(application.StatusCode);
-            bool isEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.Edit) && !finalDecisionState;
-            bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.AssessmentResults.EditFinalStateFields) && finalDecisionState);
+            bool isFormEditGranted = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.ProjectInfo.Update);
+            bool isEditGranted = isFormEditGranted && !finalDecisionState;
+            bool isPostEditFieldsAllowed = isEditGranted || (await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.ProjectInfo.UpdateFinalStateFields) && finalDecisionState);
 
             List<EconomicRegionDto> EconomicRegions = (await _applicationEconomicRegionAppService.GetListAsync()).ToList();
 
@@ -61,7 +62,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
 
             List<RegionalDistrictDto> RegionalDistricts = (await _applicationRegionalDistrictAppService.GetListAsync()).ToList();
 
-            List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();           
+            List<CommunityDto> Communities = (await _applicationCommunityAppService.GetListAsync()).ToList();
 
             ProjectInfoViewModel model = new()
             {
@@ -72,6 +73,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 Communities = Communities,
                 EconomicRegions = EconomicRegions,
                 IsFinalDecisionMade = finalDecisionState,
+                IsFormEditGranted = isFormEditGranted,
                 IsEditGranted = isEditGranted,
                 IsPostEditFieldsAllowed = isPostEditFieldsAllowed,
             };
@@ -144,7 +146,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ProjectInfo
                 EconomicRegion = application.EconomicRegion,
                 ElectoralDistrict = application.ElectoralDistrict,
                 RegionalDistrict = application.RegionalDistrict,
-                Place = application.Place,                
+                Place = application.Place,
             };
 
             return View(model);
