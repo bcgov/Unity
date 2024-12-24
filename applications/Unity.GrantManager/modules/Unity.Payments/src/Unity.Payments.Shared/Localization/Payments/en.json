@@ -29,6 +29,7 @@
     "ApplicationPaymentListTable:L1ApprovalDate": "L1 Approval Date",
     "ApplicationPaymentListTable:L2ApprovalDate": "L2 Approval Date",
     "ApplicationPaymentListTable:L3ApprovalDate": "L3 Approval Date",
+    "ApplicationPaymentListTable:BatchName": "Batch #",
     "ApplicationPaymentListTable:PaymentID": "Payment ID",
     "ApplicationPaymentListTable:ApplicantName": "Applicant Name",
     "ApplicationPaymentListTable:SupplierNumber": "Supplier Number",
