@@ -5,7 +5,6 @@ using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Notifications.Emails;
-
 public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     [Key]
@@ -28,6 +27,7 @@ public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? ChesMsgId { get; set; }
     public string ChesResponse { get; set; } = "";
     public string ChesStatus { get; set; } = "";
+    public string Status { get; set; } = "";
     public DateTime? SendOnDateTime { get; set; }
     public DateTime? SentDateTime { get; set; }
 }

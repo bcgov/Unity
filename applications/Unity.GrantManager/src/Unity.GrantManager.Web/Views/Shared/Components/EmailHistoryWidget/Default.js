@@ -1,9 +1,11 @@
 ﻿$(function () {
-    let inputAction = function (requestData, dataTableSettings) {
+
+    let inputAction = function() {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
         return applicationId;
     }
+
     let responseCallback = function (result) {
         if (result) {
             setTimeout(function () {
@@ -41,7 +43,12 @@
                     className: 'data-table-header'
                 },
                 {
-                    title: 'Sent',
+                    title: 'Status',
+                    data: 'status',
+                    className: 'data-table-header'
+                },
+                {
+                    title: 'Created',
                     data: 'creationTime',
                     className: 'data-table-header',
                     render: function (data) {
@@ -64,6 +71,24 @@
                     render: function (data) {
                         return data ? data.name + ' ' + data.surname : '—';
                     },
+                },
+                {
+                    title: 'To Address',
+                    data: 'toAddress',
+                    visible : false ,
+                    className: 'data-table-header'
+                },
+                {
+                    title: 'From Address',
+                    data: 'fromAddress',
+                    visible : false ,
+                    className: 'data-table-header'
+                },
+                {
+                    title: 'Body',
+                    data: 'body',
+                    visible : false ,
+                    className: 'data-table-header'
                 }
             ],
         })
@@ -89,6 +114,17 @@
         else {
             // Open this row
             row.child(rowFormat(row.data())).show();
+        }
+    });
+
+    emailHistoryDataTable.on('click', 'tr td', function (e) {
+        let tr = e.target.closest('tr');
+        let row = emailHistoryDataTable.row(tr);
+        let column = emailHistoryDataTable.column( this );
+
+        if(column.index() > 0) {
+            let data = row.data();
+            PubSub.publish('email_selected', data);
         }
     });
 

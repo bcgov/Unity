@@ -190,7 +190,9 @@ function enableProjectInfoSaveBtn(inputText) {
         return;
     }
 
-    $('#saveProjectInfoBtn').prop('disabled', false);
+    if (abp.auth.isGranted('GrantApplicationManagement.ProjectInfo.Update')) {
+        $('#saveProjectInfoBtn').prop('disabled', false);
+    }
 }
 
 function calculatePercentage() {
