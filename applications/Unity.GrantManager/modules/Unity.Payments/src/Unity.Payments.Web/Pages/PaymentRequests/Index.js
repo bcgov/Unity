@@ -31,7 +31,6 @@ $(function () {
     let selectedPaymentIds = [];
 
     let actionButtons = [
-
         {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
@@ -119,7 +118,7 @@ $(function () {
     });
 
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
-    let history_button = dataTable.buttons(['.history']);
+    let history_button = dataTable.buttons(['.history']);    
 
     payment_approve_buttons.disable();
     dataTable.on('search.dt', () => handleSearch());
@@ -194,7 +193,9 @@ $(function () {
     function checkActionButtons() {
         let isOnlySubmittedToCas = checkAllRowsHaveState('Submitted');
         if (dataTable.rows({ selected: true }).indexes().length > 0 && !isOnlySubmittedToCas) {
-            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline') || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
+            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
+                || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
+                || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
                 payment_approve_buttons.enable();
 
             } else {

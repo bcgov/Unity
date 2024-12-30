@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using Unity.Payments.Suppliers;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Features;
+using Volo.Abp.Authorization.Permissions;
+using Unity.Payments.Permissions;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
@@ -20,12 +22,15 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
     {
         private readonly ISupplierAppService _supplierService;
         private readonly IFeatureChecker _featureChecker;
+        private readonly IPermissionChecker _permissionChecker;
 
         public SupplierInfoViewComponent(ISupplierAppService supplierService,
-            IFeatureChecker featureChecker)
+            IFeatureChecker featureChecker,
+            IPermissionChecker permissionChecker)
         {
             _supplierService = supplierService;
             _featureChecker = featureChecker;
+            _permissionChecker = permissionChecker;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
@@ -42,16 +47,23 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
                 {
                     SupplierCorrelationId = applicantId,
                     SupplierCorrelationProvider = CorrelationConsts.Applicant,
-                    SupplierId = supplier?.Id ?? Guid.Empty, 
+                    SupplierId = supplier?.Id ?? Guid.Empty,
                     SupplierNumber = supplier?.Number?.ToString(),
                     SupplierName = supplier?.Name?.ToString(),
                     Status = supplier?.Status?.ToString(),
                     OriginalSupplierNumber = supplier?.Number?.ToString(),
+                    HasEditSupplierInfo = await HasEditSupplier()
                 });
-            } else
+            }
+            else
             {
                 return View(new SupplierInfoViewModel());
             }
+        }
+
+        private async Task<bool> HasEditSupplier()
+        {
+            return await _permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.EditSupplierInfo);
         }
     }
 
