@@ -445,11 +445,17 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             };
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style",
+            "IDE0060:Remove unused parameter",
+            Justification = "We ignore the format provided from CHEFS for datetime as this does not display correctly")]
         private static bool TryParseDateTime(string value, string? format, out string formattedDateTime)
         {
+            const string fixedFormat = "yyyy-MM-dd hh:mm:ss tt";
             if (DateTime.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTime dateTime))
             {
-                var appliedFormat = !string.IsNullOrEmpty(format) ? format : "yyyy-MM-dd hh:mm:ss tt";
+                // The format that CHEFS provides vs the provided value don't format correctly
+                format = fixedFormat;
+                var appliedFormat = !string.IsNullOrEmpty(format) ? format : fixedFormat;
                 formattedDateTime = dateTime.ToString(appliedFormat, CultureInfo.InvariantCulture);
                 return true;
             }
