@@ -27,3 +27,7 @@
     bottom: auto;
  
 }
+
+.assessment-result-form {
+    border-bottom: 0.25rem solid var(--bc-colors-white-background);
+}
