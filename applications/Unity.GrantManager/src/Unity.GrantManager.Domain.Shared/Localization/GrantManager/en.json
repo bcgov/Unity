@@ -168,6 +168,7 @@
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
 
+    "AssessmentResultsView:ApprovalTitle": "Approval",
     "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",
     "AssessmentResultsView:AssessmentResultsForm.ProjectSummary": "Project Summary",
     "AssessmentResultsView:AssessmentResultsForm.RequestedAmount": "Requested Amount",
