@@ -28,3 +28,7 @@
     display: block;
     text-align: left;
 }
+
+.spinner-loading {
+    color: #9f9d9c;
+}

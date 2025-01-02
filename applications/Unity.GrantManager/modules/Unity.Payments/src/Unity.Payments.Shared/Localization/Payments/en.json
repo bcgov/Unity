@@ -96,6 +96,8 @@
     "Permission:Payments.Default": "Payments",
     "Permission:Payments.L1ApproveOrDecline": "Approve/Decline L1 Payments",
     "Permission:Payments.L2ApproveOrDecline": "Approve/Decline L2 Payments",
-    "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments"
+    "Permission:Payments.L3ApproveOrDecline": "Approve/Decline L3 Payments",
+    "Permission:Payments.RequestPayment": "Request Payment",
+    "Permission:Payments.EditSupplierInfo": "Update Supplier Info"
   }
 }
