@@ -20,3 +20,11 @@
 .sorting_disabled:after {
     content: "" !important;
 }
+
+.submission-title {
+    display: inline-block;
+}
+
+.submission-button-section {
+    display: flex;
+}
