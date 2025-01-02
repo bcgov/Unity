@@ -64,7 +64,7 @@ $(function () {
         );
     }
 
-    setTimeout(function () { loadSiteInfoTable(); },1000);
+    setTimeout(function () { loadSiteInfoTable(); }, 1000);
     $('#nav-organization-info-tab').one('click', function () {
         dataTable?.columns?.adjust();
     });
@@ -101,8 +101,8 @@ siteInfoModal.onResult(function () {
     );
 });
 
-function openSiteInfoModal(siteId, actionType) {    
-    const applicantId = $("#ApplicantInfoViewApplicantId").val(); 
+function openSiteInfoModal(siteId, actionType) {
+    const applicantId = $("#ApplicantInfoViewApplicantId").val();
     const supplierNumber = encodeURIComponent($("#SupplierNumber").val());
     const supplierId = $("#SupplierId").val();
 

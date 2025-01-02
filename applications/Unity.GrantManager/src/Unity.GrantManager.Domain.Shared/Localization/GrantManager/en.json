@@ -161,9 +161,14 @@
     "Permission:GrantApplicationPermissions.AssessmentResults.Edit": "Assessment Results Update",
     "Permission:GrantApplicationPermissions.AssessmentResults.EditFinalStateFields": "Edit Fields After Approval",
 
+    "Permission:GrantApplicationManagement.ProjectInfo": "Project Info",
+    "Permission:GrantApplicationManagement.ProjectInfo.Update": "Project Info Update",
+    "Permission:GrantApplicationManagement.ProjectInfo.Update.UpdateFinalStateFields": "Edit Project Info Fields After Approval",
+
     "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
 
+    "AssessmentResultsView:ApprovalTitle": "Approval",
     "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",
     "AssessmentResultsView:AssessmentResultsForm.ProjectSummary": "Project Summary",
     "AssessmentResultsView:AssessmentResultsForm.RequestedAmount": "Requested Amount",

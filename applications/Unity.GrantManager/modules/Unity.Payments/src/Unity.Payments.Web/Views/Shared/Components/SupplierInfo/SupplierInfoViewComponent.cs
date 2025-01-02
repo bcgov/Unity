@@ -9,6 +9,8 @@ using Unity.Payments.Suppliers;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Features;
 using Unity.GrantManager.Applicants;
+using Volo.Abp.Authorization.Permissions;
+using Unity.Payments.Permissions;
 
 namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 {
@@ -18,6 +20,7 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
         StyleTypes = [typeof(SupplierInfosWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class SupplierInfoViewComponent(IApplicantsAppService applicantsService,
+                                           IPermissionChecker permissionChecker,
                                            IFeatureChecker featureChecker) : AbpViewComponent
     {
 
@@ -37,8 +40,10 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
                     SupplierName = supplier?.Name?.ToString(),
                     Status = supplier?.Status?.ToString(),
                     OriginalSupplierNumber = supplier?.Number?.ToString(),
+                    HasEditSupplierInfo = await HasEditSupplier()
                 });
-            } else
+            }
+            else
             {
                 return View(new SupplierInfoViewModel());
             }
@@ -47,6 +52,11 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
         public virtual async Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId)
         {
             return await applicantsService.GetSupplierByApplicantIdAsync(applicantId);
+        }
+
+        private async Task<bool> HasEditSupplier()
+        {
+            return await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.EditSupplierInfo);
         }
     }
 

@@ -26,5 +26,6 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
 
         context.Files.AddIfNotContains("/libs/datatables.net-fixedheader-bs5/js/fixedHeader.bootstrap5.min.js");
         context.Files.AddIfNotContains("/libs/echarts/echarts.min.js");
+        context.Files.AddIfNotContains("/libs/jszip/jszip.min.js");
     }
 }

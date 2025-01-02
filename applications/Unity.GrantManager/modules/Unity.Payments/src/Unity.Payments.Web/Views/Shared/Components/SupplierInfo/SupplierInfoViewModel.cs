@@ -24,4 +24,5 @@ public class SupplierInfoViewModel
     public Guid SupplierId { get; set; }
     public Guid SupplierCorrelationId { get; set; }
     public string SupplierCorrelationProvider { get; set; } = string.Empty;
+    public bool HasEditSupplierInfo { get; set; }
 }
