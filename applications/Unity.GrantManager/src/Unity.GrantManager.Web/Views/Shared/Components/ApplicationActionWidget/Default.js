@@ -45,44 +45,57 @@
 
         function customConfirmation(triggerActionEnum) {
             let confirmationDetails = getConfirmationText(triggerActionEnum);
-
             let isRedStop = $('#redStop').prop("checked");
+        
             if (isRedStop && triggerActionEnum === 'Approve') {
-                return Swal.fire({
-                    icon: "error",
-                    text: "This application is currently flagged as high risk. Approval is not permitted at this time",
-                    confirmButtonText: 'Ok',
-                    customClass: {
-                        confirmButton: 'btn btn-primary'
-                    }
-                }).then((result) => {
-                    widgetManager.refresh();
-                });
+                return handleRedStopApproval();
             }
-
+        
             if (triggerActionEnum === 'CompleteAssessment') {
-                unity.grantManager.assessments.assessment.getDisplayList(widgetAppId)
-                    .then(function (response) {
-                        if (response.data.some(item => item.status !== "COMPLETED")) {
-                            confirmationDetails = {
-                                isConfirmationRequired: true,
-                                title: 'Confirm Action',
-                                text: 'One or more assessment records are incomplete. Are you sure you want to complete the assessment of the application?',
-                                confirmButtonText: 'Confirm'
-                            };
-                        } else {
-                            confirmationDetails = {
-                                isConfirmationRequired: true,
-                                title: 'Confirm Action',
-                                text: 'Are you sure you want to complete the assessment of the application?',
-                                confirmButtonText: 'Confirm'
-                            };
-                        }
-                        firePageAlert(confirmationDetails, triggerActionEnum);
-                    });
+                handleCompleteAssessment(confirmationDetails, triggerActionEnum);
             } else {
                 firePageAlert(confirmationDetails, triggerActionEnum);
             }
+        }
+        
+        function handleRedStopApproval() {
+            return Swal.fire({
+                icon: "error",
+                text: "This application is currently flagged as high risk. Approval is not permitted at this time",
+                confirmButtonText: 'Ok',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                }
+            }).then(() => {
+                widgetManager.refresh();
+            });
+        }
+        
+        function handleCompleteAssessment(confirmationDetails, triggerActionEnum) {
+            unity.grantManager.assessments.assessment.getDisplayList(widgetAppId)
+                .then(function (response) {
+                    updateConfirmationDetails(response, confirmationDetails, triggerActionEnum);
+                });
+        }
+        
+        function updateConfirmationDetails(response, confirmationDetails, triggerActionEnum) {
+            if (response.data.some(item => item.status !== "COMPLETED")) {
+                confirmationDetails = {
+                    isConfirmationRequired: true,
+                    title: 'Confirm Action',
+                    text: 'One or more assessment records are incomplete. Are you sure you want to complete the assessment of the application?',
+                    confirmButtonText: 'Confirm'
+                };
+            } else {
+                confirmationDetails = {
+                    isConfirmationRequired: true,
+                    title: 'Confirm Action',
+                    text: 'Are you sure you want to complete the assessment of the application?',
+                    confirmButtonText: 'Confirm'
+                };
+            }
+        
+            firePageAlert(confirmationDetails, triggerActionEnum);
         }
 
         function firePageAlert(confirmationDetails, triggerActionEnum) {
